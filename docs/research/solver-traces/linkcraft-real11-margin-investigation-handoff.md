@@ -95,3 +95,8 @@ The [iteration-cap/convergence audit](linkcraft-real11-initial-seven-dual-iterat
 ## EPS2 provenance and outside-square-root proposal
 
 The [gh/blame investigation](linkcraft-real11-norm-smoothing-history.md) traces EPS2=1e-14 to the original closed-form commit inside PR #122. That PR has no description/comments; its original commit and patch document tiny norm smoothing with modest accuracy plus fallback, but no justification for the specific constant. Moving it outside the objective sqrt adds only a constant and does not smooth the kink. Changing only the gradient denominator would make derivatives inconsistent. A smaller EPS2 is a separate probe and interacts with conditioning, degenerate recovery and the 1e-9 zero-costate yaw fallback. No epsilon experiment was run.
+
+
+## Proposed objective/window preflight
+
+The [whole-jump window versus motion design note](linkcraft-real11-window-objective-preflight-design.md) records the small-costate fallback, automatic matching-wall detection, and the concrete alternatives 1–6/end64, 1–7/end68, 1–8/end71. The user clarified whole-jump shifts as an alternative to terminal motion; a tick extension mixes position with one tick of movement rather than being a fundamentally separate strategy. Extending to 8 preserves existing constraints and removes the direct Z68 objective cap. This is a proposed next probe, not an implemented or tested policy. The note also identifies the existing scalar-MOTION evaluation inconsistency that a prototype must handle.

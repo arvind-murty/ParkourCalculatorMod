@@ -938,3 +938,8 @@ At fixed dual multipliers, tick t contributes `gX[t]*uX[t] + gZ[t]*uZ[t]` to the
 ### Why smoothing is inside the norm; upstream evidence
 
 The [blame/gh PR investigation](solver-traces/linkcraft-real11-norm-smoothing-history.md) finds EPS2=1e-14 in the original dual-solver commit (PR #122), unchanged numerically since. Its intent is smooth derivatives at zero costates; no recorded derivation or tuning rationale for exactly 1e-14 was found. Moving it outside the objective sqrt only adds a constant and removes no kink. Changing only the gradient denominator makes the derivative inconsistent with the current objective/Hessian. EPS2=1e-28 would consistently mean a smaller 1e-14 norm scale, but introduces conditioning and recovery-fallback interactions and has not yet been tested. PR #387's sharpening concerns a different FreeP0 parameter.
+
+
+## Potential improvement: constraint-aware window/objective selection
+
+See [the preflight design](solver-traces/linkcraft-real11-window-objective-preflight-design.md). Before solving, detect an objective directly capped by an original wall (MAX Z with a same-state upper bound, etc.). Choose among whole-jump endpoints or terminal directional motion, preserving the committed prefix. In the initial 7-window, end68 has a Z upper wall; extending to 8 jumps/end71 preserves that wall and adds jump8 constraints without a direct Z71 wall. Shortening to 6/end64 removes jump7 from lookahead. Motion can avoid the single-wall match but still has an implied bound from Z68 upper and Z67 lower. These are proposed heuristics, not current behavior or tested winners. A one-tick extension maximizes position plus one tick of movement, equivalent to pure motion only when the earlier position is fixed.
