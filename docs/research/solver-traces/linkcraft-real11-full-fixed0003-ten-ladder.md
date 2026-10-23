@@ -116,3 +116,6 @@ The run immediately before this probe **succeeded** on 250 ticks. It used the no
 Even the full-route commit=1 retry diverges on its first window: Z/MAX and Z/MIN miss, then X/MAX succeeds. Its tick-12 state is X=743.716245683098, Z=-1103.682285411922, VX=-0.222463944016, VZ=0.069311167258, carried yaw=115.161872864. The successful 30-jump run's tick-12 state is X=743.707005403898, Z=-1103.714623692396, VX=-0.223148328561, VZ=0.067035152688, carried yaw=115.534652710. Thus these runs do not share a solved prefix before jump 14.
 
 Sources: the first window and following `LRS-WIN` in [the full trace](full-fixed0003-ten-ladder-2026-10-23/solver-trace.txt), and the first 22 lines of [the successful 30-jump trace](shared-inertia-validation-2026-10-23/normal7-commit1.txt). Changing endpoint alone has not been isolated; this comparison cannot attribute the failure to route length, window size, or margin individually. Next controls would hold windows and commits fixed while changing only margins, then only endpoint.
+
+
+[Expanded table: every objective result and timing](linkcraft-real11-full-fixed0003-all-objectives.md). Fixed margin remains a user requirement for subsequent probes. The existing SLP fallback is centered feasibility, not phase-2 objective improvement; fixed closed-form margin alone does not make every committed prefix objective optimized.
