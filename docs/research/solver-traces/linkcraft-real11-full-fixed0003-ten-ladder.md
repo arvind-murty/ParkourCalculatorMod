@@ -119,3 +119,6 @@ Sources: the first window and following `LRS-WIN` in [the full trace](full-fixed
 
 
 [Expanded table: every objective result and timing](linkcraft-real11-full-fixed0003-all-objectives.md). Fixed margin remains a user requirement for subsequent probes. The existing SLP fallback is centered feasibility, not phase-2 objective improvement; fixed closed-form margin alone does not make every committed prefix objective optimized.
+
+
+[Side-by-side comparison with the successful normal-margin run](linkcraft-real11-normal-success-vs-fixed-full.md) now lists all attempted window sizes, selected methods/margins, and summed attempt times for every starting jump.
