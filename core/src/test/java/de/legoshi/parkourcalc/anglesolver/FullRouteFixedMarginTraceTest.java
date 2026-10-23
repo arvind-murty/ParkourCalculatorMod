@@ -22,11 +22,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-/** Opt-in full Linkcraft route probe: standard 10-ladder, fixed margin, actual-inertia window validation. */
+/** Opt-in full Linkcraft route probe: configurable window ladder, fixed margin, actual-inertia window validation. */
 @Category(SlowSolverTests.class)
 public class FullRouteFixedMarginTraceTest {
     @Test
     public void traceFullRouteFixedMarginTenLadder() throws Exception {
+        runProbe(10, "ten");
+    }
+
+    @Test
+    public void traceFullRouteFixedMarginSevenLadder() throws Exception {
+        runProbe(7, "seven");
+    }
+
+    private void runProbe(int window, String label) throws Exception {
         org.junit.Assume.assumeTrue("opt in with -Dpkc.fullRouteProbe=true", Boolean.getBoolean("pkc.fullRouteProbe"));
         String path = System.getenv("PKC_TRACE_INPUT");
         if (path == null) path = "/Users/arvindmurty/Downloads/LinkcraftII_Competition_01/real/11.json";
@@ -45,14 +54,15 @@ public class FullRouteFixedMarginTraceTest {
         assertNotNull("compiled full-route spec", spec);
         assertTrue("full route extends beyond the prior 250-tick probe", spec.asScenario().numTicks > 250);
 
-        SolverTrace.enable("linkcraft-real11-full-fixed0003-ten-ladder");
-        SolverTrace.solveStart("full route margin=0.0003 windows=10,7,5,3,2,1 commits=3,1 deadline=none");
+        SolverTrace.enable("linkcraft-real11-full-fixed0003-" + label + "-ladder");
+        SolverTrace.solveStart("full route margin=0.0003 windows="
+                + (window == 10 ? "10,7,5,3,2,1" : "7,5,3,2,1") + " commits=3,1 deadline=none");
         SolverTrace.log("INPUT", "rows=%d ticks=%d constraints=%d objective=%s/%s@%d",
                 inputs.size(), spec.asScenario().numTicks, spec.constraints.size(), spec.objective.axis,
                 spec.objective.sense, spec.objective.tick);
         try {
             double[] result = LongRunSolver.solve(ExactJumpModel.forMcVersion(file.mcVersion), spec, 0.0,
-                    new AtomicBoolean(false), LongRunSolver.LongRunConfig.defaults().withFixedMargin(0.0003));
+                    new AtomicBoolean(false), LongRunSolver.LongRunConfig.of(window, 3).withFixedMargin(0.0003));
             SolverTrace.log("RESULT", "solved=%s yaws=%d", result != null, result == null ? 0 : result.length);
             if (result != null) {
                 double[] replay = spec.asScenario().toGameFacings(
@@ -64,7 +74,7 @@ public class FullRouteFixedMarginTraceTest {
                 java.util.List<String> rows = new java.util.ArrayList<>();
                 rows.add("tick,yaw");
                 for (int t = 0; t < result.length; t++) rows.add(t + "," + result[t]);
-                Files.write(Paths.get("build/reports/linkcraft-real11-full-fixed0003-yaws.csv"), rows, StandardCharsets.UTF_8);
+                Files.write(Paths.get("build/reports/linkcraft-real11-full-fixed0003-" + label + "-yaws.csv"), rows, StandardCharsets.UTF_8);
             }
             // A miss is a recorded experimental outcome, not a reason to alter solver behavior.
             System.out.println("full-route solved=" + (result != null));

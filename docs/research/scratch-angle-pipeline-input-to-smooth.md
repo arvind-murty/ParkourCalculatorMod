@@ -903,3 +903,6 @@ See [the shared-helper investigation](solver-traces/linkcraft-real11-shared-iner
 
 
 The subsequent [full-route fixed-margin 10-ladder probe](solver-traces/linkcraft-real11-full-fixed0003-ten-ladder.md) uses the saved 808-tick endpoint, windows 10,7,5,3,2,1, commit 3 then 1, and closed-form margin 0.0003. Both passes stall at tick 90 before jump 14; no outer timeout was imposed. All attempt tables, detailed traces and timings are preserved in that report.
+
+
+The [fixed-margin 7-ladder full-route control](solver-traces/linkcraft-real11-full-fixed0003-seven-ladder.md) also stalls at tick 90 before jump 14 for both commit passes. It keeps margin 0.0003 and all validation/settings from the fixed 10-ladder run, changing only the window ladder. Detailed attempts and timings are saved.

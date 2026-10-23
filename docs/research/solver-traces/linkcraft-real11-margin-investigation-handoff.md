@@ -75,3 +75,8 @@ The [shared inertia-validation experiment](linkcraft-real11-shared-inertia-valid
 ## Full-route fixed-margin 10-ladder probe
 
 The [full-route experiment](linkcraft-real11-full-fixed0003-ten-ladder.md) runs the original 808-tick endpoint with standard windows 10,7,5,3,2,1, commit retries 3 then 1, fixed closed-form margin 0.0003, and shared actual-inertia validation. It returns no solution: both commit passes stall at tick 90 before jump 14. Total trace time 3829.48 ms; no outer deadline. The report preserves every window attempt and objective timing.
+
+
+## Fixed-margin 7-ladder control
+
+The [full-route 7-ladder control](linkcraft-real11-full-fixed0003-seven-ladder.md) changes only the window ladder to 7,5,3,2,1. Both commit=3 and commit=1 still stall at tick 90 before jump 14. Total logged time 1512.21 ms; full objective/window tables and raw trace are preserved. This is distinct from the successful normal-margin 7-ladder run.

@@ -122,3 +122,8 @@ Sources: the first window and following `LRS-WIN` in [the full trace](full-fixed
 
 
 [Side-by-side comparison with the successful normal-margin run](linkcraft-real11-normal-success-vs-fixed-full.md) now lists all attempted window sizes, selected methods/margins, and summed attempt times for every starting jump.
+
+
+## Fixed-margin 7-ladder control
+
+The [full-route 7-ladder control](linkcraft-real11-full-fixed0003-seven-ladder.md) changes only the window ladder to 7,5,3,2,1. Both commit=3 and commit=1 still stall at tick 90 before jump 14. Total logged time 1512.21 ms; full objective/window tables and raw trace are preserved. This is distinct from the successful normal-margin 7-ladder run.
