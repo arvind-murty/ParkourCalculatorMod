@@ -181,7 +181,11 @@ public final class SlpSolve {
             if (plainWalls.isEmpty()) return null;
             CostateDualSolver dual = new CostateDualSolver(n, cx, cz, lin.mMagAll(), plainWalls);
             CostateDualSolver.Result r = dual.solve(0.0, null);
-            if (r == null) return null; // dual unbounded = continuous-infeasible certificate
+            if (r == null) {
+                if (SolverTrace.on()) SolverTrace.log("SLP", "dual seed rejected stop=%s iters=%d n=%d m=%d",
+                        dual.lastStopReason, dual.lastIters, n, plainWalls.size());
+                return null;
+            }
             theta = lin.recoverAlongCostate(spec.objective, r.gx, r.gz);
         }
 

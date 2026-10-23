@@ -605,8 +605,9 @@ public final class ClosedFormSolve {
             // Dual unbounded -> primal infeasible; infeasibility is monotone in the margin, so ascending
             // stops while the descending (robust) ladder keeps trying smaller rungs.
             if (r == null) {
-                if (SolverTrace.on()) SolverTrace.log("CF", "rung margin=%.2e dual unbounded ms=%.3f%s", margin,
-                        (System.nanoTime() - rungT0) / 1.0e6, ascending ? ", ladder stop" : "");
+                if (SolverTrace.on()) SolverTrace.log("CF", "rung margin=%.2e dual unbounded ms=%.3f%s stop=%s iters=%d", margin,
+                        (System.nanoTime() - rungT0) / 1.0e6, ascending ? ", ladder stop" : "",
+                        solver.lastStopReason, solver.lastIters);
                 if (ascending) break;
                 continue;
             }
