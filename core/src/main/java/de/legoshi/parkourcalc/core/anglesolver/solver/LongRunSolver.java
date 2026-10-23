@@ -35,16 +35,29 @@ public final class LongRunSolver {
 
     public static boolean DEBUG = false;
 
+    /** Opt-in endpoint policy for fixed-start, nonterminal windows with a direct objective cap. */
+    public enum WindowAdjustment { NONE, FORWARD_JUMP, FORWARD_TICK }
+
     public static final class LongRunConfig {
         final int[] windowLadder;
         final int[] commitLadder;
         /** Optional probe override for closed-form margins; null preserves the standard ladders. */
         private Double fixedMargin;
+        private WindowAdjustment adjustment = WindowAdjustment.NONE;
+
+        public LongRunConfig withWindowAdjustment(WindowAdjustment adjustment) {
+            if (adjustment == null) throw new IllegalArgumentException("null window adjustment");
+            LongRunConfig copy = new LongRunConfig(windowLadder.clone(), commitLadder.clone());
+            copy.fixedMargin = fixedMargin;
+            copy.adjustment = adjustment;
+            return copy;
+        }
 
         public LongRunConfig withFixedMargin(double margin) {
             if (!Double.isFinite(margin) || margin < 0) throw new IllegalArgumentException("invalid margin");
             LongRunConfig copy = new LongRunConfig(windowLadder.clone(), commitLadder.clone());
             copy.fixedMargin = margin;
+            copy.adjustment = adjustment;
             return copy;
         }
 
@@ -211,6 +224,15 @@ public final class LongRunSolver {
                 int a = bounds[i], c = bounds[we];
                 int ce = last ? we : Math.min(i + Math.min(commitJumps, w), jumps);
                 int commitTicks = bounds[ce] - a;
+                // Keep the nominal commit span. Only the provisional lookahead endpoint moves.
+                if (!last && freeBox == null && config.adjustment != WindowAdjustment.NONE) {
+                    int nominalEnd = c;
+                    int jumpEnd = we + 1 < bounds.length ? bounds[we + 1] : c;
+                    c = adjustedEnd(spec, a, c, jumpEnd, sc.numTicks, seedYaw, config.adjustment);
+                    if (SolverTrace.on()) SolverTrace.log("LRS-ADJUST",
+                            "policy=%s commit=%d start=%d nominalEnd=%d selectedEnd=%d replayTicks=%d",
+                            config.adjustment, commitJumps, a, nominalEnd, c, commitTicks);
+                }
                 JumpPhysicsInputs win = sliceScenario(sc, a, c, seedPos, seedVel, seedYaw);
                 List<JumpConstraint> cons = sliceConstraints(spec, a, c, seedYaw);
                 if (SolverTrace.on()) {
@@ -299,11 +321,32 @@ public final class LongRunSolver {
                 break;
             }
             if (!advanced) {
+                if (SolverTrace.on()) SolverTrace.log("LRS-STUCK", "commit=%d nextJump=%d tick=%d",
+                        commitJumps, i + 1, bounds[i]);
                 if (DEBUG) System.err.printf("  commit=%d stuck at jump %d (tick %d)%n", commitJumps, i, bounds[i]);
                 return null;
             }
         }
         return gf;
+    }
+
+    /** Extend only when the nominal +Z objective is directly capped. Never move the final goal
+     *  or consume the endpoint reserved for a terminal solve. Try the other forward size if needed. */
+    private static int adjustedEnd(JumpSpec spec, int start, int end, int jumpEnd, int routeEnd,
+                                   float yaw, WindowAdjustment policy) {
+        if (policy == WindowAdjustment.NONE || !hasDirectZCap(spec, start, end, yaw)) return end;
+        int[] choices = policy == WindowAdjustment.FORWARD_JUMP
+                ? new int[]{jumpEnd, end + 1} : new int[]{end + 1, jumpEnd};
+        for (int candidate : choices) {
+            if (candidate > end && candidate < routeEnd && !hasDirectZCap(spec, start, candidate, yaw))
+                return candidate;
+        }
+        return end;
+    }
+
+    private static boolean hasDirectZCap(JumpSpec spec, int start, int end, float yaw) {
+        Objective objective = new Objective(JumpPhysicsInputs.Axis.Z, Objective.Sense.MAX, end - start);
+        return ObjectiveBounds.directCap(objective, sliceConstraints(spec, start, end, yaw)) != null;
     }
 
     private static String windowKey(int a, int c, boolean last, int commitTicks, Vec3dCore pos, Vec3dCore vel, float yaw) {

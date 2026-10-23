@@ -35,7 +35,24 @@ public class FullRouteFixedMarginTraceTest {
         runProbe(7, "seven");
     }
 
+    @Test public void traceSevenForwardJump() throws Exception {
+        runProbe(7, "seven-forward-jump", LongRunSolver.WindowAdjustment.FORWARD_JUMP);
+    }
+    @Test public void traceSevenForwardTick() throws Exception {
+        runProbe(7, "seven-forward-tick", LongRunSolver.WindowAdjustment.FORWARD_TICK);
+    }
+    @Test public void traceTenForwardJump() throws Exception {
+        runProbe(10, "ten-forward-jump", LongRunSolver.WindowAdjustment.FORWARD_JUMP);
+    }
+    @Test public void traceTenForwardTick() throws Exception {
+        runProbe(10, "ten-forward-tick", LongRunSolver.WindowAdjustment.FORWARD_TICK);
+    }
+
     private void runProbe(int window, String label) throws Exception {
+        runProbe(window, label, LongRunSolver.WindowAdjustment.NONE);
+    }
+
+    private void runProbe(int window, String label, LongRunSolver.WindowAdjustment policy) throws Exception {
         org.junit.Assume.assumeTrue("opt in with -Dpkc.fullRouteProbe=true", Boolean.getBoolean("pkc.fullRouteProbe"));
         String path = System.getenv("PKC_TRACE_INPUT");
         if (path == null) path = "/Users/arvindmurty/Downloads/LinkcraftII_Competition_01/real/11.json";
@@ -60,10 +77,13 @@ public class FullRouteFixedMarginTraceTest {
         SolverTrace.log("INPUT", "rows=%d ticks=%d constraints=%d objective=%s/%s@%d",
                 inputs.size(), spec.asScenario().numTicks, spec.constraints.size(), spec.objective.axis,
                 spec.objective.sense, spec.objective.tick);
+        SolverTrace.log("POLICY", "adjustment=%s", policy);
+        long startNanos = System.nanoTime();
         try {
             double[] result = LongRunSolver.solve(ExactJumpModel.forMcVersion(file.mcVersion), spec, 0.0,
-                    new AtomicBoolean(false), LongRunSolver.LongRunConfig.of(window, 3).withFixedMargin(0.0003));
-            SolverTrace.log("RESULT", "solved=%s yaws=%d", result != null, result == null ? 0 : result.length);
+                    new AtomicBoolean(false), LongRunSolver.LongRunConfig.of(window, 3).withFixedMargin(0.0003).withWindowAdjustment(policy));
+            SolverTrace.log("RESULT", "solved=%s yaws=%d ms=%.3f", result != null, result == null ? 0 : result.length,
+                    (System.nanoTime() - startNanos) / 1e6);
             if (result != null) {
                 double[] replay = spec.asScenario().toGameFacings(
                         de.legoshi.parkourcalc.core.anglesolver.solver.Angles.wrapAll(result));
