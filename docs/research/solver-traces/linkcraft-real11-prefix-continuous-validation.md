@@ -29,3 +29,14 @@ The first focused invocation ran seven tests: six passed; the 30-jump completion
 The earlier [prefix-only comparison](linkcraft-real11-prefix-regression-comparison.md) remains historical evidence for the previous policy; its outcome is not the current acceptance rule.
 
 A second focused invocation, with explicit assertions for the original tick-40 position and continuous feasibility, passed all six validation tests. See [log](prefix-continuous-2026-10-23/focused-validation-checks.log) and [same-entry trace](prefix-continuous-2026-10-23/first-divergence.txt).
+
+## Inertia-pattern validity audit
+
+The new full-window continuous check is **not a complete inertia-pattern consistency check**. `maxConstraintViolation` checks only the original `JumpSpec` constraints against positions under the supplied pattern. It does not evaluate internally generated velocity-band rows or require the supplied pattern to match the threshold checks of the candidate's actual continuous trajectory.
+
+- Closed form: `runLadder` adds `lin.velocityWalls(vBound)` for ticks marked zeroed. These rows participate in the dual solve but are not explicitly revalidated by the new acceptance helper. Finite-iteration dual output may violate them. No keep-alive rows are added here for ticks assumed not zeroed; an unpatterned first pass has no such inertia rows at all. `velocityWalls` also uses non-strict band boundaries, whereas the actual zeroing comparison is strict.
+- Ordinary SLP: the full continuous check uses the unpatterned model; it does not enforce the inertia threshold checks across the full window.
+- Inertia-aware SLP: the new final continuous check calls `zeroingPattern` on the candidate itself, then evaluates positions using that derived pattern. This pattern is consistent with that candidate's deterministic continuous threshold simulation by construction (up to floating-point differences between affine evaluation and stepwise recurrence). This does not add velocity-band constraints to the LP or promise that the proposal obeyed the previous iterate's fixed pattern.
+- Minecraft replay checks the actual inertia threshold behavior in the committed prefix. It does not validate suffix pattern consistency under the new prefix scope.
+
+Sources: `ClosedFormSolve.runLadder`, `JumpLinearModel.velocityWalls`, `JumpLinearModel.zeroingPattern`, `JumpLinearModel.maxConstraintViolation`, and `SlpSolve.continuousViolation`. No behavior change or tests were run for this audit. A stronger acceptance rule would check the entire candidate using continuous simulation with actual per-axis inertia threshold checks, or explicitly validate both zeroed and surviving ticks of its fixed model.
