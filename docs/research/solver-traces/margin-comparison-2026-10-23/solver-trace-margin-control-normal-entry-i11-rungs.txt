@@ -1,0 +1,67 @@
+      1.46  t1   RUNG-DIAG pattern=free sequence=cold-3.0E-4 margin=0.00030000 iters=100 pg=0.201008879 smoothViolation=0.165460989528 smoothWorst=X@111 exactViolation=0.165369727087 exactWorst=X@111
+      2.79  t1   RUNG-DIAG pattern=free sequence=cold-0.0012 margin=0.0012000 iters=100 pg=0.479558720 smoothViolation=0.288682381016 smoothWorst=Z@114lo exactViolation=0.287393665327 exactWorst=Z@114lo
+      3.82  t1   RUNG-DIAG pattern=free sequence=warm-ladder margin=0.050000 iters=100 pg=0.476040933 smoothViolation=0.452282290099 smoothWorst=X@112hi exactViolation=0.360652710195 exactWorst=X@112hi
+      4.37  t1   RUNG-DIAG pattern=free sequence=warm-ladder margin=0.020000 iters=100 pg=0.119313320 smoothViolation=0.0870336526713 smoothWorst=X@111 exactViolation=0.0839338629648 exactWorst=X@111
+      4.66  t1   RUNG-DIAG pattern=free sequence=warm-ladder margin=0.010000 iters=29 pg=0.0127794230 smoothViolation=0.0127794233179 smoothWorst=Z@89lo exactViolation=0.0104211248799 exactWorst=Z@89lo
+      5.09  t1   RUNG-DIAG pattern=free sequence=warm-ladder margin=0.0050000 iters=100 pg=0.00632292032 smoothViolation=0.00632293231753 smoothWorst=Z@89lo exactViolation=0.00907021333705 exactWorst=Z@89lo
+      5.51  t1   RUNG-DIAG pattern=free sequence=warm-ladder margin=0.0012000 iters=100 pg=0.00139474869 smoothViolation=0.00139455858873 smoothWorst=Z@89lo exactViolation=0.0145752794209 exactWorst=X@112hi
+      5.72  t1   RUNG-DIAG pattern=free sequence=warm-ladder margin=0.00030000 iters=5 pg=0.000815497711 smoothViolation=0.000494562638939 smoothWorst=Z@89lo exactViolation=0.0154824340033 exactWorst=X@112hi
+      5.96  t1   RUNG-DIAG pattern=free sequence=warm-ladder margin=0.0000 iters=4 pg=0.00111549348 smoothViolation=0.000194565244667 smoothWorst=Z@89lo exactViolation=0.0157765917413 exactWorst=X@112hi
+      7.04  t1   RUNG-DIAG pattern=x@4-10+z@2 sequence=cold-3.0E-4 margin=0.00030000 iters=100 pg=0.0538396072 smoothViolation=0.0538949014028 smoothWorst=Z@98hi exactViolation=0.0536169837646 exactWorst=Z@98hi
+      7.06  t1   RUNG-INERTIA sequence=cold-3.0E-4 margin=0.00030000 tick=82 axis=Z velocity=0.00166423056785
+      7.07  t1   RUNG-INERTIA sequence=cold-3.0E-4 margin=0.00030000 tick=84 axis=X velocity=-0.00697866376284
+      7.08  t1   RUNG-INERTIA sequence=cold-3.0E-4 margin=0.00030000 tick=85 axis=X velocity=-0.00635965758040
+      7.08  t1   RUNG-INERTIA sequence=cold-3.0E-4 margin=0.00030000 tick=86 axis=X velocity=-0.00578955733200
+      7.09  t1   RUNG-INERTIA sequence=cold-3.0E-4 margin=0.00030000 tick=87 axis=X velocity=-0.00526396063736
+      7.09  t1   RUNG-INERTIA sequence=cold-3.0E-4 margin=0.00030000 tick=88 axis=X velocity=-0.00477432633872
+      7.10  t1   RUNG-INERTIA sequence=cold-3.0E-4 margin=0.00030000 tick=89 axis=X velocity=0.000154245938163
+      7.10  t1   RUNG-INERTIA sequence=cold-3.0E-4 margin=0.00030000 tick=90 axis=X velocity=-0.000718963548772
+      8.33  t1   RUNG-DIAG pattern=x@4-10+z@2 sequence=cold-0.0012 margin=0.0012000 iters=100 pg=0.0777148254 smoothViolation=0.113830897859 smoothWorst=Z@114lo exactViolation=0.174854946575 exactWorst=X@111
+      8.34  t1   RUNG-INERTIA sequence=cold-0.0012 margin=0.0012000 tick=82 axis=Z velocity=0.0128650260778
+      8.34  t1   RUNG-INERTIA sequence=cold-0.0012 margin=0.0012000 tick=84 axis=X velocity=-0.0153685132432
+      8.35  t1   RUNG-INERTIA sequence=cold-0.0012 margin=0.0012000 tick=85 axis=X velocity=-0.0139966895946
+      8.35  t1   RUNG-INERTIA sequence=cold-0.0012 margin=0.0012000 tick=86 axis=X velocity=-0.0127460612713
+      8.36  t1   RUNG-INERTIA sequence=cold-0.0012 margin=0.0012000 tick=87 axis=X velocity=-0.0116057206973
+      8.37  t1   RUNG-INERTIA sequence=cold-0.0012 margin=0.0012000 tick=88 axis=X velocity=-0.0105657428255
+      8.37  t1   RUNG-INERTIA sequence=cold-0.0012 margin=0.0012000 tick=89 axis=X velocity=-0.00580317313271
+      8.38  t1   RUNG-INERTIA sequence=cold-0.0012 margin=0.0012000 tick=90 axis=X velocity=-0.00581391066407
+     10.55  t1   RUNG-DIAG pattern=x@4-10+z@2 sequence=warm-ladder margin=0.050000 iters=100 pg=0.620646996 smoothViolation=0.506795010985 smoothWorst=Z@112 exactViolation=0.960879795860 exactWorst=Z@112
+     12.07  t1   RUNG-DIAG pattern=x@4-10+z@2 sequence=warm-ladder margin=0.020000 iters=100 pg=0.104106641 smoothViolation=0.0667046477908 smoothWorst=X@111 exactViolation=0.0200622294722 exactWorst=Z@114lo
+     12.65  t1   RUNG-DIAG pattern=x@4-10+z@2 sequence=warm-ladder margin=0.010000 iters=30 pg=0.0118335504 smoothViolation=0.0118335500814 smoothWorst=Z@89lo exactViolation=0.00181395771324 exactWorst=Z@89lo
+     13.74  t1   RUNG-DIAG pattern=x@4-10+z@2 sequence=warm-ladder margin=0.0050000 iters=100 pg=0.00598725677 smoothViolation=0.00598722623190 smoothWorst=Z@89lo exactViolation=0.000968782546806 exactWorst=Z@89lo
+     14.51  t1   RUNG-DIAG pattern=x@4-10+z@2 sequence=warm-ladder margin=0.0012000 iters=100 pg=0.00175928324 smoothViolation=0.00114004892647 smoothWorst=Z@89lo exactViolation=0.00000000000 exactWorst=none
+     14.52  t1   RUNG-INERTIA sequence=warm-ladder margin=0.0012000 tick=82 axis=Z velocity=0.00386126938200
+     14.53  t1   RUNG-INERTIA sequence=warm-ladder margin=0.0012000 tick=84 axis=X velocity=-0.00391340280619
+     14.53  t1   RUNG-INERTIA sequence=warm-ladder margin=0.0012000 tick=85 axis=X velocity=-0.000172394938147
+     14.54  t1   RUNG-INERTIA sequence=warm-ladder margin=0.0012000 tick=86 axis=X velocity=-0.000147443585622
+     14.54  t1   RUNG-INERTIA sequence=warm-ladder margin=0.0012000 tick=87 axis=X velocity=-0.000129295991735
+     14.55  t1   RUNG-INERTIA sequence=warm-ladder margin=0.0012000 tick=88 axis=X velocity=-0.000111150092855
+     14.55  t1   RUNG-INERTIA sequence=warm-ladder margin=0.0012000 tick=89 axis=X velocity=0.00203943019882
+     14.55  t1   RUNG-INERTIA sequence=warm-ladder margin=0.0012000 tick=90 axis=X velocity=-0.00113601835925
+     14.83  t1   RUNG-DIAG pattern=x@4-10+z@2 sequence=warm-ladder margin=0.00030000 iters=5 pg=0.00265200436 smoothViolation=0.000240050280048 smoothWorst=Z@89lo exactViolation=0.00000000000 exactWorst=none
+     14.83  t1   RUNG-INERTIA sequence=warm-ladder margin=0.00030000 tick=82 axis=Z velocity=0.00386126938200
+     14.84  t1   RUNG-INERTIA sequence=warm-ladder margin=0.00030000 tick=84 axis=X velocity=-0.00391340280619
+     14.84  t1   RUNG-INERTIA sequence=warm-ladder margin=0.00030000 tick=85 axis=X velocity=-0.000172394938147
+     14.85  t1   RUNG-INERTIA sequence=warm-ladder margin=0.00030000 tick=86 axis=X velocity=-0.000147443585622
+     14.85  t1   RUNG-INERTIA sequence=warm-ladder margin=0.00030000 tick=87 axis=X velocity=-0.000129295991735
+     14.86  t1   RUNG-INERTIA sequence=warm-ladder margin=0.00030000 tick=88 axis=X velocity=-0.000111150092855
+     14.86  t1   RUNG-INERTIA sequence=warm-ladder margin=0.00030000 tick=89 axis=X velocity=0.00203943019882
+     14.86  t1   RUNG-INERTIA sequence=warm-ladder margin=0.00030000 tick=90 axis=X velocity=-0.00113601835925
+     15.13  t1   RUNG-DIAG pattern=x@4-10+z@2 sequence=warm-ladder margin=0.0000 iters=5 pg=0.00295200199 smoothViolation=5.98898708404e-12 smoothWorst=Z@114lo exactViolation=0.00000000000 exactWorst=none
+     15.13  t1   RUNG-INERTIA sequence=warm-ladder margin=0.0000 tick=82 axis=Z velocity=0.00386126938200
+     15.14  t1   RUNG-INERTIA sequence=warm-ladder margin=0.0000 tick=84 axis=X velocity=-0.00391340280619
+     15.14  t1   RUNG-INERTIA sequence=warm-ladder margin=0.0000 tick=85 axis=X velocity=-0.000172394938147
+     15.15  t1   RUNG-INERTIA sequence=warm-ladder margin=0.0000 tick=86 axis=X velocity=-0.000147443585622
+     15.15  t1   RUNG-INERTIA sequence=warm-ladder margin=0.0000 tick=87 axis=X velocity=-0.000129295991735
+     15.15  t1   RUNG-INERTIA sequence=warm-ladder margin=0.0000 tick=88 axis=X velocity=-0.000111150092855
+     15.16  t1   RUNG-INERTIA sequence=warm-ladder margin=0.0000 tick=89 axis=X velocity=0.00203943019882
+     15.16  t1   RUNG-INERTIA sequence=warm-ladder margin=0.0000 tick=90 axis=X velocity=-0.00113601835925
+     16.39  t1   RUNG-DIAG pattern=z@2 sequence=cold-3.0E-4 margin=0.00030000 iters=100 pg=0.118039911 smoothViolation=0.231475269107 smoothWorst=X@89lo exactViolation=0.345606543086 exactWorst=Z@98hi
+     17.57  t1   RUNG-DIAG pattern=z@2 sequence=cold-0.0012 margin=0.0012000 iters=100 pg=0.0444198489 smoothViolation=0.0430426040727 smoothWorst=Z@98hi exactViolation=0.0418693566639 exactWorst=Z@98hi
+     18.62  t1   RUNG-DIAG pattern=z@2 sequence=warm-ladder margin=0.050000 iters=100 pg=0.395220284 smoothViolation=0.109928941627 smoothWorst=X@112hi exactViolation=0.0428015682642 exactWorst=Z@98hi
+     19.21  t1   RUNG-DIAG pattern=z@2 sequence=warm-ladder margin=0.020000 iters=100 pg=0.124983039 smoothViolation=0.0842618914080 smoothWorst=X@111 exactViolation=0.0862368596499 exactWorst=X@111
+     19.51  t1   RUNG-DIAG pattern=z@2 sequence=warm-ladder margin=0.010000 iters=31 pg=0.0126023814 smoothViolation=0.0126023832171 smoothWorst=Z@89lo exactViolation=0.00260428121214 exactWorst=Z@89lo
+     19.97  t1   RUNG-DIAG pattern=z@2 sequence=warm-ladder margin=0.0050000 iters=100 pg=0.00605139136 smoothViolation=0.00605139254979 smoothWorst=Z@89lo exactViolation=0.00198357368492 exactWorst=X@112hi
+     20.45  t1   RUNG-DIAG pattern=z@2 sequence=warm-ladder margin=0.0012000 iters=100 pg=0.000831365585 smoothViolation=0.000830992441743 smoothWorst=Z@89lo exactViolation=0.0139797526047 exactWorst=X@112hi
+     20.71  t1   RUNG-DIAG pattern=z@2 sequence=warm-ladder margin=0.00030000 iters=5 pg=0.000863879919 smoothViolation=1.07729711111e-11 smoothWorst=Z@114lo exactViolation=0.0149013233253 exactWorst=X@112hi
+     21.16  t1   RUNG-DIAG pattern=z@2 sequence=warm-ladder margin=0.0000 iters=100 pg=0.000841826200 smoothViolation=0.00000000000 smoothWorst=none exactViolation=0.0178529035836 exactWorst=X@112hi
