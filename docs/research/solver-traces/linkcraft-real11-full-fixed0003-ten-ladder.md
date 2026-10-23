@@ -100,3 +100,19 @@ Run in the background with output redirected to a file. `PKC_TRACE_INPUT` overri
 - [JUnit result](full-fixed0003-ten-ladder-2026-10-23/probe-junit.xml)
 
 Next investigation: compare the accepted tick-88/tick-90 states and which objectives produced them against the successful normal-margin 7-ladder run, then inspect the first failed jump-14 window's continuous and prefix-replay violations separately.
+
+## Comparison with the immediately preceding 30-jump run
+
+The run immediately before this probe **succeeded** on 250 ticks. It used the normal robust margin ladder and windows 7,5,3,2,1 with commit=1. It did not use fixed margin 0.0003. Both use the same shared actual-inertia validation. The earlier 30-jump failure at index 13 used the superseded fixed-pattern continuous check; do not confuse that with the successful shared-helper run.
+
+| Setting | Successful 30-jump probe | Full-route probe |
+|---|---|---|
+| Endpoint | 250 | 808 |
+| Windows | 7,5,3,2,1 | 10,7,5,3,2,1 |
+| Commit attempts | 1 | 3 then 1 |
+| Closed-form margins | Normal ladder | Only 0.0003 |
+| First accepted objective | Z/MAX at local tick 68, margin 0.05 | X/MAX at local tick 77, margin 0.0003 |
+
+Even the full-route commit=1 retry diverges on its first window: Z/MAX and Z/MIN miss, then X/MAX succeeds. Its tick-12 state is X=743.716245683098, Z=-1103.682285411922, VX=-0.222463944016, VZ=0.069311167258, carried yaw=115.161872864. The successful 30-jump run's tick-12 state is X=743.707005403898, Z=-1103.714623692396, VX=-0.223148328561, VZ=0.067035152688, carried yaw=115.534652710. Thus these runs do not share a solved prefix before jump 14.
+
+Sources: the first window and following `LRS-WIN` in [the full trace](full-fixed0003-ten-ladder-2026-10-23/solver-trace.txt), and the first 22 lines of [the successful 30-jump trace](shared-inertia-validation-2026-10-23/normal7-commit1.txt). Changing endpoint alone has not been isolated; this comparison cannot attribute the failure to route length, window size, or margin individually. Next controls would hold windows and commits fixed while changing only margins, then only endpoint.
