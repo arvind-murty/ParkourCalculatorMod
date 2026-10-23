@@ -132,3 +132,8 @@ At tick 67, the objective is maximize Z[68] and the only constraint row affected
 This is a structural cancellation: pushing Z improves the objective but presses equally against the active Z wall. At exact cancellation the unsmoothed Lagrangian is indifferent to that tick's direction; a zero costate does not identify a unique feasible angle. It also does not mean movement magnitude may be reduced. The solver's smoothed derivative nevertheless shrinks the internal movement vector around that cancellation, which is the discrepancy measured in the recovery audit.
 
 Only changes to research notes were made for this explanation; no new test or solve was run.
+
+
+### Component interpretation
+
+The per-tick score is `gX*uX + gZ*uZ`. A zero Z component means no direct Z reward in this fixed-multiplier Lagrangian, not zero player Z velocity. A nonzero X component can still select X-directed acceleration. A zero whole vector leaves direction undetermined by this score, without making all directions feasible. With X component zero, any positive Z component (small, 0.5 or 1) selects the same full +Z acceleration before smoothing. With X component 1, Z components 0.5 and 1 yield Z fractions 0.447214 and 0.707107 respectively. Only relative components determine the recovered direction; absolute size matters to the smoothed derivative and numerical conditioning. In the special last-tick example, gZ approximately equals 1 minus the final-wall multiplier; this is not a universal numerical scale for other ticks.

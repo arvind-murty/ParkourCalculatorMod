@@ -923,3 +923,13 @@ The [initial-seven iteration-cap audit](solver-traces/linkcraft-real11-initial-s
 In this solver `g[t] = c[t] - Σ lambda[j] A[j,t]`: objective sensitivity to tick t's acceleration minus weighted constraint sensitivities, all in world X/Z. The direction chooses acceleration direction, then key-dependent `baseArg` converts it to yaw. It is not a velocity. It can be tiny because the objective and an active wall cancel: for the first-window Z/MAX case, the final input affects both the objective Z[68] and the upper wall on Z[68] with approximately unit coefficient, giving `gZ[67] ≈ 1 - lambda[Z68]`. The recorded `gZ[67] ≈ 9.82477e-8` is therefore expected near cancellation.
 
 `EPS2=1e-14` replaces the dual's nonsmooth norm with `sqrt(normSquared + EPS2)` so its gradient/Hessian remain defined at zero. Its effective scale is 1e-7, unrelated to inertia or yaw discretization. Around a nearly canceled costate it substantially shortens the derivative-implied input, although yaw recovery restores full magnitude. See [the convergence audit](solver-traces/linkcraft-real11-initial-seven-dual-iteration-convergence.md) for exact formulas and measured evidence. At exact zero the original inner optimization is indifferent to direction; costate normalization alone does not select a feasible path.
+
+
+### Interpreting an individual costate component
+
+At fixed dual multipliers, tick t contributes `gX[t]*uX[t] + gZ[t]*uZ[t]` to the Lagrangian score. `gZ[t]` is the local marginal score for Z-directed acceleration; it is not a speed, percentage of throttle, constraint slack, or confidence. With fixed input magnitude, the best input aligns with the whole vector `(gX,gZ)`.
+
+- `gZ=0` removes the Z term from that score. If gX is nonzero, the best fixed-length input lies along X. If both components are zero, this Lagrangian is indifferent to direction; constraints still determine which directions are actually feasible.
+- A small positive gZ still favors +Z. Its size relative to gX determines the direction. If gX=0, gZ=1e-6, 0.5 and 1 all select full +Z in unsmoothed recovery. Its absolute size relative to epsilon matters to the smoothed derivative, which is a separate numerical issue.
+- With gX=1, gZ=0.5 yields a Z fraction 0.5/sqrt(1.25)=0.447214 of the input magnitude; gZ=1 yields 1/sqrt(2)=0.707107. Scaling both components equally leaves the direction unchanged.
+- In the final-input Z68 example, approximately gZ=1-lambda[Z68], so gZ=1 means no cancellation from that wall, 0.5 means half its directional reward remains, and 0 means exact cancellation. This numerical interpretation is specific to that tick's coefficients. Earlier ticks include friction propagation and other constraints, so 1 is not a universal maximum or normalized score.
