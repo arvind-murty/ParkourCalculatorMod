@@ -103,3 +103,24 @@ Zero means satisfied. All quantities are blocks; the CSV additionally includes c
 ```
 
 This passed. The [JUnit result](margin-comparison-2026-10-23/initial-seven-test-result.xml) records one passing initial-window test. Source is [First30MarginComparisonTest](../../../core/src/test/java/de/legoshi/parkourcalc/anglesolver/First30MarginComparisonTest.java), methods `initialSevenConstraintAudit` and `auditConstraints`. It invokes production `ClosedFormSolve.runLadder`, reproduces its inertia-pattern update/stopping rules, and confirms the retained yaw array equals production `optimizeReturning` exactly. The position audit uses the production `JumpLinearModel.constPos` and `coefAxis` coefficients, and `ExactJumpModel.forward` for replay. Production solver behavior is unchanged.
+
+
+## How the Z/MIN candidate is mapped and checked
+
+`ClosedFormSolve.violOnExact` performs one deterministic conversion followed by one exact simulation and constraint evaluation:
+
+```java
+double[] gf = sc.toGameFacings(yawsAbsWrapped);
+ForwardPath path = exact.forward(sc, gf);
+return compiled.maxViolation(gf, path);
+```
+
+Source: [ClosedFormSolve.java](../../../core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/ClosedFormSolve.java#L716). There is no search over neighboring angle choices in this check. `toGameFacingsInto` converts each proposed absolute facing into a wrapped delta from the preceding proposed absolute facing, casts the delta to float, and accumulates it into the current float entity yaw. A yaw-locked tick instead sets the float yaw directly. Source: [JumpPhysicsInputs.java](../../../core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/JumpPhysicsInputs.java#L240). This is not independent rounding of each yaw to the nearest sine-table angle. During `ExactJumpModel.forward`, the resulting float yaw is used in the 1.8 float arithmetic and deterministic integer-indexed sin/cos table lookups, alongside the actual per-axis inertia threshold checks. Sources: [ExactJumpModel.java](../../../core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/ExactJumpModel.java#L195), [McSineTable.java](../../../core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/McSineTable.java#L31).
+
+Other solver components do search nearby realizable angle choices:
+
+- `BucketWalk.walkPolish` first tries bucket centers, then computes small integer bucket changes with an LP. `roundGuided` enumerates nearby floor/ceil/zero combinations on up to six selected tick variables, scores those combinations in the linearized model, and the walk evaluates the selected move by exact replay. `windowScan` also searches neighboring joint sin/cos-cell representatives on selected ticks, regenerating the float-delta yaw chain after each proposed edit. These helpers can start with an infeasible candidate. They are called by `FoldReplayDriver`; they are not called by the closed-form validation check. Sources: [BucketWalk.java](../../../core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/BucketWalk.java#L143), [walkPolish](../../../core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/BucketWalk.java#L338), [windowScan](../../../core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/BucketWalk.java#L491), [FoldReplayDriver.java](../../../core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/FoldReplayDriver.java#L425).
+- `LeafSnap.snap` searches nearby cells one tick at a time and, with `pairPass`, combinations of two selected ticks. It rejects an initially infeasible replay immediately, so it cannot directly rescue this rejected Z/MIN candidate. Source: [LeafSnap.java](../../../core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/LeafSnap.java#L28).
+- Certified B&B searches discrete cell combinations in its leaves; `realizeCombo` checks that the chosen cells can actually be produced by the sequential float-delta chain. This is part of a separate search algorithm, not an alternative mode of `violOnExact`. Source: [CertifiedBnb.java](../../../core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/CertifiedBnb.java#L1086).
+
+For this initial nonterminal LongRun window, after closed-form Z/MIN fails, `solveWindow` tries X/MAX, X/MIN, then centered SLP for the primary Z/MAX objective. It does not send the rejected Z/MIN candidate through bucket repair or LeafSnap. Source: [LongRunSolver.java](../../../core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/LongRunSolver.java#L345). No experiment has yet established whether a nearby-cell search would rescue the particular Z/MIN candidate. This section is a code trace; no solver code or tests were changed.
