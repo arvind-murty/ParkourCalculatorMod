@@ -119,3 +119,8 @@ All ten selected tests passed (one capture audit, five shared-helper tests, four
 ```
 
 Background the command and redirect output to a file. Keep fixed margin 0.0003 for subsequent route experiments; margin 0.05 here is an explicit comparison only.
+
+
+## Larger dual iteration caps and recovery discrepancy
+
+The [iteration-cap/convergence audit](linkcraft-real11-initial-seven-dual-iteration-convergence.md) tests fixed 0.0003 caps 100 through 20000. More iterations do not fix Z/MAX: at cap >=200 the first pass stops at 125 on no descent, and the retry at 83 on recovered-input stall. The returned smoothed dual derivative uses shorter-than-required movement vectors; restoring full magnitude in angle recovery adds 0.07244946 to final Z and causes the measured violation. Per-iteration curves, per-tick recovery vectors, constraint margins and timings are preserved. Seven focused tests pass; default cap stays 100. The older `pg` log at a cap is one iterate behind the returned state; the new `finalPg` reports the returned-state residual.

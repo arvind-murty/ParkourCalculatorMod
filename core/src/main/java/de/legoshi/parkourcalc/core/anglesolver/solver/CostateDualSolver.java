@@ -212,16 +212,37 @@ public final class CostateDualSolver {
     /** Diagnostics: final projected-gradient residual of the last {@link #solve}. */
     public double lastPgres;
     public boolean lastStalled;
+    /** Why the last solve stopped; reaching the cap does not assert primal feasibility. */
+    public String lastStopReason;
+    /** Projected residual at the returned iterate (lastPgres is the last loop-entry sample). */
+    public double lastFinalPgres;
+
+    public interface IterationObserver {
+        void observe(int iteration, double dualValue, double projectedResidual, double inputChange,
+                     double minCostateNorm, int nearZeroCostates, boolean finalSample);
+    }
+    public IterationObserver iterationObserver;
+
 
     /** Minimize the dual with walls tightened inward by {@code margin}, warm-started from {@code warm}
      *  (null = cold, λ=0). Returns fresh arrays so the caller may keep them; internal state is reusable. */
     public Result solve(double margin, double[] warm) {
+        return solve(margin, warm, MAX_ITER);
+    }
+
+    /** Same algorithm and early stopping rules, with a caller-selected iteration cap for probes. */
+    public Result solve(double margin, double[] warm, int maxIterations) {
+        if (maxIterations < 1) throw new IllegalArgumentException("iteration cap must be positive");
         lastStalled = false;
+        lastStopReason = "ITERATION_LIMIT";
+        lastFinalPgres = Double.NaN;
         if (m == 0) {
             // No walls: the optimum is every input along the objective (costate = c). Closed form.
             double[] empty = new double[0];
             double v = costate(empty, gx, gz);
             lastIters = 0;
+            lastStopReason = "NO_WALLS";
+            lastFinalPgres = 0.0;
             return new Result(gx.clone(), gz.clone(), empty, v, recoveredDelta(empty, 0), recoveredDelta(empty, 1));
         }
         for (int j = 0; j < m; j++) bPrime[j] = bBase[j] - (eq[j] ? 0.0 : margin);
@@ -237,19 +258,20 @@ public final class CostateDualSolver {
         double pgBest = Double.POSITIVE_INFINITY;
         int stall = 0;
         int it = 0;
-        for (; it < MAX_ITER; it++) {
+        for (; it < maxIterations; it++) {
             double pgres = 0.0;
             for (int j = 0; j < m; j++) {
                 double p = project(lambda[j] - gradient[j], eq[j]) - lambda[j];
                 if (Math.abs(p) > pgres) pgres = Math.abs(p);
             }
             lastPgres = pgres;
-            if (pgres <= GRAD_TOL) break;
+            observeIteration(it, phi, pgres, false);
+            if (pgres <= GRAD_TOL) { lastStopReason = "PROJECTED_GRADIENT"; break; }
 
             // Early divergence bail (rationale at the DIVERGE_* constants).
             if (pgres < pgBest * (1.0 - DIVERGE_REL)) { pgBest = pgres; stall = 0; }
             else { if (pgres < pgBest) pgBest = pgres; stall++; }
-            if (pgBest > DIVERGE_PGRES && stall >= DIVERGE_STALL) { lastStalled = true; break; }
+            if (pgBest > DIVERGE_PGRES && stall >= DIVERGE_STALL) { lastStalled = true; lastStopReason = "DIVERGENCE_STALL"; break; }
 
             // Converge in costate space: at a degenerate optimum the multipliers λ keep wandering in the
             // null space of Aᵀ (pg never reaches 0), but the recovered inputs u*, all that the angles
@@ -259,7 +281,7 @@ public final class CostateDualSolver {
                 du = Math.max(du, Math.abs(ux[t] - uPrevX[t]));
                 du = Math.max(du, Math.abs(uz[t] - uPrevZ[t]));
             }
-            if (it > 0 && du <= U_TOL) break;
+            if (it > 0 && du <= U_TOL) { lastStopReason = "RECOVERED_INPUT_STALL"; break; }
             System.arraycopy(ux, 0, uPrevX, 0, n);
             System.arraycopy(uz, 0, uPrevZ, 0, n);
 
@@ -273,16 +295,35 @@ public final class CostateDualSolver {
                 phi = newPhi;
             } else {
                 double sp = gradientStep(phi);
-                if (!(sp < phi)) break; // no descent along the projected gradient -> stationary
+                if (!(sp < phi)) { lastStopReason = "NO_DESCENT"; break; } // no descent along the projected gradient -> stationary
                 phi = sp;
             }
 
             for (int j = 0; j < m; j++) {
-                if (lambda[j] > LAMBDA_CAP || Double.isNaN(lambda[j])) { lastIters = it; return null; }
+                if (lambda[j] > LAMBDA_CAP || Double.isNaN(lambda[j])) { lastIters = it; lastStopReason = "LAMBDA_LIMIT"; return null; }
             }
         }
         lastIters = it;
+        lastFinalPgres = 0.0;
+        for (int j = 0; j < m; j++) {
+            lastFinalPgres = Math.max(lastFinalPgres, Math.abs(project(lambda[j] - gradient[j], eq[j]) - lambda[j]));
+        }
+        observeIteration(it, phi, lastFinalPgres, true);
         return new Result(gx.clone(), gz.clone(), lambda.clone(), phi, recoveredDelta(lambda, 0), recoveredDelta(lambda, 1));
+    }
+
+    private void observeIteration(int iteration, double value, double residual, boolean finalSample) {
+        if (iterationObserver == null) return;
+        double change = 0.0, minNorm = Double.POSITIVE_INFINITY;
+        int nearZero = 0;
+        for (int t = 0; t < n; t++) {
+            change = Math.max(change, Math.max(Math.abs(ux[t] - uPrevX[t]), Math.abs(uz[t] - uPrevZ[t])));
+            if (mMag[t] == 0.0) continue;
+            double norm2 = gx[t] * gx[t] + gz[t] * gz[t];
+            minNorm = Math.min(minNorm, StrictMath.sqrt(norm2));
+            if (norm2 <= EPS2) nearZero++;
+        }
+        iterationObserver.observe(iteration, value, residual, change, minNorm, nearZero, finalSample);
     }
 
     private double recoveredDelta(double[] lam, int a) {

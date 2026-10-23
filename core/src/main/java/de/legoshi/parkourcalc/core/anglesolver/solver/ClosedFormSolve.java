@@ -43,6 +43,10 @@ public final class ClosedFormSolve {
          *  commits fragile seam states. The margin tightens the model's walls; replay checks original walls. */
         public double[] marginsRobust = {5.0e-2, 2.0e-2, 1.0e-2, 5.0e-3, 1.2e-3, 3.0e-4, 0.0};
 
+        /** Finite dual work per margin attempt; the default retains the existing 100-iteration cap. */
+        public int dualMaxIterations = 100;
+        public CostateDualSolver.IterationObserver dualIterationObserver;
+
         public int maxInertiaPasses = 4;
 
         public int rungStallLimit = 2;
@@ -583,6 +587,7 @@ public final class ClosedFormSolve {
             SolverTrace.log("CF", "prefold pinned=%d vars=%d of n=%d", pre.pinnedTicks(), red.n, lin.n);
         }
         CostateDualSolver solver = new CostateDualSolver(red.n, red.cx, red.cz, red.mMag, red.walls);
+        solver.iterationObserver = cfg.dualIterationObserver;
 
         // Each rung warm-starts from the previous margin's multipliers, so the ladder costs barely more
         // than a single solve.
@@ -596,7 +601,7 @@ public final class ClosedFormSolve {
         for (double margin : margins) {
             if (cancel.get()) return null;
             long rungT0 = SolverTrace.on() ? System.nanoTime() : 0L;
-            CostateDualSolver.Result r = solver.solve(margin, warm);
+            CostateDualSolver.Result r = solver.solve(margin, warm, cfg.dualMaxIterations);
             // Dual unbounded -> primal infeasible; infeasibility is monotone in the margin, so ascending
             // stops while the descending (robust) ladder keeps trying smaller rungs.
             if (r == null) {
@@ -616,10 +621,10 @@ public final class ClosedFormSolve {
                 SolverTrace.log("CF-CHECK", "margin=%.2e replayViol=%.12g modelViol=%.12g", margin, replayViol, modelViol);
             }
             if (SolverTrace.on()) {
-                SolverTrace.log("CF", "rung margin=%.2e iters=%d pg=%.3e dual=%.9f viol=%.3e ms=%.3f%s",
+                SolverTrace.log("CF", "rung margin=%.2e iters=%d pg=%.3e dual=%.9f viol=%.3e ms=%.3f%s stop=%s finalPg=%.3e",
                         margin, solver.lastIters, solver.lastPgres, r.value, viol,
                         (System.nanoTime() - rungT0) / 1.0e6,
-                        viol <= feasTol ? " certified" : "");
+                        viol <= feasTol ? " certified" : "", solver.lastStopReason, solver.lastFinalPgres);
             }
             if (DEBUG) {
                 double[] gf = sc.toGameFacings(yaws);

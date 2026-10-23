@@ -911,3 +911,8 @@ The [fixed-margin 7-ladder full-route control](solver-traces/linkcraft-real11-fu
 ## Shared validation diagnostics: why initial fixed Z/MAX misses
 
 The [first-window audit](solver-traces/linkcraft-real11-initial-seven-shared-validation-audit.md) records every constraint and inertia check through `WindowCandidateValidation` for normal Z/MAX 0.05, fixed Z/MAX 0.0003, and fixed Z/MIN 0.0003. Fixed Z/MAX fails a continuous positional wall before angle mapping, and its inertia-pattern retry satisfies the zeroing band but worsens position violations. The normal candidate is also feasible for the smaller-margin constraints, demonstrating a finite-solve/recovery failure rather than infeasibility. Acceptance does not certify dual convergence or attainment of the full inward margin. The optional shared observer supports closed form and SLP; all ten focused tests passed.
+
+
+## Dual convergence does not guarantee recovered angle feasibility
+
+The [initial-seven iteration-cap audit](solver-traces/linkcraft-real11-initial-seven-dual-iteration-convergence.md) raises fixed-margin Z/MAX caps from 100 through 20000 without success. The first pass stops at iteration 125 on no descent; its smoothed-gradient controls nearly satisfy the tightened walls, but normalization to full movement magnitude changes final Z by 0.07244946 blocks and violates the original wall. The inertia retry stops at 83 on input stagnation. The probe records every iteration and recovery vector; seven focused tests pass. The default cap remains 100. A future recovery/smoothing investigation is needed before assuming that more iterations solve the actual angle problem.

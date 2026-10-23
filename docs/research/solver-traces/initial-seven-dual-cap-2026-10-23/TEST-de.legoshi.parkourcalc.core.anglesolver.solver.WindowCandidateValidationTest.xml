@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="de.legoshi.parkourcalc.core.anglesolver.solver.WindowCandidateValidationTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-23T10:43:10.495Z" hostname="Arvinds-MacBook-Pro-2.local" time="0.003">
+  <properties/>
+  <testcase name="rejectsFutureFeasibilityThatDependsOnIgnoringARealThresholdCheck" classname="de.legoshi.parkourcalc.core.anglesolver.solver.WindowCandidateValidationTest" time="0.0"/>
+  <testcase name="continuousPathUsesIndependentStrictThresholdChecksAndRecordsCarryVelocity" classname="de.legoshi.parkourcalc.core.anglesolver.solver.WindowCandidateValidationTest" time="0.0"/>
+  <testcase name="sameObserverReportsSlpValidation" classname="de.legoshi.parkourcalc.core.anglesolver.solver.WindowCandidateValidationTest" time="0.002"/>
+  <testcase name="diagnosticsExplainAssumptionsWithoutChangingAcceptance" classname="de.legoshi.parkourcalc.core.anglesolver.solver.WindowCandidateValidationTest" time="0.001"/>
+  <testcase name="rejectsFutureFeasibilityThatDependsOnFictitiousZeroing" classname="de.legoshi.parkourcalc.core.anglesolver.solver.WindowCandidateValidationTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

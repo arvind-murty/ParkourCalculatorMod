@@ -1,0 +1,140 @@
+      1.42  t1   CAP-PROBE begin case=margin3.0E-4-cap100-prefix30
+      7.20  t1   CF      pass=0 pattern=free n=68 m=33 robust
+     66.53  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.0116633506263
+     66.72  t1   CF      rung margin=3.00e-04 iters=100 pg=3.623e-02 dual=11.807984930 viol=1.166e-02 ms=58.163 stop=ITERATION_LIMIT finalPg=3.323e-02
+     66.99  t1   CF      pass=1 pattern=x@0,@63+z@0 n=68 m=33 robust
+     73.84  t1   CF-CHECK margin=3.00e-04 replayViol=0.00268631270387 modelViol=0.0717737927462
+     74.01  t1   CF      rung margin=3.00e-04 iters=83 pg=4.700e-03 dual=11.799810779 viol=7.177e-02 ms=6.482 stop=RECOVERED_INPUT_STALL finalPg=4.700e-03
+     74.12  t1   CF      pass=1 no improvement (viol=7.177e-02), stop
+     74.21  t1   CF      fallback bestViol=1.166e-02 us=67279.8
+     74.33  t1   CAP-PROBE end case=margin3.0E-4-cap100-prefix30 accepted=false violation=0.0116633506263 calls=2 ms=72.432
+     74.47  t1   CAP-PROBE begin case=margin3.0E-4-cap100-prefix12
+     74.67  t1   CF      pass=0 pattern=free n=68 m=33 robust
+     83.12  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.0116633506263
+     83.27  t1   CF      rung margin=3.00e-04 iters=100 pg=3.623e-02 dual=11.807984930 viol=1.166e-02 ms=8.246 stop=ITERATION_LIMIT finalPg=3.323e-02
+     83.41  t1   CF      pass=1 pattern=x@0,@63+z@0 n=68 m=33 robust
+     89.09  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.0717737927462
+     89.21  t1   CF      rung margin=3.00e-04 iters=83 pg=4.700e-03 dual=11.799810779 viol=7.177e-02 ms=5.479 stop=RECOVERED_INPUT_STALL finalPg=4.700e-03
+     89.31  t1   CF      pass=1 no improvement (viol=7.177e-02), stop
+     89.37  t1   CF      fallback bestViol=1.166e-02 us=14721.2
+     89.45  t1   CAP-PROBE end case=margin3.0E-4-cap100-prefix12 accepted=false violation=0.0116633506263 calls=2 ms=14.860
+     89.50  t1   CAP-PROBE begin case=margin3.0E-4-cap200-prefix30
+     89.63  t1   CF      pass=0 pattern=free n=68 m=33 robust
+     96.81  t1   CF-CHECK margin=3.00e-04 replayViol=0.00284829633347 modelViol=0.0721494360564
+     96.90  t1   CF      rung margin=3.00e-04 iters=125 pg=1.498e-07 dual=11.799700045 viol=7.215e-02 ms=6.984 stop=NO_DESCENT finalPg=1.132e-07
+     97.03  t1   CF      pass=1 pattern=x@0,@63+z@0 n=68 m=33 robust
+    102.05  t1   CF-CHECK margin=3.00e-04 replayViol=0.00268631270387 modelViol=0.0717737927462
+    102.15  t1   CF      rung margin=3.00e-04 iters=83 pg=4.700e-03 dual=11.799810779 viol=7.177e-02 ms=4.872 stop=RECOVERED_INPUT_STALL finalPg=4.700e-03
+    102.27  t1   CF      pass=1 pattern fixed point, stop
+    102.33  t1   CF      fallback bestViol=7.177e-02 us=12717.5
+    102.40  t1   CAP-PROBE end case=margin3.0E-4-cap200-prefix30 accepted=false violation=0.0717737927462 calls=2 ms=12.832
+    102.54  t1   CAP-PROBE begin case=margin3.0E-4-cap200-prefix12
+    102.73  t1   CF      pass=0 pattern=free n=68 m=33 robust
+    107.75  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.0721494360564
+    107.86  t1   CF      rung margin=3.00e-04 iters=125 pg=1.498e-07 dual=11.799700045 viol=7.215e-02 ms=4.893 stop=NO_DESCENT finalPg=1.132e-07
+    107.97  t1   CF      pass=1 pattern=x@0,@63+z@0 n=68 m=33 robust
+    110.76  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.0717737927462
+    110.87  t1   CF      rung margin=3.00e-04 iters=83 pg=4.700e-03 dual=11.799810779 viol=7.177e-02 ms=2.654 stop=RECOVERED_INPUT_STALL finalPg=4.700e-03
+    110.98  t1   CF      pass=1 pattern fixed point, stop
+    111.05  t1   CF      fallback bestViol=7.177e-02 us=8331.1
+    111.12  t1   CAP-PROBE end case=margin3.0E-4-cap200-prefix12 accepted=false violation=0.0717737927462 calls=2 ms=8.454
+    111.18  t1   CAP-PROBE begin case=margin3.0E-4-cap500-prefix30
+    111.31  t1   CF      pass=0 pattern=free n=68 m=33 robust
+    114.60  t1   CF-CHECK margin=3.00e-04 replayViol=0.00284829633347 modelViol=0.0721494360564
+    114.69  t1   CF      rung margin=3.00e-04 iters=125 pg=1.498e-07 dual=11.799700045 viol=7.215e-02 ms=3.154 stop=NO_DESCENT finalPg=1.132e-07
+    114.81  t1   CF      pass=1 pattern=x@0,@63+z@0 n=68 m=33 robust
+    117.20  t1   CF-CHECK margin=3.00e-04 replayViol=0.00268631270387 modelViol=0.0717737927462
+    117.29  t1   CF      rung margin=3.00e-04 iters=83 pg=4.700e-03 dual=11.799810779 viol=7.177e-02 ms=2.247 stop=RECOVERED_INPUT_STALL finalPg=4.700e-03
+    117.39  t1   CF      pass=1 pattern fixed point, stop
+    117.44  t1   CF      fallback bestViol=7.177e-02 us=6154.4
+    117.51  t1   CAP-PROBE end case=margin3.0E-4-cap500-prefix30 accepted=false violation=0.0717737927462 calls=2 ms=6.266
+    117.55  t1   CAP-PROBE begin case=margin3.0E-4-cap500-prefix12
+    117.65  t1   CF      pass=0 pattern=free n=68 m=33 robust
+    120.75  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.0721494360564
+    120.83  t1   CF      rung margin=3.00e-04 iters=125 pg=1.498e-07 dual=11.799700045 viol=7.215e-02 ms=2.967 stop=NO_DESCENT finalPg=1.132e-07
+    120.95  t1   CF      pass=1 pattern=x@0,@63+z@0 n=68 m=33 robust
+    123.26  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.0717737927462
+    123.38  t1   CF      rung margin=3.00e-04 iters=83 pg=4.700e-03 dual=11.799810779 viol=7.177e-02 ms=2.153 stop=RECOVERED_INPUT_STALL finalPg=4.700e-03
+    123.48  t1   CF      pass=1 pattern fixed point, stop
+    123.53  t1   CF      fallback bestViol=7.177e-02 us=5898.5
+    123.59  t1   CAP-PROBE end case=margin3.0E-4-cap500-prefix12 accepted=false violation=0.0717737927462 calls=2 ms=5.991
+    123.63  t1   CAP-PROBE begin case=margin3.0E-4-cap1000-prefix30
+    123.73  t1   CF      pass=0 pattern=free n=68 m=33 robust
+    126.16  t1   CF-CHECK margin=3.00e-04 replayViol=0.00284829633347 modelViol=0.0721494360564
+    126.23  t1   CF      rung margin=3.00e-04 iters=125 pg=1.498e-07 dual=11.799700045 viol=7.215e-02 ms=2.302 stop=NO_DESCENT finalPg=1.132e-07
+    126.32  t1   CF      pass=1 pattern=x@0,@63+z@0 n=68 m=33 robust
+    127.91  t1   CF-CHECK margin=3.00e-04 replayViol=0.00268631270387 modelViol=0.0717737927462
+    127.98  t1   CF      rung margin=3.00e-04 iters=83 pg=4.700e-03 dual=11.799810779 viol=7.177e-02 ms=1.463 stop=RECOVERED_INPUT_STALL finalPg=4.700e-03
+    128.06  t1   CF      pass=1 pattern fixed point, stop
+    128.10  t1   CF      fallback bestViol=7.177e-02 us=4389.4
+    128.15  t1   CAP-PROBE end case=margin3.0E-4-cap1000-prefix30 accepted=false violation=0.0717737927462 calls=2 ms=4.473
+    128.18  t1   CAP-PROBE begin case=margin3.0E-4-cap1000-prefix12
+    128.26  t1   CF      pass=0 pattern=free n=68 m=33 robust
+    130.33  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.0721494360564
+    130.39  t1   CF      rung margin=3.00e-04 iters=125 pg=1.498e-07 dual=11.799700045 viol=7.215e-02 ms=1.953 stop=NO_DESCENT finalPg=1.132e-07
+    130.48  t1   CF      pass=1 pattern=x@0,@63+z@0 n=68 m=33 robust
+    132.06  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.0717737927462
+    132.12  t1   CF      rung margin=3.00e-04 iters=83 pg=4.700e-03 dual=11.799810779 viol=7.177e-02 ms=1.449 stop=RECOVERED_INPUT_STALL finalPg=4.700e-03
+    132.21  t1   CF      pass=1 pattern fixed point, stop
+    132.26  t1   CF      fallback bestViol=7.177e-02 us=3995.3
+    132.30  t1   CAP-PROBE end case=margin3.0E-4-cap1000-prefix12 accepted=false violation=0.0717737927462 calls=2 ms=4.075
+    132.33  t1   CAP-PROBE begin case=margin3.0E-4-cap5000-prefix30
+    132.41  t1   CF      pass=0 pattern=free n=68 m=33 robust
+    134.49  t1   CF-CHECK margin=3.00e-04 replayViol=0.00284829633347 modelViol=0.0721494360564
+    134.56  t1   CF      rung margin=3.00e-04 iters=125 pg=1.498e-07 dual=11.799700045 viol=7.215e-02 ms=1.950 stop=NO_DESCENT finalPg=1.132e-07
+    134.64  t1   CF      pass=1 pattern=x@0,@63+z@0 n=68 m=33 robust
+    136.19  t1   CF-CHECK margin=3.00e-04 replayViol=0.00268631270387 modelViol=0.0717737927462
+    136.25  t1   CF      rung margin=3.00e-04 iters=83 pg=4.700e-03 dual=11.799810779 viol=7.177e-02 ms=1.426 stop=RECOVERED_INPUT_STALL finalPg=4.700e-03
+    136.33  t1   CF      pass=1 pattern fixed point, stop
+    136.38  t1   CF      fallback bestViol=7.177e-02 us=3982.0
+    136.42  t1   CAP-PROBE end case=margin3.0E-4-cap5000-prefix30 accepted=false violation=0.0717737927462 calls=2 ms=4.050
+    136.45  t1   CAP-PROBE begin case=margin3.0E-4-cap5000-prefix12
+    136.54  t1   CF      pass=0 pattern=free n=68 m=33 robust
+    138.61  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.0721494360564
+    138.67  t1   CF      rung margin=3.00e-04 iters=125 pg=1.498e-07 dual=11.799700045 viol=7.215e-02 ms=1.963 stop=NO_DESCENT finalPg=1.132e-07
+    138.77  t1   CF      pass=1 pattern=x@0,@63+z@0 n=68 m=33 robust
+    140.34  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.0717737927462
+    140.40  t1   CF      rung margin=3.00e-04 iters=83 pg=4.700e-03 dual=11.799810779 viol=7.177e-02 ms=1.452 stop=RECOVERED_INPUT_STALL finalPg=4.700e-03
+    140.49  t1   CF      pass=1 pattern fixed point, stop
+    140.54  t1   CF      fallback bestViol=7.177e-02 us=4014.0
+    140.59  t1   CAP-PROBE end case=margin3.0E-4-cap5000-prefix12 accepted=false violation=0.0717737927462 calls=2 ms=4.089
+    140.62  t1   CAP-PROBE begin case=margin3.0E-4-cap20000-prefix30
+    140.71  t1   CF      pass=0 pattern=free n=68 m=33 robust
+    142.93  t1   CF-CHECK margin=3.00e-04 replayViol=0.00284829633347 modelViol=0.0721494360564
+    142.98  t1   CF      rung margin=3.00e-04 iters=125 pg=1.498e-07 dual=11.799700045 viol=7.215e-02 ms=2.092 stop=NO_DESCENT finalPg=1.132e-07
+    143.08  t1   CF      pass=1 pattern=x@0,@63+z@0 n=68 m=33 robust
+    144.68  t1   CF-CHECK margin=3.00e-04 replayViol=0.00268631270387 modelViol=0.0717737927462
+    144.73  t1   CF      rung margin=3.00e-04 iters=83 pg=4.700e-03 dual=11.799810779 viol=7.177e-02 ms=1.475 stop=RECOVERED_INPUT_STALL finalPg=4.700e-03
+    144.82  t1   CF      pass=1 pattern fixed point, stop
+    144.86  t1   CF      fallback bestViol=7.177e-02 us=4160.9
+    144.90  t1   CAP-PROBE end case=margin3.0E-4-cap20000-prefix30 accepted=false violation=0.0717737927462 calls=2 ms=4.245
+    144.93  t1   CAP-PROBE begin case=margin3.0E-4-cap20000-prefix12
+    145.01  t1   CF      pass=0 pattern=free n=68 m=33 robust
+    147.13  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.0721494360564
+    147.18  t1   CF      rung margin=3.00e-04 iters=125 pg=1.498e-07 dual=11.799700045 viol=7.215e-02 ms=1.999 stop=NO_DESCENT finalPg=1.132e-07
+    147.26  t1   CF      pass=1 pattern=x@0,@63+z@0 n=68 m=33 robust
+    148.78  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.0717737927462
+    148.82  t1   CF      rung margin=3.00e-04 iters=83 pg=4.700e-03 dual=11.799810779 viol=7.177e-02 ms=1.375 stop=RECOVERED_INPUT_STALL finalPg=4.700e-03
+    148.90  t1   CF      pass=1 pattern fixed point, stop
+    148.93  t1   CF      fallback bestViol=7.177e-02 us=3928.8
+    148.97  t1   CAP-PROBE end case=margin3.0E-4-cap20000-prefix12 accepted=false violation=0.0717737927462 calls=2 ms=4.001
+    149.00  t1   CAP-PROBE begin case=margin0.05-cap100-prefix30
+    149.07  t1   CF      pass=0 pattern=free n=68 m=33 robust
+    151.15  t1   CF-CHECK margin=5.00e-02 replayViol=0.00000000000 modelViol=0.00000000000
+    151.23  t1   CF      rung margin=5.00e-02 iters=100 pg=2.090e-01 dual=11.544886238 viol=0.000e+00 ms=1.968 certified stop=ITERATION_LIMIT finalPg=1.445e-02
+    151.30  t1   CAP-PROBE end case=margin0.05-cap100-prefix30 accepted=true violation=0.00000000000 calls=1 ms=2.271
+    151.33  t1   CAP-PROBE begin case=margin0.05-cap100-prefix12
+    151.40  t1   CF      pass=0 pattern=free n=68 m=33 robust
+    153.40  t1   CF-CHECK margin=5.00e-02 replayViol=0.00000000000 modelViol=0.00000000000
+    153.47  t1   CF      rung margin=5.00e-02 iters=100 pg=2.090e-01 dual=11.544886238 viol=0.000e+00 ms=1.899 certified stop=ITERATION_LIMIT finalPg=1.445e-02
+    153.51  t1   CAP-PROBE end case=margin0.05-cap100-prefix12 accepted=true violation=0.00000000000 calls=1 ms=2.159
+    153.54  t1   CAP-PROBE begin case=margin0.05-cap1000-prefix30
+    153.61  t1   CF      pass=0 pattern=free n=68 m=33 robust
+    155.70  t1   CF-CHECK margin=5.00e-02 replayViol=0.00000000000 modelViol=0.00000000000
+    155.74  t1   CF      rung margin=5.00e-02 iters=110 pg=2.347e-09 dual=11.500393358 viol=0.000e+00 ms=1.947 certified stop=PROJECTED_GRADIENT finalPg=2.347e-09
+    155.78  t1   CAP-PROBE end case=margin0.05-cap1000-prefix30 accepted=true violation=0.00000000000 calls=1 ms=2.217
+    155.81  t1   CAP-PROBE begin case=margin0.05-cap1000-prefix12
+    155.88  t1   CF      pass=0 pattern=free n=68 m=33 robust
+    157.94  t1   CF-CHECK margin=5.00e-02 replayViol=0.00000000000 modelViol=0.00000000000
+    157.98  t1   CF      rung margin=5.00e-02 iters=110 pg=2.347e-09 dual=11.500393358 viol=0.000e+00 ms=1.957 certified stop=PROJECTED_GRADIENT finalPg=2.347e-09
+    158.03  t1   CAP-PROBE end case=margin0.05-cap1000-prefix12 accepted=true violation=0.00000000000 calls=1 ms=2.194

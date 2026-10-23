@@ -85,3 +85,8 @@ The [full-route 7-ladder control](linkcraft-real11-full-fixed0003-seven-ladder.m
 ## Initial-window shared-helper validation audit
 
 The [same-input 1–7 audit](linkcraft-real11-initial-seven-shared-validation-audit.md) compares fixed Z/MAX (two proposals), normal 0.05 Z/MAX, and the accepted fixed Z/MIN. It lists every continuous constraint margin, committed replay margin, assumed/actual inertia velocity and full per-tick paths. Fixed Z/MAX first misses the continuous Z68 upper wall by 0.01166335; its inertia retry obeys its explicit zeroing band but has larger positional violations. Margin 0.05 produces a feasible but unconverged witness for the smaller-margin problem. Shared diagnostics now apply to both closed form and SLP; ten focused tests pass.
+
+
+## Larger dual iteration caps and recovery discrepancy
+
+The [iteration-cap/convergence audit](linkcraft-real11-initial-seven-dual-iteration-convergence.md) tests fixed 0.0003 caps 100 through 20000. More iterations do not fix Z/MAX: at cap >=200 the first pass stops at 125 on no descent, and the retry at 83 on recovered-input stall. The returned smoothed dual derivative uses shorter-than-required movement vectors; restoring full magnitude in angle recovery adds 0.07244946 to final Z and causes the measured violation. Per-iteration curves, per-tick recovery vectors, constraint margins and timings are preserved. Seven focused tests pass; default cap stays 100. The older `pg` log at a cap is one iterate behind the returned state; the new `finalPg` reports the returned-state residual.
