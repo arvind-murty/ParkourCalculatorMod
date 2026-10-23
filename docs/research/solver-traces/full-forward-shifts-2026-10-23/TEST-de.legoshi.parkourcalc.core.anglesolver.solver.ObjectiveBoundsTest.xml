@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="de.legoshi.parkourcalc.core.anglesolver.solver.ObjectiveBoundsTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-23T21:01:47.281Z" hostname="Arvinds-MacBook-Pro-2.local" time="0.0">
+  <properties/>
+  <testcase name="motionAndCustomDirectionsAreOutsideThisSimpleCheck" classname="de.legoshi.parkourcalc.core.anglesolver.solver.ObjectiveBoundsTest" time="0.0"/>
+  <testcase name="minXFindsTheStrongestLowerWall" classname="de.legoshi.parkourcalc.core.anglesolver.solver.ObjectiveBoundsTest" time="0.0"/>
+  <testcase name="equalityCapsEitherSenseAndTheSpecOverloadUsesIt" classname="de.legoshi.parkourcalc.core.anglesolver.solver.ObjectiveBoundsTest" time="0.0"/>
+  <testcase name="maxZFindsOnlyUpperWallsOnTheObjectiveState" classname="de.legoshi.parkourcalc.core.anglesolver.solver.ObjectiveBoundsTest" time="0.0"/>
+  <testcase name="maxXFindsTheStrongestUpperWall" classname="de.legoshi.parkourcalc.core.anglesolver.solver.ObjectiveBoundsTest" time="0.0"/>
+  <testcase name="oppositeWallAndPairedRowsDoNotMatch" classname="de.legoshi.parkourcalc.core.anglesolver.solver.ObjectiveBoundsTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

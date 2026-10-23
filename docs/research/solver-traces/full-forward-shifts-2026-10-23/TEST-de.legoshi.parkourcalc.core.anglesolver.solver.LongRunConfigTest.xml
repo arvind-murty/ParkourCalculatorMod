@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="de.legoshi.parkourcalc.core.anglesolver.solver.LongRunConfigTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-23T21:01:47.271Z" hostname="Arvinds-MacBook-Pro-2.local" time="0.002">
+  <properties/>
+  <testcase name="commitIsClampedToWindowMinusOne" classname="de.legoshi.parkourcalc.core.anglesolver.solver.LongRunConfigTest" time="0.001"/>
+  <testcase name="ofTenThreeReproducesDefaults" classname="de.legoshi.parkourcalc.core.anglesolver.solver.LongRunConfigTest" time="0.0"/>
+  <testcase name="defaultsMirrorShippedConstants" classname="de.legoshi.parkourcalc.core.anglesolver.solver.LongRunConfigTest" time="0.0"/>
+  <testcase name="commitLadderKeepsTheAutomaticOneRetry" classname="de.legoshi.parkourcalc.core.anglesolver.solver.LongRunConfigTest" time="0.0"/>
+  <testcase name="windowLadderDropsRungsAtOrAboveTheWindow" classname="de.legoshi.parkourcalc.core.anglesolver.solver.LongRunConfigTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,931 @@
+run,commit,start_tick,end_tick,objective,outcome,ms
+seven-forward-jump,3,0,71,primary Z/MAX@71,solved,62.761
+seven-forward-jump,3,30,77,primary Z/MAX@47,miss,14.487
+seven-forward-jump,3,30,77,alternate Z/MIN@47,miss,15.094
+seven-forward-jump,3,30,77,alternate X/MAX@47,miss,8.798
+seven-forward-jump,3,30,77,alternate X/MIN@47,miss,2.537
+seven-forward-jump,3,30,77,fallback SLP Z/MAX@47,solved,18.489
+seven-forward-jump,3,64,90,primary Z/MAX@26,miss,12.171
+seven-forward-jump,3,64,90,alternate Z/MIN@26,solved,4.521
+seven-forward-jump,3,75,128,primary Z/MAX@53,miss,22.900
+seven-forward-jump,3,75,128,alternate Z/MIN@53,miss,18.441
+seven-forward-jump,3,75,128,alternate X/MAX@53,miss,17.747
+seven-forward-jump,3,75,128,alternate X/MIN@53,miss,7.272
+seven-forward-jump,3,75,128,fallback SLP Z/MAX@53,miss,158.278
+seven-forward-jump,3,75,99,primary Z/MAX@24,miss,0.493
+seven-forward-jump,3,75,99,alternate Z/MIN@24,miss,0.467
+seven-forward-jump,3,75,99,alternate X/MAX@24,miss,2.534
+seven-forward-jump,3,75,99,alternate X/MIN@24,miss,3.354
+seven-forward-jump,3,75,99,fallback SLP Z/MAX@24,miss,0.648
+seven-forward-jump,3,75,90,primary Z/MAX@15,miss,1.671
+seven-forward-jump,3,75,90,alternate Z/MIN@15,miss,1.796
+seven-forward-jump,3,75,90,alternate X/MAX@15,miss,0.551
+seven-forward-jump,3,75,90,alternate X/MIN@15,miss,0.667
+seven-forward-jump,3,75,90,fallback SLP Z/MAX@15,solved,1.072
+seven-forward-jump,3,88,155,primary Z/MAX@67,miss,29.486
+seven-forward-jump,3,88,155,alternate Z/MIN@67,miss,33.668
+seven-forward-jump,3,88,155,alternate X/MAX@67,miss,34.882
+seven-forward-jump,3,88,155,alternate X/MIN@67,miss,28.605
+seven-forward-jump,3,88,155,fallback SLP Z/MAX@67,miss,61.850
+seven-forward-jump,3,88,128,primary Z/MAX@40,miss,7.598
+seven-forward-jump,3,88,128,alternate Z/MIN@40,miss,12.060
+seven-forward-jump,3,88,128,alternate X/MAX@40,miss,12.785
+seven-forward-jump,3,88,128,alternate X/MIN@40,miss,13.471
+seven-forward-jump,3,88,128,fallback SLP Z/MAX@40,miss,33.653
+seven-forward-jump,3,88,113,primary Z/MAX@25,miss,0.228
+seven-forward-jump,3,88,113,alternate Z/MIN@25,miss,0.195
+seven-forward-jump,3,88,113,alternate X/MAX@25,miss,0.310
+seven-forward-jump,3,88,113,alternate X/MIN@25,miss,0.281
+seven-forward-jump,3,88,113,fallback SLP Z/MAX@25,miss,0.267
+seven-forward-jump,3,88,99,primary Z/MAX@11,miss,0.066
+seven-forward-jump,3,88,99,alternate Z/MIN@11,miss,0.070
+seven-forward-jump,3,88,99,alternate X/MAX@11,miss,0.070
+seven-forward-jump,3,88,99,alternate X/MIN@11,miss,0.069
+seven-forward-jump,3,88,99,fallback SLP Z/MAX@11,miss,0.021
+seven-forward-jump,3,88,90,primary Z/MAX@2,solved,0.070
+seven-forward-jump,3,90,155,primary Z/MAX@65,miss,19.924
+seven-forward-jump,3,90,155,alternate Z/MIN@65,miss,36.708
+seven-forward-jump,3,90,155,alternate X/MAX@65,miss,38.526
+seven-forward-jump,3,90,155,alternate X/MIN@65,miss,59.804
+seven-forward-jump,3,90,155,fallback SLP Z/MAX@65,miss,59.207
+seven-forward-jump,3,90,130,primary Z/MAX@40,miss,7.121
+seven-forward-jump,3,90,130,alternate Z/MIN@40,miss,7.678
+seven-forward-jump,3,90,130,alternate X/MAX@40,miss,6.604
+seven-forward-jump,3,90,130,alternate X/MIN@40,miss,15.872
+seven-forward-jump,3,90,130,fallback SLP Z/MAX@40,miss,29.605
+seven-forward-jump,3,90,128,primary Z/MAX@38,miss,0.784
+seven-forward-jump,3,90,128,alternate Z/MIN@38,miss,0.597
+seven-forward-jump,3,90,128,alternate X/MAX@38,miss,0.997
+seven-forward-jump,3,90,128,alternate X/MIN@38,miss,2.148
+seven-forward-jump,3,90,128,fallback SLP Z/MAX@38,miss,2.540
+seven-forward-jump,3,90,113,primary Z/MAX@23,miss,0.131
+seven-forward-jump,3,90,113,alternate Z/MIN@23,miss,0.136
+seven-forward-jump,3,90,113,alternate X/MAX@23,miss,0.189
+seven-forward-jump,3,90,113,alternate X/MIN@23,miss,0.188
+seven-forward-jump,3,90,113,fallback SLP Z/MAX@23,miss,0.067
+seven-forward-jump,3,90,99,primary Z/MAX@9,miss,0.073
+seven-forward-jump,3,90,99,alternate Z/MIN@9,miss,0.071
+seven-forward-jump,3,90,99,alternate X/MAX@9,miss,0.069
+seven-forward-jump,3,90,99,alternate X/MIN@9,miss,0.067
+seven-forward-jump,3,90,99,fallback SLP Z/MAX@9,miss,0.020
+seven-forward-jump,1,0,71,primary Z/MAX@71,solved,2.992
+seven-forward-jump,1,12,71,primary Z/MAX@59,miss,2.921
+seven-forward-jump,1,12,71,alternate Z/MIN@59,solved,3.219
+seven-forward-jump,1,21,75,primary Z/MAX@54,solved,2.949
+seven-forward-jump,1,30,77,primary Z/MAX@47,miss,3.654
+seven-forward-jump,1,30,77,alternate Z/MIN@47,miss,4.488
+seven-forward-jump,1,30,77,alternate X/MAX@47,miss,3.807
+seven-forward-jump,1,30,77,alternate X/MIN@47,miss,5.123
+seven-forward-jump,1,30,77,fallback SLP Z/MAX@47,solved,3.246
+seven-forward-jump,1,40,80,primary Z/MAX@40,solved,3.167
+seven-forward-jump,1,55,90,primary Z/MAX@35,miss,6.849
+seven-forward-jump,1,55,90,alternate Z/MIN@35,miss,5.472
+seven-forward-jump,1,55,90,alternate X/MAX@35,miss,5.643
+seven-forward-jump,1,55,90,alternate X/MIN@35,miss,2.075
+seven-forward-jump,1,55,90,fallback SLP Z/MAX@35,miss,39.879
+seven-forward-jump,1,55,77,primary Z/MAX@22,solved,0.547
+seven-forward-jump,1,64,90,primary Z/MAX@26,miss,1.363
+seven-forward-jump,1,64,90,alternate Z/MIN@26,miss,2.609
+seven-forward-jump,1,64,90,alternate X/MAX@26,miss,2.675
+seven-forward-jump,1,64,90,alternate X/MIN@26,miss,2.704
+seven-forward-jump,1,64,90,fallback SLP Z/MAX@26,solved,12.094
+seven-forward-jump,1,68,99,primary Z/MAX@31,miss,2.009
+seven-forward-jump,1,68,99,alternate Z/MIN@31,miss,2.128
+seven-forward-jump,1,68,99,alternate X/MAX@31,miss,3.179
+seven-forward-jump,1,68,99,alternate X/MIN@31,miss,2.339
+seven-forward-jump,1,68,99,fallback SLP Z/MAX@31,miss,26.069
+seven-forward-jump,1,68,90,primary Z/MAX@22,miss,1.956
+seven-forward-jump,1,68,90,alternate Z/MIN@22,solved,1.007
+seven-forward-jump,1,71,113,primary Z/MAX@42,miss,2.207
+seven-forward-jump,1,71,113,alternate Z/MIN@42,miss,1.341
+seven-forward-jump,1,71,113,alternate X/MAX@42,miss,3.805
+seven-forward-jump,1,71,113,alternate X/MIN@42,miss,3.427
+seven-forward-jump,1,71,113,fallback SLP Z/MAX@42,miss,32.421
+seven-forward-jump,1,71,90,primary Z/MAX@19,miss,2.043
+seven-forward-jump,1,71,90,alternate Z/MIN@19,solved,0.466
+seven-forward-jump,1,75,128,primary Z/MAX@53,miss,3.575
+seven-forward-jump,1,75,128,alternate Z/MIN@53,miss,4.769
+seven-forward-jump,1,75,128,alternate X/MAX@53,miss,16.049
+seven-forward-jump,1,75,128,alternate X/MIN@53,miss,11.491
+seven-forward-jump,1,75,128,fallback SLP Z/MAX@53,miss,89.610
+seven-forward-jump,1,75,99,primary Z/MAX@24,miss,0.379
+seven-forward-jump,1,75,99,alternate Z/MIN@24,miss,0.307
+seven-forward-jump,1,75,99,alternate X/MAX@24,miss,1.055
+seven-forward-jump,1,75,99,alternate X/MIN@24,miss,0.639
+seven-forward-jump,1,75,99,fallback SLP Z/MAX@24,miss,0.332
+seven-forward-jump,1,75,90,primary Z/MAX@15,miss,0.688
+seven-forward-jump,1,75,90,alternate Z/MIN@15,miss,0.616
+seven-forward-jump,1,75,90,alternate X/MAX@15,miss,0.328
+seven-forward-jump,1,75,90,alternate X/MIN@15,miss,0.857
+seven-forward-jump,1,75,90,fallback SLP Z/MAX@15,solved,0.852
+seven-forward-jump,1,77,128,primary Z/MAX@51,miss,2.991
+seven-forward-jump,1,77,128,alternate Z/MIN@51,miss,15.668
+seven-forward-jump,1,77,128,alternate X/MAX@51,miss,4.058
+seven-forward-jump,1,77,128,alternate X/MIN@51,miss,4.061
+seven-forward-jump,1,77,128,fallback SLP Z/MAX@51,miss,99.776
+seven-forward-jump,1,77,113,primary Z/MAX@36,miss,1.952
+seven-forward-jump,1,77,113,alternate Z/MIN@36,miss,2.015
+seven-forward-jump,1,77,113,alternate X/MAX@36,miss,4.631
+seven-forward-jump,1,77,113,alternate X/MIN@36,miss,3.641
+seven-forward-jump,1,77,113,fallback SLP Z/MAX@36,miss,19.385
+seven-forward-jump,1,77,90,primary Z/MAX@13,miss,0.352
+seven-forward-jump,1,77,90,alternate Z/MIN@13,solved,0.268
+seven-forward-jump,1,80,130,primary Z/MAX@50,miss,7.411
+seven-forward-jump,1,80,130,alternate Z/MIN@50,miss,8.847
+seven-forward-jump,1,80,130,alternate X/MAX@50,miss,3.887
+seven-forward-jump,1,80,130,alternate X/MIN@50,miss,6.172
+seven-forward-jump,1,80,130,fallback SLP Z/MAX@50,miss,40.817
+seven-forward-jump,1,80,128,primary Z/MAX@48,miss,1.906
+seven-forward-jump,1,80,128,alternate Z/MIN@48,miss,2.427
+seven-forward-jump,1,80,128,alternate X/MAX@48,miss,5.273
+seven-forward-jump,1,80,128,alternate X/MIN@48,miss,6.620
+seven-forward-jump,1,80,128,fallback SLP Z/MAX@48,miss,39.619
+seven-forward-jump,1,80,99,primary Z/MAX@19,miss,0.134
+seven-forward-jump,1,80,99,alternate Z/MIN@19,miss,0.094
+seven-forward-jump,1,80,99,alternate X/MAX@19,miss,0.170
+seven-forward-jump,1,80,99,alternate X/MIN@19,miss,0.145
+seven-forward-jump,1,80,99,fallback SLP Z/MAX@19,miss,0.107
+seven-forward-jump,1,80,90,primary Z/MAX@10,miss,0.466
+seven-forward-jump,1,80,90,alternate Z/MIN@10,solved,0.156
+seven-forward-jump,1,88,155,primary Z/MAX@67,miss,17.913
+seven-forward-jump,1,88,155,alternate Z/MIN@67,miss,9.000
+seven-forward-jump,1,88,155,alternate X/MAX@67,miss,11.532
+seven-forward-jump,1,88,155,alternate X/MIN@67,miss,6.229
+seven-forward-jump,1,88,155,fallback SLP Z/MAX@67,miss,68.505
+seven-forward-jump,1,88,128,primary Z/MAX@40,miss,2.252
+seven-forward-jump,1,88,128,alternate Z/MIN@40,miss,3.027
+seven-forward-jump,1,88,128,alternate X/MAX@40,miss,2.167
+seven-forward-jump,1,88,128,alternate X/MIN@40,miss,3.144
+seven-forward-jump,1,88,128,fallback SLP Z/MAX@40,miss,17.344
+seven-forward-jump,1,88,113,primary Z/MAX@25,miss,0.439
+seven-forward-jump,1,88,113,alternate Z/MIN@25,miss,0.951
+seven-forward-jump,1,88,113,alternate X/MAX@25,miss,0.715
+seven-forward-jump,1,88,113,alternate X/MIN@25,miss,0.534
+seven-forward-jump,1,88,113,fallback SLP Z/MAX@25,miss,7.302
+seven-forward-jump,1,88,99,primary Z/MAX@11,miss,0.079
+seven-forward-jump,1,88,99,alternate Z/MIN@11,miss,0.062
+seven-forward-jump,1,88,99,alternate X/MAX@11,miss,0.142
+seven-forward-jump,1,88,99,alternate X/MIN@11,miss,0.059
+seven-forward-jump,1,88,99,fallback SLP Z/MAX@11,miss,0.028
+seven-forward-jump,1,88,90,primary Z/MAX@2,solved,0.055
+seven-forward-jump,1,90,155,primary Z/MAX@65,miss,11.453
+seven-forward-jump,1,90,155,alternate Z/MIN@65,miss,21.272
+seven-forward-jump,1,90,155,alternate X/MAX@65,miss,14.374
+seven-forward-jump,1,90,155,alternate X/MIN@65,miss,13.681
+seven-forward-jump,1,90,155,fallback SLP Z/MAX@65,miss,23.891
+seven-forward-jump,1,90,130,primary Z/MAX@40,miss,10.607
+seven-forward-jump,1,90,130,alternate Z/MIN@40,miss,6.044
+seven-forward-jump,1,90,130,alternate X/MAX@40,miss,9.720
+seven-forward-jump,1,90,130,alternate X/MIN@40,miss,14.306
+seven-forward-jump,1,90,130,fallback SLP Z/MAX@40,miss,16.788
+seven-forward-jump,1,90,128,primary Z/MAX@38,miss,2.055
+seven-forward-jump,1,90,128,alternate Z/MIN@38,miss,6.144
+seven-forward-jump,1,90,128,alternate X/MAX@38,miss,4.793
+seven-forward-jump,1,90,128,alternate X/MIN@38,miss,4.831
+seven-forward-jump,1,90,128,fallback SLP Z/MAX@38,miss,13.414
+seven-forward-jump,1,90,113,primary Z/MAX@23,miss,0.120
+seven-forward-jump,1,90,113,alternate Z/MIN@23,miss,0.206
+seven-forward-jump,1,90,113,alternate X/MAX@23,miss,0.094
+seven-forward-jump,1,90,113,alternate X/MIN@23,miss,0.106
+seven-forward-jump,1,90,113,fallback SLP Z/MAX@23,miss,0.059
+seven-forward-jump,1,90,99,primary Z/MAX@9,miss,0.042
+seven-forward-jump,1,90,99,alternate Z/MIN@9,miss,0.048
+seven-forward-jump,1,90,99,alternate X/MAX@9,miss,0.050
+seven-forward-jump,1,90,99,alternate X/MIN@9,miss,0.051
+seven-forward-jump,1,90,99,fallback SLP Z/MAX@9,miss,0.012
+seven-forward-tick,3,0,69,primary Z/MAX@69,solved,0.806
+seven-forward-tick,3,30,77,primary Z/MAX@47,solved,1.427
+seven-forward-tick,3,64,90,primary Z/MAX@26,miss,2.566
+seven-forward-tick,3,64,90,alternate Z/MIN@26,miss,2.364
+seven-forward-tick,3,64,90,alternate X/MAX@26,miss,1.907
+seven-forward-tick,3,64,90,alternate X/MIN@26,miss,2.098
+seven-forward-tick,3,64,90,fallback SLP Z/MAX@26,solved,5.293
+seven-forward-tick,3,75,118,primary Z/MAX@43,miss,11.008
+seven-forward-tick,3,75,118,alternate Z/MIN@43,miss,3.908
+seven-forward-tick,3,75,118,alternate X/MAX@43,miss,5.592
+seven-forward-tick,3,75,118,alternate X/MIN@43,miss,8.784
+seven-forward-tick,3,75,118,fallback SLP Z/MAX@43,miss,37.863
+seven-forward-tick,3,75,99,primary Z/MAX@24,miss,0.356
+seven-forward-tick,3,75,99,alternate Z/MIN@24,miss,0.185
+seven-forward-tick,3,75,99,alternate X/MAX@24,miss,0.234
+seven-forward-tick,3,75,99,alternate X/MIN@24,miss,0.300
+seven-forward-tick,3,75,99,fallback SLP Z/MAX@24,miss,0.277
+seven-forward-tick,3,75,90,primary Z/MAX@15,miss,0.433
+seven-forward-tick,3,75,90,alternate Z/MIN@15,solved,0.132
+seven-forward-tick,3,88,155,primary Z/MAX@67,miss,19.838
+seven-forward-tick,3,88,155,alternate Z/MIN@67,miss,4.149
+seven-forward-tick,3,88,155,alternate X/MAX@67,miss,12.206
+seven-forward-tick,3,88,155,alternate X/MIN@67,miss,15.763
+seven-forward-tick,3,88,155,fallback SLP Z/MAX@67,miss,45.004
+seven-forward-tick,3,88,128,primary Z/MAX@40,miss,2.411
+seven-forward-tick,3,88,128,alternate Z/MIN@40,miss,5.430
+seven-forward-tick,3,88,128,alternate X/MAX@40,miss,1.947
+seven-forward-tick,3,88,128,alternate X/MIN@40,miss,4.779
+seven-forward-tick,3,88,128,fallback SLP Z/MAX@40,miss,11.019
+seven-forward-tick,3,88,113,primary Z/MAX@25,miss,0.293
+seven-forward-tick,3,88,113,alternate Z/MIN@25,miss,0.489
+seven-forward-tick,3,88,113,alternate X/MAX@25,miss,0.627
+seven-forward-tick,3,88,113,alternate X/MIN@25,miss,0.354
+seven-forward-tick,3,88,113,fallback SLP Z/MAX@25,miss,5.773
+seven-forward-tick,3,88,99,primary Z/MAX@11,miss,0.059
+seven-forward-tick,3,88,99,alternate Z/MIN@11,miss,0.046
+seven-forward-tick,3,88,99,alternate X/MAX@11,miss,0.051
+seven-forward-tick,3,88,99,alternate X/MIN@11,miss,0.043
+seven-forward-tick,3,88,99,fallback SLP Z/MAX@11,miss,0.022
+seven-forward-tick,3,88,90,primary Z/MAX@2,solved,0.065
+seven-forward-tick,3,90,155,primary Z/MAX@65,miss,18.042
+seven-forward-tick,3,90,155,alternate Z/MIN@65,miss,11.580
+seven-forward-tick,3,90,155,alternate X/MAX@65,miss,7.614
+seven-forward-tick,3,90,155,alternate X/MIN@65,miss,13.165
+seven-forward-tick,3,90,155,fallback SLP Z/MAX@65,miss,25.737
+seven-forward-tick,3,90,130,primary Z/MAX@40,miss,6.015
+seven-forward-tick,3,90,130,alternate Z/MIN@40,miss,12.476
+seven-forward-tick,3,90,130,alternate X/MAX@40,miss,6.151
+seven-forward-tick,3,90,130,alternate X/MIN@40,miss,9.939
+seven-forward-tick,3,90,130,fallback SLP Z/MAX@40,miss,14.503
+seven-forward-tick,3,90,118,primary Z/MAX@28,miss,0.266
+seven-forward-tick,3,90,118,alternate Z/MIN@28,miss,0.893
+seven-forward-tick,3,90,118,alternate X/MAX@28,miss,0.205
+seven-forward-tick,3,90,118,alternate X/MIN@28,miss,0.276
+seven-forward-tick,3,90,118,fallback SLP Z/MAX@28,miss,7.276
+seven-forward-tick,3,90,113,primary Z/MAX@23,miss,0.127
+seven-forward-tick,3,90,113,alternate Z/MIN@23,miss,0.109
+seven-forward-tick,3,90,113,alternate X/MAX@23,miss,0.097
+seven-forward-tick,3,90,113,alternate X/MIN@23,miss,0.124
+seven-forward-tick,3,90,113,fallback SLP Z/MAX@23,miss,0.080
+seven-forward-tick,3,90,99,primary Z/MAX@9,miss,0.040
+seven-forward-tick,3,90,99,alternate Z/MIN@9,miss,0.041
+seven-forward-tick,3,90,99,alternate X/MAX@9,miss,0.043
+seven-forward-tick,3,90,99,alternate X/MIN@9,miss,0.040
+seven-forward-tick,3,90,99,fallback SLP Z/MAX@9,miss,0.012
+seven-forward-tick,1,0,69,primary Z/MAX@69,solved,0.680
+seven-forward-tick,1,12,71,primary Z/MAX@59,miss,0.751
+seven-forward-tick,1,12,71,alternate Z/MIN@59,solved,1.327
+seven-forward-tick,1,21,75,primary Z/MAX@54,miss,1.517
+seven-forward-tick,1,21,75,alternate Z/MIN@54,solved,0.940
+seven-forward-tick,1,30,77,primary Z/MAX@47,miss,1.536
+seven-forward-tick,1,30,77,alternate Z/MIN@47,miss,2.610
+seven-forward-tick,1,30,77,alternate X/MAX@47,miss,1.814
+seven-forward-tick,1,30,77,alternate X/MIN@47,miss,1.960
+seven-forward-tick,1,30,77,fallback SLP Z/MAX@47,solved,2.218
+seven-forward-tick,1,40,80,primary Z/MAX@40,miss,1.725
+seven-forward-tick,1,40,80,alternate Z/MIN@40,miss,1.319
+seven-forward-tick,1,40,80,alternate X/MAX@40,miss,1.687
+seven-forward-tick,1,40,80,alternate X/MIN@40,miss,2.030
+seven-forward-tick,1,40,80,fallback SLP Z/MAX@40,solved,5.121
+seven-forward-tick,1,55,90,primary Z/MAX@35,miss,2.280
+seven-forward-tick,1,55,90,alternate Z/MIN@35,miss,4.437
+seven-forward-tick,1,55,90,alternate X/MAX@35,miss,2.964
+seven-forward-tick,1,55,90,alternate X/MIN@35,miss,1.914
+seven-forward-tick,1,55,90,fallback SLP Z/MAX@35,miss,31.969
+seven-forward-tick,1,55,77,primary Z/MAX@22,solved,0.142
+seven-forward-tick,1,64,90,primary Z/MAX@26,miss,1.844
+seven-forward-tick,1,64,90,alternate Z/MIN@26,solved,0.966
+seven-forward-tick,1,68,99,primary Z/MAX@31,miss,1.924
+seven-forward-tick,1,68,99,alternate Z/MIN@31,miss,3.652
+seven-forward-tick,1,68,99,alternate X/MAX@31,miss,1.637
+seven-forward-tick,1,68,99,alternate X/MIN@31,miss,1.800
+seven-forward-tick,1,68,99,fallback SLP Z/MAX@31,miss,15.382
+seven-forward-tick,1,68,90,primary Z/MAX@22,miss,1.530
+seven-forward-tick,1,68,90,alternate Z/MIN@22,miss,1.140
+seven-forward-tick,1,68,90,alternate X/MAX@22,miss,1.036
+seven-forward-tick,1,68,90,alternate X/MIN@22,miss,0.713
+seven-forward-tick,1,68,90,fallback SLP Z/MAX@22,solved,2.935
+seven-forward-tick,1,71,113,primary Z/MAX@42,miss,4.024
+seven-forward-tick,1,71,113,alternate Z/MIN@42,miss,1.135
+seven-forward-tick,1,71,113,alternate X/MAX@42,miss,3.586
+seven-forward-tick,1,71,113,alternate X/MIN@42,miss,3.259
+seven-forward-tick,1,71,113,fallback SLP Z/MAX@42,miss,31.788
+seven-forward-tick,1,71,90,primary Z/MAX@19,miss,1.231
+seven-forward-tick,1,71,90,alternate Z/MIN@19,solved,0.207
+seven-forward-tick,1,75,118,primary Z/MAX@43,miss,2.436
+seven-forward-tick,1,75,118,alternate Z/MIN@43,miss,1.753
+seven-forward-tick,1,75,118,alternate X/MAX@43,miss,4.011
+seven-forward-tick,1,75,118,alternate X/MIN@43,miss,4.385
+seven-forward-tick,1,75,118,fallback SLP Z/MAX@43,miss,28.507
+seven-forward-tick,1,75,99,primary Z/MAX@24,miss,0.304
+seven-forward-tick,1,75,99,alternate Z/MIN@24,miss,0.939
+seven-forward-tick,1,75,99,alternate X/MAX@24,miss,0.277
+seven-forward-tick,1,75,99,alternate X/MIN@24,miss,0.262
+seven-forward-tick,1,75,99,fallback SLP Z/MAX@24,miss,0.259
+seven-forward-tick,1,75,90,primary Z/MAX@15,miss,0.372
+seven-forward-tick,1,75,90,alternate Z/MIN@15,solved,0.170
+seven-forward-tick,1,77,128,primary Z/MAX@51,miss,5.671
+seven-forward-tick,1,77,128,alternate Z/MIN@51,miss,9.175
+seven-forward-tick,1,77,128,alternate X/MAX@51,miss,11.519
+seven-forward-tick,1,77,128,alternate X/MIN@51,miss,5.833
+seven-forward-tick,1,77,128,fallback SLP Z/MAX@51,miss,36.869
+seven-forward-tick,1,77,113,primary Z/MAX@36,miss,3.176
+seven-forward-tick,1,77,113,alternate Z/MIN@36,miss,1.778
+seven-forward-tick,1,77,113,alternate X/MAX@36,miss,1.973
+seven-forward-tick,1,77,113,alternate X/MIN@36,miss,2.574
+seven-forward-tick,1,77,113,fallback SLP Z/MAX@36,miss,17.516
+seven-forward-tick,1,77,90,primary Z/MAX@13,miss,0.339
+seven-forward-tick,1,77,90,alternate Z/MIN@13,solved,0.129
+seven-forward-tick,1,80,130,primary Z/MAX@50,miss,5.658
+seven-forward-tick,1,80,130,alternate Z/MIN@50,miss,6.770
+seven-forward-tick,1,80,130,alternate X/MAX@50,miss,7.992
+seven-forward-tick,1,80,130,alternate X/MIN@50,miss,7.086
+seven-forward-tick,1,80,130,fallback SLP Z/MAX@50,miss,61.191
+seven-forward-tick,1,80,118,primary Z/MAX@38,miss,3.106
+seven-forward-tick,1,80,118,alternate Z/MIN@38,miss,1.146
+seven-forward-tick,1,80,118,alternate X/MAX@38,miss,2.974
+seven-forward-tick,1,80,118,alternate X/MIN@38,miss,2.447
+seven-forward-tick,1,80,118,fallback SLP Z/MAX@38,miss,27.620
+seven-forward-tick,1,80,99,primary Z/MAX@19,miss,0.111
+seven-forward-tick,1,80,99,alternate Z/MIN@19,miss,0.086
+seven-forward-tick,1,80,99,alternate X/MAX@19,miss,0.398
+seven-forward-tick,1,80,99,alternate X/MIN@19,miss,0.106
+seven-forward-tick,1,80,99,fallback SLP Z/MAX@19,miss,0.063
+seven-forward-tick,1,80,90,primary Z/MAX@10,miss,0.358
+seven-forward-tick,1,80,90,alternate Z/MIN@10,solved,0.057
+seven-forward-tick,1,88,155,primary Z/MAX@67,miss,14.612
+seven-forward-tick,1,88,155,alternate Z/MIN@67,miss,15.683
+seven-forward-tick,1,88,155,alternate X/MAX@67,miss,5.641
+seven-forward-tick,1,88,155,alternate X/MIN@67,miss,3.742
+seven-forward-tick,1,88,155,fallback SLP Z/MAX@67,miss,101.436
+seven-forward-tick,1,88,128,primary Z/MAX@40,miss,1.721
+seven-forward-tick,1,88,128,alternate Z/MIN@40,miss,4.237
+seven-forward-tick,1,88,128,alternate X/MAX@40,miss,1.949
+seven-forward-tick,1,88,128,alternate X/MIN@40,miss,4.581
+seven-forward-tick,1,88,128,fallback SLP Z/MAX@40,miss,13.085
+seven-forward-tick,1,88,113,primary Z/MAX@25,miss,0.287
+seven-forward-tick,1,88,113,alternate Z/MIN@25,miss,0.849
+seven-forward-tick,1,88,113,alternate X/MAX@25,miss,0.525
+seven-forward-tick,1,88,113,alternate X/MIN@25,miss,0.434
+seven-forward-tick,1,88,113,fallback SLP Z/MAX@25,miss,5.774
+seven-forward-tick,1,88,99,primary Z/MAX@11,miss,0.062
+seven-forward-tick,1,88,99,alternate Z/MIN@11,miss,0.051
+seven-forward-tick,1,88,99,alternate X/MAX@11,miss,0.052
+seven-forward-tick,1,88,99,alternate X/MIN@11,miss,0.045
+seven-forward-tick,1,88,99,fallback SLP Z/MAX@11,miss,0.020
+seven-forward-tick,1,88,90,primary Z/MAX@2,solved,0.060
+seven-forward-tick,1,90,155,primary Z/MAX@65,miss,17.766
+seven-forward-tick,1,90,155,alternate Z/MIN@65,miss,7.512
+seven-forward-tick,1,90,155,alternate X/MAX@65,miss,14.033
+seven-forward-tick,1,90,155,alternate X/MIN@65,miss,22.855
+seven-forward-tick,1,90,155,fallback SLP Z/MAX@65,miss,21.650
+seven-forward-tick,1,90,130,primary Z/MAX@40,miss,6.059
+seven-forward-tick,1,90,130,alternate Z/MIN@40,miss,5.680
+seven-forward-tick,1,90,130,alternate X/MAX@40,miss,6.448
+seven-forward-tick,1,90,130,alternate X/MIN@40,miss,2.779
+seven-forward-tick,1,90,130,fallback SLP Z/MAX@40,miss,13.943
+seven-forward-tick,1,90,118,primary Z/MAX@28,miss,1.351
+seven-forward-tick,1,90,118,alternate Z/MIN@28,miss,1.417
+seven-forward-tick,1,90,118,alternate X/MAX@28,miss,0.286
+seven-forward-tick,1,90,118,alternate X/MIN@28,miss,0.552
+seven-forward-tick,1,90,118,fallback SLP Z/MAX@28,miss,0.186
+seven-forward-tick,1,90,113,primary Z/MAX@23,miss,0.102
+seven-forward-tick,1,90,113,alternate Z/MIN@23,miss,0.083
+seven-forward-tick,1,90,113,alternate X/MAX@23,miss,0.080
+seven-forward-tick,1,90,113,alternate X/MIN@23,miss,0.095
+seven-forward-tick,1,90,113,fallback SLP Z/MAX@23,miss,0.072
+seven-forward-tick,1,90,99,primary Z/MAX@9,miss,0.037
+seven-forward-tick,1,90,99,alternate Z/MIN@9,miss,0.039
+seven-forward-tick,1,90,99,alternate X/MAX@9,miss,0.062
+seven-forward-tick,1,90,99,alternate X/MIN@9,miss,0.040
+seven-forward-tick,1,90,99,fallback SLP Z/MAX@9,miss,0.012
+ten-forward-jump,3,0,77,primary Z/MAX@77,miss,1.441
+ten-forward-jump,3,0,77,alternate Z/MIN@77,miss,4.070
+ten-forward-jump,3,0,77,alternate X/MAX@77,solved,2.863
+ten-forward-jump,3,30,90,primary Z/MAX@60,miss,8.514
+ten-forward-jump,3,30,90,alternate Z/MIN@60,miss,19.998
+ten-forward-jump,3,30,90,alternate X/MAX@60,miss,6.686
+ten-forward-jump,3,30,90,alternate X/MIN@60,miss,9.212
+ten-forward-jump,3,30,90,fallback SLP Z/MAX@60,solved,41.340
+ten-forward-jump,3,64,128,primary Z/MAX@64,miss,4.656
+ten-forward-jump,3,64,128,alternate Z/MIN@64,miss,12.228
+ten-forward-jump,3,64,128,alternate X/MAX@64,miss,11.104
+ten-forward-jump,3,64,128,alternate X/MIN@64,miss,10.883
+ten-forward-jump,3,64,128,fallback SLP Z/MAX@64,miss,107.604
+ten-forward-jump,3,64,90,primary Z/MAX@26,miss,0.712
+ten-forward-jump,3,64,90,alternate Z/MIN@26,solved,0.594
+ten-forward-jump,3,75,155,primary Z/MAX@80,miss,31.773
+ten-forward-jump,3,75,155,alternate Z/MIN@80,miss,16.563
+ten-forward-jump,3,75,155,alternate X/MAX@80,miss,2.858
+ten-forward-jump,3,75,155,alternate X/MIN@80,miss,6.449
+ten-forward-jump,3,75,155,fallback SLP Z/MAX@80,miss,153.448
+ten-forward-jump,3,75,128,primary Z/MAX@53,miss,10.498
+ten-forward-jump,3,75,128,alternate Z/MIN@53,miss,9.493
+ten-forward-jump,3,75,128,alternate X/MAX@53,miss,12.723
+ten-forward-jump,3,75,128,alternate X/MIN@53,miss,7.118
+ten-forward-jump,3,75,128,fallback SLP Z/MAX@53,miss,65.929
+ten-forward-jump,3,75,99,primary Z/MAX@24,miss,0.338
+ten-forward-jump,3,75,99,alternate Z/MIN@24,miss,0.168
+ten-forward-jump,3,75,99,alternate X/MAX@24,miss,0.215
+ten-forward-jump,3,75,99,alternate X/MIN@24,miss,0.223
+ten-forward-jump,3,75,99,fallback SLP Z/MAX@24,miss,0.217
+ten-forward-jump,3,75,90,primary Z/MAX@15,miss,0.336
+ten-forward-jump,3,75,90,alternate Z/MIN@15,solved,0.410
+ten-forward-jump,3,88,176,primary Z/MAX@88,miss,18.742
+ten-forward-jump,3,88,176,alternate Z/MIN@88,miss,13.142
+ten-forward-jump,3,88,176,alternate X/MAX@88,miss,8.147
+ten-forward-jump,3,88,176,alternate X/MIN@88,miss,15.143
+ten-forward-jump,3,88,176,fallback SLP Z/MAX@88,miss,62.662
+ten-forward-jump,3,88,155,primary Z/MAX@67,miss,13.389
+ten-forward-jump,3,88,155,alternate Z/MIN@67,miss,7.761
+ten-forward-jump,3,88,155,alternate X/MAX@67,miss,11.292
+ten-forward-jump,3,88,155,alternate X/MIN@67,miss,5.480
+ten-forward-jump,3,88,155,fallback SLP Z/MAX@67,miss,91.446
+ten-forward-jump,3,88,128,primary Z/MAX@40,miss,1.686
+ten-forward-jump,3,88,128,alternate Z/MIN@40,miss,1.871
+ten-forward-jump,3,88,128,alternate X/MAX@40,miss,2.031
+ten-forward-jump,3,88,128,alternate X/MIN@40,miss,2.913
+ten-forward-jump,3,88,128,fallback SLP Z/MAX@40,miss,9.885
+ten-forward-jump,3,88,113,primary Z/MAX@25,miss,0.249
+ten-forward-jump,3,88,113,alternate Z/MIN@25,miss,0.398
+ten-forward-jump,3,88,113,alternate X/MAX@25,miss,0.560
+ten-forward-jump,3,88,113,alternate X/MIN@25,miss,0.421
+ten-forward-jump,3,88,113,fallback SLP Z/MAX@25,miss,4.894
+ten-forward-jump,3,88,99,primary Z/MAX@11,miss,0.050
+ten-forward-jump,3,88,99,alternate Z/MIN@11,miss,0.040
+ten-forward-jump,3,88,99,alternate X/MAX@11,miss,0.133
+ten-forward-jump,3,88,99,alternate X/MIN@11,miss,0.050
+ten-forward-jump,3,88,99,fallback SLP Z/MAX@11,miss,0.019
+ten-forward-jump,3,88,90,primary Z/MAX@2,solved,0.050
+ten-forward-jump,3,90,196,primary Z/MAX@106,miss,56.902
+ten-forward-jump,3,90,196,alternate Z/MIN@106,miss,71.003
+ten-forward-jump,3,90,196,alternate X/MAX@106,miss,98.818
+ten-forward-jump,3,90,196,alternate X/MIN@106,miss,61.773
+ten-forward-jump,3,90,196,fallback SLP Z/MAX@106,miss,64.681
+ten-forward-jump,3,90,155,primary Z/MAX@65,miss,11.153
+ten-forward-jump,3,90,155,alternate Z/MIN@65,miss,16.593
+ten-forward-jump,3,90,155,alternate X/MAX@65,miss,4.366
+ten-forward-jump,3,90,155,alternate X/MIN@65,miss,13.069
+ten-forward-jump,3,90,155,fallback SLP Z/MAX@65,miss,23.415
+ten-forward-jump,3,90,130,primary Z/MAX@40,miss,5.939
+ten-forward-jump,3,90,130,alternate Z/MIN@40,miss,5.735
+ten-forward-jump,3,90,130,alternate X/MAX@40,miss,15.105
+ten-forward-jump,3,90,130,alternate X/MIN@40,miss,7.552
+ten-forward-jump,3,90,130,fallback SLP Z/MAX@40,miss,18.376
+ten-forward-jump,3,90,128,primary Z/MAX@38,miss,3.075
+ten-forward-jump,3,90,128,alternate Z/MIN@38,miss,1.475
+ten-forward-jump,3,90,128,alternate X/MAX@38,miss,6.418
+ten-forward-jump,3,90,128,alternate X/MIN@38,miss,3.873
+ten-forward-jump,3,90,128,fallback SLP Z/MAX@38,miss,10.023
+ten-forward-jump,3,90,113,primary Z/MAX@23,miss,0.116
+ten-forward-jump,3,90,113,alternate Z/MIN@23,miss,0.102
+ten-forward-jump,3,90,113,alternate X/MAX@23,miss,0.079
+ten-forward-jump,3,90,113,alternate X/MIN@23,miss,0.082
+ten-forward-jump,3,90,113,fallback SLP Z/MAX@23,miss,0.072
+ten-forward-jump,3,90,99,primary Z/MAX@9,miss,0.031
+ten-forward-jump,3,90,99,alternate Z/MIN@9,miss,0.032
+ten-forward-jump,3,90,99,alternate X/MAX@9,miss,0.034
+ten-forward-jump,3,90,99,alternate X/MIN@9,miss,0.033
+ten-forward-jump,3,90,99,fallback SLP Z/MAX@9,miss,0.010
+ten-forward-jump,1,0,77,primary Z/MAX@77,miss,1.434
+ten-forward-jump,1,0,77,alternate Z/MIN@77,miss,3.922
+ten-forward-jump,1,0,77,alternate X/MAX@77,solved,1.156
+ten-forward-jump,1,12,80,primary Z/MAX@68,miss,4.301
+ten-forward-jump,1,12,80,alternate Z/MIN@68,miss,8.239
+ten-forward-jump,1,12,80,alternate X/MAX@68,miss,3.117
+ten-forward-jump,1,12,80,alternate X/MIN@68,miss,3.714
+ten-forward-jump,1,12,80,fallback SLP Z/MAX@68,solved,6.834
+ten-forward-jump,1,21,90,primary Z/MAX@69,miss,11.108
+ten-forward-jump,1,21,90,alternate Z/MIN@69,miss,9.671
+ten-forward-jump,1,21,90,alternate X/MAX@69,miss,7.984
+ten-forward-jump,1,21,90,alternate X/MIN@69,miss,4.296
+ten-forward-jump,1,21,90,fallback SLP Z/MAX@69,solved,30.287
+ten-forward-jump,1,30,90,primary Z/MAX@60,miss,6.882
+ten-forward-jump,1,30,90,alternate Z/MIN@60,miss,11.518
+ten-forward-jump,1,30,90,alternate X/MAX@60,miss,13.361
+ten-forward-jump,1,30,90,alternate X/MIN@60,miss,7.919
+ten-forward-jump,1,30,90,fallback SLP Z/MAX@60,solved,30.949
+ten-forward-jump,1,40,99,primary Z/MAX@59,miss,10.834
+ten-forward-jump,1,40,99,alternate Z/MIN@59,miss,6.149
+ten-forward-jump,1,40,99,alternate X/MAX@59,miss,11.146
+ten-forward-jump,1,40,99,alternate X/MIN@59,miss,11.431
+ten-forward-jump,1,40,99,fallback SLP Z/MAX@59,miss,51.919
+ten-forward-jump,1,40,80,primary Z/MAX@40,miss,1.668
+ten-forward-jump,1,40,80,alternate Z/MIN@40,solved,0.933
+ten-forward-jump,1,55,113,primary Z/MAX@58,miss,11.375
+ten-forward-jump,1,55,113,alternate Z/MIN@58,miss,14.291
+ten-forward-jump,1,55,113,alternate X/MAX@58,miss,10.544
+ten-forward-jump,1,55,113,alternate X/MIN@58,miss,8.494
+ten-forward-jump,1,55,113,fallback SLP Z/MAX@58,miss,74.619
+ten-forward-jump,1,55,90,primary Z/MAX@35,miss,3.101
+ten-forward-jump,1,55,90,alternate Z/MIN@35,miss,4.145
+ten-forward-jump,1,55,90,alternate X/MAX@35,miss,1.450
+ten-forward-jump,1,55,90,alternate X/MIN@35,miss,1.784
+ten-forward-jump,1,55,90,fallback SLP Z/MAX@35,miss,30.603
+ten-forward-jump,1,55,77,primary Z/MAX@22,miss,0.661
+ten-forward-jump,1,55,77,alternate Z/MIN@22,miss,0.600
+ten-forward-jump,1,55,77,alternate X/MAX@22,solved,0.239
+ten-forward-jump,1,64,128,primary Z/MAX@64,miss,7.028
+ten-forward-jump,1,64,128,alternate Z/MIN@64,miss,17.526
+ten-forward-jump,1,64,128,alternate X/MAX@64,miss,22.286
+ten-forward-jump,1,64,128,alternate X/MIN@64,miss,5.369
+ten-forward-jump,1,64,128,fallback SLP Z/MAX@64,miss,81.790
+ten-forward-jump,1,64,90,primary Z/MAX@26,miss,3.900
+ten-forward-jump,1,64,90,alternate Z/MIN@26,solved,0.744
+ten-forward-jump,1,68,128,primary Z/MAX@60,miss,19.020
+ten-forward-jump,1,68,128,alternate Z/MIN@60,miss,11.137
+ten-forward-jump,1,68,128,alternate X/MAX@60,miss,13.114
+ten-forward-jump,1,68,128,alternate X/MIN@60,miss,1.887
+ten-forward-jump,1,68,128,fallback SLP Z/MAX@60,miss,81.451
+ten-forward-jump,1,68,99,primary Z/MAX@31,miss,2.402
+ten-forward-jump,1,68,99,alternate Z/MIN@31,miss,1.580
+ten-forward-jump,1,68,99,alternate X/MAX@31,miss,1.472
+ten-forward-jump,1,68,99,alternate X/MIN@31,miss,0.500
+ten-forward-jump,1,68,99,fallback SLP Z/MAX@31,miss,18.011
+ten-forward-jump,1,68,90,primary Z/MAX@22,miss,1.494
+ten-forward-jump,1,68,90,alternate Z/MIN@22,solved,0.655
+ten-forward-jump,1,71,130,primary Z/MAX@59,miss,36.583
+ten-forward-jump,1,71,130,alternate Z/MIN@59,miss,21.582
+ten-forward-jump,1,71,130,alternate X/MAX@59,miss,14.254
+ten-forward-jump,1,71,130,alternate X/MIN@59,miss,13.553
+ten-forward-jump,1,71,130,fallback SLP Z/MAX@59,miss,76.973
+ten-forward-jump,1,71,113,primary Z/MAX@42,miss,3.518
+ten-forward-jump,1,71,113,alternate Z/MIN@42,miss,4.103
+ten-forward-jump,1,71,113,alternate X/MAX@42,miss,1.690
+ten-forward-jump,1,71,113,alternate X/MIN@42,miss,3.875
+ten-forward-jump,1,71,113,fallback SLP Z/MAX@42,miss,30.299
+ten-forward-jump,1,71,90,primary Z/MAX@19,miss,0.479
+ten-forward-jump,1,71,90,alternate Z/MIN@19,miss,0.660
+ten-forward-jump,1,71,90,alternate X/MAX@19,miss,1.010
+ten-forward-jump,1,71,90,alternate X/MIN@19,miss,0.621
+ten-forward-jump,1,71,90,fallback SLP Z/MAX@19,solved,8.134
+ten-forward-jump,1,75,155,primary Z/MAX@80,miss,20.206
+ten-forward-jump,1,75,155,alternate Z/MIN@80,miss,24.669
+ten-forward-jump,1,75,155,alternate X/MAX@80,miss,15.897
+ten-forward-jump,1,75,155,alternate X/MIN@80,miss,6.350
+ten-forward-jump,1,75,155,fallback SLP Z/MAX@80,miss,141.619
+ten-forward-jump,1,75,128,primary Z/MAX@53,miss,6.661
+ten-forward-jump,1,75,128,alternate Z/MIN@53,miss,7.867
+ten-forward-jump,1,75,128,alternate X/MAX@53,miss,14.752
+ten-forward-jump,1,75,128,alternate X/MIN@53,miss,8.762
+ten-forward-jump,1,75,128,fallback SLP Z/MAX@53,miss,50.795
+ten-forward-jump,1,75,99,primary Z/MAX@24,miss,0.284
+ten-forward-jump,1,75,99,alternate Z/MIN@24,miss,0.648
+ten-forward-jump,1,75,99,alternate X/MAX@24,miss,0.267
+ten-forward-jump,1,75,99,alternate X/MIN@24,miss,0.217
+ten-forward-jump,1,75,99,fallback SLP Z/MAX@24,miss,0.246
+ten-forward-jump,1,75,90,primary Z/MAX@15,miss,0.320
+ten-forward-jump,1,75,90,alternate Z/MIN@15,solved,0.150
+ten-forward-jump,1,77,155,primary Z/MAX@78,miss,9.485
+ten-forward-jump,1,77,155,alternate Z/MIN@78,miss,17.821
+ten-forward-jump,1,77,155,alternate X/MAX@78,miss,18.479
+ten-forward-jump,1,77,155,alternate X/MIN@78,miss,7.418
+ten-forward-jump,1,77,155,fallback SLP Z/MAX@78,miss,195.752
+ten-forward-jump,1,77,128,primary Z/MAX@51,miss,6.127
+ten-forward-jump,1,77,128,alternate Z/MIN@51,miss,2.835
+ten-forward-jump,1,77,128,alternate X/MAX@51,miss,7.449
+ten-forward-jump,1,77,128,alternate X/MIN@51,miss,2.186
+ten-forward-jump,1,77,128,fallback SLP Z/MAX@51,miss,40.399
+ten-forward-jump,1,77,113,primary Z/MAX@36,miss,1.837
+ten-forward-jump,1,77,113,alternate Z/MIN@36,miss,0.829
+ten-forward-jump,1,77,113,alternate X/MAX@36,miss,2.966
+ten-forward-jump,1,77,113,alternate X/MIN@36,miss,2.156
+ten-forward-jump,1,77,113,fallback SLP Z/MAX@36,miss,15.922
+ten-forward-jump,1,77,90,primary Z/MAX@13,miss,0.350
+ten-forward-jump,1,77,90,alternate Z/MIN@13,solved,0.105
+ten-forward-jump,1,80,167,primary Z/MAX@87,miss,35.195
+ten-forward-jump,1,80,167,alternate Z/MIN@87,miss,29.602
+ten-forward-jump,1,80,167,alternate X/MAX@87,miss,42.894
+ten-forward-jump,1,80,167,alternate X/MIN@87,miss,36.858
+ten-forward-jump,1,80,167,fallback SLP Z/MAX@87,miss,136.971
+ten-forward-jump,1,80,130,primary Z/MAX@50,miss,8.497
+ten-forward-jump,1,80,130,alternate Z/MIN@50,miss,6.113
+ten-forward-jump,1,80,130,alternate X/MAX@50,miss,7.080
+ten-forward-jump,1,80,130,alternate X/MIN@50,miss,6.421
+ten-forward-jump,1,80,130,fallback SLP Z/MAX@50,miss,43.521
+ten-forward-jump,1,80,128,primary Z/MAX@48,miss,3.777
+ten-forward-jump,1,80,128,alternate Z/MIN@48,miss,5.000
+ten-forward-jump,1,80,128,alternate X/MAX@48,miss,6.965
+ten-forward-jump,1,80,128,alternate X/MIN@48,miss,5.793
+ten-forward-jump,1,80,128,fallback SLP Z/MAX@48,miss,33.977
+ten-forward-jump,1,80,99,primary Z/MAX@19,miss,0.138
+ten-forward-jump,1,80,99,alternate Z/MIN@19,miss,0.143
+ten-forward-jump,1,80,99,alternate X/MAX@19,miss,0.167
+ten-forward-jump,1,80,99,alternate X/MIN@19,miss,0.144
+ten-forward-jump,1,80,99,fallback SLP Z/MAX@19,miss,0.072
+ten-forward-jump,1,80,90,primary Z/MAX@10,miss,0.466
+ten-forward-jump,1,80,90,alternate Z/MIN@10,solved,0.055
+ten-forward-jump,1,88,176,primary Z/MAX@88,miss,16.146
+ten-forward-jump,1,88,176,alternate Z/MIN@88,miss,33.832
+ten-forward-jump,1,88,176,alternate X/MAX@88,miss,14.229
+ten-forward-jump,1,88,176,alternate X/MIN@88,miss,14.058
+ten-forward-jump,1,88,176,fallback SLP Z/MAX@88,miss,54.510
+ten-forward-jump,1,88,155,primary Z/MAX@67,miss,10.226
+ten-forward-jump,1,88,155,alternate Z/MIN@67,miss,8.526
+ten-forward-jump,1,88,155,alternate X/MAX@67,miss,7.135
+ten-forward-jump,1,88,155,alternate X/MIN@67,miss,9.129
+ten-forward-jump,1,88,155,fallback SLP Z/MAX@67,miss,106.098
+ten-forward-jump,1,88,128,primary Z/MAX@40,miss,2.253
+ten-forward-jump,1,88,128,alternate Z/MIN@40,miss,5.050
+ten-forward-jump,1,88,128,alternate X/MAX@40,miss,1.637
+ten-forward-jump,1,88,128,alternate X/MIN@40,miss,3.374
+ten-forward-jump,1,88,128,fallback SLP Z/MAX@40,miss,18.434
+ten-forward-jump,1,88,113,primary Z/MAX@25,miss,0.257
+ten-forward-jump,1,88,113,alternate Z/MIN@25,miss,0.454
+ten-forward-jump,1,88,113,alternate X/MAX@25,miss,0.480
+ten-forward-jump,1,88,113,alternate X/MIN@25,miss,0.344
+ten-forward-jump,1,88,113,fallback SLP Z/MAX@25,miss,3.993
+ten-forward-jump,1,88,99,primary Z/MAX@11,miss,0.036
+ten-forward-jump,1,88,99,alternate Z/MIN@11,miss,0.078
+ten-forward-jump,1,88,99,alternate X/MAX@11,miss,0.038
+ten-forward-jump,1,88,99,alternate X/MIN@11,miss,0.030
+ten-forward-jump,1,88,99,fallback SLP Z/MAX@11,miss,0.013
+ten-forward-jump,1,88,90,primary Z/MAX@2,solved,0.051
+ten-forward-jump,1,90,196,primary Z/MAX@106,miss,22.992
+ten-forward-jump,1,90,196,alternate Z/MIN@106,miss,63.193
+ten-forward-jump,1,90,196,alternate X/MAX@106,miss,26.388
+ten-forward-jump,1,90,196,alternate X/MIN@106,miss,51.541
+ten-forward-jump,1,90,196,fallback SLP Z/MAX@106,miss,45.276
+ten-forward-jump,1,90,155,primary Z/MAX@65,miss,11.504
+ten-forward-jump,1,90,155,alternate Z/MIN@65,miss,16.697
+ten-forward-jump,1,90,155,alternate X/MAX@65,miss,12.399
+ten-forward-jump,1,90,155,alternate X/MIN@65,miss,20.567
+ten-forward-jump,1,90,155,fallback SLP Z/MAX@65,miss,18.354
+ten-forward-jump,1,90,130,primary Z/MAX@40,miss,8.810
+ten-forward-jump,1,90,130,alternate Z/MIN@40,miss,5.666
+ten-forward-jump,1,90,130,alternate X/MAX@40,miss,12.157
+ten-forward-jump,1,90,130,alternate X/MIN@40,miss,5.916
+ten-forward-jump,1,90,130,fallback SLP Z/MAX@40,miss,13.771
+ten-forward-jump,1,90,128,primary Z/MAX@38,miss,5.086
+ten-forward-jump,1,90,128,alternate Z/MIN@38,miss,6.463
+ten-forward-jump,1,90,128,alternate X/MAX@38,miss,1.005
+ten-forward-jump,1,90,128,alternate X/MIN@38,miss,0.818
+ten-forward-jump,1,90,128,fallback SLP Z/MAX@38,miss,1.402
+ten-forward-jump,1,90,113,primary Z/MAX@23,miss,0.083
+ten-forward-jump,1,90,113,alternate Z/MIN@23,miss,0.074
+ten-forward-jump,1,90,113,alternate X/MAX@23,miss,0.059
+ten-forward-jump,1,90,113,alternate X/MIN@23,miss,0.067
+ten-forward-jump,1,90,113,fallback SLP Z/MAX@23,miss,0.064
+ten-forward-jump,1,90,99,primary Z/MAX@9,miss,0.024
+ten-forward-jump,1,90,99,alternate Z/MIN@9,miss,0.024
+ten-forward-jump,1,90,99,alternate X/MAX@9,miss,0.025
+ten-forward-jump,1,90,99,alternate X/MIN@9,miss,0.025
+ten-forward-jump,1,90,99,fallback SLP Z/MAX@9,miss,0.008
+ten-forward-tick,3,0,77,primary Z/MAX@77,miss,1.398
+ten-forward-tick,3,0,77,alternate Z/MIN@77,miss,3.979
+ten-forward-tick,3,0,77,alternate X/MAX@77,solved,2.414
+ten-forward-tick,3,30,90,primary Z/MAX@60,miss,8.477
+ten-forward-tick,3,30,90,alternate Z/MIN@60,miss,19.329
+ten-forward-tick,3,30,90,alternate X/MAX@60,miss,65.612
+ten-forward-tick,3,30,90,alternate X/MIN@60,miss,19.573
+ten-forward-tick,3,30,90,fallback SLP Z/MAX@60,solved,39.270
+ten-forward-tick,3,64,118,primary Z/MAX@54,miss,3.584
+ten-forward-tick,3,64,118,alternate Z/MIN@54,miss,2.296
+ten-forward-tick,3,64,118,alternate X/MAX@54,miss,12.546
+ten-forward-tick,3,64,118,alternate X/MIN@54,miss,18.385
+ten-forward-tick,3,64,118,fallback SLP Z/MAX@54,miss,51.765
+ten-forward-tick,3,64,90,primary Z/MAX@26,miss,0.796
+ten-forward-tick,3,64,90,alternate Z/MIN@26,solved,0.658
+ten-forward-tick,3,75,155,primary Z/MAX@80,miss,30.830
+ten-forward-tick,3,75,155,alternate Z/MIN@80,miss,16.387
+ten-forward-tick,3,75,155,alternate X/MAX@80,miss,2.666
+ten-forward-tick,3,75,155,alternate X/MIN@80,miss,6.213
+ten-forward-tick,3,75,155,fallback SLP Z/MAX@80,miss,149.482
+ten-forward-tick,3,75,118,primary Z/MAX@43,miss,7.513
+ten-forward-tick,3,75,118,alternate Z/MIN@43,miss,6.672
+ten-forward-tick,3,75,118,alternate X/MAX@43,miss,1.661
+ten-forward-tick,3,75,118,alternate X/MIN@43,miss,4.038
+ten-forward-tick,3,75,118,fallback SLP Z/MAX@43,miss,41.567
+ten-forward-tick,3,75,99,primary Z/MAX@24,miss,0.336
+ten-forward-tick,3,75,99,alternate Z/MIN@24,miss,0.158
+ten-forward-tick,3,75,99,alternate X/MAX@24,miss,0.200
+ten-forward-tick,3,75,99,alternate X/MIN@24,miss,0.212
+ten-forward-tick,3,75,99,fallback SLP Z/MAX@24,miss,0.227
+ten-forward-tick,3,75,90,primary Z/MAX@15,miss,0.327
+ten-forward-tick,3,75,90,alternate Z/MIN@15,solved,0.276
+ten-forward-tick,3,88,176,primary Z/MAX@88,miss,18.170
+ten-forward-tick,3,88,176,alternate Z/MIN@88,miss,13.008
+ten-forward-tick,3,88,176,alternate X/MAX@88,miss,7.721
+ten-forward-tick,3,88,176,alternate X/MIN@88,miss,14.705
+ten-forward-tick,3,88,176,fallback SLP Z/MAX@88,miss,65.675
+ten-forward-tick,3,88,155,primary Z/MAX@67,miss,13.239
+ten-forward-tick,3,88,155,alternate Z/MIN@67,miss,7.752
+ten-forward-tick,3,88,155,alternate X/MAX@67,miss,11.222
+ten-forward-tick,3,88,155,alternate X/MIN@67,miss,5.678
+ten-forward-tick,3,88,155,fallback SLP Z/MAX@67,miss,89.424
+ten-forward-tick,3,88,128,primary Z/MAX@40,miss,1.742
+ten-forward-tick,3,88,128,alternate Z/MIN@40,miss,1.873
+ten-forward-tick,3,88,128,alternate X/MAX@40,miss,2.041
+ten-forward-tick,3,88,128,alternate X/MIN@40,miss,2.983
+ten-forward-tick,3,88,128,fallback SLP Z/MAX@40,miss,10.376
+ten-forward-tick,3,88,113,primary Z/MAX@25,miss,0.225
+ten-forward-tick,3,88,113,alternate Z/MIN@25,miss,0.377
+ten-forward-tick,3,88,113,alternate X/MAX@25,miss,0.475
+ten-forward-tick,3,88,113,alternate X/MIN@25,miss,0.386
+ten-forward-tick,3,88,113,fallback SLP Z/MAX@25,miss,4.520
+ten-forward-tick,3,88,99,primary Z/MAX@11,miss,0.042
+ten-forward-tick,3,88,99,alternate Z/MIN@11,miss,0.032
+ten-forward-tick,3,88,99,alternate X/MAX@11,miss,0.039
+ten-forward-tick,3,88,99,alternate X/MIN@11,miss,0.034
+ten-forward-tick,3,88,99,fallback SLP Z/MAX@11,miss,0.020
+ten-forward-tick,3,88,90,primary Z/MAX@2,solved,0.041
+ten-forward-tick,3,90,188,primary Z/MAX@98,miss,70.562
+ten-forward-tick,3,90,188,alternate Z/MIN@98,miss,38.662
+ten-forward-tick,3,90,188,alternate X/MAX@98,miss,72.797
+ten-forward-tick,3,90,188,alternate X/MIN@98,miss,85.059
+ten-forward-tick,3,90,188,fallback SLP Z/MAX@98,miss,52.200
+ten-forward-tick,3,90,155,primary Z/MAX@65,miss,10.969
+ten-forward-tick,3,90,155,alternate Z/MIN@65,miss,16.121
+ten-forward-tick,3,90,155,alternate X/MAX@65,miss,4.378
+ten-forward-tick,3,90,155,alternate X/MIN@65,miss,12.415
+ten-forward-tick,3,90,155,fallback SLP Z/MAX@65,miss,20.495
+ten-forward-tick,3,90,130,primary Z/MAX@40,miss,5.849
+ten-forward-tick,3,90,130,alternate Z/MIN@40,miss,5.342
+ten-forward-tick,3,90,130,alternate X/MAX@40,miss,14.449
+ten-forward-tick,3,90,130,alternate X/MIN@40,miss,7.173
+ten-forward-tick,3,90,130,fallback SLP Z/MAX@40,miss,11.626
+ten-forward-tick,3,90,118,primary Z/MAX@28,miss,0.722
+ten-forward-tick,3,90,118,alternate Z/MIN@28,miss,1.372
+ten-forward-tick,3,90,118,alternate X/MAX@28,miss,0.520
+ten-forward-tick,3,90,118,alternate X/MIN@28,miss,0.202
+ten-forward-tick,3,90,118,fallback SLP Z/MAX@28,miss,6.072
+ten-forward-tick,3,90,113,primary Z/MAX@23,miss,0.109
+ten-forward-tick,3,90,113,alternate Z/MIN@23,miss,0.124
+ten-forward-tick,3,90,113,alternate X/MAX@23,miss,0.079
+ten-forward-tick,3,90,113,alternate X/MIN@23,miss,0.073
+ten-forward-tick,3,90,113,fallback SLP Z/MAX@23,miss,0.077
+ten-forward-tick,3,90,99,primary Z/MAX@9,miss,0.026
+ten-forward-tick,3,90,99,alternate Z/MIN@9,miss,0.026
+ten-forward-tick,3,90,99,alternate X/MAX@9,miss,0.026
+ten-forward-tick,3,90,99,alternate X/MIN@9,miss,0.026
+ten-forward-tick,3,90,99,fallback SLP Z/MAX@9,miss,0.012
+ten-forward-tick,1,0,77,primary Z/MAX@77,miss,1.377
+ten-forward-tick,1,0,77,alternate Z/MIN@77,miss,3.884
+ten-forward-tick,1,0,77,alternate X/MAX@77,solved,1.168
+ten-forward-tick,1,12,80,primary Z/MAX@68,miss,4.290
+ten-forward-tick,1,12,80,alternate Z/MIN@68,miss,8.715
+ten-forward-tick,1,12,80,alternate X/MAX@68,miss,3.166
+ten-forward-tick,1,12,80,alternate X/MIN@68,miss,3.710
+ten-forward-tick,1,12,80,fallback SLP Z/MAX@68,solved,6.717
+ten-forward-tick,1,21,90,primary Z/MAX@69,miss,11.183
+ten-forward-tick,1,21,90,alternate Z/MIN@69,miss,9.667
+ten-forward-tick,1,21,90,alternate X/MAX@69,miss,7.906
+ten-forward-tick,1,21,90,alternate X/MIN@69,miss,4.366
+ten-forward-tick,1,21,90,fallback SLP Z/MAX@69,solved,29.943
+ten-forward-tick,1,30,90,primary Z/MAX@60,miss,6.826
+ten-forward-tick,1,30,90,alternate Z/MIN@60,miss,11.661
+ten-forward-tick,1,30,90,alternate X/MAX@60,miss,12.930
+ten-forward-tick,1,30,90,alternate X/MIN@60,miss,8.275
+ten-forward-tick,1,30,90,fallback SLP Z/MAX@60,solved,28.535
+ten-forward-tick,1,40,99,primary Z/MAX@59,miss,10.829
+ten-forward-tick,1,40,99,alternate Z/MIN@59,miss,5.942
+ten-forward-tick,1,40,99,alternate X/MAX@59,miss,11.498
+ten-forward-tick,1,40,99,alternate X/MIN@59,miss,11.006
+ten-forward-tick,1,40,99,fallback SLP Z/MAX@59,miss,51.226
+ten-forward-tick,1,40,80,primary Z/MAX@40,miss,1.714
+ten-forward-tick,1,40,80,alternate Z/MIN@40,solved,0.961
+ten-forward-tick,1,55,113,primary Z/MAX@58,miss,11.034
+ten-forward-tick,1,55,113,alternate Z/MIN@58,miss,13.937
+ten-forward-tick,1,55,113,alternate X/MAX@58,miss,10.499
+ten-forward-tick,1,55,113,alternate X/MIN@58,miss,8.289
+ten-forward-tick,1,55,113,fallback SLP Z/MAX@58,miss,71.741
+ten-forward-tick,1,55,90,primary Z/MAX@35,miss,2.842
+ten-forward-tick,1,55,90,alternate Z/MIN@35,miss,4.036
+ten-forward-tick,1,55,90,alternate X/MAX@35,miss,1.519
+ten-forward-tick,1,55,90,alternate X/MIN@35,miss,1.955
+ten-forward-tick,1,55,90,fallback SLP Z/MAX@35,miss,29.057
+ten-forward-tick,1,55,77,primary Z/MAX@22,miss,0.615
+ten-forward-tick,1,55,77,alternate Z/MIN@22,miss,0.538
+ten-forward-tick,1,55,77,alternate X/MAX@22,solved,0.217
+ten-forward-tick,1,64,118,primary Z/MAX@54,miss,11.058
+ten-forward-tick,1,64,118,alternate Z/MIN@54,miss,4.218
+ten-forward-tick,1,64,118,alternate X/MAX@54,miss,12.815
+ten-forward-tick,1,64,118,alternate X/MIN@54,miss,5.204
+ten-forward-tick,1,64,118,fallback SLP Z/MAX@54,miss,80.109
+ten-forward-tick,1,64,90,primary Z/MAX@26,miss,3.946
+ten-forward-tick,1,64,90,alternate Z/MIN@26,solved,0.869
+ten-forward-tick,1,68,128,primary Z/MAX@60,miss,19.177
+ten-forward-tick,1,68,128,alternate Z/MIN@60,miss,11.363
+ten-forward-tick,1,68,128,alternate X/MAX@60,miss,13.183
+ten-forward-tick,1,68,128,alternate X/MIN@60,miss,1.877
+ten-forward-tick,1,68,128,fallback SLP Z/MAX@60,miss,85.019
+ten-forward-tick,1,68,99,primary Z/MAX@31,miss,2.496
+ten-forward-tick,1,68,99,alternate Z/MIN@31,miss,1.847
+ten-forward-tick,1,68,99,alternate X/MAX@31,miss,1.512
+ten-forward-tick,1,68,99,alternate X/MIN@31,miss,0.516
+ten-forward-tick,1,68,99,fallback SLP Z/MAX@31,miss,17.818
+ten-forward-tick,1,68,90,primary Z/MAX@22,miss,1.427
+ten-forward-tick,1,68,90,alternate Z/MIN@22,solved,0.690
+ten-forward-tick,1,71,130,primary Z/MAX@59,miss,34.118
+ten-forward-tick,1,71,130,alternate Z/MIN@59,miss,21.068
+ten-forward-tick,1,71,130,alternate X/MAX@59,miss,13.876
+ten-forward-tick,1,71,130,alternate X/MIN@59,miss,12.891
+ten-forward-tick,1,71,130,fallback SLP Z/MAX@59,miss,77.426
+ten-forward-tick,1,71,113,primary Z/MAX@42,miss,3.354
+ten-forward-tick,1,71,113,alternate Z/MIN@42,miss,3.862
+ten-forward-tick,1,71,113,alternate X/MAX@42,miss,1.659
+ten-forward-tick,1,71,113,alternate X/MIN@42,miss,3.882
+ten-forward-tick,1,71,113,fallback SLP Z/MAX@42,miss,29.260
+ten-forward-tick,1,71,90,primary Z/MAX@19,miss,0.466
+ten-forward-tick,1,71,90,alternate Z/MIN@19,miss,0.732
+ten-forward-tick,1,71,90,alternate X/MAX@19,miss,1.003
+ten-forward-tick,1,71,90,alternate X/MIN@19,miss,0.557
+ten-forward-tick,1,71,90,fallback SLP Z/MAX@19,solved,7.998
+ten-forward-tick,1,75,155,primary Z/MAX@80,miss,19.648
+ten-forward-tick,1,75,155,alternate Z/MIN@80,miss,24.924
+ten-forward-tick,1,75,155,alternate X/MAX@80,miss,15.776
+ten-forward-tick,1,75,155,alternate X/MIN@80,miss,6.116
+ten-forward-tick,1,75,155,fallback SLP Z/MAX@80,miss,144.175
+ten-forward-tick,1,75,118,primary Z/MAX@43,miss,3.198
+ten-forward-tick,1,75,118,alternate Z/MIN@43,miss,1.668
+ten-forward-tick,1,75,118,alternate X/MAX@43,miss,6.462
+ten-forward-tick,1,75,118,alternate X/MIN@43,miss,7.559
+ten-forward-tick,1,75,118,fallback SLP Z/MAX@43,miss,30.268
+ten-forward-tick,1,75,99,primary Z/MAX@24,miss,0.257
+ten-forward-tick,1,75,99,alternate Z/MIN@24,miss,0.610
+ten-forward-tick,1,75,99,alternate X/MAX@24,miss,0.258
+ten-forward-tick,1,75,99,alternate X/MIN@24,miss,0.209
+ten-forward-tick,1,75,99,fallback SLP Z/MAX@24,miss,0.236
+ten-forward-tick,1,75,90,primary Z/MAX@15,miss,0.320
+ten-forward-tick,1,75,90,alternate Z/MIN@15,solved,0.100
+ten-forward-tick,1,77,155,primary Z/MAX@78,miss,9.688
+ten-forward-tick,1,77,155,alternate Z/MIN@78,miss,18.077
+ten-forward-tick,1,77,155,alternate X/MAX@78,miss,18.237
+ten-forward-tick,1,77,155,alternate X/MIN@78,miss,7.540
+ten-forward-tick,1,77,155,fallback SLP Z/MAX@78,miss,188.134
+ten-forward-tick,1,77,128,primary Z/MAX@51,miss,6.207
+ten-forward-tick,1,77,128,alternate Z/MIN@51,miss,2.968
+ten-forward-tick,1,77,128,alternate X/MAX@51,miss,7.421
+ten-forward-tick,1,77,128,alternate X/MIN@51,miss,2.107
+ten-forward-tick,1,77,128,fallback SLP Z/MAX@51,miss,39.184
+ten-forward-tick,1,77,113,primary Z/MAX@36,miss,1.961
+ten-forward-tick,1,77,113,alternate Z/MIN@36,miss,1.802
+ten-forward-tick,1,77,113,alternate X/MAX@36,miss,2.938
+ten-forward-tick,1,77,113,alternate X/MIN@36,miss,2.149
+ten-forward-tick,1,77,113,fallback SLP Z/MAX@36,miss,15.424
+ten-forward-tick,1,77,90,primary Z/MAX@13,miss,0.339
+ten-forward-tick,1,77,90,alternate Z/MIN@13,solved,0.092
+ten-forward-tick,1,80,167,primary Z/MAX@87,miss,33.930
+ten-forward-tick,1,80,167,alternate Z/MIN@87,miss,29.040
+ten-forward-tick,1,80,167,alternate X/MAX@87,miss,42.204
+ten-forward-tick,1,80,167,alternate X/MIN@87,miss,36.528
+ten-forward-tick,1,80,167,fallback SLP Z/MAX@87,miss,137.221
+ten-forward-tick,1,80,130,primary Z/MAX@50,miss,8.533
+ten-forward-tick,1,80,130,alternate Z/MIN@50,miss,6.149
+ten-forward-tick,1,80,130,alternate X/MAX@50,miss,6.850
+ten-forward-tick,1,80,130,alternate X/MIN@50,miss,6.265
+ten-forward-tick,1,80,130,fallback SLP Z/MAX@50,miss,44.508
+ten-forward-tick,1,80,118,primary Z/MAX@38,miss,2.468
+ten-forward-tick,1,80,118,alternate Z/MIN@38,miss,3.384
+ten-forward-tick,1,80,118,alternate X/MAX@38,miss,2.953
+ten-forward-tick,1,80,118,alternate X/MIN@38,miss,3.818
+ten-forward-tick,1,80,118,fallback SLP Z/MAX@38,miss,25.695
+ten-forward-tick,1,80,99,primary Z/MAX@19,miss,0.129
+ten-forward-tick,1,80,99,alternate Z/MIN@19,miss,0.080
+ten-forward-tick,1,80,99,alternate X/MAX@19,miss,0.136
+ten-forward-tick,1,80,99,alternate X/MIN@19,miss,0.133
+ten-forward-tick,1,80,99,fallback SLP Z/MAX@19,miss,0.069
+ten-forward-tick,1,80,90,primary Z/MAX@10,miss,0.385
+ten-forward-tick,1,80,90,alternate Z/MIN@10,solved,0.040
+ten-forward-tick,1,88,176,primary Z/MAX@88,miss,16.229
+ten-forward-tick,1,88,176,alternate Z/MIN@88,miss,31.680
+ten-forward-tick,1,88,176,alternate X/MAX@88,miss,13.833
+ten-forward-tick,1,88,176,alternate X/MIN@88,miss,13.725
+ten-forward-tick,1,88,176,fallback SLP Z/MAX@88,miss,54.488
+ten-forward-tick,1,88,155,primary Z/MAX@67,miss,10.250
+ten-forward-tick,1,88,155,alternate Z/MIN@67,miss,8.541
+ten-forward-tick,1,88,155,alternate X/MAX@67,miss,7.099
+ten-forward-tick,1,88,155,alternate X/MIN@67,miss,9.305
+ten-forward-tick,1,88,155,fallback SLP Z/MAX@67,miss,107.950
+ten-forward-tick,1,88,128,primary Z/MAX@40,miss,2.211
+ten-forward-tick,1,88,128,alternate Z/MIN@40,miss,5.164
+ten-forward-tick,1,88,128,alternate X/MAX@40,miss,1.639
+ten-forward-tick,1,88,128,alternate X/MIN@40,miss,3.157
+ten-forward-tick,1,88,128,fallback SLP Z/MAX@40,miss,17.900
+ten-forward-tick,1,88,113,primary Z/MAX@25,miss,0.235
+ten-forward-tick,1,88,113,alternate Z/MIN@25,miss,0.389
+ten-forward-tick,1,88,113,alternate X/MAX@25,miss,0.455
+ten-forward-tick,1,88,113,alternate X/MIN@25,miss,0.437
+ten-forward-tick,1,88,113,fallback SLP Z/MAX@25,miss,4.345
+ten-forward-tick,1,88,99,primary Z/MAX@11,miss,0.055
+ten-forward-tick,1,88,99,alternate Z/MIN@11,miss,0.031
+ten-forward-tick,1,88,99,alternate X/MAX@11,miss,0.039
+ten-forward-tick,1,88,99,alternate X/MIN@11,miss,0.031
+ten-forward-tick,1,88,99,fallback SLP Z/MAX@11,miss,0.021
+ten-forward-tick,1,88,90,primary Z/MAX@2,solved,0.045
+ten-forward-tick,1,90,188,primary Z/MAX@98,miss,37.879
+ten-forward-tick,1,90,188,alternate Z/MIN@98,miss,55.418
+ten-forward-tick,1,90,188,alternate X/MAX@98,miss,88.773
+ten-forward-tick,1,90,188,alternate X/MIN@98,miss,45.254
+ten-forward-tick,1,90,188,fallback SLP Z/MAX@98,miss,48.783
+ten-forward-tick,1,90,155,primary Z/MAX@65,miss,11.627
+ten-forward-tick,1,90,155,alternate Z/MIN@65,miss,17.216
+ten-forward-tick,1,90,155,alternate X/MAX@65,miss,12.167
+ten-forward-tick,1,90,155,alternate X/MIN@65,miss,20.713
+ten-forward-tick,1,90,155,fallback SLP Z/MAX@65,miss,18.326
+ten-forward-tick,1,90,130,primary Z/MAX@40,miss,8.841
+ten-forward-tick,1,90,130,alternate Z/MIN@40,miss,5.628
+ten-forward-tick,1,90,130,alternate X/MAX@40,miss,12.343
+ten-forward-tick,1,90,130,alternate X/MIN@40,miss,5.897
+ten-forward-tick,1,90,130,fallback SLP Z/MAX@40,miss,11.387
+ten-forward-tick,1,90,118,primary Z/MAX@28,miss,1.776
+ten-forward-tick,1,90,118,alternate Z/MIN@28,miss,0.301
+ten-forward-tick,1,90,118,alternate X/MAX@28,miss,1.223
+ten-forward-tick,1,90,118,alternate X/MIN@28,miss,0.330
+ten-forward-tick,1,90,118,fallback SLP Z/MAX@28,miss,6.050
+ten-forward-tick,1,90,113,primary Z/MAX@23,miss,0.125
+ten-forward-tick,1,90,113,alternate Z/MIN@23,miss,0.064
+ten-forward-tick,1,90,113,alternate X/MAX@23,miss,0.058
+ten-forward-tick,1,90,113,alternate X/MIN@23,miss,0.070
+ten-forward-tick,1,90,113,fallback SLP Z/MAX@23,miss,0.091
+ten-forward-tick,1,90,99,primary Z/MAX@9,miss,0.029
+ten-forward-tick,1,90,99,alternate Z/MIN@9,miss,0.027
+ten-forward-tick,1,90,99,alternate X/MAX@9,miss,0.027
+ten-forward-tick,1,90,99,alternate X/MIN@9,miss,0.025
+ten-forward-tick,1,90,99,fallback SLP Z/MAX@9,miss,0.008

@@ -1,0 +1,13 @@
+Source implementation commit: 824f962
+Input: ~/Downloads/LinkcraftII_Competition_01/real/11.json
+808 ticks; 810 rows; 636 compiled constraints; original objective X/MAX@808
+EPS2=1e-24; default dual cap100; no route deadline
+Fixed closed-form margin0.0003; SLP configuration unchanged
+Window ladders: 7,5,3,2,1 and 10,7,5,3,2,1
+Commit ladders: 3,1 (retry restarts original state)
+Only fixed-start nonterminal capped MAXZ endpoints are adjusted.
+FORWARD_JUMP: +1 jump, else +1 tick if preferred endpoint capped/outside allowed range
+FORWARD_TICK: +1 tick, else +1 jump if preferred endpoint capped/outside allowed range
+No backward shifts. No extension to/past actual final endpoint. No solve-failure retry of the other shift size.
+Commit span remains nominal. Failed shifted solve follows normal objective/SLP and window-size fallbacks.
+Default policy NONE; experimental policies are enabled explicitly in these probes.
