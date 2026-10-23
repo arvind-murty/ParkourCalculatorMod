@@ -90,3 +90,8 @@ The [same-input 1–7 audit](linkcraft-real11-initial-seven-shared-validation-au
 ## Larger dual iteration caps and recovery discrepancy
 
 The [iteration-cap/convergence audit](linkcraft-real11-initial-seven-dual-iteration-convergence.md) tests fixed 0.0003 caps 100 through 20000. More iterations do not fix Z/MAX: at cap >=200 the first pass stops at 125 on no descent, and the retry at 83 on recovered-input stall. The returned smoothed dual derivative uses shorter-than-required movement vectors; restoring full magnitude in angle recovery adds 0.07244946 to final Z and causes the measured violation. Per-iteration curves, per-tick recovery vectors, constraint margins and timings are preserved. Seven focused tests pass; default cap stays 100. The older `pg` log at a cap is one iterate behind the returned state; the new `finalPg` reports the returned-state residual.
+
+
+## EPS2 provenance and outside-square-root proposal
+
+The [gh/blame investigation](linkcraft-real11-norm-smoothing-history.md) traces EPS2=1e-14 to the original closed-form commit inside PR #122. That PR has no description/comments; its original commit and patch document tiny norm smoothing with modest accuracy plus fallback, but no justification for the specific constant. Moving it outside the objective sqrt adds only a constant and does not smooth the kink. Changing only the gradient denominator would make derivatives inconsistent. A smaller EPS2 is a separate probe and interacts with conditioning, degenerate recovery and the 1e-9 zero-costate yaw fallback. No epsilon experiment was run.

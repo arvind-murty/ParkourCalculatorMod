@@ -137,3 +137,8 @@ Only changes to research notes were made for this explanation; no new test or so
 ### Component interpretation
 
 The per-tick score is `gX*uX + gZ*uZ`. A zero Z component means no direct Z reward in this fixed-multiplier Lagrangian, not zero player Z velocity. A nonzero X component can still select X-directed acceleration. A zero whole vector leaves direction undetermined by this score, without making all directions feasible. With X component zero, any positive Z component (small, 0.5 or 1) selects the same full +Z acceleration before smoothing. With X component 1, Z components 0.5 and 1 yield Z fractions 0.447214 and 0.707107 respectively. Only relative components determine the recovered direction; absolute size matters to the smoothed derivative and numerical conditioning. In the special last-tick example, gZ approximately equals 1 minus the final-wall multiplier; this is not a universal numerical scale for other ticks.
+
+
+## EPS2 provenance and outside-square-root proposal
+
+The [gh/blame investigation](linkcraft-real11-norm-smoothing-history.md) traces EPS2=1e-14 to the original closed-form commit inside PR #122. That PR has no description/comments; its original commit and patch document tiny norm smoothing with modest accuracy plus fallback, but no justification for the specific constant. Moving it outside the objective sqrt adds only a constant and does not smooth the kink. Changing only the gradient denominator would make derivatives inconsistent. A smaller EPS2 is a separate probe and interacts with conditioning, degenerate recovery and the 1e-9 zero-costate yaw fallback. No epsilon experiment was run.

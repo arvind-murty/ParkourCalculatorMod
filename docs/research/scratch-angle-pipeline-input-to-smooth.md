@@ -933,3 +933,8 @@ At fixed dual multipliers, tick t contributes `gX[t]*uX[t] + gZ[t]*uZ[t]` to the
 - A small positive gZ still favors +Z. Its size relative to gX determines the direction. If gX=0, gZ=1e-6, 0.5 and 1 all select full +Z in unsmoothed recovery. Its absolute size relative to epsilon matters to the smoothed derivative, which is a separate numerical issue.
 - With gX=1, gZ=0.5 yields a Z fraction 0.5/sqrt(1.25)=0.447214 of the input magnitude; gZ=1 yields 1/sqrt(2)=0.707107. Scaling both components equally leaves the direction unchanged.
 - In the final-input Z68 example, approximately gZ=1-lambda[Z68], so gZ=1 means no cancellation from that wall, 0.5 means half its directional reward remains, and 0 means exact cancellation. This numerical interpretation is specific to that tick's coefficients. Earlier ticks include friction propagation and other constraints, so 1 is not a universal maximum or normalized score.
+
+
+### Why smoothing is inside the norm; upstream evidence
+
+The [blame/gh PR investigation](solver-traces/linkcraft-real11-norm-smoothing-history.md) finds EPS2=1e-14 in the original dual-solver commit (PR #122), unchanged numerically since. Its intent is smooth derivatives at zero costates; no recorded derivation or tuning rationale for exactly 1e-14 was found. Moving it outside the objective sqrt only adds a constant and removes no kink. Changing only the gradient denominator makes the derivative inconsistent with the current objective/Hessian. EPS2=1e-28 would consistently mean a smaller 1e-14 norm scale, but introduces conditioning and recovery-fallback interactions and has not yet been tested. PR #387's sharpening concerns a different FreeP0 parameter.

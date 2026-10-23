@@ -1,0 +1,31 @@
+$ git blame -L 35,43 -- core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/CostateDualSolver.java
+e171cc52 (Leg0shii 2026-08-21 20:18:20 +0200 35)  *  Returns the per-tick costate directions for {@link JumpLinearModel#recoverYawDeg}, or {@code null} if the
+e171cc52 (Leg0shii 2026-08-21 20:18:20 +0200 36)  *  dual is unbounded (primal infeasible). */
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200 37) public final class CostateDualSolver {
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200 38) 
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200 39)     private static final double EPS2 = 1.0e-14;       // norm smoothing: ‖g‖ -> sqrt(‖g‖^2 + EPS2)
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200 40)     private static final int MAX_ITER = 100;
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200 41)     private static final double LAMBDA_CAP = 1.0e9;   // dual var this large => treat primal as infeasible
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200 42)     private static final double GRAD_TOL = 1.0e-8;    // projected-gradient (constraint-slack) convergence, blocks
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200 43)     private static final double U_TOL = 1.0e-9;       // convergence in recovered-input space (degenerate optima)
+
+$ git log --format=%h %s -G private static final double EPS2 -- core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/CostateDualSolver.java
+9a22bdb feat: angle optimizer (#122)
+
+$ git blame -L 484,498 -- core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/CostateDualSolver.java
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 484)         }
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 485)         double d = 0.0;
+2e64e994 (Legoshi 2026-09-27 12:16:47 +0200 486)         for (int t = 0; t < n; t++) d += mMag[t] * StrictMath.sqrt(outX[t] * outX[t] + outZ[t] * outZ[t] + EPS2);
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 487)         for (int j = 0; j < m; j++) d += lam[j] * bPrime[j];
+dc0fe939 (Legoshi 2026-07-10 20:45:53 +0200 488)         if (freeP0 != null) d += supportOf(hAxis(lam, 0), 0) + supportOf(hAxis(lam, 1), 1);
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 489)         return d;
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 490)     }
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 491) 
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 492)     /** grad_j = b'_j − A_j·u*, with u*_t = m_t·g_t/‖g_t‖ (the recovered constraint slack, negated). */
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 493)     private void grad(double[] gX, double[] gZ, double[] out) {
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 494)         for (int t = 0; t < n; t++) {
+2e64e994 (Legoshi 2026-09-27 12:16:47 +0200 495)             double nrm = StrictMath.sqrt(gX[t] * gX[t] + gZ[t] * gZ[t] + EPS2);
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 496)             double w = mMag[t] / nrm;
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 497)             ux[t] = w * gX[t];
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 498)             uz[t] = w * gZ[t];
+
