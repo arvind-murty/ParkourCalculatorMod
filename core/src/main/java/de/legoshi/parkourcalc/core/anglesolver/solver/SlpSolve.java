@@ -31,6 +31,8 @@ public final class SlpSolve {
         /** Phase-1 target for a centered solve; the result is accepted at whatever clearance was reached
          *  (>= {@value SlpSolve#CLEARANCE}), so a corridor narrower than twice this still solves. */
         public double centerClearance = 2.0e-2;
+        /** Restrict exact acceptance to this input prefix; all window rows still guide the LP steps. */
+        public int replayTickLimit = Integer.MAX_VALUE;
     }
 
     private SlpSolve() {
@@ -191,7 +193,7 @@ public final class SlpSolve {
                     n, m, seedAbsWrapped != null ? "given" : "dual", cfg.phase1Calls, cfg.totalCalls, bestEffort,
                     inertiaAware, ties == null ? "-" : String.valueOf(ties.dims()));
         }
-        JumpConstraintCompiler.Compiled compiled = JumpConstraintCompiler.compile(spec);
+        JumpConstraintCompiler.Compiled compiled = JumpConstraintCompiler.compile(spec, cfg.replayTickLimit);
         double[] viol = new double[m];
         double[] candViol = new double[m];
         double[] ux = new double[n];
@@ -356,11 +358,13 @@ public final class SlpSolve {
             }
             if (phase == 1) {
                 double[] gf = sc.toGameFacings(Angles.wrapAll(theta));
-                double endViol = exactSlacks(ineq, halfSign, gf, exact.forward(sc, gf), viol);
+                ForwardPath endPath = exact.forward(sc, gf);
+                double endViol = exactSlacks(ineq, halfSign, gf, endPath, viol);
                 // A hugging solve keeps any strictly feasible point (a tight corridor's best clearance can
                 // be shallower than CLEARANCE); a centered solve keeps the demand, its result seeds windows.
                 double phase1Gate = hugObjective ? feasTol : -CLEARANCE;
-                if (endViol > phase1Gate) {
+                boolean prefixAccepted = cfg.replayTickLimit < n && compiled.maxViolation(gf, endPath) <= feasTol;
+                if (endViol > phase1Gate && !prefixAccepted) {
                     if (DEBUG) System.out.printf("  SLP infeasible: viol=%.3e after %d LPs (%.1f ms)%n",
                             endViol, lpCalls, (System.nanoTime() - t0) / 1e6);
                     if (SolverTrace.on()) {

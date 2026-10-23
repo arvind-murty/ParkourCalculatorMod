@@ -8,35 +8,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** From-scratch solver for long multi-jump spans: the post-failure fallback for runs the closed-form dual
- *  cannot converge on across the whole horizon (e.g. the 354-tick "desert hard" runs, ~30 jumps, 81 walls).
+/** Receding-horizon solver for long multi-jump spans. Each window optimizes all its constraints, but
+ *  exact replay acceptance covers only the first few jumps that will be committed. The remaining
+ *  lookahead is provisional and is solved again from the committed prefix's exact exit state.
  *
- *  <p><b>Receding-horizon (model-predictive) decomposition.</b> The convex Lagrangian dual
- *  ({@link ClosedFormSolve}) solves a single jump to GLOBAL optimality in microseconds, and (measured)
- *  keeps converging for windows of up to ~10 jumps, but not for the full run (the degenerate high-dimensional
- *  landscape of dozens of jumps). So solve a sliding window of {@value #WINDOW} jumps to global optimality,
- *  COMMIT its first few jumps (chaining their exact byte-exact exit state into the next window's seed), and
- *  slide. The committed jumps' exit is, by construction, the entry of a feasible {@code (WINDOW − commit)}-jump
- *  continuation, so it cannot doom the next {@code WINDOW − commit} jumps: the coupling that defeats a greedy
- *  one-jump-at-a-time chain (greedy genuinely fails; measured seam-coupling horizon ~5 jumps).
+ *  <p>Windows use {@link ClosedFormSolve} with centered margins and fall back to SLP. Smaller windows
+ *  are tried when a solve fails; a stuck chain retries with a smaller commit count. A final window
+ *  commits its whole remainder and checks every remaining constraint.
  *
- *  <p>There is NO free global guarantee: a window sees only {@value #WINDOW} jumps, so this is feasible only
- *  while the lookahead exceeds the run's coupling horizon. Three things make it safe: (1) the lookahead margin
- *  ({@code WINDOW − commit}, default 7) is set above the measured horizon; (2) if a commit gets the chain
- *  stuck, it retries with a smaller commit, i.e. MORE lookahead ({@link #COMMIT_LADDER}); (3) the full
- *  concatenated run is re-verified byte-exact, so a coupling failure returns {@code null} (handing off to the
- *  caller's last-ditch fallback) rather than ever a false success.
- *
- *  <p>This is robust where a global 354-dimensional local search is not: every window is solved by the convex
- *  dual (no local optima, no minimax plateaus, no sine-bucket stalls, no initial guess), so the result does
- *  not depend on tuning or on incidental problem details. It uses only the resume start state, the
- *  input-specified structure (ground/air, jumps, strafe; never a recorded trajectory), and the constraints;
- *  the windows chain their own byte-exact state, so the full concatenated path is feasible by construction.
- *  Returns the chained game facings (certified via the replay {@code toGameFacings(wrapAll(gf))}, the
- *  chain the engine reports and Apply realizes) or {@code null}.
- *
- *  <p>This restores feasibility ("solve at all"); the last window already optimises the real objective, and a
- *  follow-up global objective ascent ({@link BucketAscentPolish}) is a separate, strictly-improving step. */
+ *  <p>The completed route is checked against every original constraint after the same float-delta
+ *  reconstruction used by Apply: {@code toGameFacings(wrapAll(gf))}. A prefix success does not guarantee
+ *  a feasible continuation; a stuck chain or a failed final replay returns {@code null}.
+ *  Uses the authored inputs and start state, never the capture's recorded trajectory. */
 public final class LongRunSolver {
 
     /** Jumps solved together per window (the dual converges to ~10-13; 10 leaves margin). */
@@ -217,11 +200,13 @@ public final class LongRunSolver {
                 prevWe = we;
                 boolean last = (we == jumps);
                 int a = bounds[i], c = bounds[we];
+                int ce = last ? we : Math.min(i + Math.min(commitJumps, w), jumps);
+                int commitTicks = bounds[ce] - a;
                 JumpPhysicsInputs win = sliceScenario(sc, a, c, seedPos, seedVel, seedYaw);
                 List<JumpConstraint> cons = sliceConstraints(spec, a, c, seedYaw);
                 if (SolverTrace.on()) {
-                    SolverTrace.log("LRS-WIN", "commit=%d jumps=[%d,%d) ticks=[%d,%d) seed=(%.12f,%.12f;%.12f,%.12f) yaw=%.9f constraints=%d",
-                            commitJumps, i, we, a, c, seedPos.x, seedPos.z, seedVel.x, seedVel.z, seedYaw, cons.size());
+                    SolverTrace.log("LRS-WIN", "commit=%d jumps=[%d,%d) ticks=[%d,%d) seed=(%.12f,%.12f;%.12f,%.12f) yaw=%.9f constraints=%d replayTicks=%d",
+                            commitJumps, i, we, a, c, seedPos.x, seedPos.z, seedVel.x, seedVel.z, seedYaw, cons.size(), commitTicks);
                     if (c - a <= 10) for (JumpConstraint jc : cons) {
                         SolverTrace.log("LRS-CONS", "%s %s t=%d%s %s rhs=%.12f",
                                 jc.name, jc.mode, jc.t1, jc.t2 == null ? "" : "/" + jc.t2,
@@ -231,7 +216,7 @@ public final class LongRunSolver {
                 Objective obj = last
                         ? new Objective(spec.objective.axis, spec.objective.sense, c - a)   // last window: real objective
                         : new Objective(JumpPhysicsInputs.Axis.Z, Objective.Sense.MAX, c - a); // lead-in: any feasible
-                String winKey = windowKey(a, c, last, seedPos, seedVel, seedYaw);
+                String winKey = windowKey(a, c, last, commitTicks, seedPos, seedVel, seedYaw);
                 double[] cachedWin = windows.map.get(winKey);
                 double[] yaws;
                 if (cachedWin != null) {
@@ -242,7 +227,7 @@ public final class LongRunSolver {
                     }
                 } else {
                     long winT0 = SolverTrace.on() ? System.nanoTime() : 0L;
-                    yaws = solveWindow(exact, win, cons, obj, last, cancel, deadlineNanos);
+                    yaws = solveWindow(exact, win, cons, obj, last, commitTicks, cancel, deadlineNanos);
                     if (cancel == null || !cancel.get()) {
                         windows.map.put(winKey, yaws == null ? WINDOW_MISS : yaws.clone());
                     }
@@ -288,8 +273,6 @@ public final class LongRunSolver {
                 if (yaws == null) continue;
 
                 // Commit the first commitJumps jumps (all of them for the final window), chaining the exact exit.
-                int ce = last ? we : Math.min(i + Math.min(commitJumps, w), jumps);
-                int commitTicks = bounds[ce] - a;
                 double[] wgf = win.toGameFacings(yaws);
                 ForwardPath wp = exact.forward(win, wgf);
                 if (SolverTrace.on()) for (int k = 0; k <= commitTicks; k++) {
@@ -314,8 +297,8 @@ public final class LongRunSolver {
         return gf;
     }
 
-    private static String windowKey(int a, int c, boolean last, Vec3dCore pos, Vec3dCore vel, float yaw) {
-        return a + ":" + c + ":" + last
+    private static String windowKey(int a, int c, boolean last, int commitTicks, Vec3dCore pos, Vec3dCore vel, float yaw) {
+        return a + ":" + c + ":" + last + ":" + commitTicks
                 + ":" + Double.doubleToLongBits(pos.x) + ":" + Double.doubleToLongBits(pos.y)
                 + ":" + Double.doubleToLongBits(pos.z)
                 + ":" + Double.doubleToLongBits(vel.x) + ":" + Double.doubleToLongBits(vel.y)
@@ -324,7 +307,7 @@ public final class LongRunSolver {
     }
 
     private static double[] solveWindow(ExactJumpModel exact, JumpPhysicsInputs win, List<JumpConstraint> cons,
-                                        Objective first, boolean last, AtomicBoolean cancel, long deadlineNanos) {
+                                        Objective first, boolean last, int commitTicks, AtomicBoolean cancel, long deadlineNanos) {
         if (last) {
             AtomicBoolean token = cancel != null ? cancel : new AtomicBoolean(false);
             long recoveryT0 = SolverTrace.on() ? System.nanoTime() : 0L;
@@ -338,9 +321,11 @@ public final class LongRunSolver {
                     result != null ? "solved" : "miss", (System.nanoTime() - recoveryT0) / 1.0e6);
             return result;
         }
+        ClosedFormSolve.Config closed = new ClosedFormSolve.Config();
+        closed.replayTickLimit = commitTicks;
         long objectiveT0 = SolverTrace.on() ? System.nanoTime() : 0L;
         if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "begin primary %s/%s@%d", first.axis, first.sense, first.tick);
-        double[] y = ClosedFormSolve.optimizeRobust(exact, new JumpSpec(win, cons, first), 0.0, cancel);
+        double[] y = ClosedFormSolve.optimizeRobust(exact, new JumpSpec(win, cons, first), 0.0, cancel, closed);
         if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "end primary result=%s ms=%.3f",
                 y != null ? "solved" : "miss", (System.nanoTime() - objectiveT0) / 1.0e6);
         if (y != null) return y;
@@ -348,7 +333,7 @@ public final class LongRunSolver {
             if (cancel != null && cancel.get()) return null;
             objectiveT0 = SolverTrace.on() ? System.nanoTime() : 0L;
             if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "begin alternate %s/%s@%d", alt.axis, alt.sense, alt.tick);
-            y = ClosedFormSolve.optimizeRobust(exact, new JumpSpec(win, cons, alt), 0.0, cancel);
+            y = ClosedFormSolve.optimizeRobust(exact, new JumpSpec(win, cons, alt), 0.0, cancel, closed);
             if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "end alternate %s/%s@%d result=%s ms=%.3f",
                     alt.axis, alt.sense, alt.tick, y != null ? "solved" : "miss",
                     (System.nanoTime() - objectiveT0) / 1.0e6);
@@ -358,7 +343,9 @@ public final class LongRunSolver {
         objectiveT0 = SolverTrace.on() ? System.nanoTime() : 0L;
         if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "begin fallback SLP %s/%s@%d",
                 first.axis, first.sense, first.tick);
-        y = SlpSolve.optimizeCentered(exact, new JumpSpec(win, cons, first), 0.0, cancel);
+        SlpSolve.Config slp = new SlpSolve.Config();
+        slp.replayTickLimit = commitTicks;
+        y = SlpSolve.optimizeCentered(exact, new JumpSpec(win, cons, first), 0.0, cancel, null, slp);
         if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "end fallback SLP result=%s ms=%.3f",
                 y != null ? "solved" : "miss", (System.nanoTime() - objectiveT0) / 1.0e6);
         return y;

@@ -135,6 +135,33 @@ public class First30MarginComparisonTest {
         }
     }
 
+    /** The original Z/MIN near miss is accepted for a one-jump commit without removing its lookahead walls. */
+    @Test
+    @SuppressWarnings("unchecked")
+    public void initialSevenAcceptsExactCommittedPrefixDespiteLaterReplayMiss() throws Exception {
+        Assume.assumeTrue("opt in with -Dpkc.marginProbe=true", Boolean.getBoolean("pkc.marginProbe"));
+        loadCapture();
+        JumpPhysicsInputs source = full.asScenario();
+        Seed initial = new Seed(source.startPos, source.initialVelocity, source.startYaw);
+        JumpPhysicsInputs sc = slice(initial, 0, 68);
+        List<JumpConstraint> cons = (List<JumpConstraint>) method(LongRunSolver.class, "sliceConstraints",
+                JumpSpec.class, int.class, int.class, float.class).invoke(null, full, 0, 68, initial.yaw);
+        JumpSpec spec = new JumpSpec(sc, cons, new Objective(JumpPhysicsInputs.Axis.Z, Objective.Sense.MIN, 68));
+        ClosedFormSolve.Config cfg = new ClosedFormSolve.Config();
+        cfg.marginsRobust = FIXED;
+        assertNull("full replay still rejects this candidate", ClosedFormSolve.optimizeRobust(exact, spec, 0, CANCEL, cfg));
+        cfg.replayTickLimit = bounds[1];
+        assertEquals(12, cfg.replayTickLimit);
+        double[] yaws = ClosedFormSolve.optimizeRobust(exact, spec, 0, CANCEL, cfg);
+        assertNotNull("exact committed prefix is sufficient", yaws);
+        double[] game = sc.toGameFacings(yaws);
+        ForwardPath path = exact.forward(sc, game);
+        assertEquals(0, JumpConstraintCompiler.compile(spec, cfg.replayTickLimit).maxViolation(game, path), 0);
+        assertEquals("the lookahead replay is still the historical near miss", 0.0004584547805279726,
+                JumpConstraintCompiler.compile(spec).maxViolation(game, path), 1e-11);
+        assertEquals("all lookahead walls remain in the solve", 33, spec.constraints.size());
+    }
+
     /** Only the initial seven-jump window: every fixed-margin pass, every original position constraint. */
     @Test
     @SuppressWarnings("unchecked")
@@ -306,8 +333,8 @@ public class First30MarginComparisonTest {
         if (end == bounds.length - 1) {
             Objective obj = new Objective(full.objective.axis, full.objective.sense, c - a);
             double[] y = (double[]) method(LongRunSolver.class, "solveWindow", ExactJumpModel.class,
-                    JumpPhysicsInputs.class, List.class, Objective.class, boolean.class, AtomicBoolean.class, long.class)
-                    .invoke(null, exact, sc, cons, obj, true, CANCEL, 0L);
+                    JumpPhysicsInputs.class, List.class, Objective.class, boolean.class, int.class, AtomicBoolean.class, long.class)
+                    .invoke(null, exact, sc, cons, obj, true, sc.numTicks, CANCEL, 0L);
             record(i, end, new JumpSpec(sc, cons, obj), "terminal", y);
             return y;
         }

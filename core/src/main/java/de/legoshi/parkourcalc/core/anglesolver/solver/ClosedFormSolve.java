@@ -38,14 +38,18 @@ public final class ClosedFormSolve {
          *  land safe; the rest cover the ~1e-4 sine-table perturbation with headroom. */
         public double[] margins = {0.0, 1.0e-4, 3.0e-4, 6.0e-4, 1.2e-3, 2.5e-3, 5.0e-3, 1.0e-2};
 
-        /** Robust (centered) margins, largest first: the first margin that certifies is the realized clearance
-         *  on every active wall. For surrogate-objective solves (lead-in windows), where hugging walls commits
-         *  fragile seam states. */
+        /** Robust (centered) margins, largest first: return the first candidate whose exact replay passes
+         *  the acceptance horizon. For surrogate-objective solves (lead-in windows), where hugging walls
+         *  commits fragile seam states. The margin tightens the model's walls; replay checks original walls. */
         public double[] marginsRobust = {5.0e-2, 2.0e-2, 1.0e-2, 5.0e-3, 1.2e-3, 3.0e-4, 0.0};
 
         public int maxInertiaPasses = 4;
 
         public int rungStallLimit = 2;
+
+        /** Exact replay acceptance horizon, in input ticks; optimization still uses every spec row.
+         *  LongRun windows set this to their committed prefix. Ordinary solves check the whole path. */
+        public int replayTickLimit = Integer.MAX_VALUE;
     }
 
     static final int CROSS_SIGN_CAP = 4;
@@ -95,7 +99,7 @@ public final class ClosedFormSolve {
                                          AtomicBoolean cancel, Config cfg, boolean[] zeroX, boolean[] zeroZ) {
         FacingPrefold pre = FacingPrefold.analyze(spec.constraints, new JumpLinearModel(sc));
         if (pre == null) return null;
-        JumpConstraintCompiler.Compiled compiled = JumpConstraintCompiler.compile(spec);
+        JumpConstraintCompiler.Compiled compiled = JumpConstraintCompiler.compile(spec, cfg.replayTickLimit);
         for (int[] signs : crossSignCombos(spec.constraints)) {
             Result rs = runLadder(exact, spec, sc, compiled, feasTol, cancel, cfg.margins, true, zeroX, zeroZ,
                     System.nanoTime(), cfg, pre, signs);
@@ -105,10 +109,13 @@ public final class ClosedFormSolve {
         return null;
     }
 
-    /** Like {@link #optimize}, but prefers clearance over objective: the result keeps the largest
-     *  certifiable uniform distance from every wall. */
+    /** Like {@link #optimize}, but tries inward margins largest first, preferring clearance over objective. */
     public static double[] optimizeRobust(ExactJumpModel exact, JumpSpec spec, double feasTol, AtomicBoolean cancel) {
-        Config cfg = new Config();
+        return optimizeRobust(exact, spec, feasTol, cancel, new Config());
+    }
+
+    public static double[] optimizeRobust(ExactJumpModel exact, JumpSpec spec, double feasTol, AtomicBoolean cancel,
+                                         Config cfg) {
         Result r = optimizeReturning(exact, spec, feasTol, cancel, cfg.marginsRobust, false, cfg);
         return r != null && r.feasible ? r.yaws : null;
     }
@@ -144,7 +151,7 @@ public final class ClosedFormSolve {
                                        AtomicBoolean cancel, double[] margins, boolean ascending, Config cfg,
                                        YawOrder order, boolean[] zeroX, boolean[] zeroZ) {
         long t0 = System.nanoTime();
-        JumpConstraintCompiler.Compiled full = JumpConstraintCompiler.compile(spec);
+        JumpConstraintCompiler.Compiled full = JumpConstraintCompiler.compile(spec, cfg.replayTickLimit);
         List<JumpConstraint> base = order.stripped(spec.constraints);
         int n = sc.numTicks;
         JumpLinearModel lin = new JumpLinearModel(sc);
@@ -471,7 +478,7 @@ public final class ClosedFormSolve {
                                            AtomicBoolean cancel, double[] margins, boolean ascending, Config cfg,
                                            FacingPrefold pre) {
         long t0 = System.nanoTime();
-        JumpConstraintCompiler.Compiled compiled = JumpConstraintCompiler.compile(spec);
+        JumpConstraintCompiler.Compiled compiled = JumpConstraintCompiler.compile(spec, cfg.replayTickLimit);
 
         int n = sc.numTicks;
         boolean[] zeroX = null;

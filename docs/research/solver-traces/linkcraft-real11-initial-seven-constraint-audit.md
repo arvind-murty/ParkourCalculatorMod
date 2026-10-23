@@ -124,3 +124,8 @@ Other solver components do search nearby realizable angle choices:
 - Certified B&B searches discrete cell combinations in its leaves; `realizeCombo` checks that the chosen cells can actually be produced by the sequential float-delta chain. This is part of a separate search algorithm, not an alternative mode of `violOnExact`. Source: [CertifiedBnb.java](../../../core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/CertifiedBnb.java#L1086).
 
 For this initial nonterminal LongRun window, after closed-form Z/MIN fails, `solveWindow` tries X/MAX, X/MIN, then centered SLP for the primary Z/MAX objective. It does not send the rejected Z/MIN candidate through bucket repair or LeafSnap. Source: [LongRunSolver.java](../../../core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/LongRunSolver.java#L345). No experiment has yet established whether a nearby-cell search would rescue the particular Z/MIN candidate. This section is a code trace; no solver code or tests were changed.
+
+
+## Committed-prefix validation experiment
+
+A subsequent [experiment](linkcraft-real11-prefix-replay-experiment.md) accepts nonterminal LongRun windows based on replay of the potentially committed prefix while keeping every lookahead constraint in the optimization. The initial Z/MIN near miss is accepted through tick 12. The normal-margin full route now stalls at index 12; the original route-completion assertion is retained and this failure is recorded explicitly.

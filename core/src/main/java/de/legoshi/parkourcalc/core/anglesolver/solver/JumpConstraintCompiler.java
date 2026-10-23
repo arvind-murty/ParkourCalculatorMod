@@ -49,6 +49,14 @@ public final class JumpConstraintCompiler {
     }
 
     public static Compiled compile(JumpSpec spec) {
+        return compile(spec, Integer.MAX_VALUE);
+    }
+
+    /** Exact replay checks for the first {@code inputTicks} inputs. Position at the exit tick belongs
+     *  to that prefix; facing at that tick is the next, uncommitted input. A two-tick row is checked
+     *  only when both of its referenced ticks belong to the prefix. The solve's constraint list stays intact. */
+    public static Compiled compile(JumpSpec spec, int inputTicks) {
+        if (inputTicks < 0) throw new IllegalArgumentException("negative replay prefix");
         List<JumpConstraint> ineq = new ArrayList<>();
         List<JumpConstraint> eq = new ArrayList<>();
         int n = spec.asScenario().numTicks;
@@ -58,6 +66,8 @@ public final class JumpConstraintCompiler {
             if ((c.mode == JumpConstraint.Mode.DXZ || c.mode == JumpConstraint.Mode.DZX) && c.t2 == null) {
                 throw new IllegalArgumentException("constraint " + c.name + ": " + c.mode + " requires t2");
             }
+            int hi = c.mode == JumpConstraint.Mode.F ? inputTicks - 1 : inputTicks;
+            if (c.t1 > hi || (c.t2 != null && c.t2 > hi)) continue;
             if (c.cmp == JumpConstraint.Cmp.EQ) {
                 eq.add(c);
             } else {
