@@ -153,6 +153,8 @@ public final class ClosedFormSolve {
                                        YawOrder order, boolean[] zeroX, boolean[] zeroZ) {
         long t0 = System.nanoTime();
         JumpConstraintCompiler.Compiled full = JumpConstraintCompiler.compile(spec, cfg.replayTickLimit);
+        WindowCandidateValidation validation = cfg.replayTickLimit < sc.numTicks
+                ? new WindowCandidateValidation(exact, spec, cfg.replayTickLimit) : null;
         List<JumpConstraint> base = order.stripped(spec.constraints);
         int n = sc.numTicks;
         JumpLinearModel lin = new JumpLinearModel(sc);
@@ -176,17 +178,8 @@ public final class ClosedFormSolve {
                     : solvePatterned(exact, work, sc, feasTol, cancel, cfg, zeroX, zeroZ);
             if (r == null) break;
             r = new Result(YawOrder.carryFreeTicks(lin, sc.startYaw, r.yaws), r.violation, r.feasible, r.amp, r.phase);
-            double viol = violOnExact(exact, sc, full, r.yaws);
-            if (cfg.replayTickLimit < n) {
-                // The inner solve checked its full fixed-pattern model; also check the order rows
-                // stripped for that solve against the continuous facings over the entire window.
-                if (!r.feasible) viol = Math.max(viol, r.violation);
-                for (JumpConstraint c : spec.constraints) {
-                    if (c.mode == JumpConstraint.Mode.F) {
-                        viol = Math.max(viol, JumpConstraintCompiler.slack(c, r.yaws, null));
-                    }
-                }
-            }
+            double viol = validation == null ? violOnExact(exact, sc, full, r.yaws)
+                    : validation.evaluate(r.yaws).maxViolation();
             if (least == null || viol < least.violation) least = new Result(r.yaws, viol, false);
             boolean feasible = viol <= feasTol;
             boolean[] nextTie = tie.clone();
@@ -596,8 +589,8 @@ public final class ClosedFormSolve {
         double bestViol = Double.POSITIVE_INFINITY;
         double[] bestYaws = null;
         double[] bestLambda = null;
-        JumpConstraintCompiler.Compiled continuousChecks = cfg.replayTickLimit < lin.n
-                ? JumpConstraintCompiler.compile(spec) : null;
+        WindowCandidateValidation validation = cfg.replayTickLimit < lin.n
+                ? new WindowCandidateValidation(exact, spec, cfg.replayTickLimit) : null;
         double[] warm = null;
         int rungStall = 0;
         for (double margin : margins) {
@@ -615,10 +608,11 @@ public final class ClosedFormSolve {
             warm = r.lambda;
 
             double[] yaws = pre.expand(lin, spec.objective, r);
-            double replayViol = violOnExact(exact, sc, compiled, yaws);
-            double modelViol = continuousChecks == null ? 0.0 : lin.maxConstraintViolation(continuousChecks, yaws);
+            WindowCandidateValidation.Result check = validation == null ? null : validation.evaluate(yaws);
+            double replayViol = check == null ? violOnExact(exact, sc, compiled, yaws) : check.replayViolation;
+            double modelViol = check == null ? 0.0 : check.continuousViolation;
             double viol = Math.max(replayViol, modelViol);
-            if (continuousChecks != null && SolverTrace.on()) {
+            if (validation != null && SolverTrace.on()) {
                 SolverTrace.log("CF-CHECK", "margin=%.2e replayViol=%.12g modelViol=%.12g", margin, replayViol, modelViol);
             }
             if (SolverTrace.on()) {

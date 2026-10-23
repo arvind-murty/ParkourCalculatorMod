@@ -478,6 +478,26 @@ public final class JumpLinearModel {
 
     public void zeroingPattern(double[] yawsAbsWrapped, double threshold, boolean perAxis,
                                boolean[] outZeroX, boolean[] outZeroZ) {
+        traceContinuous(yawsAbsWrapped, threshold, perAxis, outZeroX, outZeroZ, null);
+    }
+
+    /** Horizontal continuous trajectory using the same inertia checks as {@link #zeroingPattern}.
+     *  Ignores any fixed pattern supplied to this model: each check uses the candidate's actual velocity.
+     *  Y is held at its start value; the constraints evaluated on this path use only X/Z and facing. */
+    public ForwardPath forwardContinuous(double[] yawsAbsWrapped, double threshold, boolean perAxis) {
+        ForwardPath path = new ForwardPath(new double[n + 1], new double[n + 1], new double[n + 1],
+                new double[n + 1], new double[n + 1], new double[n + 1]);
+        path.posX[0] = sc.startPos.x;
+        path.posY[0] = sc.startPos.y;
+        path.posZ[0] = sc.startPos.z;
+        path.velX[0] = sc.initialVelocity.x;
+        path.velZ[0] = sc.initialVelocity.z;
+        traceContinuous(yawsAbsWrapped, threshold, perAxis, null, null, path);
+        return path;
+    }
+
+    private void traceContinuous(double[] yawsAbsWrapped, double threshold, boolean perAxis,
+                                 boolean[] outZeroX, boolean[] outZeroZ, ForwardPath path) {
         double vx = sc.initialVelocity.x;
         double vz = sc.initialVelocity.z;
         double thrSq = threshold * threshold;
@@ -489,13 +509,22 @@ public final class JumpLinearModel {
             } else {
                 if (vx * vx + vz * vz < thrSq) { vx = 0.0; vz = 0.0; zx = true; zz = true; }
             }
-            outZeroX[t] = zx;
-            outZeroZ[t] = zz;
+            if (outZeroX != null) outZeroX[t] = zx;
+            if (outZeroZ != null) outZeroZ[t] = zz;
             double phi = baseArg[t] + yawsAbsWrapped[t] * RAD;
             vx += mMag[t] * StrictMath.cos(phi);
             vz += mMag[t] * StrictMath.sin(phi);
+            if (path != null) {
+                path.posX[t + 1] = path.posX[t] + vx;
+                path.posZ[t + 1] = path.posZ[t] + vz;
+                path.posY[t + 1] = sc.startPos.y;
+            }
             vx *= f4[t];
             vz *= f4[t];
+            if (path != null) {
+                path.velX[t + 1] = vx;
+                path.velZ[t + 1] = vz;
+            }
         }
     }
 

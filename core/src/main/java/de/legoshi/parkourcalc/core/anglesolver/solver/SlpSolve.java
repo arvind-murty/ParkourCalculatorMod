@@ -195,6 +195,8 @@ public final class SlpSolve {
                     inertiaAware, ties == null ? "-" : String.valueOf(ties.dims()));
         }
         JumpConstraintCompiler.Compiled compiled = JumpConstraintCompiler.compile(spec, cfg.replayTickLimit);
+        WindowCandidateValidation validation = cfg.replayTickLimit < n
+                ? new WindowCandidateValidation(exact, spec, cfg.replayTickLimit) : null;
         double[] viol = new double[m];
         double[] candViol = new double[m];
         double[] ux = new double[n];
@@ -364,8 +366,8 @@ public final class SlpSolve {
                 // A hugging solve keeps any strictly feasible point (a tight corridor's best clearance can
                 // be shallower than CLEARANCE); a centered solve keeps the demand, its result seeds windows.
                 double phase1Gate = hugObjective ? feasTol : -CLEARANCE;
-                boolean prefixAccepted = cfg.replayTickLimit < n && compiled.maxViolation(gf, endPath) <= feasTol
-                        && continuousViolation(spec, lin, exact, theta, inertiaAware) <= feasTol;
+                boolean prefixAccepted = validation != null
+                        && validation.evaluate(Angles.wrapAll(theta), gf, endPath).maxViolation() <= feasTol;
                 if (endViol > phase1Gate && !prefixAccepted) {
                     if (DEBUG) System.out.printf("  SLP infeasible: viol=%.3e after %d LPs (%.1f ms)%n",
                             endViol, lpCalls, (System.nanoTime() - t0) / 1e6);
@@ -389,8 +391,8 @@ public final class SlpSolve {
         double[] gf = sc.toGameFacings(yaws);
         ForwardPath path = exact.forward(sc, gf);
         double finalViol = compiled.maxViolation(gf, path);
-        if (cfg.replayTickLimit < n) {
-            double modelViol = continuousViolation(spec, lin, exact, yaws, inertiaAware);
+        if (validation != null) {
+            double modelViol = validation.evaluate(yaws, gf, path).continuousViolation;
             if (SolverTrace.on()) SolverTrace.log("SLP-CHECK", "replayViol=%.12g modelViol=%.12g", finalViol, modelViol);
             finalViol = Math.max(finalViol, modelViol);
         }
@@ -404,17 +406,6 @@ public final class SlpSolve {
         if (finalViol <= feasTol) return yaws;
         if (miss != null) miss.offer(yaws, finalViol);
         return bestEffort ? yaws : null;
-    }
-
-    private static double continuousViolation(JumpSpec spec, JumpLinearModel lin, ExactJumpModel exact,
-                                               double[] yaws, boolean inertiaAware) {
-        if (inertiaAware) {
-            int n = spec.asScenario().numTicks;
-            boolean[] zx = new boolean[n], zz = new boolean[n];
-            lin.zeroingPattern(yaws, exact.inertiaThreshold(), exact.perAxisInertia(), zx, zz);
-            lin = new JumpLinearModel(spec.asScenario(), zx, zz);
-        }
-        return lin.maxConstraintViolation(JumpConstraintCompiler.compile(spec), yaws);
     }
 
     private static void offerMiss(ClosestMiss miss, ExactJumpModel exact, JumpPhysicsInputs sc,

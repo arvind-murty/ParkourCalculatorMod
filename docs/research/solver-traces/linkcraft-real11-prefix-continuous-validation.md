@@ -40,3 +40,8 @@ The new full-window continuous check is **not a complete inertia-pattern consist
 - Minecraft replay checks the actual inertia threshold behavior in the committed prefix. It does not validate suffix pattern consistency under the new prefix scope.
 
 Sources: `ClosedFormSolve.runLadder`, `JumpLinearModel.velocityWalls`, `JumpLinearModel.zeroingPattern`, `JumpLinearModel.maxConstraintViolation`, and `SlpSolve.continuousViolation`. No behavior change or tests were run for this audit. A stronger acceptance rule would check the entire candidate using continuous simulation with actual per-axis inertia threshold checks, or explicitly validate both zeroed and surviving ticks of its fixed model.
+
+
+## Superseding shared validation
+
+The [shared inertia-validation experiment](linkcraft-real11-shared-inertia-validation.md) now reuses the original continuous `zeroingPattern` recurrence to record positions/velocities and validate actual threshold behavior throughout the full window. It replaces acceptance under an assumed fixed pattern. All ten focused tests pass, including full completion of the 30-jump route. Earlier fixed-pattern results remain historical evidence.
