@@ -41,7 +41,7 @@ public final class ClosedFormSolve {
         /** Robust (centered) margins, largest first: the first margin that certifies is the realized clearance
          *  on every active wall. For surrogate-objective solves (lead-in windows), where hugging walls commits
          *  fragile seam states. */
-        public double[] marginsRobust = {5.0e-2, 2.0e-2, 1.0e-2, 5.0e-3, 1.2e-3, 3.0e-4, 0.0};
+        public double[] marginsRobust = {3.0e-4};
 
         public int maxInertiaPasses = 4;
 
