@@ -335,8 +335,15 @@ public final class SlpSolve {
                         ? cViol < maxViol
                         : cViol <= feasTol && cObj > objNorm;
                 if (SolverTrace.on()) {
-                    SolverTrace.log("SLP", "lp#%d phase=%d tr=%.3g step=%.3g pred=%.3e viol=%.3e->%.3e obj=%.9f->%.9f %s",
-                            lpCalls, phase, tr, step, lp.s, maxViol, cViol, objNorm, cObj,
+                    traceInertiaStep(lpCalls, phase, inertiaAware, lin, exact, theta, cand, path, cpath,
+                            zeroX, zeroZ, accept);
+                }
+                if (SolverTrace.on()) {
+                    SolverTrace.log("SLP", "lp#%d phase=%d tr=%.3g step=%.3g pred=%.3e viol=%.3e->%.3e worst=%s->%s t24-25=%s obj=%.9f->%.9f %s",
+                            lpCalls, phase, tr, step, lp.s, maxViol, cViol,
+                            worstViolation(ineq, halfSign, gf, path, viol),
+                            worstViolation(ineq, halfSign, cgf, cpath, candViol),
+                            tickWallSlacks(ineq, halfSign, viol, candViol, 24, 25), objNorm, cObj,
                             accept ? "accept" : "reject");
                 }
                 if (accept) {
@@ -402,6 +409,131 @@ public final class SlpSolve {
         return true;
     }
 
+    /** Trace-only comparison of the smooth model's gate prediction and the exact replay's actual checks. */
+    private static void traceInertiaStep(int lp, int phase, boolean inertiaAware, JumpLinearModel lin,
+                                         ExactJumpModel exact, double[] theta, double[] candidate,
+                                         ForwardPath currentPath, ForwardPath candidatePath,
+                                         boolean[] modelZeroX, boolean[] modelZeroZ, boolean accepted) {
+        int n = lin.n;
+        boolean[] currentSmoothX = new boolean[n], currentSmoothZ = new boolean[n];
+        boolean[] candidateSmoothX = new boolean[n], candidateSmoothZ = new boolean[n];
+        boolean[] currentExactX = new boolean[n], currentExactZ = new boolean[n];
+        boolean[] candidateExactX = new boolean[n], candidateExactZ = new boolean[n];
+        lin.zeroingPattern(theta, exact.inertiaThreshold(), exact.perAxisInertia(), currentSmoothX, currentSmoothZ);
+        lin.zeroingPattern(candidate, exact.inertiaThreshold(), exact.perAxisInertia(), candidateSmoothX, candidateSmoothZ);
+        exactZeroingPattern(currentPath, n, exact, currentExactX, currentExactZ);
+        exactZeroingPattern(candidatePath, n, exact, candidateExactX, candidateExactZ);
+        String currentMismatch = smoothExactDifferences(currentSmoothX, currentSmoothZ,
+                currentExactX, currentExactZ, currentPath, exact.inertiaThreshold());
+        String mismatch = smoothExactDifferences(candidateSmoothX, candidateSmoothZ,
+                candidateExactX, candidateExactZ, candidatePath, exact.inertiaThreshold());
+        String changed = exactPatternChanges(currentExactX, currentExactZ,
+                candidateExactX, candidateExactZ, candidatePath, exact.inertiaThreshold());
+        String modeledZeroVelocity = modeledZeroVelocities(modelZeroX, modelZeroZ, currentPath, candidatePath);
+        String nearGateVelocity = nearGateVelocities(currentPath, candidatePath, currentExactX, currentExactZ,
+                candidateExactX, candidateExactZ, exact.inertiaThreshold());
+        String yawDelta = yawDeltas(theta, candidate);
+        SolverTrace.log("SLP-GATE",
+                "lp#%d phase=%d %s jac=%s smooth=%s->%s replay=%s->%s current-replay-vs-smooth=%s trial-replay-vs-smooth=%s replay-changes=%s jac-zero-vel(current->trial)=%s near-gate-vel(current->trial)=%s yaw-delta=%s decision=%s",
+                lp, phase, inertiaAware ? "aware" : "ordinary",
+                inertiaAware ? SolverTrace.patternLabel(modelZeroX, modelZeroZ) : "unpatterned",
+                SolverTrace.patternLabel(currentSmoothX, currentSmoothZ),
+                SolverTrace.patternLabel(candidateSmoothX, candidateSmoothZ),
+                SolverTrace.patternLabel(currentExactX, currentExactZ),
+                SolverTrace.patternLabel(candidateExactX, candidateExactZ), currentMismatch, mismatch, changed,
+                modeledZeroVelocity, nearGateVelocity, yawDelta,
+                accepted ? "accept" : "reject");
+    }
+
+    /** Exact incoming velocities at checks the local Jacobian currently models as zeroed. */
+    private static String modeledZeroVelocities(boolean[] zeroX, boolean[] zeroZ,
+                                                ForwardPath current, ForwardPath trial) {
+        StringBuilder out = new StringBuilder();
+        for (int t = 0; t < zeroX.length; t++) {
+            if (zeroX[t]) appendVelocityPair(out, t, 'X', current.velX[t], trial.velX[t]);
+            if (zeroZ[t]) appendVelocityPair(out, t, 'Z', current.velZ[t], trial.velZ[t]);
+        }
+        return out.length() == 0 ? "-" : out.toString();
+    }
+
+    private static void appendVelocityPair(StringBuilder out, int tick, char axis,
+                                           double current, double trial) {
+        if (out.length() > 0) out.append(',');
+        out.append(tick).append(axis).append(':')
+                .append(String.format(java.util.Locale.ROOT, "%.9g->%.9g", current, trial));
+    }
+
+    private static String yawDeltas(double[] current, double[] trial) {
+        StringBuilder out = new StringBuilder();
+        for (int t = 0; t < current.length; t++) {
+            double d = Angles.wrapDelta(trial[t] - current[t]);
+            if (Math.abs(d) < 1.0e-9) continue;
+            if (out.length() > 0) out.append(',');
+            out.append(t).append(':').append(String.format(java.util.Locale.ROOT, "%+.6f", d));
+        }
+        return out.length() == 0 ? "-" : out.toString();
+    }
+
+    /** Exact incoming velocities near a threshold, including checks that are zeroed in either replay. */
+    private static String nearGateVelocities(ForwardPath current, ForwardPath trial,
+                                             boolean[] currentZeroX, boolean[] currentZeroZ,
+                                             boolean[] trialZeroX, boolean[] trialZeroZ,
+                                             double threshold) {
+        StringBuilder out = new StringBuilder();
+        double limit = threshold * 1.25;
+        for (int t = 0; t < currentZeroX.length; t++) {
+            if (currentZeroX[t] || trialZeroX[t] || Math.abs(current.velX[t]) <= limit || Math.abs(trial.velX[t]) <= limit)
+                appendVelocityPair(out, t, 'X', current.velX[t], trial.velX[t]);
+            if (currentZeroZ[t] || trialZeroZ[t] || Math.abs(current.velZ[t]) <= limit || Math.abs(trial.velZ[t]) <= limit)
+                appendVelocityPair(out, t, 'Z', current.velZ[t], trial.velZ[t]);
+        }
+        return out.length() == 0 ? "-" : out.toString();
+    }
+
+    private static void exactZeroingPattern(ForwardPath path, int n, ExactJumpModel exact,
+                                            boolean[] zeroX, boolean[] zeroZ) {
+        double threshold = exact.inertiaThreshold();
+        for (int t = 0; t < n; t++) {
+            if (exact.perAxisInertia()) {
+                zeroX[t] = Math.abs(path.velX[t]) < threshold;
+                zeroZ[t] = Math.abs(path.velZ[t]) < threshold;
+            } else {
+                boolean zero = path.velX[t] * path.velX[t] + path.velZ[t] * path.velZ[t] < threshold * threshold;
+                zeroX[t] = zero;
+                zeroZ[t] = zero;
+            }
+        }
+    }
+
+    private static String smoothExactDifferences(boolean[] smoothX, boolean[] smoothZ,
+                                                boolean[] exactX, boolean[] exactZ,
+                                                ForwardPath path, double threshold) {
+        StringBuilder out = new StringBuilder();
+        for (int t = 0; t < smoothX.length; t++) {
+            if (smoothX[t] != exactX[t]) appendGateDifference(out, t, 'X', smoothX[t], exactX[t], path.velX[t], threshold);
+            if (smoothZ[t] != exactZ[t]) appendGateDifference(out, t, 'Z', smoothZ[t], exactZ[t], path.velZ[t], threshold);
+        }
+        return out.length() == 0 ? "-" : out.toString();
+    }
+
+    private static String exactPatternChanges(boolean[] beforeX, boolean[] beforeZ,
+                                              boolean[] afterX, boolean[] afterZ,
+                                              ForwardPath after, double threshold) {
+        StringBuilder out = new StringBuilder();
+        for (int t = 0; t < beforeX.length; t++) {
+            if (beforeX[t] != afterX[t]) appendGateDifference(out, t, 'X', beforeX[t], afterX[t], after.velX[t], threshold);
+            if (beforeZ[t] != afterZ[t]) appendGateDifference(out, t, 'Z', beforeZ[t], afterZ[t], after.velZ[t], threshold);
+        }
+        return out.length() == 0 ? "-" : out.toString();
+    }
+
+    private static void appendGateDifference(StringBuilder out, int tick, char axis,
+                                             boolean before, boolean after, double velocity, double threshold) {
+        if (out.length() > 0) out.append(',');
+        out.append(tick).append(axis).append(':').append(before ? 'Z' : 'C').append('>').append(after ? 'Z' : 'C')
+                .append('@').append(String.format(java.util.Locale.ROOT, "%.9g/%.9g", velocity, threshold));
+    }
+
     private static boolean anySet(boolean[] a) {
         for (boolean v : a) if (v) return true;
         return false;
@@ -429,5 +561,33 @@ public final class SlpSolve {
     private static double normObjective(ForwardPath path, Objective obj, boolean max) {
         double v = obj.evaluate(path);
         return max ? v : -v;
+    }
+
+    private static String worstViolation(List<JumpConstraint> constraints, int[] halfSign,
+                                         double[] facings, ForwardPath path, double[] slacks) {
+        int worst = 0;
+        for (int j = 1; j < slacks.length; j++) if (slacks[j] > slacks[worst]) worst = j;
+        JumpConstraint c = constraints.get(worst);
+        String actual = halfSign[worst] != 0
+                ? String.format(java.util.Locale.ROOT, "half=%d", halfSign[worst])
+                : String.format(java.util.Locale.ROOT, "value=%.9f", JumpConstraintCompiler.evaluate(c, facings, path));
+        return c.name + "[t=" + c.t1 + (c.t2 == null ? "" : ",t2=" + c.t2) + ",slack="
+                + String.format(java.util.Locale.ROOT, "%.6g", slacks[worst]) + "," + actual + "]";
+    }
+
+    private static String tickWallSlacks(List<JumpConstraint> constraints, int[] halfSign,
+                                         double[] before, double[] after, int... ticks) {
+        StringBuilder out = new StringBuilder();
+        for (int j = 0; j < constraints.size(); j++) {
+            JumpConstraint c = constraints.get(j);
+            if (c.mode != JumpConstraint.Mode.X && c.mode != JumpConstraint.Mode.Z) continue;
+            boolean include = false;
+            for (int tick : ticks) if (c.t1 == tick) include = true;
+            if (!include) continue;
+            if (out.length() > 0) out.append(',');
+            out.append(c.name).append(':')
+                    .append(String.format(java.util.Locale.ROOT, "%.6g->%.6g", before[j], after[j]));
+        }
+        return out.length() == 0 ? "-" : out.toString();
     }
 }
