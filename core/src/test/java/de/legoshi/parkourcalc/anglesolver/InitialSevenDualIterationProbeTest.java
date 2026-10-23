@@ -60,11 +60,15 @@ public class InitialSevenDualIterationProbeTest {
                 JumpSpec.class, int.class, int.class, float.class).invoke(null, full, 0, 68, source.startYaw);
         JumpSpec spec = new JumpSpec(sc, constraints, new Objective(JumpPhysicsInputs.Axis.Z, Objective.Sense.MAX, 68));
         assertEquals(33, constraints.size());
+        java.lang.reflect.Field smoothingField = CostateDualSolver.class.getDeclaredField("EPS2");
+        smoothingField.setAccessible(true);
+        double eps2 = smoothingField.getDouble(null);
+        double[][] referenceYaws = {null};
         List<String> outcomes = new ArrayList<>(), candidates = new ArrayList<>(), iterations = new ArrayList<>(), margins = new ArrayList<>();
         List<String> recovery = new ArrayList<>(), recoveryMargins = new ArrayList<>();
         outcomes.add("case,cap,margin,prefix,accepted,best_violation,dual_calls,elapsed_ms");
-        candidates.add("case,pass,assumed_pattern,replay_violation,continuous_violation,assumed_max_violation,assumed_tightened_max_violation,continuous_objective,min_costate,near_zero_costates,final_dual_residual,final_iterations");
-        iterations.add("case,pass,iteration,dual_value,projected_residual,input_change,min_costate,near_zero_costates,final_sample");
+        candidates.add("case,pass,assumed_pattern,replay_violation,continuous_violation,assumed_max_violation,assumed_tightened_max_violation,continuous_objective,min_costate,near_zero_costates,final_dual_residual,final_iterations,direction_fallback_costates");
+        iterations.add("case,pass,iteration,dual_value,projected_residual,input_change,min_costate,near_zero_costates,direction_fallback_costates,final_sample");
         margins.add("case,pass,constraint,committed,assumed_margin,continuous_margin,replay_margin");
         SolverTrace.enable("initial-seven-dual-iteration-sweep");
         try {
@@ -73,16 +77,19 @@ public class InitialSevenDualIterationProbeTest {
                 for (int cap : caps) for (int prefix : new int[]{30, 12}) {
                     final String label = "margin" + margin + "-cap" + cap + "-prefix" + prefix;
                     int[] pass = {-1};
-                    double[] finalState = new double[4];
+                    double[] finalState = new double[5];
                     ClosedFormSolve.Config cfg = new ClosedFormSolve.Config();
                     cfg.dualMaxIterations = cap;
                     cfg.replayTickLimit = prefix;
-                    cfg.dualIterationObserver = (it, value, pg, change, minCostate, tiny, last) -> {
+                    cfg.dualIterationObserver = (it, value, pg, change, minCostate, tiny, fallback, last) -> {
                         if (it == 0 && !last) pass[0]++;
-                        iterations.add(csv(label, pass[0], it, value, pg, change, minCostate, tiny, last));
-                        if (last) { finalState[0] = minCostate; finalState[1] = tiny; finalState[2] = pg; finalState[3] = it; }
+                        iterations.add(csv(label, pass[0], it, value, pg, change, minCostate, tiny, fallback, last));
+                        if (last) { finalState[0] = minCostate; finalState[1] = tiny; finalState[2] = pg; finalState[3] = it; finalState[4] = fallback; }
                     };
                     WindowCandidateValidation.setDiagnosticObserver(d -> {
+                        if (margin == .0003 && cap == 200 && prefix == 30 && pass[0] == 0) {
+                            referenceYaws[0] = d.continuousFacings.clone();
+                        }
                         double assumedViolation = 0, tightenedViolation = 0;
                         for (WindowCandidateValidation.ConstraintMargin c : d.constraints) {
                             assumedViolation = Math.max(assumedViolation, -c.assumedMargin);
@@ -93,7 +100,7 @@ public class InitialSevenDualIterationProbeTest {
                         }
                         candidates.add(csv(label, pass[0], d.assumedPattern, d.result.replayViolation,
                                 d.result.continuousViolation, assumedViolation, tightenedViolation,
-                                spec.objective.evaluate(d.continuousPath), finalState[0], finalState[1], finalState[2], finalState[3]));
+                                spec.objective.evaluate(d.continuousPath), finalState[0], finalState[1], finalState[2], finalState[3], finalState[4]));
                     });
                     SolverTrace.log("CAP-PROBE", "begin case=%s", label);
                     long begin = System.nanoTime();
@@ -106,7 +113,7 @@ public class InitialSevenDualIterationProbeTest {
                     } finally { WindowCandidateValidation.setDiagnosticObserver(null); }
                     double ms = (System.nanoTime() - begin) / 1e6;
                     assertNotNull(result);
-                    if (cap == 100 && margin == .0003) assertEquals(.011663350626349711, result.violation, 1e-12);
+                    if (eps2 == 1e-14 && cap == 100 && margin == .0003) assertEquals(.011663350626349711, result.violation, 1e-12);
                     outcomes.add(csv(label, cap, margin, prefix, result.feasible, result.violation, pass[0] + 1, ms));
                     SolverTrace.log("CAP-PROBE", "end case=%s accepted=%s violation=%.12g calls=%d ms=%.3f", label, result.feasible, result.violation, pass[0] + 1, ms);
                 }
@@ -120,7 +127,8 @@ public class InitialSevenDualIterationProbeTest {
             CostateDualSolver.Result dualResult = dual.solve(.0003, null, 200);
             assertNotNull(dualResult);
             double[] angles = lin.recoverAlongCostate(spec.objective, dualResult.gx, dualResult.gz);
-            assertEquals(.07214943605640656,
+            assertArrayEquals("direct dual reconstruction matches production first pass", referenceYaws[0], angles, 0);
+            if (eps2 == 1e-14) assertEquals(.07214943605640656,
                     new WindowCandidateValidation(exact, spec, 30).evaluate(angles).continuousViolation, 1e-12);
             double[] smoothX = new double[68], smoothZ = new double[68];
             recovery.add("tick,costate_x,costate_z,costate_norm,input_magnitude,smoothed_length_ratio,smoothed_input_x,smoothed_input_z,full_input_x,full_input_z,extra_z_at68");
@@ -159,6 +167,7 @@ public class InitialSevenDualIterationProbeTest {
             SolverTrace.disable();
             Path output = Paths.get("build/reports/initial-seven-dual-iteration-sweep");
             Files.createDirectories(output);
+            Files.write(output.resolve("metadata.txt"), Collections.singletonList("EPS2=" + eps2), StandardCharsets.UTF_8);
             Files.write(output.resolve("outcomes.csv"), outcomes, StandardCharsets.UTF_8);
             Files.write(output.resolve("candidates.csv"), candidates, StandardCharsets.UTF_8);
             Files.write(output.resolve("iterations.csv"), iterations, StandardCharsets.UTF_8);

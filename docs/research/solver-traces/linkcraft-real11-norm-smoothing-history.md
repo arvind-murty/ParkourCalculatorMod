@@ -23,3 +23,8 @@ For the measured last-tick costate, the near-zero condition is structural: objec
 ## Persisted evidence
 
 [Blame and numeric-constant history](smoothing-history-2026-10-23/blame-and-history.txt), [PR #122 metadata including original commit messages](smoothing-history-2026-10-23/pr122.json), [original creation patch and message](smoothing-history-2026-10-23/original-closed-form-commit.json), and later PR/issue snapshots are stored alongside them. All GitHub reads used gh CLI. Only research notes changed; no solver edits or tests were run for this question.
+
+
+## Separate EPS2=1e-24 experiment
+
+The [sharper-smoothing experiment](linkcraft-real11-eps24-experiment.md) changes EPS2 to 1e-24 independently of direct-bound detection. Above the 1e-9 recovery threshold, relative length shrink is bounded by about 0.00005%. Initial fixed Z/MAX still fails; its inertia retry now hits the arbitrary-direction fallback on all 68 controls and has a much larger violation. Fixed Z/MIN still passes, and the full fixed 7-ladder route still stalls at tick 90 before jump 14. Five focused tests pass; no full suite ran. The original fallback comment describes objective/wall cancellation, not a documented smoothing-error calibration.

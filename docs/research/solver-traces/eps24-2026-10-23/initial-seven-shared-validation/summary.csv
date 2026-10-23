@@ -1,0 +1,9 @@
+case,candidate,objective,optimization_margin,replay_input_ticks,assumed_pattern,replay_violation,continuous_violation,accepted,continuous_objective,replay_objective
+"fixed-zmax-prefix30","0","Z/MAX","3.0E-4","30","free","0.0","0.011663350626577085","false","-1092.6883366374525","-1092.687597968574"
+"fixed-zmax-prefix30","1","Z/MAX","3.0E-4","30","x@0,@63+z@0","7.199999988079185","16.80000001192093","false","-1081.57263832508","-1081.5726347781829"
+"fixed-zmax-prefix12","0","Z/MAX","3.0E-4","12","free","0.0","0.011663350626577085","false","-1092.6883366374525","-1092.687597968574"
+"fixed-zmax-prefix12","1","Z/MAX","3.0E-4","12","x@0,@63+z@0","0.0","16.80000001192093","false","-1081.57263832508","-1081.5726347781829"
+"fixed-zmin-prefix30","0","Z/MIN","3.0E-4","30","free","0.0","0.0","true","-1093.3157142131042","-1093.314951375043"
+"fixed-zmin-prefix12","0","Z/MIN","3.0E-4","12","free","0.0","0.0","true","-1093.3157142131042","-1093.314951375043"
+"normal-zmax-prefix30","0","Z/MAX","0.05","30","free","0.0","0.0","true","-1092.8710628063463","-1092.8703012308547"
+"normal-zmax-prefix12","0","Z/MAX","0.05","12","free","0.0","0.0","true","-1092.8710628063463","-1092.8703012308547"

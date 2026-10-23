@@ -100,3 +100,8 @@ The [gh/blame investigation](linkcraft-real11-norm-smoothing-history.md) traces 
 ## Proposed objective/window preflight
 
 The [whole-jump window versus motion design note](linkcraft-real11-window-objective-preflight-design.md) records the small-costate fallback, automatic matching-wall detection, and the concrete alternatives 1–6/end64, 1–7/end68, 1–8/end71. The user clarified whole-jump shifts as an alternative to terminal motion; a tick extension mixes position with one tick of movement rather than being a fundamentally separate strategy. Extending to 8 preserves existing constraints and removes the direct Z68 objective cap. This is a proposed next probe, not an implemented or tested policy. The note also identifies the existing scalar-MOTION evaluation inconsistency that a prototype must handle.
+
+
+## Separate EPS2=1e-24 experiment
+
+The [sharper-smoothing experiment](linkcraft-real11-eps24-experiment.md) changes EPS2 to 1e-24 independently of direct-bound detection. Above the 1e-9 recovery threshold, relative length shrink is bounded by about 0.00005%. Initial fixed Z/MAX still fails; its inertia retry now hits the arbitrary-direction fallback on all 68 controls and has a much larger violation. Fixed Z/MIN still passes, and the full fixed 7-ladder route still stalls at tick 90 before jump 14. Five focused tests pass; no full suite ran. The original fallback comment describes objective/wall cancellation, not a documented smoothing-error calibration.

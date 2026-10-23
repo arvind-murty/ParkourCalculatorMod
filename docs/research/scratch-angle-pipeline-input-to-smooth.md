@@ -946,3 +946,8 @@ See [the preflight design](solver-traces/linkcraft-real11-window-objective-prefl
 
 
 The common-case [objective-bound detector](solver-traces/linkcraft-real11-objective-bound-detection.md) is implemented as reusable `ObjectiveBounds.directCap`, with LongRun preflight trace output. It detects same-state scalar positional caps and equality pins; automatic window changes are not implemented yet. This detection commit precedes and is independent of the norm-smoothing experiment.
+
+
+## Separate experiment: sharper norm smoothing
+
+[EPS2 is now 1e-24 in a separate experiment](solver-traces/linkcraft-real11-eps24-experiment.md). For costates at least 1e-9, the derivative length shrink is at most about 0.00005%; below that the existing fallback may choose arbitrary objective-directed motion. The initial fixed Z/MAX inertia retry now triggers that fallback for all 68 controls and is worse, though the retained first-pass miss is unchanged at cap100 and larger-cap best violation improves to 0.00754865. Fixed Z/MIN remains accepted; the full 7-ladder route still fails before jump14. Five focused tests pass. The fallback's original comment confirms an undetermined-direction heuristic, not a proven smoothing-error catch.

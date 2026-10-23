@@ -1,0 +1,40 @@
+      0.93  t1   AUDIT   begin case=fixed-zmax-prefix30 margin=0.00030000 prefix=30
+      1.05  t1   CF      pass=0 pattern=free n=68 m=33 robust
+      4.06  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.0116633506266
+      4.10  t1   CF      rung margin=3.00e-04 iters=100 pg=3.623e-02 dual=11.807984930 viol=1.166e-02 ms=2.994 stop=ITERATION_LIMIT finalPg=3.323e-02
+      4.15  t1   CF      pass=1 pattern=x@0,@63+z@0 n=68 m=33 robust
+      6.47  t1   CF-CHECK margin=3.00e-04 replayViol=7.19999998808 modelViol=16.8000000119
+      6.50  t1   CF      rung margin=3.00e-04 iters=100 pg=4.700e-03 dual=11.799811334 viol=1.680e+01 ms=2.299 stop=ITERATION_LIMIT finalPg=4.700e-03
+      6.53  t1   CF      pass=1 no improvement (viol=1.680e+01), stop
+      6.54  t1   CF      fallback bestViol=1.166e-02 us=5493.4
+      6.57  t1   AUDIT   end case=fixed-zmax-prefix30 candidateCount=2 accepted=false violation=0.0116633506266
+      6.58  t1   AUDIT   begin case=fixed-zmax-prefix12 margin=0.00030000 prefix=12
+      6.72  t1   CF      pass=0 pattern=free n=68 m=33 robust
+      9.41  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.0116633506266
+      9.46  t1   CF      rung margin=3.00e-04 iters=100 pg=3.623e-02 dual=11.807984930 viol=1.166e-02 ms=2.687 stop=ITERATION_LIMIT finalPg=3.323e-02
+      9.51  t1   CF      pass=1 pattern=x@0,@63+z@0 n=68 m=33 robust
+     11.92  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=16.8000000119
+     11.96  t1   CF      rung margin=3.00e-04 iters=100 pg=4.700e-03 dual=11.799811334 viol=1.680e+01 ms=2.394 stop=ITERATION_LIMIT finalPg=4.700e-03
+     11.99  t1   CF      pass=1 no improvement (viol=1.680e+01), stop
+     12.00  t1   CF      fallback bestViol=1.166e-02 us=5281.3
+     12.02  t1   AUDIT   end case=fixed-zmax-prefix12 candidateCount=2 accepted=false violation=0.0116633506266
+     12.05  t1   AUDIT   begin case=fixed-zmin-prefix30 margin=0.00030000 prefix=30
+     12.11  t1   CF      pass=0 pattern=free n=68 m=33 robust
+     14.21  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00000000000
+     14.23  t1   CF      rung margin=3.00e-04 iters=66 pg=9.113e-10 dual=-11.184285787 viol=0.000e+00 ms=2.072 certified stop=PROJECTED_GRADIENT finalPg=9.113e-10
+     14.25  t1   AUDIT   end case=fixed-zmin-prefix30 candidateCount=1 accepted=true violation=0.00000000000
+     14.26  t1   AUDIT   begin case=fixed-zmin-prefix12 margin=0.00030000 prefix=12
+     14.29  t1   CF      pass=0 pattern=free n=68 m=33 robust
+     16.36  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00000000000
+     16.38  t1   CF      rung margin=3.00e-04 iters=66 pg=9.113e-10 dual=-11.184285787 viol=0.000e+00 ms=2.050 certified stop=PROJECTED_GRADIENT finalPg=9.113e-10
+     16.39  t1   AUDIT   end case=fixed-zmin-prefix12 candidateCount=1 accepted=true violation=0.00000000000
+     16.41  t1   AUDIT   begin case=normal-zmax-prefix30 margin=0.050000 prefix=30
+     16.43  t1   CF      pass=0 pattern=free n=68 m=33 robust
+     18.91  t1   CF-CHECK margin=5.00e-02 replayViol=0.00000000000 modelViol=0.00000000000
+     18.92  t1   CF      rung margin=5.00e-02 iters=100 pg=2.090e-01 dual=11.544886238 viol=0.000e+00 ms=2.450 certified stop=ITERATION_LIMIT finalPg=1.445e-02
+     18.94  t1   AUDIT   end case=normal-zmax-prefix30 candidateCount=1 accepted=true violation=0.00000000000
+     18.95  t1   AUDIT   begin case=normal-zmax-prefix12 margin=0.050000 prefix=12
+     18.97  t1   CF      pass=0 pattern=free n=68 m=33 robust
+     21.44  t1   CF-CHECK margin=5.00e-02 replayViol=0.00000000000 modelViol=0.00000000000
+     21.46  t1   CF      rung margin=5.00e-02 iters=100 pg=2.090e-01 dual=11.544886238 viol=0.000e+00 ms=2.445 certified stop=ITERATION_LIMIT finalPg=1.445e-02
+     21.47  t1   AUDIT   end case=normal-zmax-prefix12 candidateCount=1 accepted=true violation=0.00000000000

@@ -36,7 +36,9 @@ import java.util.List;
  *  dual is unbounded (primal infeasible). */
 public final class CostateDualSolver {
 
-    private static final double EPS2 = 1.0e-14;       // norm smoothing: ‖g‖ -> sqrt(‖g‖^2 + EPS2)
+    // Smoothing length 1e-12, below the 1e-9 costate-direction fallback. At and above
+    // that fallback scale this shrinks derivative-implied input length by at most about 5e-7.
+    private static final double EPS2 = 1.0e-24;       // norm smoothing: ‖g‖ -> sqrt(‖g‖^2 + EPS2)
     private static final int MAX_ITER = 100;
     private static final double LAMBDA_CAP = 1.0e9;   // dual var this large => treat primal as infeasible
     private static final double GRAD_TOL = 1.0e-8;    // projected-gradient (constraint-slack) convergence, blocks
@@ -219,7 +221,7 @@ public final class CostateDualSolver {
 
     public interface IterationObserver {
         void observe(int iteration, double dualValue, double projectedResidual, double inputChange,
-                     double minCostateNorm, int nearZeroCostates, boolean finalSample);
+                     double minCostateNorm, int nearZeroCostates, int directionFallbackCostates, boolean finalSample);
     }
     public IterationObserver iterationObserver;
 
@@ -315,15 +317,16 @@ public final class CostateDualSolver {
     private void observeIteration(int iteration, double value, double residual, boolean finalSample) {
         if (iterationObserver == null) return;
         double change = 0.0, minNorm = Double.POSITIVE_INFINITY;
-        int nearZero = 0;
+        int nearZero = 0, fallbackScale = 0;
         for (int t = 0; t < n; t++) {
             change = Math.max(change, Math.max(Math.abs(ux[t] - uPrevX[t]), Math.abs(uz[t] - uPrevZ[t])));
             if (mMag[t] == 0.0) continue;
             double norm2 = gx[t] * gx[t] + gz[t] * gz[t];
             minNorm = Math.min(minNorm, StrictMath.sqrt(norm2));
             if (norm2 <= EPS2) nearZero++;
+            if (norm2 < 1.0e-18) fallbackScale++;
         }
-        iterationObserver.observe(iteration, value, residual, change, minNorm, nearZero, finalSample);
+        iterationObserver.observe(iteration, value, residual, change, minNorm, nearZero, fallbackScale, finalSample);
     }
 
     private double recoveredDelta(double[] lam, int a) {

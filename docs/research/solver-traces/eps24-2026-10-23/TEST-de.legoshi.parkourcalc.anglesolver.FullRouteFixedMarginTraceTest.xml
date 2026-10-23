@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="de.legoshi.parkourcalc.anglesolver.FullRouteFixedMarginTraceTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-23T20:01:53.068Z" hostname="Arvinds-MacBook-Pro-2.local" time="1.43">
+  <properties/>
+  <testcase name="traceFullRouteFixedMarginSevenLadder" classname="de.legoshi.parkourcalc.anglesolver.FullRouteFixedMarginTraceTest" time="1.427"/>
+  <system-out><![CDATA[full-route solved=false
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
