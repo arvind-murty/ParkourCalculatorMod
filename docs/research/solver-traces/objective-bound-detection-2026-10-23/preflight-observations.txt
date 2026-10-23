@@ -1,0 +1,154 @@
+      1.71  t1   LRS-PREFLIGHT primary Z/MAX@68 directCap=true constraint=Z@68 LE rhs=-1092.699999988079
+     60.62  t1   LRS-PREFLIGHT alternate Z/MIN@68 directCap=false
+     67.05  t1   LRS-PREFLIGHT primary Z/MAX@47 directCap=false
+     73.07  t1   LRS-PREFLIGHT alternate Z/MIN@47 directCap=false
+     76.74  t1   LRS-PREFLIGHT alternate X/MAX@47 directCap=true constraint=X@77 LE rhs=732.699999988079
+     87.89  t1   LRS-PREFLIGHT alternate X/MIN@47 directCap=false
+    113.31  t1   LRS-PREFLIGHT primary Z/MAX@26 directCap=false
+    118.21  t1   LRS-PREFLIGHT alternate Z/MIN@26 directCap=false
+    121.97  t1   LRS-PREFLIGHT primary Z/MAX@42 directCap=true constraint=Z@117hi LE rhs=-1091.699999988079
+    129.36  t1   LRS-PREFLIGHT alternate Z/MIN@42 directCap=true constraint=Z@117lo GE rhs=-1092.699999988079
+    134.89  t1   LRS-PREFLIGHT alternate X/MAX@42 directCap=true constraint=X@117hi LE rhs=731.300000011921
+    145.07  t1   LRS-PREFLIGHT alternate X/MIN@42 directCap=true constraint=X@117lo GE rhs=729.699999988079
+    243.70  t1   LRS-PREFLIGHT primary Z/MAX@24 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    244.11  t1   LRS-PREFLIGHT alternate Z/MIN@24 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    244.61  t1   LRS-PREFLIGHT alternate X/MAX@24 directCap=false
+    245.16  t1   LRS-PREFLIGHT alternate X/MIN@24 directCap=false
+    246.29  t1   LRS-PREFLIGHT primary Z/MAX@13 directCap=true constraint=Z@88hi LE rhs=-1088.699999988079
+    246.63  t1   LRS-PREFLIGHT alternate Z/MIN@13 directCap=true constraint=Z@88lo GE rhs=-1090.300000011921
+    247.68  t1   LRS-PREFLIGHT primary Z/MAX@44 directCap=true constraint=Z@132hi LE rhs=-1093.699999988079
+    257.32  t1   LRS-PREFLIGHT alternate Z/MIN@44 directCap=true constraint=Z@132lo GE rhs=-1095.300000011921
+    268.85  t1   LRS-PREFLIGHT alternate X/MAX@44 directCap=true constraint=X@132hi LE rhs=733.300000011921
+    277.39  t1   LRS-PREFLIGHT alternate X/MIN@44 directCap=true constraint=X@132lo GE rhs=732.300000011921
+    326.45  t1   LRS-PREFLIGHT primary Z/MAX@40 directCap=false
+    328.00  t1   LRS-PREFLIGHT alternate Z/MIN@40 directCap=true constraint=Z@128 GE rhs=-1093.699999988079
+    330.10  t1   LRS-PREFLIGHT alternate X/MAX@40 directCap=false
+    333.47  t1   LRS-PREFLIGHT alternate X/MIN@40 directCap=false
+    358.58  t1   LRS-PREFLIGHT primary Z/MAX@25 directCap=true constraint=Z@113hi LE rhs=-1090.300000011921
+    359.43  t1   LRS-PREFLIGHT alternate Z/MIN@25 directCap=true constraint=Z@113lo GE rhs=-1091.300000011921
+    360.32  t1   LRS-PREFLIGHT alternate X/MAX@25 directCap=true constraint=X@113hi LE rhs=731.300000011921
+    360.71  t1   LRS-PREFLIGHT alternate X/MIN@25 directCap=true constraint=X@113lo GE rhs=729.699999988079
+    366.71  t1   LRS-PREFLIGHT primary Z/MAX@11 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    367.11  t1   LRS-PREFLIGHT alternate Z/MIN@11 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    367.33  t1   LRS-PREFLIGHT alternate X/MAX@11 directCap=false
+    367.50  t1   LRS-PREFLIGHT alternate X/MIN@11 directCap=false
+    369.60  t1   LRS-PREFLIGHT primary Z/MAX@2 directCap=false
+    369.80  t1   LRS-PREFLIGHT primary Z/MAX@65 directCap=false
+    389.49  t1   LRS-PREFLIGHT alternate Z/MIN@65 directCap=false
+    401.77  t1   LRS-PREFLIGHT alternate X/MAX@65 directCap=false
+    417.21  t1   LRS-PREFLIGHT alternate X/MIN@65 directCap=false
+    455.38  t1   LRS-PREFLIGHT primary Z/MAX@40 directCap=true constraint=Z@130hi LE rhs=-1093.699999988079
+    460.75  t1   LRS-PREFLIGHT alternate Z/MIN@40 directCap=true constraint=Z@130lo GE rhs=-1095.300000011921
+    466.07  t1   LRS-PREFLIGHT alternate X/MAX@40 directCap=true constraint=X@130hi LE rhs=733.699999988079
+    474.97  t1   LRS-PREFLIGHT alternate X/MIN@40 directCap=true constraint=X@130lo GE rhs=733.300000011921
+    493.46  t1   LRS-PREFLIGHT primary Z/MAX@27 directCap=true constraint=Z@117hi LE rhs=-1091.699999988079
+    496.73  t1   LRS-PREFLIGHT alternate Z/MIN@27 directCap=true constraint=Z@117lo GE rhs=-1092.699999988079
+    497.11  t1   LRS-PREFLIGHT alternate X/MAX@27 directCap=true constraint=X@117hi LE rhs=731.300000011921
+    497.74  t1   LRS-PREFLIGHT alternate X/MIN@27 directCap=true constraint=X@117lo GE rhs=729.699999988079
+    498.93  t1   LRS-PREFLIGHT primary Z/MAX@23 directCap=true constraint=Z@113hi LE rhs=-1090.300000011921
+    499.16  t1   LRS-PREFLIGHT alternate Z/MIN@23 directCap=true constraint=Z@113lo GE rhs=-1091.300000011921
+    499.34  t1   LRS-PREFLIGHT alternate X/MAX@23 directCap=true constraint=X@113hi LE rhs=731.300000011921
+    499.44  t1   LRS-PREFLIGHT alternate X/MIN@23 directCap=true constraint=X@113lo GE rhs=729.699999988079
+    499.97  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    500.03  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    500.08  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+    500.15  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false
+    500.31  t1   LRS-PREFLIGHT primary Z/MAX@68 directCap=true constraint=Z@68 LE rhs=-1092.699999988079
+    502.01  t1   LRS-PREFLIGHT alternate Z/MIN@68 directCap=false
+    502.98  t1   LRS-PREFLIGHT primary Z/MAX@59 directCap=false
+    504.48  t1   LRS-PREFLIGHT primary Z/MAX@54 directCap=false
+    506.24  t1   LRS-PREFLIGHT primary Z/MAX@47 directCap=false
+    508.15  t1   LRS-PREFLIGHT alternate Z/MIN@47 directCap=false
+    510.54  t1   LRS-PREFLIGHT primary Z/MAX@40 directCap=false
+    512.40  t1   LRS-PREFLIGHT alternate Z/MIN@40 directCap=false
+    515.13  t1   LRS-PREFLIGHT alternate X/MAX@40 directCap=true constraint=X@80hi LE rhs=734.300000011921
+    516.81  t1   LRS-PREFLIGHT alternate X/MIN@40 directCap=true constraint=X@80lo GE rhs=732.699999988079
+    522.10  t1   LRS-PREFLIGHT primary Z/MAX@33 directCap=true constraint=Z@88hi LE rhs=-1088.699999988079
+    523.97  t1   LRS-PREFLIGHT alternate Z/MIN@33 directCap=true constraint=Z@88lo GE rhs=-1090.300000011921
+    526.21  t1   LRS-PREFLIGHT alternate X/MAX@33 directCap=true constraint=X@88hi LE rhs=732.699999988079
+    529.02  t1   LRS-PREFLIGHT alternate X/MIN@33 directCap=true constraint=X@88lo GE rhs=731.699999988079
+    542.61  t1   LRS-PREFLIGHT primary Z/MAX@26 directCap=false
+    543.58  t1   LRS-PREFLIGHT alternate Z/MIN@26 directCap=false
+    544.43  t1   LRS-PREFLIGHT primary Z/MAX@31 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    546.18  t1   LRS-PREFLIGHT alternate Z/MIN@31 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    546.81  t1   LRS-PREFLIGHT alternate X/MAX@31 directCap=false
+    547.57  t1   LRS-PREFLIGHT alternate X/MIN@31 directCap=false
+    599.96  t1   LRS-PREFLIGHT primary Z/MAX@20 directCap=true constraint=Z@88hi LE rhs=-1088.699999988079
+    600.59  t1   LRS-PREFLIGHT alternate Z/MIN@20 directCap=true constraint=Z@88lo GE rhs=-1090.300000011921
+    601.01  t1   LRS-PREFLIGHT primary Z/MAX@42 directCap=true constraint=Z@113hi LE rhs=-1090.300000011921
+    605.25  t1   LRS-PREFLIGHT alternate Z/MIN@42 directCap=true constraint=Z@113lo GE rhs=-1091.300000011921
+    606.39  t1   LRS-PREFLIGHT alternate X/MAX@42 directCap=true constraint=X@113hi LE rhs=731.300000011921
+    608.94  t1   LRS-PREFLIGHT alternate X/MIN@42 directCap=true constraint=X@113lo GE rhs=729.699999988079
+    646.21  t1   LRS-PREFLIGHT primary Z/MAX@19 directCap=false
+    647.36  t1   LRS-PREFLIGHT alternate Z/MIN@19 directCap=false
+    647.90  t1   LRS-PREFLIGHT primary Z/MAX@42 directCap=true constraint=Z@117hi LE rhs=-1091.699999988079
+    651.85  t1   LRS-PREFLIGHT alternate Z/MIN@42 directCap=true constraint=Z@117lo GE rhs=-1092.699999988079
+    653.47  t1   LRS-PREFLIGHT alternate X/MAX@42 directCap=true constraint=X@117hi LE rhs=731.300000011921
+    657.71  t1   LRS-PREFLIGHT alternate X/MIN@42 directCap=true constraint=X@117lo GE rhs=729.699999988079
+    701.67  t1   LRS-PREFLIGHT primary Z/MAX@24 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    701.97  t1   LRS-PREFLIGHT alternate Z/MIN@24 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    702.19  t1   LRS-PREFLIGHT alternate X/MAX@24 directCap=false
+    703.45  t1   LRS-PREFLIGHT alternate X/MIN@24 directCap=false
+    713.54  t1   LRS-PREFLIGHT primary Z/MAX@13 directCap=true constraint=Z@88hi LE rhs=-1088.699999988079
+    713.76  t1   LRS-PREFLIGHT alternate Z/MIN@13 directCap=true constraint=Z@88lo GE rhs=-1090.300000011921
+    714.09  t1   LRS-PREFLIGHT primary Z/MAX@51 directCap=false
+    717.09  t1   LRS-PREFLIGHT alternate Z/MIN@51 directCap=true constraint=Z@128 GE rhs=-1093.699999988079
+    722.74  t1   LRS-PREFLIGHT alternate X/MAX@51 directCap=false
+    726.34  t1   LRS-PREFLIGHT alternate X/MIN@51 directCap=false
+    778.14  t1   LRS-PREFLIGHT primary Z/MAX@36 directCap=true constraint=Z@113hi LE rhs=-1090.300000011921
+    782.49  t1   LRS-PREFLIGHT alternate Z/MIN@36 directCap=true constraint=Z@113lo GE rhs=-1091.300000011921
+    784.59  t1   LRS-PREFLIGHT alternate X/MAX@36 directCap=true constraint=X@113hi LE rhs=731.300000011921
+    788.06  t1   LRS-PREFLIGHT alternate X/MIN@36 directCap=true constraint=X@113lo GE rhs=729.699999988079
+    805.91  t1   LRS-PREFLIGHT primary Z/MAX@13 directCap=false
+    806.83  t1   LRS-PREFLIGHT alternate Z/MIN@13 directCap=false
+    807.21  t1   LRS-PREFLIGHT primary Z/MAX@50 directCap=true constraint=Z@130hi LE rhs=-1093.699999988079
+    816.01  t1   LRS-PREFLIGHT alternate Z/MIN@50 directCap=true constraint=Z@130lo GE rhs=-1095.300000011921
+    823.51  t1   LRS-PREFLIGHT alternate X/MAX@50 directCap=true constraint=X@130hi LE rhs=733.699999988079
+    835.51  t1   LRS-PREFLIGHT alternate X/MIN@50 directCap=true constraint=X@130lo GE rhs=733.300000011921
+    905.00  t1   LRS-PREFLIGHT primary Z/MAX@37 directCap=true constraint=Z@117hi LE rhs=-1091.699999988079
+    906.76  t1   LRS-PREFLIGHT alternate Z/MIN@37 directCap=true constraint=Z@117lo GE rhs=-1092.699999988079
+    909.02  t1   LRS-PREFLIGHT alternate X/MAX@37 directCap=true constraint=X@117hi LE rhs=731.300000011921
+    914.93  t1   LRS-PREFLIGHT alternate X/MIN@37 directCap=true constraint=X@117lo GE rhs=729.699999988079
+    944.66  t1   LRS-PREFLIGHT primary Z/MAX@19 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    944.81  t1   LRS-PREFLIGHT alternate Z/MIN@19 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    944.89  t1   LRS-PREFLIGHT alternate X/MAX@19 directCap=false
+    945.09  t1   LRS-PREFLIGHT alternate X/MIN@19 directCap=false
+    945.47  t1   LRS-PREFLIGHT primary Z/MAX@10 directCap=false
+    945.96  t1   LRS-PREFLIGHT alternate Z/MIN@10 directCap=false
+    946.23  t1   LRS-PREFLIGHT primary Z/MAX@44 directCap=true constraint=Z@132hi LE rhs=-1093.699999988079
+    950.30  t1   LRS-PREFLIGHT alternate Z/MIN@44 directCap=true constraint=Z@132lo GE rhs=-1095.300000011921
+    959.05  t1   LRS-PREFLIGHT alternate X/MAX@44 directCap=true constraint=X@132hi LE rhs=733.300000011921
+    969.65  t1   LRS-PREFLIGHT alternate X/MIN@44 directCap=true constraint=X@132lo GE rhs=732.300000011921
+    998.11  t1   LRS-PREFLIGHT primary Z/MAX@40 directCap=false
+    999.72  t1   LRS-PREFLIGHT alternate Z/MIN@40 directCap=true constraint=Z@128 GE rhs=-1093.699999988079
+   1002.68  t1   LRS-PREFLIGHT alternate X/MAX@40 directCap=false
+   1004.76  t1   LRS-PREFLIGHT alternate X/MIN@40 directCap=false
+   1018.20  t1   LRS-PREFLIGHT primary Z/MAX@25 directCap=true constraint=Z@113hi LE rhs=-1090.300000011921
+   1018.54  t1   LRS-PREFLIGHT alternate Z/MIN@25 directCap=true constraint=Z@113lo GE rhs=-1091.300000011921
+   1019.07  t1   LRS-PREFLIGHT alternate X/MAX@25 directCap=true constraint=X@113hi LE rhs=731.300000011921
+   1019.65  t1   LRS-PREFLIGHT alternate X/MIN@25 directCap=true constraint=X@113lo GE rhs=729.699999988079
+   1025.70  t1   LRS-PREFLIGHT primary Z/MAX@11 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+   1025.78  t1   LRS-PREFLIGHT alternate Z/MIN@11 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+   1025.83  t1   LRS-PREFLIGHT alternate X/MAX@11 directCap=false
+   1025.88  t1   LRS-PREFLIGHT alternate X/MIN@11 directCap=false
+   1026.06  t1   LRS-PREFLIGHT primary Z/MAX@2 directCap=false
+   1026.23  t1   LRS-PREFLIGHT primary Z/MAX@65 directCap=false
+   1043.38  t1   LRS-PREFLIGHT alternate Z/MIN@65 directCap=false
+   1054.37  t1   LRS-PREFLIGHT alternate X/MAX@65 directCap=false
+   1067.95  t1   LRS-PREFLIGHT alternate X/MIN@65 directCap=false
+   1100.91  t1   LRS-PREFLIGHT primary Z/MAX@40 directCap=true constraint=Z@130hi LE rhs=-1093.699999988079
+   1107.33  t1   LRS-PREFLIGHT alternate Z/MIN@40 directCap=true constraint=Z@130lo GE rhs=-1095.300000011921
+   1112.82  t1   LRS-PREFLIGHT alternate X/MAX@40 directCap=true constraint=X@130hi LE rhs=733.699999988079
+   1126.48  t1   LRS-PREFLIGHT alternate X/MIN@40 directCap=true constraint=X@130lo GE rhs=733.300000011921
+   1145.11  t1   LRS-PREFLIGHT primary Z/MAX@27 directCap=true constraint=Z@117hi LE rhs=-1091.699999988079
+   1145.73  t1   LRS-PREFLIGHT alternate Z/MIN@27 directCap=true constraint=Z@117lo GE rhs=-1092.699999988079
+   1146.92  t1   LRS-PREFLIGHT alternate X/MAX@27 directCap=true constraint=X@117hi LE rhs=731.300000011921
+   1147.60  t1   LRS-PREFLIGHT alternate X/MIN@27 directCap=true constraint=X@117lo GE rhs=729.699999988079
+   1148.36  t1   LRS-PREFLIGHT primary Z/MAX@23 directCap=true constraint=Z@113hi LE rhs=-1090.300000011921
+   1148.47  t1   LRS-PREFLIGHT alternate Z/MIN@23 directCap=true constraint=Z@113lo GE rhs=-1091.300000011921
+   1148.54  t1   LRS-PREFLIGHT alternate X/MAX@23 directCap=true constraint=X@113hi LE rhs=731.300000011921
+   1148.61  t1   LRS-PREFLIGHT alternate X/MIN@23 directCap=true constraint=X@113lo GE rhs=729.699999988079
+   1148.86  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+   1148.91  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+   1148.94  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+   1148.98  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false

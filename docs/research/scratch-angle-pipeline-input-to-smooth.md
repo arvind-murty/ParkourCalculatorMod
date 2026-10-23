@@ -943,3 +943,6 @@ The [blame/gh PR investigation](solver-traces/linkcraft-real11-norm-smoothing-hi
 ## Potential improvement: constraint-aware window/objective selection
 
 See [the preflight design](solver-traces/linkcraft-real11-window-objective-preflight-design.md). Before solving, detect an objective directly capped by an original wall (MAX Z with a same-state upper bound, etc.). Choose among whole-jump endpoints or terminal directional motion, preserving the committed prefix. In the initial 7-window, end68 has a Z upper wall; extending to 8 jumps/end71 preserves that wall and adds jump8 constraints without a direct Z71 wall. Shortening to 6/end64 removes jump7 from lookahead. Motion can avoid the single-wall match but still has an implied bound from Z68 upper and Z67 lower. These are proposed heuristics, not current behavior or tested winners. A one-tick extension maximizes position plus one tick of movement, equivalent to pure motion only when the earlier position is fixed.
+
+
+The common-case [objective-bound detector](solver-traces/linkcraft-real11-objective-bound-detection.md) is implemented as reusable `ObjectiveBounds.directCap`, with LongRun preflight trace output. It detects same-state scalar positional caps and equality pins; automatic window changes are not implemented yet. This detection commit precedes and is independent of the norm-smoothing experiment.

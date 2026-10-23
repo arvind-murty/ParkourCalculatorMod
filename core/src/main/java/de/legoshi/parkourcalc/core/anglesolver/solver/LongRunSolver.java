@@ -323,6 +323,7 @@ public final class LongRunSolver {
     private static double[] solveWindow(ExactJumpModel exact, JumpPhysicsInputs win, List<JumpConstraint> cons,
                                         Objective first, boolean last, int commitTicks, AtomicBoolean cancel,
                                         long deadlineNanos, Double fixedMargin) {
+        traceObjectiveBound(last ? "terminal" : "primary", first, cons);
         ClosedFormSolve.Config closed = new ClosedFormSolve.Config();
         if (fixedMargin != null) {
             closed.margins = new double[]{fixedMargin};
@@ -352,6 +353,7 @@ public final class LongRunSolver {
             if (cancel != null && cancel.get()) return null;
             objectiveT0 = SolverTrace.on() ? System.nanoTime() : 0L;
             if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "begin alternate %s/%s@%d", alt.axis, alt.sense, alt.tick);
+            traceObjectiveBound("alternate", alt, cons);
             y = ClosedFormSolve.optimizeRobust(exact, new JumpSpec(win, cons, alt), 0.0, cancel, closed);
             if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "end alternate %s/%s@%d result=%s ms=%.3f",
                     alt.axis, alt.sense, alt.tick, y != null ? "solved" : "miss",
@@ -368,6 +370,18 @@ public final class LongRunSolver {
         if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "end fallback SLP result=%s ms=%.3f",
                 y != null ? "solved" : "miss", (System.nanoTime() - objectiveT0) / 1.0e6);
         return y;
+    }
+
+    private static void traceObjectiveBound(String stage, Objective objective, List<JumpConstraint> constraints) {
+        if (!SolverTrace.on()) return;
+        JumpConstraint cap = ObjectiveBounds.directCap(objective, constraints);
+        if (cap == null) {
+            SolverTrace.log("LRS-PREFLIGHT", "%s %s/%s@%d directCap=false", stage,
+                    objective.axis, objective.sense, objective.tick);
+        } else {
+            SolverTrace.log("LRS-PREFLIGHT", "%s %s/%s@%d directCap=true constraint=%s %s rhs=%.12f", stage,
+                    objective.axis, objective.sense, objective.tick, cap.name, cap.cmp, cap.rhs);
+        }
     }
 
     private static double[] hugBestObjective(ExactJumpModel exact, JumpPhysicsInputs win, List<JumpConstraint> cons,

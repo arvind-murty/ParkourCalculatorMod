@@ -44,3 +44,8 @@ This can avoid an obvious unstable attempt using only constraints, without first
 `LongRunSolver.runHorizon` currently uses a positional +Z objective for intermediate windows and takes each end from jump boundaries; this preflight does not exist yet. `Objective.Type.MOTION` is currently evaluated as a position difference only in the custom-direction branch. `JumpLinearModel.objectiveVectors` checks `isMotion` even for scalar-axis objectives, but `Objective.evaluate`'s scalar branch returns position. A prototype must avoid that inconsistency (use the supported custom-direction motion form, or make scalar motion evaluation consistent), and make logs/alternate objectives/cache keys preserve objective type and direction. No fixes for those details are implemented in this note.
 
 Sources: `LongRunSolver.jumpBoundaries`/`runHorizon`, `Objective.evaluate`, `JumpLinearModel.objectiveVectors`/`compileWall`/`recoverAlongCostate`, `FacingPrefold.expand`, the saved initial-window constraint CSV, and the original TAS `~/Downloads/LinkcraftII_Competition_01/real/11.json` at states 64, 67, 68, 70 and 71.
+
+
+## Direct detector implemented
+
+The [direct objective-bound detector](linkcraft-real11-objective-bound-detection.md) now implements the common absolute X/Z case and reports preflight findings before LongRun objective calls. Six focused unit tests and the fixed 7-ladder capture probe pass. Whole-jump selection remains proposed work; detection is recorded in a commit before the independent EPS2 change.
