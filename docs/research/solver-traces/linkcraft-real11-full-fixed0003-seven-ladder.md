@@ -74,3 +74,8 @@ Jump numbers are one-based and inclusive. Cells show outcome / milliseconds; das
 ```
 
 Run backgrounded with output redirected to a file. Sources: [raw trace](full-fixed0003-seven-ladder-2026-10-23/solver-trace.txt), [window/objective CSV](full-fixed0003-seven-ladder-2026-10-23/window-attempts.csv), [command log](full-fixed0003-seven-ladder-2026-10-23/probe.log), [JUnit result](full-fixed0003-seven-ladder-2026-10-23/probe-junit.xml).
+
+
+## Initial-window shared-helper validation audit
+
+The [same-input 1–7 audit](linkcraft-real11-initial-seven-shared-validation-audit.md) compares fixed Z/MAX (two proposals), normal 0.05 Z/MAX, and the accepted fixed Z/MIN. It lists every continuous constraint margin, committed replay margin, assumed/actual inertia velocity and full per-tick paths. Fixed Z/MAX first misses the continuous Z68 upper wall by 0.01166335; its inertia retry obeys its explicit zeroing band but has larger positional violations. Margin 0.05 produces a feasible but unconverged witness for the smaller-margin problem. Shared diagnostics now apply to both closed form and SLP; ten focused tests pass.

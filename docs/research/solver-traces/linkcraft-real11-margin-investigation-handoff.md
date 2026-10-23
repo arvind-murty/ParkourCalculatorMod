@@ -80,3 +80,8 @@ The [full-route experiment](linkcraft-real11-full-fixed0003-ten-ladder.md) runs 
 ## Fixed-margin 7-ladder control
 
 The [full-route 7-ladder control](linkcraft-real11-full-fixed0003-seven-ladder.md) changes only the window ladder to 7,5,3,2,1. Both commit=3 and commit=1 still stall at tick 90 before jump 14. Total logged time 1512.21 ms; full objective/window tables and raw trace are preserved. This is distinct from the successful normal-margin 7-ladder run.
+
+
+## Initial-window shared-helper validation audit
+
+The [same-input 1–7 audit](linkcraft-real11-initial-seven-shared-validation-audit.md) compares fixed Z/MAX (two proposals), normal 0.05 Z/MAX, and the accepted fixed Z/MIN. It lists every continuous constraint margin, committed replay margin, assumed/actual inertia velocity and full per-tick paths. Fixed Z/MAX first misses the continuous Z68 upper wall by 0.01166335; its inertia retry obeys its explicit zeroing band but has larger positional violations. Margin 0.05 produces a feasible but unconverged witness for the smaller-margin problem. Shared diagnostics now apply to both closed form and SLP; ten focused tests pass.

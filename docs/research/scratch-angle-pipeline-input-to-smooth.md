@@ -906,3 +906,8 @@ The subsequent [full-route fixed-margin 10-ladder probe](solver-traces/linkcraft
 
 
 The [fixed-margin 7-ladder full-route control](solver-traces/linkcraft-real11-full-fixed0003-seven-ladder.md) also stalls at tick 90 before jump 14 for both commit passes. It keeps margin 0.0003 and all validation/settings from the fixed 10-ladder run, changing only the window ladder. Detailed attempts and timings are saved.
+
+
+## Shared validation diagnostics: why initial fixed Z/MAX misses
+
+The [first-window audit](solver-traces/linkcraft-real11-initial-seven-shared-validation-audit.md) records every constraint and inertia check through `WindowCandidateValidation` for normal Z/MAX 0.05, fixed Z/MAX 0.0003, and fixed Z/MIN 0.0003. Fixed Z/MAX fails a continuous positional wall before angle mapping, and its inertia-pattern retry satisfies the zeroing band but worsens position violations. The normal candidate is also feasible for the smaller-margin constraints, demonstrating a finite-solve/recovery failure rather than infeasibility. Acceptance does not certify dual convergence or attainment of the full inward margin. The optional shared observer supports closed form and SLP; all ten focused tests passed.

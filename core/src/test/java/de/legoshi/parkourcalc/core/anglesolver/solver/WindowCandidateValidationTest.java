@@ -65,4 +65,48 @@ public class WindowCandidateValidationTest {
         assertEquals(0, path.velX[2], 0);
         assertEquals(0, path.posZ[3], 0);
     }
+    @Test
+    public void diagnosticsExplainAssumptionsWithoutChangingAcceptance() {
+        JumpPhysicsInputs sc = idle(.02, 0);
+        JumpSpec spec = wall(sc, JumpConstraint.Cmp.LE, 1);
+        WindowCandidateValidation validation = new WindowCandidateValidation(exact, spec, 1);
+        double[] angles = new double[3];
+        double baseline = validation.evaluate(angles).maxViolation();
+        WindowCandidateValidation.Diagnostics[] seen = {null};
+        WindowCandidateValidation.setDiagnosticObserver(d -> seen[0] = d);
+        try {
+            JumpLinearModel assumed = new JumpLinearModel(sc, new boolean[]{true, false, false}, null);
+            assertEquals(baseline, validation.evaluate(angles, assumed).maxViolation(), 0);
+            assertNotNull(seen[0]);
+            assertFalse(seen[0].constraints.get(0).committed);
+            assertEquals(1, seen[0].constraints.get(0).assumedMargin, 0);
+            WindowCandidateValidation.InertiaCheck check = seen[0].inertiaChecks.get(0);
+            assertTrue(check.assumedZero);
+            assertFalse(check.assumptionSatisfied);
+            assertEquals(.02, check.assumedVelocity, 0);
+            assertEquals(-.015, check.assumedThresholdMargin, 1e-17);
+            assertFalse(check.continuousZero);
+        } finally { WindowCandidateValidation.setDiagnosticObserver(null); }
+    }
+
+    @Test
+    public void sameObserverReportsSlpValidation() {
+        JumpPhysicsInputs sc = idle(0, 0);
+        JumpSpec spec = wall(sc, JumpConstraint.Cmp.GE, .6);
+        SlpSolve.Config cfg = new SlpSolve.Config();
+        cfg.phase1Calls = 0;
+        cfg.totalCalls = 1;
+        cfg.replayTickLimit = 1;
+        WindowCandidateValidation.Diagnostics[] seen = {null};
+        WindowCandidateValidation.setDiagnosticObserver(d -> seen[0] = d);
+        try {
+            assertNull(SlpSolve.optimizeCentered(exact, spec, 0,
+                    new java.util.concurrent.atomic.AtomicBoolean(false), new double[3], cfg));
+            assertNotNull(seen[0]);
+            assertEquals(.6, seen[0].result.continuousViolation, 0);
+            assertEquals(0, seen[0].result.replayViolation, 0);
+            assertEquals(6, seen[0].inertiaChecks.size());
+        } finally { WindowCandidateValidation.setDiagnosticObserver(null); }
+    }
+
 }

@@ -367,7 +367,7 @@ public final class SlpSolve {
                 // be shallower than CLEARANCE); a centered solve keeps the demand, its result seeds windows.
                 double phase1Gate = hugObjective ? feasTol : -CLEARANCE;
                 boolean prefixAccepted = validation != null
-                        && validation.evaluate(Angles.wrapAll(theta), gf, endPath).maxViolation() <= feasTol;
+                        && validation.evaluate(Angles.wrapAll(theta), gf, endPath, lpLin).maxViolation() <= feasTol;
                 if (endViol > phase1Gate && !prefixAccepted) {
                     if (DEBUG) System.out.printf("  SLP infeasible: viol=%.3e after %d LPs (%.1f ms)%n",
                             endViol, lpCalls, (System.nanoTime() - t0) / 1e6);
@@ -392,7 +392,7 @@ public final class SlpSolve {
         ForwardPath path = exact.forward(sc, gf);
         double finalViol = compiled.maxViolation(gf, path);
         if (validation != null) {
-            double modelViol = validation.evaluate(yaws, gf, path).continuousViolation;
+            double modelViol = validation.evaluate(yaws, gf, path, lpLin).continuousViolation;
             if (SolverTrace.on()) SolverTrace.log("SLP-CHECK", "replayViol=%.12g modelViol=%.12g", finalViol, modelViol);
             finalViol = Math.max(finalViol, modelViol);
         }

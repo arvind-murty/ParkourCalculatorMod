@@ -608,7 +608,7 @@ public final class ClosedFormSolve {
             warm = r.lambda;
 
             double[] yaws = pre.expand(lin, spec.objective, r);
-            WindowCandidateValidation.Result check = validation == null ? null : validation.evaluate(yaws);
+            WindowCandidateValidation.Result check = validation == null ? null : validation.evaluate(yaws, lin);
             double replayViol = check == null ? violOnExact(exact, sc, compiled, yaws) : check.replayViolation;
             double modelViol = check == null ? 0.0 : check.continuousViolation;
             double viol = Math.max(replayViol, modelViol);

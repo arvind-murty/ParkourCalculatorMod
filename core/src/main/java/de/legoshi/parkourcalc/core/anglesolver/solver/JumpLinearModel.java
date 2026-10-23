@@ -409,6 +409,11 @@ public final class JumpLinearModel {
     /** Validate original constraints on this fixed-pattern continuous model, before game-yaw mapping.
      *  Uses the same affine position coefficients as the optimizer, including its inertia pattern. */
     public double maxConstraintViolation(JumpConstraintCompiler.Compiled compiled, double[] yaws) {
+        return compiled.maxViolation(yaws, forwardFixed(yaws));
+    }
+
+    /** Positions under this model's assumed pattern; useful for auditing the optimization proposal. */
+    public ForwardPath forwardFixed(double[] yaws) {
         double[][] position = new double[2][n + 1];
         for (int axis = 0; axis < 2; axis++) {
             for (int k = 0; k <= n; k++) {
@@ -421,7 +426,27 @@ public final class JumpLinearModel {
                 position[axis][k] = value;
             }
         }
-        return compiled.maxViolation(yaws, new ForwardPath(position[0], new double[n + 1], position[1]));
+        return new ForwardPath(position[0], new double[n + 1], position[1]);
+    }
+
+    boolean assumesZero(int axis, int tick) {
+        return zero[axis] != null && zero[axis][tick];
+    }
+
+    String patternDescription() {
+        return SolverTrace.patternLabel(zero[0], zero[1]);
+    }
+
+    /** Carry velocity just before the tick's assumed inertia check, from the affine model. */
+    double velocityBeforeCheck(int axis, int tick, double[] yaws) {
+        double initial = axis == 0 ? sc.initialVelocity.x : sc.initialVelocity.z;
+        double value = zFirst[axis] < tick ? 0.0 : initial * fPre[tick];
+        for (int t = 0; t < tick; t++) {
+            double phi = baseArg[t] + Angles.rad(yaws[t]);
+            value += velocityCoef(axis, t, tick) * mMag[t]
+                    * (axis == 0 ? StrictMath.cos(phi) : StrictMath.sin(phi));
+        }
+        return value;
     }
 
     public List<Wall> velocityWalls(double bound) {
