@@ -406,6 +406,24 @@ public final class JumpLinearModel {
         return walls;
     }
 
+    /** Validate original constraints on this fixed-pattern continuous model, before game-yaw mapping.
+     *  Uses the same affine position coefficients as the optimizer, including its inertia pattern. */
+    public double maxConstraintViolation(JumpConstraintCompiler.Compiled compiled, double[] yaws) {
+        double[][] position = new double[2][n + 1];
+        for (int axis = 0; axis < 2; axis++) {
+            for (int k = 0; k <= n; k++) {
+                double value = constPos(k, axis);
+                for (int t = 0; t < k; t++) {
+                    double phi = baseArg(t) + Angles.rad(yaws[t]);
+                    value += coefAxis(axis, t, k) * mMag(t)
+                            * (axis == 0 ? StrictMath.cos(phi) : StrictMath.sin(phi));
+                }
+                position[axis][k] = value;
+            }
+        }
+        return compiled.maxViolation(yaws, new ForwardPath(position[0], new double[n + 1], position[1]));
+    }
+
     public List<Wall> velocityWalls(double bound) {
         List<Wall> walls = new ArrayList<>();
         for (int a = 0; a < 2; a++) {

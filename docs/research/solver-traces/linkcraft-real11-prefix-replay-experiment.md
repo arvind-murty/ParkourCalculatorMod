@@ -40,3 +40,8 @@ Source: [new route trace](prefix-replay-2026-10-23/normal7-commit1-prefix-replay
 ## Focused explanation of the regression
 
 The [comparison report](linkcraft-real11-prefix-regression-comparison.md) preserves every window attempt through the new failure, committed positions/velocities/yaws, and per-window/objective/rung timing records. A focused same-entry probe passed (`tests=1 failures=0 timeMs=416`). At the first different window, both policies generate the same margin-0.05 candidate after 100 dual iterations. It already violates full continuous lookahead constraints by up to 0.05776 blocks; this is not merely a Minecraft angle-mapping miss. Prefix acceptance returns it immediately. Full-window acceptance rejects it and reaches a feasible margin-0.02 candidate after 32 additional warm-start iterations. The report links the complete constraint audit and raw trace.
+
+
+## Subsequent full-continuous feasibility check
+
+The [full continuous-window validation experiment](linkcraft-real11-prefix-continuous-validation.md) implements the requested combined policy and records focused results. It prevents the first bad margin-0.05 acceptance while preserving the initial Z/MIN prefix acceptance. The full 30-jump route still fails, now at index 13. Earlier descriptions of prefix-only acceptance in this document describe the prior experiment.

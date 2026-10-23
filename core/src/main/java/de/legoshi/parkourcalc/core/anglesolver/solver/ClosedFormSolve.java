@@ -48,7 +48,8 @@ public final class ClosedFormSolve {
         public int rungStallLimit = 2;
 
         /** Exact replay acceptance horizon, in input ticks; optimization still uses every spec row.
-         *  LongRun windows set this to their committed prefix. Ordinary solves check the whole path. */
+         *  LongRun windows set this to their committed prefix and also require full continuous feasibility.
+         *  Ordinary solves check the whole replay path. */
         public int replayTickLimit = Integer.MAX_VALUE;
     }
 
@@ -176,6 +177,16 @@ public final class ClosedFormSolve {
             if (r == null) break;
             r = new Result(YawOrder.carryFreeTicks(lin, sc.startYaw, r.yaws), r.violation, r.feasible, r.amp, r.phase);
             double viol = violOnExact(exact, sc, full, r.yaws);
+            if (cfg.replayTickLimit < n) {
+                // The inner solve checked its full fixed-pattern model; also check the order rows
+                // stripped for that solve against the continuous facings over the entire window.
+                if (!r.feasible) viol = Math.max(viol, r.violation);
+                for (JumpConstraint c : spec.constraints) {
+                    if (c.mode == JumpConstraint.Mode.F) {
+                        viol = Math.max(viol, JumpConstraintCompiler.slack(c, r.yaws, null));
+                    }
+                }
+            }
             if (least == null || viol < least.violation) least = new Result(r.yaws, viol, false);
             boolean feasible = viol <= feasTol;
             boolean[] nextTie = tie.clone();
@@ -585,6 +596,8 @@ public final class ClosedFormSolve {
         double bestViol = Double.POSITIVE_INFINITY;
         double[] bestYaws = null;
         double[] bestLambda = null;
+        JumpConstraintCompiler.Compiled continuousChecks = cfg.replayTickLimit < lin.n
+                ? JumpConstraintCompiler.compile(spec) : null;
         double[] warm = null;
         int rungStall = 0;
         for (double margin : margins) {
@@ -602,7 +615,12 @@ public final class ClosedFormSolve {
             warm = r.lambda;
 
             double[] yaws = pre.expand(lin, spec.objective, r);
-            double viol = violOnExact(exact, sc, compiled, yaws);
+            double replayViol = violOnExact(exact, sc, compiled, yaws);
+            double modelViol = continuousChecks == null ? 0.0 : lin.maxConstraintViolation(continuousChecks, yaws);
+            double viol = Math.max(replayViol, modelViol);
+            if (continuousChecks != null && SolverTrace.on()) {
+                SolverTrace.log("CF-CHECK", "margin=%.2e replayViol=%.12g modelViol=%.12g", margin, replayViol, modelViol);
+            }
             if (SolverTrace.on()) {
                 SolverTrace.log("CF", "rung margin=%.2e iters=%d pg=%.3e dual=%.9f viol=%.3e ms=%.3f%s",
                         margin, solver.lastIters, solver.lastPgres, r.value, viol,

@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** Receding-horizon solver for long multi-jump spans. Each window optimizes all its constraints, but
- *  exact replay acceptance covers only the first few jumps that will be committed. The remaining
+/** Receding-horizon solver for long multi-jump spans. Each window optimizes all its constraints and requires full
+ *  continuous constraint feasibility. Exact replay acceptance covers only the first few jumps that will be committed. The remaining
  *  lookahead is provisional and is solved again from the committed prefix's exact exit state.
  *
  *  <p>Windows use {@link ClosedFormSolve} with centered margins and fall back to SLP. Smaller windows

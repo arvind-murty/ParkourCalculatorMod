@@ -135,7 +135,7 @@ public class First30MarginComparisonTest {
         }
     }
 
-    /** Reconstruct the shared first three commits, then compare full and prefix gates on the same fourth window. */
+    /** Reconstruct the shared first three commits, then ensure full-model checking prevents the fourth-window regression. */
     @Test
     @SuppressWarnings("unchecked")
     public void prefixRegressionFirstDivergence() throws Exception {
@@ -183,12 +183,15 @@ public class First30MarginComparisonTest {
                 double fullViolation = JumpConstraintCompiler.compile(spec).maxViolation(game, path);
                 double prefixViolation = JumpConstraintCompiler.compile(spec, 10).maxViolation(game, path);
                 assertEquals(0, prefixViolation, 0);
-                if (prefix) assertTrue(fullViolation > .05);
-                else assertEquals(0, fullViolation, 0);
+                assertEquals(0, fullViolation, 0);
+                assertEquals(734.738601761702, path.posX[10], 1e-11);
+                assertEquals(-1099.039450382282, path.posZ[10], 1e-11);
+                assertEquals(0, new JumpLinearModel(sc).maxConstraintViolation(
+                        JumpConstraintCompiler.compile(spec), result.yaws), 0);
                 SolverTrace.log("FIRST-COMMIT", "policy=%s tick=40 x=%.12f z=%.12f vx=%.12f vz=%.12f incomingYaw=%.9f fullViolation=%.12g prefixViolation=%.12g",
                         prefix ? "prefix" : "full", path.posX[10], path.posZ[10], path.velX[10], path.velZ[10],
                         game[9], fullViolation, prefixViolation);
-                auditConstraints(sc, spec, new AuditCandidate(0, null, null, result), true, prefix ? .05 : .02, rows);
+                auditConstraints(sc, spec, new AuditCandidate(0, null, null, result), true, .02, rows);
             }
         } finally { SolverTrace.disable(); }
         Files.write(Paths.get("build/reports/prefix-first-divergence-constraints.csv"), rows, StandardCharsets.UTF_8);

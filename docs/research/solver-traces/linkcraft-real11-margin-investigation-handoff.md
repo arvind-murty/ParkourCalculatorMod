@@ -60,3 +60,8 @@ A subsequent [experiment](linkcraft-real11-prefix-replay-experiment.md) accepts 
 Read the [same-entry prefix regression comparison](linkcraft-real11-prefix-regression-comparison.md) for the first divergent candidate, all window attempts through failure, committed-state table, timing records, and focused probe evidence. Full-window replay had also been filtering candidates that violate the continuous lookahead model; prefix-only replay accepts one such candidate at index 3. Keep full continuous-model feasibility distinct from replay scope in the next experiment. No change imposing full continuous feasibility has been implemented yet.
 
 The user requests focused tests/probes only, backgrounded with output redirected to files. Do not run the full suite or pursue unrelated failures to make everything green. The earlier full suite has finished and is not being rerun.
+
+
+## Subsequent full-continuous feasibility check
+
+The [full continuous-window validation experiment](linkcraft-real11-prefix-continuous-validation.md) implements the requested combined policy and records focused results. It prevents the first bad margin-0.05 acceptance while preserving the initial Z/MIN prefix acceptance. The full 30-jump route still fails, now at index 13. Earlier descriptions of prefix-only acceptance in this document describe the prior experiment.
