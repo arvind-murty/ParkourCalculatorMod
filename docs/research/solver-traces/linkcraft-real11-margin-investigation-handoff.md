@@ -43,3 +43,8 @@ The original table used each earlier window's uncommitted preview yaw at the bou
 - Reproducer: `core/src/test/java/de/legoshi/parkourcalc/anglesolver/First30NormalMarginTraceTest.java`; its default TAS path is the Linkcraft real/11 JSON and it supports `PKC_TRACE_INPUT`.
 - Branch commit `5b632de` contains the temporary fixed-`0.0003` change; `79bb653` reverts it. Baseline commit `f980e29` has the normal margin ladder and normal trace; the comparison work leaves that production default intact. Use `git show 5b632de:<path>` to inspect the temporary override without changing branches.
 - Current branch: `codex/first30-margin-trace-bookkeeping`. Earlier solver logs, tests, and experiment changes were separated into commits; see `git log --oneline`.
+
+
+## Initial seven-jump constraint audit
+
+The [initial-window audit](linkcraft-real11-initial-seven-constraint-audit.md) now lists every original constraint for all retained candidates and every inertia pass. Z/MIN and X/MAX have small replay-only misses; Z/MAX and X/MIN already violate the continuous constraints. The normal 0.05 candidate has minimum actual replay clearance about 0.03509 blocks. This experiment runs only ticks 0–68.

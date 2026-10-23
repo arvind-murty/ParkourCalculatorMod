@@ -1,0 +1,40 @@
+      2.99  t1   AUDIT-PASS objective=Z/MAX margin=0.00030000 pass=0 pattern=free
+    172.08  t1   CF      rung margin=3.00e-04 iters=100 pg=3.623e-02 dual=11.807984930 viol=1.240e-02 ms=146.676
+    174.50  t1   AUDIT-PASS objective=Z/MAX margin=0.00030000 pass=1 pattern=x@0,@63+z@0
+    187.75  t1   CF      rung margin=3.00e-04 iters=83 pg=4.700e-03 dual=11.799810779 viol=7.261e-02 ms=11.967
+    191.25  t1   CF      pass=0 pattern=free n=68 m=33 robust
+    199.00  t1   CF      rung margin=3.00e-04 iters=100 pg=3.623e-02 dual=11.807984930 viol=1.240e-02 ms=7.268
+    199.42  t1   CF      pass=1 pattern=x@0,@63+z@0 n=68 m=33 robust
+    207.44  t1   CF      rung margin=3.00e-04 iters=83 pg=4.700e-03 dual=11.799810779 viol=7.261e-02 ms=7.631
+    207.66  t1   CF      pass=1 no improvement (viol=7.261e-02), stop
+    207.79  t1   CF      fallback bestViol=1.240e-02 us=16577.4
+    248.65  t1   AUDIT-PASS objective=Z/MIN margin=0.00030000 pass=0 pattern=free
+    253.52  t1   CF      rung margin=3.00e-04 iters=66 pg=9.113e-10 dual=-11.184285787 viol=4.585e-04 ms=3.843
+    253.75  t1   AUDIT-PASS objective=Z/MIN margin=0.00030000 pass=1 pattern=x@0,@63+z@0
+    255.88  t1   CF      rung margin=3.00e-04 iters=67 pg=6.263e-09 dual=-11.183601028 viol=5.898e-04 ms=1.849
+    256.02  t1   CF      pass=0 pattern=free n=68 m=33 robust
+    257.83  t1   CF      rung margin=3.00e-04 iters=66 pg=9.113e-10 dual=-11.184285787 viol=4.585e-04 ms=1.480
+    257.99  t1   CF      pass=1 pattern=x@0,@63+z@0 n=68 m=33 robust
+    259.62  t1   CF      rung margin=3.00e-04 iters=67 pg=6.263e-09 dual=-11.183601028 viol=5.898e-04 ms=1.335
+    259.72  t1   CF      pass=1 no improvement (viol=5.898e-04), stop
+    259.76  t1   CF      fallback bestViol=4.585e-04 us=3755.5
+    267.99  t1   AUDIT-PASS objective=X/MAX margin=0.00030000 pass=0 pattern=free
+    271.10  t1   CF      rung margin=3.00e-04 iters=79 pg=4.422e-09 dual=-16.526699666 viol=1.916e-04 ms=2.755
+    271.32  t1   CF      pass=0 pattern=free n=68 m=33 robust
+    272.78  t1   CF      rung margin=3.00e-04 iters=79 pg=4.422e-09 dual=-16.526699666 viol=1.916e-04 ms=1.295
+    272.88  t1   CF      pass=0 pattern x@0+z@0 ineffective, stop
+    272.91  t1   CF      fallback bestViol=1.916e-04 us=1608.6
+    274.33  t1   AUDIT-PASS objective=X/MIN margin=0.00030000 pass=0 pattern=free
+    277.36  t1   CF      rung margin=3.00e-04 iters=100 pg=5.351e+00 dual=17.796827834 viol=5.019e+00 ms=2.810
+    277.52  t1   AUDIT-PASS objective=X/MIN margin=0.00030000 pass=1 pattern=x@0+z@0,@21
+    280.75  t1   CF      rung margin=3.00e-04 iters=100 pg=3.818e+00 dual=17.393753741 viol=1.891e+00 ms=3.017
+    281.03  t1   CF      pass=0 pattern=free n=68 m=33 robust
+    285.42  t1   CF      rung margin=3.00e-04 iters=100 pg=5.351e+00 dual=17.796827834 viol=5.019e+00 ms=4.190
+    285.59  t1   CF      pass=1 pattern=x@0+z@0,@21 n=68 m=33 robust
+    289.06  t1   CF      rung margin=3.00e-04 iters=100 pg=3.818e+00 dual=17.393753741 viol=1.891e+00 ms=3.251
+    289.23  t1   CF      pass=1 pattern x@0+z@0 ineffective, stop
+    289.28  t1   CF      fallback bestViol=1.891e+00 us=8265.7
+    292.37  t1   AUDIT-PASS objective=Z/MAX margin=0.050000 pass=0 pattern=free
+    294.17  t1   CF      rung margin=5.00e-02 iters=100 pg=2.090e-01 dual=11.544886238 viol=0.000e+00 ms=1.355 certified
+    294.49  t1   CF      pass=0 pattern=free n=68 m=33 robust
+    297.04  t1   CF      rung margin=5.00e-02 iters=100 pg=2.090e-01 dual=11.544886238 viol=0.000e+00 ms=2.330 certified

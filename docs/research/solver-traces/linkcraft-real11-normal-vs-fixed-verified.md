@@ -118,3 +118,8 @@ The [verification script](verify_saved_margin_runs.py) compares every saved wind
 `PKC_TRACE_INPUT` can point to the same capture at a different path. The test is opt-in because the capture is external. This command passed, including original-state checks, normal completion, fixed failure index, and full chained exact validation for the normal run. Raw output writes to `core/build/reports/solver-trace-margin-control-*.txt`; copies of this run are persisted here.
 
 No solver behavior was changed. Potential next experiments, not implemented: (1) spend the same iteration count at fixed 0.0003, preserving multipliers between calls, to distinguish continuation from extra iterations; (2) use the successful pattern discovered by a broader search as a seed for the tighter-margin solve; (3) retain the feasible remaining suffix from an accepted window so a later window-search miss does not discard a known continuation. Failed controls above establish search failure, not mathematical infeasibility of their entry states.
+
+
+## Initial seven-jump constraint audit
+
+The [initial-window audit](linkcraft-real11-initial-seven-constraint-audit.md) now lists every original constraint for all retained candidates and every inertia pass. Z/MIN and X/MAX have small replay-only misses; Z/MAX and X/MIN already violate the continuous constraints. The normal 0.05 candidate has minimum actual replay clearance about 0.03509 blocks. This experiment runs only ticks 0–68.
