@@ -1,0 +1,766 @@
+     83.17  t1   AUDIT   begin case=seven-forward-jump-commit3 shortest-original-state
+     87.18  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+     87.29  t1   LRS-OBJ begin primary Z/MAX@9
+     89.44  t1   CF      pass=0 pattern=free n=9 m=8 robust
+     90.91  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.198 stop=LAMBDA_LIMIT iters=2
+     90.98  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+     91.05  t1   CF      fallback bestViol=none us=2000.6
+     91.12  t1   LRS-OBJ end primary result=miss ms=3.823
+     91.19  t1   LRS-OBJ begin alternate Z/MIN@9
+     91.26  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+     91.35  t1   CF      pass=0 pattern=free n=9 m=8 robust
+     91.53  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.046 stop=LAMBDA_LIMIT iters=2
+     91.58  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+     91.65  t1   CF      fallback bestViol=none us=292.0
+     91.72  t1   LRS-OBJ end alternate Z/MIN@9 result=miss ms=0.526
+     91.77  t1   LRS-OBJ begin alternate X/MAX@9
+     91.82  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+     91.97  t1   CF      pass=0 pattern=free n=9 m=8 robust
+     92.27  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.090 stop=LAMBDA_LIMIT iters=4
+     92.33  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+     92.40  t1   CF      fallback bestViol=none us=487.0
+     92.47  t1   LRS-OBJ end alternate X/MAX@9 result=miss ms=0.685
+     92.51  t1   LRS-OBJ begin alternate X/MIN@9
+     92.56  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false
+     92.66  t1   CF      pass=0 pattern=free n=9 m=8 robust
+     92.85  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.070 stop=LAMBDA_LIMIT iters=3
+     92.90  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+     92.95  t1   CF      fallback bestViol=none us=312.6
+     93.01  t1   LRS-OBJ end alternate X/MIN@9 result=miss ms=0.491
+     93.06  t1   LRS-OBJ begin fallback SLP Z/MAX@9
+     94.36  t1   SLP     dual seed rejected stop=LAMBDA_LIMIT iters=2 n=9 m=8
+     94.44  t1   LRS-OBJ end fallback SLP result=miss ms=1.369
+     94.55  t1   AUDIT   counterfactual case=seven-forward-jump-commit3 jump13=MAX
+     94.73  t1   CF      pass=0 pattern=free n=2 m=8 robust
+     95.35  t1   CF      rung margin=3.00e-04 iters=4 pg=7.235e-10 dual=0.494111896 viol=0.000e+00 ms=0.474 certified stop=PROJECTED_GRADIENT finalPg=7.235e-10
+     96.07  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+     96.12  t1   LRS-OBJ begin primary Z/MAX@9
+     96.20  t1   CF      pass=0 pattern=free n=9 m=8 robust
+     96.36  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.045 stop=LAMBDA_LIMIT iters=2
+     96.40  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+     96.45  t1   CF      fallback bestViol=none us=253.6
+     96.49  t1   LRS-OBJ end primary result=miss ms=0.365
+     96.53  t1   LRS-OBJ begin alternate Z/MIN@9
+     96.59  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+     96.67  t1   CF      pass=0 pattern=free n=9 m=8 robust
+     96.85  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.045 stop=LAMBDA_LIMIT iters=2
+     96.90  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+     96.94  t1   CF      fallback bestViol=none us=283.1
+     96.99  t1   LRS-OBJ end alternate Z/MIN@9 result=miss ms=0.448
+     97.03  t1   LRS-OBJ begin alternate X/MAX@9
+     97.09  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+     97.16  t1   CF      pass=0 pattern=free n=9 m=8 robust
+     97.34  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.081 stop=LAMBDA_LIMIT iters=4
+     97.38  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+     97.42  t1   CF      fallback bestViol=none us=275.0
+     97.48  t1   LRS-OBJ end alternate X/MAX@9 result=miss ms=0.441
+     97.51  t1   LRS-OBJ begin alternate X/MIN@9
+     97.55  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false
+     97.63  t1   CF      pass=0 pattern=free n=9 m=8 robust
+     97.80  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.060 stop=LAMBDA_LIMIT iters=3
+     97.84  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+     97.89  t1   CF      fallback bestViol=none us=253.8
+     97.94  t1   LRS-OBJ end alternate X/MIN@9 result=miss ms=0.424
+     97.98  t1   LRS-OBJ begin fallback SLP Z/MAX@9
+     98.10  t1   SLP     dual seed rejected stop=LAMBDA_LIMIT iters=2 n=9 m=8
+     98.15  t1   LRS-OBJ end fallback SLP result=miss ms=0.165
+     98.20  t1   AUDIT   counterfactual case=seven-forward-jump-commit3 jump13=MIN
+     98.34  t1   CF      pass=0 pattern=free n=2 m=8 robust
+     98.51  t1   CF      rung margin=3.00e-04 iters=4 pg=7.235e-10 dual=0.494111896 viol=0.000e+00 ms=0.034 certified stop=PROJECTED_GRADIENT finalPg=7.235e-10
+     98.92  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+     98.96  t1   LRS-OBJ begin primary Z/MAX@9
+     99.03  t1   CF      pass=0 pattern=free n=9 m=8 robust
+     99.17  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.041 stop=LAMBDA_LIMIT iters=2
+     99.20  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+     99.24  t1   CF      fallback bestViol=none us=216.5
+     99.28  t1   LRS-OBJ end primary result=miss ms=0.314
+     99.31  t1   LRS-OBJ begin alternate Z/MIN@9
+     99.36  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+     99.42  t1   CF      pass=0 pattern=free n=9 m=8 robust
+     99.57  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.055 stop=LAMBDA_LIMIT iters=3
+     99.61  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+     99.64  t1   CF      fallback bestViol=none us=230.1
+     99.68  t1   LRS-OBJ end alternate Z/MIN@9 result=miss ms=0.362
+     99.71  t1   LRS-OBJ begin alternate X/MAX@9
+     99.75  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+     99.82  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    100.00  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.083 stop=LAMBDA_LIMIT iters=5
+    100.04  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    100.08  t1   CF      fallback bestViol=none us=258.9
+    100.12  t1   LRS-OBJ end alternate X/MAX@9 result=miss ms=0.392
+    100.14  t1   LRS-OBJ begin alternate X/MIN@9
+    100.17  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false
+    100.23  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    100.39  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.066 stop=LAMBDA_LIMIT iters=4
+    100.42  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    100.46  t1   CF      fallback bestViol=none us=231.2
+    100.50  t1   LRS-OBJ end alternate X/MIN@9 result=miss ms=0.345
+    100.53  t1   LRS-OBJ begin fallback SLP Z/MAX@9
+    100.69  t1   SLP     dual seed rejected stop=LAMBDA_LIMIT iters=2 n=9 m=8
+    100.76  t1   LRS-OBJ end fallback SLP result=miss ms=0.229
+    101.22  t1   AUDIT   begin case=seven-forward-jump-commit1 shortest-original-state
+    101.29  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    101.33  t1   LRS-OBJ begin primary Z/MAX@9
+    101.39  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    101.53  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.044 stop=LAMBDA_LIMIT iters=2
+    101.56  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    101.60  t1   CF      fallback bestViol=none us=211.8
+    101.63  t1   LRS-OBJ end primary result=miss ms=0.298
+    101.67  t1   LRS-OBJ begin alternate Z/MIN@9
+    101.70  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    101.76  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    101.89  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.040 stop=LAMBDA_LIMIT iters=2
+    101.92  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    101.95  t1   CF      fallback bestViol=none us=200.8
+    101.99  t1   LRS-OBJ end alternate Z/MIN@9 result=miss ms=0.318
+    102.02  t1   LRS-OBJ begin alternate X/MAX@9
+    102.06  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+    102.13  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    102.31  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.078 stop=LAMBDA_LIMIT iters=4
+    102.35  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    102.38  t1   CF      fallback bestViol=none us=273.5
+    102.43  t1   LRS-OBJ end alternate X/MAX@9 result=miss ms=0.391
+    102.46  t1   LRS-OBJ begin alternate X/MIN@9
+    102.49  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false
+    102.54  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    102.69  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.073 stop=LAMBDA_LIMIT iters=4
+    102.72  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    102.76  t1   CF      fallback bestViol=none us=222.8
+    102.82  t1   LRS-OBJ end alternate X/MIN@9 result=miss ms=0.353
+    102.84  t1   LRS-OBJ begin fallback SLP Z/MAX@9
+    102.95  t1   SLP     dual seed rejected stop=LAMBDA_LIMIT iters=2 n=9 m=8
+    102.99  t1   LRS-OBJ end fallback SLP result=miss ms=0.139
+    103.04  t1   AUDIT   counterfactual case=seven-forward-jump-commit1 jump13=MAX
+    103.14  t1   CF      pass=0 pattern=free n=2 m=8 robust
+    103.27  t1   CF      rung margin=3.00e-04 iters=3 pg=8.200e-11 dual=0.532159395 viol=0.000e+00 ms=0.033 certified stop=PROJECTED_GRADIENT finalPg=8.200e-11
+    103.59  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    103.64  t1   LRS-OBJ begin primary Z/MAX@9
+    103.69  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    103.80  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.041 stop=LAMBDA_LIMIT iters=2
+    103.83  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    103.87  t1   CF      fallback bestViol=none us=183.0
+    103.89  t1   LRS-OBJ end primary result=miss ms=0.254
+    103.92  t1   LRS-OBJ begin alternate Z/MIN@9
+    103.95  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    104.00  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    104.11  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.036 stop=LAMBDA_LIMIT iters=2
+    104.15  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    104.18  t1   CF      fallback bestViol=none us=184.0
+    104.21  t1   LRS-OBJ end alternate Z/MIN@9 result=miss ms=0.285
+    104.23  t1   LRS-OBJ begin alternate X/MAX@9
+    104.26  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+    104.31  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    104.46  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.073 stop=LAMBDA_LIMIT iters=4
+    104.49  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    104.52  t1   CF      fallback bestViol=none us=216.5
+    104.55  t1   LRS-OBJ end alternate X/MAX@9 result=miss ms=0.311
+    104.57  t1   LRS-OBJ begin alternate X/MIN@9
+    104.59  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false
+    104.64  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    104.81  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.070 stop=LAMBDA_LIMIT iters=4
+    104.84  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    104.86  t1   CF      fallback bestViol=none us=223.1
+    104.90  t1   LRS-OBJ end alternate X/MIN@9 result=miss ms=0.320
+    104.92  t1   LRS-OBJ begin fallback SLP Z/MAX@9
+    105.04  t1   SLP     dual seed rejected stop=LAMBDA_LIMIT iters=2 n=9 m=8
+    105.08  t1   LRS-OBJ end fallback SLP result=miss ms=0.151
+    105.11  t1   AUDIT   counterfactual case=seven-forward-jump-commit1 jump13=MIN
+    105.22  t1   CF      pass=0 pattern=free n=2 m=8 robust
+    105.33  t1   CF      rung margin=3.00e-04 iters=3 pg=8.200e-11 dual=0.532159395 viol=0.000e+00 ms=0.030 certified stop=PROJECTED_GRADIENT finalPg=8.200e-11
+    105.58  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    105.62  t1   LRS-OBJ begin primary Z/MAX@9
+    105.69  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    105.90  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.125 stop=LAMBDA_LIMIT iters=12
+    105.93  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    105.96  t1   CF      fallback bestViol=none us=284.8
+    105.98  t1   LRS-OBJ end primary result=miss ms=0.363
+    106.00  t1   LRS-OBJ begin alternate Z/MIN@9
+    106.03  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    106.10  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    106.23  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.068 stop=LAMBDA_LIMIT iters=7
+    106.26  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    106.28  t1   CF      fallback bestViol=none us=186.6
+    106.30  t1   LRS-OBJ end alternate Z/MIN@9 result=miss ms=0.295
+    106.32  t1   LRS-OBJ begin alternate X/MAX@9
+    106.34  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+    106.38  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    106.61  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.156 stop=LAMBDA_LIMIT iters=14
+    106.64  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    106.66  t1   CF      fallback bestViol=none us=286.0
+    106.69  t1   LRS-OBJ end alternate X/MAX@9 result=miss ms=0.366
+    106.73  t1   LRS-OBJ begin alternate X/MIN@9
+    106.75  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false
+    106.80  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    106.97  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.108 stop=LAMBDA_LIMIT iters=13
+    107.00  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    107.03  t1   CF      fallback bestViol=none us=238.9
+    107.05  t1   LRS-OBJ end alternate X/MIN@9 result=miss ms=0.320
+    107.07  t1   LRS-OBJ begin fallback SLP Z/MAX@9
+    107.22  t1   SLP     dual seed rejected stop=LAMBDA_LIMIT iters=13 n=9 m=8
+    107.25  t1   LRS-OBJ end fallback SLP result=miss ms=0.177
+    120.13  t1   AUDIT   begin case=seven-forward-tick-commit3 shortest-original-state
+    120.30  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    120.33  t1   LRS-OBJ begin primary Z/MAX@9
+    120.39  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    120.50  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.036 stop=LAMBDA_LIMIT iters=2
+    120.52  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    120.56  t1   CF      fallback bestViol=none us=170.7
+    120.60  t1   LRS-OBJ end primary result=miss ms=0.264
+    120.62  t1   LRS-OBJ begin alternate Z/MIN@9
+    120.65  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    120.69  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    120.78  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.027 stop=LAMBDA_LIMIT iters=2
+    120.80  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    120.82  t1   CF      fallback bestViol=none us=137.2
+    120.85  t1   LRS-OBJ end alternate Z/MIN@9 result=miss ms=0.223
+    120.87  t1   LRS-OBJ begin alternate X/MAX@9
+    120.89  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+    120.93  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    121.04  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.053 stop=LAMBDA_LIMIT iters=4
+    121.07  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    121.09  t1   CF      fallback bestViol=none us=165.8
+    121.11  t1   LRS-OBJ end alternate X/MAX@9 result=miss ms=0.240
+    121.13  t1   LRS-OBJ begin alternate X/MIN@9
+    121.15  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false
+    121.19  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    121.30  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.050 stop=LAMBDA_LIMIT iters=4
+    121.32  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    121.35  t1   CF      fallback bestViol=none us=161.3
+    121.39  t1   LRS-OBJ end alternate X/MIN@9 result=miss ms=0.251
+    121.41  t1   LRS-OBJ begin fallback SLP Z/MAX@9
+    121.49  t1   SLP     dual seed rejected stop=LAMBDA_LIMIT iters=2 n=9 m=8
+    121.52  t1   LRS-OBJ end fallback SLP result=miss ms=0.106
+    121.58  t1   AUDIT   counterfactual case=seven-forward-tick-commit3 jump13=MAX
+    121.70  t1   CF      pass=0 pattern=free n=2 m=8 robust
+    121.79  t1   CF      rung margin=3.00e-04 iters=0 pg=0.000e+00 dual=0.532160447 viol=6.570e-05 ms=0.019 stop=PROJECTED_GRADIENT finalPg=0.000e+00
+    121.84  t1   CF      pass=1 pattern=x@0-1 n=2 m=8 robust
+    121.95  t1   CF      rung margin=3.00e-04 iters=3 pg=4.493e-11 dual=0.532160131 viol=0.000e+00 ms=0.026 certified stop=PROJECTED_GRADIENT finalPg=4.493e-11
+    122.21  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    122.25  t1   LRS-OBJ begin primary Z/MAX@9
+    122.29  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    122.38  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.030 stop=LAMBDA_LIMIT iters=2
+    122.41  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    122.43  t1   CF      fallback bestViol=none us=149.8
+    122.45  t1   LRS-OBJ end primary result=miss ms=0.207
+    122.47  t1   LRS-OBJ begin alternate Z/MIN@9
+    122.50  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    122.53  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    122.62  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.029 stop=LAMBDA_LIMIT iters=2
+    122.64  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    122.66  t1   CF      fallback bestViol=none us=135.0
+    122.69  t1   LRS-OBJ end alternate Z/MIN@9 result=miss ms=0.211
+    122.70  t1   LRS-OBJ begin alternate X/MAX@9
+    122.72  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+    122.76  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    122.87  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.055 stop=LAMBDA_LIMIT iters=4
+    122.89  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    122.93  t1   CF      fallback bestViol=none us=174.8
+    122.95  t1   LRS-OBJ end alternate X/MAX@9 result=miss ms=0.243
+    122.97  t1   LRS-OBJ begin alternate X/MIN@9
+    122.98  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false
+    123.02  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    123.13  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.052 stop=LAMBDA_LIMIT iters=4
+    123.15  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    123.17  t1   CF      fallback bestViol=none us=155.2
+    123.19  t1   LRS-OBJ end alternate X/MIN@9 result=miss ms=0.220
+    123.21  t1   LRS-OBJ begin fallback SLP Z/MAX@9
+    123.29  t1   SLP     dual seed rejected stop=LAMBDA_LIMIT iters=2 n=9 m=8
+    123.31  t1   LRS-OBJ end fallback SLP result=miss ms=0.105
+    123.36  t1   AUDIT   counterfactual case=seven-forward-tick-commit3 jump13=MIN
+    123.46  t1   CF      pass=0 pattern=free n=2 m=8 robust
+    123.55  t1   CF      rung margin=3.00e-04 iters=1 pg=1.064e-04 dual=0.532044542 viol=6.570e-05 ms=0.027 stop=RECOVERED_INPUT_STALL finalPg=1.064e-04
+    123.60  t1   CF      pass=1 pattern=x@0-1 n=2 m=8 robust
+    123.72  t1   CF      rung margin=3.00e-04 iters=9 pg=1.062e-04 dual=0.531998461 viol=0.000e+00 ms=0.043 certified stop=RECOVERED_INPUT_STALL finalPg=1.062e-04
+    123.93  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    123.95  t1   LRS-OBJ begin primary Z/MAX@9
+    123.98  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    124.09  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.052 stop=LAMBDA_LIMIT iters=7
+    124.11  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    124.13  t1   CF      fallback bestViol=none us=148.3
+    124.53  t1   LRS-OBJ end primary result=miss ms=0.575
+    124.55  t1   LRS-OBJ begin alternate Z/MIN@9
+    124.57  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    124.60  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    124.69  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.041 stop=LAMBDA_LIMIT iters=6
+    124.71  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    124.74  t1   CF      fallback bestViol=none us=135.5
+    124.76  t1   LRS-OBJ end alternate Z/MIN@9 result=miss ms=0.209
+    124.78  t1   LRS-OBJ begin alternate X/MAX@9
+    124.79  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+    124.83  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    124.94  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.065 stop=LAMBDA_LIMIT iters=13
+    124.96  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    124.98  t1   CF      fallback bestViol=none us=158.9
+    125.00  t1   LRS-OBJ end alternate X/MAX@9 result=miss ms=0.221
+    125.02  t1   LRS-OBJ begin alternate X/MIN@9
+    125.04  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false
+    125.07  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    125.19  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.046 stop=LAMBDA_LIMIT iters=11
+    125.20  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    125.22  t1   CF      fallback bestViol=none us=153.6
+    125.30  t1   LRS-OBJ end alternate X/MIN@9 result=miss ms=0.219
+    125.39  t1   LRS-OBJ begin fallback SLP Z/MAX@9
+    125.50  t1   SLP     dual seed rejected stop=LAMBDA_LIMIT iters=7 n=9 m=8
+    125.52  t1   LRS-OBJ end fallback SLP result=miss ms=0.129
+    125.78  t1   AUDIT   begin case=seven-forward-tick-commit1 shortest-original-state
+    125.83  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    125.85  t1   LRS-OBJ begin primary Z/MAX@9
+    125.90  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    125.98  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.017 stop=LAMBDA_LIMIT iters=2
+    125.99  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    126.01  t1   CF      fallback bestViol=none us=131.4
+    126.03  t1   LRS-OBJ end primary result=miss ms=0.179
+    126.04  t1   LRS-OBJ begin alternate Z/MIN@9
+    126.06  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    126.10  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    126.16  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.013 stop=LAMBDA_LIMIT iters=2
+    126.17  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    126.19  t1   CF      fallback bestViol=none us=97.8
+    126.20  t1   LRS-OBJ end alternate Z/MIN@9 result=miss ms=0.160
+    126.22  t1   LRS-OBJ begin alternate X/MAX@9
+    126.23  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+    126.26  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    126.32  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.021 stop=LAMBDA_LIMIT iters=4
+    126.34  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    126.35  t1   CF      fallback bestViol=none us=94.3
+    126.37  t1   LRS-OBJ end alternate X/MAX@9 result=miss ms=0.147
+    126.38  t1   LRS-OBJ begin alternate X/MIN@9
+    126.39  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false
+    126.42  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    126.48  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.019 stop=LAMBDA_LIMIT iters=4
+    126.49  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    126.51  t1   CF      fallback bestViol=none us=93.9
+    126.53  t1   LRS-OBJ end alternate X/MIN@9 result=miss ms=0.146
+    126.54  t1   LRS-OBJ begin fallback SLP Z/MAX@9
+    126.60  t1   SLP     dual seed rejected stop=LAMBDA_LIMIT iters=2 n=9 m=8
+    126.62  t1   LRS-OBJ end fallback SLP result=miss ms=0.077
+    126.64  t1   AUDIT   counterfactual case=seven-forward-tick-commit1 jump13=MAX
+    126.74  t1   CF      pass=0 pattern=free n=2 m=8 robust
+    126.80  t1   CF      rung margin=3.00e-04 iters=0 pg=0.000e+00 dual=0.532160447 viol=1.372e-04 ms=0.017 stop=PROJECTED_GRADIENT finalPg=0.000e+00
+    126.84  t1   CF      pass=1 pattern=x@0-1 n=2 m=8 robust
+    126.91  t1   CF      rung margin=3.00e-04 iters=3 pg=5.371e-11 dual=0.532159996 viol=0.000e+00 ms=0.021 certified stop=PROJECTED_GRADIENT finalPg=5.371e-11
+    127.11  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    127.13  t1   LRS-OBJ begin primary Z/MAX@9
+    127.18  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    127.23  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.013 stop=LAMBDA_LIMIT iters=2
+    127.25  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    127.27  t1   CF      fallback bestViol=none us=93.0
+    127.28  t1   LRS-OBJ end primary result=miss ms=0.147
+    127.30  t1   LRS-OBJ begin alternate Z/MIN@9
+    127.32  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    127.35  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    127.40  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.012 stop=LAMBDA_LIMIT iters=2
+    127.42  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    127.43  t1   CF      fallback bestViol=none us=90.8
+    127.45  t1   LRS-OBJ end alternate Z/MIN@9 result=miss ms=0.149
+    127.46  t1   LRS-OBJ begin alternate X/MAX@9
+    127.47  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+    127.50  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    127.56  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.020 stop=LAMBDA_LIMIT iters=4
+    127.58  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    127.59  t1   CF      fallback bestViol=none us=94.6
+    127.61  t1   LRS-OBJ end alternate X/MAX@9 result=miss ms=0.144
+    127.62  t1   LRS-OBJ begin alternate X/MIN@9
+    127.63  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false
+    127.66  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    127.72  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.020 stop=LAMBDA_LIMIT iters=4
+    127.74  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    127.75  t1   CF      fallback bestViol=none us=92.6
+    127.76  t1   LRS-OBJ end alternate X/MIN@9 result=miss ms=0.144
+    127.78  t1   LRS-OBJ begin fallback SLP Z/MAX@9
+    127.83  t1   SLP     dual seed rejected stop=LAMBDA_LIMIT iters=2 n=9 m=8
+    127.85  t1   LRS-OBJ end fallback SLP result=miss ms=0.066
+    127.87  t1   AUDIT   counterfactual case=seven-forward-tick-commit1 jump13=MIN
+    127.96  t1   CF      pass=0 pattern=free n=2 m=8 robust
+    128.02  t1   CF      rung margin=3.00e-04 iters=1 pg=9.098e-06 dual=0.532146879 viol=1.372e-04 ms=0.023 stop=RECOVERED_INPUT_STALL finalPg=9.098e-06
+    128.06  t1   CF      pass=1 pattern=x@0-1 n=2 m=8 robust
+    128.14  t1   CF      rung margin=3.00e-04 iters=4 pg=8.806e-06 dual=0.532159452 viol=0.000e+00 ms=0.023 certified stop=RECOVERED_INPUT_STALL finalPg=8.806e-06
+    128.33  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    128.35  t1   LRS-OBJ begin primary Z/MAX@9
+    128.38  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    128.50  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.038 stop=LAMBDA_LIMIT iters=11
+    128.52  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    128.53  t1   CF      fallback bestViol=none us=153.3
+    128.55  t1   LRS-OBJ end primary result=miss ms=0.193
+    128.57  t1   LRS-OBJ begin alternate Z/MIN@9
+    128.58  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    128.61  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    128.68  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.025 stop=LAMBDA_LIMIT iters=7
+    128.70  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    128.71  t1   CF      fallback bestViol=none us=103.3
+    128.73  t1   LRS-OBJ end alternate Z/MIN@9 result=miss ms=0.160
+    128.74  t1   LRS-OBJ begin alternate X/MAX@9
+    128.75  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+    128.78  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    128.87  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.049 stop=LAMBDA_LIMIT iters=14
+    128.89  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    128.90  t1   CF      fallback bestViol=none us=125.9
+    128.92  t1   LRS-OBJ end alternate X/MAX@9 result=miss ms=0.178
+    128.93  t1   LRS-OBJ begin alternate X/MIN@9
+    128.94  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false
+    128.97  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    129.06  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.050 stop=LAMBDA_LIMIT iters=13
+    129.08  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    129.09  t1   CF      fallback bestViol=none us=123.4
+    129.11  t1   LRS-OBJ end alternate X/MIN@9 result=miss ms=0.178
+    129.12  t1   LRS-OBJ begin fallback SLP Z/MAX@9
+    129.21  t1   SLP     dual seed rejected stop=LAMBDA_LIMIT iters=15 n=9 m=8
+    129.22  t1   LRS-OBJ end fallback SLP result=miss ms=0.098
+    155.57  t1   AUDIT   begin case=ten-forward-jump-commit3 shortest-original-state
+    155.68  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    155.70  t1   LRS-OBJ begin primary Z/MAX@9
+    155.74  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    155.81  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.021 stop=LAMBDA_LIMIT iters=2
+    155.82  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    155.84  t1   CF      fallback bestViol=none us=107.5
+    155.85  t1   LRS-OBJ end primary result=miss ms=0.151
+    155.87  t1   LRS-OBJ begin alternate Z/MIN@9
+    155.88  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    155.91  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    155.96  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.009 stop=LAMBDA_LIMIT iters=2
+    155.97  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    155.99  t1   CF      fallback bestViol=none us=82.0
+    156.01  t1   LRS-OBJ end alternate Z/MIN@9 result=miss ms=0.139
+    156.02  t1   LRS-OBJ begin alternate X/MAX@9
+    156.03  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+    156.06  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    156.11  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.017 stop=LAMBDA_LIMIT iters=4
+    156.12  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    156.13  t1   CF      fallback bestViol=none us=79.2
+    156.15  t1   LRS-OBJ end alternate X/MAX@9 result=miss ms=0.127
+    156.16  t1   LRS-OBJ begin alternate X/MIN@9
+    156.17  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false
+    156.19  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    156.24  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.015 stop=LAMBDA_LIMIT iters=4
+    156.26  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    156.27  t1   CF      fallback bestViol=none us=85.8
+    156.29  t1   LRS-OBJ end alternate X/MIN@9 result=miss ms=0.128
+    156.30  t1   LRS-OBJ begin fallback SLP Z/MAX@9
+    156.34  t1   SLP     dual seed rejected stop=LAMBDA_LIMIT iters=2 n=9 m=8
+    156.36  t1   LRS-OBJ end fallback SLP result=miss ms=0.059
+    156.38  t1   AUDIT   counterfactual case=ten-forward-jump-commit3 jump13=MAX
+    156.47  t1   CF      pass=0 pattern=free n=2 m=8 robust
+    156.53  t1   CF      rung margin=3.00e-04 iters=3 pg=5.150e-10 dual=0.532119631 viol=4.375e-05 ms=0.019 stop=PROJECTED_GRADIENT finalPg=5.150e-10
+    156.56  t1   CF      pass=1 pattern=x@0-1 n=2 m=8 robust
+    156.62  t1   CF      rung margin=3.00e-04 iters=3 pg=5.605e-10 dual=0.532112242 viol=0.000e+00 ms=0.017 certified stop=PROJECTED_GRADIENT finalPg=5.605e-10
+    156.80  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    156.81  t1   LRS-OBJ begin primary Z/MAX@9
+    156.84  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    156.88  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.010 stop=LAMBDA_LIMIT iters=2
+    156.90  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    156.91  t1   CF      fallback bestViol=none us=76.8
+    156.92  t1   LRS-OBJ end primary result=miss ms=0.109
+    156.94  t1   LRS-OBJ begin alternate Z/MIN@9
+    156.95  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    156.98  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    157.02  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.009 stop=LAMBDA_LIMIT iters=2
+    157.04  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    157.06  t1   CF      fallback bestViol=none us=88.7
+    157.07  t1   LRS-OBJ end alternate Z/MIN@9 result=miss ms=0.135
+    157.09  t1   LRS-OBJ begin alternate X/MAX@9
+    157.10  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+    157.13  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    157.18  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.015 stop=LAMBDA_LIMIT iters=4
+    157.19  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    157.20  t1   CF      fallback bestViol=none us=87.3
+    157.22  t1   LRS-OBJ end alternate X/MAX@9 result=miss ms=0.131
+    157.23  t1   LRS-OBJ begin alternate X/MIN@9
+    157.24  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false
+    157.27  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    157.31  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.015 stop=LAMBDA_LIMIT iters=4
+    157.32  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    157.34  t1   CF      fallback bestViol=none us=75.0
+    157.35  t1   LRS-OBJ end alternate X/MIN@9 result=miss ms=0.119
+    157.36  t1   LRS-OBJ begin fallback SLP Z/MAX@9
+    157.40  t1   SLP     dual seed rejected stop=LAMBDA_LIMIT iters=2 n=9 m=8
+    157.41  t1   LRS-OBJ end fallback SLP result=miss ms=0.051
+    157.43  t1   AUDIT   counterfactual case=ten-forward-jump-commit3 jump13=MIN
+    157.52  t1   CF      pass=0 pattern=free n=2 m=8 robust
+    157.61  t1   CF      rung margin=3.00e-04 iters=20 pg=2.898e-06 dual=0.532052211 viol=4.218e-03 ms=0.055 stop=NO_DESCENT finalPg=3.277e-07
+    157.64  t1   CF      pass=1 pattern=x@0-1 n=2 m=8 robust
+    157.75  t1   CF      rung margin=3.00e-04 iters=24 pg=2.711e-06 dual=0.532052211 viol=4.218e-03 ms=0.070 stop=NO_DESCENT finalPg=4.708e-06
+    157.77  t1   CF      pass=1 no improvement (viol=4.218e-03), stop
+    157.79  t1   CF      fallback bestViol=4.218e-03 us=282.7
+    158.01  t1   AUDIT   begin case=ten-forward-jump-commit1 shortest-original-state
+    158.04  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    158.05  t1   LRS-OBJ begin primary Z/MAX@9
+    158.08  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    158.13  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.011 stop=LAMBDA_LIMIT iters=2
+    158.14  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    158.15  t1   CF      fallback bestViol=none us=74.8
+    158.16  t1   LRS-OBJ end primary result=miss ms=0.108
+    158.18  t1   LRS-OBJ begin alternate Z/MIN@9
+    158.19  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    158.21  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    158.26  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.010 stop=LAMBDA_LIMIT iters=2
+    158.27  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    158.28  t1   CF      fallback bestViol=none us=68.5
+    158.29  t1   LRS-OBJ end alternate Z/MIN@9 result=miss ms=0.115
+    158.31  t1   LRS-OBJ begin alternate X/MAX@9
+    158.32  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+    158.34  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    158.39  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.017 stop=LAMBDA_LIMIT iters=4
+    158.40  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    158.41  t1   CF      fallback bestViol=none us=75.8
+    158.43  t1   LRS-OBJ end alternate X/MAX@9 result=miss ms=0.117
+    158.44  t1   LRS-OBJ begin alternate X/MIN@9
+    158.45  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false
+    158.47  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    158.52  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.015 stop=LAMBDA_LIMIT iters=4
+    158.54  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    158.56  t1   CF      fallback bestViol=none us=90.6
+    158.60  t1   LRS-OBJ end alternate X/MIN@9 result=miss ms=0.137
+    158.68  t1   LRS-OBJ begin fallback SLP Z/MAX@9
+    158.73  t1   SLP     dual seed rejected stop=LAMBDA_LIMIT iters=2 n=9 m=8
+    158.75  t1   LRS-OBJ end fallback SLP result=miss ms=0.069
+    158.78  t1   AUDIT   counterfactual case=ten-forward-jump-commit1 jump13=MAX
+    158.87  t1   CF      pass=0 pattern=free n=2 m=8 robust
+    158.93  t1   CF      rung margin=3.00e-04 iters=0 pg=0.000e+00 dual=0.532160447 viol=1.587e-04 ms=0.014 stop=PROJECTED_GRADIENT finalPg=0.000e+00
+    158.96  t1   CF      pass=1 pattern=x@0-1 n=2 m=8 robust
+    159.01  t1   CF      rung margin=3.00e-04 iters=3 pg=5.636e-11 dual=0.532159950 viol=0.000e+00 ms=0.018 certified stop=PROJECTED_GRADIENT finalPg=5.636e-11
+    159.20  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    159.22  t1   LRS-OBJ begin primary Z/MAX@9
+    159.25  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    159.29  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.012 stop=LAMBDA_LIMIT iters=2
+    159.31  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    159.32  t1   CF      fallback bestViol=none us=78.1
+    159.33  t1   LRS-OBJ end primary result=miss ms=0.114
+    159.35  t1   LRS-OBJ begin alternate Z/MIN@9
+    159.36  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    159.39  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    159.44  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.009 stop=LAMBDA_LIMIT iters=2
+    159.45  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    159.47  t1   CF      fallback bestViol=none us=83.8
+    159.48  t1   LRS-OBJ end alternate Z/MIN@9 result=miss ms=0.131
+    159.49  t1   LRS-OBJ begin alternate X/MAX@9
+    159.50  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+    159.52  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    159.57  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.016 stop=LAMBDA_LIMIT iters=4
+    159.58  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    159.60  t1   CF      fallback bestViol=none us=77.2
+    159.61  t1   LRS-OBJ end alternate X/MAX@9 result=miss ms=0.118
+    159.62  t1   LRS-OBJ begin alternate X/MIN@9
+    159.63  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false
+    159.65  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    159.70  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.015 stop=LAMBDA_LIMIT iters=4
+    159.71  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    159.73  t1   CF      fallback bestViol=none us=76.2
+    159.74  t1   LRS-OBJ end alternate X/MIN@9 result=miss ms=0.116
+    159.75  t1   LRS-OBJ begin fallback SLP Z/MAX@9
+    159.79  t1   SLP     dual seed rejected stop=LAMBDA_LIMIT iters=2 n=9 m=8
+    159.87  t1   LRS-OBJ end fallback SLP result=miss ms=0.072
+    159.89  t1   AUDIT   counterfactual case=ten-forward-jump-commit1 jump13=MIN
+    159.98  t1   CF      pass=0 pattern=free n=2 m=8 robust
+    160.03  t1   CF      rung margin=3.00e-04 iters=0 pg=0.000e+00 dual=0.532160447 viol=1.587e-04 ms=0.014 stop=PROJECTED_GRADIENT finalPg=0.000e+00
+    160.06  t1   CF      pass=1 pattern=x@0-1 n=2 m=8 robust
+    160.11  t1   CF      rung margin=3.00e-04 iters=3 pg=5.636e-11 dual=0.532159950 viol=0.000e+00 ms=0.016 certified stop=PROJECTED_GRADIENT finalPg=5.636e-11
+    160.29  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    160.30  t1   LRS-OBJ begin primary Z/MAX@9
+    160.33  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    160.40  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.033 stop=LAMBDA_LIMIT iters=12
+    160.41  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    160.42  t1   CF      fallback bestViol=none us=92.0
+    160.44  t1   LRS-OBJ end primary result=miss ms=0.133
+    160.45  t1   LRS-OBJ begin alternate Z/MIN@9
+    160.46  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    160.48  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    160.53  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.018 stop=LAMBDA_LIMIT iters=7
+    160.54  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    160.55  t1   CF      fallback bestViol=none us=72.3
+    160.57  t1   LRS-OBJ end alternate Z/MIN@9 result=miss ms=0.122
+    160.58  t1   LRS-OBJ begin alternate X/MAX@9
+    160.59  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+    160.61  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    160.68  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.041 stop=LAMBDA_LIMIT iters=14
+    160.69  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    160.70  t1   CF      fallback bestViol=none us=93.6
+    160.71  t1   LRS-OBJ end alternate X/MAX@9 result=miss ms=0.131
+    160.72  t1   LRS-OBJ begin alternate X/MIN@9
+    160.73  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false
+    160.76  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    160.82  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.036 stop=LAMBDA_LIMIT iters=13
+    160.83  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    160.84  t1   CF      fallback bestViol=none us=88.4
+    160.86  t1   LRS-OBJ end alternate X/MIN@9 result=miss ms=0.131
+    160.86  t1   LRS-OBJ begin fallback SLP Z/MAX@9
+    160.92  t1   SLP     dual seed rejected stop=LAMBDA_LIMIT iters=12 n=9 m=8
+    160.93  t1   LRS-OBJ end fallback SLP result=miss ms=0.068
+    179.14  t1   AUDIT   begin case=ten-forward-tick-commit3 shortest-original-state
+    179.23  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    179.25  t1   LRS-OBJ begin primary Z/MAX@9
+    179.28  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    179.37  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.033 stop=LAMBDA_LIMIT iters=2
+    179.38  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    179.39  t1   CF      fallback bestViol=none us=114.3
+    179.40  t1   LRS-OBJ end primary result=miss ms=0.152
+    179.42  t1   LRS-OBJ begin alternate Z/MIN@9
+    179.43  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    179.45  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    179.49  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.004 stop=LAMBDA_LIMIT iters=2
+    179.50  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    179.51  t1   CF      fallback bestViol=none us=64.5
+    179.52  t1   LRS-OBJ end alternate Z/MIN@9 result=miss ms=0.107
+    179.54  t1   LRS-OBJ begin alternate X/MAX@9
+    179.55  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+    179.57  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    179.60  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.008 stop=LAMBDA_LIMIT iters=4
+    179.61  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    179.63  t1   CF      fallback bestViol=none us=63.1
+    179.64  t1   LRS-OBJ end alternate X/MAX@9 result=miss ms=0.100
+    179.65  t1   LRS-OBJ begin alternate X/MIN@9
+    179.66  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false
+    179.68  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    179.71  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.007 stop=LAMBDA_LIMIT iters=4
+    179.72  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    179.73  t1   CF      fallback bestViol=none us=56.7
+    179.74  t1   LRS-OBJ end alternate X/MIN@9 result=miss ms=0.096
+    179.75  t1   LRS-OBJ begin fallback SLP Z/MAX@9
+    179.79  t1   SLP     dual seed rejected stop=LAMBDA_LIMIT iters=2 n=9 m=8
+    179.80  t1   LRS-OBJ end fallback SLP result=miss ms=0.045
+    179.83  t1   AUDIT   counterfactual case=ten-forward-tick-commit3 jump13=MAX
+    179.91  t1   CF      pass=0 pattern=free n=2 m=8 robust
+    179.97  t1   CF      rung margin=3.00e-04 iters=3 pg=5.150e-10 dual=0.532119631 viol=4.375e-05 ms=0.033 stop=PROJECTED_GRADIENT finalPg=5.150e-10
+    180.00  t1   CF      pass=1 pattern=x@0-1 n=2 m=8 robust
+    180.06  t1   CF      rung margin=3.00e-04 iters=3 pg=5.605e-10 dual=0.532112242 viol=0.000e+00 ms=0.012 certified stop=PROJECTED_GRADIENT finalPg=5.605e-10
+    180.22  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    180.24  t1   LRS-OBJ begin primary Z/MAX@9
+    180.28  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    180.31  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.004 stop=LAMBDA_LIMIT iters=2
+    180.32  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    180.34  t1   CF      fallback bestViol=none us=63.2
+    180.35  t1   LRS-OBJ end primary result=miss ms=0.108
+    180.36  t1   LRS-OBJ begin alternate Z/MIN@9
+    180.37  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    180.39  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    180.42  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.003 stop=LAMBDA_LIMIT iters=2
+    180.43  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    180.44  t1   CF      fallback bestViol=none us=52.2
+    180.45  t1   LRS-OBJ end alternate Z/MIN@9 result=miss ms=0.093
+    180.46  t1   LRS-OBJ begin alternate X/MAX@9
+    180.47  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+    180.52  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    180.55  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.007 stop=LAMBDA_LIMIT iters=4
+    180.56  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    180.57  t1   CF      fallback bestViol=none us=57.1
+    180.58  t1   LRS-OBJ end alternate X/MAX@9 result=miss ms=0.116
+    180.59  t1   LRS-OBJ begin alternate X/MIN@9
+    180.60  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false
+    180.62  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    180.65  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.006 stop=LAMBDA_LIMIT iters=4
+    180.67  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    180.68  t1   CF      fallback bestViol=none us=60.0
+    180.69  t1   LRS-OBJ end alternate X/MIN@9 result=miss ms=0.098
+    180.70  t1   LRS-OBJ begin fallback SLP Z/MAX@9
+    180.72  t1   SLP     dual seed rejected stop=LAMBDA_LIMIT iters=2 n=9 m=8
+    180.74  t1   LRS-OBJ end fallback SLP result=miss ms=0.037
+    180.75  t1   AUDIT   counterfactual case=ten-forward-tick-commit3 jump13=MIN
+    180.83  t1   CF      pass=0 pattern=free n=2 m=8 robust
+    180.91  t1   CF      rung margin=3.00e-04 iters=20 pg=2.898e-06 dual=0.532052211 viol=4.218e-03 ms=0.033 stop=NO_DESCENT finalPg=3.277e-07
+    180.94  t1   CF      pass=1 pattern=x@0-1 n=2 m=8 robust
+    181.01  t1   CF      rung margin=3.00e-04 iters=24 pg=2.711e-06 dual=0.532052211 viol=4.218e-03 ms=0.043 stop=NO_DESCENT finalPg=4.708e-06
+    181.03  t1   CF      pass=1 no improvement (viol=4.218e-03), stop
+    181.04  t1   CF      fallback bestViol=4.218e-03 us=216.2
+    181.24  t1   AUDIT   begin case=ten-forward-tick-commit1 shortest-original-state
+    181.27  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    181.29  t1   LRS-OBJ begin primary Z/MAX@9
+    181.31  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    181.34  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.004 stop=LAMBDA_LIMIT iters=2
+    181.35  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    181.36  t1   CF      fallback bestViol=none us=54.9
+    181.37  t1   LRS-OBJ end primary result=miss ms=0.082
+    181.38  t1   LRS-OBJ begin alternate Z/MIN@9
+    181.39  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    181.42  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    181.44  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.003 stop=LAMBDA_LIMIT iters=2
+    181.45  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    181.46  t1   CF      fallback bestViol=none us=51.5
+    181.47  t1   LRS-OBJ end alternate Z/MIN@9 result=miss ms=0.092
+    181.48  t1   LRS-OBJ begin alternate X/MAX@9
+    181.49  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+    181.51  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    181.54  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.006 stop=LAMBDA_LIMIT iters=4
+    181.55  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    181.56  t1   CF      fallback bestViol=none us=49.5
+    181.57  t1   LRS-OBJ end alternate X/MAX@9 result=miss ms=0.089
+    181.58  t1   LRS-OBJ begin alternate X/MIN@9
+    181.59  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false
+    181.61  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    181.64  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.006 stop=LAMBDA_LIMIT iters=4
+    181.65  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    181.66  t1   CF      fallback bestViol=none us=49.8
+    181.67  t1   LRS-OBJ end alternate X/MIN@9 result=miss ms=0.085
+    181.68  t1   LRS-OBJ begin fallback SLP Z/MAX@9
+    181.70  t1   SLP     dual seed rejected stop=LAMBDA_LIMIT iters=2 n=9 m=8
+    181.72  t1   LRS-OBJ end fallback SLP result=miss ms=0.037
+    181.73  t1   AUDIT   counterfactual case=ten-forward-tick-commit1 jump13=MAX
+    181.81  t1   CF      pass=0 pattern=free n=2 m=8 robust
+    181.85  t1   CF      rung margin=3.00e-04 iters=0 pg=0.000e+00 dual=0.532160447 viol=1.587e-04 ms=0.010 stop=PROJECTED_GRADIENT finalPg=0.000e+00
+    181.88  t1   CF      pass=1 pattern=x@0-1 n=2 m=8 robust
+    181.92  t1   CF      rung margin=3.00e-04 iters=3 pg=5.636e-11 dual=0.532159950 viol=0.000e+00 ms=0.010 certified stop=PROJECTED_GRADIENT finalPg=5.636e-11
+    182.09  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    182.11  t1   LRS-OBJ begin primary Z/MAX@9
+    182.14  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    182.18  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.004 stop=LAMBDA_LIMIT iters=2
+    182.20  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    182.21  t1   CF      fallback bestViol=none us=66.6
+    182.22  t1   LRS-OBJ end primary result=miss ms=0.106
+    182.23  t1   LRS-OBJ begin alternate Z/MIN@9
+    182.24  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    182.26  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    182.29  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.003 stop=LAMBDA_LIMIT iters=2
+    182.30  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    182.31  t1   CF      fallback bestViol=none us=54.0
+    182.33  t1   LRS-OBJ end alternate Z/MIN@9 result=miss ms=0.094
+    182.34  t1   LRS-OBJ begin alternate X/MAX@9
+    182.36  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+    182.38  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    182.41  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.007 stop=LAMBDA_LIMIT iters=4
+    182.42  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    182.44  t1   CF      fallback bestViol=none us=62.4
+    182.45  t1   LRS-OBJ end alternate X/MAX@9 result=miss ms=0.108
+    182.46  t1   LRS-OBJ begin alternate X/MIN@9
+    182.46  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false
+    182.49  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    182.51  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.007 stop=LAMBDA_LIMIT iters=4
+    182.52  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    182.53  t1   CF      fallback bestViol=none us=53.3
+    182.55  t1   LRS-OBJ end alternate X/MIN@9 result=miss ms=0.087
+    182.55  t1   LRS-OBJ begin fallback SLP Z/MAX@9
+    182.58  t1   SLP     dual seed rejected stop=LAMBDA_LIMIT iters=2 n=9 m=8
+    182.59  t1   LRS-OBJ end fallback SLP result=miss ms=0.035
+    182.61  t1   AUDIT   counterfactual case=ten-forward-tick-commit1 jump13=MIN
+    182.69  t1   CF      pass=0 pattern=free n=2 m=8 robust
+    182.73  t1   CF      rung margin=3.00e-04 iters=0 pg=0.000e+00 dual=0.532160447 viol=1.587e-04 ms=0.011 stop=PROJECTED_GRADIENT finalPg=0.000e+00
+    182.76  t1   CF      pass=1 pattern=x@0-1 n=2 m=8 robust
+    182.80  t1   CF      rung margin=3.00e-04 iters=3 pg=5.636e-11 dual=0.532159950 viol=0.000e+00 ms=0.011 certified stop=PROJECTED_GRADIENT finalPg=5.636e-11
+    182.97  t1   LRS-PREFLIGHT primary Z/MAX@9 directCap=true constraint=Z@99hi LE rhs=-1093.700000000000
+    182.98  t1   LRS-OBJ begin primary Z/MAX@9
+    183.02  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    183.06  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.012 stop=LAMBDA_LIMIT iters=12
+    183.07  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    183.08  t1   CF      fallback bestViol=none us=66.9
+    183.09  t1   LRS-OBJ end primary result=miss ms=0.108
+    183.10  t1   LRS-OBJ begin alternate Z/MIN@9
+    183.12  t1   LRS-PREFLIGHT alternate Z/MIN@9 directCap=true constraint=Z@99lo GE rhs=-1095.300000011921
+    183.14  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    183.17  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.006 stop=LAMBDA_LIMIT iters=7
+    183.18  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    183.19  t1   CF      fallback bestViol=none us=54.1
+    183.20  t1   LRS-OBJ end alternate Z/MIN@9 result=miss ms=0.093
+    183.21  t1   LRS-OBJ begin alternate X/MAX@9
+    183.22  t1   LRS-PREFLIGHT alternate X/MAX@9 directCap=false
+    183.24  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    183.27  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.015 stop=LAMBDA_LIMIT iters=14
+    183.28  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    183.29  t1   CF      fallback bestViol=none us=58.5
+    183.30  t1   LRS-OBJ end alternate X/MAX@9 result=miss ms=0.096
+    183.31  t1   LRS-OBJ begin alternate X/MIN@9
+    183.32  t1   LRS-PREFLIGHT alternate X/MIN@9 directCap=false
+    183.34  t1   CF      pass=0 pattern=free n=9 m=8 robust
+    183.38  t1   CF      rung margin=3.00e-04 dual unbounded ms=0.014 stop=LAMBDA_LIMIT iters=13
+    183.39  t1   CF      pass=0 ladder empty (trivial/unbounded/cancel)
+    183.40  t1   CF      fallback bestViol=none us=61.3
+    183.41  t1   LRS-OBJ end alternate X/MIN@9 result=miss ms=0.096
+    183.42  t1   LRS-OBJ begin fallback SLP Z/MAX@9
+    183.45  t1   SLP     dual seed rejected stop=LAMBDA_LIMIT iters=12 n=9 m=8
+    183.47  t1   LRS-OBJ end fallback SLP result=miss ms=0.046
