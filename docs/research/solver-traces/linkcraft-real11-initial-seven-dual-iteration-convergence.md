@@ -113,3 +113,22 @@ Sources and reproduction:
 ```
 
 Run in the background with output redirected to a file.
+
+
+## Why EPS2 exists, and what a small costate means
+
+`EPS2=1e-14` smooths the norm in the dual objective, not merely a denominator. The original term `m[t] * norm(g[t])` has a kink at `g[t]=0`: its gradient has no unique direction there, and the Newton Hessian formula involves division by the norm. Replacing it with `m[t]*sqrt(dot(g[t],g[t])+EPS2)` makes it differentiable with finite curvature. The effective norm scale is `sqrt(EPS2)=1e-7`. This does not remove all Hessian singularities (redundant constraints can still give flat directions); the separate damping handles that. Neither smoothing constant is a Minecraft velocity, inertia threshold or angle-resolution constant. It is a fixed numerical approximation parameter, with no problem-specific scale guarantee evident in the inspected code.
+
+For this implementation, the per-tick costate is exactly the two-component vector
+
+```
+g[t] = c[t] - sum_j lambda[j] * A[j,t]
+```
+
+Here `c[t]` is the final-objective sensitivity to a unit X/Z acceleration at tick t, including its friction-propagated effects. `A[j,t]` is that acceleration's contribution to normalized wall j. `lambda[j]` is the wall's dual weight. Thus `g[t]` is the direction preferred by the objective after subtracting weighted constraint effects. It is a sensitivity vector, not player velocity or acceleration. Its direction supplies the recovered acceleration direction; `baseArg[t]` converts that direction to the required facing for the tick's keys.
+
+At tick 67, the objective is maximize Z[68] and the only constraint row affected by that final tick's input is the upper wall on the same Z[68]. The coefficient is approximately 1 for both. Hence `gZ[67]` is approximately `1 - lambda[Z68]`. When that wall's multiplier approaches 1, objective and wall contributions cancel. The measured `gZ[67]=9.824770808e-8` corresponds to an approximately 0.999999902 multiplier; this multiplier value is inferred from that one-row relation, not separately logged. `gX[67]=0` exactly in the recorded candidate.
+
+This is a structural cancellation: pushing Z improves the objective but presses equally against the active Z wall. At exact cancellation the unsmoothed Lagrangian is indifferent to that tick's direction; a zero costate does not identify a unique feasible angle. It also does not mean movement magnitude may be reduced. The solver's smoothed derivative nevertheless shrinks the internal movement vector around that cancellation, which is the discrepancy measured in the recovery audit.
+
+Only changes to research notes were made for this explanation; no new test or solve was run.

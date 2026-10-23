@@ -916,3 +916,10 @@ The [first-window audit](solver-traces/linkcraft-real11-initial-seven-shared-val
 ## Dual convergence does not guarantee recovered angle feasibility
 
 The [initial-seven iteration-cap audit](solver-traces/linkcraft-real11-initial-seven-dual-iteration-convergence.md) raises fixed-margin Z/MAX caps from 100 through 20000 without success. The first pass stops at iteration 125 on no descent; its smoothed-gradient controls nearly satisfy the tightened walls, but normalization to full movement magnitude changes final Z by 0.07244946 blocks and violates the original wall. The inertia retry stops at 83 on input stagnation. The probe records every iteration and recovery vector; seven focused tests pass. The default cap remains 100. A future recovery/smoothing investigation is needed before assuming that more iterations solve the actual angle problem.
+
+
+### Meaning of costate and norm smoothing
+
+In this solver `g[t] = c[t] - Σ lambda[j] A[j,t]`: objective sensitivity to tick t's acceleration minus weighted constraint sensitivities, all in world X/Z. The direction chooses acceleration direction, then key-dependent `baseArg` converts it to yaw. It is not a velocity. It can be tiny because the objective and an active wall cancel: for the first-window Z/MAX case, the final input affects both the objective Z[68] and the upper wall on Z[68] with approximately unit coefficient, giving `gZ[67] ≈ 1 - lambda[Z68]`. The recorded `gZ[67] ≈ 9.82477e-8` is therefore expected near cancellation.
+
+`EPS2=1e-14` replaces the dual's nonsmooth norm with `sqrt(normSquared + EPS2)` so its gradient/Hessian remain defined at zero. Its effective scale is 1e-7, unrelated to inertia or yaw discretization. Around a nearly canceled costate it substantially shortens the derivative-implied input, although yaw recovery restores full magnitude. See [the convergence audit](solver-traces/linkcraft-real11-initial-seven-dual-iteration-convergence.md) for exact formulas and measured evidence. At exact zero the original inner optimization is indifferent to direction; costate normalization alone does not select a feasible path.
