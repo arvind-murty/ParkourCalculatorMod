@@ -582,11 +582,13 @@ public final class ClosedFormSolve {
         int rungStall = 0;
         for (double margin : margins) {
             if (cancel.get()) return null;
+            long rungT0 = SolverTrace.on() ? System.nanoTime() : 0L;
             CostateDualSolver.Result r = solver.solve(margin, warm);
             // Dual unbounded -> primal infeasible; infeasibility is monotone in the margin, so ascending
             // stops while the descending (robust) ladder keeps trying smaller rungs.
             if (r == null) {
-                if (SolverTrace.on()) SolverTrace.log("CF", "rung margin=%.2e dual unbounded%s", margin, ascending ? ", ladder stop" : "");
+                if (SolverTrace.on()) SolverTrace.log("CF", "rung margin=%.2e dual unbounded ms=%.3f%s", margin,
+                        (System.nanoTime() - rungT0) / 1.0e6, ascending ? ", ladder stop" : "");
                 if (ascending) break;
                 continue;
             }
@@ -595,8 +597,9 @@ public final class ClosedFormSolve {
             double[] yaws = pre.expand(lin, spec.objective, r);
             double viol = violOnExact(exact, sc, compiled, yaws);
             if (SolverTrace.on()) {
-                SolverTrace.log("CF", "rung margin=%.2e iters=%d pg=%.3e dual=%.9f viol=%.3e%s",
+                SolverTrace.log("CF", "rung margin=%.2e iters=%d pg=%.3e dual=%.9f viol=%.3e ms=%.3f%s",
                         margin, solver.lastIters, solver.lastPgres, r.value, viol,
+                        (System.nanoTime() - rungT0) / 1.0e6,
                         viol <= feasTol ? " certified" : "");
             }
             if (DEBUG) {

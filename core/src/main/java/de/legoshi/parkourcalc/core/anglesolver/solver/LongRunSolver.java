@@ -219,6 +219,15 @@ public final class LongRunSolver {
                 int a = bounds[i], c = bounds[we];
                 JumpPhysicsInputs win = sliceScenario(sc, a, c, seedPos, seedVel, seedYaw);
                 List<JumpConstraint> cons = sliceConstraints(spec, a, c, seedYaw);
+                if (SolverTrace.on()) {
+                    SolverTrace.log("LRS-WIN", "commit=%d jumps=[%d,%d) ticks=[%d,%d) seed=(%.12f,%.12f;%.12f,%.12f) yaw=%.9f constraints=%d",
+                            commitJumps, i, we, a, c, seedPos.x, seedPos.z, seedVel.x, seedVel.z, seedYaw, cons.size());
+                    if (c - a <= 10) for (JumpConstraint jc : cons) {
+                        SolverTrace.log("LRS-CONS", "%s %s t=%d%s %s rhs=%.12f",
+                                jc.name, jc.mode, jc.t1, jc.t2 == null ? "" : "/" + jc.t2,
+                                jc.cmp, jc.rhs);
+                    }
+                }
                 Objective obj = last
                         ? new Objective(spec.objective.axis, spec.objective.sense, c - a)   // last window: real objective
                         : new Objective(JumpPhysicsInputs.Axis.Z, Objective.Sense.MAX, c - a); // lead-in: any feasible
@@ -283,6 +292,12 @@ public final class LongRunSolver {
                 int commitTicks = bounds[ce] - a;
                 double[] wgf = win.toGameFacings(yaws);
                 ForwardPath wp = exact.forward(win, wgf);
+                if (SolverTrace.on()) for (int k = 0; k <= commitTicks; k++) {
+                    int tick = a + k;
+                    SolverTrace.log("LRS-COMMIT-PATH", "jump=%d tick=%d x=%.12f z=%.12f vx=%.12f vz=%.12f yaw=%s",
+                            i, tick, wp.posX[k], wp.posZ[k], wp.velX[k], wp.velZ[k],
+                            k < wgf.length ? SolverTrace.fmt("%.9f", wgf[k]) : "-");
+                }
                 System.arraycopy(wgf, 0, gf, a, commitTicks);
                 seedPos = new Vec3dCore(wp.posX[commitTicks], wp.posY[commitTicks], wp.posZ[commitTicks]);
                 seedVel = new Vec3dCore(wp.velX[commitTicks], wp.velY[commitTicks], wp.velZ[commitTicks]);
@@ -317,11 +332,20 @@ public final class LongRunSolver {
                     null);
             return hugBestObjective(exact, win, cons, first, primary, token, deadlineNanos);
         }
+        long objectiveT0 = SolverTrace.on() ? System.nanoTime() : 0L;
+        if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "begin primary %s/%s@%d", first.axis, first.sense, first.tick);
         double[] y = ClosedFormSolve.optimizeRobust(exact, new JumpSpec(win, cons, first), 0.0, cancel);
+        if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "end primary result=%s ms=%.3f",
+                y != null ? "solved" : "miss", (System.nanoTime() - objectiveT0) / 1.0e6);
         if (y != null) return y;
         for (Objective alt : alternates(first, win.numTicks)) {
             if (cancel != null && cancel.get()) return null;
+            objectiveT0 = SolverTrace.on() ? System.nanoTime() : 0L;
+            if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "begin alternate %s/%s@%d", alt.axis, alt.sense, alt.tick);
             y = ClosedFormSolve.optimizeRobust(exact, new JumpSpec(win, cons, alt), 0.0, cancel);
+            if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "end alternate %s/%s@%d result=%s ms=%.3f",
+                    alt.axis, alt.sense, alt.tick, y != null ? "solved" : "miss",
+                    (System.nanoTime() - objectiveT0) / 1.0e6);
             if (y != null) return y;
         }
         if (cancel != null && cancel.get()) return null;
