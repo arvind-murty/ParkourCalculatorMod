@@ -70,3 +70,8 @@ The [full continuous-window validation experiment](linkcraft-real11-prefix-conti
 ## Superseding shared validation
 
 The [shared inertia-validation experiment](linkcraft-real11-shared-inertia-validation.md) now reuses the original continuous `zeroingPattern` recurrence to record positions/velocities and validate actual threshold behavior throughout the full window. It replaces acceptance under an assumed fixed pattern. All ten focused tests pass, including full completion of the 30-jump route. Earlier fixed-pattern results remain historical evidence.
+
+
+## Full-route fixed-margin 10-ladder probe
+
+The [full-route experiment](linkcraft-real11-full-fixed0003-ten-ladder.md) runs the original 808-tick endpoint with standard windows 10,7,5,3,2,1, commit retries 3 then 1, fixed closed-form margin 0.0003, and shared actual-inertia validation. It returns no solution: both commit passes stall at tick 90 before jump 14. Total trace time 3829.48 ms; no outer deadline. The report preserves every window attempt and objective timing.

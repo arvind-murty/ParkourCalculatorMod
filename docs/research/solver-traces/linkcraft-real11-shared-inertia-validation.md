@@ -24,3 +24,8 @@ The helper tests distinguish (1) fictitious survival of velocity below threshold
 The 30-jump route now completes, unlike the prior fixed-pattern feasibility check. It returns 250 yaws and passes LongRun's final full Apply-style exact validation. Trace duration is 7730.24 ms (JUnit test 7.753 s); this single instrumented run is not a controlled performance comparison. We have not yet traced every changed window to attribute why route completion changed.
 
 Sources: [focused log](shared-inertia-validation-2026-10-23/focused-tests.log), [complete route trace](shared-inertia-validation-2026-10-23/normal7-commit1.txt), [same-entry comparison](shared-inertia-validation-2026-10-23/first-divergence.txt), and saved JUnit XML alongside those files.
+
+
+## Full-route fixed-margin 10-ladder probe
+
+The [full-route experiment](linkcraft-real11-full-fixed0003-ten-ladder.md) runs the original 808-tick endpoint with standard windows 10,7,5,3,2,1, commit retries 3 then 1, fixed closed-form margin 0.0003, and shared actual-inertia validation. It returns no solution: both commit passes stall at tick 90 before jump 14. Total trace time 3829.48 ms; no outer deadline. The report preserves every window attempt and objective timing.

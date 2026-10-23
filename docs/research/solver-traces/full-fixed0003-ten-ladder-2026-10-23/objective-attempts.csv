@@ -1,0 +1,539 @@
+elapsed_since_start_ms,event
+1.85,begin primary Z/MAX@77
+64.88,end primary result=miss ms=63.032
+64.96,begin alternate Z/MIN@77
+79.49,end alternate Z/MIN@77 result=miss ms=14.517
+79.54,begin alternate X/MAX@77
+87.93,end alternate X/MAX@77 result=solved ms=8.379
+91.59,begin primary Z/MAX@60
+123.48,end primary result=miss ms=31.891
+123.52,begin alternate Z/MIN@60
+192.85,end alternate Z/MIN@60 result=miss ms=69.321
+192.88,begin alternate X/MAX@60
+200.94,end alternate X/MAX@60 result=miss ms=8.050
+200.97,begin alternate X/MIN@60
+211.37,end alternate X/MIN@60 result=miss ms=10.401
+211.41,begin fallback SLP Z/MAX@60
+393.40,end fallback SLP result=solved ms=181.997
+394.42,begin primary Z/MAX@53
+404.34,end primary result=miss ms=9.928
+404.36,begin alternate Z/MIN@53
+410.43,end alternate Z/MIN@53 result=miss ms=6.068
+410.46,begin alternate X/MAX@53
+417.37,end alternate X/MAX@53 result=miss ms=6.906
+417.38,begin alternate X/MIN@53
+437.77,end alternate X/MIN@53 result=miss ms=20.389
+437.79,begin fallback SLP Z/MAX@53
+554.42,end fallback SLP result=miss ms=116.629
+554.57,begin primary Z/MAX@26
+556.22,end primary result=miss ms=1.650
+556.23,begin alternate Z/MIN@26
+557.11,end alternate Z/MIN@26 result=solved ms=0.879
+557.44,begin primary Z/MAX@57
+572.54,end primary result=miss ms=15.101
+572.56,begin alternate Z/MIN@57
+578.60,end alternate Z/MIN@57 result=miss ms=6.041
+578.61,begin alternate X/MAX@57
+597.64,end alternate X/MAX@57 result=miss ms=19.029
+597.65,begin alternate X/MIN@57
+610.65,end alternate X/MIN@57 result=miss ms=12.994
+610.66,begin fallback SLP Z/MAX@57
+708.27,end fallback SLP result=miss ms=97.606
+708.41,begin primary Z/MAX@42
+712.57,end primary result=miss ms=4.156
+712.58,begin alternate Z/MIN@42
+714.57,end alternate Z/MIN@42 result=miss ms=1.986
+714.58,begin alternate X/MAX@42
+720.81,end alternate X/MAX@42 result=miss ms=6.227
+720.83,begin alternate X/MIN@42
+729.21,end alternate X/MIN@42 result=miss ms=8.379
+729.22,begin fallback SLP Z/MAX@42
+775.65,end fallback SLP result=miss ms=46.424
+775.80,begin primary Z/MAX@24
+776.23,end primary result=miss ms=0.430
+776.24,begin alternate Z/MIN@24
+776.58,end alternate Z/MIN@24 result=miss ms=0.331
+776.58,begin alternate X/MAX@24
+776.91,end alternate X/MAX@24 result=miss ms=0.328
+776.92,begin alternate X/MIN@24
+777.27,end alternate X/MIN@24 result=miss ms=0.346
+777.28,begin fallback SLP Z/MAX@24
+777.64,end fallback SLP result=miss ms=0.360
+777.76,begin primary Z/MAX@13
+778.15,end primary result=miss ms=0.397
+778.17,begin alternate Z/MIN@13
+778.43,end alternate Z/MIN@13 result=solved ms=0.263
+778.84,begin primary Z/MAX@88
+825.99,end primary result=miss ms=47.151
+826.01,begin alternate Z/MIN@88
+860.32,end alternate Z/MIN@88 result=miss ms=34.305
+860.33,begin alternate X/MAX@88
+877.49,end alternate X/MAX@88 result=miss ms=17.160
+877.50,begin alternate X/MIN@88
+894.86,end alternate X/MIN@88 result=miss ms=17.359
+894.87,begin fallback SLP Z/MAX@88
+988.40,end fallback SLP result=miss ms=93.528
+988.66,begin primary Z/MAX@44
+998.39,end primary result=miss ms=9.781
+998.40,begin alternate Z/MIN@44
+1002.66,end alternate Z/MIN@44 result=miss ms=4.258
+1002.68,begin alternate X/MAX@44
+1011.45,end alternate X/MAX@44 result=miss ms=8.777
+1011.46,begin alternate X/MIN@44
+1015.45,end alternate X/MIN@44 result=miss ms=3.982
+1015.46,begin fallback SLP Z/MAX@44
+1031.55,end fallback SLP result=miss ms=16.092
+1031.70,begin primary Z/MAX@40
+1040.32,end primary result=miss ms=8.618
+1040.33,begin alternate Z/MIN@40
+1045.14,end alternate Z/MIN@40 result=miss ms=4.802
+1045.14,begin alternate X/MAX@40
+1047.05,end alternate X/MAX@40 result=miss ms=1.907
+1047.06,begin alternate X/MIN@40
+1050.87,end alternate X/MIN@40 result=miss ms=3.804
+1050.87,begin fallback SLP Z/MAX@40
+1066.53,end fallback SLP result=miss ms=15.654
+1066.67,begin primary Z/MAX@25
+1067.51,end primary result=miss ms=0.842
+1067.52,begin alternate Z/MIN@25
+1067.96,end alternate Z/MIN@25 result=miss ms=0.440
+1067.97,begin alternate X/MAX@25
+1069.44,end alternate X/MAX@25 result=miss ms=1.466
+1069.45,begin alternate X/MIN@25
+1070.47,end alternate X/MIN@25 result=miss ms=1.017
+1070.48,begin fallback SLP Z/MAX@25
+1076.58,end fallback SLP result=miss ms=6.102
+1076.71,begin primary Z/MAX@11
+1077.15,end primary result=miss ms=0.441
+1077.16,begin alternate Z/MIN@11
+1078.73,end alternate Z/MIN@11 result=miss ms=1.565
+1078.74,begin alternate X/MAX@11
+1078.98,end alternate X/MAX@11 result=miss ms=0.236
+1078.98,begin alternate X/MIN@11
+1079.15,end alternate X/MIN@11 result=miss ms=0.166
+1079.16,begin fallback SLP Z/MAX@11
+1082.52,end fallback SLP result=miss ms=3.361
+1082.73,begin primary Z/MAX@2
+1082.81,end primary result=solved ms=0.079
+1082.98,begin primary Z/MAX@97
+1091.26,end primary result=miss ms=8.269
+1091.27,begin alternate Z/MIN@97
+1133.52,end alternate Z/MIN@97 result=miss ms=42.232
+1133.56,begin alternate X/MAX@97
+1169.57,end alternate X/MAX@97 result=miss ms=36.008
+1169.58,begin alternate X/MIN@97
+1202.15,end alternate X/MIN@97 result=miss ms=32.568
+1202.16,begin fallback SLP Z/MAX@97
+1258.46,end fallback SLP result=miss ms=56.306
+1258.61,begin primary Z/MAX@65
+1269.74,end primary result=miss ms=11.131
+1269.75,begin alternate Z/MIN@65
+1281.11,end alternate Z/MIN@65 result=miss ms=11.351
+1281.12,begin alternate X/MAX@65
+1301.53,end alternate X/MAX@65 result=miss ms=20.408
+1301.54,begin alternate X/MIN@65
+1313.41,end alternate X/MIN@65 result=miss ms=11.868
+1313.44,begin fallback SLP Z/MAX@65
+1337.89,end fallback SLP result=miss ms=24.455
+1338.04,begin primary Z/MAX@40
+1341.06,end primary result=miss ms=3.018
+1341.08,begin alternate Z/MIN@40
+1346.87,end alternate Z/MIN@40 result=miss ms=5.786
+1346.88,begin alternate X/MAX@40
+1352.90,end alternate X/MAX@40 result=miss ms=6.020
+1352.91,begin alternate X/MIN@40
+1359.21,end alternate X/MIN@40 result=miss ms=6.295
+1359.22,begin fallback SLP Z/MAX@40
+1377.38,end fallback SLP result=miss ms=18.161
+1377.52,begin primary Z/MAX@27
+1379.82,end primary result=miss ms=2.299
+1379.83,begin alternate Z/MIN@27
+1380.35,end alternate Z/MIN@27 result=miss ms=0.518
+1380.35,begin alternate X/MAX@27
+1381.15,end alternate X/MAX@27 result=miss ms=0.794
+1381.16,begin alternate X/MIN@27
+1381.42,end alternate X/MIN@27 result=miss ms=0.264
+1381.44,begin fallback SLP Z/MAX@27
+1382.08,end fallback SLP result=miss ms=0.634
+1382.20,begin primary Z/MAX@23
+1382.31,end primary result=miss ms=0.110
+1382.32,begin alternate Z/MIN@23
+1382.54,end alternate Z/MIN@23 result=miss ms=0.223
+1382.55,begin alternate X/MAX@23
+1382.66,end alternate X/MAX@23 result=miss ms=0.114
+1382.67,begin alternate X/MIN@23
+1382.79,end alternate X/MIN@23 result=miss ms=0.112
+1382.80,begin fallback SLP Z/MAX@23
+1382.86,end fallback SLP result=miss ms=0.059
+1383.04,begin primary Z/MAX@9
+1383.10,end primary result=miss ms=0.061
+1383.11,begin alternate Z/MIN@9
+1383.17,end alternate Z/MIN@9 result=miss ms=0.057
+1383.18,begin alternate X/MAX@9
+1383.24,end alternate X/MAX@9 result=miss ms=0.057
+1383.25,begin alternate X/MIN@9
+1383.31,end alternate X/MIN@9 result=miss ms=0.059
+1383.32,begin fallback SLP Z/MAX@9
+1383.34,end fallback SLP result=miss ms=0.017
+1383.45,begin primary Z/MAX@77
+1385.03,end primary result=miss ms=1.577
+1385.04,begin alternate Z/MIN@77
+1389.48,end alternate Z/MIN@77 result=miss ms=4.443
+1389.49,begin alternate X/MAX@77
+1390.85,end alternate X/MAX@77 result=solved ms=1.358
+1391.19,begin primary Z/MAX@68
+1395.78,end primary result=miss ms=4.586
+1395.79,begin alternate Z/MIN@68
+1405.24,end alternate Z/MIN@68 result=miss ms=9.447
+1405.25,begin alternate X/MAX@68
+1408.86,end alternate X/MAX@68 result=miss ms=3.613
+1408.87,begin alternate X/MIN@68
+1412.76,end alternate X/MIN@68 result=miss ms=3.887
+1412.77,begin fallback SLP Z/MAX@68
+1420.30,end fallback SLP result=solved ms=7.529
+1420.61,begin primary Z/MAX@67
+1438.34,end primary result=miss ms=17.727
+1438.36,begin alternate Z/MIN@67
+1444.55,end alternate Z/MIN@67 result=miss ms=6.186
+1444.56,begin alternate X/MAX@67
+1448.50,end alternate X/MAX@67 result=miss ms=3.947
+1448.52,begin alternate X/MIN@67
+1458.96,end alternate X/MIN@67 result=miss ms=10.445
+1458.97,begin fallback SLP Z/MAX@67
+1505.99,end fallback SLP result=solved ms=47.014
+1506.28,begin primary Z/MAX@60
+1515.14,end primary result=miss ms=8.862
+1515.15,begin alternate Z/MIN@60
+1536.52,end alternate Z/MIN@60 result=miss ms=21.364
+1536.53,begin alternate X/MAX@60
+1552.28,end alternate X/MAX@60 result=miss ms=15.744
+1552.29,begin alternate X/MIN@60
+1563.06,end alternate X/MIN@60 result=miss ms=10.765
+1563.06,begin fallback SLP Z/MAX@60
+1591.04,end fallback SLP result=solved ms=27.979
+1591.36,begin primary Z/MAX@59
+1610.26,end primary result=miss ms=18.900
+1610.27,begin alternate Z/MIN@59
+1621.47,end alternate Z/MIN@59 result=miss ms=11.202
+1621.48,begin alternate X/MAX@59
+1633.45,end alternate X/MAX@59 result=miss ms=11.961
+1633.45,begin alternate X/MIN@59
+1643.07,end alternate X/MIN@59 result=miss ms=9.615
+1643.08,begin fallback SLP Z/MAX@59
+1701.11,end fallback SLP result=miss ms=58.027
+1701.28,begin primary Z/MAX@40
+1703.33,end primary result=miss ms=2.051
+1703.34,begin alternate Z/MIN@40
+1706.16,end alternate Z/MIN@40 result=miss ms=2.818
+1706.17,begin alternate X/MAX@40
+1708.04,end alternate X/MAX@40 result=miss ms=1.873
+1708.05,begin alternate X/MIN@40
+1709.20,end alternate X/MIN@40 result=miss ms=1.150
+1709.21,begin fallback SLP Z/MAX@40
+1713.43,end fallback SLP result=solved ms=4.214
+1713.82,begin primary Z/MAX@58
+1723.20,end primary result=miss ms=9.381
+1723.21,begin alternate Z/MIN@58
+1731.97,end alternate Z/MIN@58 result=miss ms=8.759
+1731.98,begin alternate X/MAX@58
+1739.14,end alternate X/MAX@58 result=miss ms=7.152
+1739.15,begin alternate X/MIN@58
+1753.58,end alternate X/MIN@58 result=miss ms=14.432
+1753.59,begin fallback SLP Z/MAX@58
+1847.53,end fallback SLP result=miss ms=93.933
+1847.68,begin primary Z/MAX@33
+1850.68,end primary result=miss ms=3.008
+1850.69,begin alternate Z/MIN@33
+1854.54,end alternate Z/MIN@33 result=miss ms=3.847
+1854.55,begin alternate X/MAX@33
+1858.94,end alternate X/MAX@33 result=miss ms=4.394
+1858.95,begin alternate X/MIN@33
+1861.93,end alternate X/MIN@33 result=miss ms=2.976
+1861.94,begin fallback SLP Z/MAX@33
+1872.59,end fallback SLP result=solved ms=10.658
+1872.84,begin primary Z/MAX@53
+1886.97,end primary result=miss ms=14.123
+1886.98,begin alternate Z/MIN@53
+1896.43,end alternate Z/MIN@53 result=miss ms=9.454
+1896.45,begin alternate X/MAX@53
+1900.24,end alternate X/MAX@53 result=miss ms=3.794
+1900.25,begin alternate X/MIN@53
+1909.60,end alternate X/MIN@53 result=miss ms=9.347
+1909.61,begin fallback SLP Z/MAX@53
+1986.31,end fallback SLP result=miss ms=76.704
+1986.45,begin primary Z/MAX@26
+1987.36,end primary result=miss ms=0.908
+1987.37,begin alternate Z/MIN@26
+1988.14,end alternate Z/MIN@26 result=solved ms=0.770
+1988.33,begin primary Z/MAX@60
+1992.27,end primary result=miss ms=3.945
+1992.28,begin alternate Z/MIN@60
+2005.31,end alternate Z/MIN@60 result=miss ms=13.026
+2005.32,begin alternate X/MAX@60
+2009.22,end alternate X/MAX@60 result=miss ms=3.885
+2009.24,begin alternate X/MIN@60
+2027.37,end alternate X/MIN@60 result=miss ms=18.135
+2027.38,begin fallback SLP Z/MAX@60
+2117.35,end fallback SLP result=miss ms=89.975
+2117.48,begin primary Z/MAX@31
+2118.04,end primary result=miss ms=0.566
+2118.06,begin alternate Z/MIN@31
+2119.71,end alternate Z/MIN@31 result=miss ms=1.649
+2119.71,begin alternate X/MAX@31
+2120.46,end alternate X/MAX@31 result=miss ms=0.743
+2120.46,begin alternate X/MIN@31
+2120.84,end alternate X/MIN@31 result=miss ms=0.377
+2120.85,begin fallback SLP Z/MAX@31
+2121.57,end fallback SLP result=miss ms=0.714
+2121.91,begin primary Z/MAX@20
+2122.49,end primary result=miss ms=0.584
+2122.50,begin alternate Z/MIN@20
+2122.65,end alternate Z/MIN@20 result=solved ms=0.147
+2122.80,begin primary Z/MAX@59
+2139.20,end primary result=miss ms=16.397
+2139.21,begin alternate Z/MIN@59
+2153.01,end alternate Z/MIN@59 result=miss ms=13.794
+2153.02,begin alternate X/MAX@59
+2169.48,end alternate X/MAX@59 result=miss ms=16.464
+2169.49,begin alternate X/MIN@59
+2190.85,end alternate X/MIN@59 result=miss ms=21.366
+2190.86,begin fallback SLP Z/MAX@59
+2285.22,end fallback SLP result=miss ms=94.357
+2285.36,begin primary Z/MAX@42
+2288.82,end primary result=miss ms=3.462
+2288.84,begin alternate Z/MIN@42
+2291.37,end alternate Z/MIN@42 result=miss ms=2.536
+2291.38,begin alternate X/MAX@42
+2294.03,end alternate X/MAX@42 result=miss ms=2.651
+2294.04,begin alternate X/MIN@42
+2300.29,end alternate X/MIN@42 result=miss ms=6.257
+2300.30,begin fallback SLP Z/MAX@42
+2328.06,end fallback SLP result=miss ms=27.763
+2328.18,begin primary Z/MAX@19
+2328.73,end primary result=miss ms=0.557
+2328.74,begin alternate Z/MIN@19
+2329.24,end alternate Z/MIN@19 result=solved ms=0.503
+2329.37,begin primary Z/MAX@57
+2359.76,end primary result=miss ms=30.393
+2359.77,begin alternate Z/MIN@57
+2361.31,end alternate Z/MIN@57 result=miss ms=1.532
+2361.31,begin alternate X/MAX@57
+2377.67,end alternate X/MAX@57 result=miss ms=16.363
+2377.68,begin alternate X/MIN@57
+2390.57,end alternate X/MIN@57 result=miss ms=12.886
+2390.57,begin fallback SLP Z/MAX@57
+2471.40,end fallback SLP result=miss ms=80.826
+2471.54,begin primary Z/MAX@42
+2476.22,end primary result=miss ms=4.688
+2476.24,begin alternate Z/MIN@42
+2478.06,end alternate Z/MIN@42 result=miss ms=1.823
+2478.06,begin alternate X/MAX@42
+2484.13,end alternate X/MAX@42 result=miss ms=6.066
+2484.14,begin alternate X/MIN@42
+2492.97,end alternate X/MIN@42 result=miss ms=8.832
+2492.98,begin fallback SLP Z/MAX@42
+2532.88,end fallback SLP result=miss ms=39.905
+2533.02,begin primary Z/MAX@24
+2533.32,end primary result=miss ms=0.303
+2533.33,begin alternate Z/MIN@24
+2533.50,end alternate Z/MIN@24 result=miss ms=0.176
+2533.51,begin alternate X/MAX@24
+2533.86,end alternate X/MAX@24 result=miss ms=0.348
+2533.86,begin alternate X/MIN@24
+2534.12,end alternate X/MIN@24 result=miss ms=0.257
+2534.12,begin fallback SLP Z/MAX@24
+2534.38,end fallback SLP result=miss ms=0.260
+2534.46,begin primary Z/MAX@13
+2534.66,end primary result=miss ms=0.191
+2534.66,begin alternate Z/MIN@13
+2534.86,end alternate Z/MIN@13 result=solved ms=0.199
+2534.98,begin primary Z/MAX@78
+2553.10,end primary result=miss ms=18.120
+2553.11,begin alternate Z/MIN@78
+2572.31,end alternate Z/MIN@78 result=miss ms=19.201
+2572.32,begin alternate X/MAX@78
+2604.25,end alternate X/MAX@78 result=miss ms=31.936
+2604.26,begin alternate X/MIN@78
+2618.66,end alternate X/MIN@78 result=miss ms=14.402
+2618.67,begin fallback SLP Z/MAX@78
+2750.84,end fallback SLP result=miss ms=132.176
+2750.97,begin primary Z/MAX@51
+2753.72,end primary result=miss ms=2.747
+2753.73,begin alternate Z/MIN@51
+2762.73,end alternate Z/MIN@51 result=miss ms=9.001
+2762.73,begin alternate X/MAX@51
+2765.71,end alternate X/MAX@51 result=miss ms=2.972
+2765.71,begin alternate X/MIN@51
+2774.30,end alternate X/MIN@51 result=miss ms=8.588
+2774.31,begin fallback SLP Z/MAX@51
+2806.44,end fallback SLP result=miss ms=32.132
+2806.57,begin primary Z/MAX@36
+2808.27,end primary result=miss ms=1.700
+2808.28,begin alternate Z/MIN@36
+2809.72,end alternate Z/MIN@36 result=miss ms=1.440
+2809.72,begin alternate X/MAX@36
+2811.46,end alternate X/MAX@36 result=miss ms=1.738
+2811.47,begin alternate X/MIN@36
+2813.85,end alternate X/MIN@36 result=miss ms=2.380
+2813.85,begin fallback SLP Z/MAX@36
+2827.44,end fallback SLP result=miss ms=13.584
+2827.57,begin primary Z/MAX@13
+2827.94,end primary result=miss ms=0.370
+2827.95,begin alternate Z/MIN@13
+2828.04,end alternate Z/MIN@13 result=solved ms=0.088
+2828.16,begin primary Z/MAX@87
+2858.25,end primary result=miss ms=30.091
+2858.27,begin alternate Z/MIN@87
+2902.69,end alternate Z/MIN@87 result=miss ms=44.419
+2902.69,begin alternate X/MAX@87
+2916.39,end alternate X/MAX@87 result=miss ms=13.700
+2916.40,begin alternate X/MIN@87
+2941.21,end alternate X/MIN@87 result=miss ms=24.809
+2941.21,begin fallback SLP Z/MAX@87
+3123.26,end fallback SLP result=miss ms=182.047
+3123.39,begin primary Z/MAX@50
+3133.16,end primary result=miss ms=9.773
+3133.18,begin alternate Z/MIN@50
+3143.77,end alternate Z/MIN@50 result=miss ms=10.592
+3143.78,begin alternate X/MAX@50
+3152.02,end alternate X/MAX@50 result=miss ms=8.245
+3152.03,begin alternate X/MIN@50
+3155.64,end alternate X/MIN@50 result=miss ms=3.612
+3155.65,begin fallback SLP Z/MAX@50
+3194.27,end fallback SLP result=miss ms=38.619
+3194.39,begin primary Z/MAX@37
+3196.38,end primary result=miss ms=1.983
+3196.39,begin alternate Z/MIN@37
+3197.61,end alternate Z/MIN@37 result=miss ms=1.225
+3197.62,begin alternate X/MAX@37
+3200.59,end alternate X/MAX@37 result=miss ms=2.972
+3200.60,begin alternate X/MIN@37
+3202.85,end alternate X/MIN@37 result=miss ms=2.255
+3202.86,begin fallback SLP Z/MAX@37
+3230.61,end fallback SLP result=miss ms=27.752
+3230.72,begin primary Z/MAX@19
+3230.84,end primary result=miss ms=0.118
+3230.85,begin alternate Z/MIN@19
+3230.92,end alternate Z/MIN@19 result=miss ms=0.073
+3230.93,begin alternate X/MAX@19
+3231.13,end alternate X/MAX@19 result=miss ms=0.208
+3231.14,begin alternate X/MIN@19
+3231.27,end alternate X/MIN@19 result=miss ms=0.130
+3231.27,begin fallback SLP Z/MAX@19
+3231.34,end fallback SLP result=miss ms=0.069
+3231.52,begin primary Z/MAX@10
+3231.97,end primary result=miss ms=0.452
+3231.97,begin alternate Z/MIN@10
+3232.02,end alternate Z/MIN@10 result=solved ms=0.046
+3232.17,begin primary Z/MAX@88
+3250.50,end primary result=miss ms=18.337
+3250.52,begin alternate Z/MIN@88
+3261.06,end alternate Z/MIN@88 result=miss ms=10.545
+3261.07,begin alternate X/MAX@88
+3286.10,end alternate X/MAX@88 result=miss ms=25.033
+3286.11,begin alternate X/MIN@88
+3311.30,end alternate X/MIN@88 result=miss ms=25.195
+3311.31,begin fallback SLP Z/MAX@88
+3413.41,end fallback SLP result=miss ms=102.097
+3413.53,begin primary Z/MAX@44
+3419.87,end primary result=miss ms=6.340
+3419.89,begin alternate Z/MIN@44
+3430.63,end alternate Z/MIN@44 result=miss ms=10.745
+3430.64,begin alternate X/MAX@44
+3436.63,end alternate X/MAX@44 result=miss ms=5.992
+3436.63,begin alternate X/MIN@44
+3442.91,end alternate X/MIN@44 result=miss ms=6.274
+3442.91,begin fallback SLP Z/MAX@44
+3461.50,end fallback SLP result=miss ms=18.583
+3461.62,begin primary Z/MAX@40
+3463.21,end primary result=miss ms=1.594
+3463.22,begin alternate Z/MIN@40
+3467.39,end alternate Z/MIN@40 result=miss ms=4.171
+3467.39,begin alternate X/MAX@40
+3469.21,end alternate X/MAX@40 result=miss ms=1.813
+3469.21,begin alternate X/MIN@40
+3471.97,end alternate X/MIN@40 result=miss ms=2.755
+3471.97,begin fallback SLP Z/MAX@40
+3479.76,end fallback SLP result=miss ms=7.785
+3479.88,begin primary Z/MAX@25
+3480.15,end primary result=miss ms=0.271
+3480.16,begin alternate Z/MIN@25
+3480.53,end alternate Z/MIN@25 result=miss ms=0.369
+3480.53,begin alternate X/MAX@25
+3481.13,end alternate X/MAX@25 result=miss ms=0.599
+3481.14,begin alternate X/MIN@25
+3481.47,end alternate X/MIN@25 result=miss ms=0.335
+3481.47,begin fallback SLP Z/MAX@25
+3485.13,end fallback SLP result=miss ms=3.653
+3485.23,begin primary Z/MAX@11
+3485.28,end primary result=miss ms=0.047
+3485.28,begin alternate Z/MIN@11
+3485.33,end alternate Z/MIN@11 result=miss ms=0.043
+3485.33,begin alternate X/MAX@11
+3485.37,end alternate X/MAX@11 result=miss ms=0.042
+3485.38,begin alternate X/MIN@11
+3485.41,end alternate X/MIN@11 result=miss ms=0.033
+3485.42,begin fallback SLP Z/MAX@11
+3485.43,end fallback SLP result=miss ms=0.014
+3485.53,begin primary Z/MAX@2
+3485.60,end primary result=solved ms=0.068
+3485.71,begin primary Z/MAX@97
+3506.98,end primary result=miss ms=21.269
+3506.99,begin alternate Z/MIN@97
+3549.83,end alternate Z/MIN@97 result=miss ms=42.844
+3549.84,begin alternate X/MAX@97
+3607.69,end alternate X/MAX@97 result=miss ms=57.848
+3607.69,begin alternate X/MIN@97
+3623.89,end alternate X/MIN@97 result=miss ms=16.190
+3623.89,begin fallback SLP Z/MAX@97
+3705.38,end fallback SLP result=miss ms=81.485
+3705.52,begin primary Z/MAX@65
+3711.73,end primary result=miss ms=6.207
+3711.74,begin alternate Z/MIN@65
+3725.83,end alternate Z/MIN@65 result=miss ms=14.088
+3725.83,begin alternate X/MAX@65
+3733.51,end alternate X/MAX@65 result=miss ms=7.674
+3733.51,begin alternate X/MIN@65
+3749.24,end alternate X/MIN@65 result=miss ms=15.731
+3749.25,begin fallback SLP Z/MAX@65
+3769.33,end fallback SLP result=miss ms=20.075
+3769.44,begin primary Z/MAX@40
+3782.47,end primary result=miss ms=13.029
+3782.48,begin alternate Z/MIN@40
+3789.29,end alternate Z/MIN@40 result=miss ms=6.802
+3789.29,begin alternate X/MAX@40
+3795.78,end alternate X/MAX@40 result=miss ms=6.488
+3795.79,begin alternate X/MIN@40
+3806.25,end alternate X/MIN@40 result=miss ms=10.459
+3806.25,begin fallback SLP Z/MAX@40
+3818.15,end fallback SLP result=miss ms=11.897
+3818.27,begin primary Z/MAX@27
+3819.97,end primary result=miss ms=1.701
+3819.97,begin alternate Z/MIN@27
+3821.89,end alternate Z/MIN@27 result=miss ms=1.911
+3821.89,begin alternate X/MAX@27
+3822.32,end alternate X/MAX@27 result=miss ms=0.432
+3822.33,begin alternate X/MIN@27
+3822.48,end alternate X/MIN@27 result=miss ms=0.154
+3822.48,begin fallback SLP Z/MAX@27
+3828.53,end fallback SLP result=miss ms=6.048
+3828.66,begin primary Z/MAX@23
+3828.78,end primary result=miss ms=0.124
+3828.79,begin alternate Z/MIN@23
+3828.85,end alternate Z/MIN@23 result=miss ms=0.066
+3828.86,begin alternate X/MAX@23
+3828.92,end alternate X/MAX@23 result=miss ms=0.061
+3828.92,begin alternate X/MIN@23
+3829.10,end alternate X/MIN@23 result=miss ms=0.173
+3829.10,begin fallback SLP Z/MAX@23
+3829.19,end fallback SLP result=miss ms=0.085
+3829.32,begin primary Z/MAX@9
+3829.35,end primary result=miss ms=0.039
+3829.36,begin alternate Z/MIN@9
+3829.39,end alternate Z/MIN@9 result=miss ms=0.026
+3829.39,begin alternate X/MAX@9
+3829.42,end alternate X/MAX@9 result=miss ms=0.025
+3829.42,begin alternate X/MIN@9
+3829.44,end alternate X/MIN@9 result=miss ms=0.024
+3829.45,begin fallback SLP Z/MAX@9
+3829.46,end fallback SLP result=miss ms=0.009

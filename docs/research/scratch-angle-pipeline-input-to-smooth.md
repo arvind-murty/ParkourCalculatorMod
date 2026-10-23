@@ -900,3 +900,6 @@ The older normal-margin trace is enough to compare outcomes, rung attempts, timi
 ## Experimental LongRun window acceptance: shared continuous inertia validation
 
 See [the shared-helper investigation](solver-traces/linkcraft-real11-shared-inertia-validation.md). `WindowCandidateValidation` checks every full-window constraint on continuous angles with actual inertia threshold checks, and checks Minecraft replay constraints only through the committed prefix. The continuous path reuses the existing `JumpLinearModel.zeroingPattern` loop, extended to record positions and carry velocities. Validation does not trust the optimizer's assumed pattern. The focused 30-jump Linkcraft real/11 probe now completes; ten focused tests passed. This remains an experimental LongRun acceptance policy, not a change to every graph node.
+
+
+The subsequent [full-route fixed-margin 10-ladder probe](solver-traces/linkcraft-real11-full-fixed0003-ten-ladder.md) uses the saved 808-tick endpoint, windows 10,7,5,3,2,1, commit 3 then 1, and closed-form margin 0.0003. Both passes stall at tick 90 before jump 14; no outer timeout was imposed. All attempt tables, detailed traces and timings are preserved in that report.
