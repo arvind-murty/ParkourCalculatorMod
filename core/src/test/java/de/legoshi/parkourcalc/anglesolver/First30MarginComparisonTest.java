@@ -60,6 +60,13 @@ public class First30MarginComparisonTest {
     @Test
     public void compareMarginsAtIdenticalEntries() throws Exception {
         Assume.assumeTrue("opt in with -Dpkc.marginProbe=true", Boolean.getBoolean("pkc.marginProbe"));
+        loadCapture();
+        attempts.add("run,start_index,end_index,start_tick,end_tick,objective,result,violation,worst,objective_value");
+        states.add("run,start_index,tick,x,z,vx,vz,incoming_committed_yaw");
+        comparePreparedCapture();
+    }
+
+    private void loadCapture() throws Exception {
         String capture = System.getenv("PKC_TRACE_INPUT");
         if (capture == null) capture = "/Users/arvindmurty/Downloads/LinkcraftII_Competition_01/real/11.json";
         SaveFile file = SaveIO.parseSafe(new String(Files.readAllBytes(Paths.get(capture)), StandardCharsets.UTF_8));
@@ -77,8 +84,9 @@ public class First30MarginComparisonTest {
         bounds = (int[]) method(LongRunSolver.class, "jumpBoundaries", JumpPhysicsInputs.class)
                 .invoke(null, full.asScenario());
         assertEquals(31, bounds.length);
-        attempts.add("run,start_index,end_index,start_tick,end_tick,objective,result,violation,worst,objective_value");
-        states.add("run,start_index,tick,x,z,vx,vz,incoming_committed_yaw");
+    }
+
+    private void comparePreparedCapture() throws Exception {
         Run normal = run("normal-full", NORMAL);
         Run fixed = run("fixed-full", FIXED);
         assertTrue("normal policy completes", normal.solved);
@@ -116,6 +124,124 @@ public class First30MarginComparisonTest {
         Path reports = Paths.get("build/reports");
         Files.write(reports.resolve("margin-comparison-attempts.csv"), attempts, StandardCharsets.UTF_8);
         Files.write(reports.resolve("margin-comparison-states.csv"), states, StandardCharsets.UTF_8);
+    }
+
+    private static final class AuditCandidate {
+        final int pass;
+        final boolean[] zeroX, zeroZ;
+        final ClosedFormSolve.Result result;
+        AuditCandidate(int pass, boolean[] zeroX, boolean[] zeroZ, ClosedFormSolve.Result result) {
+            this.pass = pass; this.zeroX = zeroX; this.zeroZ = zeroZ; this.result = result;
+        }
+    }
+
+    /** Only the initial seven-jump window: every fixed-margin pass, every original position constraint. */
+    @Test
+    @SuppressWarnings("unchecked")
+    public void initialSevenConstraintAudit() throws Exception {
+        Assume.assumeTrue("opt in with -Dpkc.marginProbe=true", Boolean.getBoolean("pkc.marginProbe"));
+        loadCapture();
+        JumpPhysicsInputs source = full.asScenario();
+        Seed initial = new Seed(source.startPos, source.initialVelocity, source.startYaw);
+        JumpPhysicsInputs sc = slice(initial, 0, 68);
+        assertEquals(68, bounds[7]);
+        List<JumpConstraint> cons = (List<JumpConstraint>) method(LongRunSolver.class, "sliceConstraints",
+                JumpSpec.class, int.class, int.class, float.class).invoke(null, full, 0, 68, initial.yaw);
+        assertEquals(33, cons.size());
+        assertEquals(0, JumpLinearModel.crossAxisCount(cons));
+        FacingPrefold pre = FacingPrefold.analyze(cons, new JumpLinearModel(sc));
+        assertNotNull(pre);
+        assertTrue(pre.isIdentity());
+        List<String> rows = new ArrayList<>();
+        rows.add("objective,margin,pass,pattern,best_for_objective,constraint,axis,tick,comparison,wall,model_value,model_clearance,model_violation,model_tightened_violation,replay_value,replay_clearance,replay_violation,replay_minus_model");
+        SolverTrace.enable("initial-seven-constraint-audit");
+        try {
+            for (int k = 0; k < 5; k++) {
+                boolean normalControl = k == 4;
+                Objective obj = new Objective(k < 2 || normalControl ? JumpPhysicsInputs.Axis.Z : JumpPhysicsInputs.Axis.X,
+                        k % 2 == 0 ? Objective.Sense.MAX : Objective.Sense.MIN, 68);
+                JumpSpec spec = new JumpSpec(sc, cons, obj);
+                double margin = normalControl ? 0.05 : 0.0003;
+                ClosedFormSolve.Config cfg = new ClosedFormSolve.Config();
+                JumpConstraintCompiler.Compiled compiled = JumpConstraintCompiler.compile(spec);
+                List<AuditCandidate> candidates = new ArrayList<>();
+                boolean[] zeroX = null, zeroZ = null;
+                AuditCandidate best = null;
+                for (int pass = 0; pass < cfg.maxInertiaPasses; pass++) {
+                    SolverTrace.log("AUDIT-PASS", "objective=%s/%s margin=%.5g pass=%d pattern=%s", obj.axis, obj.sense,
+                            margin, pass, SolverTrace.patternLabel(zeroX, zeroZ));
+                    ClosedFormSolve.Result r = (ClosedFormSolve.Result) method(ClosedFormSolve.class, "runLadder",
+                            ExactJumpModel.class, JumpSpec.class, JumpPhysicsInputs.class, JumpConstraintCompiler.Compiled.class,
+                            double.class, AtomicBoolean.class, double[].class, boolean.class, boolean[].class,
+                            boolean[].class, long.class, ClosedFormSolve.Config.class, FacingPrefold.class, int[].class)
+                            .invoke(null, exact, spec, sc, compiled, 0.0, CANCEL, new double[]{margin}, false, zeroX,
+                                    zeroZ, System.nanoTime(), cfg, pre, new int[0]);
+                    assertNotNull(r);
+                    AuditCandidate candidate = new AuditCandidate(pass, zeroX, zeroZ, r);
+                    candidates.add(candidate);
+                    boolean improved = best == null || r.violation < best.result.violation;
+                    if (improved) best = candidate;
+                    if (r.feasible || (pass > 0 && !improved)) break;
+                    boolean[] nx = new boolean[68], nz = new boolean[68];
+                    new JumpLinearModel(sc).zeroingPattern(r.yaws, exact.inertiaThreshold(), exact.perAxisInertia(), nx, nz);
+                    boolean effective = (Boolean) method(ClosedFormSolve.class, "patternEffective",
+                            JumpPhysicsInputs.class, boolean[].class, boolean[].class).invoke(null, sc, nx, nz);
+                    if (!effective || (java.util.Arrays.equals(zeroX, nx) && java.util.Arrays.equals(zeroZ, nz))) break;
+                    zeroX = nx; zeroZ = nz;
+                }
+                assertNotNull(best);
+                ClosedFormSolve.Result reference = (ClosedFormSolve.Result) method(ClosedFormSolve.class, "optimizeReturning",
+                        ExactJumpModel.class, JumpSpec.class, double.class, AtomicBoolean.class, double[].class,
+                        boolean.class, ClosedFormSolve.Config.class).invoke(null, exact, spec, 0.0, CANCEL,
+                        new double[]{margin}, false, cfg);
+                assertNotNull(reference);
+                assertArrayEquals("audit matches production candidate", reference.yaws, best.result.yaws, 0.0);
+                assertEquals(normalControl, best.result.feasible);
+                for (AuditCandidate candidate : candidates) {
+                    auditConstraints(sc, spec, candidate, candidate == best, margin, rows);
+                }
+            }
+        } finally { SolverTrace.disable(); }
+        Files.write(Paths.get("build/reports/initial-seven-constraints.csv"), rows, StandardCharsets.UTF_8);
+    }
+
+    private void auditConstraints(JumpPhysicsInputs sc, JumpSpec spec, AuditCandidate candidate, boolean best,
+                                  double margin, List<String> rows) {
+        JumpLinearModel lin = new JumpLinearModel(sc, candidate.zeroX, candidate.zeroZ);
+        double[] yaws = candidate.result.yaws;
+        double[] game = sc.toGameFacings(yaws);
+        ForwardPath replay = exact.forward(sc, game);
+        double[][] position = new double[2][sc.numTicks + 1];
+        for (int axis = 0; axis < 2; axis++) for (int tick = 0; tick <= sc.numTicks; tick++) {
+            double value = lin.constPos(tick, axis);
+            for (int t = 0; t < tick; t++) {
+                double phi = lin.baseArg(t) + Angles.rad(yaws[t]);
+                value += lin.coefAxis(axis, t, tick) * lin.mMag(t)
+                        * (axis == 0 ? StrictMath.cos(phi) : StrictMath.sin(phi));
+            }
+            position[axis][tick] = value;
+        }
+        for (JumpConstraint c : spec.constraints) {
+            assertTrue(c.mode == JumpConstraint.Mode.X || c.mode == JumpConstraint.Mode.Z);
+            int axis = c.mode == JumpConstraint.Mode.X ? 0 : 1;
+            double modelValue = position[axis][c.t1];
+            if (c.t2 != null) modelValue += (c.op == JumpConstraint.Op.PLUS ? 1 : -1) * position[axis][c.t2];
+            double replayValue = JumpConstraintCompiler.evaluate(c, game, replay) + c.rhs;
+            double modelClearance = clearance(c, modelValue);
+            double replayClearance = clearance(c, replayValue);
+            double tightened = c.cmp == JumpConstraint.Cmp.EQ ? -modelClearance : margin - modelClearance;
+            rows.add(String.format(Locale.ROOT,
+                    "%s/%s,%.9g,%d,\"%s\",%s,%s,%s,%d,%s,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g",
+                    spec.objective.axis, spec.objective.sense, margin, candidate.pass,
+                    SolverTrace.patternLabel(candidate.zeroX, candidate.zeroZ), best, c.name, c.mode, c.t1, c.cmp,
+                    c.rhs, modelValue, modelClearance, Math.max(0, -modelClearance), Math.max(0, tightened),
+                    replayValue, replayClearance, Math.max(0, -replayClearance), replayValue - modelValue));
+        }
+    }
+
+    private static double clearance(JumpConstraint c, double value) {
+        if (c.cmp == JumpConstraint.Cmp.EQ) return -StrictMath.abs(value - c.rhs);
+        return c.cmp == JumpConstraint.Cmp.LE ? c.rhs - value : value - c.rhs;
     }
 
     private Run run(String name, double[] margins) throws Exception {
