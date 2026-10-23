@@ -951,3 +951,8 @@ The common-case [objective-bound detector](solver-traces/linkcraft-real11-object
 ## Separate experiment: sharper norm smoothing
 
 [EPS2 is now 1e-24 in a separate experiment](solver-traces/linkcraft-real11-eps24-experiment.md). For costates at least 1e-9, the derivative length shrink is at most about 0.00005%; below that the existing fallback may choose arbitrary objective-directed motion. The initial fixed Z/MAX inertia retry now triggers that fallback for all 68 controls and is worse, though the retained first-pass miss is unchanged at cap100 and larger-cap best violation improves to 0.00754865. Fixed Z/MIN remains accepted; the full 7-ladder route still fails before jump14. Five focused tests pass. The fallback's original comment confirms an undetermined-direction heuristic, not a proven smoothing-error catch.
+
+
+## Endpoint shifts tested on the initial fixed-margin window
+
+[The initial-window endpoint comparison](solver-traces/linkcraft-real11-initial-window-endpoint-shifts.md) now tests original end68 versus ±1 jump (64/71) and ±1 tick (67/69), keeping margin0.0003, EPS2=1e-24 and shared validation. Forward one jump and forward one tick both accept Z/MAX for commit3 and commit1; end71 needs an inertia-pattern retry, end69 passes the first candidate. Original end68 fails Z/MAX and falls back to Z/MIN. Backward one jump fails commit3 replay by 0.00007916738 at Z20 but passes commit1; backward one tick passes but drops Z68. Direct-cap detection remains diagnostic-only: automatic window selection and a full-route test of that policy have not run.

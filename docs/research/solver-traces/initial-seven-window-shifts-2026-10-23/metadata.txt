@@ -1,0 +1,3 @@
+input=/Users/arvindmurty/Downloads/LinkcraftII_Competition_01/real/11.json
+EPS2=1.0E-24
+fixedMargin=0.0003; dualMaxIterations=100; same initial state; prefixes=30,12
