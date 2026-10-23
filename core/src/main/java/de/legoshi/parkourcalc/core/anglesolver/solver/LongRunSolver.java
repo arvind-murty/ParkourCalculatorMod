@@ -327,10 +327,16 @@ public final class LongRunSolver {
                                         Objective first, boolean last, AtomicBoolean cancel, long deadlineNanos) {
         if (last) {
             AtomicBoolean token = cancel != null ? cancel : new AtomicBoolean(false);
+            long recoveryT0 = SolverTrace.on() ? System.nanoTime() : 0L;
+            if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "begin terminal recovery %s/%s@%d",
+                    first.axis, first.sense, first.tick);
             double[] primary = RecoveryLadder.solve(exact, new JumpSpec(win, cons, first), win, token, new String[1],
                     deadlineNanos, new SlpSolve.Config(), new ClosedFormSolve.Config(), new RelaxationRecovery.Config(),
                     null);
-            return hugBestObjective(exact, win, cons, first, primary, token, deadlineNanos);
+            double[] result = hugBestObjective(exact, win, cons, first, primary, token, deadlineNanos);
+            if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "end terminal recovery result=%s ms=%.3f",
+                    result != null ? "solved" : "miss", (System.nanoTime() - recoveryT0) / 1.0e6);
+            return result;
         }
         long objectiveT0 = SolverTrace.on() ? System.nanoTime() : 0L;
         if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "begin primary %s/%s@%d", first.axis, first.sense, first.tick);
@@ -349,7 +355,13 @@ public final class LongRunSolver {
             if (y != null) return y;
         }
         if (cancel != null && cancel.get()) return null;
-        return SlpSolve.optimizeCentered(exact, new JumpSpec(win, cons, first), 0.0, cancel);
+        objectiveT0 = SolverTrace.on() ? System.nanoTime() : 0L;
+        if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "begin fallback SLP %s/%s@%d",
+                first.axis, first.sense, first.tick);
+        y = SlpSolve.optimizeCentered(exact, new JumpSpec(win, cons, first), 0.0, cancel);
+        if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "end fallback SLP result=%s ms=%.3f",
+                y != null ? "solved" : "miss", (System.nanoTime() - objectiveT0) / 1.0e6);
+        return y;
     }
 
     private static double[] hugBestObjective(ExactJumpModel exact, JumpPhysicsInputs win, List<JumpConstraint> cons,
