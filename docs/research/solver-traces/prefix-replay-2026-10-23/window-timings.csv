@@ -1,0 +1,57 @@
+policy,start_index,end_index,start_tick,end_tick,result,window_ms,closedform_margin_calls,closedform_iterations,objective_sequence
+full-window,0,7,0,68,solved,54.1,1,100,Z/MAX@68 solved 53.935ms @5.00e-02
+full-window,1,8,12,71,solved,8.1,1,100,Z/MAX@59 solved 8.068ms @5.00e-02
+full-window,2,9,21,75,solved,10.1,2,83,Z/MAX@54 solved 10.001ms @2.00e-02
+full-window,3,10,30,77,solved,6.5,2,132,Z/MAX@47 solved 6.430ms @2.00e-02
+full-window,4,11,40,80,solved,7.2,2,128,Z/MAX@40 solved 7.192ms @2.00e-02
+full-window,5,12,55,88,solved,119.0,34,3282,Z/MAX@33 miss 85.395ms; Z/MIN@33 solved 33.541ms @3.00e-04
+full-window,6,13,64,90,solved,12.8,10,937,Z/MAX@26 miss 10.859ms; Z/MIN@26 solved 1.878ms @1.00e-02
+full-window,7,14,68,99,solved,23.4,27,1234,Z/MAX@31 miss 12.683ms; Z/MIN@31 solved 10.693ms @3.00e-04
+full-window,8,15,71,113,solved,16.1,13,1229,Z/MAX@42 solved 16.058ms @3.00e-04
+full-window,9,16,75,117,solved,18.6,12,1147,Z/MAX@42 solved 18.574ms @1.20e-03
+full-window,10,17,77,128,solved,129.7,54,5005,Z/MAX@51 miss 32.597ms; Z/MIN@51 miss 76.089ms; X/MAX@51 solved 20.937ms @1.20e-03
+full-window,11,18,80,130,miss,340.1,77,7363,Z/MAX@50 miss 23.263ms; Z/MIN@50 miss 34.505ms; X/MAX@50 miss 73.044ms; X/MIN@50 miss 48.054ms; fallback SLP Z/MAX@50 miss 161.138ms
+full-window,11,16,80,117,solved,23.7,26,2268,Z/MAX@37 miss 17.001ms; Z/MIN@37 solved 6.680ms @1.20e-03
+full-window,12,19,88,132,solved,60.5,55,4913,Z/MAX@44 miss 15.349ms; Z/MIN@44 miss 13.785ms; X/MAX@44 miss 20.172ms; X/MIN@44 solved 11.097ms @3.00e-04
+full-window,13,20,90,155,miss,455.5,77,7528,Z/MAX@65 miss 93.368ms; Z/MIN@65 miss 72.484ms; X/MAX@65 miss 73.304ms; X/MIN@65 miss 32.775ms; fallback SLP Z/MAX@65 miss 183.502ms
+full-window,13,18,90,130,solved,97.2,70,5526,Z/MAX@40 miss 10.763ms; Z/MIN@40 miss 40.365ms; X/MAX@40 miss 12.396ms; X/MIN@40 miss 15.618ms; fallback SLP Z/MAX@40 solved 18.020ms
+full-window,14,21,99,167,miss,656.7,77,7615,Z/MAX@68 miss 298.011ms; Z/MIN@68 miss 94.533ms; X/MAX@68 miss 69.540ms; X/MIN@68 miss 114.895ms; fallback SLP Z/MAX@68 miss 79.695ms
+full-window,14,19,99,132,solved,8.4,10,937,Z/MAX@33 miss 6.458ms; Z/MIN@33 solved 1.869ms @1.00e-02
+full-window,15,22,113,176,solved,32.4,8,800,Z/MAX@63 solved 32.422ms @5.00e-02
+full-window,16,23,117,187,miss,390.0,63,6300,Z/MAX@70 miss 87.657ms; Z/MIN@70 miss 48.997ms; X/MAX@70 miss 101.909ms; X/MIN@70 miss 54.011ms; fallback SLP Z/MAX@70 miss 97.339ms
+full-window,16,21,117,167,solved,217.2,31,3058,Z/MAX@50 miss 213.481ms; Z/MIN@50 solved 3.713ms @1.00e-02
+full-window,17,24,128,196,miss,546.0,77,7700,Z/MAX@68 miss 164.358ms; Z/MIN@68 miss 67.988ms; X/MAX@68 miss 175.326ms; X/MIN@68 miss 74.460ms; fallback SLP Z/MAX@68 miss 63.847ms
+full-window,17,22,128,176,solved,1.4,2,148,Z/MAX@48 solved 1.411ms @2.00e-02
+full-window,18,25,130,205,miss,1024.4,91,8937,Z/MAX@75 miss 276.024ms; Z/MIN@75 miss 101.331ms; X/MAX@75 miss 251.221ms; X/MIN@75 miss 342.035ms; fallback SLP Z/MAX@75 miss 53.731ms
+full-window,18,23,130,187,miss,343.7,70,7000,Z/MAX@57 miss 49.776ms; Z/MIN@57 miss 28.907ms; X/MAX@57 miss 128.324ms; X/MIN@57 miss 72.953ms; fallback SLP Z/MAX@57 miss 63.732ms
+full-window,18,21,130,167,solved,0.3,1,58,Z/MAX@37 solved 0.306ms @5.00e-02
+full-window,19,26,132,207,miss,896.4,98,9639,Z/MAX@75 miss 216.418ms; Z/MIN@75 miss 131.449ms; X/MAX@75 miss 236.635ms; X/MIN@75 miss 263.936ms; fallback SLP Z/MAX@75 miss 47.892ms
+full-window,19,24,132,196,miss,459.5,84,8237,Z/MAX@64 miss 92.314ms; Z/MIN@64 miss 54.317ms; X/MAX@64 miss 113.457ms; X/MIN@64 miss 175.824ms; fallback SLP Z/MAX@64 miss 23.476ms
+full-window,19,22,132,176,solved,1.0,2,151,Z/MAX@44 solved 1.016ms @2.00e-02
+full-window,20,27,155,209,miss,297.5,77,7700,Z/MAX@54 miss 82.174ms; Z/MIN@54 miss 65.168ms; X/MAX@54 miss 41.688ms; X/MIN@54 miss 42.494ms; fallback SLP Z/MAX@54 miss 65.948ms
+full-window,20,25,155,205,miss,203.9,70,7000,Z/MAX@50 miss 28.917ms; Z/MIN@50 miss 32.159ms; X/MAX@50 miss 42.877ms; X/MIN@50 miss 66.588ms; fallback SLP Z/MAX@50 miss 33.329ms
+full-window,20,23,155,187,miss,41.6,56,3294,Z/MAX@32 miss 5.624ms; Z/MIN@32 miss 4.609ms; X/MAX@32 miss 5.573ms; X/MIN@32 miss 6.418ms; fallback SLP Z/MAX@32 miss 19.320ms
+full-window,20,22,155,176,solved,0.3,1,1,Z/MAX@21 solved 0.265ms @5.00e-02
+full-window,21,28,167,222,solved,220.2,56,5524,Z/MAX@55 miss 46.087ms; Z/MIN@55 miss 47.774ms; X/MAX@55 miss 49.075ms; X/MIN@55 miss 57.995ms; fallback SLP Z/MAX@55 solved 19.178ms
+full-window,22,29,176,241,solved,217.3,77,7700,Z/MAX@65 miss 59.322ms; Z/MIN@65 miss 34.154ms; X/MAX@65 miss 70.173ms; X/MIN@65 miss 38.648ms; fallback SLP Z/MAX@65 solved 14.947ms
+full-window,23,30,187,250,solved,141.5,29,2900,terminal recovery X/MAX@63 solved 141.516ms
+committed-prefix,0,7,0,68,solved,1.2,1,100,Z/MAX@68 solved 1.147ms @5.00e-02
+committed-prefix,1,8,12,71,solved,1.2,1,100,Z/MAX@59 solved 1.140ms @5.00e-02
+committed-prefix,2,9,21,75,solved,1.6,2,83,Z/MAX@54 solved 1.559ms @2.00e-02
+committed-prefix,3,10,30,77,solved,0.8,1,100,Z/MAX@47 solved 0.824ms @5.00e-02
+committed-prefix,4,11,40,80,solved,1.1,1,100,Z/MAX@40 solved 1.089ms @5.00e-02
+committed-prefix,5,12,55,88,solved,6.0,4,400,Z/MAX@33 solved 5.925ms @5.00e-03
+committed-prefix,6,13,64,90,solved,6.1,5,500,Z/MAX@26 solved 6.084ms @1.20e-03
+committed-prefix,7,14,68,99,solved,2.0,2,100,Z/MAX@31 solved 1.966ms @2.00e-02
+committed-prefix,8,15,71,113,solved,1.7,1,100,Z/MAX@42 solved 1.716ms @5.00e-02
+committed-prefix,9,16,75,117,solved,2.0,1,100,Z/MAX@42 solved 2.019ms @5.00e-02
+committed-prefix,10,17,77,128,solved,2.8,1,100,Z/MAX@51 solved 2.788ms @5.00e-02
+committed-prefix,11,18,80,130,miss,128.4,49,4813,Z/MAX@50 miss 24.903ms; Z/MIN@50 miss 34.315ms; X/MAX@50 miss 10.646ms; X/MIN@50 miss 21.971ms; fallback SLP Z/MAX@50 miss 36.441ms
+committed-prefix,11,16,80,117,miss,62.2,63,4649,Z/MAX@37 miss 11.445ms; Z/MIN@37 miss 8.264ms; X/MAX@37 miss 11.905ms; X/MIN@37 miss 9.485ms; fallback SLP Z/MAX@37 miss 21.030ms
+committed-prefix,11,14,80,99,miss,1.6,28,0,Z/MAX@19 miss 0.424ms; Z/MIN@19 miss 0.272ms; X/MAX@19 miss 0.443ms; X/MIN@19 miss 0.353ms; fallback SLP Z/MAX@19 miss 0.063ms
+committed-prefix,11,13,80,90,solved,0.7,4,400,Z/MAX@10 solved 0.672ms @5.00e-03
+committed-prefix,12,19,88,132,miss,293.4,84,8400,Z/MAX@44 miss 36.127ms; Z/MIN@44 miss 72.039ms; X/MAX@44 miss 64.768ms; X/MIN@44 miss 101.865ms; fallback SLP Z/MAX@44 miss 18.545ms
+committed-prefix,12,17,88,128,miss,131.7,63,5924,Z/MAX@40 miss 23.922ms; Z/MIN@40 miss 25.494ms; X/MAX@40 miss 42.624ms; X/MIN@40 miss 25.333ms; fallback SLP Z/MAX@40 miss 14.286ms
+committed-prefix,12,15,88,113,miss,3.4,28,0,Z/MAX@25 miss 0.775ms; Z/MIN@25 miss 0.632ms; X/MAX@25 miss 1.337ms; X/MIN@25 miss 0.454ms; fallback SLP Z/MAX@25 miss 0.138ms
+committed-prefix,12,14,88,99,miss,0.5,28,0,Z/MAX@11 miss 0.098ms; Z/MIN@11 miss 0.092ms; X/MAX@11 miss 0.109ms; X/MIN@11 miss 0.110ms; fallback SLP Z/MAX@11 miss 0.013ms
+committed-prefix,12,13,88,90,miss,0.6,28,0,Z/MAX@2 miss 0.160ms; Z/MIN@2 miss 0.095ms; X/MAX@2 miss 0.093ms; X/MIN@2 miss 0.159ms; fallback SLP Z/MAX@2 miss 0.015ms

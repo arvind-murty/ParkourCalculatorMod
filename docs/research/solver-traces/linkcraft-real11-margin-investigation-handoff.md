@@ -53,3 +53,10 @@ The [initial-window audit](linkcraft-real11-initial-seven-constraint-audit.md) n
 ## Committed-prefix validation experiment
 
 A subsequent [experiment](linkcraft-real11-prefix-replay-experiment.md) accepts nonterminal LongRun windows based on replay of the potentially committed prefix while keeping every lookahead constraint in the optimization. The initial Z/MIN near miss is accepted through tick 12. The normal-margin full route now stalls at index 12; the original route-completion assertion is retained and this failure is recorded explicitly.
+
+
+## Prefix-regression follow-up and current test policy
+
+Read the [same-entry prefix regression comparison](linkcraft-real11-prefix-regression-comparison.md) for the first divergent candidate, all window attempts through failure, committed-state table, timing records, and focused probe evidence. Full-window replay had also been filtering candidates that violate the continuous lookahead model; prefix-only replay accepts one such candidate at index 3. Keep full continuous-model feasibility distinct from replay scope in the next experiment. No change imposing full continuous feasibility has been implemented yet.
+
+The user requests focused tests/probes only, backgrounded with output redirected to files. Do not run the full suite or pursue unrelated failures to make everything green. The earlier full suite has finished and is not being rerun.

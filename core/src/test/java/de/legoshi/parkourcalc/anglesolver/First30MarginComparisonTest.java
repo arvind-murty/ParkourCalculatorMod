@@ -135,6 +135,65 @@ public class First30MarginComparisonTest {
         }
     }
 
+    /** Reconstruct the shared first three commits, then compare full and prefix gates on the same fourth window. */
+    @Test
+    @SuppressWarnings("unchecked")
+    public void prefixRegressionFirstDivergence() throws Exception {
+        Assume.assumeTrue("opt in with -Dpkc.marginProbe=true", Boolean.getBoolean("pkc.marginProbe"));
+        loadCapture();
+        JumpPhysicsInputs source = full.asScenario();
+        Seed entry = new Seed(source.startPos, source.initialVelocity, source.startYaw);
+        for (int i = 0; i < 3; i++) {
+            JumpPhysicsInputs win = slice(entry, bounds[i], bounds[i + 7]);
+            List<JumpConstraint> cons = (List<JumpConstraint>) method(LongRunSolver.class, "sliceConstraints",
+                    JumpSpec.class, int.class, int.class, float.class)
+                    .invoke(null, full, bounds[i], bounds[i + 7], entry.yaw);
+            Objective obj = new Objective(JumpPhysicsInputs.Axis.Z, Objective.Sense.MAX, win.numTicks);
+            double[] yaws = (double[]) method(LongRunSolver.class, "solveWindow", ExactJumpModel.class,
+                    JumpPhysicsInputs.class, List.class, Objective.class, boolean.class, int.class, AtomicBoolean.class, long.class)
+                    .invoke(null, exact, win, cons, obj, false, win.numTicks, CANCEL, 0L);
+            assertNotNull(yaws);
+            double[] game = win.toGameFacings(yaws);
+            ForwardPath path = exact.forward(win, game);
+            int k = bounds[i + 1] - bounds[i];
+            entry = new Seed(new Vec3dCore(path.posX[k], path.posY[k], path.posZ[k]),
+                    new Vec3dCore(path.velX[k], path.velY[k], path.velZ[k]), (float) game[k - 1]);
+        }
+        assertEquals(737.886541672909, entry.pos.x, 1e-11);
+        assertEquals(-1101.003672163501, entry.pos.z, 1e-11);
+        JumpPhysicsInputs sc = slice(entry, bounds[3], bounds[10]);
+        List<JumpConstraint> cons = (List<JumpConstraint>) method(LongRunSolver.class, "sliceConstraints",
+                JumpSpec.class, int.class, int.class, float.class).invoke(null, full, bounds[3], bounds[10], entry.yaw);
+        JumpSpec spec = new JumpSpec(sc, cons, new Objective(JumpPhysicsInputs.Axis.Z, Objective.Sense.MAX, sc.numTicks));
+        List<String> rows = new ArrayList<>();
+        rows.add("objective,margin,pass,pattern,best_for_objective,constraint,axis,tick,comparison,wall,model_value,model_clearance,model_violation,model_tightened_violation,replay_value,replay_clearance,replay_violation,replay_minus_model");
+        SolverTrace.enable("prefix-first-divergence");
+        try {
+            for (boolean prefix : new boolean[]{false, true}) {
+                ClosedFormSolve.Config cfg = new ClosedFormSolve.Config();
+                cfg.replayTickLimit = prefix ? 10 : sc.numTicks;
+                SolverTrace.log("FIRST-DIFF", "policy=%s globalTicks=[30,77) replayTicks=%d", prefix ? "prefix" : "full", cfg.replayTickLimit);
+                ClosedFormSolve.Result result = (ClosedFormSolve.Result) method(ClosedFormSolve.class, "optimizeReturning",
+                        ExactJumpModel.class, JumpSpec.class, double.class, AtomicBoolean.class, double[].class,
+                        boolean.class, ClosedFormSolve.Config.class).invoke(null, exact, spec, 0.0, CANCEL, NORMAL, false, cfg);
+                assertNotNull(result);
+                assertTrue(result.feasible);
+                double[] game = sc.toGameFacings(result.yaws);
+                ForwardPath path = exact.forward(sc, game);
+                double fullViolation = JumpConstraintCompiler.compile(spec).maxViolation(game, path);
+                double prefixViolation = JumpConstraintCompiler.compile(spec, 10).maxViolation(game, path);
+                assertEquals(0, prefixViolation, 0);
+                if (prefix) assertTrue(fullViolation > .05);
+                else assertEquals(0, fullViolation, 0);
+                SolverTrace.log("FIRST-COMMIT", "policy=%s tick=40 x=%.12f z=%.12f vx=%.12f vz=%.12f incomingYaw=%.9f fullViolation=%.12g prefixViolation=%.12g",
+                        prefix ? "prefix" : "full", path.posX[10], path.posZ[10], path.velX[10], path.velZ[10],
+                        game[9], fullViolation, prefixViolation);
+                auditConstraints(sc, spec, new AuditCandidate(0, null, null, result), true, prefix ? .05 : .02, rows);
+            }
+        } finally { SolverTrace.disable(); }
+        Files.write(Paths.get("build/reports/prefix-first-divergence-constraints.csv"), rows, StandardCharsets.UTF_8);
+    }
+
     /** The original Z/MIN near miss is accepted for a one-jump commit without removing its lookahead walls. */
     @Test
     @SuppressWarnings("unchecked")

@@ -1,0 +1,9 @@
+      5.58  t1   FIRST-DIFF policy=full globalTicks=[30,77) replayTicks=47
+      9.15  t1   CF      pass=0 pattern=free n=47 m=40 robust
+     11.59  t1   CF      rung margin=5.00e-02 iters=100 pg=1.417e-01 dual=10.515850925 viol=5.802e-02 ms=2.060
+     12.20  t1   CF      rung margin=2.00e-02 iters=32 pg=1.252e-09 dual=10.596350051 viol=0.000e+00 ms=0.446 certified
+     12.45  t1   FIRST-COMMIT policy=full tick=40 x=734.738601761702 z=-1099.039450382282 vx=-0.249842385537 vz=0.158261647746 incomingYaw=101.704818726 fullViolation=0.00000000000 prefixViolation=0.00000000000
+     18.44  t1   FIRST-DIFF policy=prefix globalTicks=[30,77) replayTicks=10
+     18.64  t1   CF      pass=0 pattern=free n=47 m=40 robust
+     20.74  t1   CF      rung margin=5.00e-02 iters=100 pg=1.417e-01 dual=10.515850925 viol=0.000e+00 ms=1.852 certified
+     20.96  t1   FIRST-COMMIT policy=prefix tick=40 x=734.768677428967 z=-1098.993991550265 vx=-0.247170954923 vz=0.162289855924 incomingYaw=100.741180420 fullViolation=0.0580212702463 prefixViolation=0.00000000000
