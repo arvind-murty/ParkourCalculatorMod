@@ -1,0 +1,3 @@
+index,pattern,continuous_violation,prefix_replay_violation,failed_inertia_assumptions
+0,free,0.010383205522430217,0.0000000000000000,1
+1,x@8,0.31890070209385610,0.15748579038131538,1

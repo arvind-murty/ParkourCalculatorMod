@@ -1,0 +1,12 @@
+Capture: /Users/arvindmurty/Downloads/LinkcraftII_Competition_01/real/11.json
+Capture SHA256: af5d2d1bc6e0ab466f1b6cf309f3a26e76e4a63765ac8b15ff02fb4ad55d28bf
+Isolated code: b98f87f in /tmp/pkc-endpoints-fixed
+Production diff in isolated worktree: none; settings.gradle is core-only.
+Main production code: unchanged.
+EPS2=1e-24; dual cap=10000; original early exits; single margin=0.0003; CF max inertia passes=4.
+Reconstruct first5 fixed windows by sequential exact replay, assert archived prefix positions/yaws, then reuse exact entry bits for all six attempts.
+Shared acceptance: replay through64 plus continuous actual-inertia feasibility across retained window rows.
+Matching objective endpoint caps temporarily omitted; original-row full replay additionally reported.
+Primary coordinate objective only; no SLP, alternative objective fallback, graph nodes, or complete-route run.
+Timing: one final JVM run, ordered baseline-max/min, forward/backward, forward-narrow/backward-narrow; no interleaved timing benchmark. Timed CF call includes diagnostics/tracing.
+Command: ./gradlew -Dorg.gradle.java.home=/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home -Dpkc.coupledWindowProbe=true :core:test -PslowTests --tests de.legoshi.parkourcalc.core.anglesolver.solver.ManualCoupledWindowProbeTest > focused.log 2>&1

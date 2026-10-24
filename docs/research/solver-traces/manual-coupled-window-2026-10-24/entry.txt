@@ -1,0 +1,6 @@
+tick=55
+x=0x1.6d260140be42ep9
+z=-0x1.1207ed3cc304ep10
+vx=-0x1.dee232dd1faffp-3
+vz=0x1.477f4e157b6b5p-3
+yaw=0x1.777b44p6
