@@ -1,0 +1,3 @@
+entry reconstructed from committed float game facings0..54
+x55=730.2967883104711 z55=-1096.123960468676 vx55=-0.23385825069855395 vz55=0.15986372215028655 yaw=93.82391
+fixed CF margin0.0003; cap1000; EPS2=1e-24; prefix9; endpoints90 and77; no altered entry/margin controls
