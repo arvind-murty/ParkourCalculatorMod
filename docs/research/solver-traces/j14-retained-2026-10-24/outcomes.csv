@@ -1,0 +1,5 @@
+end_jump,objective,seed_scale,accepted,passes,best_violation,total_solve_ms
+14,Z/MAX,0.00,false,4,0.0065569214860943250,827.450
+14,Z/MAX,1.00,false,2,0.88304033841745880,500.082
+14,Z/MAX,0.25,false,3,0.75892919964871910,451.214
+14,Z/MAX,-1.00,false,2,0.88304033841745880,523.173

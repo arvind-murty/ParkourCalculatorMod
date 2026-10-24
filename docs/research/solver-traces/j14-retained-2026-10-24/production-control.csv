@@ -1,0 +1,3 @@
+retain,accepted,continuous_violation,prefix_replay_violation,objective,elapsed_ms
+false,false,NaN,NaN,NaN,545.680
+true,false,NaN,NaN,NaN,596.649

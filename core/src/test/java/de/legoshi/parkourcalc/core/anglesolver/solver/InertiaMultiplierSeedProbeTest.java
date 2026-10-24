@@ -27,11 +27,12 @@ import static org.junit.Assert.*;
 public class InertiaMultiplierSeedProbeTest {
     private static final Path ROOT = Paths.get("/Users/arvindmurty/CS/ParkourCalculatorMod");
     private static final String CASES = System.getProperty("pkc.inertiaSeedCases", "baseline");
-    private static final boolean RETAIN = "j13-retained".equals(CASES);
-    private static final boolean DETAIL = RETAIN || "j13-inertia-detail".equals(CASES);
-    private static final boolean CLEAR_CAP = DETAIL || "post-turn-clear-cap".equals(CASES);
+    private static final boolean J14 = "j14-retained".equals(CASES);
+    private static final boolean RETAIN = J14 || "j13-retained".equals(CASES);
+    private static final boolean DETAIL = (!J14 && RETAIN) || "j13-inertia-detail".equals(CASES);
+    private static final boolean CLEAR_CAP = RETAIN || DETAIL || "post-turn-clear-cap".equals(CASES);
     private static final boolean POST_TURN = CLEAR_CAP || "post-turn".equals(CASES);
-    private static final Path OUT = ROOT.resolve("docs/research/solver-traces/"+(RETAIN?"j13-retained-2026-10-24":DETAIL?"j13-inertia-detail-2026-10-24":CLEAR_CAP?"post-turn-clear-cap-2026-10-24":POST_TURN?"post-turn-objectives-2026-10-24":"inertia-multiplier-seeding-2026-10-24"));
+    private static final Path OUT = ROOT.resolve("docs/research/solver-traces/"+(J14?"j14-retained-2026-10-24":RETAIN?"j13-retained-2026-10-24":DETAIL?"j13-inertia-detail-2026-10-24":CLEAR_CAP?"post-turn-clear-cap-2026-10-24":POST_TURN?"post-turn-objectives-2026-10-24":"inertia-multiplier-seeding-2026-10-24"));
 
     @Test public void compareColdAndCarriedMultipliers() throws Exception {
         org.junit.Assume.assumeTrue(Boolean.getBoolean("pkc.inertiaSeedProbe"));
@@ -53,12 +54,12 @@ public class InertiaMultiplierSeedProbeTest {
         List<String> result = new ArrayList<>();
         result.add("end_jump,objective,seed_scale,pass,pattern,rows,seeded_rows,initial_dual,initial_residual,initial_min_costate,iters,stop,final_residual,final_min_costate,fallback_ticks,continuous_violation,prefix_replay_violation,assumed_violation,failed_inertia_assumptions,elapsed_ms");
         List<String> outcomes = new ArrayList<>(); outcomes.add("end_jump,objective,seed_scale,accepted,passes,best_violation,total_solve_ms");
-        int[] ends = DETAIL ? new int[]{90} : CLEAR_CAP ? new int[]{90,103} : POST_TURN ? new int[]{90,99} : new int[]{75,77,99,113};
-        int[] jumps = POST_TURN ? new int[]{13,14} : new int[]{9,10,14,15};
+        int[] ends = J14 ? new int[]{103} : DETAIL ? new int[]{90} : CLEAR_CAP ? new int[]{90,103} : POST_TURN ? new int[]{90,99} : new int[]{75,77,99,113};
+        int[] jumps = J14 ? new int[]{14} : POST_TURN ? new int[]{13,14} : new int[]{9,10,14,15};
         SolverTrace.enable("inertia-multiplier-seeding");
         try {
             for (int k = 0; k < ends.length; k++) {
-                Objective.Sense sense = POST_TURN ? (k==0?Objective.Sense.MIN:Objective.Sense.MAX) : (k<2?Objective.Sense.MAX:Objective.Sense.MIN);
+                Objective.Sense sense = J14 ? Objective.Sense.MAX : POST_TURN ? (k==0?Objective.Sense.MIN:Objective.Sense.MAX) : (k<2?Objective.Sense.MAX:Objective.Sense.MIN);
                 JumpPhysicsInputs win = (JumpPhysicsInputs) slice.invoke(null, full.asScenario(), 55, ends[k], pos, vel, yaw);
                 @SuppressWarnings("unchecked") List<JumpConstraint> rows = (List<JumpConstraint>) rowsAt.invoke(null, full, 55, ends[k], yaw);
                 Objective objective = new Objective(JumpPhysicsInputs.Axis.Z, sense, win.numTicks);
@@ -69,7 +70,7 @@ public class InertiaMultiplierSeedProbeTest {
                 if(CLEAR_CAP) {
                     assertNull("objective tick is outside the repeated capping Z rows",ObjectiveBounds.directCap(spec));
                     assertEquals("all authored rows retained",rows.size(),spec.constraints.size());
-                    int expectedLast=k==0?89:102;
+                    int expectedLast=J14?102:k==0?89:102;
                     assertTrue("last capped state retained",spec.constraints.stream().anyMatch(c->c.mode==JumpConstraint.Mode.Z && c.t1==expectedLast-55 && c.cmp==JumpConstraint.Cmp.LE));
                 }
                 for (double scale : DETAIL ? new double[]{-1.0} : new double[]{0.0,1.0,0.25,-1.0}) run(exact,spec,jumps[k],scale,result,outcomes);
@@ -314,7 +315,7 @@ public class InertiaMultiplierSeedProbeTest {
         List<String> margins = new ArrayList<>();margins.add("tick,name,comparison,continuous_margin,replay_margin,assumed_margin");
         for (WindowCandidateValidation.ConstraintMargin m:d.constraints) margins.add(String.format(Locale.ROOT,"%d,%s,%s,%.17g,%.17g,%.17g",55+m.constraint.t1,m.constraint.name,m.constraint.cmp,m.continuousMargin,m.replayMargin,m.assumedMargin));
         Files.write(OUT.resolve(label+"-pass"+pass+"-margins.csv"),margins,StandardCharsets.UTF_8);
-        if(DETAIL) {
+        if(DETAIL || J14) {
             List<String> inertia=new ArrayList<>();inertia.add("tick,axis,assumed_zero,assumed_velocity,actual_velocity,actual_zero,assumption_satisfied");
             for(WindowCandidateValidation.InertiaCheck c:d.inertiaChecks)inertia.add(String.format(Locale.ROOT,"%d,%d,%s,%.17g,%.17g,%s,%s",55+c.tick,c.axis,c.assumedZero,c.assumedVelocity,c.continuousVelocity,c.continuousZero,c.assumptionSatisfied));
             Files.write(OUT.resolve(label+"-pass"+pass+"-inertia.csv"),inertia,StandardCharsets.UTF_8);

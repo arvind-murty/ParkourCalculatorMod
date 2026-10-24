@@ -1,0 +1,44 @@
+      6.77  t1   SEED    case=j14-seed0.0 pass=0 pattern=free seedRows=0
+    332.05  t1   SEED    case=j14-seed0.0 pass=1 pattern=x@7,@34-35,@45-47+z@26 seedRows=0
+    557.24  t1   SEED    case=j14-seed0.0 pass=2 pattern=x@8,@33-35,@46-47 seedRows=0
+    576.68  t1   SEED    case=j14-seed0.0 pass=3 pattern=x@8,@29-35,@46-47+z@27 seedRows=0
+    866.27  t1   SEED    case=j14-seed1.0 pass=0 pattern=free seedRows=0
+   1070.91  t1   SEED    case=j14-seed1.0 pass=1 pattern=x@7,@34-35,@45-47+z@26 seedRows=26
+   1377.49  t1   SEED    case=j14-seed0.25 pass=0 pattern=free seedRows=0
+   1574.01  t1   SEED    case=j14-seed0.25 pass=1 pattern=x@7,@34-35,@45-47+z@26 seedRows=26
+   1827.94  t1   SEED    case=j14-seed0.25 pass=2 pattern=x@9,@46-47 seedRows=22
+   1839.90  t1   SEED    case=j14-seed-1.0 pass=0 pattern=free seedRows=0
+   2073.55  t1   SEED    case=j14-seed-1.0 pass=1 preservation declined; retain mapped position weights only
+   2073.73  t1   SEED    case=j14-seed-1.0 pass=1 pattern=x@7,@34-35,@45-47+z@26 seedRows=26
+   2371.71  t1   CF      pass=0 pattern=free n=48 m=71 robust
+   2539.20  t1   CF-CHECK margin=3.00e-04 replayViol=0.0631066582559 modelViol=0.883040338417
+   2539.30  t1   CF      rung margin=3.00e-04 iters=10000 pg=9.475e-01 dual=1.973291333 viol=8.830e-01 ms=167.367 stop=ITERATION_LIMIT finalPg=8.794e-01
+   2540.56  t1   CF      pass=1 pattern=x@7,@34-35,@45-47+z@26 n=48 m=71 robust
+   2643.16  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.332352548739
+   2643.26  t1   CF      rung margin=3.00e-04 iters=10000 pg=1.732e-01 dual=1.763492952 viol=3.324e-01 ms=101.707 stop=ITERATION_LIMIT finalPg=3.155e-01
+   2643.34  t1   CF      pass=2 pattern=x@8,@33-35,@46-47 n=48 m=71 robust
+   2660.38  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00655692148609
+   2660.47  t1   CF      rung margin=3.00e-04 iters=883 pg=1.621e-04 dual=1.633244108 viol=6.557e-03 ms=16.936 stop=RECOVERED_INPUT_STALL finalPg=1.621e-04
+   2660.57  t1   CF      pass=3 pattern=x@8,@29-35,@46-47+z@27 n=48 m=71 robust
+   2916.37  t1   CF-CHECK margin=3.00e-04 replayViol=0.157660890380 modelViol=1.12866328150
+   2916.48  t1   CF      rung margin=3.00e-04 iters=10000 pg=1.049e+00 dual=1.990489717 viol=1.129e+00 ms=255.656 stop=ITERATION_LIMIT finalPg=5.926e-01
+   2916.54  t1   CF      pass=3 no improvement (viol=1.129e+00), stop
+   2916.58  t1   CF      fallback bestViol=6.557e-03 us=544887.2
+   2916.99  t1   CF      pass=0 pattern=free n=48 m=71 robust
+   3109.67  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=29.140
+   3109.83  t1   CF-CHECK margin=3.00e-04 replayViol=0.0631066582559 modelViol=0.883040338417
+   3109.87  t1   CF      rung margin=3.00e-04 iters=10000 pg=9.475e-01 dual=1.973291333 viol=8.830e-01 ms=192.703 stop=ITERATION_LIMIT finalPg=8.794e-01
+   3109.95  t1   CF      pass=1 pattern=x@7,@34-35,@45-47+z@26 n=48 m=71 robust
+   3235.59  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=27.648
+   3235.80  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.332352548739
+   3235.82  t1   CF      rung margin=3.00e-04 iters=10000 pg=1.732e-01 dual=1.763492952 viol=3.324e-01 ms=125.705 stop=ITERATION_LIMIT finalPg=3.155e-01
+   3235.96  t1   CF      pass=2 pattern=x@8,@33-35,@46-47 n=48 m=71 robust
+   3249.37  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=2.432
+   3249.60  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00655692148609
+   3249.62  t1   CF      rung margin=3.00e-04 iters=883 pg=1.621e-04 dual=1.633244108 viol=6.557e-03 ms=13.514 stop=RECOVERED_INPUT_STALL finalPg=1.621e-04
+   3249.69  t1   CF      pass=3 pattern=x@8,@29-35,@46-47+z@27 n=48 m=71 robust
+   3513.33  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=29.871
+   3513.48  t1   CF-CHECK margin=3.00e-04 replayViol=0.157660890380 modelViol=1.12866328150
+   3513.50  t1   CF      rung margin=3.00e-04 iters=10000 pg=1.049e+00 dual=1.990489717 viol=1.129e+00 ms=263.676 stop=ITERATION_LIMIT finalPg=5.926e-01
+   3513.55  t1   CF      pass=3 no improvement (viol=1.129e+00), stop
+   3513.57  t1   CF      fallback bestViol=6.557e-03 us=596587.7
