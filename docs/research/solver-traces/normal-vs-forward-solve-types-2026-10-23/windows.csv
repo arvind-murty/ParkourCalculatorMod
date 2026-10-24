@@ -1,0 +1,81 @@
+run,first_jump,nominal_window,start_tick,end_tick,accepted_solver,margin,calls,source,line
+normal-success,1,7,0,68,Z/MAX,5.00e-02,Z/MAX pass,docs/research/solver-traces/shared-inertia-validation-2026-10-23/normal7-commit1.txt,2
+normal-success,2,7,12,71,Z/MAX,5.00e-02,Z/MAX pass,docs/research/solver-traces/shared-inertia-validation-2026-10-23/normal7-commit1.txt,22
+normal-success,3,7,21,75,Z/MAX,2.00e-02,Z/MAX pass,docs/research/solver-traces/shared-inertia-validation-2026-10-23/normal7-commit1.txt,39
+normal-success,4,7,30,77,Z/MAX,2.00e-02,Z/MAX pass,docs/research/solver-traces/shared-inertia-validation-2026-10-23/normal7-commit1.txt,57
+normal-success,5,7,40,80,Z/MAX,2.00e-02,Z/MAX pass,docs/research/solver-traces/shared-inertia-validation-2026-10-23/normal7-commit1.txt,77
+normal-success,6,7,55,88,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,docs/research/solver-traces/shared-inertia-validation-2026-10-23/normal7-commit1.txt,102
+normal-success,7,7,64,90,Z/MIN,1.00e-02,Z/MAX fail; Z/MIN pass,docs/research/solver-traces/shared-inertia-validation-2026-10-23/normal7-commit1.txt,193
+normal-success,8,7,68,99,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,docs/research/solver-traces/shared-inertia-validation-2026-10-23/normal7-commit1.txt,228
+normal-success,9,7,71,113,Z/MAX,3.00e-04,Z/MAX pass,docs/research/solver-traces/shared-inertia-validation-2026-10-23/normal7-commit1.txt,285
+normal-success,10,7,75,117,Z/MAX,1.20e-03,Z/MAX pass,docs/research/solver-traces/shared-inertia-validation-2026-10-23/normal7-commit1.txt,322
+normal-success,11,7,77,128,X/MAX,1.20e-03,Z/MAX fail; Z/MIN fail; X/MAX pass,docs/research/solver-traces/shared-inertia-validation-2026-10-23/normal7-commit1.txt,355
+normal-success,12,7,80,130,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/shared-inertia-validation-2026-10-23/normal7-commit1.txt,487
+normal-success,12,5,80,117,Z/MIN,1.20e-03,Z/MAX fail; Z/MIN pass,docs/research/solver-traces/shared-inertia-validation-2026-10-23/normal7-commit1.txt,830
+normal-success,13,7,88,132,X/MIN,3.00e-04,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN pass,docs/research/solver-traces/shared-inertia-validation-2026-10-23/normal7-commit1.txt,903
+normal-success,14,7,90,155,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/shared-inertia-validation-2026-10-23/normal7-commit1.txt,1040
+normal-success,14,5,90,130,SLP,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP pass,docs/research/solver-traces/shared-inertia-validation-2026-10-23/normal7-commit1.txt,1379
+fixed-forward-jump,1,7,0,71,Z/MAX,3.00e-04,Z/MAX pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,1519
+fixed-forward-jump,2,7,12,71,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,1544
+fixed-forward-jump,3,7,21,75,Z/MAX,3.00e-04,Z/MAX pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,1577
+fixed-forward-jump,4,7,30,77,SLP,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,1599
+fixed-forward-jump,5,7,40,80,Z/MAX,3.00e-04,Z/MAX pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,1671
+fixed-forward-jump,6,7,55,90,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,1699
+fixed-forward-jump,6,5,55,77,Z/MAX,3.00e-04,Z/MAX pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,1913
+fixed-forward-jump,7,7,64,90,SLP,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,1935
+fixed-forward-jump,8,7,68,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,2073
+fixed-forward-jump,8,5,68,90,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,2280
+fixed-forward-jump,9,7,71,113,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,2307
+fixed-forward-jump,9,5,71,90,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,2492
+fixed-forward-jump,10,7,75,128,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,2523
+fixed-forward-jump,10,5,75,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,2717
+fixed-forward-jump,10,3,75,90,SLP,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,2754
+fixed-forward-jump,11,7,77,128,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,2810
+fixed-forward-jump,11,5,77,113,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,3017
+fixed-forward-jump,11,3,77,90,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,3221
+fixed-forward-jump,12,7,80,130,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,3245
+fixed-forward-jump,12,5,80,128,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,3456
+fixed-forward-jump,12,3,80,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,3660
+fixed-forward-jump,12,2,80,90,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,3693
+fixed-forward-jump,13,7,88,155,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,3745
+fixed-forward-jump,13,5,88,128,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,3967
+fixed-forward-jump,13,3,88,113,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,4167
+fixed-forward-jump,13,2,88,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,4379
+fixed-forward-jump,13,1,88,90,Z/MAX,3.00e-04,Z/MAX pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,4412
+fixed-forward-jump,14,7,90,155,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,4431
+fixed-forward-jump,14,5,90,130,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,4625
+fixed-forward-jump,14,3,90,128,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,4850
+fixed-forward-jump,14,2,90,113,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,5060
+fixed-forward-jump,14,1,90,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-jump.txt,5093
+fixed-forward-tick,1,7,0,69,Z/MAX,3.00e-04,Z/MAX pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,1779
+fixed-forward-tick,2,7,12,71,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,1801
+fixed-forward-tick,3,7,21,75,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,1831
+fixed-forward-tick,4,7,30,77,SLP,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,1861
+fixed-forward-tick,5,7,40,80,SLP,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,1933
+fixed-forward-tick,6,7,55,90,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,2023
+fixed-forward-tick,6,5,55,77,Z/MAX,3.00e-04,Z/MAX pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,2233
+fixed-forward-tick,7,7,64,90,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,2252
+fixed-forward-tick,8,7,68,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,2280
+fixed-forward-tick,8,5,68,90,SLP,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,2476
+fixed-forward-tick,9,7,71,113,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,2560
+fixed-forward-tick,9,5,71,90,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,2767
+fixed-forward-tick,10,7,75,118,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,2792
+fixed-forward-tick,10,5,75,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,2981
+fixed-forward-tick,10,3,75,90,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,3018
+fixed-forward-tick,11,7,77,128,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,3038
+fixed-forward-tick,11,5,77,113,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,3232
+fixed-forward-tick,11,3,77,90,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,3438
+fixed-forward-tick,12,7,80,130,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,3459
+fixed-forward-tick,12,5,80,118,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,3658
+fixed-forward-tick,12,3,80,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,3871
+fixed-forward-tick,12,2,80,90,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,3907
+fixed-forward-tick,13,7,88,155,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,3956
+fixed-forward-tick,13,5,88,128,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,4174
+fixed-forward-tick,13,3,88,113,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,4387
+fixed-forward-tick,13,2,88,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,4599
+fixed-forward-tick,13,1,88,90,Z/MAX,3.00e-04,Z/MAX pass,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,4632
+fixed-forward-tick,14,7,90,155,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,4653
+fixed-forward-tick,14,5,90,130,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,4850
+fixed-forward-tick,14,3,90,118,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,5050
+fixed-forward-tick,14,2,90,113,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,5089
+fixed-forward-tick,14,1,90,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,docs/research/solver-traces/full-forward-shifts-2026-10-23/seven-forward-tick.txt,5122
