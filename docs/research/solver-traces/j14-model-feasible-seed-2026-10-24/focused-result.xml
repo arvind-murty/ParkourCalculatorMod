@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="de.legoshi.parkourcalc.core.anglesolver.solver.InertiaMultiplierSeedProbeTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-24T23:40:01.759Z" hostname="Arvinds-MacBook-Pro-2.local" time="0.764">
+  <properties/>
+  <testcase name="compareColdAndCarriedMultipliers" classname="de.legoshi.parkourcalc.core.anglesolver.solver.InertiaMultiplierSeedProbeTest" time="0.762"/>
+  <system-out><![CDATA[14,Z/MAX,-1.00,true,4,0.0000000000000000,555.131
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

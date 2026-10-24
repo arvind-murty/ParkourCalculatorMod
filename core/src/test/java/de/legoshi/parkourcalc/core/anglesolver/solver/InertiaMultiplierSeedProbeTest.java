@@ -27,7 +27,8 @@ import static org.junit.Assert.*;
 public class InertiaMultiplierSeedProbeTest {
     private static final Path ROOT = Paths.get("/Users/arvindmurty/CS/ParkourCalculatorMod");
     private static final String CASES = System.getProperty("pkc.inertiaSeedCases", "baseline");
-    private static final boolean CLOSE_SEED = "j14-close-seed".equals(CASES);
+    private static final boolean MODEL_SEED = "j14-model-feasible-seed".equals(CASES);
+    private static final boolean CLOSE_SEED = MODEL_SEED || "j14-close-seed".equals(CASES);
     private static final boolean GUARD_DISABLED = "j14-seed-no-guard".equals(CASES);
     private static final boolean REPAIR = "j14-near-repair".equals(CASES);
     private static final boolean J14 = CLOSE_SEED || GUARD_DISABLED || REPAIR || "j14-retained".equals(CASES);
@@ -35,7 +36,7 @@ public class InertiaMultiplierSeedProbeTest {
     private static final boolean DETAIL = (!J14 && RETAIN) || "j13-inertia-detail".equals(CASES);
     private static final boolean CLEAR_CAP = RETAIN || DETAIL || "post-turn-clear-cap".equals(CASES);
     private static final boolean POST_TURN = CLEAR_CAP || "post-turn".equals(CASES);
-    private static final Path OUT = ROOT.resolve("docs/research/solver-traces/"+(CLOSE_SEED?"j14-close-seed-2026-10-24":GUARD_DISABLED?"j14-seed-no-guard-2026-10-24":REPAIR?"j14-near-repair-2026-10-24":J14?"j14-retained-2026-10-24":RETAIN?"j13-retained-2026-10-24":DETAIL?"j13-inertia-detail-2026-10-24":CLEAR_CAP?"post-turn-clear-cap-2026-10-24":POST_TURN?"post-turn-objectives-2026-10-24":"inertia-multiplier-seeding-2026-10-24"));
+    private static final Path OUT = ROOT.resolve("docs/research/solver-traces/"+(MODEL_SEED?"j14-model-feasible-seed-2026-10-24":CLOSE_SEED?"j14-close-seed-2026-10-24":GUARD_DISABLED?"j14-seed-no-guard-2026-10-24":REPAIR?"j14-near-repair-2026-10-24":J14?"j14-retained-2026-10-24":RETAIN?"j13-retained-2026-10-24":DETAIL?"j13-inertia-detail-2026-10-24":CLEAR_CAP?"post-turn-clear-cap-2026-10-24":POST_TURN?"post-turn-objectives-2026-10-24":"inertia-multiplier-seeding-2026-10-24"));
 
     @Test public void compareColdAndCarriedMultipliers() throws Exception {
         org.junit.Assume.assumeTrue(Boolean.getBoolean("pkc.inertiaSeedProbe"));
@@ -93,6 +94,8 @@ public class InertiaMultiplierSeedProbeTest {
         double[] previousGx = null, previousGz = null;
         double best = Double.POSITIVE_INFINITY, solveMs = 0.0;
         double previousViolation=Double.POSITIVE_INFINITY,previousAssumedViolation=Double.POSITIVE_INFINITY;
+        double previousAssumedModelViolation=Double.POSITIVE_INFINITY;
+        List<String> seedPolicy=new ArrayList<>();seedPolicy.add("pass,previous_actual_violation,previous_assumed_position_violation,previous_assumed_model_violation,seed");
         int previousMismatches=0;
         boolean accepted = false;
         int passes = 0;
@@ -125,7 +128,12 @@ public class InertiaMultiplierSeedProbeTest {
                 Files.write(OUT.resolve(label+"-same-angles-positions.csv"),positions,StandardCharsets.UTF_8);
             }
             double[] seed = null; int seeded = 0;
-            boolean closeSeedEligible=previousViolation<=.01 && previousAssumedViolation<=1e-8 && previousMismatches>0;
+            boolean closeSeedEligible=MODEL_SEED ? previousAssumedModelViolation<=1e-8
+                    : previousViolation<=.01 && previousAssumedViolation<=1e-8 && previousMismatches>0;
+            if(MODEL_SEED) {
+                seedPolicy.add(String.format(Locale.ROOT,"%d,%.17g,%.17g,%.17g,%s",pass,previousViolation,previousAssumedViolation,previousAssumedModelViolation,closeSeedEligible));
+                Files.write(OUT.resolve("seed-policy.csv"),seedPolicy,StandardCharsets.UTF_8);
+            }
             if(CLOSE_SEED)SolverTrace.log("SEED-POLICY","pass=%d previousViolation=%.12g previousAssumed=%.12g mismatches=%d seed=%s",pass,previousViolation,previousAssumedViolation,previousMismatches,closeSeedEligible);
             if (scale != 0.0 && previousLambda != null && (!REPAIR || pass>=3 || scale==-2.0) && (!CLOSE_SEED || closeSeedEligible)) {
                 seed = new double[reduced.walls.size()];
@@ -236,6 +244,9 @@ public class InertiaMultiplierSeedProbeTest {
             boolean[] nx = new boolean[n], nz = new boolean[n];
             new JumpLinearModel(spec.asScenario()).zeroingPattern(angles,exact.inertiaThreshold(),true,nx,nz);
             if (Arrays.equals(zx,nx) && Arrays.equals(zz,nz)) break;
+            previousAssumedModelViolation=assumed;
+            for(WindowCandidateValidation.InertiaCheck c:diagnostic[0].inertiaChecks)if(c.assumedZero)
+                previousAssumedModelViolation=Math.max(previousAssumedModelViolation,Math.max(0.0,-c.assumedThresholdMargin));
             previousViolation=check.maxViolation();previousAssumedViolation=assumed;previousMismatches=failed;
             zx=nx;zz=nz;previousModel=lin;previousWalls=reduced.walls;previousLambda=r.lambda;previousAngles=angles;previousGx=r.gx;previousGz=r.gz;
         }
