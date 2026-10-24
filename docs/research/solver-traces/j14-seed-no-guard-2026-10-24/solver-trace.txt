@@ -1,0 +1,3 @@
+      7.30  t1   SEED    case=j14-seed-1.0 pass=0 pattern=free seedRows=0
+    325.27  t1   SEED    case=j14-seed-1.0 pass=1 preservation tolerance exceeded; compensation retained
+    325.46  t1   SEED    case=j14-seed-1.0 pass=1 pattern=x@7,@34-35,@45-47+z@26 seedRows=30
