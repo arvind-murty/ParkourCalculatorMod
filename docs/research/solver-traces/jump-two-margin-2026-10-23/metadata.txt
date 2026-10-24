@@ -1,0 +1,4 @@
+EPS2=1.0E-24
+input=/Users/arvindmurty/Downloads/LinkcraftII_Competition_01/real/11.json
+window inputs12..70; end71;37constraints;9committed inputs
+Entries reconstructed exactly from logged float game facings0..11 and checked against archived12-decimal state logs.

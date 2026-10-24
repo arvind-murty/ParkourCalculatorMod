@@ -1,0 +1,94 @@
+     85.55  t1   J2      begin case=normal-reference-zMAX-normal eps=1.00000e-24 marginPolicy=[0.05, 0.02, 0.01, 0.005, 0.0012, 3.0E-4, 0.0] cap=100
+     90.88  t1   CF      pass=0 pattern=free n=59 m=37 robust
+    110.46  t1   CF-CHECK margin=5.00e-02 replayViol=0.00000000000 modelViol=0.00000000000
+    110.65  t1   CF      rung margin=5.00e-02 iters=100 pg=4.711e-04 dual=11.354832458 viol=0.000e+00 ms=18.703 certified stop=ITERATION_LIMIT finalPg=1.158e-04
+    110.87  t1   J2      end case=normal-reference-zMAX-normal feasible=true violation=0.0 checks=1
+    111.03  t1   J2      begin case=normal-reference-zMAX-fixed100 eps=1.00000e-24 marginPolicy=[3.0E-4] cap=100
+    111.22  t1   CF      pass=0 pattern=free n=59 m=37 robust
+    118.57  t1   CF-CHECK margin=3.00e-04 replayViol=0.0377587694027 modelViol=0.352603328266
+    118.71  t1   CF      rung margin=3.00e-04 iters=100 pg=1.541e-01 dual=11.830002557 viol=3.526e-01 ms=7.062 stop=ITERATION_LIMIT finalPg=3.529e-01
+    118.98  t1   CF      pass=1 pattern=x@50 n=59 m=37 robust
+    124.93  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00000000000
+    125.05  t1   CF      rung margin=3.00e-04 iters=77 pg=1.730e-09 dual=11.791956018 viol=0.000e+00 ms=5.669 certified stop=PROJECTED_GRADIENT finalPg=1.730e-09
+    125.17  t1   J2      end case=normal-reference-zMAX-fixed100 feasible=true violation=0.0 checks=2
+    125.26  t1   J2      begin case=normal-reference-zMAX-fixed1000 eps=1.00000e-24 marginPolicy=[3.0E-4] cap=1000
+    125.39  t1   CF      pass=0 pattern=free n=59 m=37 robust
+    133.61  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00000000000
+    133.79  t1   CF      rung margin=3.00e-04 iters=133 pg=6.050e-09 dual=11.789916314 viol=0.000e+00 ms=8.071 certified stop=PROJECTED_GRADIENT finalPg=6.050e-09
+    133.88  t1   J2      end case=normal-reference-zMAX-fixed1000 feasible=true violation=0.0 checks=1
+    133.96  t1   J2      begin case=normal-reference-zMIN-normal eps=1.00000e-24 marginPolicy=[0.05, 0.02, 0.01, 0.005, 0.0012, 3.0E-4, 0.0] cap=100
+    134.08  t1   CF      pass=0 pattern=free n=59 m=37 robust
+    139.52  t1   CF-CHECK margin=5.00e-02 replayViol=0.00000000000 modelViol=0.00000000000
+    139.63  t1   CF      rung margin=5.00e-02 iters=87 pg=4.279e-03 dual=-9.958264077 viol=0.000e+00 ms=5.303 certified stop=RECOVERED_INPUT_STALL finalPg=4.279e-03
+    139.71  t1   J2      end case=normal-reference-zMIN-normal feasible=true violation=0.0 checks=1
+    139.78  t1   J2      begin case=normal-reference-zMIN-fixed100 eps=1.00000e-24 marginPolicy=[3.0E-4] cap=100
+    139.90  t1   CF      pass=0 pattern=free n=59 m=37 robust
+    145.44  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00974901735060
+    145.55  t1   CF      rung margin=3.00e-04 iters=78 pg=1.725e-09 dual=-9.850036289 viol=9.749e-03 ms=5.420 stop=PROJECTED_GRADIENT finalPg=1.725e-09
+    145.66  t1   CF      pass=1 pattern=x@52 n=59 m=37 robust
+    151.74  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00000000000
+    152.21  t1   CF      rung margin=3.00e-04 iters=62 pg=1.929e-09 dual=-9.850122533 viol=0.000e+00 ms=6.195 certified stop=PROJECTED_GRADIENT finalPg=1.929e-09
+    152.33  t1   J2      end case=normal-reference-zMIN-fixed100 feasible=true violation=0.0 checks=2
+    163.96  t1   J2      begin case=fixed-forward-jump-zMAX-normal eps=1.00000e-24 marginPolicy=[0.05, 0.02, 0.01, 0.005, 0.0012, 3.0E-4, 0.0] cap=100
+    164.15  t1   CF      pass=0 pattern=free n=59 m=37 robust
+    166.55  t1   CF-CHECK margin=5.00e-02 replayViol=0.00000000000 modelViol=0.00000000000
+    166.66  t1   CF      rung margin=5.00e-02 iters=96 pg=1.050e-09 dual=11.295773575 viol=0.000e+00 ms=2.264 certified stop=PROJECTED_GRADIENT finalPg=1.050e-09
+    166.73  t1   J2      end case=fixed-forward-jump-zMAX-normal feasible=true violation=0.0 checks=1
+    166.80  t1   J2      begin case=fixed-forward-jump-zMAX-fixed100 eps=1.00000e-24 marginPolicy=[3.0E-4] cap=100
+    166.92  t1   CF      pass=0 pattern=free n=59 m=37 robust
+    169.00  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.0855014547633
+    169.11  t1   CF      rung margin=3.00e-04 iters=100 pg=3.885e-01 dual=11.779431183 viol=8.550e-02 ms=1.968 stop=ITERATION_LIMIT finalPg=1.244e-01
+    169.23  t1   CF      pass=1 pattern=x@51 n=59 m=37 robust
+    171.59  t1   CF-CHECK margin=3.00e-04 replayViol=0.0185460669604 modelViol=0.211319277857
+    171.69  t1   CF      rung margin=3.00e-04 iters=100 pg=2.470e-01 dual=11.785419768 viol=2.113e-01 ms=2.161 stop=ITERATION_LIMIT finalPg=2.116e-01
+    171.76  t1   CF      pass=1 no improvement (viol=2.113e-01), stop
+    171.82  t1   CF      fallback bestViol=8.550e-02 us=4910.9
+    171.89  t1   J2      end case=fixed-forward-jump-zMAX-fixed100 feasible=false violation=0.08550145476328908 checks=2
+    171.96  t1   J2      begin case=fixed-forward-jump-zMAX-fixed1000 eps=1.00000e-24 marginPolicy=[3.0E-4] cap=1000
+    172.13  t1   CF      pass=0 pattern=free n=59 m=37 robust
+    174.65  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00000000000
+    174.74  t1   CF      rung margin=3.00e-04 iters=135 pg=5.978e-09 dual=11.745603822 viol=0.000e+00 ms=2.333 certified stop=PROJECTED_GRADIENT finalPg=5.978e-09
+    174.81  t1   J2      end case=fixed-forward-jump-zMAX-fixed1000 feasible=true violation=0.0 checks=1
+    174.89  t1   J2      begin case=fixed-forward-jump-zMIN-normal eps=1.00000e-24 marginPolicy=[0.05, 0.02, 0.01, 0.005, 0.0012, 3.0E-4, 0.0] cap=100
+    174.99  t1   CF      pass=0 pattern=free n=59 m=37 robust
+    177.45  t1   CF-CHECK margin=5.00e-02 replayViol=0.00000000000 modelViol=0.00000000000
+    177.52  t1   CF      rung margin=5.00e-02 iters=100 pg=4.062e-03 dual=-9.916397838 viol=0.000e+00 ms=2.325 certified stop=ITERATION_LIMIT finalPg=3.844e-03
+    177.58  t1   J2      end case=fixed-forward-jump-zMIN-normal feasible=true violation=0.0 checks=1
+    177.63  t1   J2      begin case=fixed-forward-jump-zMIN-fixed100 eps=1.00000e-24 marginPolicy=[3.0E-4] cap=100
+    177.72  t1   CF      pass=0 pattern=free n=59 m=37 robust
+    180.05  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00926184705213
+    180.14  t1   CF      rung margin=3.00e-04 iters=94 pg=1.927e-09 dual=-9.805360961 viol=9.262e-03 ms=2.217 stop=PROJECTED_GRADIENT finalPg=1.927e-09
+    180.24  t1   CF      pass=1 pattern=x@52 n=59 m=37 robust
+    182.30  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00000000000
+    182.37  t1   CF      rung margin=3.00e-04 iters=76 pg=2.603e-09 dual=-9.805429867 viol=0.000e+00 ms=1.927 certified stop=PROJECTED_GRADIENT finalPg=2.603e-09
+    182.43  t1   J2      end case=fixed-forward-jump-zMIN-fixed100 feasible=true violation=0.0 checks=2
+    196.69  t1   J2      begin case=fixed-forward-tick-zMAX-normal eps=1.00000e-24 marginPolicy=[0.05, 0.02, 0.01, 0.005, 0.0012, 3.0E-4, 0.0] cap=100
+    196.84  t1   CF      pass=0 pattern=free n=59 m=37 robust
+    198.93  t1   CF-CHECK margin=5.00e-02 replayViol=0.00000000000 modelViol=0.00000000000
+    199.02  t1   CF      rung margin=5.00e-02 iters=96 pg=1.084e-09 dual=11.294479420 viol=0.000e+00 ms=1.973 certified stop=PROJECTED_GRADIENT finalPg=1.084e-09
+    199.09  t1   J2      end case=fixed-forward-tick-zMAX-normal feasible=true violation=0.0 checks=1
+    199.15  t1   J2      begin case=fixed-forward-tick-zMAX-fixed100 eps=1.00000e-24 marginPolicy=[3.0E-4] cap=100
+    199.24  t1   CF      pass=0 pattern=free n=59 m=37 robust
+    201.26  t1   CF-CHECK margin=3.00e-04 replayViol=0.0626487352924 modelViol=0.496625813556
+    201.32  t1   CF      rung margin=3.00e-04 iters=100 pg=4.153e-01 dual=11.757304482 viol=4.966e-01 ms=1.899 stop=ITERATION_LIMIT finalPg=4.969e-01
+    201.41  t1   CF      pass=0 pattern free ineffective, stop
+    201.45  t1   CF      fallback bestViol=4.966e-01 us=2217.5
+    201.49  t1   J2      end case=fixed-forward-tick-zMAX-fixed100 feasible=false violation=0.49662581355551083 checks=1
+    201.54  t1   J2      begin case=fixed-forward-tick-zMAX-fixed1000 eps=1.00000e-24 marginPolicy=[3.0E-4] cap=1000
+    201.62  t1   CF      pass=0 pattern=free n=59 m=37 robust
+    203.77  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00000000000
+    203.83  t1   CF      rung margin=3.00e-04 iters=125 pg=6.470e-09 dual=11.744821785 viol=0.000e+00 ms=2.032 certified stop=PROJECTED_GRADIENT finalPg=6.470e-09
+    203.89  t1   J2      end case=fixed-forward-tick-zMAX-fixed1000 feasible=true violation=0.0 checks=1
+    203.94  t1   J2      begin case=fixed-forward-tick-zMIN-normal eps=1.00000e-24 marginPolicy=[0.05, 0.02, 0.01, 0.005, 0.0012, 3.0E-4, 0.0] cap=100
+    204.02  t1   CF      pass=0 pattern=free n=59 m=37 robust
+    206.28  t1   CF-CHECK margin=5.00e-02 replayViol=0.00000000000 modelViol=0.00000000000
+    206.34  t1   CF      rung margin=5.00e-02 iters=100 pg=3.550e-03 dual=-9.915256677 viol=0.000e+00 ms=2.132 certified stop=ITERATION_LIMIT finalPg=3.550e-03
+    206.39  t1   J2      end case=fixed-forward-tick-zMIN-normal feasible=true violation=0.0 checks=1
+    206.48  t1   J2      begin case=fixed-forward-tick-zMIN-fixed100 eps=1.00000e-24 marginPolicy=[3.0E-4] cap=100
+    206.69  t1   CF      pass=0 pattern=free n=59 m=37 robust
+    210.89  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00925904823384
+    211.01  t1   CF      rung margin=3.00e-04 iters=72 pg=1.947e-09 dual=-9.804578416 viol=9.259e-03 ms=4.094 stop=PROJECTED_GRADIENT finalPg=1.947e-09
+    211.10  t1   CF      pass=1 pattern=x@52 n=59 m=37 robust
+    212.84  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00000000000
+    212.92  t1   CF      rung margin=3.00e-04 iters=72 pg=2.567e-09 dual=-9.804647229 viol=0.000e+00 ms=1.588 certified stop=PROJECTED_GRADIENT finalPg=2.567e-09
+    212.98  t1   J2      end case=fixed-forward-tick-zMIN-fixed100 feasible=true violation=0.0 checks=2
