@@ -1021,3 +1021,12 @@ At the user's request, default direct/CF dual caps are now10000 (previously1000)
 
 
 Tick88–90 bounds clarified in the [jump6 recovery note](solver-traces/linkcraft-real11-jump-six-10k-zmin-recovery.md): rounded X88∈[731.7,732.7], X89∈[732.7,734.3]; both Z88/Z89∈[-1090.3,-1088.7]; state90 has no authored row. Original bounds precede inward margins. Extending to90 adds the state89 box while leaving90 as an unbounded objective endpoint.
+
+
+## Fixed windows and temporary endpoint-bound removal (2026-10-23)
+
+User clarification supersedes the earlier request to drop rows from final validation. Windows no longer extend by a jump or tick. For each window coordinate objective, `LongRunSolver.objectiveProblem` creates a temporary constraint list without same-axis, same-endpoint absolute upper bounds for MAX or lower bounds for MIN (equality also caps either direction). The candidate solver and its shared continuous/full-window plus replay/committed-prefix checks receive that temporary spec. Opposite bounds, other axes, earlier ticks and relative constraints remain. Centered feasibility SLP uses the original current-window rows because it has no coordinate improvement objective.
+
+Every objective attempt and every newly selected window starts from the original rows; no removals accumulate. **Final whole-route replay checks every original constraint**, including all temporarily omitted endpoint bounds. A route can therefore pass its window checks and still fail final acceptance. `JumpSpec` remains unchanged; no validation override is published to the graph or engine. `LRS-DROP` logs temporary omissions and `LRS-FINAL` reports full-route violation against original rows. Dual iteration limit remains10000 and EPS2 remains1e-24. No route rerun accompanies this change. Obsolete window-extension probe entry points and their policy test are removed; previous runs remain archived in git.
+
+Compilation: `:core:compileJava :core:compileTestJava` succeeded (6s; background log `/tmp/pkc-window-bound-removal-compile.log`). No tests or route probes ran.

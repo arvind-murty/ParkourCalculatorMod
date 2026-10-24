@@ -16,18 +16,24 @@ public final class ObjectiveBounds {
      *  Motion and custom-direction objectives are outside this check's scope. */
     public static JumpConstraint directCap(Objective objective, List<JumpConstraint> constraints) {
         if (objective.isMotion() || objective.isCustomAngle()) return null;
-        JumpConstraint.Mode mode = objective.axis == JumpPhysicsInputs.Axis.X
-                ? JumpConstraint.Mode.X : JumpConstraint.Mode.Z;
-        JumpConstraint.Cmp cap = objective.sense == Objective.Sense.MAX
-                ? JumpConstraint.Cmp.LE : JumpConstraint.Cmp.GE;
         JumpConstraint best = null;
         for (JumpConstraint row : constraints) {
-            if (row.mode != mode || row.t1 != objective.tick || row.t2 != null) continue;
-            if (row.cmp != cap && row.cmp != JumpConstraint.Cmp.EQ) continue;
+            if (!isDirectCap(objective, row)) continue;
             if (best == null || (objective.sense == Objective.Sense.MAX ? row.rhs < best.rhs : row.rhs > best.rhs)) {
                 best = row;
             }
         }
         return best;
+    }
+
+    /** Same-axis endpoint upper wall for MAX, lower wall for MIN, or an equality for either. */
+    public static boolean isDirectCap(Objective objective, JumpConstraint row) {
+        if (objective.isMotion() || objective.isCustomAngle()) return false;
+        JumpConstraint.Mode mode = objective.axis == JumpPhysicsInputs.Axis.X
+                ? JumpConstraint.Mode.X : JumpConstraint.Mode.Z;
+        JumpConstraint.Cmp cap = objective.sense == Objective.Sense.MAX
+                ? JumpConstraint.Cmp.LE : JumpConstraint.Cmp.GE;
+        return row.mode == mode && row.t1 == objective.tick && row.t2 == null
+                && (row.cmp == cap || row.cmp == JumpConstraint.Cmp.EQ);
     }
 }
