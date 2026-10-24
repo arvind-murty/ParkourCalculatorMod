@@ -1,0 +1,33 @@
+> Task :core:compileJava UP-TO-DATE
+> Task :core:processResources NO-SOURCE
+> Task :core:classes UP-TO-DATE
+
+> Task :core:compileTestJava
+warning: [options] source value 8 is obsolete and will be removed in a future release
+warning: [options] target value 8 is obsolete and will be removed in a future release
+warning: [options] To suppress warnings about obsolete options, use -Xlint:-options.
+3 warnings
+
+> Task :core:processTestResources UP-TO-DATE
+> Task :core:testClasses
+
+> Task :core:test FAILED
+
+JumpSixWindowEndpointsProbeTest > endpoints FAILED
+    java.lang.AssertionError at JumpSixWindowEndpointsProbeTest.java:44
+
+1 test completed, 1 failed
+
+[Incubating] Problems report is available at: file:///private/tmp/pkc-endpoints-fixed/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':core:test'.
+> There were failing tests. See the report at: file:///private/tmp/pkc-endpoints-fixed/core/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 2s
+4 actionable tasks: 2 executed, 2 up-to-date

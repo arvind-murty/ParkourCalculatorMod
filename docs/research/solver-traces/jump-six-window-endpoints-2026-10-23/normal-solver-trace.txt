@@ -1,0 +1,48 @@
+      7.08  t1   CF      pass=0 pattern=free n=68 m=33 robust
+     62.97  t1   CF-CHECK margin=5.00e-02 replayViol=0.00000000000 modelViol=0.00000000000
+     63.18  t1   CF      rung margin=5.00e-02 iters=100 pg=2.090e-01 dual=11.544886238 viol=0.000e+00 ms=53.036 certified
+     64.30  t1   CF      pass=0 pattern=free n=59 m=37 robust
+     72.17  t1   CF-CHECK margin=5.00e-02 replayViol=0.00000000000 modelViol=0.00000000000
+     72.35  t1   CF      rung margin=5.00e-02 iters=100 pg=4.711e-04 dual=11.354832458 viol=0.000e+00 ms=7.656 certified
+     72.88  t1   CF      pass=0 pattern=free n=54 m=39 robust
+     77.43  t1   CF      rung margin=5.00e-02 dual unbounded ms=4.210
+     82.17  t1   CF-CHECK margin=2.00e-02 replayViol=0.00000000000 modelViol=0.00000000000
+     82.32  t1   CF      rung margin=2.00e-02 iters=83 pg=3.186e-09 dual=11.640763833 viol=0.000e+00 ms=4.741 certified
+     82.82  t1   CF      pass=0 pattern=free n=47 m=40 robust
+     87.05  t1   CF-CHECK margin=5.00e-02 replayViol=0.00000000000 modelViol=0.0577555413403
+     87.20  t1   CF      rung margin=5.00e-02 iters=100 pg=1.417e-01 dual=10.515850925 viol=5.776e-02 ms=4.071
+     87.76  t1   CF-CHECK margin=2.00e-02 replayViol=0.00000000000 modelViol=0.00000000000
+     87.87  t1   CF      rung margin=2.00e-02 iters=32 pg=1.252e-09 dual=10.596350051 viol=0.000e+00 ms=0.549 certified
+     88.30  t1   CF      pass=0 pattern=free n=40 m=43 robust
+     93.52  t1   CF-CHECK margin=5.00e-02 replayViol=0.0268163699541 modelViol=0.239256902584
+     93.64  t1   CF      rung margin=5.00e-02 iters=100 pg=2.901e-01 dual=9.495476978 viol=2.393e-01 ms=5.066
+     94.04  t1   CF-CHECK margin=2.00e-02 replayViol=0.00000000000 modelViol=0.00000000000
+     94.14  t1   CF      rung margin=2.00e-02 iters=28 pg=1.564e-10 dual=9.543352798 viol=0.000e+00 ms=0.402 certified
+     94.52  t1   CF      pass=0 pattern=free n=33 m=53 robust
+    100.98  t1   CF-CHECK margin=5.00e-02 replayViol=0.00000000000 modelViol=0.817211576181
+    101.14  t1   CF      rung margin=5.00e-02 iters=100 pg=7.208e-01 dual=-4.980059503 viol=8.172e-01 ms=6.382
+    105.78  t1   CF-CHECK margin=2.00e-02 replayViol=0.000461427317305 modelViol=0.829647024683
+    105.88  t1   CF      rung margin=2.00e-02 iters=100 pg=6.757e-01 dual=-4.934115258 viol=8.296e-01 ms=4.638
+    108.01  t1   CF-CHECK margin=1.00e-02 replayViol=0.00000000000 modelViol=0.168248872680
+    108.14  t1   CF      rung margin=1.00e-02 iters=100 pg=4.581e-01 dual=-5.013907987 viol=1.682e-01 ms=2.163
+    109.02  t1   CF-CHECK margin=5.00e-03 replayViol=0.00000000000 modelViol=0.202596599750
+    109.12  t1   CF      rung margin=5.00e-03 iters=100 pg=1.004e+00 dual=-5.007190267 viol=2.026e-01 ms=0.883
+    109.93  t1   CF-CHECK margin=1.20e-03 replayViol=0.00692440546368 modelViol=0.0602647482210
+    110.08  t1   CF      rung margin=1.20e-03 iters=100 pg=1.548e-01 dual=-5.002504766 viol=6.026e-02 ms=0.810
+    111.12  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.540808411714
+    111.20  t1   CF      rung margin=3.00e-04 iters=100 pg=4.042e-01 dual=-5.007315697 viol=5.408e-01 ms=1.027
+    112.05  t1   CF-CHECK margin=0.00e+00 replayViol=0.00000000000 modelViol=0.0421825973708
+    112.19  t1   CF      rung margin=0.00e+00 iters=100 pg=7.691e-02 dual=-5.006930658 viol=4.218e-02 ms=0.861
+    112.30  t1   CF      pass=1 pattern=x@8,@26 n=33 m=53 robust
+    121.51  t1   CF-CHECK margin=5.00e-02 replayViol=0.00000000000 modelViol=0.167925281002
+    121.66  t1   CF      rung margin=5.00e-02 iters=100 pg=2.719e-01 dual=-4.972216640 viol=1.679e-01 ms=9.123
+    125.95  t1   CF-CHECK margin=2.00e-02 replayViol=0.00000000000 modelViol=0.394111792148
+    126.08  t1   CF      rung margin=2.00e-02 iters=100 pg=1.436e+00 dual=-5.037274786 viol=3.941e-01 ms=4.330
+    129.27  t1   CF-CHECK margin=1.00e-02 replayViol=0.0444337070961 modelViol=0.408752207804
+    129.37  t1   CF      rung margin=1.00e-02 iters=100 pg=1.078e+00 dual=-5.020990664 viol=4.088e-01 ms=3.212
+    132.18  t1   CF-CHECK margin=5.00e-03 replayViol=0.00000000000 modelViol=0.109705630947
+    132.26  t1   CF      rung margin=5.00e-03 iters=100 pg=1.556e-01 dual=-5.038125291 viol=1.097e-01 ms=2.825
+    135.08  t1   CF-CHECK margin=1.20e-03 replayViol=0.00000000000 modelViol=0.0627347720383
+    135.20  t1   CF      rung margin=1.20e-03 iters=100 pg=8.126e-02 dual=-5.032168063 viol=6.273e-02 ms=2.844
+    136.51  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00000000000
+    136.62  t1   CF      rung margin=3.00e-04 iters=71 pg=3.109e-15 dual=-5.062496823 viol=0.000e+00 ms=1.290 certified
