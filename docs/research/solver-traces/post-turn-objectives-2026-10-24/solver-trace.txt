@@ -1,0 +1,16 @@
+      6.08  t1   SEED    case=j13-seed0.0 pass=0 pattern=free seedRows=0
+     39.20  t1   SEED    case=j13-seed0.0 pass=1 pattern=x@8,@29-34+z@27 seedRows=0
+    245.11  t1   SEED    case=j13-seed1.0 pass=0 pattern=free seedRows=0
+    251.36  t1   SEED    case=j13-seed1.0 pass=1 pattern=x@8,@29-34+z@27 seedRows=8
+    263.52  t1   SEED    case=j13-seed0.25 pass=0 pattern=free seedRows=0
+    268.40  t1   SEED    case=j13-seed0.25 pass=1 pattern=x@8,@29-34+z@27 seedRows=8
+    433.75  t1   SEED    case=j13-seed-1.0 pass=0 pattern=free seedRows=0
+    438.67  t1   SEED    case=j13-seed-1.0 pass=1 pattern=x@8,@29-34+z@27 seedRows=15
+    443.49  t1   SEED    case=j14-seed0.0 pass=0 pattern=free seedRows=0
+    450.01  t1   SEED    case=j14-seed0.0 pass=1 pattern=x@8,@29-35+z@27 seedRows=0
+    550.40  t1   SEED    case=j14-seed1.0 pass=0 pattern=free seedRows=0
+    558.15  t1   SEED    case=j14-seed1.0 pass=1 pattern=x@8,@29-35+z@27 seedRows=11
+    842.55  t1   SEED    case=j14-seed0.25 pass=0 pattern=free seedRows=0
+    853.07  t1   SEED    case=j14-seed0.25 pass=1 pattern=x@8,@29-35+z@27 seedRows=11
+    897.74  t1   SEED    case=j14-seed-1.0 pass=0 pattern=free seedRows=0
+    907.08  t1   SEED    case=j14-seed-1.0 pass=1 pattern=x@8,@29-35+z@27 seedRows=20

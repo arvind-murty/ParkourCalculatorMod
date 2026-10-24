@@ -26,7 +26,8 @@ import static org.junit.Assert.*;
 @Category(SlowSolverTests.class)
 public class InertiaMultiplierSeedProbeTest {
     private static final Path ROOT = Paths.get("/Users/arvindmurty/CS/ParkourCalculatorMod");
-    private static final Path OUT = ROOT.resolve("docs/research/solver-traces/inertia-multiplier-seeding-2026-10-24");
+    private static final boolean POST_TURN = "post-turn".equals(System.getProperty("pkc.inertiaSeedCases"));
+    private static final Path OUT = ROOT.resolve("docs/research/solver-traces/"+(POST_TURN?"post-turn-objectives-2026-10-24":"inertia-multiplier-seeding-2026-10-24"));
 
     @Test public void compareColdAndCarriedMultipliers() throws Exception {
         org.junit.Assume.assumeTrue(Boolean.getBoolean("pkc.inertiaSeedProbe"));
@@ -48,16 +49,17 @@ public class InertiaMultiplierSeedProbeTest {
         List<String> result = new ArrayList<>();
         result.add("end_jump,objective,seed_scale,pass,pattern,rows,seeded_rows,initial_dual,initial_residual,initial_min_costate,iters,stop,final_residual,final_min_costate,fallback_ticks,continuous_violation,prefix_replay_violation,assumed_violation,failed_inertia_assumptions,elapsed_ms");
         List<String> outcomes = new ArrayList<>(); outcomes.add("end_jump,objective,seed_scale,accepted,passes,best_violation,total_solve_ms");
-        int[] ends = {75,77,99,113}, jumps = {9,10,14,15};
+        int[] ends = POST_TURN ? new int[]{90,99} : new int[]{75,77,99,113};
+        int[] jumps = POST_TURN ? new int[]{13,14} : new int[]{9,10,14,15};
         SolverTrace.enable("inertia-multiplier-seeding");
         try {
             for (int k = 0; k < ends.length; k++) {
-                Objective.Sense sense = k < 2 ? Objective.Sense.MAX : Objective.Sense.MIN;
+                Objective.Sense sense = POST_TURN ? (k==0?Objective.Sense.MIN:Objective.Sense.MAX) : (k<2?Objective.Sense.MAX:Objective.Sense.MIN);
                 JumpPhysicsInputs win = (JumpPhysicsInputs) slice.invoke(null, full.asScenario(), 55, ends[k], pos, vel, yaw);
                 @SuppressWarnings("unchecked") List<JumpConstraint> rows = (List<JumpConstraint>) rowsAt.invoke(null, full, 55, ends[k], yaw);
                 Objective objective = new Objective(JumpPhysicsInputs.Axis.Z, sense, win.numTicks);
                 List<JumpConstraint> keep = new ArrayList<>();
-                for (JumpConstraint c : rows) if (!ObjectiveBounds.isDirectCap(objective,c)) keep.add(c);
+                for (JumpConstraint c : rows) if (POST_TURN || !ObjectiveBounds.isDirectCap(objective,c)) keep.add(c);
                 JumpSpec spec = new JumpSpec(win, keep, objective);
                 assertFalse(JumpLinearModel.hasFacingWall(spec.constraints));
                 for (double scale : new double[]{0.0,1.0,0.25,-1.0}) run(exact,spec,jumps[k],scale,result,outcomes);
@@ -95,8 +97,13 @@ public class InertiaMultiplierSeedProbeTest {
                     if (seed[j] != 0.0) seeded++;
                 }
             }
+            boolean preserved=false;
             if (scale<0.0 && seed!=null) {
-                seedBandPrices(reduced,seed,authoredRows,previousGx,previousGz);
+                preserved=seedBandPrices(reduced,seed,authoredRows,previousGx,previousGz);
+                if(!preserved) {
+                    Arrays.fill(seed,authoredRows,seed.length,0.0);
+                    SolverTrace.log("SEED", "case=%s pass=%d preservation declined; retain mapped position weights only",label,pass);
+                }
                 seeded=0;for(double v:seed)if(v!=0.0)seeded++;
             }
             CostateDualSolver solver = new CostateDualSolver(reduced.n,reduced.cx,reduced.cz,reduced.mMag,reduced.walls);
@@ -117,9 +124,10 @@ public class InertiaMultiplierSeedProbeTest {
             WindowCandidateValidation.Result initialCheck = new WindowCandidateValidation(exact,spec,9).evaluate(initialAngles);
             double yawChange = 0.0;
             if(previousAngles!=null)for(int t=0;t<n;t++)yawChange=Math.max(yawChange,Math.abs(Angles.wrap(initialAngles[t]-previousAngles[t])));
+            if(preserved)assertTrue("verified costates preserve recovered angles",yawChange<1e-6);
             List<String> initial = new ArrayList<>();
-            initial.add("continuous_violation,prefix_replay_violation,max_yaw_change_from_previous");
-            initial.add(String.format(Locale.ROOT,"%.17g,%.17g,%.17g",initialCheck.continuousViolation,initialCheck.replayViolation,previousAngles==null?Double.NaN:yawChange));
+            initial.add("continuous_violation,prefix_replay_violation,max_yaw_change_from_previous,preservation_verified");
+            initial.add(String.format(Locale.ROOT,"%.17g,%.17g,%.17g,%s",initialCheck.continuousViolation,initialCheck.replayViolation,previousAngles==null?Double.NaN:yawChange,preserved));
             Files.write(OUT.resolve(label+"-pass"+pass+"-initial.csv"),initial,StandardCharsets.UTF_8);
             long t0 = System.nanoTime(); CostateDualSolver.Result r = solver.solve(.0003,seed,10000);
             double ms = (System.nanoTime()-t0)/1e6; solveMs += ms; passes++;
@@ -146,7 +154,7 @@ public class InertiaMultiplierSeedProbeTest {
             boolean improved = check.maxViolation() < best;
             best = Math.min(best,check.maxViolation());
             if (check.maxViolation()==0.0) {accepted=true;break;}
-            if (pass==0) {
+            if (pass==0 && !POST_TURN) {
                 double expected = endJump==9?.010383205522430217:endJump==10?.008981865496934915:.009402272;
                 assertEquals("initial pass reproduces archived window",expected,check.continuousViolation,1e-9);
             }
@@ -160,7 +168,7 @@ public class InertiaMultiplierSeedProbeTest {
         Files.write(OUT.resolve("outcomes.csv"),outcomes,StandardCharsets.UTF_8);
         System.out.println(outcomes.get(outcomes.size()-1));
     }
-    private static void seedBandPrices(FacingPrefold.Reduced reduced, double[] seed, int authoredRows,
+    private static boolean seedBandPrices(FacingPrefold.Reduced reduced, double[] seed, int authoredRows,
                                        double[] oldGx, double[] oldGz) {
         double[] dx=reduced.cx.clone(),dz=reduced.cz.clone();
         for(int j=0;j<authoredRows;j++) {
@@ -177,6 +185,18 @@ public class InertiaMultiplierSeedProbeTest {
             seed[j]=Math.max(price,0.0);seed[j+1]=Math.max(-price,0.0);
             for(int t=0;t<reduced.n;t++)delta[t]-=price*hi.coef[t];
         }
+        double[] actualX=reduced.cx.clone(),actualZ=reduced.cz.clone();
+        for(int j=0;j<seed.length;j++) {
+            if(!Double.isFinite(seed[j]) || seed[j]<0.0)return false;
+            JumpLinearModel.Wall w=reduced.walls.get(j);
+            for(int t=0;t<reduced.n;t++){if(w.axis==0)actualX[t]-=seed[j]*w.coef[t];else actualZ[t]-=seed[j]*w.coef[t];}
+        }
+        for(int t=0;t<reduced.n;t++) {
+            double error=StrictMath.hypot(actualX[t]-oldGx[t],actualZ[t]-oldGz[t]);
+            double norm=StrictMath.hypot(oldGx[t],oldGz[t]);
+            if(error>1e-8*Math.max(norm,1e-12))return false;
+        }
+        return true;
     }
     private static void saveDiagnostics(String label, int pass, WindowCandidateValidation.Diagnostics d) throws Exception {
         List<String> margins = new ArrayList<>();margins.add("tick,name,comparison,continuous_margin,replay_margin,assumed_margin");

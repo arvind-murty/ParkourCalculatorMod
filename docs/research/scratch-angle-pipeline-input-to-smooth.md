@@ -1180,3 +1180,13 @@ The successful1.113485/1.364222 prices were computed from coefficient difference
 ## Constraint-to-jump mapping through20
 
 [Complete per-jump table](solver-traces/jump-six-through-twenty-by-jump.md). Input spans:6=55–63,7=64–67,8=68–70,9=71–74,10=75–76,11=77–79,12=80–87,13=88–89,14=90–98,15=99–112,16=113–116,17=117–127,18=128–129,19=130–131,20=132–154. State constraints at the start of a jump are grouped with that jump; a preceding solve ending at that same state also includes them because positional window slicing includes the end boundary. This is a grouping convention, not exclusive constraint ownership. No new solve.
+
+
+## Why zero initialization is valid, and where1.113 actually comes from
+
+Both new band weights0 is mathematically valid. The measured optimizer does not reliably converge from it, so seeding is a numerical initialization improvement, not a requirement to enforce inertia. In end9's old solution, gX63=1.1134852193806766; the computed seed is1.1134852193806761. For a single new X63 reset, the discrepancy in earlier costates is exactly -1.113485 times the velocity-row coefficients w. The lower band has normal -w, hence multiplier1.113485 adds +1.113485*w back to costates. Upper0/lower1.113485 supplies the needed signed correction with nonnegative weights; both can subsequently change and lower ends .561550. The physical zeroing is never canceled, only the initialization's costate change. Old gX55=-.027401391139 versus naive carried-weight newgX55=-.341572934464 illustrates why numerical angles move despite a small physical perturbation. Full explanation in the seeding archive. No new run for this clarification.
+
+
+## Requested post-turn +1 objectives and seed verification
+
+[All-row-retained trials](solver-traces/post-turn-objectives-2026-10-24/README.md): jump13 constraints89, objective90 Z/MIN; jump14 constraints98, objective99 Z/MAX. These are existing end-state boundaries, not91/100. Keep all original rows;99 itself still has a Z upper bound, so +1 does not remove the direct objective cap for14. Guard added to test-side compensation: reconstruct costates within relative1e-8 per tick (norm floor1e-12), reject invalid weights, decline inaccurate compensation explicitly, and assert recovered-angle preservation. Both trials preserve angles within3.3e-12deg, but patterned retries still fail:13 NO_DESCENT227, residual .00903, actualmiss16.91574;14 cap10000, residual .002735, actualmiss3.61652. Best candidates remain initial actualmiss .0093914/.0093502. Only focused probe; no production default changes or full graph. The user then steered back to understanding why band weights are nonzero; explanation recorded separately above.
