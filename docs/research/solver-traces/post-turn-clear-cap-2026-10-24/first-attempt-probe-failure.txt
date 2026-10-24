@@ -1,0 +1,1 @@
+The first corrected run completed all j13 controls and j14 cold/direct-carry controls, then the quarter-carry run returned null from the dual at a later pattern. A probe assertNotNull aborted the remaining comparison. This is a valid solver outcome; the probe is being changed to record the null/stop reason and continue other controls. Production unchanged.

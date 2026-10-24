@@ -1195,3 +1195,12 @@ Both new band weights0 is mathematically valid. The measured optimizer does not 
 ## Corrected jump14 objective offset
 
 User confirms incrementing beyond the repeated endpoint Z band. Original jump14 landing state98 has Z range[-1095.3,-1093.7], repeated at99,100,101,102. State103 has no Z row. Therefore the first uncapped same-axis endpoint is Z/MAX@103: landing98+5, or four extra input ticks beyond the previous +1 objective99. Keep all original rows through102. This ends inside jump15, not at jump15's end113. Source capture rechecked; no new solve for this indexing clarification.
+
+
+## Corrected j13@90 and j14@103 solves after interruption
+
+[Inventory, complete pass table, timings and reproducible artifacts](solver-traces/post-turn-clear-cap-2026-10-24/README.md). Confirmed the interrupted probe was still90/99 and no worker was running. Corrected test-only mode retains all original rows, asserts no direct cap at90/103 and retention of Z89/Z102. Same exact entry55, fixed .0003, EPS24, cap10000, shared actual-inertia full-continuous and committed-prefix replay validation. No production changes or full suite/graph/route run.
+
+j13/MIN90: unpatterned167 NO_DESCENT, assumed valid, actualmiss .009391425 at X79; all four seed variants fail to improve it. Verified compensation retry227 NO_DESCENT, actualmiss16.915739. j14/MAX103: initial10000 cap, assumedmiss .879105564, actualmiss .883040338; cold pattern passes improve to .332352549 then .006556921 at X94 (883 input-stall, assumed valid, five inertia mismatches), next retry worsens1.128663. Compensation is DECLINED for this j14 transition; fallback full positional carry gives actualmiss1.464312, not angle preservation. Quarter carry later returns null LAMBDA_LIMIT667, now recorded without aborting the probe. No accepted candidate in either case. Best full-continuous misses .009391425/.006556921; zero committed-prefix miss on those best candidates does not satisfy whole-window validation.
+
+All eight seed/endpoint variants completed in the focused probe (Gradle3s). Accumulated dual times range3.262–523.612ms, subject to JVM warmup and excluding validation/export. First aborted probe assertion, corrected null-result handling and second successful execution are archived. User j127 fixture edit untouched.

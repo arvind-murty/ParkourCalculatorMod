@@ -1,0 +1,17 @@
+Inventory before corrected trials, 2026-10-24
+Main HEAD: 478d14f371e4502fa3eeda76693c5ca3db1de420
+Main status:
+ M core/src/test/resources/captures/hpk/d9/j127_Head_to_Head_Neo.json
+
+Isolated HEAD: b98f87f275d3fd715a8cc3998c39d9158ee76d67
+Isolated status:
+ M settings.gradle
+?? core/src/test/java/de/legoshi/parkourcalc/core/anglesolver/solver/FirstFiveWindowEndpointsProbeTest.java
+?? core/src/test/java/de/legoshi/parkourcalc/core/anglesolver/solver/InertiaMultiplierSeedProbeTest.java
+?? core/src/test/java/de/legoshi/parkourcalc/core/anglesolver/solver/JumpSixWindowEndpointsProbeTest.java
+?? core/src/test/java/de/legoshi/parkourcalc/core/anglesolver/solver/ManualCoupledWindowProbeTest.java
+
+No GradleWrapperMain/GradleWorkerMain/probe process was running at inventory.
+Pre-existing main modification is the user j127 capture; untouched.
+Prior probe used objectives90 and99. Corrected103 case had not been configured or run.
+Prior tracked probe SHA256: 1a322bc7bf16fa33491027048aef7ad45cfab35a6586945d27a9253a2f7aed40

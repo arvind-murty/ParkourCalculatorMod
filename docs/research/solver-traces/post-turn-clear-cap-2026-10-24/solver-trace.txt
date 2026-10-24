@@ -1,0 +1,20 @@
+      7.01  t1   SEED    case=j13-seed0.0 pass=0 pattern=free seedRows=0
+     39.07  t1   SEED    case=j13-seed0.0 pass=1 pattern=x@8,@29-34+z@27 seedRows=0
+    247.27  t1   SEED    case=j13-seed1.0 pass=0 pattern=free seedRows=0
+    253.08  t1   SEED    case=j13-seed1.0 pass=1 pattern=x@8,@29-34+z@27 seedRows=8
+    263.80  t1   SEED    case=j13-seed0.25 pass=0 pattern=free seedRows=0
+    269.53  t1   SEED    case=j13-seed0.25 pass=1 pattern=x@8,@29-34+z@27 seedRows=8
+    427.86  t1   SEED    case=j13-seed-1.0 pass=0 pattern=free seedRows=0
+    432.90  t1   SEED    case=j13-seed-1.0 pass=1 pattern=x@8,@29-34+z@27 seedRows=15
+    439.73  t1   SEED    case=j14-seed0.0 pass=0 pattern=free seedRows=0
+    609.71  t1   SEED    case=j14-seed0.0 pass=1 pattern=x@7,@34-35,@45-47+z@26 seedRows=0
+    710.93  t1   SEED    case=j14-seed0.0 pass=2 pattern=x@8,@33-35,@46-47 seedRows=0
+    727.19  t1   SEED    case=j14-seed0.0 pass=3 pattern=x@8,@29-35,@46-47+z@27 seedRows=0
+    978.36  t1   SEED    case=j14-seed1.0 pass=0 pattern=free seedRows=0
+   1148.47  t1   SEED    case=j14-seed1.0 pass=1 pattern=x@7,@34-35,@45-47+z@26 seedRows=26
+   1414.34  t1   SEED    case=j14-seed0.25 pass=0 pattern=free seedRows=0
+   1624.56  t1   SEED    case=j14-seed0.25 pass=1 pattern=x@7,@34-35,@45-47+z@26 seedRows=26
+   1832.01  t1   SEED    case=j14-seed0.25 pass=2 pattern=x@9,@46-47 seedRows=22
+   1841.35  t1   SEED    case=j14-seed-1.0 pass=0 pattern=free seedRows=0
+   2009.39  t1   SEED    case=j14-seed-1.0 pass=1 preservation declined; retain mapped position weights only
+   2009.52  t1   SEED    case=j14-seed-1.0 pass=1 pattern=x@7,@34-35,@45-47+z@26 seedRows=26

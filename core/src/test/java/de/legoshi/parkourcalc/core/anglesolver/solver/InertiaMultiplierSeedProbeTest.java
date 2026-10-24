@@ -26,8 +26,10 @@ import static org.junit.Assert.*;
 @Category(SlowSolverTests.class)
 public class InertiaMultiplierSeedProbeTest {
     private static final Path ROOT = Paths.get("/Users/arvindmurty/CS/ParkourCalculatorMod");
-    private static final boolean POST_TURN = "post-turn".equals(System.getProperty("pkc.inertiaSeedCases"));
-    private static final Path OUT = ROOT.resolve("docs/research/solver-traces/"+(POST_TURN?"post-turn-objectives-2026-10-24":"inertia-multiplier-seeding-2026-10-24"));
+    private static final String CASES = System.getProperty("pkc.inertiaSeedCases", "baseline");
+    private static final boolean CLEAR_CAP = "post-turn-clear-cap".equals(CASES);
+    private static final boolean POST_TURN = CLEAR_CAP || "post-turn".equals(CASES);
+    private static final Path OUT = ROOT.resolve("docs/research/solver-traces/"+(CLEAR_CAP?"post-turn-clear-cap-2026-10-24":POST_TURN?"post-turn-objectives-2026-10-24":"inertia-multiplier-seeding-2026-10-24"));
 
     @Test public void compareColdAndCarriedMultipliers() throws Exception {
         org.junit.Assume.assumeTrue(Boolean.getBoolean("pkc.inertiaSeedProbe"));
@@ -49,7 +51,7 @@ public class InertiaMultiplierSeedProbeTest {
         List<String> result = new ArrayList<>();
         result.add("end_jump,objective,seed_scale,pass,pattern,rows,seeded_rows,initial_dual,initial_residual,initial_min_costate,iters,stop,final_residual,final_min_costate,fallback_ticks,continuous_violation,prefix_replay_violation,assumed_violation,failed_inertia_assumptions,elapsed_ms");
         List<String> outcomes = new ArrayList<>(); outcomes.add("end_jump,objective,seed_scale,accepted,passes,best_violation,total_solve_ms");
-        int[] ends = POST_TURN ? new int[]{90,99} : new int[]{75,77,99,113};
+        int[] ends = CLEAR_CAP ? new int[]{90,103} : POST_TURN ? new int[]{90,99} : new int[]{75,77,99,113};
         int[] jumps = POST_TURN ? new int[]{13,14} : new int[]{9,10,14,15};
         SolverTrace.enable("inertia-multiplier-seeding");
         try {
@@ -62,6 +64,12 @@ public class InertiaMultiplierSeedProbeTest {
                 for (JumpConstraint c : rows) if (POST_TURN || !ObjectiveBounds.isDirectCap(objective,c)) keep.add(c);
                 JumpSpec spec = new JumpSpec(win, keep, objective);
                 assertFalse(JumpLinearModel.hasFacingWall(spec.constraints));
+                if(CLEAR_CAP) {
+                    assertNull("objective tick is outside the repeated capping Z rows",ObjectiveBounds.directCap(spec));
+                    assertEquals("all authored rows retained",rows.size(),spec.constraints.size());
+                    int expectedLast=k==0?89:102;
+                    assertTrue("last capped state retained",spec.constraints.stream().anyMatch(c->c.mode==JumpConstraint.Mode.Z && c.t1==expectedLast-55 && c.cmp==JumpConstraint.Cmp.LE));
+                }
                 for (double scale : new double[]{0.0,1.0,0.25,-1.0}) run(exact,spec,jumps[k],scale,result,outcomes);
             }
         } finally { SolverTrace.disable(); }
@@ -131,7 +139,12 @@ public class InertiaMultiplierSeedProbeTest {
             Files.write(OUT.resolve(label+"-pass"+pass+"-initial.csv"),initial,StandardCharsets.UTF_8);
             long t0 = System.nanoTime(); CostateDualSolver.Result r = solver.solve(.0003,seed,10000);
             double ms = (System.nanoTime()-t0)/1e6; solveMs += ms; passes++;
-            assertNotNull("dual returned a finite iterate",r);
+            if(r==null) {
+                result.add(String.format(Locale.ROOT,"%d,Z/%s,%.2f,%d,\"%s\",%d,%d,%.17g,%.17g,%.17g,%d,%s,NaN,NaN,NaN,NaN,NaN,NaN,-1,%.3f",endJump,spec.objective.sense,scale,pass,lin.patternDescription(),walls.size(),seeded,first[0],first[1],first[2],solver.lastIters,solver.lastStopReason,ms));
+                Files.write(OUT.resolve("passes.csv"),result,StandardCharsets.UTF_8);
+                Files.write(OUT.resolve(label+"-pass"+pass+"-iterations.csv"),history,StandardCharsets.UTF_8);
+                break;
+            }
             double[] angles = pre.expand(lin,spec.objective,r);
             final WindowCandidateValidation.Diagnostics[] diagnostic = new WindowCandidateValidation.Diagnostics[1];
             WindowCandidateValidation.setDiagnosticObserver(d -> diagnostic[0]=d);
