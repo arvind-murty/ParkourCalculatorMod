@@ -1,0 +1,13 @@
+diff --git a/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/CostateDualSolver.java b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/CostateDualSolver.java
+index bdc7f6b..db091a7 100644
+--- a/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/CostateDualSolver.java
++++ b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/CostateDualSolver.java
+@@ -283,7 +283,7 @@ public final class CostateDualSolver {
+                 du = Math.max(du, Math.abs(ux[t] - uPrevX[t]));
+                 du = Math.max(du, Math.abs(uz[t] - uPrevZ[t]));
+             }
+-            if (it > 0 && du <= U_TOL) { lastStopReason = "RECOVERED_INPUT_STALL"; break; }
++            // Probe: use the existing projected-gradient convergence check; do not stop on control changes.
+             System.arraycopy(ux, 0, uPrevX, 0, n);
+             System.arraycopy(uz, 0, uPrevZ, 0, n);
+ 
