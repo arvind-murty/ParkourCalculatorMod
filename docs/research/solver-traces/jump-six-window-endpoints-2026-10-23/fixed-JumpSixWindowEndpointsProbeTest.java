@@ -41,6 +41,14 @@ public class JumpSixWindowEndpointsProbeTest {
     ClosedFormSolve.Config cfg=new ClosedFormSolve.Config();cfg.replayTickLimit=commits[j-1]-a;if(fixed){cfg.margins=new double[]{.0003};cfg.marginsRobust=new double[]{.0003};}
     final WindowCandidateValidation.Diagnostics[] last=new WindowCandidateValidation.Diagnostics[1];WindowCandidateValidation.setDiagnosticObserver(d->last[0]=d);
     double[] y=ClosedFormSolve.optimizeRobust(exact,new JumpSpec(win,rows,objective),0,new AtomicBoolean(false),cfg);WindowCandidateValidation.setDiagnosticObserver(null);if(j==6){assertNull("fixed Z/MIN rejected",y);assertNotNull(last[0]);y=last[0].continuousFacings;}else assertNotNull(y);
+    if(j==6){
+     List<String> audit=new ArrayList<>();audit.add("tick,name,axis,comparison,bound,committed,continuous_value,continuous_margin,replay_value,replay_margin,assumed_value,assumed_margin");
+     for(WindowCandidateValidation.ConstraintMargin m:last[0].constraints){JumpConstraint cst=m.constraint;audit.add(String.format(java.util.Locale.ROOT,"%d,%s,%s,%s,%.12f,%s,%.12f,%.12f,%.12f,%.12f,%.12f,%.12f",a+cst.t1,cst.name,cst.mode,cst.cmp,cst.rhs,m.committed,m.continuousValue,m.continuousMargin,m.replayValue,m.replayMargin,m.assumedValue,m.assumedMargin));}
+     Files.write(Paths.get("/tmp/pkc-jump-six-violations.csv"),audit,StandardCharsets.UTF_8);
+     List<String> inertia=new ArrayList<>();inertia.add("tick,axis,assumed_velocity,continuous_velocity,replay_velocity,assumed_zero,assumption_satisfied");
+     for(WindowCandidateValidation.InertiaCheck m:last[0].inertiaChecks)inertia.add(String.format(java.util.Locale.ROOT,"%d,%s,%.12f,%.12f,%.12f,%s,%s",a+m.tick,m.axis==0?"X":"Z",m.assumedVelocity,m.continuousVelocity,m.replayVelocity,m.assumedZero,m.assumptionSatisfied));
+     Files.write(Paths.get("/tmp/pkc-jump-six-inertia.csv"),inertia,StandardCharsets.UTF_8);
+    }
     double[] game=win.toGameFacings(y);ForwardPath replay=exact.forward(win,game);ForwardPath continuous=new JumpLinearModel(win).forwardContinuous(y,exact.inertiaThreshold(),exact.perAxisInertia());
     double pd=0,yd=0;
     for(int t=a;t<=commits[j-1] && j<6;t++){

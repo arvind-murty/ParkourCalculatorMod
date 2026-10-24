@@ -1051,3 +1051,8 @@ Higher provisional endpoint Z does not guarantee a solvable shifted window: wind
 ## Jump6–12 replay endpoint extraction
 
 [Exact sequential reproduction](solver-traces/jump-six-window-endpoints-2026-10-23/README.md): normal accepted Z/MIN ends state88 at X732.655541654916,Z-1090.148753136121. Fixed rejected Z/MIN ends X732.687406696540,Z-1091.807886997006. Reproduced normal71-iteration accepted0.0003 X63/X81 pattern and fixed1264-iteration input-stall with replay0.0113403853090/continuous1.50530499057. Initial rounded12decimal seed reconstructions did NOT reproduce jump6, so results here chain exact states from original start through first5 accepted windows. Rounded-seed exploratory logs retained separately; they show numerical sensitivity and are not substituted for the original runs. Only focused probes; production unchanged.
+
+
+## Exact fixed jump6–12 Z/MIN violated rows
+
+[All violations and shared-helper audit](solver-traces/jump-six-window-endpoints-2026-10-23/fixed-violations.md): retained constraints violated at X58 upper, X66 upper, X74 upper, X79 lower, Z83 lower, X84/85/86 uppers, Z87 lower. Only X58 is in the committed replay check (miss0.011340385309). Worst full continuous violation is Z83 lower1.505304990575; the replay counterpart is1.505353541769. All66 per-axis inertia assumptions are satisfied; assumed and actual continuous row values agree. The omitted Z88 lower bound is also violated by endpoint replay1.507886985085, but intentionally does not participate in this window validation. One focused audit rerun in isolated fixed worktree; production unchanged.

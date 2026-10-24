@@ -1,0 +1,18 @@
+> Task :core:compileJava UP-TO-DATE
+> Task :core:processResources NO-SOURCE
+> Task :core:classes UP-TO-DATE
+
+> Task :core:compileTestJava
+warning: [options] source value 8 is obsolete and will be removed in a future release
+warning: [options] target value 8 is obsolete and will be removed in a future release
+warning: [options] To suppress warnings about obsolete options, use -Xlint:-options.
+3 warnings
+
+> Task :core:processTestResources UP-TO-DATE
+> Task :core:testClasses
+> Task :core:test
+
+[Incubating] Problems report is available at: file:///private/tmp/pkc-endpoints-fixed/build/reports/problems/problems-report.html
+
+BUILD SUCCESSFUL in 1s
+4 actionable tasks: 2 executed, 2 up-to-date
