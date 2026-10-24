@@ -1056,3 +1056,8 @@ Higher provisional endpoint Z does not guarantee a solvable shifted window: wind
 ## Exact fixed jump6–12 Z/MIN violated rows
 
 [All violations and shared-helper audit](solver-traces/jump-six-window-endpoints-2026-10-23/fixed-violations.md): retained constraints violated at X58 upper, X66 upper, X74 upper, X79 lower, Z83 lower, X84/85/86 uppers, Z87 lower. Only X58 is in the committed replay check (miss0.011340385309). Worst full continuous violation is Z83 lower1.505304990575; the replay counterpart is1.505353541769. All66 per-axis inertia assumptions are satisfied; assumed and actual continuous row values agree. The omitted Z88 lower bound is also violated by endpoint replay1.507886985085, but intentionally does not participate in this window validation. One focused audit rerun in isolated fixed worktree; production unchanged.
+
+
+## Normal clearance on jump6–12
+
+[Normal full constraint-margin audit](solver-traces/jump-six-window-endpoints-2026-10-23/normal-margins.md): all53 original rows pass continuous and full replay. Six continuous rows sit at0.0003 clearance (X58 upper,Z68 upper,X74 upper,X79 lower,Z83 lower,X84 upper). Smallest full replay clearance0.000170328230 at Z83. Other fixed-failed rows normal replay clearances: X66 .020678795,X85 .013023539,X86 .024504052,Z87 .413505625. Tightness at the selected optimum does not prove the fixed-start window difficult/infeasible. One focused historical-normal audit rerun; production unchanged.

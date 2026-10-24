@@ -41,6 +41,11 @@ public class JumpSixWindowEndpointsProbeTest {
     ClosedFormSolve.Config cfg=new ClosedFormSolve.Config();cfg.replayTickLimit=commits[j-1]-a;if(fixed){cfg.margins=new double[]{.0003};cfg.marginsRobust=new double[]{.0003};}
     double[] y=ClosedFormSolve.optimizeRobust(exact,new JumpSpec(win,rows,objective),0,new AtomicBoolean(false),cfg);assertNotNull("window"+j,y);
     double[] game=win.toGameFacings(y);ForwardPath replay=exact.forward(win,game);ForwardPath continuous=new JumpLinearModel(win).forwardContinuous(y,exact.inertiaThreshold(),exact.perAxisInertia());
+    if(j==6){
+     List<String> audit=new ArrayList<>();audit.add("tick,name,axis,comparison,bound,committed,continuous_value,continuous_margin,replay_value,replay_margin");
+     for(JumpConstraint cc:rows){double cr=JumpConstraintCompiler.evaluate(cc,y,continuous),rr=JumpConstraintCompiler.evaluate(cc,game,replay);double cm=cc.cmp==JumpConstraint.Cmp.LE?-cr:cc.cmp==JumpConstraint.Cmp.GE?cr:-Math.abs(cr);double rm=cc.cmp==JumpConstraint.Cmp.LE?-rr:cc.cmp==JumpConstraint.Cmp.GE?rr:-Math.abs(rr);audit.add(String.format(java.util.Locale.ROOT,"%d,%s,%s,%s,%.12f,%s,%.12f,%.12f,%.12f,%.12f",a+cc.t1,cc.name,cc.mode,cc.cmp,cc.rhs,cc.t1<=commits[j-1]-a,cr+cc.rhs,cm,rr+cc.rhs,rm));}
+     Files.write(Paths.get("/tmp/pkc-jump-six-normal-margins.csv"),audit,StandardCharsets.UTF_8);
+    }
     double pd=0,yd=0;
     for(int t=a;t<=commits[j-1] && j<6;t++){
      String[] saved=expected.get(t+1).split(",");int k=t-a;
