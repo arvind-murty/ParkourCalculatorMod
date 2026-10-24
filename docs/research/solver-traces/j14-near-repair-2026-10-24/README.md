@@ -69,3 +69,12 @@ Only the focused opt-in test ran: one test, zero failures/errors, Gradle3s. No f
 ```
 
 Run from the isolated core-only worktree with the archived modified sources. [Trace](solver-trace.txt), [JUnit result](focused-result.xml), [source](InertiaMultiplierSeedProbeTest.java), per-pass initial/terminal/retained diagnostics, same-angle model comparisons, and per-tick seed reconstruction error CSVs are archived. Pass3 path/margins/inertia files for successful arms describe selected intermediate candidates; terminal costate/multiplier columns and stopping stats still describe the terminal dual. Retained multipliers are exported separately.
+
+
+## Guard ownership and the two distinct transitions
+
+The preservation guard was added by this investigation in bd1fd03 (`experiment(solver): verify inertia seed preservation and test post-turn objectives`), in the test-only `InertiaMultiplierSeedProbeTest.seedBandPrices`. It is not an upstream production requirement. Its purpose was to verify the new initializer's claim that it preserves costates/starting directions across a pattern coefficient change, rather than silently assuming the direct row projection works for every pattern/fold.
+
+It rejects nonfinite or negative multiplier seeds, and additionally requires every reconstructed costate to obey error<=1e-8*max(old_norm,1e-12). The relative threshold is an experimental verification tolerance, not a physics rule, feasibility requirement, or convergence theorem. A finite nonnegative multiplier seed need not preserve the old costates to be a valid initialization. On failure this probe zeros the new band weights but keeps position weights, which can badly change starting angles after coefficient changes. The existing final candidate validation remains the feasibility authority.
+
+Crucial distinction: this guard rejected the ORIGINAL nonconverged no-zeroing-to-first-pattern transition (.88304-miss original), on roundoff at tiny g78. It did NOT reject seeding from the CLOSE .00655692-miss path. That close path already has six assumed X zeroings (not a no-inertia solve); adding five missing actual checks gives a compensated seed that passes the unchanged guard and solves with retention. Its previous failure was because the cold experiment deliberately did not seed that transition. Do not attribute that cold restart to the guard. A guard-policy revision could retain diagnostics while avoiding whole-seed rejection for roundoff, but no revision or new solve is made in this clarification.
