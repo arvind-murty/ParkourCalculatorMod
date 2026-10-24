@@ -1,0 +1,58 @@
+package de.legoshi.parkourcalc.core.anglesolver.solver;
+import de.legoshi.parkourcalc.SlowSolverTests;
+import de.legoshi.parkourcalc.anglesolver.harness.Fixtures;
+import de.legoshi.parkourcalc.core.anglesolver.*;
+import de.legoshi.parkourcalc.core.save.*;
+import de.legoshi.parkourcalc.core.ui.InputData;
+import de.legoshi.parkourcalc.core.sim.Vec3dCore;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import java.nio.file.*;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.lang.reflect.Method;
+import java.util.concurrent.atomic.AtomicBoolean;
+import static org.junit.Assert.*;
+@Category(SlowSolverTests.class)
+public class FirstFiveWindowEndpointsProbeTest {
+ @Test public void endpoints() throws Exception {
+  String run=System.getProperty("pkc.endpointRun"); boolean fixed="fixed".equals(run);
+  Path artifacts=Paths.get("/Users/arvindmurty/CS/ParkourCalculatorMod/docs/research/solver-traces/fixed-seven-window-local-bounds-2026-10-23");
+  SaveFile file=SaveIO.parseSafe(new String(Files.readAllBytes(Paths.get("/Users/arvindmurty/Downloads/LinkcraftII_Competition_01/real/11.json")),StandardCharsets.UTF_8));
+  InputData input=new InputData();SaveIO.applyRowsTo(file,input);
+  AngleSolverState state=new AngleSolverState();SaveIO.applyAngleSolverTo(file,state);state.setStartTick(0);if(!fixed)state.setLandingTick(250);
+  ExactJumpModel exact=ExactJumpModel.forMcVersion(file.mcVersion);
+  JumpSpec full=new AngleSolverEngine(state,Fixtures.buildBoxes(file),input,t->{},exact).debugBuildSpec();
+  Method scenario=LongRunSolver.class.getDeclaredMethod("sliceScenario",JumpPhysicsInputs.class,int.class,int.class,Vec3dCore.class,Vec3dCore.class,float.class);scenario.setAccessible(true);
+  Method constraints=LongRunSolver.class.getDeclaredMethod("sliceConstraints",JumpSpec.class,int.class,int.class,float.class);constraints.setAccessible(true);
+  List<String> expected=Files.readAllLines(artifacts.resolve("committed-jumps1-5-every-tick.csv"));
+  String[] headers=expected.get(0).split(",");Map<String,Integer> index=new HashMap<>();for(int k=0;k<headers.length;k++)index.put(headers[k],k);
+  List<String> output=new ArrayList<>();output.add("run,start_jump,end_jump,start_tick,end_tick,continuous_x,continuous_z,replay_x,replay_z,continuous_vx,continuous_vz,replay_vx,replay_vz,max_prefix_position_diff,max_prefix_yaw_diff");
+  int[] ends={68,71,75,77,80};int[] commits={12,21,30,40,55};
+  SolverTrace.enable("first-five-endpoints-"+run);
+  try {
+   for(String row:Files.readAllLines(artifacts.resolve("committed-jumps1-5-seams.csv")).subList(1,13)) {
+    String[] r=row.split(",");if(!r[0].equals(run))continue;int j=Integer.parseInt(r[1]);if(j>5)continue;int a=Integer.parseInt(r[2]),c=ends[j-1];
+    Vec3dCore pos=new Vec3dCore(Double.parseDouble(r[3]),full.asScenario().startPos.y,Double.parseDouble(r[4]));
+    Vec3dCore vel=new Vec3dCore(Double.parseDouble(r[5]),0,Double.parseDouble(r[6]));float yaw=Float.parseFloat(r[7]);
+    JumpPhysicsInputs win=(JumpPhysicsInputs)scenario.invoke(null,full.asScenario(),a,c,pos,vel,yaw);
+    @SuppressWarnings("unchecked") List<JumpConstraint> rows=(List<JumpConstraint>)constraints.invoke(null,full,a,c,yaw);
+    Objective objective=new Objective(JumpPhysicsInputs.Axis.Z,Objective.Sense.MAX,c-a);
+    if(fixed){List<JumpConstraint> retained=new ArrayList<>();for(JumpConstraint q:rows)if(!(q.mode==JumpConstraint.Mode.Z && q.t1==c-a && q.t2==null && (q.cmp==JumpConstraint.Cmp.LE || q.cmp==JumpConstraint.Cmp.EQ)))retained.add(q);rows=retained;}
+    ClosedFormSolve.Config cfg=new ClosedFormSolve.Config();cfg.replayTickLimit=commits[j-1]-a;if(fixed){cfg.margins=new double[]{.0003};cfg.marginsRobust=new double[]{.0003};}
+    double[] y=ClosedFormSolve.optimizeRobust(exact,new JumpSpec(win,rows,objective),0,new AtomicBoolean(false),cfg);assertNotNull("window"+j,y);
+    double[] game=win.toGameFacings(y);ForwardPath replay=exact.forward(win,game);ForwardPath continuous=new JumpLinearModel(win).forwardContinuous(y,exact.inertiaThreshold(),exact.perAxisInertia());
+    double pd=0,yd=0;
+    for(int t=a;t<=commits[j-1];t++){
+     String[] saved=expected.get(t+1).split(",");int k=t-a;
+     pd=Math.max(pd,Math.abs(replay.posX[k]-Double.parseDouble(saved[index.get(run+"_x")])));
+     pd=Math.max(pd,Math.abs(replay.posZ[k]-Double.parseDouble(saved[index.get(run+"_z")])));
+     if(t<commits[j-1])yd=Math.max(yd,Math.abs(game[k]-Double.parseDouble(saved[index.get(run+"_yaw")])));
+    }
+    assertEquals("position matches saved "+run+" window"+j,0,pd,1e-9);assertEquals("yaw matches saved "+run+" window"+j,0,yd,1e-7);
+    int n=c-a;output.add(String.format(java.util.Locale.ROOT,"%s,%d,%d,%d,%d,%.12f,%.12f,%.12f,%.12f,%.12f,%.12f,%.12f,%.12f,%.12g,%.12g",run,j,j+6,a,c,continuous.posX[n],continuous.posZ[n],replay.posX[n],replay.posZ[n],continuous.velX[n],continuous.velZ[n],replay.velX[n],replay.velZ[n],pd,yd));
+   }
+   Files.write(Paths.get("/tmp/pkc-endpoints-"+run+".csv"),output,StandardCharsets.UTF_8);
+  } finally {SolverTrace.disable();}
+ }
+}

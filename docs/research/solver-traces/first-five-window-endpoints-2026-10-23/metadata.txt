@@ -1,0 +1,4 @@
+Normal code: aac6527 (cap100, EPS2=1e-14, original rows, normal margins, 250tick parent). Fixed code: b98f87f (cap10000, EPS2=1e-24, temporary objective cap removal, margin0.0003, 808tick parent). Both independently reproduce only first5 accepted Z/MAX windows, using saved commit1 entry states. Assertions verify every committed position and yaw against original traces.
+Isolated worktrees: /tmp/pkc-endpoints-normal and /tmp/pkc-endpoints-fixed. Isolated settings.gradle reduced to rootProject.name and include core to avoid loader configuration. Production source unchanged.
+Command in each worktree: ./gradlew -Dorg.gradle.java.home=/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home -Dpkc.endpointRun=<normal|fixed> :core:test -PslowTests --tests de.legoshi.parkourcalc.core.anglesolver.solver.FirstFiveWindowEndpointsProbeTest
+Probe source archived here; copy it to core/src/test/java/de/legoshi/parkourcalc/core/anglesolver/solver/ in the selected revision.

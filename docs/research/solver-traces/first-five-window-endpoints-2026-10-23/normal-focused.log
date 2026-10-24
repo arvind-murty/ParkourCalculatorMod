@@ -1,0 +1,25 @@
+Starting a Gradle Daemon, 2 busy Daemons could not be reused, use --status for details
+
+> Task :core:compileJava
+warning: [options] source value 8 is obsolete and will be removed in a future release
+warning: [options] target value 8 is obsolete and will be removed in a future release
+warning: [options] To suppress warnings about obsolete options, use -Xlint:-options.
+3 warnings
+
+> Task :core:processResources NO-SOURCE
+> Task :core:classes
+
+> Task :core:compileTestJava
+warning: [options] source value 8 is obsolete and will be removed in a future release
+warning: [options] target value 8 is obsolete and will be removed in a future release
+warning: [options] To suppress warnings about obsolete options, use -Xlint:-options.
+3 warnings
+
+> Task :core:processTestResources
+> Task :core:testClasses
+> Task :core:test
+
+[Incubating] Problems report is available at: file:///private/tmp/pkc-endpoints-normal/build/reports/problems/problems-report.html
+
+BUILD SUCCESSFUL in 18s
+4 actionable tasks: 4 executed

@@ -1,0 +1,24 @@
+     11.23  t1   CF      pass=0 pattern=free n=68 m=32 robust
+     77.87  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00000000000
+     78.09  t1   CF      rung margin=3.00e-04 iters=59 pg=4.001e-09 dual=11.958365712 viol=0.000e+00 ms=64.853 certified stop=PROJECTED_GRADIENT finalPg=4.001e-09
+     79.06  t1   CF      pass=0 pattern=free n=59 m=37 robust
+     91.04  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00000000000
+     91.25  t1   CF      rung margin=3.00e-04 iters=125 pg=7.011e-09 dual=11.735248284 viol=0.000e+00 ms=11.673 certified stop=PROJECTED_GRADIENT finalPg=7.011e-09
+     91.88  t1   CF      pass=0 pattern=free n=54 m=39 robust
+    107.62  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.0114734737975
+    107.80  t1   CF      rung margin=3.00e-04 iters=95 pg=4.212e-10 dual=11.677583074 viol=1.147e-02 ms=15.557 stop=PROJECTED_GRADIENT finalPg=4.212e-10
+    107.99  t1   CF      pass=1 pattern=x@42 n=54 m=39 robust
+    111.00  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00000000000
+    111.14  t1   CF      rung margin=3.00e-04 iters=108 pg=2.277e-10 dual=11.680341562 viol=0.000e+00 ms=2.795 certified stop=PROJECTED_GRADIENT finalPg=2.277e-10
+    111.67  t1   CF      pass=0 pattern=free n=47 m=40 robust
+    113.97  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00935464175257
+    114.12  t1   CF      rung margin=3.00e-04 iters=93 pg=4.900e-10 dual=10.649411366 viol=9.355e-03 ms=2.144 stop=PROJECTED_GRADIENT finalPg=4.900e-10
+    114.27  t1   CF      pass=1 pattern=x@33 n=47 m=40 robust
+    116.63  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00000000000
+    116.75  t1   CF      rung margin=3.00e-04 iters=119 pg=5.730e-09 dual=10.653192725 viol=0.000e+00 ms=2.153 certified stop=PROJECTED_GRADIENT finalPg=5.730e-09
+    117.23  t1   CF      pass=0 pattern=free n=40 m=43 robust
+    118.96  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00888605256534
+    119.07  t1   CF      rung margin=3.00e-04 iters=110 pg=8.435e-09 dual=9.617614662 viol=8.886e-03 ms=1.588 stop=PROJECTED_GRADIENT finalPg=8.435e-09
+    119.21  t1   CF      pass=1 pattern=x@23 n=40 m=43 robust
+    120.68  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00000000000
+    120.80  t1   CF      rung margin=3.00e-04 iters=121 pg=4.118e-10 dual=9.621816605 viol=0.000e+00 ms=1.343 certified stop=PROJECTED_GRADIENT finalPg=4.118e-10
