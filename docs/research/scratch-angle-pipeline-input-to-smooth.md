@@ -1175,3 +1175,8 @@ The successful1.113485/1.364222 prices were computed from coefficient difference
 ## Route constraints through jump20 and candidate endpoints
 
 [All original6–20 positional constraints and jump/tick map](solver-traces/jump-six-through-twenty-constraints.md), plus full-precision CSV. There are several nearby Z reversals:12 forward reach;14/15 low-Z region followed by required +Z displacement (Z98–102<=-1093.7 thenZ111>=-1091.7);15/16 high-Z crossing then return;20 low-Z crossing (Z135<=-1095.425, Z136>=-1095.425). Thus14/15 are among further reversals, not simply outside one isolated jump12 turn. Candidate next endpoints from geometry:17 Z/MIN@128,18 Z/MIN@130, after the15/16 peak and before20.17 avoids the later X return better; neither is validated or guaranteed.20 Z/MAX@155 is after its crossing but lacks final Z bounds, while156 still has a Z band, so maximizing155 without156 can overshoot its immediate continuation. If extending farther,21 Z/MAX@167 includes the outgoing166 Z band and22 continues +Z. These are candidate comparisons, not a claim that geometry caused prior numerical misses. No new solves/tests; original route constraints inspected only.
+
+
+## Constraint-to-jump mapping through20
+
+[Complete per-jump table](solver-traces/jump-six-through-twenty-by-jump.md). Input spans:6=55–63,7=64–67,8=68–70,9=71–74,10=75–76,11=77–79,12=80–87,13=88–89,14=90–98,15=99–112,16=113–116,17=117–127,18=128–129,19=130–131,20=132–154. State constraints at the start of a jump are grouped with that jump; a preceding solve ending at that same state also includes them because positional window slicing includes the end boundary. This is a grouping convention, not exclusive constraint ownership. No new solve.
