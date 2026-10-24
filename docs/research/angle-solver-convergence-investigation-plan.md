@@ -264,3 +264,7 @@ The [existing failure/recovery catalog](angle-solver-existing-failures-and-recov
 ## Updated priority: general window-sensitive failure patterns
 
 User steering on 2026-10-24 prioritizes research/investigation across solve families; jump6 is one facet, and making that exact window solve is secondary. The [window-pattern review](angle-solver-window-failure-patterns.md) now leads the next research phase. It recovers ARCH-2 falsification/M0/M1 comments, separates numerical tractability from physical continuation and recovery coverage, and distinguishes static warnings from candidate-dependent evidence. No new recovery comparisons or nearby-window experiments were started after this steering. The exact jump6 comparison remains an example within a future matched-case study, not the sole objective.
+
+## Follow-up result: preserve the adjoint response when changing patterns
+
+[Multiplier-seeding experiment](solver-traces/inertia-multiplier-seeding-2026-10-24/README.md) identifies a concrete avoidable failure in shifted end9/end10 windows. Naively carrying positional multipliers does not preserve angles after the affine coefficients change. Adding compensating prices on the new opposing inertia-band rows preserves costates, hence the prior angle response; both shorter inertia-aware retries then converge in12 iterations and pass continuous and full replay checks. Longer end14/end15 retries remain unresolved. This is test-side evidence, not a production default change or a complete solution of the original end12 case.
