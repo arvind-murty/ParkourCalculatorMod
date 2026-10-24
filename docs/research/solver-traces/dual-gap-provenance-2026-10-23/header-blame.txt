@@ -1,0 +1,22 @@
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200  5) /** Solves the constant-modulus jump problem to global optimality via its Lagrangian dual.
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200  6)  *
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200  7)  *  <p>Primal: maximize {@code c·u} subject to walls {@code A_j·u ≤ b_j} and the fixed per-tick modulus
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200  8)  *  {@code |u_t| = m_t}. Dualizing only the (linear) walls and keeping the modulus constraints gives the
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200  9)  *  dual function
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200 10)  *  <pre>   D(λ) = Σ_t m_t · ‖c_t − Σ_j λ_j A_{j,t}‖  +  Σ_j λ_j b_j ,   minimized over λ_j ≥ 0   </pre>
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200 11)  *  (equality walls keep a free multiplier). The inner maximization {@code max_{|u_t|=m_t} g_t·u_t} is
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200 12)  *  {@code m_t‖g_t‖}, solved EXACTLY rather than relaxed, so the constant-modulus nonconvexity is absorbed
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200 13)  *  with NO duality gap: at the dual optimum the recovery {@code u*_t = m_t·g_t/‖g_t‖} (each input pointing
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200 14)  *  along its friction-propagated costate {@code g_t = c_t − Σ_j λ_j A_{j,t}}) is automatically primal
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200 15)  *  feasible and optimal by complementary slackness.
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200 16)  *
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200 17)  *  <p>{@code D} is convex in {@code λ} and low-dimensional. Two structural quirks drive the algorithm:
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200 18)  *  (1) at {@code λ=0} (and wherever the costates align with a wall axis) the dual is locally FLAT in those
+95d44c06 (Leg0shii 2026-06-11 14:45:38 +0200 19)  *  wall directions (moving λ along them does not rotate the unit inputs, so the curvature {@code 1−ĝ·ĝ}
+95d44c06 (Leg0shii 2026-06-11 14:45:38 +0200 20)  *  vanishes); (2) elsewhere it is smooth and curved. So each iteration first tries a TRUNCATED-EIGEN Newton
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200 21)  *  step (exact second order in the curved eigen-subspace of the free-set Hessian, zero in the flat
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200 22)  *  subspace), and if that cannot reduce {@code D} (the curved part is already solved, only flat directions
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200 23)  *  remain) it falls back to a projected-gradient step with a robust expand/backtrack line search along the
+95d44c06 (Leg0shii 2026-06-11 14:45:38 +0200 24)  *  feasible path, which always makes progress while any descent exists. The two together converge in a
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200 25)  *  handful of iterations and a few microseconds; successive {@link #solve} calls (the margin ladder)
+9a22bdbe (Legoshi  2026-06-10 18:26:51 +0200 26)  *  warm-start from the previous λ.

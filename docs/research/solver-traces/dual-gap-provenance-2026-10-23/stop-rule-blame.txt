@@ -1,0 +1,10 @@
+9a22bdbe (Legoshi      2026-06-10 18:26:51 +0200 278)             // Converge in costate space: at a degenerate optimum the multipliers λ keep wandering in the
+95d44c06 (Leg0shii     2026-06-11 14:45:38 +0200 279)             // null space of Aᵀ (pg never reaches 0), but the recovered inputs u*, all that the angles
+95d44c06 (Leg0shii     2026-06-11 14:45:38 +0200 280)             // depend on, have stopped moving. That is the real optimum.
+9a22bdbe (Legoshi      2026-06-10 18:26:51 +0200 281)             double du = 0.0;
+9a22bdbe (Legoshi      2026-06-10 18:26:51 +0200 282)             for (int t = 0; t < n; t++) {
+9a22bdbe (Legoshi      2026-06-10 18:26:51 +0200 283)                 du = Math.max(du, Math.abs(ux[t] - uPrevX[t]));
+9a22bdbe (Legoshi      2026-06-10 18:26:51 +0200 284)                 du = Math.max(du, Math.abs(uz[t] - uPrevZ[t]));
+9a22bdbe (Legoshi      2026-06-10 18:26:51 +0200 285)             }
+080b8f66 (Arvind Murty 2026-10-23 03:47:41 -0700 286)             if (it > 0 && du <= U_TOL) { lastStopReason = "RECOVERED_INPUT_STALL"; break; }
+9a22bdbe (Legoshi      2026-06-10 18:26:51 +0200 287)             System.arraycopy(ux, 0, uPrevX, 0, n);
