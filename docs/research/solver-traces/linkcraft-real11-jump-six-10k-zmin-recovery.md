@@ -76,3 +76,16 @@ The specific failure chain is now measured: small actual-inertia mismatch in a c
 - `JumpLinearModel.coefAxis`, `zeroingPattern`, `velocityWalls`, `recoverAlongCostate` and `recoverYawDeg`; `CostateDualSolver.solve/grad`; `ClosedFormSolve.runLadder` plus the inertia-pass improvement stopping rule.
 
 The reconstructed seed uses the exact archived X/Z state from the earlier audit; Y is set0 because authored contact state and all X/Z dynamics here are independent of Y. The probe reproduces the production failure to1e-9 and asserts the coefficient-cancellation identity and27 fallback controls. Numerical timings from this fully instrumented probe are not used as performance benchmarks.
+
+
+## Original position bounds at states88–90
+
+Using the same absolute state-tick numbering as the traces:
+
+| State tick | X lower | X upper | Z lower | Z upper |
+|---:|---:|---:|---:|---:|
+|88|731.6999999880792|732.6999999880791|-1090.3000000119207|-1088.6999999880793|
+|89|732.6999999880792|734.3000000119208|-1090.3000000119207|-1088.6999999880793|
+|90|None|None|None|None|
+
+These are original bounds before any requested inward margin. There are no facing or paired rows at these states in the compiled jump6 window. The same Z interval is constrained at both88 and89; the X interval moves to the right, meeting near732.7. Extending end88→90 includes the four state89 rows; state90 has no authored position bound and becomes the objective endpoint. A state88 constraint is checked before input88, and similarly for89/90. Source: `jump-six-fixed-cap1000-2026-10-23/constraint-margins.csv`, case `end90-ZMIN`, candidate0; the latest trace uses the same original row list.
