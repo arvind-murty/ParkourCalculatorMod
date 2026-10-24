@@ -46,6 +46,7 @@ public final class ClosedFormSolve {
         /** Maximum dual iterations per margin attempt; existing early stopping rules still apply. */
         public int dualMaxIterations = 10000;
         public CostateDualSolver.IterationObserver dualIterationObserver;
+        public boolean retainIntermediateCandidates = true;
 
         public int maxInertiaPasses = 4;
 
@@ -601,10 +602,17 @@ public final class ClosedFormSolve {
         for (double margin : margins) {
             if (cancel.get()) return null;
             long rungT0 = SolverTrace.on() ? System.nanoTime() : 0L;
+            DualCandidateRetention retained = cfg.retainIntermediateCandidates
+                    ? new DualCandidateRetention(exact, spec, lin, pre, cfg.replayTickLimit, feasTol) : null;
+            solver.candidateObserver = retained;
             CostateDualSolver.Result r = solver.solve(margin, warm, cfg.dualMaxIterations);
+            if (retained != null && SolverTrace.on()) SolverTrace.log("CF-RETENTION", "iteration=%d improvements=%d auditMs=%.3f", retained.iteration, retained.improvements, retained.evaluationNanos / 1e6);
             // Dual unbounded -> primal infeasible; infeasibility is monotone in the margin, so ascending
             // stops while the descending (robust) ladder keeps trying smaller rungs.
             if (r == null) {
+                if (retained != null && retained.yaws != null) {
+                    return withCostates(new Result(retained.yaws, retained.violation, true), lin, cx, cz, walls, retained.multipliers);
+                }
                 if (SolverTrace.on()) SolverTrace.log("CF", "rung margin=%.2e dual unbounded ms=%.3f%s stop=%s iters=%d", margin,
                         (System.nanoTime() - rungT0) / 1.0e6, ascending ? ", ladder stop" : "",
                         solver.lastStopReason, solver.lastIters);
@@ -618,6 +626,15 @@ public final class ClosedFormSolve {
             double replayViol = check == null ? violOnExact(exact, sc, compiled, yaws) : check.replayViolation;
             double modelViol = check == null ? 0.0 : check.continuousViolation;
             double viol = Math.max(replayViol, modelViol);
+            double[] selectedLambda = r.lambda;
+            if (retained != null && retained.preferredTo(yaws, viol)) {
+                yaws = retained.yaws;
+                selectedLambda = retained.multipliers;
+                viol = retained.violation;
+                replayViol = retained.replayViolation;
+                modelViol = retained.continuousViolation;
+                if (SolverTrace.on()) SolverTrace.log("CF", "retained iteration=%d improvements=%d auditMs=%.3f", retained.iteration, retained.improvements, retained.evaluationNanos / 1e6);
+            }
             if (validation != null && SolverTrace.on()) {
                 SolverTrace.log("CF-CHECK", "margin=%.2e replayViol=%.12g modelViol=%.12g", margin, replayViol, modelViol);
             }
@@ -636,14 +653,14 @@ public final class ClosedFormSolve {
             if (viol < bestViol) {
                 bestViol = viol;
                 bestYaws = yaws;
-                bestLambda = r.lambda;
+                bestLambda = selectedLambda;
                 rungStall = 0;
             } else {
                 rungStall++;
             }
             if (viol <= feasTol) {
                 if (DEBUG) System.out.printf("  CLOSED -> %.2fus (margin=%.1e)%n", (System.nanoTime() - t0) / 1e3, margin);
-                return withCostates(new Result(yaws, viol, true), lin, cx, cz, walls, r.lambda);
+                return withCostates(new Result(yaws, viol, true), lin, cx, cz, walls, selectedLambda);
             }
             if (ascending && rungStall >= cfg.rungStallLimit) {
                 if (SolverTrace.on()) SolverTrace.log("CF", "ladder stalled after margin=%.2e (bestViol=%.3e)", margin, bestViol);

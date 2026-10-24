@@ -225,6 +225,11 @@ public final class CostateDualSolver {
     }
     public IterationObserver iterationObserver;
 
+    public interface CandidateObserver {
+        void observe(int iteration, double[] costateX, double[] costateZ, double[] multipliers);
+    }
+    public CandidateObserver candidateObserver;
+
 
     /** Minimize the dual with walls tightened inward by {@code margin}, warm-started from {@code warm}
      *  (null = cold, λ=0). Returns fresh arrays so the caller may keep them; internal state is reusable. */
@@ -315,6 +320,7 @@ public final class CostateDualSolver {
     }
 
     private void observeIteration(int iteration, double value, double residual, boolean finalSample) {
+        if (candidateObserver != null) candidateObserver.observe(iteration, gx, gz, lambda);
         if (iterationObserver == null) return;
         double change = 0.0, minNorm = Double.POSITIVE_INFINITY;
         int nearZero = 0, fallbackScale = 0;
