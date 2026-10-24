@@ -46,3 +46,19 @@ The original Z/MIN baseline reproduces1264 iterations, residual0.0394, continuou
 `summary.csv`: results, single-run timings, proposed jump6 exit position/velocity/yaw. `*-path.csv`: every tick position/velocity/yaw of the best candidate. `*-margins.csv` and `*-inertia.csv`: original retained constraint margins and threshold velocities for that candidate. `*-candidates.csv`: every validation event, assumed pattern, violations and failed assumption count. `*-iterations.csv`: sampled and final dual diagnostics for every pattern solve. solver-trace.txt preserves stage/rung timings and exits. entry.txt records hexadecimal exact entry bits; boundaries.txt records jump partition.
 
 Focused test has2 passing methods: the manual endpoint-selection assertions and opt-in capture experiment. An experimental miss is recorded data, not a failed test. Production solver files unchanged. No full suite or route run. See metadata.txt for command, code revision and capture hash. Timings are single measurements with JVM/order/observer effects, not performance regression estimates.
+
+## Why no shifted candidate was accepted
+
+The experiment called only `ClosedFormSolve.optimizeRobust` on each chosen coordinate objective. It did not run SLP, relaxation recovery, fold/chord recovery or either B&B. Therefore “no successful solve” here means no accepted CF candidate in these controlled attempts, not failure of the full recovery graph or a physical infeasibility result.
+
+For the simple backward9 case:
+
+1. The initial no-zeroing model converges in46 iterations, projected residual4.11e-10. It predicts X75=731.300300011919, satisfying X75>=731.300000011921 with the requested .0003 clearance.
+2. Its X velocity before the tick63 check is .002396562811, below .005. Actual continuous physics zeros it. Same angles then produce X75=731.289616806398, a .010383205522 violation. The committed replay through64 still satisfies all its retained rows.
+3. Closed form discovers X63 zeroing (local tick8), constructs that fixed-pattern model with its threshold-band rows, and cold-solves the .0003 attempt again.
+4. The retry hits10000 iterations with projected residual .646584585; minimum costate1.708e-12, one direction-fallback tick. Returned continuous violation .318900702 and prefix replay violation .157485790 are worse than the initial candidate.
+5. The outer inertia loop stops on `pass=1 no improvement`, before its four-pass maximum. No accepted candidate is returned.
+
+Other retries: endpoint10 Z/MAX stops NO_DESCENT at914 with residual1.517437235 and continuous violation .583956613; endpoint14 Z/MIN stops NO_DESCENT at272 with residual .015909477 and violation16.915740158; endpoint15 Z/MIN stops NO_DESCENT at1455 with residual1.150817621 and violation3.125772893. They also exit the pattern loop for no improvement.
+
+This establishes the rejection mechanism and where the numerical failure moved. It does not yet identify why each patterned problem becomes difficult, certify its feasibility, or prove a true duality gap. Near-zero costates/fallbacks are observed in the retries, not a proved sole cause. No additional runs for this explanation.
