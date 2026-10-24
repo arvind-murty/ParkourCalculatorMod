@@ -27,14 +27,15 @@ import static org.junit.Assert.*;
 public class InertiaMultiplierSeedProbeTest {
     private static final Path ROOT = Paths.get("/Users/arvindmurty/CS/ParkourCalculatorMod");
     private static final String CASES = System.getProperty("pkc.inertiaSeedCases", "baseline");
+    private static final boolean CLOSE_SEED = "j14-close-seed".equals(CASES);
     private static final boolean GUARD_DISABLED = "j14-seed-no-guard".equals(CASES);
     private static final boolean REPAIR = "j14-near-repair".equals(CASES);
-    private static final boolean J14 = GUARD_DISABLED || REPAIR || "j14-retained".equals(CASES);
+    private static final boolean J14 = CLOSE_SEED || GUARD_DISABLED || REPAIR || "j14-retained".equals(CASES);
     private static final boolean RETAIN = J14 || "j13-retained".equals(CASES);
     private static final boolean DETAIL = (!J14 && RETAIN) || "j13-inertia-detail".equals(CASES);
     private static final boolean CLEAR_CAP = RETAIN || DETAIL || "post-turn-clear-cap".equals(CASES);
     private static final boolean POST_TURN = CLEAR_CAP || "post-turn".equals(CASES);
-    private static final Path OUT = ROOT.resolve("docs/research/solver-traces/"+(GUARD_DISABLED?"j14-seed-no-guard-2026-10-24":REPAIR?"j14-near-repair-2026-10-24":J14?"j14-retained-2026-10-24":RETAIN?"j13-retained-2026-10-24":DETAIL?"j13-inertia-detail-2026-10-24":CLEAR_CAP?"post-turn-clear-cap-2026-10-24":POST_TURN?"post-turn-objectives-2026-10-24":"inertia-multiplier-seeding-2026-10-24"));
+    private static final Path OUT = ROOT.resolve("docs/research/solver-traces/"+(CLOSE_SEED?"j14-close-seed-2026-10-24":GUARD_DISABLED?"j14-seed-no-guard-2026-10-24":REPAIR?"j14-near-repair-2026-10-24":J14?"j14-retained-2026-10-24":RETAIN?"j13-retained-2026-10-24":DETAIL?"j13-inertia-detail-2026-10-24":CLEAR_CAP?"post-turn-clear-cap-2026-10-24":POST_TURN?"post-turn-objectives-2026-10-24":"inertia-multiplier-seeding-2026-10-24"));
 
     @Test public void compareColdAndCarriedMultipliers() throws Exception {
         org.junit.Assume.assumeTrue(Boolean.getBoolean("pkc.inertiaSeedProbe"));
@@ -75,8 +76,8 @@ public class InertiaMultiplierSeedProbeTest {
                     int expectedLast=J14?102:k==0?89:102;
                     assertTrue("last capped state retained",spec.constraints.stream().anyMatch(c->c.mode==JumpConstraint.Mode.Z && c.t1==expectedLast-55 && c.cmp==JumpConstraint.Cmp.LE));
                 }
-                for (double scale : GUARD_DISABLED ? new double[]{-1.0} : REPAIR ? new double[]{0.0,1.0,-1.0,-2.0} : DETAIL ? new double[]{-1.0} : new double[]{0.0,1.0,0.25,-1.0}) run(exact,spec,jumps[k],scale,result,outcomes);
-                if(RETAIN && !REPAIR && !GUARD_DISABLED) runProductionControl(exact,spec);
+                for (double scale : CLOSE_SEED ? new double[]{-1.0} : GUARD_DISABLED ? new double[]{-1.0} : REPAIR ? new double[]{0.0,1.0,-1.0,-2.0} : DETAIL ? new double[]{-1.0} : new double[]{0.0,1.0,0.25,-1.0}) run(exact,spec,jumps[k],scale,result,outcomes);
+                if(RETAIN && !REPAIR && !GUARD_DISABLED && !CLOSE_SEED) runProductionControl(exact,spec);
             }
         } finally { SolverTrace.disable(); }
     }
@@ -91,6 +92,8 @@ public class InertiaMultiplierSeedProbeTest {
         double[] previousAngles = null;
         double[] previousGx = null, previousGz = null;
         double best = Double.POSITIVE_INFINITY, solveMs = 0.0;
+        double previousViolation=Double.POSITIVE_INFINITY,previousAssumedViolation=Double.POSITIVE_INFINITY;
+        int previousMismatches=0;
         boolean accepted = false;
         int passes = 0;
         String label = "j"+endJump+"-seed"+scale;
@@ -122,7 +125,9 @@ public class InertiaMultiplierSeedProbeTest {
                 Files.write(OUT.resolve(label+"-same-angles-positions.csv"),positions,StandardCharsets.UTF_8);
             }
             double[] seed = null; int seeded = 0;
-            if (scale != 0.0 && previousLambda != null && (!REPAIR || pass>=3 || scale==-2.0)) {
+            boolean closeSeedEligible=previousViolation<=.01 && previousAssumedViolation<=1e-8 && previousMismatches>0;
+            if(CLOSE_SEED)SolverTrace.log("SEED-POLICY","pass=%d previousViolation=%.12g previousAssumed=%.12g mismatches=%d seed=%s",pass,previousViolation,previousAssumedViolation,previousMismatches,closeSeedEligible);
+            if (scale != 0.0 && previousLambda != null && (!REPAIR || pass>=3 || scale==-2.0) && (!CLOSE_SEED || closeSeedEligible)) {
                 seed = new double[reduced.walls.size()];
                 for (int j = 0; j < authoredRows; j++) {
                     JumpLinearModel.Wall old = previousWalls.get(j), next = reduced.walls.get(j);
@@ -231,6 +236,7 @@ public class InertiaMultiplierSeedProbeTest {
             boolean[] nx = new boolean[n], nz = new boolean[n];
             new JumpLinearModel(spec.asScenario()).zeroingPattern(angles,exact.inertiaThreshold(),true,nx,nz);
             if (Arrays.equals(zx,nx) && Arrays.equals(zz,nz)) break;
+            previousViolation=check.maxViolation();previousAssumedViolation=assumed;previousMismatches=failed;
             zx=nx;zz=nz;previousModel=lin;previousWalls=reduced.walls;previousLambda=r.lambda;previousAngles=angles;previousGx=r.gx;previousGz=r.gz;
         }
         outcomes.add(String.format(Locale.ROOT,"%d,Z/%s,%.2f,%s,%d,%.17g,%.3f",endJump,spec.objective.sense,scale,accepted,passes,best,solveMs));
@@ -330,7 +336,7 @@ public class InertiaMultiplierSeedProbeTest {
             errors.add(String.format(Locale.ROOT,"%d,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g",55+t,oldGx[t],oldGz[t],actualX[t],actualZ[t],norm,error,allowed,change));
             if(error>allowed)verified=false;
         }
-        if(REPAIR || GUARD_DISABLED)Files.write(OUT.resolve(label+"-pass"+pass+"-seed-errors.csv"),errors,StandardCharsets.UTF_8);
+        if(REPAIR || GUARD_DISABLED || CLOSE_SEED)Files.write(OUT.resolve(label+"-pass"+pass+"-seed-errors.csv"),errors,StandardCharsets.UTF_8);
         return verified;
     }
     private static void saveDiagnostics(String label, int pass, WindowCandidateValidation.Diagnostics d) throws Exception {

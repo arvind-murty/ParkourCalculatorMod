@@ -1,0 +1,11 @@
+      6.31  t1   SEED-POLICY pass=0 previousViolation=Infinity previousAssumed=Infinity mismatches=0 seed=false
+      7.88  t1   SEED    case=j14-seed-1.0 pass=0 pattern=free seedRows=0
+    414.69  t1   SEED-POLICY pass=1 previousViolation=0.883040338417 previousAssumed=0.879105563646 mismatches=7 seed=false
+    414.94  t1   SEED    case=j14-seed-1.0 pass=1 pattern=x@7,@34-35,@45-47+z@26 seedRows=0
+    639.60  t1   SEED-POLICY pass=2 previousViolation=0.332352548739 previousAssumed=0.236166363409 mismatches=4 seed=false
+    639.72  t1   SEED    case=j14-seed-1.0 pass=2 pattern=x@8,@33-35,@46-47 seedRows=0
+    659.10  t1   SEED-POLICY pass=3 previousViolation=0.00655692148609 previousAssumed=0.00000000000 mismatches=5 seed=true
+    660.37  t1   SEED    case=j14-seed-1.0 pass=3 pattern=x@8,@29-35,@46-47+z@27 seedRows=16
+    662.62  t1   CF-INCUMBENT iteration=77 score=-1093.65307176 violation=0.000e+00
+    662.75  t1   CF-INCUMBENT iteration=78 score=-1093.65270072 violation=0.000e+00
+    662.86  t1   CF-INCUMBENT iteration=82 score=-1093.65268755 violation=0.000e+00
