@@ -44,7 +44,7 @@ public final class ClosedFormSolve {
         public double[] marginsRobust = {5.0e-2, 2.0e-2, 1.0e-2, 5.0e-3, 1.2e-3, 3.0e-4, 0.0};
 
         /** Maximum dual iterations per margin attempt; existing early stopping rules still apply. */
-        public int dualMaxIterations = 1000;
+        public int dualMaxIterations = 10000;
         public CostateDualSolver.IterationObserver dualIterationObserver;
 
         public int maxInertiaPasses = 4;
