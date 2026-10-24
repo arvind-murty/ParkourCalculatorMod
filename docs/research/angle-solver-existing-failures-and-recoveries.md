@@ -167,3 +167,7 @@ For the current E1, the useful order is:
 5. Only then design new numerical machinery for the uncovered failure class.
 
 No such comparison was executed in this documentation pass. This file maps prior results and current code, rather than claiming a new solve. Current expectations and unit-test assertions are evidence of intended contracts; they were not rerun and are not a fresh green-suite report.
+
+### Priority clarification after user steering
+
+The next [window-pattern research review](angle-solver-window-failure-patterns.md) broadens the agenda above: learn general structural failure modes and which can inform window selection, rather than prioritize rescuing jump6. New upstream ARCH-2 comments give concrete falsifications of root inertia inference and disk-control rounding, successful chord-narrowing evidence, and interface-sensitivity findings. No new probes were started. Jump6 remains a matched example, not the target that determines every next step.
