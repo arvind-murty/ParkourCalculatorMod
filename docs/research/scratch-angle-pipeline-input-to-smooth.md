@@ -1190,3 +1190,8 @@ Both new band weights0 is mathematically valid. The measured optimizer does not 
 ## Requested post-turn +1 objectives and seed verification
 
 [All-row-retained trials](solver-traces/post-turn-objectives-2026-10-24/README.md): jump13 constraints89, objective90 Z/MIN; jump14 constraints98, objective99 Z/MAX. These are existing end-state boundaries, not91/100. Keep all original rows;99 itself still has a Z upper bound, so +1 does not remove the direct objective cap for14. Guard added to test-side compensation: reconstruct costates within relative1e-8 per tick (norm floor1e-12), reject invalid weights, decline inaccurate compensation explicitly, and assert recovered-angle preservation. Both trials preserve angles within3.3e-12deg, but patterned retries still fail:13 NO_DESCENT227, residual .00903, actualmiss16.91574;14 cap10000, residual .002735, actualmiss3.61652. Best candidates remain initial actualmiss .0093914/.0093502. Only focused probe; no production default changes or full graph. The user then steered back to understanding why band weights are nonzero; explanation recorded separately above.
+
+
+## Corrected jump14 objective offset
+
+User confirms incrementing beyond the repeated endpoint Z band. Original jump14 landing state98 has Z range[-1095.3,-1093.7], repeated at99,100,101,102. State103 has no Z row. Therefore the first uncapped same-axis endpoint is Z/MAX@103: landing98+5, or four extra input ticks beyond the previous +1 objective99. Keep all original rows through102. This ends inside jump15, not at jump15's end113. Source capture rechecked; no new solve for this indexing clarification.
