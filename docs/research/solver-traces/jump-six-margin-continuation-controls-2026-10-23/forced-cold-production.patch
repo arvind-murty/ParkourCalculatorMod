@@ -1,0 +1,21 @@
+diff --git a/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/ClosedFormSolve.java b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/ClosedFormSolve.java
+index 8e453d4..75fef8a 100644
+--- a/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/ClosedFormSolve.java
++++ b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/ClosedFormSolve.java
+@@ -611,7 +611,7 @@ public final class ClosedFormSolve {
+                 if (ascending) break;
+                 continue;
+             }
+-            warm = r.lambda;
++            warm = null; // Probe: cold start every margin.
+ 
+             double[] yaws = pre.expand(lin, spec.objective, r);
+             WindowCandidateValidation.Result check = validation == null ? null : validation.evaluate(yaws, lin);
+@@ -633,6 +633,7 @@ public final class ClosedFormSolve {
+                 System.out.printf("  CLOSED margin=%.2e iters=%d pg=%.3e viol=%.2e obj=%.6f%n",
+                         margin, solver.lastIters, solver.lastPgres, viol, o);
+             }
++            if (margin > 0.0003) continue; // Probe: require target rung despite earlier feasibility.
+             if (viol < bestViol) {
+                 bestViol = viol;
+                 bestYaws = yaws;

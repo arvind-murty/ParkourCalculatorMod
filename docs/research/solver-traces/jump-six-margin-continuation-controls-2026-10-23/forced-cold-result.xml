@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="de.legoshi.parkourcalc.core.anglesolver.solver.JumpSixWindowEndpointsProbeTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-24T05:59:04.972Z" hostname="Arvinds-MacBook-Pro-2.local" time="0.34">
+  <properties/>
+  <testcase name="endpoints" classname="de.legoshi.parkourcalc.core.anglesolver.solver.JumpSixWindowEndpointsProbeTest" time="0.338"/>
+  <system-out><![CDATA[CONTROL accepted=false
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,52 @@
+      7.18  t1   CF      pass=0 pattern=free n=68 m=32 robust
+     55.94  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00000000000
+     56.15  t1   CF      rung margin=3.00e-04 iters=59 pg=4.001e-09 dual=11.958365712 viol=0.000e+00 ms=47.438 certified stop=PROJECTED_GRADIENT finalPg=4.001e-09
+     57.05  t1   CF      pass=0 pattern=free n=59 m=37 robust
+     64.83  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00000000000
+     65.06  t1   CF      rung margin=3.00e-04 iters=125 pg=7.011e-09 dual=11.735248284 viol=0.000e+00 ms=7.582 certified stop=PROJECTED_GRADIENT finalPg=7.011e-09
+     65.63  t1   CF      pass=0 pattern=free n=54 m=39 robust
+     69.45  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.0114734737970
+     69.61  t1   CF      rung margin=3.00e-04 iters=95 pg=4.212e-10 dual=11.677583074 viol=1.147e-02 ms=3.625 stop=PROJECTED_GRADIENT finalPg=4.212e-10
+     69.76  t1   CF      pass=1 pattern=x@42 n=54 m=39 robust
+     73.60  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00000000000
+     73.80  t1   CF      rung margin=3.00e-04 iters=108 pg=2.277e-10 dual=11.680341562 viol=0.000e+00 ms=3.643 certified stop=PROJECTED_GRADIENT finalPg=2.277e-10
+     74.28  t1   CF      pass=0 pattern=free n=47 m=40 robust
+     76.91  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00935464175222
+     77.04  t1   CF      rung margin=3.00e-04 iters=93 pg=4.900e-10 dual=10.649411366 viol=9.355e-03 ms=2.496 stop=PROJECTED_GRADIENT finalPg=4.900e-10
+     77.14  t1   CF      pass=1 pattern=x@33 n=47 m=40 robust
+     80.30  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00000000000
+     80.41  t1   CF      rung margin=3.00e-04 iters=119 pg=5.730e-09 dual=10.653192725 viol=0.000e+00 ms=3.029 certified stop=PROJECTED_GRADIENT finalPg=5.730e-09
+     80.85  t1   CF      pass=0 pattern=free n=40 m=43 robust
+     83.48  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00888605256512
+     83.63  t1   CF      rung margin=3.00e-04 iters=110 pg=8.435e-09 dual=9.617614662 viol=8.886e-03 ms=2.555 stop=PROJECTED_GRADIENT finalPg=8.435e-09
+     83.73  t1   CF      pass=1 pattern=x@23 n=40 m=43 robust
+     86.57  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00000000000
+     86.73  t1   CF      rung margin=3.00e-04 iters=121 pg=4.118e-10 dual=9.621816605 viol=0.000e+00 ms=2.750 certified stop=PROJECTED_GRADIENT finalPg=4.118e-10
+     87.16  t1   CF      pass=0 pattern=free n=33 m=52 robust
+     92.97  t1   CF-CHECK margin=5.00e-02 replayViol=0.00000000000 modelViol=0.00000000000
+     93.10  t1   CF      rung margin=5.00e-02 iters=267 pg=4.483e-04 dual=-6809.673788758 viol=0.000e+00 ms=5.724 certified stop=RECOVERED_INPUT_STALL finalPg=4.483e-04
+    100.56  t1   CF-CHECK margin=2.00e-02 replayViol=0.00000000000 modelViol=0.00000000000
+    100.71  t1   CF      rung margin=2.00e-02 iters=340 pg=5.200e-09 dual=-5.169083078 viol=0.000e+00 ms=7.502 certified stop=PROJECTED_GRADIENT finalPg=5.200e-09
+    101.13  t1   CF-CHECK margin=1.00e-02 replayViol=0.00000000000 modelViol=0.00767059496980
+    101.22  t1   CF      rung margin=1.00e-02 iters=14 pg=4.691e-10 dual=-5.151337040 viol=7.671e-03 ms=0.418 stop=PROJECTED_GRADIENT finalPg=4.691e-10
+    101.64  t1   CF-CHECK margin=5.00e-03 replayViol=0.00000000000 modelViol=0.00792665811889
+    101.73  t1   CF      rung margin=5.00e-03 iters=14 pg=3.896e-10 dual=-5.143061247 viol=7.927e-03 ms=0.429 stop=PROJECTED_GRADIENT finalPg=3.896e-10
+    114.06  t1   CF-CHECK margin=1.20e-03 replayViol=0.00000000000 modelViol=1.60496319323
+    114.21  t1   CF      rung margin=1.20e-03 iters=1517 pg=1.364e-04 dual=-5.137012285 viol=1.605e+00 ms=12.371 stop=NO_DESCENT finalPg=1.364e-04
+    127.76  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=1.60064021868
+    127.89  t1   CF      rung margin=3.00e-04 iters=1672 pg=2.622e-05 dual=-5.135596653 viol=1.601e+00 ms=13.597 stop=NO_DESCENT finalPg=2.277e-05
+    127.99  t1   CF      pass=1 pattern=x@8 n=33 m=52 robust
+    141.35  t1   CF-CHECK margin=5.00e-02 replayViol=0.00000000000 modelViol=0.00000000000
+    141.50  t1   CF      rung margin=5.00e-02 iters=1196 pg=4.541e-02 dual=-68970471.145918100 viol=0.000e+00 ms=13.287 certified stop=RECOVERED_INPUT_STALL finalPg=4.541e-02
+    148.34  t1   CF-CHECK margin=2.00e-02 replayViol=0.231223574413 modelViol=1.11228847005
+    148.48  t1   CF      rung margin=2.00e-02 iters=704 pg=2.879e-01 dual=-23233474.171943314 viol=1.112e+00 ms=6.888 stop=NO_DESCENT finalPg=6.722e-01
+    148.82  t1   CF-CHECK margin=1.00e-02 replayViol=0.231223574413 modelViol=0.951613045392
+    148.91  t1   CF      rung margin=1.00e-02 iters=0 pg=6.622e-01 dual=-7619690.685842119 viol=9.516e-01 ms=0.355 stop=NO_DESCENT finalPg=9.616e-01
+    149.27  t1   CF-CHECK margin=5.00e-03 replayViol=0.231223574413 modelViol=1.57051499852
+    149.34  t1   CF      rung margin=5.00e-03 iters=1 pg=2.362e-01 dual=187201.057208471 viol=1.571e+00 ms=0.359 stop=NO_DESCENT finalPg=1.576e+00
+    149.67  t1   CF-CHECK margin=1.20e-03 replayViol=0.231223574413 modelViol=0.585128159041
+    149.75  t1   CF      rung margin=1.20e-03 iters=0 pg=1.572e+00 dual=6120438.781926923 viol=5.851e-01 ms=0.335 stop=NO_DESCENT finalPg=2.324e-01
+    150.10  t1   CF-CHECK margin=3.00e-04 replayViol=0.231223574413 modelViol=1.60909195804
+    150.18  t1   CF      rung margin=3.00e-04 iters=1 pg=2.315e-01 dual=7525679.295676023 viol=1.609e+00 ms=0.353 stop=NO_DESCENT finalPg=2.315e-01
+    150.26  t1   CF      pass=1 no improvement (viol=1.609e+00), stop
+    150.31  t1   CF      fallback bestViol=1.601e+00 us=63164.0

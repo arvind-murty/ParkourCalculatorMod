@@ -1061,3 +1061,8 @@ Higher provisional endpoint Z does not guarantee a solvable shifted window: wind
 ## Normal clearance on jump6–12
 
 [Normal full constraint-margin audit](solver-traces/jump-six-window-endpoints-2026-10-23/normal-margins.md): all53 original rows pass continuous and full replay. Six continuous rows sit at0.0003 clearance (X58 upper,Z68 upper,X74 upper,X79 lower,Z83 lower,X84 upper). Smallest full replay clearance0.000170328230 at Z83. Other fixed-failed rows normal replay clearances: X66 .020678795,X85 .013023539,X86 .024504052,Z87 .413505625. Tightness at the selected optimum does not prove the fixed-start window difficult/infeasible. One focused historical-normal audit rerun; production unchanged.
+
+
+## Controlled margin-continuation experiment at exact fixed jump6 entry
+
+[Settings, source, patches and all four controls](solver-traces/jump-six-margin-continuation-controls-2026-10-23/README.md). Fixed entry,52rows,EPS24,cap10000 held identical. Ordinary normal margin ladder accepts its FIRST0.05 rung in267 iterations, with or without multiplier reuse; no continuation has happened yet. Candidate full replay clearance>=0.034189 and continuous>=0.034317; omitted original Z88 lower bound also passes, so all53 original constraints are satisfied. This demonstrates feasibility from the fixed entry. Forcing the ladder to actually reach0.0003 still fails: warm best continuous violation1.600640 (two patterns), cold1.505305 (same as single cold). Consequently multiplier continuation alone is not a demonstrated explanation for normal success and is not sufficient to rescue fixed0.0003 in this controlled case. Larger-margin candidate generation already produces a valid solution. Four focused isolated probes; main production unchanged.
