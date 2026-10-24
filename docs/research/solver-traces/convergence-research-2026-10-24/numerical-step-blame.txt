@@ -1,0 +1,66 @@
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 345)         if (nf == 0) return phi;
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 346)         buildHessian(nf);
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 347)         double maxDiag = 0.0;
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 348)         for (int a = 0; a < nf; a++) maxDiag = Math.max(maxDiag, H[a][a]);
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 349)         if (maxDiag <= 0.0) return phi; // no positive curvature anywhere -> defer to the gradient step
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 350)
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 351)         for (int retry = 0; retry < 8; retry++) {
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 352)             double damp = rhoRel * maxDiag;
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 353)             if (!choleskySolve(nf, damp)) { rhoRel = Math.min(rhoRel * 4.0, RHO_MAX); continue; }
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 354)
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 355)             java.util.Arrays.fill(dir, 0.0);
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 356)             double dphi = 0.0;
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 357)             for (int a = 0; a < nf; a++) {
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 358)                 int j = freeIdx[a];
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 359)                 dir[j] = step[a];
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 360)                 dphi += gradient[j] * step[a];
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 361)             }
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 362)             if (dphi < 0.0) {
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 363)                 double t = 1.0;
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 364)                 for (int ls = 0; ls < 22; ls++) {
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 365)                     for (int j = 0; j < m; j++) cand[j] = project(lambda[j] + t * dir[j], eq[j]);
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 366)                     double cphi = costate(cand, ngx, ngz);
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 367)                     if (cphi <= phi + GAMMA * t * dphi) {
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 368)                         // accepted: shrink damping if it took a full step (trust Newton more next time)
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 369)                         rhoRel = (t == 1.0) ? Math.max(rhoRel * 0.5, RHO_MIN) : Math.min(rhoRel * 2.0, RHO_MAX);
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 370)                         commit();
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 371)                         return cphi;
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 372)                     }
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 373)                     t *= 0.5;
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 374)                 }
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 375)             }
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 376)             rhoRel = Math.min(rhoRel * 4.0, RHO_MAX); // step too aggressive: damp more and retry
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 377)         }
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 378)         return phi;
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 379)     }
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 380)
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 381)     /** Projected-gradient step with an expand/backtrack line search along the feasible path
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 382)      *  {@code λ(t) = P(λ − t·α·∇D)}. Convex in t, so this always finds a decrease while one exists,
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 383)      *  including escaping the flat regions a Newton step cannot. Commits and returns the new dual value. */
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 384)     private double gradientStep(double phi) {
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 385)         double gInf = 0.0;
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 386)         for (int j = 0; j < m; j++) gInf = Math.max(gInf, Math.abs(gradient[j]));
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 387)         if (gInf == 0.0) return phi;
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 388)         double a = 1.0 / gInf; // scale so the first probe moves λ by O(1)
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 389)
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 390)         double bestT = 0.0, bestPhi = phi;
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 391)         double t = 1.0;
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 392)         double pt = pathValue(a * t);
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 393)         if (pt < bestPhi) {
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 394)             bestT = t; bestPhi = pt;
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 395)             for (int e = 0; e < 40; e++) {     // expand while improving (reach far for flat-direction descent)
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 396)                 double t2 = t * 2.0;
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 397)                 double p2 = pathValue(a * t2);
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 398)                 if (p2 < bestPhi) { t = t2; bestT = t2; bestPhi = p2; } else break;
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 399)             }
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 400)         } else {
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 401)             for (int b = 0; b < 40; b++) {     // backtrack until improving
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 402)                 t *= 0.5;
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 403)                 double pb = pathValue(a * t);
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 404)                 if (pb < bestPhi) { bestT = t; bestPhi = pb; break; }
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 405)                 if (t < 1.0e-18) break;
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 406)             }
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 407)         }
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 408)         if (bestT == 0.0) return phi;
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 409)         commitPath(a * bestT);
+9a22bdbe (Legoshi 2026-06-10 18:26:51 +0200 410)         return bestPhi;

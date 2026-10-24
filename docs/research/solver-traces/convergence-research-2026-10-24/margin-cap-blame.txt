@@ -1,0 +1,23 @@
+e171cc52 (Leg0shii 2026-08-21 20:18:20 +0200 645)         double pairCap = Double.POSITIVE_INFINITY;
+e171cc52 (Leg0shii 2026-08-21 20:18:20 +0200 646)         for (int i = 0; i < red.walls.size(); i++) {
+e171cc52 (Leg0shii 2026-08-21 20:18:20 +0200 647)             JumpLinearModel.Wall wi = red.walls.get(i);
+e171cc52 (Leg0shii 2026-08-21 20:18:20 +0200 648)             if (wi.eq) continue;
+e171cc52 (Leg0shii 2026-08-21 20:18:20 +0200 649)             for (int j = i + 1; j < red.walls.size(); j++) {
+e171cc52 (Leg0shii 2026-08-21 20:18:20 +0200 650)                 JumpLinearModel.Wall wj = red.walls.get(j);
+e171cc52 (Leg0shii 2026-08-21 20:18:20 +0200 651)                 if (wj.eq || wj.axis != wi.axis || wj.coef.length != wi.coef.length) continue;
+e171cc52 (Leg0shii 2026-08-21 20:18:20 +0200 652)                 if (wi.p0coef != -wj.p0coef) continue;
+e171cc52 (Leg0shii 2026-08-21 20:18:20 +0200 653)                 boolean anti = true;
+e171cc52 (Leg0shii 2026-08-21 20:18:20 +0200 654)                 for (int t = 0; t < wi.coef.length; t++) {
+e171cc52 (Leg0shii 2026-08-21 20:18:20 +0200 655)                     if (wi.coef[t] != -wj.coef[t]) { anti = false; break; }
+e171cc52 (Leg0shii 2026-08-21 20:18:20 +0200 656)                 }
+e171cc52 (Leg0shii 2026-08-21 20:18:20 +0200 657)                 if (anti) pairCap = Math.min(pairCap, 0.5 * (wi.bPrime + wj.bPrime));
+e171cc52 (Leg0shii 2026-08-21 20:18:20 +0200 658)             }
+e171cc52 (Leg0shii 2026-08-21 20:18:20 +0200 659)         }
+197b70f8 (Leg0shii 2026-08-21 20:18:19 +0200 660)         CostateDualSolver.Result probe = solver.solve(0.0, null);
+197b70f8 (Leg0shii 2026-08-21 20:18:19 +0200 661)         if (probe == null || solver.lastStalled) {
+197b70f8 (Leg0shii 2026-08-21 20:18:19 +0200 662)             lastJointDebug = probe == null ? "branch-infeasible@0" : "branch-stalled@0";
+197b70f8 (Leg0shii 2026-08-21 20:18:19 +0200 663)             return null;
+197b70f8 (Leg0shii 2026-08-21 20:18:19 +0200 664)         }
+197b70f8 (Leg0shii 2026-08-21 20:18:19 +0200 665)         double[] warm = probe.lambda;
+197b70f8 (Leg0shii 2026-08-21 20:18:19 +0200 666)         double lo = 0.0;
+e171cc52 (Leg0shii 2026-08-21 20:18:20 +0200 667)         double hi = Math.min(cfg.jointMarginMax, Math.max(0.0, pairCap));

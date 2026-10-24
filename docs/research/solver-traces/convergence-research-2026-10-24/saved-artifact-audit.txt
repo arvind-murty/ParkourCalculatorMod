@@ -1,0 +1,7 @@
+Read-only analysis of saved CSVs; no solver execution.
+Duplicate row signatures in the archived53-row jump6 normal spec:
+('87', 'X', 'LE', '732.699999988079') names=['X@87', 'X@87hi']
+Accepted nominal0.05 candidate: minimum assumed_margin=0.049551671155 at X@58
+Accepted nominal0.05 candidate: minimum continuous_margin=0.034316913340 at X@79lo
+Accepted nominal0.05 candidate: minimum replay_margin=0.034189192121 at X@79lo
+Same0.05 candidate: max |assumed_value-continuous_value|=0.015718118408926784
