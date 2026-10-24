@@ -117,3 +117,34 @@ The broader research priority is therefore:
 5. Use jump6 as one deliberately difficult case in that study. Rescue comparisons are diagnostic evidence, not the objective of the whole investigation.
 
 No general success/failure classifier has been established. The strongest immediately reusable findings are direct objective-wall detection, analytical margin consistency, existing primal/chord/fold recovery, explicit threshold-survival/zeroing hypotheses, and retaining exact continuation evidence.
+
+## 6. Route-only turnaround detection
+
+User asks whether potential turnarounds can be identified before optimizing angles. Yes: use the full authored positional constraint sequence and the jump partition, including constraints beyond the proposed window. This detects geometric route reversals, not the exact velocity-zero tick. Current `LongRunSolver` partitions the scenario using the ground/air schedule and slices constraints, but does not perform this classification. `real/11.json` has no selected-block list, so the positional constraints are the available route description.
+
+A practical detector should:
+
+1. Form an allowed X interval and Z interval at each constrained state tick, intersecting only rows at the SAME tick. An absent side is unbounded. Preserve interior obstacle rows as well as landing bands. Do not intersect all rows of a jump as if they constrain one position.
+2. Compare intervals in temporal order. For earlier interval A and later interval B, displacement lies in `[B.lo-A.hi, B.hi-A.lo]`. A positive lower endpoint forces positive displacement; a negative upper endpoint forces negative displacement. Overlap means direction is ambiguous, not necessarily zero movement.
+3. Look across runs of overlapping regions, rather than only immediate neighbor pairs. A broad landing plateau can hide a reversal from center-to-center or adjacent-only tests.
+4. Mark a maximum region where forced/suggested positive progress is followed by negative progress, and a minimum region for the reverse. Label the axis and confidence. Finite interval centers can suggest candidates, but should not override clear interval evidence. One-sided rows often provide stronger evidence than landing centers.
+5. Associate those regions with jumps; penalize ending a window inside them. Compare endpoints clearly before the region using the incoming axis/sense, or clearly after it using the outgoing one, while preserving adequate lookahead before commitment. This is a proposed policy, not implemented or benchmarked.
+
+### This route already exposes the relevant Z reversal
+
+Rounded original constraints, independent of any solved trajectory:
+
+| Anchor | Z requirement | Route implication |
+|---|---|---|
+| Jump9, state74 | Z<=-1090.3 | Before the forward reach |
+| Inside jump12, state83 | Z>=-1088.7 | At least1.6 blocks farther in +Z than state74 |
+| Inside jump12, state84 | Z<=-1088.7 | Same plane must be reached or crossed back by the following state |
+| Jump14, state98 | Z<=-1093.7 | At least5 blocks back in -Z relative to state83 |
+
+Thus every feasible path has positive net Z displacement from74 to83 and negative net displacement from83 to98. A Z reversal is required within that broader segment. The83/84 crossing pair localizes the route's turn plane; it does not identify the exact velocity reversal or prove the maximum occurs at83. The old window ends at88, inside this turn/early-return region, before the next clearly rearward landing at98. Potential endpoints after jump14 therefore have a route-based reason for Z/MIN, without using candidate velocities. Earlier endpoints can instead target incoming +Z progress.
+
+A landing-center-only detector is weaker here: landing Z bands at76,79,87 and89 are the SAME broad band. Their centers create a plateau and lose the important83/84 obstacle crossing information.
+
+The same route also contains an X minimum candidate around jump6: state39 requires X>=733.7, state63 requires X<=729.7, and state79 requires X>=732.7. This forces negative then positive net X displacement over those intervals. Again, the exact minimum tick is not determined; classification should mark a region rather than pin a single jump as the physical reversal.
+
+Sources: original capture's `angleSolver.ticks`; [jump6 constraint table](solver-traces/jump-six-window-constraints.md); [window jump/tick mapping](solver-traces/fixed-seven-window-local-bounds-2026-10-23/windows.csv); `LongRunSolver.jumpBoundaries` and `sliceConstraints`. No tests, solve runs or detector implementation were performed for this analysis.
