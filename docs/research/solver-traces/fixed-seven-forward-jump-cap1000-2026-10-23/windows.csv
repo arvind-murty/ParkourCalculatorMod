@@ -1,0 +1,136 @@
+run,commit,first_jump,nominal_window,start_tick,end_tick,commit_end_tick,accepted_solver,margin,calls,elapsed_ms,source_line
+normal-success,1,1,7,0,68,12,Z/MAX,5.00e-02,Z/MAX pass,1.9,2
+normal-success,1,2,7,12,71,21,Z/MAX,5.00e-02,Z/MAX pass,2.1,22
+normal-success,1,3,7,21,75,30,Z/MAX,2.00e-02,Z/MAX pass,2.5,39
+normal-success,1,4,7,30,77,40,Z/MAX,2.00e-02,Z/MAX pass,1.6,57
+normal-success,1,5,7,40,80,55,Z/MAX,2.00e-02,Z/MAX pass,2.0,77
+normal-success,1,6,7,55,88,64,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,62.1,102
+normal-success,1,7,7,64,90,68,Z/MIN,1.00e-02,Z/MAX fail; Z/MIN pass,23.7,193
+normal-success,1,8,7,68,99,71,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,28.5,228
+normal-success,1,9,7,71,113,75,Z/MAX,3.00e-04,Z/MAX pass,20.9,285
+normal-success,1,10,7,75,117,77,Z/MAX,1.20e-03,Z/MAX pass,22.6,322
+normal-success,1,11,7,77,128,80,X/MAX,1.20e-03,Z/MAX fail; Z/MIN fail; X/MAX pass,133.0,355
+normal-success,1,12,7,80,130,88,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,371.0,487
+normal-success,1,12,5,80,117,88,Z/MIN,1.20e-03,Z/MAX fail; Z/MIN pass,21.6,830
+normal-success,1,13,7,88,132,90,X/MIN,3.00e-04,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN pass,59.9,903
+normal-success,1,14,7,90,155,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,455.4,1040
+normal-success,1,14,5,90,130,99,SLP,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP pass,107.6,1379
+normal-success,1,15,7,99,167,113,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,662.5,1643
+normal-success,1,15,5,99,132,113,Z/MIN,1.00e-02,Z/MAX fail; Z/MIN pass,8.3,1978
+normal-success,1,16,7,113,176,117,Z/MAX,5.00e-02,Z/MAX pass,33.2,2023
+normal-success,1,17,7,117,187,128,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,371.0,2050
+normal-success,1,17,5,117,167,128,Z/MIN,1.00e-02,Z/MAX fail; Z/MIN pass,214.9,2363
+normal-success,1,18,7,128,196,130,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,543.8,2450
+normal-success,1,18,5,128,176,130,Z/MAX,2.00e-02,Z/MAX pass,1.4,2785
+normal-success,1,19,7,130,205,132,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,1047.1,2797
+normal-success,1,19,5,130,187,132,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,313.9,3166
+normal-success,1,19,3,130,167,132,Z/MAX,5.00e-02,Z/MAX pass,0.3,3490
+normal-success,1,20,7,132,207,155,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,941.0,3500
+normal-success,1,20,5,132,196,155,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,454.3,3880
+normal-success,1,20,3,132,176,155,Z/MAX,2.00e-02,Z/MAX pass,1.1,4250
+normal-success,1,21,7,155,209,167,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,294.6,4283
+normal-success,1,21,5,155,205,167,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,197.8,4638
+normal-success,1,21,3,155,187,167,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,38.7,4970
+normal-success,1,21,2,155,176,167,Z/MAX,5.00e-02,Z/MAX pass,0.3,5267
+normal-success,1,22,7,167,222,176,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,182.0,5287
+normal-success,1,22,5,167,207,176,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,175.6,5519
+normal-success,1,22,3,167,196,176,SLP,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP pass,36.2,5840
+normal-success,1,23,7,176,241,187,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,199.7,6050
+normal-success,1,23,5,176,209,187,SLP,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP pass,317.5,6379
+normal-success,1,24,7,187,250,250,X/MAX,,X/MAX pass,369.2,6682
+fixed-cap100,3,1,7,0,71,30,Z/MAX,3.00e-04,Z/MAX pass,63.0,5
+fixed-cap100,3,4,7,30,77,64,SLP,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP pass,59.7,48
+fixed-cap100,3,7,7,64,90,75,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,16.8,141
+fixed-cap100,3,10,7,75,128,88,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,224.7,179
+fixed-cap100,3,10,5,75,99,88,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,7.6,382
+fixed-cap100,3,10,3,75,90,88,SLP,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP pass,5.8,428
+fixed-cap100,3,13,7,88,155,113,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,188.6,491
+fixed-cap100,3,13,5,88,128,113,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,79.7,708
+fixed-cap100,3,13,3,88,113,113,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,1.3,929
+fixed-cap100,3,13,2,88,99,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,0.4,962
+fixed-cap100,3,13,1,88,90,90,Z/MAX,3.00e-04,Z/MAX pass,0.1,995
+fixed-cap100,3,14,7,90,155,117,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,214.2,1014
+fixed-cap100,3,14,5,90,130,117,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,67.0,1228
+fixed-cap100,3,14,3,90,128,117,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,7.2,1411
+fixed-cap100,3,14,2,90,113,113,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,0.8,1444
+fixed-cap100,3,14,1,90,99,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,0.4,1477
+fixed-cap100,1,1,7,0,71,12,Z/MAX,3.00e-04,Z/MAX pass,3.0,1519
+fixed-cap100,1,2,7,12,71,21,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,6.2,1544
+fixed-cap100,1,3,7,21,75,30,Z/MAX,3.00e-04,Z/MAX pass,3.0,1577
+fixed-cap100,1,4,7,30,77,40,SLP,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP pass,20.4,1599
+fixed-cap100,1,5,7,40,80,55,Z/MAX,3.00e-04,Z/MAX pass,3.2,1671
+fixed-cap100,1,6,7,55,90,64,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,60.0,1699
+fixed-cap100,1,6,5,55,77,64,Z/MAX,3.00e-04,Z/MAX pass,0.6,1913
+fixed-cap100,1,7,7,64,90,68,SLP,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP pass,21.5,1935
+fixed-cap100,1,8,7,68,99,71,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,35.8,2073
+fixed-cap100,1,8,5,68,90,71,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,3.0,2280
+fixed-cap100,1,9,7,71,113,75,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,43.3,2307
+fixed-cap100,1,9,5,71,90,75,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,2.5,2492
+fixed-cap100,1,10,7,75,128,77,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,125.6,2523
+fixed-cap100,1,10,5,75,99,77,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,2.8,2717
+fixed-cap100,1,10,3,75,90,77,SLP,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP pass,3.4,2754
+fixed-cap100,1,11,7,77,128,80,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,126.6,2810
+fixed-cap100,1,11,5,77,113,80,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,31.7,3017
+fixed-cap100,1,11,3,77,90,80,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,0.7,3221
+fixed-cap100,1,12,7,80,130,88,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,67.2,3245
+fixed-cap100,1,12,5,80,128,88,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,55.9,3456
+fixed-cap100,1,12,3,80,99,88,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,0.7,3660
+fixed-cap100,1,12,2,80,90,88,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,0.6,3693
+fixed-cap100,1,13,7,88,155,90,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,113.2,3745
+fixed-cap100,1,13,5,88,128,90,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,28.0,3967
+fixed-cap100,1,13,3,88,113,90,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,10.0,4167
+fixed-cap100,1,13,2,88,99,90,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,0.4,4379
+fixed-cap100,1,13,1,88,90,90,Z/MAX,3.00e-04,Z/MAX pass,0.1,4412
+fixed-cap100,1,14,7,90,155,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,84.7,4431
+fixed-cap100,1,14,5,90,130,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,57.5,4625
+fixed-cap100,1,14,3,90,128,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,31.3,4850
+fixed-cap100,1,14,2,90,113,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,0.6,5060
+fixed-cap100,1,14,1,90,99,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,0.2,5093
+fixed-cap1000,3,1,7,0,71,30,Z/MAX,3.00e-04,Z/MAX pass,59.0,5
+fixed-cap1000,3,4,7,30,77,64,Z/MAX,3.00e-04,Z/MAX pass,5.8,45
+fixed-cap1000,3,7,7,64,90,75,SLP,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP pass,154.1,92
+fixed-cap1000,3,10,7,75,128,88,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,234.9,186
+fixed-cap1000,3,10,5,75,99,88,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,1.8,386
+fixed-cap1000,3,10,3,75,90,88,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,7.0,420
+fixed-cap1000,3,13,7,88,155,113,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,442.2,454
+fixed-cap1000,3,13,5,88,128,113,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,45.7,662
+fixed-cap1000,3,13,3,88,113,113,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,16.6,846
+fixed-cap1000,3,13,2,88,99,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,0.9,1029
+fixed-cap1000,3,13,1,88,90,90,Z/MAX,3.00e-04,Z/MAX pass,0.2,1063
+fixed-cap1000,3,14,7,90,155,117,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,587.1,1084
+fixed-cap1000,3,14,5,90,130,117,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,256.3,1290
+fixed-cap1000,3,14,3,90,128,117,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,10.5,1483
+fixed-cap1000,3,14,2,90,113,113,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,0.5,1517
+fixed-cap1000,3,14,1,90,99,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,0.2,1551
+fixed-cap1000,1,1,7,0,71,12,Z/MAX,3.00e-04,Z/MAX pass,1.2,1594
+fixed-cap1000,1,2,7,12,71,21,Z/MAX,3.00e-04,Z/MAX pass,0.8,1616
+fixed-cap1000,1,3,7,21,75,30,Z/MAX,3.00e-04,Z/MAX pass,1.9,1635
+fixed-cap1000,1,4,7,30,77,40,Z/MAX,3.00e-04,Z/MAX pass,1.8,1657
+fixed-cap1000,1,5,7,40,80,55,Z/MAX,3.00e-04,Z/MAX pass,1.6,1680
+fixed-cap1000,1,6,7,55,90,64,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,146.0,1708
+fixed-cap1000,1,6,5,55,77,64,X/MAX,3.00e-04,Z/MAX fail; Z/MIN fail; X/MAX pass,5.7,1906
+fixed-cap1000,1,7,7,64,90,68,SLP,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP pass,56.3,1947
+fixed-cap1000,1,8,7,68,99,71,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,3.6,2024
+fixed-cap1000,1,8,5,68,90,71,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,24.6,2058
+fixed-cap1000,1,9,7,71,113,75,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,92.8,2088
+fixed-cap1000,1,9,5,71,90,75,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,13.9,2288
+fixed-cap1000,1,10,7,75,128,77,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,235.9,2313
+fixed-cap1000,1,10,5,75,99,77,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,1.3,2525
+fixed-cap1000,1,10,3,75,90,77,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,6.0,2559
+fixed-cap1000,1,11,7,77,128,80,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,231.9,2582
+fixed-cap1000,1,11,5,77,113,80,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,49.1,2785
+fixed-cap1000,1,11,3,77,90,80,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,5.9,3008
+fixed-cap1000,1,12,7,80,130,88,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,200.5,3032
+fixed-cap1000,1,12,5,80,128,88,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,171.3,3243
+fixed-cap1000,1,12,3,80,99,88,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,0.7,3439
+fixed-cap1000,1,12,2,80,90,88,Z/MIN,3.00e-04,Z/MAX fail; Z/MIN pass,5.3,3473
+fixed-cap1000,1,13,7,88,155,90,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,316.2,3525
+fixed-cap1000,1,13,5,88,128,90,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,38.8,3737
+fixed-cap1000,1,13,3,88,113,90,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,9.3,3925
+fixed-cap1000,1,13,2,88,99,90,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,0.3,4115
+fixed-cap1000,1,13,1,88,90,90,Z/MAX,3.00e-04,Z/MAX pass,0.1,4149
+fixed-cap1000,1,14,7,90,155,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,888.8,4170
+fixed-cap1000,1,14,5,90,130,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,307.1,4377
+fixed-cap1000,1,14,3,90,128,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,19.7,4573
+fixed-cap1000,1,14,2,90,113,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,0.5,4607
+fixed-cap1000,1,14,1,90,99,99,miss,,Z/MAX fail; Z/MIN fail; X/MAX fail; X/MIN fail; SLP fail,0.2,4641

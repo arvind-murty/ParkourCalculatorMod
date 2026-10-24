@@ -981,3 +981,10 @@ The common-case [objective-bound detector](solver-traces/linkcraft-real11-object
 ## Default dual iteration cap raised to1000
 
 At the user's request following the jump2 audit, `CostateDualSolver.MAX_ITER` and `ClosedFormSolve.Config.dualMaxIterations` now default to1000 instead of100. This affects direct dual calls (including SLP's dual seed) and closed-form margin attempts. Existing convergence, no-descent, recovered-input-stall, divergence and multiplier-limit exits remain active;1000 is a ceiling, not a required number of iterations. Explicit diagnostic cap overrides retain their chosen values so historical100-versus1000 probes remain reproducible. No new tests or route probes were run for this edit; previously archived outcomes describe their recorded budgets.
+
+
+## Fixed seven-ladder cap1000 rerun and helper scope
+
+[Full rerun](solver-traces/linkcraft-real11-fixed-seven-cap1000.md) uses forward-jump preference, fixed0.0003, EPS2=1e-24, windows7,5,3,2,1 and commits3,1 with no outer deadline. Both commit attempts still stop before jump14 at tick90; total4678.576ms. Commit1 now accepts CF Z/MAX on jumps1–5, matching normal's solve types there; first remaining mismatch is jump6 (normal7-jump Z/MIN versus fixed shrinking to5-jump X/MAX). Full objective/window/timing comparisons are saved.
+
+Validation scope clarified: CF and SLP use `WindowCandidateValidation` when the committed prefix is shorter than the window; it runs actual continuous per-axis inertia checks across the full window and checks original constraints there, plus original constraints on the committed Minecraft replay. It does not require agreement with the assumed inertia pattern. If the whole window is committed, the call sites bypass this helper and retain full exact replay checking. Terminal and final route replay likewise check actual Minecraft inertia without a separate helper continuous check. No validation changes were made.

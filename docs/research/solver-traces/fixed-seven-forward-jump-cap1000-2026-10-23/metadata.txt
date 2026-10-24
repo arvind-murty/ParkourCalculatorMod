@@ -1,0 +1,7 @@
+Implementation: c8d7616 (default dual cap1000)
+Input: ~/Downloads/LinkcraftII_Competition_01/real/11.json
+808 ticks;636 constraints; original objective X/MAX@808
+Window ladder7,5,3,2,1; commits3,1; fixed CF margin0.0003
+Adjustment FORWARD_JUMP; fallback FORWARD_TICK if preferred endpoint capped/unavailable
+EPS2=1e-24; no outer deadline; existing early stopping enabled
+Compared with archived same-policy cap100 run and successful shared-validation normal-margin reference.
