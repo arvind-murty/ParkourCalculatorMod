@@ -31,3 +31,10 @@ Do not conflate this with the [successful delayed seed experiment](../j14-near-r
 ```
 
 From the isolated core-only worktree. One focused test, zero failures/errors; no full suite/route/graph run. Timing in passes/outcomes includes retention auditing and is subject to JVM warmup; no benchmark claim. The guard rejection remains commented out in the current probe source as requested. Archived prior sources preserve the enabled version. `preservation_verified=false` remains an honest diagnostic, not a seed-use flag.
+
+
+## Why this run never reaches the previous close candidate
+
+The successful diagnostic used COLD initialization for passes0,1,2, then seeded only pass3. Its sequence was .8830403384 -> .3323525487 -> .0065569215 -> valid retained path. The new no-guard experiment instead seeds pass1 immediately from pass0: .8830403384 -> .9837925211 -> stop for no improvement. The initial input state and first inferred pattern are identical; initialization of that first patterned dual solve is the changed variable. Because it takes a different finite numerical trajectory, it produces different angles, hence different inferred threshold patterns or, here, stops before the next pattern can be attempted. The close candidate was never reached and then lost in the new run; it belongs to an alternative cold discovery trajectory that we replaced early. No claim that the convex dual has different local optima is implied by these nonconverged results.
+
+This comparison means automatic warm starts should not be assumed to dominate cold discovery. A cold alternative when seeded repair fails/worsens would preserve the route to the close candidate demonstrated here. The current test-only hybrid manually delays seeding; there is no automatic production warm/cold selection policy yet. The agent should have made the earlier versus delayed application of seeding clearer before the rerun.
