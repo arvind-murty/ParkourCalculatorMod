@@ -1,0 +1,20 @@
+      8.21  t1   SEED    case=j14-seed0.0 pass=0 pattern=free seedRows=0
+    426.20  t1   SEED    case=j14-seed0.0 pass=1 pattern=x@7,@34-35,@45-47+z@26 seedRows=0
+    659.64  t1   SEED    case=j14-seed0.0 pass=2 pattern=x@8,@33-35,@46-47 seedRows=0
+    681.82  t1   SEED    case=j14-seed0.0 pass=3 pattern=x@8,@29-35,@46-47+z@27 seedRows=0
+   1004.65  t1   SEED    case=j14-seed1.0 pass=0 pattern=free seedRows=0
+   1207.18  t1   SEED    case=j14-seed1.0 pass=1 pattern=x@7,@34-35,@45-47+z@26 seedRows=0
+   1345.94  t1   SEED    case=j14-seed1.0 pass=2 pattern=x@8,@33-35,@46-47 seedRows=0
+   1367.79  t1   SEED    case=j14-seed1.0 pass=3 pattern=x@8,@29-35,@46-47+z@27 seedRows=10
+   1370.35  t1   CF-INCUMBENT iteration=95 score=-1093.65315751 violation=0.000e+00
+   1370.62  t1   CF-INCUMBENT iteration=96 score=-1093.65283200 violation=0.000e+00
+   1386.98  t1   SEED    case=j14-seed-1.0 pass=0 pattern=free seedRows=0
+   1582.50  t1   SEED    case=j14-seed-1.0 pass=1 pattern=x@7,@34-35,@45-47+z@26 seedRows=0
+   1717.14  t1   SEED    case=j14-seed-1.0 pass=2 pattern=x@8,@33-35,@46-47 seedRows=0
+   1736.23  t1   SEED    case=j14-seed-1.0 pass=3 pattern=x@8,@29-35,@46-47+z@27 seedRows=16
+   1737.57  t1   CF-INCUMBENT iteration=77 score=-1093.65307176 violation=0.000e+00
+   1737.63  t1   CF-INCUMBENT iteration=78 score=-1093.65270072 violation=0.000e+00
+   1737.71  t1   CF-INCUMBENT iteration=82 score=-1093.65268755 violation=0.000e+00
+   1744.43  t1   SEED    case=j14-seed-2.0 pass=0 pattern=free seedRows=0
+   1949.51  t1   SEED    case=j14-seed-2.0 pass=1 preservation declined; retain mapped position weights only
+   1949.66  t1   SEED    case=j14-seed-2.0 pass=1 pattern=x@7,@34-35,@45-47+z@26 seedRows=26

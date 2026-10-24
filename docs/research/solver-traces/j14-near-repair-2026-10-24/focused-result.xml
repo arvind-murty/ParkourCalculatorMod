@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="de.legoshi.parkourcalc.core.anglesolver.solver.InertiaMultiplierSeedProbeTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-24T23:21:30.401Z" hostname="Arvinds-MacBook-Pro-2.local" time="2.434">
+  <properties/>
+  <testcase name="compareColdAndCarriedMultipliers" classname="de.legoshi.parkourcalc.core.anglesolver.solver.InertiaMultiplierSeedProbeTest" time="2.432"/>
+  <system-out><![CDATA[14,Z/MAX,0.00,false,4,0.0065569214860943250,961.317
+14,Z/MAX,1.00,true,4,0.0000000000000000,361.456
+14,Z/MAX,-1.00,true,4,0.0000000000000000,341.148
+14,Z/MAX,-2.00,false,2,0.88304033841745880,530.573
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
