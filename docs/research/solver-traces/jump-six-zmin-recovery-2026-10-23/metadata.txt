@@ -1,0 +1,5 @@
+EPS2=1e-24; margin0.0003; cap10000; same fixed tick55 state from audit metadata
+firstIter=319 retryIter=625 stop=NO_DESCENT finalPg=0.025378113599580754
+fallbackControls=27 retryMs=26.516709
+Z89lo_lambda=1.0000000000059024
+Y set0; authored contact schedule and X/Z physics independent of Y

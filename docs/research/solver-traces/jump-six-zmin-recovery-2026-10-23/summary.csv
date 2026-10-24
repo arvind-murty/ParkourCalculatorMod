@@ -1,0 +1,4 @@
+variant,position_violation,tightened_wall_violation,tightened_inertia_violation,actual_continuous_violation,prefix_replay_violation
+"smoothed_derivative_variable_length","0.025078113599306562","0.025378113599580754","4.862505528280686E-4","NaN","NaN"
+"full_length_costate_direction_no_fallback","0.026619956013973933","0.026919956014137547","4.956895043462736E-4","0.05076988784048808","0.0"
+"production_objective_direction_fallback","16.347987768163193","16.34828776816218","0.19882253785390278","16.91609160957796","3.8936504571313435"
