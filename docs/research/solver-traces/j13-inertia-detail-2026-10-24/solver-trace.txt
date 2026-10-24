@@ -1,0 +1,2 @@
+     10.73  t1   SEED    case=j13-seed-1.0 pass=0 pattern=free seedRows=0
+    168.14  t1   SEED    case=j13-seed-1.0 pass=1 pattern=x@8,@29-34+z@27 seedRows=15

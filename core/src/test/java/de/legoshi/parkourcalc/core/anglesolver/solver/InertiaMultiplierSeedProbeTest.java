@@ -27,9 +27,10 @@ import static org.junit.Assert.*;
 public class InertiaMultiplierSeedProbeTest {
     private static final Path ROOT = Paths.get("/Users/arvindmurty/CS/ParkourCalculatorMod");
     private static final String CASES = System.getProperty("pkc.inertiaSeedCases", "baseline");
-    private static final boolean CLEAR_CAP = "post-turn-clear-cap".equals(CASES);
+    private static final boolean DETAIL = "j13-inertia-detail".equals(CASES);
+    private static final boolean CLEAR_CAP = DETAIL || "post-turn-clear-cap".equals(CASES);
     private static final boolean POST_TURN = CLEAR_CAP || "post-turn".equals(CASES);
-    private static final Path OUT = ROOT.resolve("docs/research/solver-traces/"+(CLEAR_CAP?"post-turn-clear-cap-2026-10-24":POST_TURN?"post-turn-objectives-2026-10-24":"inertia-multiplier-seeding-2026-10-24"));
+    private static final Path OUT = ROOT.resolve("docs/research/solver-traces/"+(DETAIL?"j13-inertia-detail-2026-10-24":CLEAR_CAP?"post-turn-clear-cap-2026-10-24":POST_TURN?"post-turn-objectives-2026-10-24":"inertia-multiplier-seeding-2026-10-24"));
 
     @Test public void compareColdAndCarriedMultipliers() throws Exception {
         org.junit.Assume.assumeTrue(Boolean.getBoolean("pkc.inertiaSeedProbe"));
@@ -51,7 +52,7 @@ public class InertiaMultiplierSeedProbeTest {
         List<String> result = new ArrayList<>();
         result.add("end_jump,objective,seed_scale,pass,pattern,rows,seeded_rows,initial_dual,initial_residual,initial_min_costate,iters,stop,final_residual,final_min_costate,fallback_ticks,continuous_violation,prefix_replay_violation,assumed_violation,failed_inertia_assumptions,elapsed_ms");
         List<String> outcomes = new ArrayList<>(); outcomes.add("end_jump,objective,seed_scale,accepted,passes,best_violation,total_solve_ms");
-        int[] ends = CLEAR_CAP ? new int[]{90,103} : POST_TURN ? new int[]{90,99} : new int[]{75,77,99,113};
+        int[] ends = DETAIL ? new int[]{90} : CLEAR_CAP ? new int[]{90,103} : POST_TURN ? new int[]{90,99} : new int[]{75,77,99,113};
         int[] jumps = POST_TURN ? new int[]{13,14} : new int[]{9,10,14,15};
         SolverTrace.enable("inertia-multiplier-seeding");
         try {
@@ -70,7 +71,7 @@ public class InertiaMultiplierSeedProbeTest {
                     int expectedLast=k==0?89:102;
                     assertTrue("last capped state retained",spec.constraints.stream().anyMatch(c->c.mode==JumpConstraint.Mode.Z && c.t1==expectedLast-55 && c.cmp==JumpConstraint.Cmp.LE));
                 }
-                for (double scale : new double[]{0.0,1.0,0.25,-1.0}) run(exact,spec,jumps[k],scale,result,outcomes);
+                for (double scale : DETAIL ? new double[]{-1.0} : new double[]{0.0,1.0,0.25,-1.0}) run(exact,spec,jumps[k],scale,result,outcomes);
             }
         } finally { SolverTrace.disable(); }
     }
@@ -95,6 +96,14 @@ public class InertiaMultiplierSeedProbeTest {
             walls.addAll(lin.velocityWalls(exact.inertiaThreshold()));
             FacingPrefold pre = FacingPrefold.analyze(spec.constraints,lin); assertNotNull(pre); assertTrue(pre.isIdentity());
             FacingPrefold.Reduced reduced = pre.reduce(cx,cz,lin.mMagAll(),walls);
+            if(DETAIL) {
+                List<String> coefficients=new ArrayList<>();coefficients.add("tick,objective_x,objective_z,Z89lo_normal,objective_minus_Z89lo");
+                JumpLinearModel.Wall z89=null;
+                for(JumpLinearModel.Wall w:reduced.walls)if(w.name.equals("Z@89lo"))z89=w;
+                assertNotNull(z89);
+                for(int t=0;t<n;t++)coefficients.add(String.format(Locale.ROOT,"%d,%.17g,%.17g,%.17g,%.17g",55+t,reduced.cx[t],reduced.cz[t],z89.coef[t],reduced.cz[t]-z89.coef[t]));
+                Files.write(OUT.resolve(label+"-pass"+pass+"-coefficients.csv"),coefficients,StandardCharsets.UTF_8);
+            }
             double[] seed = null; int seeded = 0;
             if (scale != 0.0 && previousLambda != null) {
                 seed = new double[reduced.walls.size()];
@@ -116,10 +125,19 @@ public class InertiaMultiplierSeedProbeTest {
             }
             CostateDualSolver solver = new CostateDualSolver(reduced.n,reduced.cx,reduced.cz,reduced.mMag,reduced.walls);
             double[] first = new double[3], last = new double[2];
+            List<String> detailed = new ArrayList<>();
+            detailed.add("iteration,dual,residual,fallback_ticks,min_radius_ratio,relaxed_position_violation,relaxed_band_violation,raw_fixed_violation,raw_continuous_violation,decoded_fixed_violation,decoded_continuous_violation,max_decoder_yaw_change,raw_final_z,decoded_final_z,shared_prefix_violation,shared_continuous_violation");
+            List<String> tickDetail = new ArrayList<>();
+            tickDetail.add("iteration,tick,gx,gz,norm,radius_ratio,raw_yaw,decoded_yaw,raw_assumed_vx,raw_assumed_vz");
+            final double[] auditGx = DETAIL ? arrayOf(solver,"gx") : null;
+            final double[] auditGz = DETAIL ? arrayOf(solver,"gz") : null;
+            final double[] auditUx = DETAIL ? arrayOf(solver,"ux") : null;
+            final double[] auditUz = DETAIL ? arrayOf(solver,"uz") : null;
             List<String> history = new ArrayList<>(); history.add("iteration,dual,residual,input_change,min_costate,fallback,final_sample");
             solver.iterationObserver = (it,value,residual,change,min,near,fallback,finalSample) -> {
                 if (it==0) {first[0]=value;first[1]=residual;first[2]=min;}
                 if (finalSample) {last[0]=min;last[1]=fallback;}
+                if (DETAIL) auditIteration(it,value,residual,fallback,lin,pre,spec,reduced,authoredRows,auditGx,auditGz,auditUx,auditUz,detailed,tickDetail,exact);
                 if (it%100==0 || finalSample) history.add(String.format(Locale.ROOT,"%d,%.17g,%.17g,%.17g,%.17g,%d,%s",it,value,residual,change,min,fallback,finalSample));
             };
             SolverTrace.log("SEED", "case=%s pass=%d pattern=%s seedRows=%d",label,pass,lin.patternDescription(),seeded);
@@ -139,6 +157,10 @@ public class InertiaMultiplierSeedProbeTest {
             Files.write(OUT.resolve(label+"-pass"+pass+"-initial.csv"),initial,StandardCharsets.UTF_8);
             long t0 = System.nanoTime(); CostateDualSolver.Result r = solver.solve(.0003,seed,10000);
             double ms = (System.nanoTime()-t0)/1e6; solveMs += ms; passes++;
+            if(DETAIL) {
+                Files.write(OUT.resolve(label+"-pass"+pass+"-detailed.csv"),detailed,StandardCharsets.UTF_8);
+                Files.write(OUT.resolve(label+"-pass"+pass+"-tick-detail.csv"),tickDetail,StandardCharsets.UTF_8);
+            }
             if(r==null) {
                 result.add(String.format(Locale.ROOT,"%d,Z/%s,%.2f,%d,\"%s\",%d,%d,%.17g,%.17g,%.17g,%d,%s,NaN,NaN,NaN,NaN,NaN,NaN,-1,%.3f",endJump,spec.objective.sense,scale,pass,lin.patternDescription(),walls.size(),seeded,first[0],first[1],first[2],solver.lastIters,solver.lastStopReason,ms));
                 Files.write(OUT.resolve("passes.csv"),result,StandardCharsets.UTF_8);
@@ -181,6 +203,49 @@ public class InertiaMultiplierSeedProbeTest {
         Files.write(OUT.resolve("outcomes.csv"),outcomes,StandardCharsets.UTF_8);
         System.out.println(outcomes.get(outcomes.size()-1));
     }
+    private static double[] arrayOf(Object instance,String name) throws Exception {
+        java.lang.reflect.Field f=instance.getClass().getDeclaredField(name);
+        f.setAccessible(true);
+        return (double[])f.get(instance);
+    }
+
+    private static void auditIteration(int it,double value,double residual,int fallback,JumpLinearModel lin,
+            FacingPrefold pre,JumpSpec spec,FacingPrefold.Reduced reduced,int authoredRows,
+            double[] gx,double[] gz,double[] ux,double[] uz,List<String> detailed,List<String> ticks,ExactJumpModel exact) {
+        int n=gx.length;
+        double[] raw=new double[n],decoded=pre.expand(lin,spec.objective,gx,gz);
+        double ratio=1.0,yawChange=0.0;
+        for(int t=0;t<n;t++) {
+            raw[t]=lin.recoverYawDeg(t,gx[t],gz[t]);
+            double norm=StrictMath.hypot(gx[t],gz[t]);
+            double r=norm/StrictMath.sqrt(norm*norm+1e-24);
+            ratio=Math.min(ratio,r);
+            yawChange=Math.max(yawChange,Math.abs(Angles.wrap(raw[t]-decoded[t])));
+            ticks.add(String.format(Locale.ROOT,"%d,%d,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g",it,55+t,gx[t],gz[t],norm,r,raw[t],decoded[t],lin.velocityBeforeCheck(0,t,raw),lin.velocityBeforeCheck(1,t,raw)));
+        }
+        double pv=0.0,bv=0.0;
+        for(int j=0;j<reduced.walls.size();j++) {
+            JumpLinearModel.Wall w=reduced.walls.get(j);
+            double dot=0.0;double[] u=w.axis==0?ux:uz;
+            for(int t=0;t<n;t++)dot+=w.coef[t]*u[t];
+            double violation=Math.max(0.0,dot-w.bPrime);
+            if(j<authoredRows)pv=Math.max(pv,violation);else bv=Math.max(bv,violation);
+        }
+        JumpConstraintCompiler.Compiled compiled=JumpConstraintCompiler.compile(spec);
+        JumpLinearModel physical=new JumpLinearModel(spec.asScenario());
+        ForwardPath rp=physical.forwardContinuous(raw,.005,true),dp=physical.forwardContinuous(decoded,.005,true);
+        final WindowCandidateValidation.Diagnostics[] audit=new WindowCandidateValidation.Diagnostics[1];
+        WindowCandidateValidation.setDiagnosticObserver(d->audit[0]=d);
+        WindowCandidateValidation.Result check;
+        try {check=new WindowCandidateValidation(exact,spec,9).evaluate(decoded,lin);}
+        finally {WindowCandidateValidation.setDiagnosticObserver(null);}
+        if(it==5 || it==20 || it==50) {
+            try {saveDiagnostics("snapshot-"+(lin.patternDescription().equals("free")?"free":"patterned")+"-iteration"+it,0,audit[0]);}
+            catch(Exception e){throw new RuntimeException(e);}
+        }
+        detailed.add(String.format(Locale.ROOT,"%d,%.17g,%.17g,%d,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g",it,value,residual,fallback,ratio,pv,bv,compiled.maxViolation(raw,lin.forwardFixed(raw)),compiled.maxViolation(raw,rp),compiled.maxViolation(decoded,lin.forwardFixed(decoded)),compiled.maxViolation(decoded,dp),yawChange,rp.posZ[n],dp.posZ[n],check.replayViolation,check.continuousViolation));
+    }
+
     private static boolean seedBandPrices(FacingPrefold.Reduced reduced, double[] seed, int authoredRows,
                                        double[] oldGx, double[] oldGz) {
         double[] dx=reduced.cx.clone(),dz=reduced.cz.clone();
@@ -215,6 +280,11 @@ public class InertiaMultiplierSeedProbeTest {
         List<String> margins = new ArrayList<>();margins.add("tick,name,comparison,continuous_margin,replay_margin,assumed_margin");
         for (WindowCandidateValidation.ConstraintMargin m:d.constraints) margins.add(String.format(Locale.ROOT,"%d,%s,%s,%.17g,%.17g,%.17g",55+m.constraint.t1,m.constraint.name,m.constraint.cmp,m.continuousMargin,m.replayMargin,m.assumedMargin));
         Files.write(OUT.resolve(label+"-pass"+pass+"-margins.csv"),margins,StandardCharsets.UTF_8);
+        if(DETAIL) {
+            List<String> inertia=new ArrayList<>();inertia.add("tick,axis,assumed_zero,assumed_velocity,actual_velocity,actual_zero,assumption_satisfied");
+            for(WindowCandidateValidation.InertiaCheck c:d.inertiaChecks)inertia.add(String.format(Locale.ROOT,"%d,%d,%s,%.17g,%.17g,%s,%s",55+c.tick,c.axis,c.assumedZero,c.assumedVelocity,c.continuousVelocity,c.continuousZero,c.assumptionSatisfied));
+            Files.write(OUT.resolve(label+"-pass"+pass+"-inertia.csv"),inertia,StandardCharsets.UTF_8);
+        }
         List<String> ticks = new ArrayList<>();ticks.add("tick,yaw,continuous_x,continuous_z,replay_x,replay_z,replay_vx,replay_vz");
         for (int t=0;t<d.continuousFacings.length;t++) ticks.add(String.format(Locale.ROOT,"%d,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g",55+t,d.continuousFacings[t],d.continuousPath.posX[t],d.continuousPath.posZ[t],d.replayPath.posX[t],d.replayPath.posZ[t],d.replayPath.velX[t],d.replayPath.velZ[t]));
         Files.write(OUT.resolve(label+"-pass"+pass+"-path.csv"),ticks,StandardCharsets.UTF_8);
