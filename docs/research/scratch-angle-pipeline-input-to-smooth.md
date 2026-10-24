@@ -976,3 +976,8 @@ The common-case [objective-bound detector](solver-traces/linkcraft-real11-object
 ## Jump2 fixed Z/MAX: unfinished dual candidates, not just inertia/replay mismatch
 
 [Jump2 candidate audit](solver-traces/linkcraft-real11-jump-two-fixed-zmax-violations.md): forward-jump initial/retry and forward-tick initial all stop at100 iterations with original positional violations already present in their assumed models (0.076033 atX67,0.211319 atZ68,0.496626 atZ68). Actual X zeroing at63 adds0.009468 to the first; the retry obeys its explicit threshold but still violatesZ68. Forward-tick has no new actual inertia pattern to retry. Costate minima0.128–0.172 are far above the direction fallback. The saved normal Z/MAX@0.05 accepts on original constraints despite also hitting100; its residual and clearance differ. No further controls ran after the user's stop request. Existing diagnostic outputs and previously completed controls are preserved for later discussion.
+
+
+## Default dual iteration cap raised to1000
+
+At the user's request following the jump2 audit, `CostateDualSolver.MAX_ITER` and `ClosedFormSolve.Config.dualMaxIterations` now default to1000 instead of100. This affects direct dual calls (including SLP's dual seed) and closed-form margin attempts. Existing convergence, no-descent, recovered-input-stall, divergence and multiplier-limit exits remain active;1000 is a ceiling, not a required number of iterations. Explicit diagnostic cap overrides retain their chosen values so historical100-versus1000 probes remain reproducible. No new tests or route probes were run for this edit; previously archived outcomes describe their recorded budgets.

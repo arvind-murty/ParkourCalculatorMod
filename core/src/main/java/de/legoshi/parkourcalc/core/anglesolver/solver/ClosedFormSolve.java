@@ -43,8 +43,8 @@ public final class ClosedFormSolve {
          *  commits fragile seam states. The margin tightens the model's walls; replay checks original walls. */
         public double[] marginsRobust = {5.0e-2, 2.0e-2, 1.0e-2, 5.0e-3, 1.2e-3, 3.0e-4, 0.0};
 
-        /** Finite dual work per margin attempt; the default retains the existing 100-iteration cap. */
-        public int dualMaxIterations = 100;
+        /** Maximum dual iterations per margin attempt; existing early stopping rules still apply. */
+        public int dualMaxIterations = 1000;
         public CostateDualSolver.IterationObserver dualIterationObserver;
 
         public int maxInertiaPasses = 4;

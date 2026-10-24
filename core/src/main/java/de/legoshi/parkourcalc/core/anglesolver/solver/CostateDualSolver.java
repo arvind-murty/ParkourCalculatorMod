@@ -39,7 +39,7 @@ public final class CostateDualSolver {
     // Smoothing length 1e-12, below the 1e-9 costate-direction fallback. At and above
     // that fallback scale this shrinks derivative-implied input length by at most about 5e-7.
     private static final double EPS2 = 1.0e-24;       // norm smoothing: ‖g‖ -> sqrt(‖g‖^2 + EPS2)
-    private static final int MAX_ITER = 100;
+    private static final int MAX_ITER = 1000;
     private static final double LAMBDA_CAP = 1.0e9;   // dual var this large => treat primal as infeasible
     private static final double GRAD_TOL = 1.0e-8;    // projected-gradient (constraint-slack) convergence, blocks
     private static final double U_TOL = 1.0e-9;       // convergence in recovered-input space (degenerate optima)
