@@ -1,0 +1,27 @@
+     10.06  t1   SEED    case=j13-seed-1.0 pass=0 pattern=free seedRows=0
+    175.92  t1   SEED    case=j13-seed-1.0 pass=1 pattern=x@8,@29-34+z@27 seedRows=15
+    180.76  t1   CF-INCUMBENT iteration=5 score=-1090.62996620 violation=0.000e+00
+    188.77  t1   CF-INCUMBENT iteration=18 score=-1090.63068690 violation=0.000e+00
+    206.90  t1   CF-INCUMBENT iteration=50 score=-1090.63071046 violation=0.000e+00
+    208.89  t1   CF-INCUMBENT iteration=51 score=-1090.63071428 violation=0.000e+00
+    209.40  t1   CF-INCUMBENT iteration=52 score=-1090.63073372 violation=0.000e+00
+    227.49  t1   CF-INCUMBENT iteration=78 score=-1090.63101504 violation=0.000e+00
+    245.75  t1   CF-INCUMBENT iteration=114 score=-1090.63125718 violation=0.000e+00
+    329.78  t1   CF      pass=0 pattern=free n=35 m=57 robust
+    336.89  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00939142456230
+    336.96  t1   CF      rung margin=3.00e-04 iters=167 pg=1.438e-08 dual=-4.654316541 viol=9.391e-03 ms=6.978 stop=NO_DESCENT finalPg=1.437e-08
+    337.29  t1   CF      pass=1 pattern=x@8,@29-34+z@27 n=35 m=57 robust
+    647.63  t1   CF-CHECK margin=3.00e-04 replayViol=2.53954974486 modelViol=3.56048015608
+    647.76  t1   CF      rung margin=3.00e-04 iters=10000 pg=3.947e-01 dual=-4.556818929 viol=3.560e+00 ms=310.312 stop=ITERATION_LIMIT finalPg=2.687e-01
+    647.81  t1   CF      pass=1 no improvement (viol=3.560e+00), stop
+    647.83  t1   CF      fallback bestViol=9.391e-03 us=318079.6
+    648.15  t1   CF      pass=0 pattern=free n=35 m=57 robust
+    650.72  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=0.710
+    650.76  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00939142456230
+    650.77  t1   CF      rung margin=3.00e-04 iters=167 pg=1.438e-08 dual=-4.654316541 viol=9.391e-03 ms=2.515 stop=NO_DESCENT finalPg=1.437e-08
+    650.81  t1   CF      pass=1 pattern=x@8,@29-34+z@27 n=35 m=57 robust
+    830.47  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=43.984
+    830.61  t1   CF-CHECK margin=3.00e-04 replayViol=2.53954974486 modelViol=3.56048015608
+    830.63  t1   CF      rung margin=3.00e-04 iters=10000 pg=3.947e-01 dual=-4.556818929 viol=3.560e+00 ms=179.691 stop=ITERATION_LIMIT finalPg=2.687e-01
+    830.69  t1   CF      pass=1 no improvement (viol=3.560e+00), stop
+    830.73  t1   CF      fallback bestViol=9.391e-03 us=182587.5

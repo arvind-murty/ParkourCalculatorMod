@@ -27,10 +27,11 @@ import static org.junit.Assert.*;
 public class InertiaMultiplierSeedProbeTest {
     private static final Path ROOT = Paths.get("/Users/arvindmurty/CS/ParkourCalculatorMod");
     private static final String CASES = System.getProperty("pkc.inertiaSeedCases", "baseline");
-    private static final boolean DETAIL = "j13-inertia-detail".equals(CASES);
+    private static final boolean RETAIN = "j13-retained".equals(CASES);
+    private static final boolean DETAIL = RETAIN || "j13-inertia-detail".equals(CASES);
     private static final boolean CLEAR_CAP = DETAIL || "post-turn-clear-cap".equals(CASES);
     private static final boolean POST_TURN = CLEAR_CAP || "post-turn".equals(CASES);
-    private static final Path OUT = ROOT.resolve("docs/research/solver-traces/"+(DETAIL?"j13-inertia-detail-2026-10-24":CLEAR_CAP?"post-turn-clear-cap-2026-10-24":POST_TURN?"post-turn-objectives-2026-10-24":"inertia-multiplier-seeding-2026-10-24"));
+    private static final Path OUT = ROOT.resolve("docs/research/solver-traces/"+(RETAIN?"j13-retained-2026-10-24":DETAIL?"j13-inertia-detail-2026-10-24":CLEAR_CAP?"post-turn-clear-cap-2026-10-24":POST_TURN?"post-turn-objectives-2026-10-24":"inertia-multiplier-seeding-2026-10-24"));
 
     @Test public void compareColdAndCarriedMultipliers() throws Exception {
         org.junit.Assume.assumeTrue(Boolean.getBoolean("pkc.inertiaSeedProbe"));
@@ -72,6 +73,7 @@ public class InertiaMultiplierSeedProbeTest {
                     assertTrue("last capped state retained",spec.constraints.stream().anyMatch(c->c.mode==JumpConstraint.Mode.Z && c.t1==expectedLast-55 && c.cmp==JumpConstraint.Cmp.LE));
                 }
                 for (double scale : DETAIL ? new double[]{-1.0} : new double[]{0.0,1.0,0.25,-1.0}) run(exact,spec,jumps[k],scale,result,outcomes);
+                if(RETAIN) runProductionControl(exact,spec);
             }
         } finally { SolverTrace.disable(); }
     }
@@ -155,6 +157,8 @@ public class InertiaMultiplierSeedProbeTest {
             initial.add("continuous_violation,prefix_replay_violation,max_yaw_change_from_previous,preservation_verified");
             initial.add(String.format(Locale.ROOT,"%.17g,%.17g,%.17g,%s",initialCheck.continuousViolation,initialCheck.replayViolation,previousAngles==null?Double.NaN:yawChange,preserved));
             Files.write(OUT.resolve(label+"-pass"+pass+"-initial.csv"),initial,StandardCharsets.UTF_8);
+            DualCandidateRetention retained = RETAIN ? new DualCandidateRetention(exact,spec,lin,pre,9,0.0) : null;
+            solver.candidateObserver = retained;
             long t0 = System.nanoTime(); CostateDualSolver.Result r = solver.solve(.0003,seed,10000);
             double ms = (System.nanoTime()-t0)/1e6; solveMs += ms; passes++;
             if(DETAIL) {
@@ -168,6 +172,19 @@ public class InertiaMultiplierSeedProbeTest {
                 break;
             }
             double[] angles = pre.expand(lin,spec.objective,r);
+            if(RETAIN) {
+                WindowCandidateValidation.Result terminal=new WindowCandidateValidation(exact,spec,9).evaluate(angles,lin);
+                boolean selected=retained.preferredTo(angles,terminal.maxViolation());
+                List<String> saved=Arrays.asList("terminal_iteration,terminal_stop,terminal_violation,selected,retained_iteration,improvements,score,audit_ms",
+                        String.format(Locale.ROOT,"%d,%s,%.17g,%s,%d,%d,%.17g,%.3f",solver.lastIters,solver.lastStopReason,terminal.maxViolation(),selected,retained.iteration,retained.improvements,retained.score,retained.evaluationNanos/1e6));
+                Files.write(OUT.resolve(label+"-pass"+pass+"-retention.csv"),saved,StandardCharsets.UTF_8);
+                if(selected) {
+                    angles=retained.yaws;
+                    List<String> savedWeights=new ArrayList<>();savedWeights.add("index,name,multiplier");
+                    for(int j=0;j<retained.multipliers.length;j++)savedWeights.add(String.format(Locale.ROOT,"%d,%s,%.17g",j,reduced.walls.get(j).name,retained.multipliers[j]));
+                    Files.write(OUT.resolve(label+"-pass"+pass+"-retained-multipliers.csv"),savedWeights,StandardCharsets.UTF_8);
+                }
+            }
             final WindowCandidateValidation.Diagnostics[] diagnostic = new WindowCandidateValidation.Diagnostics[1];
             WindowCandidateValidation.setDiagnosticObserver(d -> diagnostic[0]=d);
             WindowCandidateValidation.Result check;
@@ -203,6 +220,23 @@ public class InertiaMultiplierSeedProbeTest {
         Files.write(OUT.resolve("outcomes.csv"),outcomes,StandardCharsets.UTF_8);
         System.out.println(outcomes.get(outcomes.size()-1));
     }
+    private static void runProductionControl(ExactJumpModel exact,JumpSpec spec) throws Exception {
+        List<String> rows=new ArrayList<>();rows.add("retain,accepted,continuous_violation,prefix_replay_violation,objective,elapsed_ms");
+        for(boolean retain:new boolean[]{false,true}) {
+            ClosedFormSolve.Config cfg=new ClosedFormSolve.Config();
+            cfg.marginsRobust=new double[]{.0003};cfg.replayTickLimit=9;cfg.dualMaxIterations=10000;
+            cfg.retainIntermediateCandidates=retain;
+            long started=System.nanoTime();
+            double[] yaws=ClosedFormSolve.optimizeRobust(exact,spec,0.0,new AtomicBoolean(false),cfg);
+            double elapsed=(System.nanoTime()-started)/1e6;
+            WindowCandidateValidation.Result check=yaws==null?null:new WindowCandidateValidation(exact,spec,9).evaluate(yaws);
+            double objective=yaws==null?Double.NaN:spec.objective.evaluate(new JumpLinearModel(spec.asScenario()).forwardContinuous(yaws,.005,true));
+            rows.add(String.format(Locale.ROOT,"%s,%s,%.17g,%.17g,%.17g,%.3f",retain,yaws!=null,check==null?Double.NaN:check.continuousViolation,check==null?Double.NaN:check.replayViolation,objective,elapsed));
+            Files.write(OUT.resolve("production-control.csv"),rows,StandardCharsets.UTF_8);
+            if(yaws!=null)assertEquals(0.0,check.maxViolation(),0.0);
+        }
+    }
+
     private static double[] arrayOf(Object instance,String name) throws Exception {
         java.lang.reflect.Field f=instance.getClass().getDeclaredField(name);
         f.setAccessible(true);
