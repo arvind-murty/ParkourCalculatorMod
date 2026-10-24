@@ -1,0 +1,9 @@
+Implementation commits: 0edbfbf (objective-specific endpoint selection), 94d7a80 (dual cap10000)
+Full input: ~/Downloads/LinkcraftII_Competition_01/real/11.json
+808 ticks;636 constraints; original objective X/MAX@808
+Fixed start; nominal windows7,5,3,2,1; commit3 then commit1 restart
+Fixed closed-form margin0.0003; EPS2=1e-24; direct/CF dual cap10000; existing early stops enabled
+FORWARD_JUMP preference; independent endpoint decision for each CF objective; centeredSLP nominal window
+No outer deadline; SLP call budgets and centerClearance0.02 unchanged
+Only FullRouteFixedMarginTraceTest.traceSevenForwardJump was run.
+Diagnostic test passes when outcome recorded; route did not solve.

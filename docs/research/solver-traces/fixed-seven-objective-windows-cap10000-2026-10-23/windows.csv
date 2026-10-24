@@ -1,0 +1,137 @@
+run,commit,first_jump,nominal_size,window_start,window_end,commit_end,accepted_end,accepted_method,accepted_margin,calls,elapsed_ms,source_line
+normal-success,1,1,7,0,68,12,68,CF Z/MAX,5.00e-02,CF Z/MAX@68 pass,1.9,2
+normal-success,1,2,7,12,71,21,71,CF Z/MAX,5.00e-02,CF Z/MAX@71 pass,2.1,22
+normal-success,1,3,7,21,75,30,75,CF Z/MAX,2.00e-02,CF Z/MAX@75 pass,2.5,39
+normal-success,1,4,7,30,77,40,77,CF Z/MAX,2.00e-02,CF Z/MAX@77 pass,1.6,57
+normal-success,1,5,7,40,80,55,80,CF Z/MAX,2.00e-02,CF Z/MAX@80 pass,2.0,77
+normal-success,1,6,7,55,88,64,88,CF Z/MIN,3.00e-04,CF Z/MAX@88 fail; CF Z/MIN@88 pass,62.1,102
+normal-success,1,7,7,64,90,68,90,CF Z/MIN,1.00e-02,CF Z/MAX@90 fail; CF Z/MIN@90 pass,23.7,193
+normal-success,1,8,7,68,99,71,99,CF Z/MIN,3.00e-04,CF Z/MAX@99 fail; CF Z/MIN@99 pass,28.5,228
+normal-success,1,9,7,71,113,75,113,CF Z/MAX,3.00e-04,CF Z/MAX@113 pass,20.9,285
+normal-success,1,10,7,75,117,77,117,CF Z/MAX,1.20e-03,CF Z/MAX@117 pass,22.6,322
+normal-success,1,11,7,77,128,80,128,CF X/MAX,1.20e-03,CF Z/MAX@128 fail; CF Z/MIN@128 fail; CF X/MAX@128 pass,133.0,355
+normal-success,1,12,7,80,130,88,,miss,,CF Z/MAX@130 fail; CF Z/MIN@130 fail; CF X/MAX@130 fail; CF X/MIN@130 fail; centered SLP@130 fail,371.0,487
+normal-success,1,12,5,80,117,88,117,CF Z/MIN,1.20e-03,CF Z/MAX@117 fail; CF Z/MIN@117 pass,21.6,830
+normal-success,1,13,7,88,132,90,132,CF X/MIN,3.00e-04,CF Z/MAX@132 fail; CF Z/MIN@132 fail; CF X/MAX@132 fail; CF X/MIN@132 pass,59.9,903
+normal-success,1,14,7,90,155,99,,miss,,CF Z/MAX@155 fail; CF Z/MIN@155 fail; CF X/MAX@155 fail; CF X/MIN@155 fail; centered SLP@155 fail,455.4,1040
+normal-success,1,14,5,90,130,99,130,centered SLP,,CF Z/MAX@130 fail; CF Z/MIN@130 fail; CF X/MAX@130 fail; CF X/MIN@130 fail; centered SLP@130 pass,107.6,1379
+normal-success,1,15,7,99,167,113,,miss,,CF Z/MAX@167 fail; CF Z/MIN@167 fail; CF X/MAX@167 fail; CF X/MIN@167 fail; centered SLP@167 fail,662.5,1643
+normal-success,1,15,5,99,132,113,132,CF Z/MIN,1.00e-02,CF Z/MAX@132 fail; CF Z/MIN@132 pass,8.3,1978
+normal-success,1,16,7,113,176,117,176,CF Z/MAX,5.00e-02,CF Z/MAX@176 pass,33.2,2023
+normal-success,1,17,7,117,187,128,,miss,,CF Z/MAX@187 fail; CF Z/MIN@187 fail; CF X/MAX@187 fail; CF X/MIN@187 fail; centered SLP@187 fail,371.0,2050
+normal-success,1,17,5,117,167,128,167,CF Z/MIN,1.00e-02,CF Z/MAX@167 fail; CF Z/MIN@167 pass,214.9,2363
+normal-success,1,18,7,128,196,130,,miss,,CF Z/MAX@196 fail; CF Z/MIN@196 fail; CF X/MAX@196 fail; CF X/MIN@196 fail; centered SLP@196 fail,543.8,2450
+normal-success,1,18,5,128,176,130,176,CF Z/MAX,2.00e-02,CF Z/MAX@176 pass,1.4,2785
+normal-success,1,19,7,130,205,132,,miss,,CF Z/MAX@205 fail; CF Z/MIN@205 fail; CF X/MAX@205 fail; CF X/MIN@205 fail; centered SLP@205 fail,1047.1,2797
+normal-success,1,19,5,130,187,132,,miss,,CF Z/MAX@187 fail; CF Z/MIN@187 fail; CF X/MAX@187 fail; CF X/MIN@187 fail; centered SLP@187 fail,313.9,3166
+normal-success,1,19,3,130,167,132,167,CF Z/MAX,5.00e-02,CF Z/MAX@167 pass,0.3,3490
+normal-success,1,20,7,132,207,155,,miss,,CF Z/MAX@207 fail; CF Z/MIN@207 fail; CF X/MAX@207 fail; CF X/MIN@207 fail; centered SLP@207 fail,941.0,3500
+normal-success,1,20,5,132,196,155,,miss,,CF Z/MAX@196 fail; CF Z/MIN@196 fail; CF X/MAX@196 fail; CF X/MIN@196 fail; centered SLP@196 fail,454.3,3880
+normal-success,1,20,3,132,176,155,176,CF Z/MAX,2.00e-02,CF Z/MAX@176 pass,1.1,4250
+normal-success,1,21,7,155,209,167,,miss,,CF Z/MAX@209 fail; CF Z/MIN@209 fail; CF X/MAX@209 fail; CF X/MIN@209 fail; centered SLP@209 fail,294.6,4283
+normal-success,1,21,5,155,205,167,,miss,,CF Z/MAX@205 fail; CF Z/MIN@205 fail; CF X/MAX@205 fail; CF X/MIN@205 fail; centered SLP@205 fail,197.8,4638
+normal-success,1,21,3,155,187,167,,miss,,CF Z/MAX@187 fail; CF Z/MIN@187 fail; CF X/MAX@187 fail; CF X/MIN@187 fail; centered SLP@187 fail,38.7,4970
+normal-success,1,21,2,155,176,167,176,CF Z/MAX,5.00e-02,CF Z/MAX@176 pass,0.3,5267
+normal-success,1,22,7,167,222,176,,miss,,CF Z/MAX@222 fail; CF Z/MIN@222 fail; CF X/MAX@222 fail; CF X/MIN@222 fail; centered SLP@222 fail,182.0,5287
+normal-success,1,22,5,167,207,176,,miss,,CF Z/MAX@207 fail; CF Z/MIN@207 fail; CF X/MAX@207 fail; CF X/MIN@207 fail; centered SLP@207 fail,175.6,5519
+normal-success,1,22,3,167,196,176,196,centered SLP,,CF Z/MAX@196 fail; CF Z/MIN@196 fail; CF X/MAX@196 fail; CF X/MIN@196 fail; centered SLP@196 pass,36.2,5840
+normal-success,1,23,7,176,241,187,,miss,,CF Z/MAX@241 fail; CF Z/MIN@241 fail; CF X/MAX@241 fail; CF X/MIN@241 fail; centered SLP@241 fail,199.7,6050
+normal-success,1,23,5,176,209,187,209,centered SLP,,CF Z/MAX@209 fail; CF Z/MIN@209 fail; CF X/MAX@209 fail; CF X/MIN@209 fail; centered SLP@209 pass,317.5,6379
+normal-success,1,24,7,187,250,250,250,terminal recovery,,terminal recovery@250 pass,369.2,6682
+fixed1000-global-extension,3,1,7,0,71,30,71,CF Z/MAX,3.00e-04,CF Z/MAX@71 pass,59.0,5
+fixed1000-global-extension,3,4,7,30,77,64,77,CF Z/MAX,3.00e-04,CF Z/MAX@77 pass,5.8,45
+fixed1000-global-extension,3,7,7,64,90,75,90,centered SLP,,CF Z/MAX@90 fail; CF Z/MIN@90 fail; CF X/MAX@90 fail; CF X/MIN@90 fail; centered SLP@90 pass,154.1,92
+fixed1000-global-extension,3,10,7,75,128,88,,miss,,CF Z/MAX@128 fail; CF Z/MIN@128 fail; CF X/MAX@128 fail; CF X/MIN@128 fail; centered SLP@128 fail,234.9,186
+fixed1000-global-extension,3,10,5,75,99,88,,miss,,CF Z/MAX@99 fail; CF Z/MIN@99 fail; CF X/MAX@99 fail; CF X/MIN@99 fail; centered SLP@99 fail,1.8,386
+fixed1000-global-extension,3,10,3,75,90,88,90,CF Z/MIN,3.00e-04,CF Z/MAX@90 fail; CF Z/MIN@90 pass,7.0,420
+fixed1000-global-extension,3,13,7,88,155,113,,miss,,CF Z/MAX@155 fail; CF Z/MIN@155 fail; CF X/MAX@155 fail; CF X/MIN@155 fail; centered SLP@155 fail,442.2,454
+fixed1000-global-extension,3,13,5,88,128,113,,miss,,CF Z/MAX@128 fail; CF Z/MIN@128 fail; CF X/MAX@128 fail; CF X/MIN@128 fail; centered SLP@128 fail,45.7,662
+fixed1000-global-extension,3,13,3,88,113,113,,miss,,CF Z/MAX@113 fail; CF Z/MIN@113 fail; CF X/MAX@113 fail; CF X/MIN@113 fail; centered SLP@113 fail,16.6,846
+fixed1000-global-extension,3,13,2,88,99,99,,miss,,CF Z/MAX@99 fail; CF Z/MIN@99 fail; CF X/MAX@99 fail; CF X/MIN@99 fail; centered SLP@99 fail,0.9,1029
+fixed1000-global-extension,3,13,1,88,90,90,90,CF Z/MAX,3.00e-04,CF Z/MAX@90 pass,0.2,1063
+fixed1000-global-extension,3,14,7,90,155,117,,miss,,CF Z/MAX@155 fail; CF Z/MIN@155 fail; CF X/MAX@155 fail; CF X/MIN@155 fail; centered SLP@155 fail,587.1,1084
+fixed1000-global-extension,3,14,5,90,130,117,,miss,,CF Z/MAX@130 fail; CF Z/MIN@130 fail; CF X/MAX@130 fail; CF X/MIN@130 fail; centered SLP@130 fail,256.3,1290
+fixed1000-global-extension,3,14,3,90,128,117,,miss,,CF Z/MAX@128 fail; CF Z/MIN@128 fail; CF X/MAX@128 fail; CF X/MIN@128 fail; centered SLP@128 fail,10.5,1483
+fixed1000-global-extension,3,14,2,90,113,113,,miss,,CF Z/MAX@113 fail; CF Z/MIN@113 fail; CF X/MAX@113 fail; CF X/MIN@113 fail; centered SLP@113 fail,0.5,1517
+fixed1000-global-extension,3,14,1,90,99,99,,miss,,CF Z/MAX@99 fail; CF Z/MIN@99 fail; CF X/MAX@99 fail; CF X/MIN@99 fail; centered SLP@99 fail,0.2,1551
+fixed1000-global-extension,1,1,7,0,71,12,71,CF Z/MAX,3.00e-04,CF Z/MAX@71 pass,1.2,1594
+fixed1000-global-extension,1,2,7,12,71,21,71,CF Z/MAX,3.00e-04,CF Z/MAX@71 pass,0.8,1616
+fixed1000-global-extension,1,3,7,21,75,30,75,CF Z/MAX,3.00e-04,CF Z/MAX@75 pass,1.9,1635
+fixed1000-global-extension,1,4,7,30,77,40,77,CF Z/MAX,3.00e-04,CF Z/MAX@77 pass,1.8,1657
+fixed1000-global-extension,1,5,7,40,80,55,80,CF Z/MAX,3.00e-04,CF Z/MAX@80 pass,1.6,1680
+fixed1000-global-extension,1,6,7,55,90,64,,miss,,CF Z/MAX@90 fail; CF Z/MIN@90 fail; CF X/MAX@90 fail; CF X/MIN@90 fail; centered SLP@90 fail,146.0,1708
+fixed1000-global-extension,1,6,5,55,77,64,77,CF X/MAX,3.00e-04,CF Z/MAX@77 fail; CF Z/MIN@77 fail; CF X/MAX@77 pass,5.7,1906
+fixed1000-global-extension,1,7,7,64,90,68,90,centered SLP,,CF Z/MAX@90 fail; CF Z/MIN@90 fail; CF X/MAX@90 fail; CF X/MIN@90 fail; centered SLP@90 pass,56.3,1947
+fixed1000-global-extension,1,8,7,68,99,71,,miss,,CF Z/MAX@99 fail; CF Z/MIN@99 fail; CF X/MAX@99 fail; CF X/MIN@99 fail; centered SLP@99 fail,3.6,2024
+fixed1000-global-extension,1,8,5,68,90,71,90,CF Z/MIN,3.00e-04,CF Z/MAX@90 fail; CF Z/MIN@90 pass,24.6,2058
+fixed1000-global-extension,1,9,7,71,113,75,,miss,,CF Z/MAX@113 fail; CF Z/MIN@113 fail; CF X/MAX@113 fail; CF X/MIN@113 fail; centered SLP@113 fail,92.8,2088
+fixed1000-global-extension,1,9,5,71,90,75,90,CF Z/MIN,3.00e-04,CF Z/MAX@90 fail; CF Z/MIN@90 pass,13.9,2288
+fixed1000-global-extension,1,10,7,75,128,77,,miss,,CF Z/MAX@128 fail; CF Z/MIN@128 fail; CF X/MAX@128 fail; CF X/MIN@128 fail; centered SLP@128 fail,235.9,2313
+fixed1000-global-extension,1,10,5,75,99,77,,miss,,CF Z/MAX@99 fail; CF Z/MIN@99 fail; CF X/MAX@99 fail; CF X/MIN@99 fail; centered SLP@99 fail,1.3,2525
+fixed1000-global-extension,1,10,3,75,90,77,90,CF Z/MIN,3.00e-04,CF Z/MAX@90 fail; CF Z/MIN@90 pass,6.0,2559
+fixed1000-global-extension,1,11,7,77,128,80,,miss,,CF Z/MAX@128 fail; CF Z/MIN@128 fail; CF X/MAX@128 fail; CF X/MIN@128 fail; centered SLP@128 fail,231.9,2582
+fixed1000-global-extension,1,11,5,77,113,80,,miss,,CF Z/MAX@113 fail; CF Z/MIN@113 fail; CF X/MAX@113 fail; CF X/MIN@113 fail; centered SLP@113 fail,49.1,2785
+fixed1000-global-extension,1,11,3,77,90,80,90,CF Z/MIN,3.00e-04,CF Z/MAX@90 fail; CF Z/MIN@90 pass,5.9,3008
+fixed1000-global-extension,1,12,7,80,130,88,,miss,,CF Z/MAX@130 fail; CF Z/MIN@130 fail; CF X/MAX@130 fail; CF X/MIN@130 fail; centered SLP@130 fail,200.5,3032
+fixed1000-global-extension,1,12,5,80,128,88,,miss,,CF Z/MAX@128 fail; CF Z/MIN@128 fail; CF X/MAX@128 fail; CF X/MIN@128 fail; centered SLP@128 fail,171.3,3243
+fixed1000-global-extension,1,12,3,80,99,88,,miss,,CF Z/MAX@99 fail; CF Z/MIN@99 fail; CF X/MAX@99 fail; CF X/MIN@99 fail; centered SLP@99 fail,0.7,3439
+fixed1000-global-extension,1,12,2,80,90,88,90,CF Z/MIN,3.00e-04,CF Z/MAX@90 fail; CF Z/MIN@90 pass,5.3,3473
+fixed1000-global-extension,1,13,7,88,155,90,,miss,,CF Z/MAX@155 fail; CF Z/MIN@155 fail; CF X/MAX@155 fail; CF X/MIN@155 fail; centered SLP@155 fail,316.2,3525
+fixed1000-global-extension,1,13,5,88,128,90,,miss,,CF Z/MAX@128 fail; CF Z/MIN@128 fail; CF X/MAX@128 fail; CF X/MIN@128 fail; centered SLP@128 fail,38.8,3737
+fixed1000-global-extension,1,13,3,88,113,90,,miss,,CF Z/MAX@113 fail; CF Z/MIN@113 fail; CF X/MAX@113 fail; CF X/MIN@113 fail; centered SLP@113 fail,9.3,3925
+fixed1000-global-extension,1,13,2,88,99,90,,miss,,CF Z/MAX@99 fail; CF Z/MIN@99 fail; CF X/MAX@99 fail; CF X/MIN@99 fail; centered SLP@99 fail,0.3,4115
+fixed1000-global-extension,1,13,1,88,90,90,90,CF Z/MAX,3.00e-04,CF Z/MAX@90 pass,0.1,4149
+fixed1000-global-extension,1,14,7,90,155,99,,miss,,CF Z/MAX@155 fail; CF Z/MIN@155 fail; CF X/MAX@155 fail; CF X/MIN@155 fail; centered SLP@155 fail,888.8,4170
+fixed1000-global-extension,1,14,5,90,130,99,,miss,,CF Z/MAX@130 fail; CF Z/MIN@130 fail; CF X/MAX@130 fail; CF X/MIN@130 fail; centered SLP@130 fail,307.1,4377
+fixed1000-global-extension,1,14,3,90,128,99,,miss,,CF Z/MAX@128 fail; CF Z/MIN@128 fail; CF X/MAX@128 fail; CF X/MIN@128 fail; centered SLP@128 fail,19.7,4573
+fixed1000-global-extension,1,14,2,90,113,99,,miss,,CF Z/MAX@113 fail; CF Z/MIN@113 fail; CF X/MAX@113 fail; CF X/MIN@113 fail; centered SLP@113 fail,0.5,4607
+fixed1000-global-extension,1,14,1,90,99,99,,miss,,CF Z/MAX@99 fail; CF Z/MIN@99 fail; CF X/MAX@99 fail; CF X/MIN@99 fail; centered SLP@99 fail,0.2,4641
+fixed10000-per-objective,3,1,7,0,68,30,71,CF Z/MAX,3.00e-04,CF Z/MAX@71 pass,56.3,4
+fixed10000-per-objective,3,4,7,30,77,64,77,CF Z/MAX,3.00e-04,CF Z/MAX@77 pass,8.4,45
+fixed10000-per-objective,3,7,7,64,90,75,90,centered SLP,,CF Z/MAX@90 fail; CF Z/MIN@90 fail; CF X/MAX@90 fail; CF X/MIN@90 fail; centered SLP@90 pass,526.4,93
+fixed10000-per-objective,3,10,7,75,117,88,,miss,,CF Z/MAX@128 fail; CF Z/MIN@118 fail; CF X/MAX@128 fail; CF X/MIN@128 fail; centered SLP@117 fail,454.7,191
+fixed10000-per-objective,3,10,5,75,99,88,,miss,,CF Z/MAX@99 fail; CF Z/MIN@99 fail; CF X/MAX@99 fail; CF X/MIN@99 fail; centered SLP@99 fail,2.6,411
+fixed10000-per-objective,3,10,3,75,88,88,90,CF Z/MIN,3.00e-04,CF Z/MAX@90 fail; CF Z/MIN@90 pass,13.3,448
+fixed10000-per-objective,3,13,7,88,132,113,,miss,,CF Z/MAX@155 fail; CF Z/MIN@155 fail; CF X/MAX@155 fail; CF X/MIN@155 fail; centered SLP@132 fail,1149.3,484
+fixed10000-per-objective,3,13,5,88,128,113,,miss,,CF Z/MAX@128 fail; CF Z/MIN@128 fail; CF X/MAX@128 fail; CF X/MIN@128 fail; centered SLP@128 fail,63.3,695
+fixed10000-per-objective,3,13,3,88,113,113,,miss,,CF Z/MAX@113 fail; CF Z/MIN@113 fail; CF X/MAX@113 fail; CF X/MIN@113 fail; centered SLP@113 fail,48.6,882
+fixed10000-per-objective,3,13,2,88,99,99,,miss,,CF Z/MAX@99 fail; CF Z/MIN@99 fail; CF X/MAX@99 fail; CF X/MIN@99 fail; centered SLP@99 fail,0.7,1072
+fixed10000-per-objective,3,13,1,88,90,90,90,CF Z/MAX,3.00e-04,CF Z/MAX@90 pass,0.2,1109
+fixed10000-per-objective,3,14,7,90,155,117,,miss,,CF Z/MAX@155 fail; CF Z/MIN@155 fail; CF X/MAX@155 fail; CF X/MIN@155 fail; centered SLP@155 fail,7900.7,1131
+fixed10000-per-objective,3,14,5,90,130,117,,miss,,CF Z/MAX@130 fail; CF Z/MIN@130 fail; CF X/MAX@130 fail; CF X/MIN@130 fail; centered SLP@130 fail,1727.7,1337
+fixed10000-per-objective,3,14,3,90,117,117,,miss,,CF Z/MAX@128 fail; CF Z/MIN@118 fail; CF X/MAX@128 fail; CF X/MIN@128 fail; centered SLP@117 fail,50.3,1389
+fixed10000-per-objective,3,14,2,90,113,113,,miss,,CF Z/MAX@113 fail; CF Z/MIN@113 fail; CF X/MAX@113 fail; CF X/MIN@113 fail; centered SLP@113 fail,0.7,1426
+fixed10000-per-objective,3,14,1,90,99,99,,miss,,CF Z/MAX@99 fail; CF Z/MIN@99 fail; CF X/MAX@99 fail; CF X/MIN@99 fail; centered SLP@99 fail,0.4,1463
+fixed10000-per-objective,1,1,7,0,68,12,71,CF Z/MAX,3.00e-04,CF Z/MAX@71 pass,1.3,1509
+fixed10000-per-objective,1,2,7,12,71,21,71,CF Z/MAX,3.00e-04,CF Z/MAX@71 pass,0.9,1532
+fixed10000-per-objective,1,3,7,21,75,30,75,CF Z/MAX,3.00e-04,CF Z/MAX@75 pass,1.9,1552
+fixed10000-per-objective,1,4,7,30,77,40,77,CF Z/MAX,3.00e-04,CF Z/MAX@77 pass,1.8,1575
+fixed10000-per-objective,1,5,7,40,80,55,80,CF Z/MAX,3.00e-04,CF Z/MAX@80 pass,1.6,1599
+fixed10000-per-objective,1,6,7,55,88,64,,miss,,CF Z/MAX@90 fail; CF Z/MIN@90 fail; CF X/MAX@90 fail; CF X/MIN@90 fail; centered SLP@88 fail,462.4,1628
+fixed10000-per-objective,1,6,5,55,77,64,77,CF Z/MAX,3.00e-04,CF Z/MAX@77 pass,9.7,1797
+fixed10000-per-objective,1,7,7,64,90,68,,miss,,CF Z/MAX@90 fail; CF Z/MIN@90 fail; CF X/MAX@90 fail; CF X/MIN@90 fail; centered SLP@90 fail,487.9,1820
+fixed10000-per-objective,1,7,5,64,80,68,80,CF Z/MAX,3.00e-04,CF Z/MAX@80 pass,0.2,1992
+fixed10000-per-objective,1,8,7,68,99,71,,miss,,CF Z/MAX@99 fail; CF Z/MIN@99 fail; CF X/MAX@99 fail; CF X/MIN@99 fail; centered SLP@99 fail,213.2,2007
+fixed10000-per-objective,1,8,5,68,88,71,88,centered SLP,,CF Z/MAX@90 fail; CF Z/MIN@90 fail; CF X/MAX@90 fail; CF X/MIN@90 fail; centered SLP@88 pass,312.6,2223
+fixed10000-per-objective,1,9,7,71,113,75,,miss,,CF Z/MAX@113 fail; CF Z/MIN@113 fail; CF X/MAX@113 fail; CF X/MIN@113 fail; centered SLP@113 fail,239.8,2301
+fixed10000-per-objective,1,9,5,71,90,75,90,CF Z/MIN,3.00e-04,CF Z/MAX@90 fail; CF Z/MIN@90 pass,113.4,2507
+fixed10000-per-objective,1,10,7,75,117,77,,miss,,CF Z/MAX@128 fail; CF Z/MIN@118 fail; CF X/MAX@128 fail; CF X/MIN@128 fail; centered SLP@117 fail,268.2,2540
+fixed10000-per-objective,1,10,5,75,99,77,,miss,,CF Z/MAX@99 fail; CF Z/MIN@99 fail; CF X/MAX@99 fail; CF X/MIN@99 fail; centered SLP@99 fail,1.4,2747
+fixed10000-per-objective,1,10,3,75,88,77,90,CF Z/MIN,3.00e-04,CF Z/MAX@90 fail; CF Z/MIN@90 pass,12.3,2784
+fixed10000-per-objective,1,11,7,77,128,80,,miss,,CF Z/MAX@128 fail; CF Z/MIN@128 fail; CF X/MAX@128 fail; CF X/MIN@128 fail; centered SLP@128 fail,321.3,2812
+fixed10000-per-objective,1,11,5,77,113,80,,miss,,CF Z/MAX@113 fail; CF Z/MIN@113 fail; CF X/MAX@113 fail; CF X/MIN@113 fail; centered SLP@113 fail,163.8,3008
+fixed10000-per-objective,1,11,3,77,90,80,90,CF Z/MIN,3.00e-04,CF Z/MAX@90 fail; CF Z/MIN@90 pass,24.2,3210
+fixed10000-per-objective,1,12,7,80,130,88,,miss,,CF Z/MAX@130 fail; CF Z/MIN@130 fail; CF X/MAX@130 fail; CF X/MIN@130 fail; centered SLP@130 fail,1358.9,3236
+fixed10000-per-objective,1,12,5,80,117,88,,miss,,CF Z/MAX@128 fail; CF Z/MIN@118 fail; CF X/MAX@128 fail; CF X/MIN@128 fail; centered SLP@117 fail,282.5,3454
+fixed10000-per-objective,1,12,3,80,99,88,,miss,,CF Z/MAX@99 fail; CF Z/MIN@99 fail; CF X/MAX@99 fail; CF X/MIN@99 fail; centered SLP@99 fail,0.7,3676
+fixed10000-per-objective,1,12,2,80,90,88,90,CF Z/MIN,3.00e-04,CF Z/MAX@90 fail; CF Z/MIN@90 pass,2.2,3713
+fixed10000-per-objective,1,13,7,88,132,90,,miss,,CF Z/MAX@155 fail; CF Z/MIN@155 fail; CF X/MAX@155 fail; CF X/MIN@155 fail; centered SLP@132 fail,1214.0,3770
+fixed10000-per-objective,1,13,5,88,128,90,,miss,,CF Z/MAX@128 fail; CF Z/MIN@128 fail; CF X/MAX@128 fail; CF X/MIN@128 fail; centered SLP@128 fail,196.1,3989
+fixed10000-per-objective,1,13,3,88,113,90,,miss,,CF Z/MAX@113 fail; CF Z/MIN@113 fail; CF X/MAX@113 fail; CF X/MIN@113 fail; centered SLP@113 fail,34.5,4198
+fixed10000-per-objective,1,13,2,88,99,90,,miss,,CF Z/MAX@99 fail; CF Z/MIN@99 fail; CF X/MAX@99 fail; CF X/MIN@99 fail; centered SLP@99 fail,0.4,4411
+fixed10000-per-objective,1,13,1,88,90,90,90,CF Z/MAX,3.00e-04,CF Z/MAX@90 pass,0.2,4448
+fixed10000-per-objective,1,14,7,90,155,99,,miss,,CF Z/MAX@155 fail; CF Z/MIN@155 fail; CF X/MAX@155 fail; CF X/MIN@155 fail; centered SLP@155 fail,5933.0,4470
+fixed10000-per-objective,1,14,5,90,130,99,,miss,,CF Z/MAX@130 fail; CF Z/MIN@130 fail; CF X/MAX@130 fail; CF X/MIN@130 fail; centered SLP@130 fail,2318.7,4530
+fixed10000-per-objective,1,14,3,90,117,99,,miss,,CF Z/MAX@128 fail; CF Z/MIN@118 fail; CF X/MAX@128 fail; CF X/MIN@128 fail; centered SLP@117 fail,8.0,4733
+fixed10000-per-objective,1,14,2,90,113,99,,miss,,CF Z/MAX@113 fail; CF Z/MIN@113 fail; CF X/MAX@113 fail; CF X/MIN@113 fail; centered SLP@113 fail,0.6,4771
+fixed10000-per-objective,1,14,1,90,99,99,,miss,,CF Z/MAX@99 fail; CF Z/MIN@99 fail; CF X/MAX@99 fail; CF X/MIN@99 fail; centered SLP@99 fail,0.3,4808
