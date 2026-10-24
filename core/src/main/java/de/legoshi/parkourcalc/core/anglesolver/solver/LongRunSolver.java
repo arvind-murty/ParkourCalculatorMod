@@ -35,7 +35,7 @@ public final class LongRunSolver {
 
     public static boolean DEBUG = false;
 
-    /** Opt-in endpoint policy for fixed-start, nonterminal windows with a direct objective cap. */
+    /** Opt-in endpoint policy applied separately to each capped objective in fixed-start, nonterminal windows. */
     public enum WindowAdjustment { NONE, FORWARD_JUMP, FORWARD_TICK }
 
     public static final class LongRunConfig {
@@ -224,15 +224,10 @@ public final class LongRunSolver {
                 int a = bounds[i], c = bounds[we];
                 int ce = last ? we : Math.min(i + Math.min(commitJumps, w), jumps);
                 int commitTicks = bounds[ce] - a;
-                // Keep the nominal commit span. Only the provisional lookahead endpoint moves.
-                if (!last && freeBox == null && config.adjustment != WindowAdjustment.NONE) {
-                    int nominalEnd = c;
-                    int jumpEnd = we + 1 < bounds.length ? bounds[we + 1] : c;
-                    c = adjustedEnd(spec, a, c, jumpEnd, sc.numTicks, seedYaw, config.adjustment);
-                    if (SolverTrace.on()) SolverTrace.log("LRS-ADJUST",
-                            "policy=%s commit=%d start=%d nominalEnd=%d selectedEnd=%d replayTicks=%d",
-                            config.adjustment, commitJumps, a, nominalEnd, c, commitTicks);
-                }
+                // Each objective chooses its own endpoint from this nominal window.
+                WindowContext context = !last && freeBox == null && config.adjustment != WindowAdjustment.NONE
+                        ? new WindowContext(sc, spec, a, c, bounds[we + 1], seedPos, seedVel, seedYaw, config.adjustment)
+                        : null;
                 JumpPhysicsInputs win = sliceScenario(sc, a, c, seedPos, seedVel, seedYaw);
                 List<JumpConstraint> cons = sliceConstraints(spec, a, c, seedYaw);
                 if (SolverTrace.on()) {
@@ -247,7 +242,9 @@ public final class LongRunSolver {
                 Objective obj = last
                         ? new Objective(spec.objective.axis, spec.objective.sense, c - a)   // last window: real objective
                         : new Objective(JumpPhysicsInputs.Axis.Z, Objective.Sense.MAX, c - a); // lead-in: any feasible
-                String winKey = windowKey(a, c, last, commitTicks, seedPos, seedVel, seedYaw) + ":margin=" + config.fixedMargin;
+                String winKey = windowKey(a, c, last, commitTicks, seedPos, seedVel, seedYaw)
+                        + ":margin=" + config.fixedMargin + ":adjustment=" + config.adjustment
+                        + ":nextJumpEnd=" + (context == null ? c : context.jumpEnd);
                 double[] cachedWin = windows.map.get(winKey);
                 double[] yaws;
                 if (cachedWin != null) {
@@ -258,7 +255,7 @@ public final class LongRunSolver {
                     }
                 } else {
                     long winT0 = SolverTrace.on() ? System.nanoTime() : 0L;
-                    yaws = solveWindow(exact, win, cons, obj, last, commitTicks, cancel, deadlineNanos, config.fixedMargin);
+                    yaws = solveWindow(exact, win, cons, obj, last, commitTicks, cancel, deadlineNanos, config.fixedMargin, context);
                     if (cancel == null || !cancel.get()) {
                         windows.map.put(winKey, yaws == null ? WINDOW_MISS : yaws.clone());
                     }
@@ -302,6 +299,13 @@ public final class LongRunSolver {
                     }
                 }
                 if (yaws == null) continue;
+                // The accepted objective may have used a longer lookahead than another objective.
+                // Rebuild precisely that scenario, including after a cache hit, before exact replay.
+                if (context != null && yaws.length != win.numTicks) {
+                    win = sliceScenario(sc, a, a + yaws.length, seedPos, seedVel, seedYaw);
+                }
+                if (context != null && SolverTrace.on()) SolverTrace.log("LRS-SELECT",
+                        "start=%d nominalEnd=%d acceptedEnd=%d replayTicks=%d", a, c, a + yaws.length, commitTicks);
 
                 // Commit the first commitJumps jumps (all of them for the final window), chaining the exact exit.
                 double[] wgf = win.toGameFacings(yaws);
@@ -330,23 +334,73 @@ public final class LongRunSolver {
         return gf;
     }
 
-    /** Extend only when the nominal +Z objective is directly capped. Never move the final goal
-     *  or consume the endpoint reserved for a terminal solve. Try the other forward size if needed. */
+    /** Full-route context for reslicing a provisional window independently for each objective. */
+    private static final class WindowContext {
+        final JumpPhysicsInputs source;
+        final JumpSpec spec;
+        final int start, end, jumpEnd;
+        final Vec3dCore pos, vel;
+        final float yaw;
+        final WindowAdjustment policy;
+
+        WindowContext(JumpPhysicsInputs source, JumpSpec spec, int start, int end, int jumpEnd,
+                      Vec3dCore pos, Vec3dCore vel, float yaw, WindowAdjustment policy) {
+            this.source = source;
+            this.spec = spec;
+            this.start = start;
+            this.end = end;
+            this.jumpEnd = jumpEnd;
+            this.pos = pos;
+            this.vel = vel;
+            this.yaw = yaw;
+            this.policy = policy;
+        }
+    }
+
+    // Preserve the original +Z preflight entry point for existing diagnostic callers.
     private static int adjustedEnd(JumpSpec spec, int start, int end, int jumpEnd, int routeEnd,
                                    float yaw, WindowAdjustment policy) {
-        if (policy == WindowAdjustment.NONE || !hasDirectZCap(spec, start, end, yaw)) return end;
+        return adjustedEnd(spec, start, end, jumpEnd, routeEnd, yaw, policy,
+                new Objective(JumpPhysicsInputs.Axis.Z, Objective.Sense.MAX, end - start));
+    }
+
+    /** Extend only when this objective has a matching direct cap. Never move the final goal
+     *  or consume the endpoint reserved for a terminal solve. Try the other forward size if needed. */
+    private static int adjustedEnd(JumpSpec spec, int start, int end, int jumpEnd, int routeEnd,
+                                   float yaw, WindowAdjustment policy, Objective objective) {
+        if (policy == WindowAdjustment.NONE || !hasDirectCap(spec, start, end, yaw, objective)) return end;
         int[] choices = policy == WindowAdjustment.FORWARD_JUMP
                 ? new int[]{jumpEnd, end + 1} : new int[]{end + 1, jumpEnd};
         for (int candidate : choices) {
-            if (candidate > end && candidate < routeEnd && !hasDirectZCap(spec, start, candidate, yaw))
+            if (candidate > end && candidate < routeEnd && !hasDirectCap(spec, start, candidate, yaw, objective))
                 return candidate;
         }
         return end;
     }
 
-    private static boolean hasDirectZCap(JumpSpec spec, int start, int end, float yaw) {
-        Objective objective = new Objective(JumpPhysicsInputs.Axis.Z, Objective.Sense.MAX, end - start);
-        return ObjectiveBounds.directCap(objective, sliceConstraints(spec, start, end, yaw)) != null;
+    private static Objective atEnd(Objective objective, int tick) {
+        return new Objective(objective.axis, objective.sense, tick, objective.smoothLambda,
+                objective.customYaw, objective.type);
+    }
+
+    private static boolean hasDirectCap(JumpSpec spec, int start, int end, float yaw, Objective objective) {
+        return ObjectiveBounds.directCap(atEnd(objective, end - start),
+                sliceConstraints(spec, start, end, yaw)) != null;
+    }
+
+    private static JumpSpec objectiveWindow(JumpPhysicsInputs nominal, List<JumpConstraint> constraints,
+                                            Objective objective, WindowContext context) {
+        if (context == null) return new JumpSpec(nominal, constraints, objective);
+        int end = adjustedEnd(context.spec, context.start, context.end, context.jumpEnd,
+                context.source.numTicks, context.yaw, context.policy, objective);
+        if (SolverTrace.on()) SolverTrace.log("LRS-ADJUST",
+                "policy=%s objective=%s/%s start=%d nominalEnd=%d selectedEnd=%d",
+                context.policy, objective.axis, objective.sense, context.start, context.end, end);
+        if (end == context.end) return new JumpSpec(nominal, constraints, objective);
+        JumpPhysicsInputs scenario = sliceScenario(context.source, context.start, end,
+                context.pos, context.vel, context.yaw);
+        List<JumpConstraint> rows = sliceConstraints(context.spec, context.start, end, context.yaw);
+        return new JumpSpec(scenario, rows, atEnd(objective, end - context.start));
     }
 
     private static String windowKey(int a, int c, boolean last, int commitTicks, Vec3dCore pos, Vec3dCore vel, float yaw) {
@@ -366,7 +420,13 @@ public final class LongRunSolver {
     private static double[] solveWindow(ExactJumpModel exact, JumpPhysicsInputs win, List<JumpConstraint> cons,
                                         Objective first, boolean last, int commitTicks, AtomicBoolean cancel,
                                         long deadlineNanos, Double fixedMargin) {
-        traceObjectiveBound(last ? "terminal" : "primary", first, cons);
+        return solveWindow(exact, win, cons, first, last, commitTicks, cancel, deadlineNanos, fixedMargin, null);
+    }
+
+    private static double[] solveWindow(ExactJumpModel exact, JumpPhysicsInputs win, List<JumpConstraint> cons,
+                                        Objective first, boolean last, int commitTicks, AtomicBoolean cancel,
+                                        long deadlineNanos, Double fixedMargin, WindowContext context) {
+        if (last) traceObjectiveBound("terminal", first, cons);
         ClosedFormSolve.Config closed = new ClosedFormSolve.Config();
         if (fixedMargin != null) {
             closed.margins = new double[]{fixedMargin};
@@ -386,30 +446,32 @@ public final class LongRunSolver {
             return result;
         }
         closed.replayTickLimit = commitTicks;
-        long objectiveT0 = SolverTrace.on() ? System.nanoTime() : 0L;
-        if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "begin primary %s/%s@%d", first.axis, first.sense, first.tick);
-        double[] y = ClosedFormSolve.optimizeRobust(exact, new JumpSpec(win, cons, first), 0.0, cancel, closed);
-        if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "end primary result=%s ms=%.3f",
-                y != null ? "solved" : "miss", (System.nanoTime() - objectiveT0) / 1.0e6);
-        if (y != null) return y;
-        for (Objective alt : alternates(first, win.numTicks)) {
+        List<Objective> objectives = new ArrayList<>();
+        objectives.add(first);
+        objectives.addAll(alternates(first, win.numTicks));
+        for (int k = 0; k < objectives.size(); k++) {
             if (cancel != null && cancel.get()) return null;
-            objectiveT0 = SolverTrace.on() ? System.nanoTime() : 0L;
-            if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "begin alternate %s/%s@%d", alt.axis, alt.sense, alt.tick);
-            traceObjectiveBound("alternate", alt, cons);
-            y = ClosedFormSolve.optimizeRobust(exact, new JumpSpec(win, cons, alt), 0.0, cancel, closed);
-            if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "end alternate %s/%s@%d result=%s ms=%.3f",
-                    alt.axis, alt.sense, alt.tick, y != null ? "solved" : "miss",
-                    (System.nanoTime() - objectiveT0) / 1.0e6);
+            JumpSpec attempt = objectiveWindow(win, cons, objectives.get(k), context);
+            Objective selected = attempt.objective;
+            String stage = k == 0 ? "primary" : "alternate";
+            traceObjectiveBound(stage, selected, attempt.constraints);
+            long t0 = SolverTrace.on() ? System.nanoTime() : 0L;
+            if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "begin %s %s/%s@%d", stage,
+                    selected.axis, selected.sense, selected.tick);
+            double[] y = ClosedFormSolve.optimizeRobust(exact, attempt, 0.0, cancel, closed);
+            if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "end %s %s/%s@%d result=%s ms=%.3f", stage,
+                    selected.axis, selected.sense, selected.tick, y != null ? "solved" : "miss",
+                    (System.nanoTime() - t0) / 1.0e6);
             if (y != null) return y;
         }
         if (cancel != null && cancel.get()) return null;
-        objectiveT0 = SolverTrace.on() ? System.nanoTime() : 0L;
+        // Centered SLP restores feasibility on the nominal window; it does not maximize first.
+        long objectiveT0 = SolverTrace.on() ? System.nanoTime() : 0L;
         if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "begin fallback SLP %s/%s@%d",
                 first.axis, first.sense, first.tick);
         SlpSolve.Config slp = new SlpSolve.Config();
         slp.replayTickLimit = commitTicks;
-        y = SlpSolve.optimizeCentered(exact, new JumpSpec(win, cons, first), 0.0, cancel, null, slp);
+        double[] y = SlpSolve.optimizeCentered(exact, new JumpSpec(win, cons, first), 0.0, cancel, null, slp);
         if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "end fallback SLP result=%s ms=%.3f",
                 y != null ? "solved" : "miss", (System.nanoTime() - objectiveT0) / 1.0e6);
         return y;
