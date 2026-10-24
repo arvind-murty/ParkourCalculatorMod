@@ -46,3 +46,13 @@ The normal reference is a 30-jump/250-tick route, whereas the new probe uses the
 - [Every window](fixed-seven-window-local-bounds-2026-10-23/windows.csv), [every objective attempt](fixed-seven-window-local-bounds-2026-10-23/objectives.csv), [CF rungs](fixed-seven-window-local-bounds-2026-10-23/cf-rungs.csv), [accepted-window timings](fixed-seven-window-local-bounds-2026-10-23/per-step-timing.md).
 - [Saved normal reference](shared-inertia-validation-2026-10-23/normal7-commit1.txt).
 - [Probe command/settings](fixed-seven-window-local-bounds-2026-10-23/metadata.txt), [background Gradle log](fixed-seven-window-local-bounds-2026-10-23/focused-test.log). Gradle succeeded; the probe records a solver miss without treating it as an assertion failure.
+
+## Why jump6 Z/MIN differs despite an accepted margin of0.0003
+
+The endpoint is identical (states55–88), but the optimization problems and execution paths differ. Normal has53 rows; fixed drops `Z@88lo >= -1090.300000011921`, leaving52. Thus normal minimizes toward a retained lower wall, whereas fixed can continue below it. Entry state normal: X730.338594178782,Z-1096.094697424725,VX-0.226905272350,VZ0.168494581577,yaw86.486671448. Fixed: X730.296913235570,Z-1096.123854818772,VX-0.233829877256,VZ0.159910783797,yaw93.870376587.
+
+Normal's unpatterned Z/MIN ladder reaches0.0003 with replay0 but continuous violation0.540808411714; it does NOT pass there. The next0-margin rung has violation0.0421825973708 and supplies the best candidate for inertia discovery. Pass1 fixes local X8,X26 (global X63,X81), restarts the margin ladder, and finally passes0.0003 in71 iterations with replay0 and continuous0. Each rung warm-starts the next rung's multipliers (`ClosedFormSolve.runLadder`), so its accepted0.0003 is not a cold standalone0.0003 solve.
+
+Fixed has one cold0.0003 rung. It stops at1264 iterations with `RECOVERED_INPUT_STALL`, projected residual0.0394, replay-prefix violation0.0113403853090, full continuous violation1.50530499057. Its candidate produces an empty effective inertia pattern (`pattern free ineffective`), so no inertia-pattern retry occurs. Input-stall means the recovered dual controls stopped changing; it is not a feasibility certificate. This is not a max10000-iteration failure. Normal also used cap100/EPS2=1e-14; fixed uses10000/1e-24.
+
+Sources: normal trace lines102–181 (Z/MIN begins149); fixed trace lines1907–1934 (Z/MIN begins1928). These establish the different trajectories and actual stop, but do not isolate which change causes it; no new control run was made.
