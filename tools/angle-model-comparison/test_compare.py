@@ -49,13 +49,16 @@ class ComparisonTest(unittest.TestCase):
         self.assertEqual(case["facingWalls"], [])
         self.assertEqual(case["objective"]["tick"], 350)
         self.assertTrue(all(max(row["t1"], row.get("t2", 0)) <= 350 for row in case["walls"]))
-        witness = saved["witness"]
-        angle = np.array(case["base"]) + np.deg2rad(witness["yaw"])
-        controls = np.array(case["magnitude"])[:, None] * np.column_stack((np.cos(angle), np.sin(angle)))
-        positions = np.array(witness["positions"]) - case["position"]
-        result = validate_candidate(case, positions, controls, saved["tolerance"])
-        self.assertTrue(result["feasible"])
-        self.assertAlmostEqual(result["objective"], 703.3000000119208, places=8)
+        states = json.loads((root / "state-witnesses.json").read_text())
+        self.assertEqual(states["problemsSha256"], saved["problemsSha256"])
+        for witness in [saved["witness"]] + states["witnesses"]:
+            with self.subTest(formulation=witness["formulation"]):
+                angle = np.array(case["base"]) + np.deg2rad(witness["yaw"])
+                controls = np.array(case["magnitude"])[:, None] * np.column_stack((np.cos(angle), np.sin(angle)))
+                positions = np.array(witness["positions"]) - case["position"]
+                result = validate_candidate(case, positions, controls, saved["tolerance"])
+                self.assertTrue(result["feasible"])
+                self.assertAlmostEqual(result["objective"], 703.3000000119208, places=8)
 
     def test_saved_real11_copy_and_interval_infeasibility_bound(self):
         root = Path(__file__).parent / "benchmarks/real11-full-2026-10-25"
