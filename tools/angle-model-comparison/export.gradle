@@ -1,0 +1,19 @@
+gradle.projectsEvaluated {
+    def core = gradle.rootProject.project(':core')
+    def experiment = new File(gradle.rootProject.projectDir, 'tools/angle-model-comparison')
+    core.tasks.register('compileContinuousModelExport', JavaCompile) {
+        dependsOn core.tasks.named('testClasses')
+        source new File(experiment, 'ExportContinuousModel.java')
+        classpath = core.sourceSets.test.runtimeClasspath
+        destinationDirectory = new File(experiment, 'build/classes')
+        options.release = 8
+    }
+    core.tasks.register('exportContinuousModel', JavaExec) {
+        dependsOn core.tasks.named('compileContinuousModelExport')
+        classpath = core.sourceSets.test.runtimeClasspath + core.files(new File(experiment, 'build/classes'))
+        mainClass = 'de.legoshi.parkourcalc.anglesolver.harness.ExportContinuousModel'
+        args gradle.rootProject.projectDir.absolutePath,
+                new File(experiment, 'cases.json').absolutePath,
+                new File(experiment, 'build/problems.json').absolutePath
+    }
+}

@@ -1,0 +1,11 @@
+[
+  {"name":"j111", "source":"core/src/test/resources/captures/hpk/d9/j111_0bm_Trapdoor_to_Trapdoor_Cross_Neo.json"},
+  {"name":"j119", "source":"core/src/test/resources/captures/hpk/d9/j119_Head_Waza_to_Anvil.json"},
+  {"name":"j120", "source":"core/src/test/resources/captures/hpk/d9/j120_3bm_5.0625b-0.5.json"},
+  {"name":"j121", "source":"core/src/test/resources/captures/hpk/d9/j121_3jmm_Double_Winged_Neo__0.5.json"},
+  {"name":"j122", "source":"core/src/test/resources/captures/hpk/d9/j122_1.5b_Head_Butterfly_Neo.json"},
+  {"name":"j128", "source":"core/src/test/resources/captures/hpk/d9/j128_Head_to_Head_Neo_1bl.json"},
+  {"name":"real11-60-Xmax", "source":"docs/research/solver-traces/jump39-baseline-handoff-2026-10-24/real11-input.json.gz", "ticks":60, "axis":"X", "sense":"MAX"},
+  {"name":"real11-100-Xmax", "source":"docs/research/solver-traces/jump39-baseline-handoff-2026-10-24/real11-input.json.gz", "ticks":100, "axis":"X", "sense":"MAX"},
+  {"name":"real11-100-Zmax", "source":"docs/research/solver-traces/jump39-baseline-handoff-2026-10-24/real11-input.json.gz", "ticks":100, "axis":"Z", "sense":"MAX"}
+]
