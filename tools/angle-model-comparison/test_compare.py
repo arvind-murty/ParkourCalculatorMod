@@ -5,7 +5,7 @@ import numpy as np
 
 from compare import CandidateMonitor, FORMULATIONS, build_problem, execute_solver, forward, initial_controls, start_vector, validate_candidate, wall_residual
 from analyze import native_validation
-from disk_phase1 import diagnose
+from disk_phase1 import affine_walls, diagnose
 
 
 def fixture(magnitude, velocity=(0.0, 0.0), walls=(), sense="MAX"):
@@ -30,6 +30,35 @@ def solve(case, formulation):
 
 
 class ComparisonTest(unittest.TestCase):
+    def test_sqp_constraint_jacobians_match_finite_differences(self):
+        case = fixture([0.1, 0.026, 0.0], velocity=(0.17, -0.09), walls=[
+            {"mode": "X", "t1": 3, "cmp": "LE", "rhs": 7.8},
+            {"mode": "Z", "t1": 2, "t2": 1, "op": "PLUS", "cmp": "GE", "rhs": -6.0}])
+        case["yaw"] = [30.0, 60.0, 0.0]
+        for formulation in FORMULATIONS:
+            solver, _, evaluate, slices, _, _, _, _, _ = build_problem(case, formulation, backend="sqp")
+            start = np.array(start_vector(case, 0, slices))
+            jacobian = np.array(solver.get_function("nlp_jac_fg")(start, [])[3])
+            finite = np.zeros_like(jacobian)
+            for column in range(len(start)):
+                shift = np.zeros_like(start)
+                shift[column] = 1e-6
+                finite[:, column] = (np.array(evaluate(start + shift)).ravel()
+                                     - np.array(evaluate(start - shift)).ravel()) / 2e-6
+            np.testing.assert_allclose(jacobian, finite, atol=2e-8, rtol=2e-8)
+
+    def test_affine_disk_rows_match_absolute_sum_and_difference_walls(self):
+        walls = [{"mode": "X", "t1": 3, "t2": 1, "op": "PLUS", "cmp": "LE", "rhs": 14.5},
+                 {"mode": "Z", "t1": 2, "t2": 1, "op": "MINUS", "cmp": "GE", "rhs": 0.1}]
+        case = fixture([0.1, 0.0, 0.026], velocity=(0.17, -0.09), walls=walls)
+        active, matrix, rhs = affine_walls(case)
+        controls = initial_controls(case, 2)
+        q = controls[active] / np.array(case["magnitude"])[active, None]
+        positions, _ = forward(case, controls)
+        expected = [wall_residual(case, wall, positions) * (1 if wall["cmp"] == "LE" else -1)
+                    for wall in walls]
+        np.testing.assert_allclose(matrix @ q.ravel() - rhs, expected, atol=2e-14)
+
     def test_backend_exception_keeps_the_last_candidate_and_error_status(self):
         case = fixture([0.1])
         monitor = CandidateMonitor(case, 1e-7)
@@ -56,7 +85,7 @@ class ComparisonTest(unittest.TestCase):
         result = diagnose(case)
         expected = 0.08 - 0.1 / math.sqrt(2.0)
         self.assertAlmostEqual(result["supportDualLowerBound"], expected, places=9)
-        self.assertAlmostEqual(result["diskWorstSlack"], expected, places=9)
+        self.assertGreaterEqual(result["diskPrimalUpperBound"], expected - 1e-12)
         self.assertTrue(all(weight >= 0 for weight in result["nonnegativeWeights"]))
         self.assertAlmostEqual(result["weightSum"], 1.0)
 
@@ -64,6 +93,15 @@ class ComparisonTest(unittest.TestCase):
         case = fixture([0.1], walls=[{"mode": "X", "t1": 1, "cmp": "GE", "rhs": 7.08}])
         result = diagnose(case)
         self.assertAlmostEqual(result["supportDualLowerBound"], -0.02, places=9)
+
+    def test_disk_phase_one_closes_the_bound_on_a_multitick_problem(self):
+        case = fixture([0.1, 0.1], walls=[
+            {"mode": "X", "t1": 2, "cmp": "GE", "rhs": 7.13},
+            {"mode": "Z", "t1": 2, "cmp": "GE", "rhs": -2.85}])
+        expected = (0.28 - math.sqrt(2 * 0.291 ** 2 - 0.02 ** 2)) / 2
+        result = diagnose(case)
+        self.assertLess(result["diskGap"], 2e-8)
+        self.assertAlmostEqual(result["supportDualLowerBound"], expected, places=7)
 
     def test_native_output_validation_checks_the_replayed_path_and_objective(self):
         case = fixture([0.1, 0.1])

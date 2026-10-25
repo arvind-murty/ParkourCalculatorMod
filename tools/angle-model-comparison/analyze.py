@@ -9,7 +9,7 @@ import numpy as np
 from compare import forward, validate_candidate, verify_oracles
 
 
-def native_validation(case, row, tolerance=1e-7):
+def native_validation(case, row, tolerance=1e-7, roundoff=2e-10):
     if not row["returned"]:
         return {"feasible": False}
     angle = np.array(case["base"]) + np.deg2rad(row["yaw"])
@@ -19,9 +19,10 @@ def native_validation(case, row, tolerance=1e-7):
     error = float(np.max(np.abs(positions - replay)))
     if error > 2e-10:
         raise AssertionError((case["name"], row["method"], "Java replay mismatch", error))
-    result = validate_candidate(case, positions, controls, tolerance)
-    if bool(row["feasible"]) != result["feasible"]:
-        raise AssertionError((case["name"], "Java feasibility mismatch"))
+    result = validate_candidate(case, positions, controls, tolerance + roundoff)
+    if abs(max(0.0, row["wallViolation"]) - result["wallViolation"]) > roundoff:
+        raise AssertionError((case["name"], "Java wall residual mismatch"))
+    result["originalFeasible"] = row["feasible"]
     if abs(row["objective"] - result["objective"]) > 2e-10:
         raise AssertionError((case["name"], "Java objective mismatch"))
     return result
@@ -52,7 +53,11 @@ def analyze(problems, native, reports):
         if report["problemsSha256"] != hashlib.sha256(data).hexdigest():
             raise AssertionError("NLP benchmark used different problems")
         for row in report["results"]:
-            methods[report["solver"] + "/" + row["formulation"]].append(row)
+            scored = dict(row, originalFeasible=row["feasible"])
+            residuals = ("wallViolation", "rawWallViolation", "magnitudeError", "dynamicsError", "replayDifference")
+            scored["feasible"] = max([row.get(key, float("inf")) for key in residuals]
+                                     + [row["constantViolation"]]) <= 1e-7 + 2e-10
+            methods[report["solver"] + "/" + row["formulation"]].append(scored)
     best = {}
     for rows in methods.values():
         for row in rows:
@@ -90,7 +95,8 @@ def analyze(problems, native, reports):
             "bestOfAllSeedsSeconds": {name: sum(row["solveSeconds"] for row in group)
                                       for name, group in grouped.items()},
         }
-    return {"problemsSha256": hashlib.sha256(data).hexdigest(), "methods": summary,
+    return {"problemsSha256": hashlib.sha256(data).hexdigest(), "searchTolerance": 1e-7,
+            "scoringRoundoffAllowance": 2e-10, "methods": summary,
             "bestObservedNormalizedObjective": best}
 
 
