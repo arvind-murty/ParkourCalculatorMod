@@ -1,5 +1,7 @@
 # Jump39 investigation handoff: preserved baselines
 
+**Follow-up: [compiled jump30–50 constraints and lead-up windows](../jump30-50-route-map-2026-10-24/README.md).** Exact export detects76 total segments, correcting the earlier74 in this handoff; numbered boundaries30–50 and stop39/state351 are unchanged.
+
 2026-10-24. Start here before investigating the failure. This document inventories existing evidence; no new solve or solver behavior change was made for this handoff. Current implementation commit **b84931e**, staged full-run artifact commit **8b9806b**. The records establish solver failure from two generated states, not proof of physical infeasibility.
 
 ## 1. Which baseline is which
@@ -16,7 +18,7 @@ The staged run is70.7% shorter,3.41x baseline/staged elapsed ratio. Neither reac
 
 ## 2. Original input and reproducibility
 
-Original real/11.json:810 rows,808 modeled ticks,636 compiled original constraints,74 detected jump segments, final X/MAX@808. SHA256 `af5d2d1bc6e0ab466f1b6cf309f3a26e76e4a63765ac8b15ff02fb4ad55d28bf`.
+Original real/11.json:810 rows,808 modeled ticks,636 compiled original constraints,76 detected jump segments, final X/MAX@808. SHA256 `af5d2d1bc6e0ab466f1b6cf309f3a26e76e4a63765ac8b15ff02fb4ad55d28bf`.
 
 - [Exact original input archive](real11-input.json.gz), [input metadata](input-metadata.json). Decompress to a temporary file and set PKC_TRACE_INPUT when reproducing a full-route probe if the external original changes.
 - [Authored constraints and physics overrides near39](authored-constraints-340-493.json). These are original JSON entries, not compiled rows; the engine can expand/duplicate constraints.
