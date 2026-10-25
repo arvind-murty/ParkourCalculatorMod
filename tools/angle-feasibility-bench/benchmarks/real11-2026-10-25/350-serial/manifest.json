@@ -1,0 +1,43 @@
+{
+  "created_utc": "2026-10-25T22:23:40.885924+00:00",
+  "code_commit": "9bc4d24479056edb010053ea32bee311b064b4a9",
+  "code_hashes": {
+    "test_feasibility.py": "71f29bee2ccdbacf6dcf446b24c2742b9d31f251872de3887fbb45d47f499628",
+    "baselines.py": "88a79616d807916459ae13680508793fefd76a6bd24072e32b39f2caa10e1223",
+    "run.py": "e85824e94b315a81fd09a18ebf34d426a029611cb96c6bc1fdb837d7b1d84120",
+    "model.py": "45b1b49084512a6805b102646fb4dcf4044a560115917cada480f4ba8fb1c9e9",
+    "verify.py": "7db7616bdcd129020b1045b257841900d18920ee48dd54c038e9c414b7cbb7d5",
+    "restrictions.py": "c1773cbb8a16b86365393c71dc3a8e2f7162945044553cb07718febd75614292",
+    "requirements.txt": "52307197b0bdac5eb3598a10f8536c51e8ebf748d26a9a6060777f2ff1b71713"
+  },
+  "packages": {
+    "numpy": "2.5.4",
+    "scipy": "1.16.3",
+    "casadi": "3.8.1",
+    "clarabel": "0.11.1",
+    "pyscipopt": "6.3.0"
+  },
+  "cpu": "Apple M1 Pro",
+  "threads": 1,
+  "horizons": [
+    350
+  ],
+  "starts": [
+    "waypoints",
+    "random-0",
+    "random-1",
+    "random-2",
+    "random-3",
+    "random-4"
+  ],
+  "methods": [
+    "inner",
+    "ipopt"
+  ],
+  "seconds": 60,
+  "max_nodes": 4096,
+  "source_sha256": "ce8b765c0f8b1e1d0add83d2a690230e1df0898d4bc4c8919d7a72b358bd27be",
+  "positional_rows": 273,
+  "two_time_rows": 4,
+  "timing": "Serial subprocesses; solve seconds exclude IPOPT model construction; process_seconds include startup and serialization."
+}
