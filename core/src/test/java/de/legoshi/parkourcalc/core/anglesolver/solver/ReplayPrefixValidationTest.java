@@ -62,7 +62,7 @@ public class ReplayPrefixValidationTest {
     }
 
     @Test
-    public void centeredSlpRejectsAFeasiblePrefixWhenTheContinuousLookaheadMisses() {
+    public void centeredSlpRejectsAFeasiblePrefixWhenTheReplayLookaheadMisses() {
         JumpPhysicsInputs sc = new JumpPhysicsInputs(4);
         JumpSpec spec = new JumpSpec(sc, Arrays.asList(
                 row(JumpConstraint.Mode.X, 1, null, JumpConstraint.Cmp.LE, 1, "committed position"),
@@ -73,9 +73,7 @@ public class ReplayPrefixValidationTest {
         // Hold the seed fixed to isolate the phase-1 replay acceptance rule from LP improvements.
         cfg.phase1Calls = 0;
         cfg.totalCalls = 1;
-        assertNull(SlpSolve.optimizeCentered(exact, spec, 0, new AtomicBoolean(false), new double[4], cfg));
-        cfg.replayTickLimit = 1;
         double[] yaws = SlpSolve.optimizeCentered(exact, spec, 0, new AtomicBoolean(false), new double[4], cfg);
-        assertNull("prefix replay cannot override a continuous lookahead violation", yaws);
+        assertNull("SLP requires full-window replay feasibility", yaws);
     }
 }

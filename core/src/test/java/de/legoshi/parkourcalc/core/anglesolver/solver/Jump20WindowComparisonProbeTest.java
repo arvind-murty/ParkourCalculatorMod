@@ -19,7 +19,7 @@ import java.util.zip.GZIPInputStream;
 @Category(SlowSolverTests.class)
 public class Jump20WindowComparisonProbeTest {
     private static final Path ROOT=Paths.get("/Users/arvindmurty/CS/ParkourCalculatorMod");
-    private static final Path OUT=ROOT.resolve("docs/research/solver-traces/jump20-window-comparison-2026-10-24");
+    private static final Path OUT=ROOT.resolve(System.getProperty("pkc.jump20Output", "docs/research/solver-traces/jump20-slp-replay-validation-2026-10-24"));
     private static String csv(Object... values){StringJoiner out=new StringJoiner(",");for(Object value:values){String text=String.valueOf(value);out.add(text.indexOf(',')>=0 || text.indexOf('"')>=0 ? "\""+text.replace("\"","\"\"")+"\"" : text);}return out.toString();}
     private static void write(String name,List<String> rows)throws Exception{Files.write(OUT.resolve(name),rows,StandardCharsets.UTF_8);}
     @Test public void compareWindows()throws Exception {
@@ -41,6 +41,7 @@ public class Jump20WindowComparisonProbeTest {
         Method solve=LongRunSolver.class.getDeclaredMethod("solveWindow",ExactJumpModel.class,JumpPhysicsInputs.class,List.class,Objective.class,boolean.class,int.class,AtomicBoolean.class,long.class,Double.class,int.class);solve.setAccessible(true);
         SolverTrace.enable("jump20-window-comparison");
         try {
+            List<String> results=new ArrayList<>();results.add("end_tick,accepted,full_window_replay_violation,continuous_violation");
             for(int end:new int[]{178,169}) {
                 JumpPhysicsInputs win=(JumpPhysicsInputs)slice.invoke(null,full.asScenario(),132,end,pos,vel,yaw);
                 @SuppressWarnings("unchecked") List<JumpConstraint> rows=(List<JumpConstraint>)constraints.invoke(null,full,132,end,yaw);
@@ -48,6 +49,17 @@ public class Jump20WindowComparisonProbeTest {
                 SolverTrace.log("CONTROL","start=132 end=%d prefix=23 cap=1000 constraints=%d",end,rows.size());
                 double[] answer;
                 try{answer=(double[])solve.invoke(null,exact,win,rows,new Objective(JumpPhysicsInputs.Axis.Z,Objective.Sense.MAX,end-132),false,23,new AtomicBoolean(false),0L,Double.valueOf(.0003),1000);}finally{WindowCandidateValidation.setDiagnosticObserver(null);}
+                if(answer!=null) {
+                    JumpSpec acceptedSpec=new JumpSpec(win,rows,new Objective(JumpPhysicsInputs.Axis.Z,Objective.Sense.MAX,end-132));
+                    double[] game=win.toGameFacings(Angles.wrapAll(answer));
+                    double fullReplay=JumpConstraintCompiler.compile(acceptedSpec).maxViolation(game,exact.forward(win,game));
+                    WindowCandidateValidation.setDiagnosticObserver(audits::add);
+                    WindowCandidateValidation.Result audit;
+                    try {audit=new WindowCandidateValidation(exact,acceptedSpec,23).evaluate(answer);}finally{WindowCandidateValidation.setDiagnosticObserver(null);}
+                    results.add(csv(end,true,fullReplay,audit.continuousViolation));
+                    org.junit.Assert.assertEquals(0,fullReplay,0);
+                } else results.add(csv(end,false,Double.NaN,Double.NaN));
+                write("returns.csv",results);
                 List<String> margins=new ArrayList<>();margins.add("evaluation,pattern,continuous_violation,prefix_replay_violation,tick,mode,comparison,rhs,committed,continuous_value,replay_value,continuous_margin,replay_margin,assumed_margin");
                 for(int i=0;i<audits.size();i++){
                     WindowCandidateValidation.Diagnostics d=audits.get(i);
@@ -63,7 +75,7 @@ public class Jump20WindowComparisonProbeTest {
                     for(WindowCandidateValidation.InertiaCheck c:d.inertiaChecks)inertia.add(csv(132+c.tick,c.axis,c.assumedZero,c.continuousZero,c.replayZero,c.assumedVelocity,c.continuousVelocity,c.replayVelocity));
                     write(end+"-last-inertia.csv",inertia);
                 }
-                if(end==178)org.junit.Assert.assertNull(answer);else org.junit.Assert.assertNotNull(answer);
+                org.junit.Assert.assertNotNull("window endpoint "+end,answer);
             }
         }finally{WindowCandidateValidation.setDiagnosticObserver(null);SolverTrace.disable();}
     }

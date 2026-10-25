@@ -426,7 +426,6 @@ public final class LongRunSolver {
         if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "begin fallback SLP %s/%s@%d",
                 first.axis, first.sense, first.tick);
         SlpSolve.Config slp = new SlpSolve.Config();
-        slp.replayTickLimit = commitTicks;
         double[] y = SlpSolve.optimizeCentered(exact, new JumpSpec(win, cons, first), 0.0, cancel, null, slp);
         if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "end fallback SLP result=%s ms=%.3f",
                 y != null ? "solved" : "miss", (System.nanoTime() - objectiveT0) / 1.0e6);

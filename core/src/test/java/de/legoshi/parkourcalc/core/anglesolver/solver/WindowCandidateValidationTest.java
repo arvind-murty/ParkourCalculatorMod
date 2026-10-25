@@ -90,22 +90,18 @@ public class WindowCandidateValidationTest {
     }
 
     @Test
-    public void sameObserverReportsSlpValidation() {
+    public void slpUsesReplayWithoutSharedContinuousObserver() {
         JumpPhysicsInputs sc = idle(0, 0);
         JumpSpec spec = wall(sc, JumpConstraint.Cmp.GE, .6);
         SlpSolve.Config cfg = new SlpSolve.Config();
         cfg.phase1Calls = 0;
         cfg.totalCalls = 1;
-        cfg.replayTickLimit = 1;
         WindowCandidateValidation.Diagnostics[] seen = {null};
         WindowCandidateValidation.setDiagnosticObserver(d -> seen[0] = d);
         try {
             assertNull(SlpSolve.optimizeCentered(exact, spec, 0,
                     new java.util.concurrent.atomic.AtomicBoolean(false), new double[3], cfg));
-            assertNotNull(seen[0]);
-            assertEquals(.6, seen[0].result.continuousViolation, 0);
-            assertEquals(0, seen[0].result.replayViolation, 0);
-            assertEquals(6, seen[0].inertiaChecks.size());
+            assertNull("SLP validates full replay without the shared continuous check", seen[0]);
         } finally { WindowCandidateValidation.setDiagnosticObserver(null); }
     }
 
