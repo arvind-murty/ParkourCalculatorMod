@@ -4,6 +4,8 @@
 
 ## Scope and reading order
 
+**Current scope, user clarification on 2026-10-24:** focus on the initial fixed-start yaw solve with authored keys/contact schedule. Defer inertia threshold handling, recovery and long-route window/commit policies. The broader route goals below are future context, not requirements for this first step.
+
 We care about Minecraft **1.8**, fixed-start yaw optimization with authored keys/contact schedule, hard windows around 100 ticks, and eventually maps with more than 100 jumps. Long routes need useful intermediate objectives and safe commits as well as feasibility. Free-start optimization can wait. The user knows general optimization and parkour; explain implementation choices precisely.
 
 1. Read [CONTEXT.md](../../CONTEXT.md), [AGENTS.md](../../AGENTS.md) and [coding guide](../CODING_GUIDE.md). The [Minecraft Parkour Wiki mirror](../reference/mcpk/) records physics constants and update order.
@@ -67,6 +69,8 @@ Primary theory and the applicability review:
 Start by specifying the new method's variables, physical constraints, treatment of inertia, feasibility certificate, objectives and window interface. Compare on identical exact entry states and original constraints; keep feasible witnesses and separate solver failure from unreachable committed states. Objective placement near a turnaround or a bounding wall can be poor, and locally valid commits do not prove future feasibility. Automatic turnaround detection remains unimplemented.
 
 ## Workspace and experiment rules
+
+**Ongoing documentation and Git workflow, user instruction on 2026-10-24:** update documentation as the work progresses without waiting for reminders. Record scope decisions, formulations, features, spikes, measurements and conclusions alongside the corresponding work. Make frequent, focused commits at meaningful checkpoints, including documentation-only checkpoints, so each feature, spike and finding can be referenced by commit. Preserve unsuccessful experiments with their results and limitations. Stage only the intended files and leave unrelated user changes untouched.
 
 Branch `codex/first30-margin-trace-bookkeeping`; recorded production baseline `02844f45872604b21d0d139736d3ae0163454156`. Current code contains experiments: changed epsilon/caps, disabled tiny-costate decoder substitution, intermediate retention, conditional inertia multiplier seeding, validation and objective-placement changes. The checkpoint inventories exact defaults versus probe options. Do not silently treat them as production or discard them.
 
