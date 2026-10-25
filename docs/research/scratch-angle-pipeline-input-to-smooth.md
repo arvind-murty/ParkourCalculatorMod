@@ -1388,3 +1388,10 @@ Current staged baseline, cap1000: nominal28–37 (10 jumps), actual209..338, fai
 ## Standalone input-constraint table, all jumps
 
 [All jumps: ticks, jump numbers and authored constraints](linkcraft-real11-all-jumps-input-constraints.md). Covers all76 segments from archived real/11.json, preserving every authored comparison and numeric bound. Shared boundary rows identify both adjacent jumps. No solver-generated rows, solve results or timings are included.
+
+
+## 2026-10-24: why20–22 misses while20–21 succeeds
+
+[Identical-entry focused probe and all validation margins](solver-traces/jump20-window-comparison-2026-10-24/README.md). Exact reconstructed entry132: X733.2993911151426,Z-1095.0468786224278,VX.00005327436714,VZ-.3022178746736,raw yaw258.950653076deg. Both commit23 inputs through155, margin.0003, cap1000.20–22 horizon178 has38 rows;20–21 horizon169 has31 and a different endpoint objective. All20–22 CF objectives miss, best continuous.226800589 from Z/min; no eligible assumed-model seeds. Ordinary centered SLP passes replay phase1 (worst signed slack-.001755934) but final actual continuous check fails.047522722. The only actual/game zeroing disagreement is Z134: continuous-.00499406563 zeroes, replay-.00500667357 survives. Continuous Z135 upper fails.000643779 inside committed prefix; Z160 upper fails.047522722 provisionally. Both game rows pass. Phase1 passed, so the existing phase1-failure-only inertia-aware retry is never invoked after this final continuous-only rejection. No claim of20–22 infeasibility.
+
+20–21 Z/min retains valid unpatterned iteration126, continues to252 recovered-input stall, selects retained126, reports continuous0/replay0; SLP not reached. Candidate-specific threshold mismatch is a concrete cause of the longer SLP rejection; the added future rows are not themselves the violated rows. No production change or new recovery control in this probe.

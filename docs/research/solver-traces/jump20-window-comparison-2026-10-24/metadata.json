@@ -1,0 +1,25 @@
+{
+  "source_head": "3fc79b35479869007d7b77cea802ca0853f71c15",
+  "production_implementation": "b84931e",
+  "start_tick": 132,
+  "end_ticks": [
+    178,
+    169
+  ],
+  "replay_input_ticks": 23,
+  "cf_cap": 1000,
+  "fixed_margin": 0.0003,
+  "input": "../jump39-baseline-handoff-2026-10-24/real11-input.json.gz",
+  "prefix_source": "../full-route-commit1-staged-caps-2026-10-24/committed-ticks.csv",
+  "source_hashes": {
+    "LongRunSolver": "6f5c9d24e8713590dec9448a4dafab4118c4c9732c9f0284e68f1fbbbd466270",
+    "ClosedFormSolve": "63a0ae4a9bad907dd01d9bda8d87690d41dc38314b774d1325292f9a9ee299c0",
+    "CostateDualSolver": "367e69d1083cf9eb0ec1f51aa446fc22e6a408a122811b3d7e846e7894c21b2f",
+    "SlpSolve": "a04afd7ae947b4f0122ff679a61dd65cef0e347b9fff89bf5e905b57f65b52a8",
+    "JumpLinearModel": "3932db5bb723e390ecc8d694aa658a31269e9b0266aae284a51f6447166b8a0a",
+    "WindowCandidateValidation": "5f7b3fea87e89d397fd9a4f5f9cee022f16fa03a716a47d66b625fc0dd0619f5"
+  },
+  "production_changes": false,
+  "focused_runs": 2,
+  "repeat_reason": "Correct CSV quoting for pattern strings containing commas; outcomes reproduce identically."
+}
