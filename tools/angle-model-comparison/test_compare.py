@@ -10,6 +10,7 @@ import numpy as np
 from compare import CandidateMonitor, FORMULATIONS, build_problem, execute_solver, forward, initial_controls, start_vector, validate_candidate, wall_residual
 from analyze import native_validation
 from disk_phase1 import affine_walls, diagnose
+from audit_facing import facing_pin_conflicts
 
 
 def fixture(magnitude, velocity=(0.0, 0.0), walls=(), sense="MAX"):
@@ -34,6 +35,24 @@ def solve(case, formulation):
 
 
 class ComparisonTest(unittest.TestCase):
+    def test_facing_pin_conflict_audit_handles_wrapped_turns(self):
+        def problem(first, second, turn):
+            rows = []
+            for tick, yaw in enumerate((first, second)):
+                for cmp, rhs in (("GE", yaw - 0.001), ("LE", yaw + 0.001)):
+                    rows.append({"mode": "F", "t1": tick, "op": "PLUS", "cmp": cmp,
+                                 "rhs": rhs, "name": "pin" + str(tick) + cmp})
+            for cmp, rhs in (("GE", turn - 0.0001), ("LE", turn + 0.0001)):
+                rows.append({"mode": "F", "t1": 1, "t2": 0, "op": "MINUS", "cmp": cmp,
+                             "rhs": rhs, "name": "turn" + cmp})
+            return {"facingWalls": rows}
+
+        conflict = facing_pin_conflicts(problem(42.54849, 45.01, 0.0))
+        self.assertEqual(len(conflict), 1)
+        self.assertGreater(conflict[0]["separationDegrees"], 2.45)
+        self.assertEqual(facing_pin_conflicts(problem(45.01, 45.01, 0.0)), [])
+        self.assertEqual(facing_pin_conflicts(problem(179.999, -179.999, 0.002)), [])
+
     def test_saved_benchmark_witnesses_meet_the_frozen_physical_model(self):
         root = Path(__file__).parent / "benchmarks/sqp-2026-10-25"
         data = gzip.decompress((root / "problems.json.gz").read_bytes())

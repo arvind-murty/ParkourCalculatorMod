@@ -109,6 +109,7 @@ public final class ExportContinuousModel {
             base[t] = linear.baseArg(t);
         }
         List<JumpConstraint> walls = new ArrayList<>();
+        List<JumpConstraint> facingWalls = new ArrayList<>();
         int droppedFacing = 0;
         for (JumpConstraint wall : spec.constraints) {
             if (wall.t1 < from && (wall.t2 == null || wall.t2 < from)) continue;
@@ -120,6 +121,7 @@ public final class ExportContinuousModel {
             if (wall.t1 > n || (wall.t2 != null && wall.t2 > n)) continue;
             if (wall.mode == JumpConstraint.Mode.F) {
                 droppedFacing++;
+                facingWalls.add(wall);
                 continue;
             }
             if (wall.mode != JumpConstraint.Mode.X && wall.mode != JumpConstraint.Mode.Z) {
@@ -144,6 +146,7 @@ public final class ExportContinuousModel {
         result.add("base", GSON.toJsonTree(base));
         result.add("yaw", GSON.toJsonTree(Arrays.copyOf(yaw, n)));
         result.add("walls", GSON.toJsonTree(walls));
+        result.add("facingWalls", GSON.toJsonTree(facingWalls));
         JsonObject objective = GSON.toJsonTree(spec.objective).getAsJsonObject();
         objective.addProperty("tick", n);
         if (entry.has("axis")) {
