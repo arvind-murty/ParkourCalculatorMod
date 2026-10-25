@@ -1,0 +1,68 @@
+{
+  "source": "/Users/arvindmurty/Downloads/LinkcraftII_Competition_01/real/11.json",
+  "copy": "tools/angle-model-comparison/fixtures/linkcraft-real11-no-facing.json",
+  "sourceSha256": "af5d2d1bc6e0ab466f1b6cf309f3a26e76e4a63765ac8b15ff02fb4ad55d28bf",
+  "copySha256": "d299a82612574171b8c3a0d06517294dbc7c2a51f6f3410cbbeef4f64c37543c",
+  "removedFacingConstraints": [
+    {
+      "tick": 651,
+      "constraint": {
+        "range": false,
+        "field": "DF",
+        "op": "EQ",
+        "value": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "loInclusive": false,
+        "hiInclusive": false,
+        "disabled": false,
+        "vsDz": false
+      }
+    },
+    {
+      "tick": 651,
+      "constraint": {
+        "range": false,
+        "field": "F",
+        "op": "EQ",
+        "value": 45.01,
+        "lo": 0.0,
+        "hi": 0.0,
+        "loInclusive": false,
+        "hiInclusive": false,
+        "disabled": false,
+        "vsDz": false
+      }
+    },
+    {
+      "tick": 650,
+      "constraint": {
+        "range": false,
+        "field": "F",
+        "op": "EQ",
+        "value": 42.54849,
+        "lo": 0.0,
+        "hi": 0.0,
+        "loInclusive": false,
+        "hiInclusive": false,
+        "disabled": false,
+        "vsDz": false
+      }
+    },
+    {
+      "tick": 187,
+      "constraint": {
+        "range": false,
+        "field": "F",
+        "op": "EQ",
+        "value": 125.80603,
+        "lo": 0.0,
+        "hi": 0.0,
+        "loInclusive": false,
+        "hiInclusive": false,
+        "disabled": false,
+        "vsDz": false
+      }
+    }
+  ]
+}

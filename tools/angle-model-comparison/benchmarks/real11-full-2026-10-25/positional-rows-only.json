@@ -1,0 +1,7 @@
+{
+  "case": "linkcraft-real11-no-facing",
+  "success": true,
+  "status": 0,
+  "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+  "scope": "Positional rows alone with fixed initial position; no motion dynamics or control-length limits"
+}

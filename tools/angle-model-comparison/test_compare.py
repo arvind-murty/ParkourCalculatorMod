@@ -2,6 +2,7 @@ import math
 import gzip
 import hashlib
 import json
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -11,6 +12,8 @@ from compare import CandidateMonitor, FORMULATIONS, build_problem, execute_solve
 from analyze import native_validation
 from disk_phase1 import affine_walls, diagnose
 from audit_facing import facing_pin_conflicts
+from copy_without_facing import copy_without_facing
+from certify_disk_bound import certified_lower_bound
 
 
 def fixture(magnitude, velocity=(0.0, 0.0), walls=(), sense="MAX"):
@@ -35,6 +38,82 @@ def solve(case, formulation):
 
 
 class ComparisonTest(unittest.TestCase):
+    def test_saved_real11_copy_and_interval_infeasibility_bound(self):
+        root = Path(__file__).parent / "benchmarks/real11-full-2026-10-25"
+        data = gzip.decompress((root / "problems.json.gz").read_bytes())
+        case = json.loads(data)[0]
+        saved = json.loads((root / "interval-bound.json").read_text())
+        diagnostic = json.loads((root / "disk-relaxation.json").read_text())[0]
+        self.assertEqual(hashlib.sha256(data).hexdigest(), saved["problemsSha256"])
+        self.assertEqual(case["ticks"], 808)
+        self.assertEqual(len(case["walls"]), 628)
+        self.assertEqual(case["facingWalls"], [])
+        certificate = certified_lower_bound(case, diagnostic["nonnegativeWeights"])
+        self.assertTrue(certificate["excludesZeroViolation"])
+        self.assertGreater(float(certificate["supportDualLowerBound"]), 0.0068)
+        self.assertEqual(certificate["supportDualLowerBound"], saved["supportDualLowerBound"])
+        capture = json.loads((Path(__file__).parent / "fixtures/linkcraft-real11-no-facing.json").read_text())
+        self.assertFalse(any(constraint.get("field") in ("F", "DF")
+                             for tick in capture["angleSolver"]["ticks"]
+                             for constraint in tick.get("constraints", [])))
+
+    def test_capture_copy_removes_only_facing_constraints(self):
+        document = {"rows": [{"yaw": 45.0}], "start": {"yaw": 12.0}, "angleSolver": {
+            "ticks": [{"tick": 7, "override": {"slipperiness": "AIR"}, "constraints": [
+                {"field": "F", "op": "EQ", "value": 45.0},
+                {"field": "X", "op": "LE", "value": 8.0},
+                {"field": "DF", "op": "EQ", "value": 0.0, "disabled": True}]}]}}
+        with tempfile.TemporaryDirectory() as directory:
+            source, output = Path(directory) / "original.json", Path(directory) / "copy.json"
+            original = json.dumps(document).encode()
+            source.write_bytes(original)
+            manifest = copy_without_facing(source, output)
+            copied = json.loads(output.read_text())
+            self.assertEqual(source.read_bytes(), original)
+            self.assertEqual(copied["rows"], document["rows"])
+            self.assertEqual(copied["start"], document["start"])
+            tick = copied["angleSolver"]["ticks"][0]
+            self.assertEqual(tick["override"], {"slipperiness": "AIR"})
+            self.assertEqual(tick["constraints"], [{"field": "X", "op": "LE", "value": 8.0}])
+            self.assertEqual(len(manifest["removedFacingConstraints"]), 2)
+            self.assertEqual(manifest["sourceSha256"], hashlib.sha256(original).hexdigest())
+
+    def test_capture_copy_rejects_source_or_existing_destination(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source, output = Path(directory) / "original.json", Path(directory) / "copy.json"
+            source.write_text("{}")
+            with self.assertRaises(ValueError):
+                copy_without_facing(source, source)
+            output.write_text("preserve this")
+            with self.assertRaises(FileExistsError):
+                copy_without_facing(source, output)
+            self.assertEqual(source.read_text(), "{}")
+            self.assertEqual(output.read_text(), "preserve this")
+
+    def test_interval_certificate_on_analytic_disk_bounds(self):
+        case = fixture([0.1], walls=[
+            {"mode": "X", "t1": 1, "cmp": "GE", "rhs": 7.08},
+            {"mode": "Z", "t1": 1, "cmp": "GE", "rhs": -2.92}])
+        expected = 0.08 - 0.1 / math.sqrt(2.0)
+        bound = float(certified_lower_bound(case, [0.5, 0.5])["supportDualLowerBound"])
+        self.assertGreater(bound, expected - 1e-14)
+        self.assertLessEqual(bound, expected + 1e-14)
+        case["walls"] = case["walls"][:1]
+        bound = certified_lower_bound(case, [1.0])
+        self.assertFalse(bound["excludesZeroViolation"])
+        self.assertAlmostEqual(float(bound["supportDualLowerBound"]), -0.02, places=12)
+
+    def test_interval_adjoint_agrees_with_independent_affine_matrix(self):
+        case = fixture([0.1, 0.0, 0.026, 0.05], velocity=(0.17, -0.09), walls=[
+            {"mode": "X", "t1": 4, "t2": 1, "op": "PLUS", "cmp": "LE", "rhs": 14.5},
+            {"mode": "Z", "t1": 3, "t2": 1, "op": "MINUS", "cmp": "EQ", "rhs": 0.1}])
+        case["friction"] = [0.91, 0.546, 0.8, 0.7]
+        _, matrix, rhs = affine_walls(case)
+        from disk_phase1 import support_bound
+        expected, _ = support_bound(matrix, rhs, [0.2, 0.3, 0.5])
+        certified = certified_lower_bound(case, [0.2, 0.3, 0.5])
+        self.assertAlmostEqual(float(certified["supportDualLowerBound"]), expected, places=12)
+
     def test_facing_pin_conflict_audit_handles_wrapped_turns(self):
         def problem(first, second, turn):
             rows = []

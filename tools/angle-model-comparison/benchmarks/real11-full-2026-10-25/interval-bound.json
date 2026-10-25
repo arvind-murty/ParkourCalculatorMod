@@ -1,0 +1,12 @@
+{
+  "case": "linkcraft-real11-no-facing",
+  "precision": 60,
+  "signedWallRows": 628,
+  "supportDualLowerBound": "0.00688517571233483647121819450190412038370659828390940022929",
+  "excludesZeroViolation": true,
+  "multiplierNormalization": "Exact rational normalization of nonnegative binary64 inputs",
+  "arithmetic": "Directed Decimal intervals; adjoint recurrence independent of dense affine matrix",
+  "scope": "Ideal continuous no-threshold recurrence with serialized binary64 parameters and unit disks; not Minecraft game replay",
+  "problemsSha256": "62ed1f2e04bba1f044f6078a7cc526d29988041e809a8dcee67a0f1fca828cdc",
+  "weightsSha256": "24d88b877a811fd87f37f060525d2df69ed09fd5bebd6c690fd4c9db80cfcbbd"
+}
