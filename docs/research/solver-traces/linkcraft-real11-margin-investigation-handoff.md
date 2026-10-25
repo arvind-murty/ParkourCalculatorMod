@@ -105,3 +105,8 @@ The [whole-jump window versus motion design note](linkcraft-real11-window-object
 ## Separate EPS2=1e-24 experiment
 
 The [sharper-smoothing experiment](linkcraft-real11-eps24-experiment.md) changes EPS2 to 1e-24 independently of direct-bound detection. Above the 1e-9 recovery threshold, relative length shrink is bounded by about 0.00005%. Initial fixed Z/MAX still fails; its inertia retry now hits the arbitrary-direction fallback on all 68 controls and has a much larger violation. Fixed Z/MIN still passes, and the full fixed 7-ladder route still stalls at tick 90 before jump 14. Five focused tests pass; no full suite ran. The original fallback comment describes objective/wall cancellation, not a documented smoothing-error calibration.
+
+
+## Latest inventory and seeded full-route result, 2026-10-24
+
+Start with the [current inventory](full-route-seeded-inventory-2026-10-24/INVENTORY.md) and [full-route report](full-route-seeded-inventory-2026-10-24/README.md). Production now has validated intermediate retention (c392645) and assumed-model-feasible conditional inertia compensation (e14dfe4). The latter was previously test-only; it now reproduces direct j13/j14 successes. Decoder default remains unchanged. Full808-tick seven-ladder fixed .0003 run still misses: commit3 stuck before jump39/state351; commit1 before jump14/state90;47.09s; final route replay not reached. Every window, objective, dual rung and committed state/yaw is archived with source lines. Manual turnaround/window objective experiments are not automatically applied. The user j127 fixture modification is unrelated and was not staged.

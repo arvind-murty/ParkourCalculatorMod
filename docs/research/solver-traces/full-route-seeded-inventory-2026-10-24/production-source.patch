@@ -1,0 +1,1472 @@
+diff --git a/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/ClosedFormSolve.java b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/ClosedFormSolve.java
+index 4c268b3..9af657e 100644
+--- a/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/ClosedFormSolve.java
++++ b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/ClosedFormSolve.java
+@@ -38,14 +38,25 @@ public final class ClosedFormSolve {
+          *  land safe; the rest cover the ~1e-4 sine-table perturbation with headroom. */
+         public double[] margins = {0.0, 1.0e-4, 3.0e-4, 6.0e-4, 1.2e-3, 2.5e-3, 5.0e-3, 1.0e-2};
+ 
+-        /** Robust (centered) margins, largest first: the first margin that certifies is the realized clearance
+-         *  on every active wall. For surrogate-objective solves (lead-in windows), where hugging walls commits
+-         *  fragile seam states. */
++        /** Robust (centered) margins, largest first: return the first candidate whose exact replay passes
++         *  the acceptance horizon. For surrogate-objective solves (lead-in windows), where hugging walls
++         *  commits fragile seam states. The margin tightens the model's walls; replay checks original walls. */
+         public double[] marginsRobust = {5.0e-2, 2.0e-2, 1.0e-2, 5.0e-3, 1.2e-3, 3.0e-4, 0.0};
+ 
++        /** Maximum dual iterations per margin attempt; existing early stopping rules still apply. */
++        public int dualMaxIterations = 10000;
++        public CostateDualSolver.IterationObserver dualIterationObserver;
++        public boolean retainIntermediateCandidates = true;
++        public boolean seedInertiaRetries = true;
++
+         public int maxInertiaPasses = 4;
+ 
+         public int rungStallLimit = 2;
++
++        /** Exact replay acceptance horizon, in input ticks; optimization still uses every spec row.
++         *  LongRun windows set this to their committed prefix and also require full continuous feasibility.
++         *  Ordinary solves check the whole replay path. */
++        public int replayTickLimit = Integer.MAX_VALUE;
+     }
+ 
+     static final int CROSS_SIGN_CAP = 4;
+@@ -95,20 +106,23 @@ public final class ClosedFormSolve {
+                                          AtomicBoolean cancel, Config cfg, boolean[] zeroX, boolean[] zeroZ) {
+         FacingPrefold pre = FacingPrefold.analyze(spec.constraints, new JumpLinearModel(sc));
+         if (pre == null) return null;
+-        JumpConstraintCompiler.Compiled compiled = JumpConstraintCompiler.compile(spec);
++        JumpConstraintCompiler.Compiled compiled = JumpConstraintCompiler.compile(spec, cfg.replayTickLimit);
+         for (int[] signs : crossSignCombos(spec.constraints)) {
+             Result rs = runLadder(exact, spec, sc, compiled, feasTol, cancel, cfg.margins, true, zeroX, zeroZ,
+-                    System.nanoTime(), cfg, pre, signs);
++                    System.nanoTime(), cfg, pre, signs, null);
+             if (rs != null && rs.feasible) return rs;
+             if (cancel.get()) break;
+         }
+         return null;
+     }
+ 
+-    /** Like {@link #optimize}, but prefers clearance over objective: the result keeps the largest
+-     *  certifiable uniform distance from every wall. */
++    /** Like {@link #optimize}, but tries inward margins largest first, preferring clearance over objective. */
+     public static double[] optimizeRobust(ExactJumpModel exact, JumpSpec spec, double feasTol, AtomicBoolean cancel) {
+-        Config cfg = new Config();
++        return optimizeRobust(exact, spec, feasTol, cancel, new Config());
++    }
++
++    public static double[] optimizeRobust(ExactJumpModel exact, JumpSpec spec, double feasTol, AtomicBoolean cancel,
++                                         Config cfg) {
+         Result r = optimizeReturning(exact, spec, feasTol, cancel, cfg.marginsRobust, false, cfg);
+         return r != null && r.feasible ? r.yaws : null;
+     }
+@@ -144,7 +158,9 @@ public final class ClosedFormSolve {
+                                        AtomicBoolean cancel, double[] margins, boolean ascending, Config cfg,
+                                        YawOrder order, boolean[] zeroX, boolean[] zeroZ) {
+         long t0 = System.nanoTime();
+-        JumpConstraintCompiler.Compiled full = JumpConstraintCompiler.compile(spec);
++        JumpConstraintCompiler.Compiled full = JumpConstraintCompiler.compile(spec, cfg.replayTickLimit);
++        WindowCandidateValidation validation = cfg.replayTickLimit < sc.numTicks
++                ? new WindowCandidateValidation(exact, spec, cfg.replayTickLimit) : null;
+         List<JumpConstraint> base = order.stripped(spec.constraints);
+         int n = sc.numTicks;
+         JumpLinearModel lin = new JumpLinearModel(sc);
+@@ -168,7 +184,8 @@ public final class ClosedFormSolve {
+                     : solvePatterned(exact, work, sc, feasTol, cancel, cfg, zeroX, zeroZ);
+             if (r == null) break;
+             r = new Result(YawOrder.carryFreeTicks(lin, sc.startYaw, r.yaws), r.violation, r.feasible, r.amp, r.phase);
+-            double viol = violOnExact(exact, sc, full, r.yaws);
++            double viol = validation == null ? violOnExact(exact, sc, full, r.yaws)
++                    : validation.evaluate(r.yaws).maxViolation();
+             if (least == null || viol < least.violation) least = new Result(r.yaws, viol, false);
+             boolean feasible = viol <= feasTol;
+             boolean[] nextTie = tie.clone();
+@@ -471,7 +488,8 @@ public final class ClosedFormSolve {
+                                            AtomicBoolean cancel, double[] margins, boolean ascending, Config cfg,
+                                            FacingPrefold pre) {
+         long t0 = System.nanoTime();
+-        JumpConstraintCompiler.Compiled compiled = JumpConstraintCompiler.compile(spec);
++        JumpConstraintCompiler.Compiled compiled = JumpConstraintCompiler.compile(spec, cfg.replayTickLimit);
++        InertiaRetrySeed retrySeed = cfg.seedInertiaRetries ? new InertiaRetrySeed() : null;
+ 
+         int n = sc.numTicks;
+         boolean[] zeroX = null;
+@@ -485,7 +503,7 @@ public final class ClosedFormSolve {
+             }
+             Result r = null;
+             for (int[] signs : crossSignCombos(spec.constraints)) {
+-                Result rs = runLadder(exact, spec, sc, compiled, feasTol, cancel, margins, ascending, zeroX, zeroZ, t0, cfg, pre, signs);
++                Result rs = runLadder(exact, spec, sc, compiled, feasTol, cancel, margins, ascending, zeroX, zeroZ, t0, cfg, pre, signs, retrySeed);
+                 if (rs != null && (r == null || rs.feasible || rs.violation < r.violation)) r = rs;
+                 if ((r != null && r.feasible) || cancel.get()) break;
+             }
+@@ -554,7 +572,7 @@ public final class ClosedFormSolve {
+     private static Result runLadder(ExactJumpModel exact, JumpSpec spec, JumpPhysicsInputs sc,
+                                     JumpConstraintCompiler.Compiled compiled, double feasTol, AtomicBoolean cancel,
+                                     double[] margins, boolean ascending, boolean[] zeroX, boolean[] zeroZ, long t0,
+-                                    Config cfg, FacingPrefold pre, int[] crossSigns) {
++                                    Config cfg, FacingPrefold pre, int[] crossSigns, InertiaRetrySeed retrySeed) {
+         JumpLinearModel lin = new JumpLinearModel(sc, zeroX, zeroZ);
+         double[] cx = new double[lin.n];
+         double[] cz = new double[lin.n];
+@@ -565,6 +583,7 @@ public final class ClosedFormSolve {
+         if (trivialInfeasible[0]) return null;
+         double vBound = exact.perAxisInertia() ? exact.inertiaThreshold()
+                 : exact.inertiaThreshold() / StrictMath.sqrt(2.0);
++        int authoredCount = walls.size();
+         walls.addAll(lin.velocityWalls(vBound));
+ 
+         FacingPrefold.Reduced red = pre.reduce(cx, cz, lin.mMagAll(), walls);
+@@ -572,32 +591,61 @@ public final class ClosedFormSolve {
+             SolverTrace.log("CF", "prefold pinned=%d vars=%d of n=%d", pre.pinnedTicks(), red.n, lin.n);
+         }
+         CostateDualSolver solver = new CostateDualSolver(red.n, red.cx, red.cz, red.mMag, red.walls);
++        solver.iterationObserver = cfg.dualIterationObserver;
+ 
+         // Each rung warm-starts from the previous margin's multipliers, so the ladder costs barely more
+         // than a single solve.
+         double bestViol = Double.POSITIVE_INFINITY;
+         double[] bestYaws = null;
+         double[] bestLambda = null;
+-        double[] warm = null;
++        WindowCandidateValidation validation = cfg.replayTickLimit < lin.n
++                ? new WindowCandidateValidation(exact, spec, cfg.replayTickLimit) : null;
++        double[] warm = retrySeed != null && pre.isIdentity() ? retrySeed.forModel(red, authoredCount) : null;
+         int rungStall = 0;
+         for (double margin : margins) {
+             if (cancel.get()) return null;
+-            CostateDualSolver.Result r = solver.solve(margin, warm);
++            long rungT0 = SolverTrace.on() ? System.nanoTime() : 0L;
++            DualCandidateRetention retained = cfg.retainIntermediateCandidates
++                    ? new DualCandidateRetention(exact, spec, lin, pre, cfg.replayTickLimit, feasTol) : null;
++            solver.candidateObserver = retained;
++            CostateDualSolver.Result r = solver.solve(margin, warm, cfg.dualMaxIterations);
++            if (retained != null && SolverTrace.on()) SolverTrace.log("CF-RETENTION", "iteration=%d improvements=%d auditMs=%.3f", retained.iteration, retained.improvements, retained.evaluationNanos / 1e6);
+             // Dual unbounded -> primal infeasible; infeasibility is monotone in the margin, so ascending
+             // stops while the descending (robust) ladder keeps trying smaller rungs.
+             if (r == null) {
+-                if (SolverTrace.on()) SolverTrace.log("CF", "rung margin=%.2e dual unbounded%s", margin, ascending ? ", ladder stop" : "");
++                if (retained != null && retained.yaws != null) {
++                    return withCostates(new Result(retained.yaws, retained.violation, true), lin, cx, cz, walls, retained.multipliers);
++                }
++                if (SolverTrace.on()) SolverTrace.log("CF", "rung margin=%.2e dual unbounded ms=%.3f%s stop=%s iters=%d", margin,
++                        (System.nanoTime() - rungT0) / 1.0e6, ascending ? ", ladder stop" : "",
++                        solver.lastStopReason, solver.lastIters);
+                 if (ascending) break;
+                 continue;
+             }
+             warm = r.lambda;
+ 
+             double[] yaws = pre.expand(lin, spec.objective, r);
+-            double viol = violOnExact(exact, sc, compiled, yaws);
++            WindowCandidateValidation.Result check = validation == null ? null : validation.evaluate(yaws, lin);
++            double replayViol = check == null ? violOnExact(exact, sc, compiled, yaws) : check.replayViolation;
++            double modelViol = check == null ? 0.0 : check.continuousViolation;
++            double viol = Math.max(replayViol, modelViol);
++            double[] selectedLambda = r.lambda;
++            if (retained != null && retained.preferredTo(yaws, viol)) {
++                yaws = retained.yaws;
++                selectedLambda = retained.multipliers;
++                viol = retained.violation;
++                replayViol = retained.replayViolation;
++                modelViol = retained.continuousViolation;
++                if (SolverTrace.on()) SolverTrace.log("CF", "retained iteration=%d improvements=%d auditMs=%.3f", retained.iteration, retained.improvements, retained.evaluationNanos / 1e6);
++            }
++            if (validation != null && SolverTrace.on()) {
++                SolverTrace.log("CF-CHECK", "margin=%.2e replayViol=%.12g modelViol=%.12g", margin, replayViol, modelViol);
++            }
+             if (SolverTrace.on()) {
+-                SolverTrace.log("CF", "rung margin=%.2e iters=%d pg=%.3e dual=%.9f viol=%.3e%s",
++                SolverTrace.log("CF", "rung margin=%.2e iters=%d pg=%.3e dual=%.9f viol=%.3e ms=%.3f%s stop=%s finalPg=%.3e",
+                         margin, solver.lastIters, solver.lastPgres, r.value, viol,
+-                        viol <= feasTol ? " certified" : "");
++                        (System.nanoTime() - rungT0) / 1.0e6,
++                        viol <= feasTol ? " certified" : "", solver.lastStopReason, solver.lastFinalPgres);
+             }
+             if (DEBUG) {
+                 double[] gf = sc.toGameFacings(yaws);
+@@ -608,14 +656,14 @@ public final class ClosedFormSolve {
+             if (viol < bestViol) {
+                 bestViol = viol;
+                 bestYaws = yaws;
+-                bestLambda = r.lambda;
++                bestLambda = selectedLambda;
+                 rungStall = 0;
+             } else {
+                 rungStall++;
+             }
+             if (viol <= feasTol) {
+                 if (DEBUG) System.out.printf("  CLOSED -> %.2fus (margin=%.1e)%n", (System.nanoTime() - t0) / 1e3, margin);
+-                return withCostates(new Result(yaws, viol, true), lin, cx, cz, walls, r.lambda);
++                return withCostates(new Result(yaws, viol, true), lin, cx, cz, walls, selectedLambda);
+             }
+             if (ascending && rungStall >= cfg.rungStallLimit) {
+                 if (SolverTrace.on()) SolverTrace.log("CF", "ladder stalled after margin=%.2e (bestViol=%.3e)", margin, bestViol);
+@@ -625,6 +673,7 @@ public final class ClosedFormSolve {
+         if (DEBUG) System.out.printf("  CLOSED FALLBACK %.2fus bestViol=%.2e%n",
+                 (System.nanoTime() - t0) / 1e3, bestViol);
+         if (bestYaws == null) return null;
++        if (retrySeed != null) retrySeed.capture(exact, spec, lin, pre, red, authoredCount, bestYaws, bestLambda);
+         return withCostates(new Result(bestYaws, bestViol, false), lin, cx, cz, walls, bestLambda);
+     }
+ 
+diff --git a/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/CostateDualSolver.java b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/CostateDualSolver.java
+index 11126aa..754906f 100644
+--- a/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/CostateDualSolver.java
++++ b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/CostateDualSolver.java
+@@ -36,8 +36,10 @@ import java.util.List;
+  *  dual is unbounded (primal infeasible). */
+ public final class CostateDualSolver {
+ 
+-    private static final double EPS2 = 1.0e-14;       // norm smoothing: ‖g‖ -> sqrt(‖g‖^2 + EPS2)
+-    private static final int MAX_ITER = 100;
++    // Smoothing length 1e-12, below the 1e-9 costate-direction fallback. At and above
++    // that fallback scale this shrinks derivative-implied input length by at most about 5e-7.
++    private static final double EPS2 = 1.0e-24;       // norm smoothing: ‖g‖ -> sqrt(‖g‖^2 + EPS2)
++    private static final int MAX_ITER = 10000;
+     private static final double LAMBDA_CAP = 1.0e9;   // dual var this large => treat primal as infeasible
+     private static final double GRAD_TOL = 1.0e-8;    // projected-gradient (constraint-slack) convergence, blocks
+     private static final double U_TOL = 1.0e-9;       // convergence in recovered-input space (degenerate optima)
+@@ -45,7 +47,7 @@ public final class CostateDualSolver {
+     // GRAD_TOL; the degenerate high-dimensional landscape of a long multi-jump run instead plateaus it at a
+     // large floor and grinds all MAX_ITER iterations before the caller's byte-exact check rejects it. Detect
+     // that stall (best residual still HUGE and not improving for several iterations) and stop, so the
+-    // caller bails on the (unchanged) huge recovered violation immediately instead of after 100 iterations.
++    // caller bails on the (unchanged) huge recovered violation immediately instead of after reaching the iteration cap.
+     // The floor is set well above the residual any solvable single jump ever lingers at (~1.5), so the fast
+     // path, whose residual is always below it, can never trip this.
+     private static final double DIVERGE_PGRES = 4.0;  // bail only while the best residual is this far from 0
+@@ -212,16 +214,42 @@ public final class CostateDualSolver {
+     /** Diagnostics: final projected-gradient residual of the last {@link #solve}. */
+     public double lastPgres;
+     public boolean lastStalled;
++    /** Why the last solve stopped; reaching the cap does not assert primal feasibility. */
++    public String lastStopReason;
++    /** Projected residual at the returned iterate (lastPgres is the last loop-entry sample). */
++    public double lastFinalPgres;
++
++    public interface IterationObserver {
++        void observe(int iteration, double dualValue, double projectedResidual, double inputChange,
++                     double minCostateNorm, int nearZeroCostates, int directionFallbackCostates, boolean finalSample);
++    }
++    public IterationObserver iterationObserver;
++
++    public interface CandidateObserver {
++        void observe(int iteration, double[] costateX, double[] costateZ, double[] multipliers);
++    }
++    public CandidateObserver candidateObserver;
++
+ 
+     /** Minimize the dual with walls tightened inward by {@code margin}, warm-started from {@code warm}
+      *  (null = cold, λ=0). Returns fresh arrays so the caller may keep them; internal state is reusable. */
+     public Result solve(double margin, double[] warm) {
++        return solve(margin, warm, MAX_ITER);
++    }
++
++    /** Same algorithm and early stopping rules, with a caller-selected iteration cap for probes. */
++    public Result solve(double margin, double[] warm, int maxIterations) {
++        if (maxIterations < 1) throw new IllegalArgumentException("iteration cap must be positive");
+         lastStalled = false;
++        lastStopReason = "ITERATION_LIMIT";
++        lastFinalPgres = Double.NaN;
+         if (m == 0) {
+             // No walls: the optimum is every input along the objective (costate = c). Closed form.
+             double[] empty = new double[0];
+             double v = costate(empty, gx, gz);
+             lastIters = 0;
++            lastStopReason = "NO_WALLS";
++            lastFinalPgres = 0.0;
+             return new Result(gx.clone(), gz.clone(), empty, v, recoveredDelta(empty, 0), recoveredDelta(empty, 1));
+         }
+         for (int j = 0; j < m; j++) bPrime[j] = bBase[j] - (eq[j] ? 0.0 : margin);
+@@ -237,19 +265,20 @@ public final class CostateDualSolver {
+         double pgBest = Double.POSITIVE_INFINITY;
+         int stall = 0;
+         int it = 0;
+-        for (; it < MAX_ITER; it++) {
++        for (; it < maxIterations; it++) {
+             double pgres = 0.0;
+             for (int j = 0; j < m; j++) {
+                 double p = project(lambda[j] - gradient[j], eq[j]) - lambda[j];
+                 if (Math.abs(p) > pgres) pgres = Math.abs(p);
+             }
+             lastPgres = pgres;
+-            if (pgres <= GRAD_TOL) break;
++            observeIteration(it, phi, pgres, false);
++            if (pgres <= GRAD_TOL) { lastStopReason = "PROJECTED_GRADIENT"; break; }
+ 
+             // Early divergence bail (rationale at the DIVERGE_* constants).
+             if (pgres < pgBest * (1.0 - DIVERGE_REL)) { pgBest = pgres; stall = 0; }
+             else { if (pgres < pgBest) pgBest = pgres; stall++; }
+-            if (pgBest > DIVERGE_PGRES && stall >= DIVERGE_STALL) { lastStalled = true; break; }
++            if (pgBest > DIVERGE_PGRES && stall >= DIVERGE_STALL) { lastStalled = true; lastStopReason = "DIVERGENCE_STALL"; break; }
+ 
+             // Converge in costate space: at a degenerate optimum the multipliers λ keep wandering in the
+             // null space of Aᵀ (pg never reaches 0), but the recovered inputs u*, all that the angles
+@@ -259,7 +288,7 @@ public final class CostateDualSolver {
+                 du = Math.max(du, Math.abs(ux[t] - uPrevX[t]));
+                 du = Math.max(du, Math.abs(uz[t] - uPrevZ[t]));
+             }
+-            if (it > 0 && du <= U_TOL) break;
++            if (it > 0 && du <= U_TOL) { lastStopReason = "RECOVERED_INPUT_STALL"; break; }
+             System.arraycopy(ux, 0, uPrevX, 0, n);
+             System.arraycopy(uz, 0, uPrevZ, 0, n);
+ 
+@@ -273,18 +302,39 @@ public final class CostateDualSolver {
+                 phi = newPhi;
+             } else {
+                 double sp = gradientStep(phi);
+-                if (!(sp < phi)) break; // no descent along the projected gradient -> stationary
++                if (!(sp < phi)) { lastStopReason = "NO_DESCENT"; break; } // no descent along the projected gradient -> stationary
+                 phi = sp;
+             }
+ 
+             for (int j = 0; j < m; j++) {
+-                if (lambda[j] > LAMBDA_CAP || Double.isNaN(lambda[j])) { lastIters = it; return null; }
++                if (lambda[j] > LAMBDA_CAP || Double.isNaN(lambda[j])) { lastIters = it; lastStopReason = "LAMBDA_LIMIT"; return null; }
+             }
+         }
+         lastIters = it;
++        lastFinalPgres = 0.0;
++        for (int j = 0; j < m; j++) {
++            lastFinalPgres = Math.max(lastFinalPgres, Math.abs(project(lambda[j] - gradient[j], eq[j]) - lambda[j]));
++        }
++        observeIteration(it, phi, lastFinalPgres, true);
+         return new Result(gx.clone(), gz.clone(), lambda.clone(), phi, recoveredDelta(lambda, 0), recoveredDelta(lambda, 1));
+     }
+ 
++    private void observeIteration(int iteration, double value, double residual, boolean finalSample) {
++        if (candidateObserver != null) candidateObserver.observe(iteration, gx, gz, lambda);
++        if (iterationObserver == null) return;
++        double change = 0.0, minNorm = Double.POSITIVE_INFINITY;
++        int nearZero = 0, fallbackScale = 0;
++        for (int t = 0; t < n; t++) {
++            change = Math.max(change, Math.max(Math.abs(ux[t] - uPrevX[t]), Math.abs(uz[t] - uPrevZ[t])));
++            if (mMag[t] == 0.0) continue;
++            double norm2 = gx[t] * gx[t] + gz[t] * gz[t];
++            minNorm = Math.min(minNorm, StrictMath.sqrt(norm2));
++            if (norm2 <= EPS2) nearZero++;
++            if (norm2 < 1.0e-18) fallbackScale++;
++        }
++        iterationObserver.observe(iteration, value, residual, change, minNorm, nearZero, fallbackScale, finalSample);
++    }
++
+     private double recoveredDelta(double[] lam, int a) {
+         return freeP0 == null ? 0.0 : deltaOf(hAxis(lam, a), a);
+     }
+diff --git a/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/DualCandidateRetention.java b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/DualCandidateRetention.java
+new file mode 100644
+index 0000000..0b6e58a
+--- /dev/null
++++ b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/DualCandidateRetention.java
+@@ -0,0 +1,76 @@
++package de.legoshi.parkourcalc.core.anglesolver.solver;
++
++final class DualCandidateRetention implements CostateDualSolver.CandidateObserver {
++    private final JumpSpec spec;
++    private final JumpLinearModel assumed;
++    private final JumpLinearModel physical;
++    private final FacingPrefold prefold;
++    private final ExactJumpModel exact;
++    private final JumpConstraintCompiler.Compiled constraints;
++    private final WindowCandidateValidation validation;
++    private final double tolerance;
++    double[] yaws;
++    double[] multipliers;
++    double score;
++    double violation;
++    double replayViolation;
++    double continuousViolation;
++    int iteration = -1;
++    int improvements;
++    long evaluationNanos;
++
++    DualCandidateRetention(ExactJumpModel exact, JumpSpec spec, JumpLinearModel assumed,
++                           FacingPrefold prefold, int replayTicks, double tolerance) {
++        this.exact = exact;
++        this.spec = spec;
++        this.assumed = assumed;
++        this.physical = new JumpLinearModel(spec.asScenario());
++        this.prefold = prefold;
++        this.constraints = JumpConstraintCompiler.compile(spec);
++        this.validation = new WindowCandidateValidation(exact, spec, replayTicks);
++        this.tolerance = tolerance;
++    }
++
++    @Override public void observe(int iteration, double[] gx, double[] gz, double[] lambda) {
++        long started = System.nanoTime();
++        try {
++            double[] candidate = prefold.expand(assumed, spec.objective, gx, gz);
++            ForwardPath path = physical.forwardContinuous(candidate, exact.inertiaThreshold(), exact.perAxisInertia());
++            double continuousViolation = constraints.maxViolation(candidate, path);
++            if (!Double.isFinite(continuousViolation) || continuousViolation > tolerance) return;
++            double candidateScore = score(candidate, path);
++            if (!Double.isFinite(candidateScore) || !better(candidateScore)) return;
++            WindowCandidateValidation.Result check = validation.evaluate(candidate, assumed);
++            if (!Double.isFinite(check.maxViolation()) || check.maxViolation() > tolerance) return;
++            this.yaws = candidate;
++            this.multipliers = lambda.clone();
++            this.score = candidateScore;
++            this.violation = check.maxViolation();
++            this.replayViolation = check.replayViolation;
++            this.continuousViolation = check.continuousViolation;
++            this.iteration = iteration;
++            this.improvements++;
++            if (SolverTrace.on()) SolverTrace.log("CF-INCUMBENT", "iteration=%d score=%.12g violation=%.3e", iteration, score, violation);
++        } finally {
++            evaluationNanos += System.nanoTime() - started;
++        }
++    }
++
++    boolean better(double candidateScore) {
++        return yaws == null || (spec.objective.sense == Objective.Sense.MAX
++                ? candidateScore > score : candidateScore < score);
++    }
++
++    double score(double[] candidate, ForwardPath path) {
++        return spec.objective.scored(spec.objective.evaluate(path), spec.asScenario().startYaw, candidate);
++    }
++
++    boolean preferredTo(double[] candidate, double candidateViolation) {
++        if (yaws == null) return false;
++        if (!Double.isFinite(candidateViolation) || candidateViolation > tolerance) return true;
++        ForwardPath path = physical.forwardContinuous(candidate, exact.inertiaThreshold(), exact.perAxisInertia());
++        double candidateScore = score(candidate, path);
++        return !Double.isFinite(candidateScore) || (spec.objective.sense == Objective.Sense.MAX
++                ? score > candidateScore : score < candidateScore);
++    }
++}
+diff --git a/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/InertiaRetrySeed.java b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/InertiaRetrySeed.java
+new file mode 100644
+index 0000000..a4ee8bf
+--- /dev/null
++++ b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/InertiaRetrySeed.java
+@@ -0,0 +1,78 @@
++package de.legoshi.parkourcalc.core.anglesolver.solver;
++
++final class InertiaRetrySeed {
++    private static final double MODEL_TOLERANCE = 1e-8;
++    private FacingPrefold.Reduced source;
++    private double[] multipliers;
++    private double[] gx, gz;
++    private int authoredCount;
++
++    void capture(ExactJumpModel exact, JumpSpec spec, JumpLinearModel model,
++                 FacingPrefold prefold, FacingPrefold.Reduced reduced, int authoredCount,
++                 double[] angles, double[] lambda) {
++        source = null;
++        if (!exact.perAxisInertia() || !prefold.isIdentity()) return;
++        double violation = JumpConstraintCompiler.compile(spec).maxViolation(angles, model.forwardFixed(angles));
++        for (int t = 0; t < model.n; t++) for (int axis = 0; axis < 2; axis++) {
++            if (model.assumesZero(axis, t)) violation = Math.max(violation,
++                    Math.max(0.0, Math.abs(model.velocityBeforeCheck(axis, t, angles)) - exact.inertiaThreshold()));
++        }
++        if (SolverTrace.on()) SolverTrace.log("CF-SEED", "source assumedViolation=%.12g eligible=%s", violation,
++                Double.isFinite(violation) && violation <= MODEL_TOLERANCE);
++        if (!Double.isFinite(violation) || violation > MODEL_TOLERANCE) return;
++        double[] x = reduced.cx.clone(), z = reduced.cz.clone();
++        for (int j = 0; j < reduced.walls.size(); j++) {
++            JumpLinearModel.Wall wall = reduced.walls.get(j);
++            if (wall.axis > 1 || !Double.isFinite(lambda[j]) || (!wall.eq && lambda[j] < 0)) return;
++            for (int t = 0; t < reduced.n; t++) {
++                if (wall.axis == 0) x[t] -= lambda[j] * wall.coef[t];
++                else z[t] -= lambda[j] * wall.coef[t];
++            }
++        }
++        this.source = reduced;
++        this.multipliers = lambda.clone();
++        this.gx = x;
++        this.gz = z;
++        this.authoredCount = authoredCount;
++    }
++
++    double[] forModel(FacingPrefold.Reduced next, int nextAuthoredCount) {
++        if (source == null || source.n != next.n || authoredCount != nextAuthoredCount) return null;
++        double[] seed = new double[next.walls.size()];
++        double[] dx = next.cx.clone(), dz = next.cz.clone();
++        for (int j = 0; j < authoredCount; j++) {
++            JumpLinearModel.Wall old = source.walls.get(j), wall = next.walls.get(j);
++            if (wall.axis > 1 || old.axis != wall.axis || old.eq != wall.eq || !old.name.equals(wall.name)) return null;
++            seed[j] = multipliers[j];
++            for (int t = 0; t < next.n; t++) {
++                if (wall.axis == 0) dx[t] -= seed[j] * wall.coef[t];
++                else dz[t] -= seed[j] * wall.coef[t];
++            }
++        }
++        for (int t = 0; t < next.n; t++) { dx[t] -= gx[t]; dz[t] -= gz[t]; }
++        if ((next.walls.size() - authoredCount) % 2 != 0) return null;
++        for (int j = authoredCount; j < next.walls.size(); j += 2) {
++            JumpLinearModel.Wall hi = next.walls.get(j), lo = next.walls.get(j + 1);
++            if (hi.axis > 1 || hi.axis != lo.axis || hi.eq || lo.eq) return null;
++            double[] delta = hi.axis == 0 ? dx : dz;
++            double dot = 0, norm2 = 0;
++            for (int t = 0; t < next.n; t++) {
++                if (hi.coef[t] != -lo.coef[t]) return null;
++                dot += hi.coef[t] * delta[t];
++                norm2 += hi.coef[t] * hi.coef[t];
++            }
++            double price = norm2 == 0 ? 0 : dot / norm2;
++            if (!Double.isFinite(price)) return null;
++            seed[j] = Math.max(price, 0);
++            seed[j + 1] = Math.max(-price, 0);
++            for (int t = 0; t < next.n; t++) delta[t] -= price * hi.coef[t];
++        }
++        double error = 0;
++        for (int t = 0; t < next.n; t++) {
++            if (!Double.isFinite(dx[t]) || !Double.isFinite(dz[t])) return null;
++            error = Math.max(error, StrictMath.hypot(dx[t], dz[t]));
++        }
++        if (SolverTrace.on()) SolverTrace.log("CF-SEED", "applied rows=%d costateError=%.3e", seed.length, error);
++        return seed;
++    }
++}
+diff --git a/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/JumpConstraintCompiler.java b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/JumpConstraintCompiler.java
+index b75accb..2b58415 100644
+--- a/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/JumpConstraintCompiler.java
++++ b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/JumpConstraintCompiler.java
+@@ -49,6 +49,14 @@ public final class JumpConstraintCompiler {
+     }
+ 
+     public static Compiled compile(JumpSpec spec) {
++        return compile(spec, Integer.MAX_VALUE);
++    }
++
++    /** Exact replay checks for the first {@code inputTicks} inputs. Position at the exit tick belongs
++     *  to that prefix; facing at that tick is the next, uncommitted input. A two-tick row is checked
++     *  only when both of its referenced ticks belong to the prefix. The solve's constraint list stays intact. */
++    public static Compiled compile(JumpSpec spec, int inputTicks) {
++        if (inputTicks < 0) throw new IllegalArgumentException("negative replay prefix");
+         List<JumpConstraint> ineq = new ArrayList<>();
+         List<JumpConstraint> eq = new ArrayList<>();
+         int n = spec.asScenario().numTicks;
+@@ -58,6 +66,8 @@ public final class JumpConstraintCompiler {
+             if ((c.mode == JumpConstraint.Mode.DXZ || c.mode == JumpConstraint.Mode.DZX) && c.t2 == null) {
+                 throw new IllegalArgumentException("constraint " + c.name + ": " + c.mode + " requires t2");
+             }
++            int hi = c.mode == JumpConstraint.Mode.F ? inputTicks - 1 : inputTicks;
++            if (c.t1 > hi || (c.t2 != null && c.t2 > hi)) continue;
+             if (c.cmp == JumpConstraint.Cmp.EQ) {
+                 eq.add(c);
+             } else {
+diff --git a/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/JumpLinearModel.java b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/JumpLinearModel.java
+index 64ea301..2e73799 100644
+--- a/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/JumpLinearModel.java
++++ b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/JumpLinearModel.java
+@@ -406,6 +406,49 @@ public final class JumpLinearModel {
+         return walls;
+     }
+ 
++    /** Validate original constraints on this fixed-pattern continuous model, before game-yaw mapping.
++     *  Uses the same affine position coefficients as the optimizer, including its inertia pattern. */
++    public double maxConstraintViolation(JumpConstraintCompiler.Compiled compiled, double[] yaws) {
++        return compiled.maxViolation(yaws, forwardFixed(yaws));
++    }
++
++    /** Positions under this model's assumed pattern; useful for auditing the optimization proposal. */
++    public ForwardPath forwardFixed(double[] yaws) {
++        double[][] position = new double[2][n + 1];
++        for (int axis = 0; axis < 2; axis++) {
++            for (int k = 0; k <= n; k++) {
++                double value = constPos(k, axis);
++                for (int t = 0; t < k; t++) {
++                    double phi = baseArg(t) + Angles.rad(yaws[t]);
++                    value += coefAxis(axis, t, k) * mMag(t)
++                            * (axis == 0 ? StrictMath.cos(phi) : StrictMath.sin(phi));
++                }
++                position[axis][k] = value;
++            }
++        }
++        return new ForwardPath(position[0], new double[n + 1], position[1]);
++    }
++
++    boolean assumesZero(int axis, int tick) {
++        return zero[axis] != null && zero[axis][tick];
++    }
++
++    String patternDescription() {
++        return SolverTrace.patternLabel(zero[0], zero[1]);
++    }
++
++    /** Carry velocity just before the tick's assumed inertia check, from the affine model. */
++    double velocityBeforeCheck(int axis, int tick, double[] yaws) {
++        double initial = axis == 0 ? sc.initialVelocity.x : sc.initialVelocity.z;
++        double value = zFirst[axis] < tick ? 0.0 : initial * fPre[tick];
++        for (int t = 0; t < tick; t++) {
++            double phi = baseArg[t] + Angles.rad(yaws[t]);
++            value += velocityCoef(axis, t, tick) * mMag[t]
++                    * (axis == 0 ? StrictMath.cos(phi) : StrictMath.sin(phi));
++        }
++        return value;
++    }
++
+     public List<Wall> velocityWalls(double bound) {
+         List<Wall> walls = new ArrayList<>();
+         for (int a = 0; a < 2; a++) {
+@@ -460,6 +503,26 @@ public final class JumpLinearModel {
+ 
+     public void zeroingPattern(double[] yawsAbsWrapped, double threshold, boolean perAxis,
+                                boolean[] outZeroX, boolean[] outZeroZ) {
++        traceContinuous(yawsAbsWrapped, threshold, perAxis, outZeroX, outZeroZ, null);
++    }
++
++    /** Horizontal continuous trajectory using the same inertia checks as {@link #zeroingPattern}.
++     *  Ignores any fixed pattern supplied to this model: each check uses the candidate's actual velocity.
++     *  Y is held at its start value; the constraints evaluated on this path use only X/Z and facing. */
++    public ForwardPath forwardContinuous(double[] yawsAbsWrapped, double threshold, boolean perAxis) {
++        ForwardPath path = new ForwardPath(new double[n + 1], new double[n + 1], new double[n + 1],
++                new double[n + 1], new double[n + 1], new double[n + 1]);
++        path.posX[0] = sc.startPos.x;
++        path.posY[0] = sc.startPos.y;
++        path.posZ[0] = sc.startPos.z;
++        path.velX[0] = sc.initialVelocity.x;
++        path.velZ[0] = sc.initialVelocity.z;
++        traceContinuous(yawsAbsWrapped, threshold, perAxis, null, null, path);
++        return path;
++    }
++
++    private void traceContinuous(double[] yawsAbsWrapped, double threshold, boolean perAxis,
++                                 boolean[] outZeroX, boolean[] outZeroZ, ForwardPath path) {
+         double vx = sc.initialVelocity.x;
+         double vz = sc.initialVelocity.z;
+         double thrSq = threshold * threshold;
+@@ -471,13 +534,22 @@ public final class JumpLinearModel {
+             } else {
+                 if (vx * vx + vz * vz < thrSq) { vx = 0.0; vz = 0.0; zx = true; zz = true; }
+             }
+-            outZeroX[t] = zx;
+-            outZeroZ[t] = zz;
++            if (outZeroX != null) outZeroX[t] = zx;
++            if (outZeroZ != null) outZeroZ[t] = zz;
+             double phi = baseArg[t] + yawsAbsWrapped[t] * RAD;
+             vx += mMag[t] * StrictMath.cos(phi);
+             vz += mMag[t] * StrictMath.sin(phi);
++            if (path != null) {
++                path.posX[t + 1] = path.posX[t] + vx;
++                path.posZ[t + 1] = path.posZ[t] + vz;
++                path.posY[t + 1] = sc.startPos.y;
++            }
+             vx *= f4[t];
+             vz *= f4[t];
++            if (path != null) {
++                path.velX[t + 1] = vx;
++                path.velZ[t + 1] = vz;
++            }
+         }
+     }
+ 
+diff --git a/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/LongRunSolver.java b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/LongRunSolver.java
+index ad6cc5c..64c1f46 100644
+--- a/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/LongRunSolver.java
++++ b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/LongRunSolver.java
+@@ -8,35 +8,18 @@ import java.util.List;
+ import java.util.Map;
+ import java.util.concurrent.atomic.AtomicBoolean;
+ 
+-/** From-scratch solver for long multi-jump spans: the post-failure fallback for runs the closed-form dual
+- *  cannot converge on across the whole horizon (e.g. the 354-tick "desert hard" runs, ~30 jumps, 81 walls).
++/** Receding-horizon solver for long multi-jump spans. Each window temporarily omits endpoint bounds that cap its current objective and requires full
++ *  continuous feasibility for its remaining rows. Exact replay acceptance covers only the first few jumps that will be committed. The remaining
++ *  lookahead is provisional and is solved again from the committed prefix's exact exit state.
+  *
+- *  <p><b>Receding-horizon (model-predictive) decomposition.</b> The convex Lagrangian dual
+- *  ({@link ClosedFormSolve}) solves a single jump to GLOBAL optimality in microseconds, and (measured)
+- *  keeps converging for windows of up to ~10 jumps, but not for the full run (the degenerate high-dimensional
+- *  landscape of dozens of jumps). So solve a sliding window of {@value #WINDOW} jumps to global optimality,
+- *  COMMIT its first few jumps (chaining their exact byte-exact exit state into the next window's seed), and
+- *  slide. The committed jumps' exit is, by construction, the entry of a feasible {@code (WINDOW − commit)}-jump
+- *  continuation, so it cannot doom the next {@code WINDOW − commit} jumps: the coupling that defeats a greedy
+- *  one-jump-at-a-time chain (greedy genuinely fails; measured seam-coupling horizon ~5 jumps).
++ *  <p>Windows use {@link ClosedFormSolve} with centered margins and fall back to SLP. Smaller windows
++ *  are tried when a solve fails; a stuck chain retries with a smaller commit count. A final window
++ *  commits its whole remainder. Each new window starts from the original constraints.
+  *
+- *  <p>There is NO free global guarantee: a window sees only {@value #WINDOW} jumps, so this is feasible only
+- *  while the lookahead exceeds the run's coupling horizon. Three things make it safe: (1) the lookahead margin
+- *  ({@code WINDOW − commit}, default 7) is set above the measured horizon; (2) if a commit gets the chain
+- *  stuck, it retries with a smaller commit, i.e. MORE lookahead ({@link #COMMIT_LADDER}); (3) the full
+- *  concatenated run is re-verified byte-exact, so a coupling failure returns {@code null} (handing off to the
+- *  caller's last-ditch fallback) rather than ever a false success.
+- *
+- *  <p>This is robust where a global 354-dimensional local search is not: every window is solved by the convex
+- *  dual (no local optima, no minimax plateaus, no sine-bucket stalls, no initial guess), so the result does
+- *  not depend on tuning or on incidental problem details. It uses only the resume start state, the
+- *  input-specified structure (ground/air, jumps, strafe; never a recorded trajectory), and the constraints;
+- *  the windows chain their own byte-exact state, so the full concatenated path is feasible by construction.
+- *  Returns the chained game facings (certified via the replay {@code toGameFacings(wrapAll(gf))}, the
+- *  chain the engine reports and Apply realizes) or {@code null}.
+- *
+- *  <p>This restores feasibility ("solve at all"); the last window already optimises the real objective, and a
+- *  follow-up global objective ascent ({@link BucketAscentPolish}) is a separate, strictly-improving step. */
++ *  <p>The completed route is checked against every original constraint after the same float-delta
++ *  reconstruction used by Apply: {@code toGameFacings(wrapAll(gf))}. A prefix success does not guarantee
++ *  a feasible continuation; a stuck chain or a failed final replay returns {@code null}.
++ *  Uses the authored inputs and start state, never the capture's recorded trajectory. */
+ public final class LongRunSolver {
+ 
+     /** Jumps solved together per window (the dual converges to ~10-13; 10 leaves margin). */
+@@ -55,6 +38,24 @@ public final class LongRunSolver {
+     public static final class LongRunConfig {
+         final int[] windowLadder;
+         final int[] commitLadder;
++        /** Optional probe override for closed-form margins; null preserves the standard ladders. */
++        private Double fixedMargin;
++        private boolean removeObjectiveBounds = true;
++
++        public LongRunConfig withObjectiveBoundRemoval(boolean enabled) {
++            LongRunConfig copy = new LongRunConfig(windowLadder.clone(), commitLadder.clone());
++            copy.fixedMargin = fixedMargin;
++            copy.removeObjectiveBounds = enabled;
++            return copy;
++        }
++
++        public LongRunConfig withFixedMargin(double margin) {
++            if (!Double.isFinite(margin) || margin < 0) throw new IllegalArgumentException("invalid margin");
++            LongRunConfig copy = new LongRunConfig(windowLadder.clone(), commitLadder.clone());
++            copy.fixedMargin = margin;
++            copy.removeObjectiveBounds = removeObjectiveBounds;
++            return copy;
++        }
+ 
+         LongRunConfig(int[] windowLadder, int[] commitLadder) {
+             this.windowLadder = windowLadder;
+@@ -129,7 +130,6 @@ public final class LongRunSolver {
+                                     LongRunConfig cfg, StartBox freeBox, WindowCache windows, long deadlineNanos) {
+         if (freeBox == null || !freeBox.startFree()) return null;
+         JumpPhysicsInputs sc = spec.asScenario();
+-        JumpConstraintCompiler.Compiled compiled = JumpConstraintCompiler.compile(spec);
+         int[] bounds = jumpBoundaries(sc);
+         int jumps = bounds.length - 1;
+         if (jumps < 1) return null;
+@@ -141,13 +141,15 @@ public final class LongRunSolver {
+             if (deadlineNanos > 0L && System.nanoTime() >= deadlineNanos) return null;
+             chosen[0] = Double.NaN;
+             chosen[1] = Double.NaN;
+-            double[] gf = runHorizon(exact, sc, spec, bounds, jumps, commit, cfg.windowLadder, cancel,
++            double[] gf = runHorizon(exact, sc, spec, bounds, jumps, commit, cfg, cancel,
+                     freeBox, chosen, retryCache, windows, deadlineNanos);
+             if (gf == null || Double.isNaN(chosen[0])) continue;
+             JumpPhysicsInputs at = FreeStartSolve.copyWithStart(sc, chosen[0], chosen[1]);
+             double[] replay = at.toGameFacings(Angles.wrapAll(gf));
+-            double viol = compiled.maxViolation(replay, exact.forward(at, replay));
+-            if (viol <= feasTol) return new FreeRun(gf, chosen[0], chosen[1]);
++            double viol = validateRoute(exact, spec, at, replay);
++            if (viol <= feasTol) {
++                return new FreeRun(gf, chosen[0], chosen[1]);
++            }
+         }
+         return null;
+     }
+@@ -165,7 +167,6 @@ public final class LongRunSolver {
+     public static double[] solve(ExactJumpModel exact, JumpSpec spec, double feasTol, AtomicBoolean cancel,
+                                  LongRunConfig cfg, WindowCache windows, long deadlineNanos) {
+         JumpPhysicsInputs sc = spec.asScenario();
+-        JumpConstraintCompiler.Compiled compiled = JumpConstraintCompiler.compile(spec);
+         int[] bounds = jumpBoundaries(sc);
+         int jumps = bounds.length - 1;
+         if (jumps < 1) return null;
+@@ -174,7 +175,7 @@ public final class LongRunSolver {
+         for (int commit : cfg.commitLadder) {
+             if (cancel != null && cancel.get()) return null;
+             if (deadlineNanos > 0L && System.nanoTime() >= deadlineNanos) return null;
+-            double[] gf = runHorizon(exact, sc, spec, bounds, jumps, commit, cfg.windowLadder, cancel, null, null, null,
++            double[] gf = runHorizon(exact, sc, spec, bounds, jumps, commit, cfg, cancel, null, null, null,
+                     windows, deadlineNanos);
+             if (gf == null) continue;
+             // Certify the chain Apply will actually realize, not the window-chained facings themselves:
+@@ -184,9 +185,11 @@ public final class LongRunSolver {
+             // the verified, reported, and applied trajectories one and the same object: the engine and
+             // Apply both recompute exactly toGameFacings(wrapAll(gf)).
+             double[] replay = sc.toGameFacings(Angles.wrapAll(gf));
+-            double viol = compiled.maxViolation(replay, exact.forward(sc, replay));
++            double viol = validateRoute(exact, spec, sc, replay);
+             if (DEBUG) System.err.printf("LRS commit=%d -> full viol=%.6f%n", commit, viol);
+-            if (viol <= feasTol) return gf;
++            if (viol <= feasTol) {
++                return gf;
++            }
+         }
+         return null;
+     }
+@@ -196,7 +199,7 @@ public final class LongRunSolver {
+     private static final Object FREE_RETRY_MISS = new Object();
+ 
+     private static double[] runHorizon(ExactJumpModel exact, JumpPhysicsInputs sc, JumpSpec spec, int[] bounds,
+-                                       int jumps, int commitJumps, int[] windowLadder, AtomicBoolean cancel,
++                                       int jumps, int commitJumps, LongRunConfig config, AtomicBoolean cancel,
+                                        StartBox freeBox, double[] chosenStart, Map<Integer, Object> retryCache,
+                                        WindowCache windows, long deadlineNanos) {
+         int n = sc.numTicks;
+@@ -211,18 +214,30 @@ public final class LongRunSolver {
+             boolean advanced = false;
+             // Try the largest window that solves; shrink on failure for robustness near the run's end / hard spots.
+             int prevWe = -1;
+-            for (int w : windowLadder) {
++            for (int w : config.windowLadder) {
+                 int we = Math.min(i + w, jumps);
+                 if (we == prevWe) continue; // several ladder sizes clamp to the same window near the end: solve it once
+                 prevWe = we;
+                 boolean last = (we == jumps);
+                 int a = bounds[i], c = bounds[we];
++                int ce = last ? we : Math.min(i + Math.min(commitJumps, w), jumps);
++                int commitTicks = bounds[ce] - a;
+                 JumpPhysicsInputs win = sliceScenario(sc, a, c, seedPos, seedVel, seedYaw);
+                 List<JumpConstraint> cons = sliceConstraints(spec, a, c, seedYaw);
++                if (SolverTrace.on()) {
++                    SolverTrace.log("LRS-WIN", "commit=%d jumps=[%d,%d) ticks=[%d,%d) seed=(%.12f,%.12f;%.12f,%.12f) yaw=%.9f constraints=%d replayTicks=%d",
++                            commitJumps, i, we, a, c, seedPos.x, seedPos.z, seedVel.x, seedVel.z, seedYaw, cons.size(), commitTicks);
++                    if (c - a <= 10) for (JumpConstraint jc : cons) {
++                        SolverTrace.log("LRS-CONS", "%s %s t=%d%s %s rhs=%.12f",
++                                jc.name, jc.mode, jc.t1, jc.t2 == null ? "" : "/" + jc.t2,
++                                jc.cmp, jc.rhs);
++                    }
++                }
+                 Objective obj = last
+                         ? new Objective(spec.objective.axis, spec.objective.sense, c - a)   // last window: real objective
+                         : new Objective(JumpPhysicsInputs.Axis.Z, Objective.Sense.MAX, c - a); // lead-in: any feasible
+-                String winKey = windowKey(a, c, last, seedPos, seedVel, seedYaw);
++                String winKey = windowKey(a, c, last, commitTicks, seedPos, seedVel, seedYaw)
++                        + ":margin=" + config.fixedMargin + ":removeBounds=" + config.removeObjectiveBounds;
+                 double[] cachedWin = windows.map.get(winKey);
+                 double[] yaws;
+                 if (cachedWin != null) {
+@@ -233,9 +248,11 @@ public final class LongRunSolver {
+                     }
+                 } else {
+                     long winT0 = SolverTrace.on() ? System.nanoTime() : 0L;
+-                    yaws = solveWindow(exact, win, cons, obj, last, cancel, deadlineNanos);
++                    yaws = solveWindow(exact, win, cons, obj, last, commitTicks, cancel,
++                            deadlineNanos, config.fixedMargin, config.removeObjectiveBounds);
+                     if (cancel == null || !cancel.get()) {
+-                        windows.map.put(winKey, yaws == null ? WINDOW_MISS : yaws.clone());
++                        windows.map.put(winKey, yaws == null ? WINDOW_MISS
++                                : yaws.clone());
+                     }
+                     if (SolverTrace.on()) {
+                         SolverTrace.log("LRS", "commit=%d window i=%d we=%d ticks=%d cons=%d last=%s -> %s ms=%.1f",
+@@ -277,12 +294,15 @@ public final class LongRunSolver {
+                     }
+                 }
+                 if (yaws == null) continue;
+-
+                 // Commit the first commitJumps jumps (all of them for the final window), chaining the exact exit.
+-                int ce = last ? we : Math.min(i + Math.min(commitJumps, w), jumps);
+-                int commitTicks = bounds[ce] - a;
+                 double[] wgf = win.toGameFacings(yaws);
+                 ForwardPath wp = exact.forward(win, wgf);
++                if (SolverTrace.on()) for (int k = 0; k <= commitTicks; k++) {
++                    int tick = a + k;
++                    SolverTrace.log("LRS-COMMIT-PATH", "jump=%d tick=%d x=%.12f z=%.12f vx=%.12f vz=%.12f yaw=%s",
++                            i, tick, wp.posX[k], wp.posZ[k], wp.velX[k], wp.velZ[k],
++                            k < wgf.length ? SolverTrace.fmt("%.9f", wgf[k]) : "-");
++                }
+                 System.arraycopy(wgf, 0, gf, a, commitTicks);
+                 seedPos = new Vec3dCore(wp.posX[commitTicks], wp.posY[commitTicks], wp.posZ[commitTicks]);
+                 seedVel = new Vec3dCore(wp.velX[commitTicks], wp.velY[commitTicks], wp.velZ[commitTicks]);
+@@ -292,6 +312,8 @@ public final class LongRunSolver {
+                 break;
+             }
+             if (!advanced) {
++                if (SolverTrace.on()) SolverTrace.log("LRS-STUCK", "commit=%d nextJump=%d tick=%d",
++                        commitJumps, i + 1, bounds[i]);
+                 if (DEBUG) System.err.printf("  commit=%d stuck at jump %d (tick %d)%n", commitJumps, i, bounds[i]);
+                 return null;
+             }
+@@ -299,8 +321,30 @@ public final class LongRunSolver {
+         return gf;
+     }
+ 
+-    private static String windowKey(int a, int c, boolean last, Vec3dCore pos, Vec3dCore vel, float yaw) {
+-        return a + ":" + c + ":" + last
++    /** Final acceptance always uses the authored rows, including bounds omitted by window attempts. */
++    private static double validateRoute(ExactJumpModel exact, JumpSpec original, JumpPhysicsInputs scenario,
++                                         double[] replay) {
++        double violation = JumpConstraintCompiler.compile(original).maxViolation(replay, exact.forward(scenario, replay));
++        if (SolverTrace.on()) SolverTrace.log("LRS-FINAL", "originalRows=%d violation=%.12g",
++                original.constraints.size(), violation);
++        return violation;
++    }
++
++    private static JumpSpec objectiveProblem(JumpPhysicsInputs scenario, List<JumpConstraint> rows,
++                                             Objective objective, boolean removeBounds) {
++        if (!removeBounds) return new JumpSpec(scenario, rows, objective);
++        List<JumpConstraint> retained = new ArrayList<>();
++        for (JumpConstraint row : rows) {
++            if (ObjectiveBounds.isDirectCap(objective, row)) {
++                if (SolverTrace.on()) SolverTrace.log("LRS-DROP", "objective=%s/%s@%d row=%s %s rhs=%.12f",
++                        objective.axis, objective.sense, objective.tick, row.name, row.cmp, row.rhs);
++            } else retained.add(row);
++        }
++        return new JumpSpec(scenario, retained, objective);
++    }
++
++    private static String windowKey(int a, int c, boolean last, int commitTicks, Vec3dCore pos, Vec3dCore vel, float yaw) {
++        return a + ":" + c + ":" + last + ":" + commitTicks
+                 + ":" + Double.doubleToLongBits(pos.x) + ":" + Double.doubleToLongBits(pos.y)
+                 + ":" + Double.doubleToLongBits(pos.z)
+                 + ":" + Double.doubleToLongBits(vel.x) + ":" + Double.doubleToLongBits(vel.y)
+@@ -309,27 +353,88 @@ public final class LongRunSolver {
+     }
+ 
+     private static double[] solveWindow(ExactJumpModel exact, JumpPhysicsInputs win, List<JumpConstraint> cons,
+-                                        Objective first, boolean last, AtomicBoolean cancel, long deadlineNanos) {
++                                        Objective first, boolean last, int commitTicks, AtomicBoolean cancel, long deadlineNanos) {
++        return solveWindow(exact, win, cons, first, last, commitTicks, cancel, deadlineNanos, null);
++    }
++
++    private static double[] solveWindow(ExactJumpModel exact, JumpPhysicsInputs win, List<JumpConstraint> cons,
++                                        Objective first, boolean last, int commitTicks, AtomicBoolean cancel,
++                                        long deadlineNanos, Double fixedMargin) {
++        return solveWindow(exact, win, cons, first, last, commitTicks, cancel,
++                deadlineNanos, fixedMargin, true);
++    }
++
++    private static double[] solveWindow(ExactJumpModel exact, JumpPhysicsInputs win, List<JumpConstraint> cons,
++                                        Objective first, boolean last, int commitTicks, AtomicBoolean cancel,
++                                        long deadlineNanos, Double fixedMargin, boolean removeBounds) {
++        ClosedFormSolve.Config closed = new ClosedFormSolve.Config();
++        if (fixedMargin != null) {
++            closed.margins = new double[]{fixedMargin};
++            closed.marginsRobust = new double[]{fixedMargin};
++        }
+         if (last) {
++            JumpSpec terminal = objectiveProblem(win, cons, first, removeBounds);
++            cons = terminal.constraints;
++            traceObjectiveBound("terminal", first, cons);
+             AtomicBoolean token = cancel != null ? cancel : new AtomicBoolean(false);
++            long recoveryT0 = SolverTrace.on() ? System.nanoTime() : 0L;
++            if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "begin terminal recovery %s/%s@%d",
++                    first.axis, first.sense, first.tick);
+             double[] primary = RecoveryLadder.solve(exact, new JumpSpec(win, cons, first), win, token, new String[1],
+-                    deadlineNanos, new SlpSolve.Config(), new ClosedFormSolve.Config(), new RelaxationRecovery.Config(),
++                    deadlineNanos, new SlpSolve.Config(), closed, new RelaxationRecovery.Config(),
+                     null);
+-            return hugBestObjective(exact, win, cons, first, primary, token, deadlineNanos);
++            double[] result = hugBestObjective(exact, win, cons, first, primary, token, deadlineNanos, closed);
++            if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "end terminal recovery result=%s ms=%.3f",
++                    result != null ? "solved" : "miss", (System.nanoTime() - recoveryT0) / 1.0e6);
++            return result;
+         }
+-        double[] y = ClosedFormSolve.optimizeRobust(exact, new JumpSpec(win, cons, first), 0.0, cancel);
+-        if (y != null) return y;
+-        for (Objective alt : alternates(first, win.numTicks)) {
++        closed.replayTickLimit = commitTicks;
++        List<Objective> objectives = new ArrayList<>();
++        objectives.add(first);
++        objectives.addAll(alternates(first, win.numTicks));
++        for (int k = 0; k < objectives.size(); k++) {
+             if (cancel != null && cancel.get()) return null;
+-            y = ClosedFormSolve.optimizeRobust(exact, new JumpSpec(win, cons, alt), 0.0, cancel);
++            JumpSpec attempt = objectiveProblem(win, cons, objectives.get(k), removeBounds);
++            Objective selected = attempt.objective;
++            String stage = k == 0 ? "primary" : "alternate";
++            traceObjectiveBound(stage, selected, attempt.constraints);
++            long t0 = SolverTrace.on() ? System.nanoTime() : 0L;
++            if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "begin %s %s/%s@%d", stage,
++                    selected.axis, selected.sense, selected.tick);
++            double[] y = ClosedFormSolve.optimizeRobust(exact, attempt, 0.0, cancel, closed);
++            if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "end %s %s/%s@%d result=%s ms=%.3f", stage,
++                    selected.axis, selected.sense, selected.tick, y != null ? "solved" : "miss",
++                    (System.nanoTime() - t0) / 1.0e6);
+             if (y != null) return y;
+         }
+         if (cancel != null && cancel.get()) return null;
+-        return SlpSolve.optimizeCentered(exact, new JumpSpec(win, cons, first), 0.0, cancel);
++        // Centered SLP restores feasibility on the nominal window; it does not maximize first.
++        long objectiveT0 = SolverTrace.on() ? System.nanoTime() : 0L;
++        if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "begin fallback SLP %s/%s@%d",
++                first.axis, first.sense, first.tick);
++        SlpSolve.Config slp = new SlpSolve.Config();
++        slp.replayTickLimit = commitTicks;
++        double[] y = SlpSolve.optimizeCentered(exact, new JumpSpec(win, cons, first), 0.0, cancel, null, slp);
++        if (SolverTrace.on()) SolverTrace.log("LRS-OBJ", "end fallback SLP result=%s ms=%.3f",
++                y != null ? "solved" : "miss", (System.nanoTime() - objectiveT0) / 1.0e6);
++        return y;
++    }
++
++    private static void traceObjectiveBound(String stage, Objective objective, List<JumpConstraint> constraints) {
++        if (!SolverTrace.on()) return;
++        JumpConstraint cap = ObjectiveBounds.directCap(objective, constraints);
++        if (cap == null) {
++            SolverTrace.log("LRS-PREFLIGHT", "%s %s/%s@%d directCap=false", stage,
++                    objective.axis, objective.sense, objective.tick);
++        } else {
++            SolverTrace.log("LRS-PREFLIGHT", "%s %s/%s@%d directCap=true constraint=%s %s rhs=%.12f", stage,
++                    objective.axis, objective.sense, objective.tick, cap.name, cap.cmp, cap.rhs);
++        }
+     }
+ 
+     private static double[] hugBestObjective(ExactJumpModel exact, JumpPhysicsInputs win, List<JumpConstraint> cons,
+-                                             Objective first, double[] primary, AtomicBoolean cancel, long deadlineNanos) {
++                                             Objective first, double[] primary, AtomicBoolean cancel, long deadlineNanos,
++                                             ClosedFormSolve.Config closed) {
+         JumpSpec spec = new JumpSpec(win, cons, first);
+         JumpConstraintCompiler.Compiled compiled = JumpConstraintCompiler.compile(spec);
+         boolean max = first.sense == Objective.Sense.MAX;
+@@ -338,7 +443,7 @@ public final class LongRunSolver {
+         for (Objective alt : alternates(first, win.numTicks)) {
+             if (cancel != null && cancel.get()) break;
+             if (deadlineNanos > 0L && System.nanoTime() >= deadlineNanos) break;
+-            double[] seed = ClosedFormSolve.optimize(exact, new JumpSpec(win, cons, alt), 0.0, cancel);
++            double[] seed = ClosedFormSolve.optimize(exact, new JumpSpec(win, cons, alt), 0.0, cancel, closed);
+             if (seed == null) continue;
+             double[] hugged = hugObjective(exact, win, cons, first, seed, cancel);
+             double obj = feasibleObjective(exact, win, compiled, first, hugged);
+diff --git a/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/ObjectiveBounds.java b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/ObjectiveBounds.java
+new file mode 100644
+index 0000000..b0efa37
+--- /dev/null
++++ b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/ObjectiveBounds.java
+@@ -0,0 +1,39 @@
++package de.legoshi.parkourcalc.core.anglesolver.solver;
++
++import java.util.List;
++
++/** Cheap preflight for a scalar position objective directly capped by a same-tick axis wall.
++ *  A match flags possible objective/wall cancellation; it does not prove the wall will be active.
++ *  This deliberately handles the common absolute X/Z case, not combinations of relative or facing rows. */
++public final class ObjectiveBounds {
++    private ObjectiveBounds() { }
++
++    public static JumpConstraint directCap(JumpSpec spec) {
++        return directCap(spec.objective, spec.constraints);
++    }
++
++    /** Returns the tightest matching wall, or null when this simple check finds no direct cap.
++     *  Motion and custom-direction objectives are outside this check's scope. */
++    public static JumpConstraint directCap(Objective objective, List<JumpConstraint> constraints) {
++        if (objective.isMotion() || objective.isCustomAngle()) return null;
++        JumpConstraint best = null;
++        for (JumpConstraint row : constraints) {
++            if (!isDirectCap(objective, row)) continue;
++            if (best == null || (objective.sense == Objective.Sense.MAX ? row.rhs < best.rhs : row.rhs > best.rhs)) {
++                best = row;
++            }
++        }
++        return best;
++    }
++
++    /** Same-axis endpoint upper wall for MAX, lower wall for MIN, or an equality for either. */
++    public static boolean isDirectCap(Objective objective, JumpConstraint row) {
++        if (objective.isMotion() || objective.isCustomAngle()) return false;
++        JumpConstraint.Mode mode = objective.axis == JumpPhysicsInputs.Axis.X
++                ? JumpConstraint.Mode.X : JumpConstraint.Mode.Z;
++        JumpConstraint.Cmp cap = objective.sense == Objective.Sense.MAX
++                ? JumpConstraint.Cmp.LE : JumpConstraint.Cmp.GE;
++        return row.mode == mode && row.t1 == objective.tick && row.t2 == null
++                && (row.cmp == cap || row.cmp == JumpConstraint.Cmp.EQ);
++    }
++}
+diff --git a/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/SlpSolve.java b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/SlpSolve.java
+index fbc54b6..efddb5b 100644
+--- a/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/SlpSolve.java
++++ b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/SlpSolve.java
+@@ -31,6 +31,9 @@ public final class SlpSolve {
+         /** Phase-1 target for a centered solve; the result is accepted at whatever clearance was reached
+          *  (>= {@value SlpSolve#CLEARANCE}), so a corridor narrower than twice this still solves. */
+         public double centerClearance = 2.0e-2;
++        /** Restrict exact acceptance to this input prefix; require full continuous constraint feasibility
++         *  as well. All window rows still guide the LP steps. */
++        public int replayTickLimit = Integer.MAX_VALUE;
+     }
+ 
+     private SlpSolve() {
+@@ -178,7 +181,11 @@ public final class SlpSolve {
+             if (plainWalls.isEmpty()) return null;
+             CostateDualSolver dual = new CostateDualSolver(n, cx, cz, lin.mMagAll(), plainWalls);
+             CostateDualSolver.Result r = dual.solve(0.0, null);
+-            if (r == null) return null; // dual unbounded = continuous-infeasible certificate
++            if (r == null) {
++                if (SolverTrace.on()) SolverTrace.log("SLP", "dual seed rejected stop=%s iters=%d n=%d m=%d",
++                        dual.lastStopReason, dual.lastIters, n, plainWalls.size());
++                return null;
++            }
+             theta = lin.recoverAlongCostate(spec.objective, r.gx, r.gz);
+         }
+ 
+@@ -191,7 +198,9 @@ public final class SlpSolve {
+                     n, m, seedAbsWrapped != null ? "given" : "dual", cfg.phase1Calls, cfg.totalCalls, bestEffort,
+                     inertiaAware, ties == null ? "-" : String.valueOf(ties.dims()));
+         }
+-        JumpConstraintCompiler.Compiled compiled = JumpConstraintCompiler.compile(spec);
++        JumpConstraintCompiler.Compiled compiled = JumpConstraintCompiler.compile(spec, cfg.replayTickLimit);
++        WindowCandidateValidation validation = cfg.replayTickLimit < n
++                ? new WindowCandidateValidation(exact, spec, cfg.replayTickLimit) : null;
+         double[] viol = new double[m];
+         double[] candViol = new double[m];
+         double[] ux = new double[n];
+@@ -335,8 +344,15 @@ public final class SlpSolve {
+                         ? cViol < maxViol
+                         : cViol <= feasTol && cObj > objNorm;
+                 if (SolverTrace.on()) {
+-                    SolverTrace.log("SLP", "lp#%d phase=%d tr=%.3g step=%.3g pred=%.3e viol=%.3e->%.3e obj=%.9f->%.9f %s",
+-                            lpCalls, phase, tr, step, lp.s, maxViol, cViol, objNorm, cObj,
++                    traceInertiaStep(lpCalls, phase, inertiaAware, lin, exact, theta, cand, path, cpath,
++                            zeroX, zeroZ, accept);
++                }
++                if (SolverTrace.on()) {
++                    SolverTrace.log("SLP", "lp#%d phase=%d tr=%.3g step=%.3g pred=%.3e viol=%.3e->%.3e worst=%s->%s t24-25=%s obj=%.9f->%.9f %s",
++                            lpCalls, phase, tr, step, lp.s, maxViol, cViol,
++                            worstViolation(ineq, halfSign, gf, path, viol),
++                            worstViolation(ineq, halfSign, cgf, cpath, candViol),
++                            tickWallSlacks(ineq, halfSign, viol, candViol, 24, 25), objNorm, cObj,
+                             accept ? "accept" : "reject");
+                 }
+                 if (accept) {
+@@ -349,11 +365,14 @@ public final class SlpSolve {
+             }
+             if (phase == 1) {
+                 double[] gf = sc.toGameFacings(Angles.wrapAll(theta));
+-                double endViol = exactSlacks(ineq, halfSign, gf, exact.forward(sc, gf), viol);
++                ForwardPath endPath = exact.forward(sc, gf);
++                double endViol = exactSlacks(ineq, halfSign, gf, endPath, viol);
+                 // A hugging solve keeps any strictly feasible point (a tight corridor's best clearance can
+                 // be shallower than CLEARANCE); a centered solve keeps the demand, its result seeds windows.
+                 double phase1Gate = hugObjective ? feasTol : -CLEARANCE;
+-                if (endViol > phase1Gate) {
++                boolean prefixAccepted = validation != null
++                        && validation.evaluate(Angles.wrapAll(theta), gf, endPath, lpLin).maxViolation() <= feasTol;
++                if (endViol > phase1Gate && !prefixAccepted) {
+                     if (DEBUG) System.out.printf("  SLP infeasible: viol=%.3e after %d LPs (%.1f ms)%n",
+                             endViol, lpCalls, (System.nanoTime() - t0) / 1e6);
+                     if (SolverTrace.on()) {
+@@ -376,6 +395,11 @@ public final class SlpSolve {
+         double[] gf = sc.toGameFacings(yaws);
+         ForwardPath path = exact.forward(sc, gf);
+         double finalViol = compiled.maxViolation(gf, path);
++        if (validation != null) {
++            double modelViol = validation.evaluate(yaws, gf, path, lpLin).continuousViolation;
++            if (SolverTrace.on()) SolverTrace.log("SLP-CHECK", "replayViol=%.12g modelViol=%.12g", finalViol, modelViol);
++            finalViol = Math.max(finalViol, modelViol);
++        }
+         if (DEBUG) System.out.printf("  SLP viol=%.3e obj=%.7f lps=%d (%.1f ms)%n", finalViol,
+                 spec.objective.evaluate(path), lpCalls, (System.nanoTime() - t0) / 1e6);
+         if (SolverTrace.on()) {
+@@ -402,6 +426,131 @@ public final class SlpSolve {
+         return true;
+     }
+ 
++    /** Trace-only comparison of the smooth model's gate prediction and the exact replay's actual checks. */
++    private static void traceInertiaStep(int lp, int phase, boolean inertiaAware, JumpLinearModel lin,
++                                         ExactJumpModel exact, double[] theta, double[] candidate,
++                                         ForwardPath currentPath, ForwardPath candidatePath,
++                                         boolean[] modelZeroX, boolean[] modelZeroZ, boolean accepted) {
++        int n = lin.n;
++        boolean[] currentSmoothX = new boolean[n], currentSmoothZ = new boolean[n];
++        boolean[] candidateSmoothX = new boolean[n], candidateSmoothZ = new boolean[n];
++        boolean[] currentExactX = new boolean[n], currentExactZ = new boolean[n];
++        boolean[] candidateExactX = new boolean[n], candidateExactZ = new boolean[n];
++        lin.zeroingPattern(theta, exact.inertiaThreshold(), exact.perAxisInertia(), currentSmoothX, currentSmoothZ);
++        lin.zeroingPattern(candidate, exact.inertiaThreshold(), exact.perAxisInertia(), candidateSmoothX, candidateSmoothZ);
++        exactZeroingPattern(currentPath, n, exact, currentExactX, currentExactZ);
++        exactZeroingPattern(candidatePath, n, exact, candidateExactX, candidateExactZ);
++        String currentMismatch = smoothExactDifferences(currentSmoothX, currentSmoothZ,
++                currentExactX, currentExactZ, currentPath, exact.inertiaThreshold());
++        String mismatch = smoothExactDifferences(candidateSmoothX, candidateSmoothZ,
++                candidateExactX, candidateExactZ, candidatePath, exact.inertiaThreshold());
++        String changed = exactPatternChanges(currentExactX, currentExactZ,
++                candidateExactX, candidateExactZ, candidatePath, exact.inertiaThreshold());
++        String modeledZeroVelocity = modeledZeroVelocities(modelZeroX, modelZeroZ, currentPath, candidatePath);
++        String nearGateVelocity = nearGateVelocities(currentPath, candidatePath, currentExactX, currentExactZ,
++                candidateExactX, candidateExactZ, exact.inertiaThreshold());
++        String yawDelta = yawDeltas(theta, candidate);
++        SolverTrace.log("SLP-GATE",
++                "lp#%d phase=%d %s jac=%s smooth=%s->%s replay=%s->%s current-replay-vs-smooth=%s trial-replay-vs-smooth=%s replay-changes=%s jac-zero-vel(current->trial)=%s near-gate-vel(current->trial)=%s yaw-delta=%s decision=%s",
++                lp, phase, inertiaAware ? "aware" : "ordinary",
++                inertiaAware ? SolverTrace.patternLabel(modelZeroX, modelZeroZ) : "unpatterned",
++                SolverTrace.patternLabel(currentSmoothX, currentSmoothZ),
++                SolverTrace.patternLabel(candidateSmoothX, candidateSmoothZ),
++                SolverTrace.patternLabel(currentExactX, currentExactZ),
++                SolverTrace.patternLabel(candidateExactX, candidateExactZ), currentMismatch, mismatch, changed,
++                modeledZeroVelocity, nearGateVelocity, yawDelta,
++                accepted ? "accept" : "reject");
++    }
++
++    /** Exact incoming velocities at checks the local Jacobian currently models as zeroed. */
++    private static String modeledZeroVelocities(boolean[] zeroX, boolean[] zeroZ,
++                                                ForwardPath current, ForwardPath trial) {
++        StringBuilder out = new StringBuilder();
++        for (int t = 0; t < zeroX.length; t++) {
++            if (zeroX[t]) appendVelocityPair(out, t, 'X', current.velX[t], trial.velX[t]);
++            if (zeroZ[t]) appendVelocityPair(out, t, 'Z', current.velZ[t], trial.velZ[t]);
++        }
++        return out.length() == 0 ? "-" : out.toString();
++    }
++
++    private static void appendVelocityPair(StringBuilder out, int tick, char axis,
++                                           double current, double trial) {
++        if (out.length() > 0) out.append(',');
++        out.append(tick).append(axis).append(':')
++                .append(String.format(java.util.Locale.ROOT, "%.9g->%.9g", current, trial));
++    }
++
++    private static String yawDeltas(double[] current, double[] trial) {
++        StringBuilder out = new StringBuilder();
++        for (int t = 0; t < current.length; t++) {
++            double d = Angles.wrapDelta(trial[t] - current[t]);
++            if (Math.abs(d) < 1.0e-9) continue;
++            if (out.length() > 0) out.append(',');
++            out.append(t).append(':').append(String.format(java.util.Locale.ROOT, "%+.6f", d));
++        }
++        return out.length() == 0 ? "-" : out.toString();
++    }
++
++    /** Exact incoming velocities near a threshold, including checks that are zeroed in either replay. */
++    private static String nearGateVelocities(ForwardPath current, ForwardPath trial,
++                                             boolean[] currentZeroX, boolean[] currentZeroZ,
++                                             boolean[] trialZeroX, boolean[] trialZeroZ,
++                                             double threshold) {
++        StringBuilder out = new StringBuilder();
++        double limit = threshold * 1.25;
++        for (int t = 0; t < currentZeroX.length; t++) {
++            if (currentZeroX[t] || trialZeroX[t] || Math.abs(current.velX[t]) <= limit || Math.abs(trial.velX[t]) <= limit)
++                appendVelocityPair(out, t, 'X', current.velX[t], trial.velX[t]);
++            if (currentZeroZ[t] || trialZeroZ[t] || Math.abs(current.velZ[t]) <= limit || Math.abs(trial.velZ[t]) <= limit)
++                appendVelocityPair(out, t, 'Z', current.velZ[t], trial.velZ[t]);
++        }
++        return out.length() == 0 ? "-" : out.toString();
++    }
++
++    private static void exactZeroingPattern(ForwardPath path, int n, ExactJumpModel exact,
++                                            boolean[] zeroX, boolean[] zeroZ) {
++        double threshold = exact.inertiaThreshold();
++        for (int t = 0; t < n; t++) {
++            if (exact.perAxisInertia()) {
++                zeroX[t] = Math.abs(path.velX[t]) < threshold;
++                zeroZ[t] = Math.abs(path.velZ[t]) < threshold;
++            } else {
++                boolean zero = path.velX[t] * path.velX[t] + path.velZ[t] * path.velZ[t] < threshold * threshold;
++                zeroX[t] = zero;
++                zeroZ[t] = zero;
++            }
++        }
++    }
++
++    private static String smoothExactDifferences(boolean[] smoothX, boolean[] smoothZ,
++                                                boolean[] exactX, boolean[] exactZ,
++                                                ForwardPath path, double threshold) {
++        StringBuilder out = new StringBuilder();
++        for (int t = 0; t < smoothX.length; t++) {
++            if (smoothX[t] != exactX[t]) appendGateDifference(out, t, 'X', smoothX[t], exactX[t], path.velX[t], threshold);
++            if (smoothZ[t] != exactZ[t]) appendGateDifference(out, t, 'Z', smoothZ[t], exactZ[t], path.velZ[t], threshold);
++        }
++        return out.length() == 0 ? "-" : out.toString();
++    }
++
++    private static String exactPatternChanges(boolean[] beforeX, boolean[] beforeZ,
++                                              boolean[] afterX, boolean[] afterZ,
++                                              ForwardPath after, double threshold) {
++        StringBuilder out = new StringBuilder();
++        for (int t = 0; t < beforeX.length; t++) {
++            if (beforeX[t] != afterX[t]) appendGateDifference(out, t, 'X', beforeX[t], afterX[t], after.velX[t], threshold);
++            if (beforeZ[t] != afterZ[t]) appendGateDifference(out, t, 'Z', beforeZ[t], afterZ[t], after.velZ[t], threshold);
++        }
++        return out.length() == 0 ? "-" : out.toString();
++    }
++
++    private static void appendGateDifference(StringBuilder out, int tick, char axis,
++                                             boolean before, boolean after, double velocity, double threshold) {
++        if (out.length() > 0) out.append(',');
++        out.append(tick).append(axis).append(':').append(before ? 'Z' : 'C').append('>').append(after ? 'Z' : 'C')
++                .append('@').append(String.format(java.util.Locale.ROOT, "%.9g/%.9g", velocity, threshold));
++    }
++
+     private static boolean anySet(boolean[] a) {
+         for (boolean v : a) if (v) return true;
+         return false;
+@@ -430,4 +579,32 @@ public final class SlpSolve {
+         double v = obj.evaluate(path);
+         return max ? v : -v;
+     }
++
++    private static String worstViolation(List<JumpConstraint> constraints, int[] halfSign,
++                                         double[] facings, ForwardPath path, double[] slacks) {
++        int worst = 0;
++        for (int j = 1; j < slacks.length; j++) if (slacks[j] > slacks[worst]) worst = j;
++        JumpConstraint c = constraints.get(worst);
++        String actual = halfSign[worst] != 0
++                ? String.format(java.util.Locale.ROOT, "half=%d", halfSign[worst])
++                : String.format(java.util.Locale.ROOT, "value=%.9f", JumpConstraintCompiler.evaluate(c, facings, path));
++        return c.name + "[t=" + c.t1 + (c.t2 == null ? "" : ",t2=" + c.t2) + ",slack="
++                + String.format(java.util.Locale.ROOT, "%.6g", slacks[worst]) + "," + actual + "]";
++    }
++
++    private static String tickWallSlacks(List<JumpConstraint> constraints, int[] halfSign,
++                                         double[] before, double[] after, int... ticks) {
++        StringBuilder out = new StringBuilder();
++        for (int j = 0; j < constraints.size(); j++) {
++            JumpConstraint c = constraints.get(j);
++            if (c.mode != JumpConstraint.Mode.X && c.mode != JumpConstraint.Mode.Z) continue;
++            boolean include = false;
++            for (int tick : ticks) if (c.t1 == tick) include = true;
++            if (!include) continue;
++            if (out.length() > 0) out.append(',');
++            out.append(c.name).append(':')
++                    .append(String.format(java.util.Locale.ROOT, "%.6g->%.6g", before[j], after[j]));
++        }
++        return out.length() == 0 ? "-" : out.toString();
++    }
+ }
+diff --git a/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/WindowCandidateValidation.java b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/WindowCandidateValidation.java
+new file mode 100644
+index 0000000..0a3bf81
+--- /dev/null
++++ b/core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/WindowCandidateValidation.java
+@@ -0,0 +1,158 @@
++package de.legoshi.parkourcalc.core.anglesolver.solver;
++
++/** Shared acceptance rule for a lookahead window: continuous feasibility over the entire window
++ *  with actual inertia checks, plus Minecraft replay feasibility over the committed prefix.
++ *  The solver's assumed inertia pattern is deliberately not an input to this check. */
++public final class WindowCandidateValidation {
++    /** Optional per-thread audit hook. No detailed audit arrays are built unless an observer is installed. */
++    public interface DiagnosticObserver { void evaluated(Diagnostics diagnostics); }
++    private static final ThreadLocal<DiagnosticObserver> OBSERVER = new ThreadLocal<>();
++
++    public static void setDiagnosticObserver(DiagnosticObserver observer) {
++        if (observer == null) OBSERVER.remove();
++        else OBSERVER.set(observer);
++    }
++
++    public static final class ConstraintMargin {
++        public final JumpConstraint constraint;
++        public final boolean committed;
++        public final double continuousValue, continuousMargin, replayValue, replayMargin;
++        public final double assumedValue, assumedMargin;
++
++        private ConstraintMargin(JumpConstraint c, boolean committed, double[] angles, double[] game,
++                                 ForwardPath smooth, ForwardPath replay, ForwardPath assumed) {
++            this.constraint = c;
++            this.committed = committed;
++            double continuousResidual = JumpConstraintCompiler.evaluate(c, angles, smooth);
++            double replayResidual = JumpConstraintCompiler.evaluate(c, game, replay);
++            double assumedResidual = assumed == null ? Double.NaN : JumpConstraintCompiler.evaluate(c, angles, assumed);
++            continuousValue = continuousResidual + c.rhs;
++            replayValue = replayResidual + c.rhs;
++            assumedValue = assumedResidual + c.rhs;
++            continuousMargin = signedMargin(c, continuousResidual);
++            replayMargin = signedMargin(c, replayResidual);
++            assumedMargin = signedMargin(c, assumedResidual);
++        }
++    }
++
++    public static final class InertiaCheck {
++        public final int tick, axis;
++        public final double continuousVelocity, replayVelocity, assumedVelocity, assumedThresholdMargin;
++        public final boolean continuousZero, replayZero, assumptionKnown, assumedZero, assumptionSatisfied;
++
++        private InertiaCheck(int tick, int axis, ExactJumpModel exact, double[] angles,
++                             ForwardPath smooth, ForwardPath replay, JumpLinearModel assumed) {
++            this.tick = tick;
++            this.axis = axis;
++            continuousVelocity = axis == 0 ? smooth.velX[tick] : smooth.velZ[tick];
++            replayVelocity = axis == 0 ? replay.velX[tick] : replay.velZ[tick];
++            continuousZero = belowThreshold(exact, continuousVelocity, smooth.velX[tick], smooth.velZ[tick]);
++            replayZero = belowThreshold(exact, replayVelocity, replay.velX[tick], replay.velZ[tick]);
++            assumptionKnown = assumed != null;
++            assumedZero = assumed != null && assumed.assumesZero(axis, tick);
++            assumedVelocity = assumed == null ? Double.NaN : assumed.velocityBeforeCheck(axis, tick, angles);
++            double measure = assumedVelocity;
++            if (!exact.perAxisInertia() && assumed != null) {
++                measure = StrictMath.hypot(assumed.velocityBeforeCheck(0, tick, angles),
++                        assumed.velocityBeforeCheck(1, tick, angles));
++            }
++            assumedThresholdMargin = assumedZero ? exact.inertiaThreshold() - Math.abs(measure)
++                    : Math.abs(measure) - exact.inertiaThreshold();
++            assumptionSatisfied = assumptionKnown && (assumedZero ? assumedThresholdMargin > 0 : assumedThresholdMargin >= 0);
++        }
++    }
++
++    public static final class Diagnostics {
++        public final Result result;
++        public final String assumedPattern;
++        public final double[] continuousFacings, gameFacings;
++        public final ForwardPath continuousPath, replayPath, assumedPath;
++        public final java.util.List<ConstraintMargin> constraints;
++        public final java.util.List<InertiaCheck> inertiaChecks;
++
++        private Diagnostics(Result result, ExactJumpModel exact, JumpConstraintCompiler.Compiled full,
++                            JumpConstraintCompiler.Compiled prefix, double[] angles, double[] game,
++                            ForwardPath smooth, ForwardPath replay, JumpLinearModel assumed) {
++            this.result = result;
++            assumedPattern = assumed == null ? "not supplied" : assumed.patternDescription();
++            continuousFacings = angles.clone();
++            gameFacings = game.clone();
++            continuousPath = smooth;
++            replayPath = replay;
++            assumedPath = assumed == null ? null : assumed.forwardFixed(angles);
++            java.util.List<ConstraintMargin> margins = new java.util.ArrayList<>();
++            for (JumpConstraint c : full.ineq) margins.add(new ConstraintMargin(c, prefix.ineq.contains(c), angles, game, smooth, replay, assumedPath));
++            for (JumpConstraint c : full.eq) margins.add(new ConstraintMargin(c, prefix.eq.contains(c), angles, game, smooth, replay, assumedPath));
++            constraints = java.util.Collections.unmodifiableList(margins);
++            java.util.List<InertiaCheck> checks = new java.util.ArrayList<>();
++            for (int t = 0; t < angles.length; t++) for (int axis = 0; axis < 2; axis++) {
++                checks.add(new InertiaCheck(t, axis, exact, angles, smooth, replay, assumed));
++            }
++            inertiaChecks = java.util.Collections.unmodifiableList(checks);
++        }
++    }
++
++    private static boolean belowThreshold(ExactJumpModel exact, double component, double vx, double vz) {
++        double threshold = exact.inertiaThreshold();
++        return exact.perAxisInertia() ? Math.abs(component) < threshold : vx * vx + vz * vz < threshold * threshold;
++    }
++
++    private static double signedMargin(JumpConstraint c, double residual) {
++        return c.cmp == JumpConstraint.Cmp.GE ? residual : c.cmp == JumpConstraint.Cmp.LE ? -residual : -Math.abs(residual);
++    }
++
++    private final ExactJumpModel exact;
++    private final JumpPhysicsInputs scenario;
++    private final JumpLinearModel continuous;
++    private final JumpConstraintCompiler.Compiled full;
++    private final JumpConstraintCompiler.Compiled prefix;
++
++    public static final class Result {
++        public final double replayViolation;
++        public final double continuousViolation;
++
++        private Result(double replayViolation, double continuousViolation) {
++            this.replayViolation = replayViolation;
++            this.continuousViolation = continuousViolation;
++        }
++
++        public double maxViolation() {
++            return Math.max(replayViolation, continuousViolation);
++        }
++    }
++
++    public WindowCandidateValidation(ExactJumpModel exact, JumpSpec spec, int committedInputTicks) {
++        this.exact = exact;
++        this.scenario = spec.asScenario();
++        this.continuous = new JumpLinearModel(scenario);
++        this.full = JumpConstraintCompiler.compile(spec);
++        this.prefix = JumpConstraintCompiler.compile(spec, committedInputTicks);
++    }
++
++    public Result evaluate(double[] continuousFacings) {
++        return evaluate(continuousFacings, (JumpLinearModel) null);
++    }
++
++    /** The optional assumed model is used only for diagnostics, never for acceptance. */
++    public Result evaluate(double[] continuousFacings, JumpLinearModel assumed) {
++        double[] game = scenario.toGameFacings(continuousFacings);
++        return evaluate(continuousFacings, game, exact.forward(scenario, game), assumed);
++    }
++
++    /** Reuse a replay already computed by the caller, without converting or simulating it again. */
++    public Result evaluate(double[] continuousFacings, double[] gameFacings, ForwardPath replay) {
++        return evaluate(continuousFacings, gameFacings, replay, null);
++    }
++
++    public Result evaluate(double[] continuousFacings, double[] gameFacings, ForwardPath replay,
++                           JumpLinearModel assumed) {
++        ForwardPath smooth = continuous.forwardContinuous(continuousFacings,
++                exact.inertiaThreshold(), exact.perAxisInertia());
++        Result result = new Result(prefix.maxViolation(gameFacings, replay),
++                full.maxViolation(continuousFacings, smooth));
++        DiagnosticObserver observer = OBSERVER.get();
++        if (observer != null) observer.evaluated(new Diagnostics(result, exact, full, prefix,
++                continuousFacings, gameFacings, smooth, replay, assumed));
++        return result;
++    }
++}

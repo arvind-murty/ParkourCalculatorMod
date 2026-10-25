@@ -1,0 +1,5 @@
+end_tick,seeding,accepted,continuous_violation,prefix_replay_violation,full_replay_violation,objective,ms
+90,false,false,NaN,NaN,NaN,NaN,263.320
+90,true,true,0.0000000000000000,0.0000000000000000,0.00011207921761524631,-1090.6312571804070,9.460
+103,false,false,NaN,NaN,NaN,NaN,624.076
+103,true,true,0.0000000000000000,0.0000000000000000,0.0000000000000000,-1093.6526875545678,345.192

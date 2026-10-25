@@ -36,6 +36,7 @@ public class FullRouteFixedMarginTraceTest {
     }
 
     private void runProbe(int window, String label) throws Exception {
+        label = label + System.getProperty("pkc.fullRouteLabel", "");
         org.junit.Assume.assumeTrue("opt in with -Dpkc.fullRouteProbe=true", Boolean.getBoolean("pkc.fullRouteProbe"));
         String path = System.getenv("PKC_TRACE_INPUT");
         if (path == null) path = "/Users/arvindmurty/Downloads/LinkcraftII_Competition_01/real/11.json";

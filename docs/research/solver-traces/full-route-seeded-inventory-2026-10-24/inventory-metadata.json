@@ -1,0 +1,13 @@
+{
+  "branch": "codex/first30-margin-trace-bookkeeping",
+  "turn_start_head": "5370274",
+  "production_seed_commit": "e14dfe4",
+  "inventory_base": "02844f45872604b21d0d139736d3ae0163454156",
+  "run_worktree": "/tmp/pkc-endpoints-fixed",
+  "run_base": "b98f87f",
+  "input": "/Users/arvindmurty/Downloads/LinkcraftII_Competition_01/real/11.json",
+  "input_sha256": "af5d2d1bc6e0ab466f1b6cf309f3a26e76e4a63765ac8b15ff02fb4ad55d28bf",
+  "preexisting_user_modification": "core/src/test/resources/captures/hpk/d9/j127_Head_to_Head_Neo.json",
+  "before_turn_status": " M core/src/test/resources/captures/hpk/d9/j127_Head_to_Head_Neo.json",
+  "tested_production_files_match_main": true
+}

@@ -1,0 +1,2 @@
+rootProject.name = 'pkc-window-endpoints'
+include 'core'

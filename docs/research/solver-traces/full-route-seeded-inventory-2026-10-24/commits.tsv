@@ -1,0 +1,96 @@
+e67a2ac	2026-10-23T01:22:03-07:00	debug(solver): trace SLP inertia proposals
+0c09e1d	2026-10-23T01:22:05-07:00	test(solver): guard BnB on long routes
+9751d69	2026-10-23T01:22:19-07:00	debug(solver): trace long-run window attempts
+5b632de	2026-10-23T01:22:22-07:00	experiment(solver): pin robust margin to 0.0003
+79bb653	2026-10-23T01:23:50-07:00	Revert "experiment(solver): pin robust margin to 0.0003"
+eb8aea8	2026-10-23T01:26:16-07:00	debug(solver): trace fallback solve outcomes
+f980e29	2026-10-23T01:28:07-07:00	experiment(solver): record normal-margin 7-window trace
+2a9b4a8	2026-10-23T01:44:18-07:00	docs(solver): hand off margin investigation
+522ae2c	2026-10-23T01:57:13-07:00	test(solver): compare margin policies from identical entry states
+d3dbb05	2026-10-23T01:57:13-07:00	docs(solver): verify Linkcraft margin divergence and preserve controls
+2dfbaa5	2026-10-23T02:06:07-07:00	test(solver): audit each constraint in the initial seven-jump window
+e404884	2026-10-23T02:06:07-07:00	docs(solver): record initial-window constraint violations
+446322b	2026-10-23T02:17:17-07:00	docs(solver): trace yaw mapping and neighboring-cell repair
+ea25bc8	2026-10-23T02:39:49-07:00	experiment(solver): validate only committed window prefixes
+d16facd	2026-10-23T02:50:10-07:00	test(solver): isolate prefix replay margin regression
+f8929eb	2026-10-23T02:54:36-07:00	experiment(solver): require continuous feasibility across lookahead windows
+ef85a2b	2026-10-23T02:57:47-07:00	docs(solver): audit inertia consistency gaps in continuous validation
+aac6527	2026-10-23T03:07:48-07:00	experiment(solver): share window validation with actual continuous inertia checks
+ff44792	2026-10-23T03:12:28-07:00	experiment(solver): probe full route with fixed-margin ten-jump ladder
+1bf22a8	2026-10-23T03:14:20-07:00	docs(solver): distinguish full fixed-margin probe from successful baseline
+36afd5b	2026-10-23T03:19:26-07:00	docs(solver): preserve every fixed-margin objective attempt
+e5de52a	2026-10-23T03:21:32-07:00	docs(solver): compare successful normal and fixed-margin window sequences
+2c44d2a	2026-10-23T03:23:40-07:00	experiment(solver): probe fixed-margin seven-window full route
+4e3db72	2026-10-23T03:35:50-07:00	test(solver): audit constraint margins and inertia through shared validation
+080b8f6	2026-10-23T03:47:41-07:00	test(solver): probe dual iteration caps and angle recovery convergence
+bc96e1c	2026-10-23T12:32:30-07:00	docs(solver): explain norm smoothing and costate cancellation
+5a8fbbc	2026-10-23T12:37:03-07:00	docs(solver): clarify the meaning of costate components
+66959be	2026-10-23T12:42:24-07:00	docs(solver): trace norm smoothing through upstream blame and PR history
+e90a319	2026-10-23T12:52:36-07:00	docs(solver): design constraint-aware whole-jump window objectives
+4dd969c	2026-10-23T12:59:29-07:00	feat(solver): detect direct positional objective caps before window solves
+b96d5a3	2026-10-23T13:03:41-07:00	experiment(solver): sharpen costate norm smoothing to 1e-24
+c389444	2026-10-23T13:58:54-07:00	experiment(solver): compare initial window jump and tick endpoint shifts
+824f962	2026-10-23T14:02:18-07:00	experiment(solver): add forward-only window endpoint adjustment policies
+2245e9d	2026-10-23T14:03:03-07:00	docs(solver): archive full-route forward window adjustment comparisons
+6302ec5	2026-10-23T15:11:41-07:00	experiment(solver): inspect tick90 reachability and dual seed rejection
+cf7ac44	2026-10-23T15:11:41-07:00	docs(solver): trace wrong-direction commits and unreachable jump14 landing
+29d3a9f	2026-10-23T19:14:50-07:00	docs(solver): compare every solve type against successful normal-margin reference
+077589e	2026-10-23T19:22:06-07:00	docs(solver): explain jump2 fixed Zmax model violations and preserve probe evidence
+c8d7616	2026-10-23T19:48:26-07:00	experiment(solver): raise default dual iteration cap to 1000
+9ac56f9	2026-10-23T19:51:41-07:00	docs(solver): record cap1000 fixed seven rerun and shared validation scope
+e410090	2026-10-23T21:35:11-07:00	experiment(solver): trace jump6 solve types and inertia recovery failures
+0edbfbf	2026-10-23T21:41:05-07:00	fix(solver): choose forward window adjustment separately for each objective
+f08515f	2026-10-23T21:42:52-07:00	docs(solver): record observed cost of 100 and 1000 dual iterations
+94d7a80	2026-10-23T21:45:12-07:00	experiment(solver): raise default dual cap to 10000 and document fallback objectives
+91209ee	2026-10-23T21:53:26-07:00	experiment(solver): archive fixed seven rerun with per-objective windows and 10000 cap
+ecb5acd	2026-10-23T22:03:19-07:00	experiment(solver): isolate jump6 inertia retry cancellation and recovery fallback
+6a21bb4	2026-10-23T22:04:25-07:00	docs(solver): list original bounds at ticks 88 through 90
+ae541ac	2026-10-23T22:22:16-07:00	fix(solver): scope endpoint bound removal to window validation
+ae502c6	2026-10-23T22:24:48-07:00	docs(solver): archive fixed seven-window bound-removal rerun
+b95c6bb	2026-10-23T22:32:36-07:00	docs(solver): explain equal-margin jump six divergence
+b98f87f	2026-10-23T22:36:23-07:00	docs(solver): compare committed jump states and explain multiplier reuse
+a5e1e3e	2026-10-23T22:43:31-07:00	docs(solver): reproduce first five provisional window endpoints
+8ad82b8	2026-10-23T22:46:55-07:00	docs(solver): distinguish lookahead objective gains from shifted window failure
+31207c0	2026-10-23T22:50:41-07:00	docs(solver): reproduce accepted and rejected jump six window endpoints
+111a6f2	2026-10-23T22:52:03-07:00	docs(solver): audit every violated row in jump six Z min candidate
+e10200b	2026-10-23T22:56:10-07:00	docs(solver): compare normal constraint clearances on jump six window
+a1a7460	2026-10-23T23:00:13-07:00	experiment(solver): isolate jump six margin continuation and multiplier reuse
+4467eb0	2026-10-23T23:04:26-07:00	docs(solver): distinguish dual relaxation gaps from convergence and recovery failures
+6e2eb4a	2026-10-23T23:11:56-07:00	docs(solver): prove nonzero costate condition and trace zero gap provenance
+61036f6	2026-10-23T23:21:50-07:00	docs(solver): trace convergence limits and reasons for recovery fallbacks
+7adf456	2026-10-23T23:29:42-07:00	docs(solver): explain control stagnation away from the dual optimum
+0f72262	2026-10-23T23:33:30-07:00	experiment(solver): test projected stationarity without control change exit
+98113dd	2026-10-24T00:41:23-07:00	docs(solver): plan research into uneven convergence across similar windows
+6f5ab46	2026-10-24T00:54:55-07:00	docs(solver): expand convergence research and rank diagnostic leads
+faad943	2026-10-24T13:27:59-07:00	docs(solver): catalog existing failure research and reusable recoveries
+c9934a3	2026-10-24T13:39:05-07:00	docs(solver): research structural failure patterns for window selection
+fb646ee	2026-10-24T13:47:26-07:00	docs(solver): list exact jump6 window entry and positional constraints
+da41d2c	2026-10-24T13:54:38-07:00	docs(solver): derive route-only turnaround detection from position bounds
+f7918a1	2026-10-24T14:04:13-07:00	experiment(solver): compare endpoints outside manually coupled jump sections
+debed58	2026-10-24T14:19:13-07:00	docs(solver): explain shifted-window inertia retry rejections
+3ab610b	2026-10-24T14:23:48-07:00	docs(solver): distinguish inertia drift from failed patterned re-solve
+0aaf590	2026-10-24T14:34:53-07:00	experiment(solver): preserve costates when seeding inertia-aware retries
+1d5e5a5	2026-10-24T14:35:27-07:00	docs(solver): compare margin and inertia multiplier warm starts
+f8ead13	2026-10-24T14:38:37-07:00	docs(solver): clarify nonzero inertia-band seed values
+63b2ace	2026-10-24T14:40:16-07:00	docs(solver): derive generic contracts for inertia retry initialization
+d815cf1	2026-10-24T14:43:24-07:00	docs(solver): map constraints and turnaround endpoints through jump20
+22dc8be	2026-10-24T14:44:55-07:00	docs(solver): group route constraints by jump boundaries
+bd1fd03	2026-10-24T15:02:09-07:00	experiment(solver): verify inertia seed preservation and test post-turn objectives
+478d14f	2026-10-24T15:04:51-07:00	docs(solver): identify uncapped jump14 objective at state103
+167f1fb	2026-10-24T15:10:22-07:00	experiment: run corrected post-turn objectives at ticks 90 and 103
+7f9b2ed	2026-10-24T15:16:42-07:00	experiment: trace feasible j13 inertia iterates and costate collapse
+01e979b	2026-10-24T15:16:46-07:00	docs: normalize j13 state comparison CSV line endings
+f2fed54	2026-10-24T15:27:07-07:00	docs: clarify inertia cancellation and retaining useful window candidates
+a083645	2026-10-24T15:40:07-07:00	docs: clarify path preservation during inertia repair and costate fallback
+c392645	2026-10-24T16:08:32-07:00	feat(solver): retain validated intermediate closed-form candidates
+1dfe611	2026-10-24T16:09:34-07:00	experiment: verify retained j13 candidates and production cold-start control
+d823b09	2026-10-24T16:13:43-07:00	docs: summarize seeded j13 recovery and pending j14 retention trial
+0c71cc4	2026-10-24T16:16:47-07:00	experiment: rerun j14 with retained candidates and seed controls
+d451e88	2026-10-24T16:23:17-07:00	experiment: repair close j14 inertia candidate with delayed warm starts
+bc1c51b	2026-10-24T16:25:21-07:00	docs: identify experimental seed guard and distinguish rejected transition
+1aa14cc	2026-10-24T16:30:21-07:00	experiment: disable seed preservation rejection and retry initial j14 pattern
+c3af8d9	2026-10-24T16:31:30-07:00	docs: contrast early seeding with successful cold-discovery j14 sequence
+330ac4e	2026-10-24T16:35:18-07:00	experiment: seed j14 only after detecting a close inertia miss
+adeae32	2026-10-24T16:40:41-07:00	experiment: seed inertia retries from feasible assumed-model candidates
+5370274	2026-10-24T17:13:18-07:00	docs: explain retained candidate selection versus dual stopping
+e14dfe4	2026-10-24T17:20:09-07:00	feat(solver): seed inertia retries from feasible fixed-pattern solutions

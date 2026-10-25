@@ -1,0 +1,11 @@
+ .../core/anglesolver/solver/ClosedFormSolve.java   |  91 +++++++--
+ .../core/anglesolver/solver/CostateDualSolver.java |  68 ++++++-
+ .../anglesolver/solver/DualCandidateRetention.java |  76 ++++++++
+ .../core/anglesolver/solver/InertiaRetrySeed.java  |  78 ++++++++
+ .../anglesolver/solver/JumpConstraintCompiler.java |  10 +
+ .../core/anglesolver/solver/JumpLinearModel.java   |  76 +++++++-
+ .../core/anglesolver/solver/LongRunSolver.java     | 215 +++++++++++++++------
+ .../core/anglesolver/solver/ObjectiveBounds.java   |  39 ++++
+ .../core/anglesolver/solver/SlpSolve.java          | 189 +++++++++++++++++-
+ .../solver/WindowCandidateValidation.java          | 158 +++++++++++++++
+ 10 files changed, 907 insertions(+), 93 deletions(-)
