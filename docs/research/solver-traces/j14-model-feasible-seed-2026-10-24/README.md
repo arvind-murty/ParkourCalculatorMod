@@ -30,3 +30,10 @@ One focused opt-in test, zero failures/errors; no full suite/graph/route. Run fr
 ```
 
 [Explicit policy decisions](seed-policy.csv), [every solve](passes.csv), [saved candidate](j14-seed-1.0-pass3-retention.csv), [trace](solver-trace.txt), [JUnit result](focused-result.xml), [source snapshot](InertiaMultiplierSeedProbeTest.java). All per-pass paths, yaw, inertia velocities, costate/price and constraint margin diagnostics preserved. Terminal solver diagnostics and selected intermediate path diagnostics remain distinguished as in the preceding archives. Previous [close-only policy](../j14-close-seed-2026-10-24/README.md) is superseded for the proposed selection rule.
+
+
+## Continuing optimization and selecting the returned iteration
+
+Saving a feasible candidate does not stop the inner dual solve. It continues to its existing projected-gradient, recovered-input-stall, no-descent, divergence-stall, multiplier-limit or iteration-limit stop. The candidate observer audits decoded paths at loop-entry/final samples without changing the optimization steps. Retention screens actual continuous feasibility, then checks promising candidates through shared continuous/replay validation. It retains the feasible candidate with the best continuous objective score, including any configured smoothing penalty. Here Z/MAX with no smoothing means largest actual continuous Z103. It stores the angles and that iteration's multiplier snapshot, not only the number.
+
+Latest j14 first saves77, improves78 then82, and still runs to373 NO_DESCENT. Terminal physical miss3.61652403689 is rejected, so it returns the saved82 candidate with Z103=-1093.6526875545678. If a valid terminal candidate scores better, the caller uses it instead. Saving82 does not establish it is globally optimal. Once this fixed-pattern/margin solve completes and supplies an accepted candidate, the surrounding closed-form routine returns without advancing to another margin or inertia pattern. This statement is about this solve, not a claim that the outer Optimize graph cannot run later stages. No new run for this clarification.
