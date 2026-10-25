@@ -3,7 +3,7 @@ import unittest
 
 import numpy as np
 
-from compare import FORMULATIONS, build_problem, forward, initial_controls, start_vector, validate_candidate, wall_residual
+from compare import CandidateMonitor, FORMULATIONS, build_problem, forward, initial_controls, start_vector, validate_candidate, wall_residual
 
 
 def fixture(magnitude, velocity=(0.0, 0.0), walls=(), sense="MAX"):
@@ -28,6 +28,42 @@ def solve(case, formulation):
 
 
 class ComparisonTest(unittest.TestCase):
+    def test_sqp_backends_reach_analytic_optimum_from_a_rotated_seed(self):
+        case = fixture([0.1, 0.1], velocity=(0.2, 0.0), walls=[
+            {"mode": "X", "t1": 1, "cmp": "GE", "rhs": 7.28}], sense="MIN")
+        case["yaw"] = [30.0, 150.0]
+        expected = 7.0 + 1.91 * 0.28 - 0.1
+        for backend in ("sqp", "slsqp"):
+            for formulation in FORMULATIONS:
+                with self.subTest(backend=backend, formulation=formulation):
+                    solver, decode, _, slices, lower, upper, _, _, _ = build_problem(case, formulation, backend=backend)
+                    answer = solver(x0=start_vector(case, 0, slices), lbg=lower, ubg=upper)
+                    positions, controls = decode(answer["x"])
+                    result = validate_candidate(case, np.array(positions).T, np.array(controls).T, 1e-7)
+                    self.assertTrue(result["feasible"])
+                    self.assertAlmostEqual(result["objective"], expected, places=6)
+
+    def test_monitor_retains_a_feasible_incumbent_after_an_infeasible_iterate(self):
+        case = fixture([0.1], walls=[{"mode": "X", "t1": 1, "cmp": "GE", "rhs": 7.08}])
+        monitor = CandidateMonitor(case, 1e-7)
+        build_problem(case, "condensed-angle", backend="sqp", monitor=monitor)
+        monitor.reset([0.0], 0.0)
+        monitor.record([math.pi])
+        self.assertTrue(monitor.best["feasible"])
+        self.assertAlmostEqual(monitor.best["objective"], 7.1)
+        self.assertFalse(monitor.history[-1]["feasible"])
+        self.assertIsNotNone(monitor.first_feasible)
+
+    def test_all_zero_controls_and_a_constant_contradiction(self):
+        case = fixture([0.0, 0.0], walls=[{"mode": "X", "t1": 2, "cmp": "LE", "rhs": 6.9}])
+        solver, decode, _, slices, lower, upper, constant, _, _ = build_problem(case, "condensed-angle", backend="sqp")
+        answer = solver(x0=start_vector(case, 0, slices), lbg=lower, ubg=upper)
+        positions, controls = decode(answer["x"])
+        result = validate_candidate(case, np.array(positions).T, np.array(controls).T, 1e-7)
+        self.assertAlmostEqual(constant, 0.1)
+        self.assertFalse(result["feasible"])
+        self.assertEqual(solver.stats()["iter_count"], 0)
+
     def test_unconstrained_optimum_with_carried_velocity(self):
         case = fixture([0.1, 0.1], velocity=(0.2, 0.0))
         expected = 7.0 + 1.91 * 0.2 + 2.91 * 0.1
