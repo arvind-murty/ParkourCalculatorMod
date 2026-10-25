@@ -3,7 +3,9 @@ import unittest
 
 import numpy as np
 
-from compare import CandidateMonitor, FORMULATIONS, build_problem, forward, initial_controls, start_vector, validate_candidate, wall_residual
+from compare import CandidateMonitor, FORMULATIONS, build_problem, execute_solver, forward, initial_controls, start_vector, validate_candidate, wall_residual
+from analyze import native_validation
+from disk_phase1 import diagnose
 
 
 def fixture(magnitude, velocity=(0.0, 0.0), walls=(), sense="MAX"):
@@ -28,6 +30,56 @@ def solve(case, formulation):
 
 
 class ComparisonTest(unittest.TestCase):
+    def test_backend_exception_keeps_the_last_candidate_and_error_status(self):
+        case = fixture([0.1])
+        monitor = CandidateMonitor(case, 1e-7)
+        build_problem(case, "condensed-angle", backend="sqp", monitor=monitor)
+        monitor.reset([0.0], 0.0)
+
+        class FailingBackend:
+            def __call__(self, **kwargs):
+                raise RuntimeError("QP elastic penalty overflow")
+
+            def stats(self):
+                return {"iter_count": 1, "return_status": "Unfinished"}
+
+        answer, stats, _, error = execute_solver(FailingBackend(), [0.0], [], [], monitor)
+        self.assertEqual(stats["return_status"], "Backend_Exception")
+        self.assertIn("penalty overflow", error)
+        self.assertTrue(monitor.best["feasible"])
+        np.testing.assert_allclose(answer["x"], [[0.0]])
+
+    def test_disk_support_bound_detects_coupled_axis_infeasibility(self):
+        case = fixture([0.1], walls=[
+            {"mode": "X", "t1": 1, "cmp": "GE", "rhs": 7.08},
+            {"mode": "Z", "t1": 1, "cmp": "GE", "rhs": -2.92}])
+        result = diagnose(case)
+        expected = 0.08 - 0.1 / math.sqrt(2.0)
+        self.assertAlmostEqual(result["supportDualLowerBound"], expected, places=9)
+        self.assertAlmostEqual(result["diskWorstSlack"], expected, places=9)
+        self.assertTrue(all(weight >= 0 for weight in result["nonnegativeWeights"]))
+        self.assertAlmostEqual(result["weightSum"], 1.0)
+
+    def test_disk_support_bound_does_not_exclude_an_analytic_feasible_case(self):
+        case = fixture([0.1], walls=[{"mode": "X", "t1": 1, "cmp": "GE", "rhs": 7.08}])
+        result = diagnose(case)
+        self.assertAlmostEqual(result["supportDualLowerBound"], -0.02, places=9)
+
+    def test_native_output_validation_checks_the_replayed_path_and_objective(self):
+        case = fixture([0.1, 0.1])
+        controls = initial_controls(case, 0)
+        positions, _ = forward(case, controls)
+        result = validate_candidate(case, positions, controls, 1e-7)
+        row = {**result, "returned": True, "method": "native-test"}
+        self.assertTrue(native_validation(case, row)["feasible"])
+        row["positions"][1][0] += 0.001
+        with self.assertRaisesRegex(AssertionError, "Java replay mismatch"):
+            native_validation(case, row)
+        row["positions"][1][0] -= 0.001
+        row["objective"] += 0.001
+        with self.assertRaisesRegex(AssertionError, "Java objective mismatch"):
+            native_validation(case, row)
+
     def test_sqp_backends_reach_analytic_optimum_from_a_rotated_seed(self):
         case = fixture([0.1, 0.1], velocity=(0.2, 0.0), walls=[
             {"mode": "X", "t1": 1, "cmp": "GE", "rhs": 7.28}], sense="MIN")

@@ -56,6 +56,7 @@ class CandidateMonitor(ca.Callback):
         self.record(ca.DM(start))
 
     def record(self, x):
+        self.last_x = ca.DM(x)
         positions, controls = self.decode(x)
         result = validate_candidate(self.case, np.array(positions).T, np.array(controls).T, self.tolerance)
         result["feasible"] = result["feasible"] and self.constant_violation <= self.tolerance
@@ -126,6 +127,24 @@ class ConstantSolver:
 
     def stats(self):
         return {"iter_count": 0, "return_status": "Constant_Model"}
+
+
+def execute_solver(solver, start, lower, upper, monitor):
+    exception = None
+    begin = time.perf_counter()
+    try:
+        solution = solver(x0=start, lbg=lower, ubg=upper)
+    except RuntimeError as error:
+        exception = str(error)
+        solution = {"x": monitor.last_x}
+    elapsed = time.perf_counter() - begin
+    try:
+        stats = solver.stats()
+    except RuntimeError:
+        stats = {"iter_count": len(monitor.history) - 1, "return_status": "Statistics_Unavailable"}
+    if exception is not None:
+        stats["return_status"] = "Backend_Exception"
+    return solution, stats, elapsed, exception
 
 
 def forward(case, controls):
@@ -431,10 +450,7 @@ def compare(args):
                 initial_violation = float(max([0.0] + (np.array(lower) - initial_g).tolist()
                                               + (initial_g - np.array(upper)).tolist()))
                 monitor.reset(start, constant_violation)
-                begin = time.perf_counter()
-                solution = solver(x0=start, lbg=lower, ubg=upper)
-                elapsed = time.perf_counter() - begin
-                stats = solver.stats()
+                solution, stats, elapsed, exception = execute_solver(solver, start, lower, upper, monitor)
                 raw_positions, raw_controls = decode(solution["x"])
                 validation = validate_candidate(case, np.array(raw_positions).T, np.array(raw_controls).T, args.tolerance)
                 validation["feasible"] = validation["feasible"] and constant_violation <= args.tolerance
@@ -449,6 +465,7 @@ def compare(args):
                     "jacobianNnz": jac_nnz, "hessianNnz": hess_nnz,
                     "buildSeconds": build_seconds, "solveSeconds": elapsed,
                     "iterations": stats["iter_count"], "status": stats["return_status"],
+                    "backendException": exception,
                     "firstFeasibleSeconds": monitor.first_feasible,
                     "final": final_validation,
                     "history": monitor.history,
