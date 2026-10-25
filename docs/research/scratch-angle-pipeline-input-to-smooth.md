@@ -1,5 +1,7 @@
 # Scratch notes: angle solver from inputs through smoothing
 
+**Shelved handoff,2026-10-24: [current findings, changes, results and next steps](angle-solver-investigation-current-state.md). Read this first.** The last full route predates the restored SLP replay-only validation; no full-route result exists yet for the latest code. Costate recovery ideas are documented but unimplemented.
+
 Scope: current shared-core implementation, from the input snapshot through the solve graph and the optional Smooth action. Focus is the optimization model and inertia treatment. This deliberately skips the byte-level Minecraft arithmetic in `ExactJumpModel` and its conversion details. These are working notes, not a canonical design record.
 
 Checked against current source on 2026-10-20. PR descriptions were fetched with `gh pr view` from `Leg0shii/ParkourCalculatorMod`. PR #209 has an empty body; for that change, only the merge commit and code history are available.

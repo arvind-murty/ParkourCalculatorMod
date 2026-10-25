@@ -1,5 +1,7 @@
 # Linkcraft real/11 margin investigation handoff
 
+**Shelved handoff,2026-10-24: [current findings, changes, results and next steps](../angle-solver-investigation-current-state.md). Read this first.** The last full route predates the restored SLP replay-only validation; no full-route result exists yet for the latest code. Costate recovery ideas are documented but unimplemented.
+
 **Current handoff (2026-10-24): [jump39 baselines and next investigation](jump39-baseline-handoff-2026-10-24/README.md).** The latest staged1000/10000 commit1 run commits38 jumps in93.032s and stops at state351. Both baseline entry states, all90 objective calls,175 closed-form inertia attempts and36 SLP starts are inventoried there, with source links and the exact input archive. Earlier30-jump normal-margin success below is historical context, not a solved route through39.
 
 Date: 2026-10-23  
