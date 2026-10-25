@@ -1,0 +1,65 @@
+      0.13  t1   CONTROL production Z/MAX@178 cap=1000
+      3.06  t1   CF      pass=0 pattern=free n=46 m=38 robust
+     71.59  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=9.423
+     72.93  t1   CF-CHECK margin=3.00e-04 replayViol=0.490237087138 modelViol=0.490218808733
+     73.04  t1   CF      rung margin=3.00e-04 iters=1000 pg=2.072e-01 dual=8.835963803 viol=4.902e-01 ms=68.889 stop=ITERATION_LIMIT finalPg=1.495e-01
+     73.51  t1   CF-SEED source assumedViolation=0.500630247359 eligible=false
+     74.71  t1   CF      pass=1 pattern=x@0,@17-45+z@13 n=46 m=38 robust
+     95.87  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=3.515
+     96.60  t1   CF-CHECK margin=3.00e-04 replayViol=0.588732887928 modelViol=0.603099246533
+     96.69  t1   CF      rung margin=3.00e-04 iters=513 pg=2.604e-01 dual=8.588509007 viol=6.031e-01 ms=21.542 stop=NO_DESCENT finalPg=2.571e-01
+     97.04  t1   CF-SEED source assumedViolation=0.486952786782 eligible=false
+     97.12  t1   CF      pass=1 no improvement (viol=6.031e-01), stop
+     97.18  t1   CF      fallback bestViol=4.902e-01 us=94812.0
+    141.12  t1   CONTROL production Z/MAX@178 cap=10000
+    141.27  t1   CF      pass=0 pattern=free n=46 m=38 robust
+    351.41  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=69.412
+    351.83  t1   CF-CHECK margin=3.00e-04 replayViol=0.467394092959 modelViol=0.467372026535
+    351.91  t1   CF      rung margin=3.00e-04 iters=10000 pg=2.068e-01 dual=8.835957946 viol=4.674e-01 ms=210.433 stop=ITERATION_LIMIT finalPg=1.475e-01
+    352.04  t1   CF-SEED source assumedViolation=0.476205988439 eligible=false
+    352.15  t1   CF      pass=1 pattern=x@0,@17-45+z@13 n=46 m=38 robust
+    366.92  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=2.757
+    367.30  t1   CF-CHECK margin=3.00e-04 replayViol=0.588732887928 modelViol=0.603099246533
+    367.37  t1   CF      rung margin=3.00e-04 iters=513 pg=2.604e-01 dual=8.588509007 viol=6.031e-01 ms=14.945 stop=NO_DESCENT finalPg=2.571e-01
+    367.64  t1   CF-SEED source assumedViolation=0.486952786782 eligible=false
+    367.71  t1   CF      pass=1 no improvement (viol=6.031e-01), stop
+    367.75  t1   CF      fallback bestViol=4.674e-01 us=226487.4
+    460.53  t1   CONTROL production Z/MAX@178 cap=100000
+    460.68  t1   CF      pass=0 pattern=free n=46 m=38 robust
+    679.14  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=74.374
+    679.49  t1   CF-CHECK margin=3.00e-04 replayViol=0.592478226983 modelViol=0.592445704951
+    679.56  t1   CF      rung margin=3.00e-04 iters=20819 pg=1.626e-01 dual=8.835956596 viol=5.925e-01 ms=218.688 stop=NO_DESCENT finalPg=5.008e-01
+    679.65  t1   CF-SEED source assumedViolation=0.604462332217 eligible=false
+    679.76  t1   CF      pass=1 pattern=x@0,@18-45+z@13 n=46 m=38 robust
+    687.89  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=1.436
+    688.16  t1   CF-CHECK margin=3.00e-04 replayViol=0.465403085152 modelViol=0.956317042341
+    688.23  t1   CF      rung margin=3.00e-04 iters=537 pg=1.059e+00 dual=8.588826315 viol=9.563e-01 ms=8.226 stop=NO_DESCENT finalPg=1.064e+00
+    688.33  t1   CF-SEED source assumedViolation=1.18519318753 eligible=false
+    688.39  t1   CF      pass=1 no improvement (viol=9.563e-01), stop
+    688.44  t1   CF      fallback bestViol=5.925e-01 us=227754.0
+    847.94  t1   CONTROL diagnostic fixed first 1 tick facings from SLP, cap10000
+    849.68  t1   CF      pass=0 pattern=free n=46 m=39 robust
+    849.88  t1   CF      prefold pinned=1 vars=45 of n=46
+    854.72  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=2.359
+    855.00  t1   CF-CHECK margin=3.00e-04 replayViol=0.00588569141587 modelViol=0.0102425251457
+    855.08  t1   CF      rung margin=3.00e-04 iters=467 pg=1.309e-03 dual=9.243314890 viol=1.024e-02 ms=5.060 stop=NO_DESCENT finalPg=1.312e-03
+    855.16  t1   CF      pass=1 pattern=x@0,@20-45+z@2,@4 n=46 m=39 robust
+    855.38  t1   CF      prefold pinned=1 vars=45 of n=46
+    937.25  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=28.001
+    937.56  t1   CF-CHECK margin=3.00e-04 replayViol=0.0582970292617 modelViol=0.0954764153239
+    937.63  t1   CF      rung margin=3.00e-04 iters=10000 pg=2.421e-02 dual=8.077129509 viol=9.548e-02 ms=82.100 stop=ITERATION_LIMIT finalPg=1.442e-02
+    937.70  t1   CF      pass=1 no improvement (viol=9.548e-02), stop
+    937.74  t1   CF      fallback bestViol=1.024e-02 us=88085.5
+    938.58  t1   CONTROL diagnostic fixed first 2 tick facings from SLP, cap10000
+    938.84  t1   CF      pass=0 pattern=free n=46 m=40 robust
+    939.03  t1   CF      prefold pinned=2 vars=44 of n=46
+    994.13  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=28.693
+    994.39  t1   CF-CHECK margin=3.00e-04 replayViol=0.00407375307577 modelViol=0.00160180331955
+    994.45  t1   CF      rung margin=3.00e-04 iters=10000 pg=1.811e-02 dual=7.920861222 viol=4.074e-03 ms=55.311 stop=ITERATION_LIMIT finalPg=4.816e-03
+    994.52  t1   CF      pass=1 pattern=x@0,@18-45+z@2,@4 n=46 m=40 robust
+    994.78  t1   CF      prefold pinned=2 vars=44 of n=46
+   1044.05  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=22.427
+   1044.35  t1   CF-CHECK margin=3.00e-04 replayViol=1.16599997000e-05 modelViol=0.104818350718
+   1044.42  t1   CF      rung margin=3.00e-04 iters=10000 pg=2.941e-04 dual=7.866117364 viol=1.048e-01 ms=49.466 stop=ITERATION_LIMIT finalPg=2.941e-04
+   1044.46  t1   CF      pass=1 no improvement (viol=1.048e-01), stop
+   1044.50  t1   CF      fallback bestViol=4.074e-03 us=105697.5

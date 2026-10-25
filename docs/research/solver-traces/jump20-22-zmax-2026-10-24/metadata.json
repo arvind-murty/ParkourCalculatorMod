@@ -1,0 +1,23 @@
+{
+  "source_head": "ee3df8a67d3741871334c9ff8301d2a9af8cab3c",
+  "production_changed": false,
+  "probe": "Jump20ZMaxProbeTest.inspectZMax",
+  "entry_tick": 132,
+  "endpoint": 178,
+  "commit_through": 155,
+  "constraint_rows": 38,
+  "objective": "Z/MAX",
+  "caps": [
+    1000,
+    10000,
+    100000
+  ],
+  "fixed_margin": 0.0003,
+  "eps2": 1e-24,
+  "seeding": true,
+  "retention": true,
+  "decoder_fallback": false,
+  "controls": "Pin first1 or2 facings to saved replay-valid SLP candidate, cap10000; diagnostic restricted problems only.",
+  "scope": "Focused CF and manual unpatterned dual audits only, no full route/suite.",
+  "input": "archived real11 exact input, same reconstructed staged prefix state132"
+}
