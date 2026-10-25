@@ -1,0 +1,32 @@
+{
+  "head": "f4ac831dca73877bbeebb0ea489c24bafd76ce01",
+  "input": "/Users/arvindmurty/Downloads/LinkcraftII_Competition_01/real/11.json",
+  "input_sha256": "af5d2d1bc6e0ab466f1b6cf309f3a26e76e4a63765ac8b15ff02fb4ad55d28bf",
+  "window_ladder": [
+    10,
+    7,
+    5,
+    3,
+    2,
+    1
+  ],
+  "commit_ladder": [
+    3,
+    1
+  ],
+  "fixed_margin": 0.0003,
+  "objective_placement": "first unconstrained airborne tick; terminal objective unchanged",
+  "constraint_removal": false,
+  "outer_deadline": null,
+  "seeding": true,
+  "retention": true,
+  "source_matches_runner": [
+    "LongRunSolver",
+    "ClosedFormSolve",
+    "CostateDualSolver",
+    "InertiaRetrySeed",
+    "DualCandidateRetention",
+    "WindowCandidateValidation"
+  ],
+  "user_j127_fixture": "pre-existing modification untouched"
+}

@@ -120,3 +120,8 @@ User restored10,7,5,3,2,1, keeping fixed .0003 and current production seeding/re
 ## Superseding objective policy: unconstrained airborne state
 
 Current implementation3d4557e replaces endpoint-bound deletion. [Policy and checks](free-air-objective-2026-10-24/README.md), [current differences versus recorded production](free-air-objective-2026-10-24/comparison-to-prod.md). Scan forward from each nominal provisional end to first airborne tick with no original constraint referencing it (any axis/sense/mode, both row references). Extend lookahead and retain all rows; commit boundary unchanged. Terminal route objective stays authored. This is not an automatic turnaround-region detector. Sample88->91,99->104.20 focused checks pass; full route has not been rerun under this new rule. Older ten/seven full-run results used cap deletion and must not be attributed to this policy. User j127 unchanged.
+
+
+## Latest full-route result with the free-air rule
+
+[Current full rerun](full-route-free-air-ten-ladder-2026-10-24/README.md): normal ten ladder, fixed .0003, production conditional seeds/retention, all constraints retained, no deadline. No full route. Commit3 stuck before jump25/state196; commit1 before jump11/state77;74.190s; final full-route replay not reached. First nominal window extends77->91 and switches accepted objective to Z/MIN, changing early states. At state77 the3/2/1 rungs all share endpoint91/commit exit80 and cache the same miss. Every attempted solve, extension and committed state/yaw is preserved; no failure diagnosis yet. User j127 unchanged.
