@@ -125,3 +125,10 @@ Current implementation3d4557e replaces endpoint-bound deletion. [Policy and chec
 ## Latest full-route result with the free-air rule
 
 [Current full rerun](full-route-free-air-ten-ladder-2026-10-24/README.md): normal ten ladder, fixed .0003, production conditional seeds/retention, all constraints retained, no deadline. No full route. Commit3 stuck before jump25/state196; commit1 before jump11/state77;74.190s; final full-route replay not reached. First nominal window extends77->91 and switches accepted objective to Z/MIN, changing early states. At state77 the3/2/1 rungs all share endpoint91/commit exit80 and cache the same miss. Every attempted solve, extension and committed state/yaw is preserved; no failure diagnosis yet. User j127 unchanged.
+
+
+## 2026-10-24: commit1 early failure isolated at state77
+
+[Detailed investigation and all per-iteration evidence](commit1-early-failure-2026-10-24/README.md). Production solver unchanged; one focused opt-in probe only. Reconstructing the committed game inputs reproduces the full run's initial120-iteration Z/min miss and70-iteration seeded retry at77..91. Initial assumed-model violation0, actual continuous miss.003152213371 from Z82 and X84..90 threshold checks. Seeding preserves costates to3.331e-16, but its subsequent path never becomes feasible. Five early costates enter the decoder fallback; terminal raw continuous miss.007339 becomes2.729172 after objective-direction substitution. The seeded retry stops NO_DESCENT, not the10000 cap.
+
+Identical-entry cold retry, with intermediate retention still enabled, succeeds: production retains iteration152, whole continuous window violation0 and committed-prefix Minecraft replay violation0. Its terminal161 iterate is invalid, so retention is necessary. This demonstrates a valid continuation through91 from the current state77; it does not prove the longer horizons or full route feasible. Next supported experiment: retain seeded retry first, then a cold fixed-pattern retry on failure. Do not globally remove seeding, since earlier j13/j14 cases benefited. No such production fallback has been implemented yet.

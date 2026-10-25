@@ -1,0 +1,14 @@
+{
+  "source_head": "687ff5d23af7e66ab4be95a06fc21aef84d4c57c",
+  "production_modified": false,
+  "probe": "CommitOneEarlyFailureProbeTest.traceShortestWindow",
+  "scenario": "real/11.json",
+  "from_tick": 77,
+  "objective": "Z/MIN@91",
+  "commit_through_tick": 80,
+  "margin": 0.0003,
+  "dual_cap": 10000,
+  "entry_reconstruction": "Exact forward of archived commit1 game yaw inputs through tick76. Matches original printed state and original 120/70 iteration counts and violations.",
+  "controls": "production seedInertiaRetries true versus false; retention stays true",
+  "limitations": "Only shortest distinct window isolated; no full route rerun; cold success is not proof of later route feasibility."
+}
