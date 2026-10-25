@@ -1,5 +1,7 @@
 package de.legoshi.parkourcalc.core.anglesolver;
 
+import de.legoshi.parkourcalc.core.anglesolver.ipopt.IpoptProblem;
+import de.legoshi.parkourcalc.core.anglesolver.ipopt.LocalIpoptSolver;
 import de.legoshi.parkourcalc.core.sim.TickState;
 import de.legoshi.parkourcalc.core.sim.Vec3dCore;
 import de.legoshi.parkourcalc.core.ui.BoxController;
@@ -248,7 +250,8 @@ public final class AngleSolverEngine {
             counters.smoothingEvals = ctx.smoothingEvals.get();
             r.counters = counters;
         }
-        r.model = model.getClass().getSimpleName();
+        r.model = "IPOPT (local continuous)".equals(rec.config.preset)
+                ? "Continuous with prescribed wall contacts" : model.getClass().getSimpleName();
         lastRunRecord = r;
         SolveRunLog log = runLog;
         if (log != null) log.append(r);
@@ -275,9 +278,10 @@ public final class AngleSolverEngine {
         final Vec3dCore start;
         final boolean lockYaws;
         final boolean freeStartYaw;
+        final boolean continuous;
 
         Plan(int startTick, double[] yaws, boolean[] strafeMask, boolean[] force45Mask, int strafeSign,
-             ForwardPath path, Vec3dCore start, boolean lockYaws, boolean freeStartYaw) {
+             ForwardPath path, Vec3dCore start, boolean lockYaws, boolean freeStartYaw, boolean continuous) {
             this.startTick = startTick;
             this.yaws = yaws;
             this.strafeMask = strafeMask;
@@ -287,6 +291,7 @@ public final class AngleSolverEngine {
             this.start = start;
             this.lockYaws = lockYaws;
             this.freeStartYaw = freeStartYaw;
+            this.continuous = continuous;
         }
     }
 
@@ -324,6 +329,8 @@ public final class AngleSolverEngine {
         double[] incumbentYaws;
         Vec3dCore incumbentStart;
         Job legalFallback;
+        IpoptProblem ipopt;
+        volatile LocalIpoptSolver.Result ipoptBest;
 
         Job withDeadline(long deadlineNanos) {
             return new Job(spec, sense, startTick, landingTick, numTicks, strafeMask, force45Mask, uiConstraints,
@@ -386,6 +393,8 @@ public final class AngleSolverEngine {
 
     private Job buildJob(AngleSolverState.Effort effort, SolverGraph graphOverride, boolean publishFailure,
                          int startTick, int landingTick) {
+        boolean localIpopt = !rowsAsTyped
+                && state.getBackend() == AngleSolverState.Backend.IPOPT_LOCAL;
         int total = segmentConstraintCount(startTick, landingTick);
 
         List<InputRow> rows = inputs.getRows();
@@ -410,11 +419,11 @@ public final class AngleSolverEngine {
         }
 
         Set<Constraint> consumed = new HashSet<>();
-        if (startTick == 0 && model instanceof ExactJumpModel) {
+        if (!localIpopt && startTick == 0 && model instanceof ExactJumpModel) {
             StartBox freeBox = deriveFreeStartBox(uiCons, ph.inputs, consumed);
             if (freeBox != null) ph.inputs.startBox = freeBox;
         }
-        boolean freeStartYaw = consumeFirstTickZeroTurn(uiCons, consumed);
+        boolean freeStartYaw = !localIpopt && consumeFirstTickZeroTurn(uiCons, consumed);
         if (freeStartYaw) ph.inputs.yawLockedPerTick[0] = true;
 
         List<JumpConstraint> constraints = new ArrayList<>();
@@ -427,7 +436,7 @@ public final class AngleSolverEngine {
                 state.getSmoothLambda());
         for (ConstraintAt ca : uiCons) {
             if (consumed.contains(ca.c)) continue;
-            addMapped(constraints, ca.c, ca.absTick, ca.segTick, numTicks, ph.inputs.startYaw, ph.inputs);
+            addMapped(constraints, ca.c, ca.absTick, ca.segTick, numTicks, ph.inputs.startYaw, localIpopt ? null : ph.inputs);
         }
 
         JumpConstraint legalGoal = null;
@@ -454,6 +463,41 @@ public final class AngleSolverEngine {
                 ph.force45Mask, uiCons,
                 deadlineNanosFor(state, effort), longRunConfigFor(state, effort), useWindowSolverFor(state, effort),
                 stopOnFeasible, ilsExhaustiveFor(state, effort), legalGoal, graph, freeStartYaw);
+        if (localIpopt) {
+            try {
+                for (ConstraintAt ca : uiCons) {
+                    Constraint c = ca.c;
+                    if (c.isRelative() && (c.getRefTick() < startTick || c.getRefTick() > landingTick))
+                        throw new IllegalArgumentException("Local IPOPT requires relative position references inside the selected range");
+                    if ((c.getField() == Constraint.Field.F || c.getField() == Constraint.Field.DF)
+                            && ca.segTick >= numTicks)
+                        throw new IllegalArgumentException("The final state has no facing input; move its facing constraint to an input tick");
+                    if ((c.getField() == Constraint.Field.DX || c.getField() == Constraint.Field.DZ) && ca.segTick == 0)
+                        throw new IllegalArgumentException("Displacement at the first state requires a preceding tick inside the selected range");
+                }
+                if (state.isLegalMode()) throw new IllegalArgumentException("Turn off Legal record mode for the local IPOPT backend");
+                if (objective.smoothLambda > 0) throw new IllegalArgumentException("Local IPOPT currently requires zero smooth lambda");
+                ExactJumpModel exact = exactModel();
+                if (state.isIpoptInertia() && (exact == null || !exact.perAxisInertia()))
+                    throw new IllegalArgumentException("Local IPOPT inertia currently supports per-axis zeroing only");
+                if (!state.isIpoptInertia()) ph.inputs.initialVelocity = boxes.getState(startTick).velocity;
+                double seconds = state.getBudgetMs() > 0 ? state.getBudgetMs() / 1000.0 : 10.0;
+                job.ipopt = new IpoptProblem(spec, currentRowYaws(startTick, numTicks),
+                        state.isIpoptRecordedWalls()
+                                ? IpoptProblem.recordedContacts(new ArrayList<>(boxes.getStates()), startTick, numTicks)
+                                : new ArrayList<>(),
+                        state.isIpoptInertia() ? exact.inertiaThreshold() : 0.0, seconds, stopOnFeasible);
+            } catch (IllegalArgumentException error) {
+                if (publishFailure) {
+                    SolveResult failed = new SolveResult(false, 0, total, startTick + 1, landingTick + 1);
+                    failed.setSolver("IPOPT (local continuous)");
+                    failed.setNoticeLabel("IPOPT configuration");
+                    failed.setNotice(error.getMessage());
+                    state.setResult(failed);
+                }
+                return null;
+            }
+        }
         if (legalWallHard) {
             List<JumpConstraint> reduced = new ArrayList<>(constraints);
             reduced.remove(legalGoal);
@@ -561,7 +605,8 @@ public final class AngleSolverEngine {
         Plan prev = lastPlan;
         SolveResult prevResult = state.getResult();
         if (solving || !(model instanceof ExactJumpModel)) return false;
-        if (prev == null || prevResult == null || !prevResult.isSuccess() || prev.lockYaws) return false;
+        if (state.getBackend() == AngleSolverState.Backend.IPOPT_LOCAL) return false;
+        if (prev == null || prevResult == null || !prevResult.isSuccess() || prev.lockYaws || prev.continuous) return false;
         return prev.startTick == state.getStartTick()
                 && prev.yaws.length == state.getLandingTick() - state.getStartTick();
     }
@@ -596,13 +641,20 @@ public final class AngleSolverEngine {
                 job.spec.objective.smoothLambda, job.spec.asScenario().startYaw);
         currentProgress = progress;
         currentJob = job;
+        if (job.ipopt != null) lastRunState = null;
         liveResult = null;
         liveVersion = -1;
         String presetName = effort == AngleSolverState.Effort.CUSTOM ? state.getGraphPresetName() : null;
-        RunRecording rec = new RunRecording(
-                SolveRunRecord.configOf(job.graph, presetName, effort.name(), FEAS_TOL, job.spec.objective),
-                SolveRunRecord.problemOf(job.spec, countJumps(job.spec.asScenario())),
-                progress, t0);
+        SolveRunRecord.Config config = SolveRunRecord.configOf(job.graph,
+                job.ipopt != null ? "IPOPT (local continuous)" : presetName, effort.name(),
+                job.ipopt != null ? LocalIpoptSolver.FEASIBILITY_TOLERANCE : FEAS_TOL, job.spec.objective);
+        if (job.ipopt != null) {
+            config.graphHash = null;
+            config.nodes.clear();
+            config.metric.type = "continuous";
+        }
+        RunRecording rec = new RunRecording(config,
+                SolveRunRecord.problemOf(job.spec, countJumps(job.spec.asScenario())), progress, t0);
         recording = rec;
         solving = true;
         Thread worker = new Thread(() -> {
@@ -897,7 +949,12 @@ public final class AngleSolverEngine {
         currentJob = null;
         liveResult = null;
         liveVersion = -1;
-        if (prog != null && job != null && prog.haveBest()) {
+        if (job != null && job.ipoptBest != null) {
+            LocalIpoptSolver.Result best = job.ipoptBest;
+            finishRecord(recording, SolveRunRecord.STATUS_STOPPED_BEST, job.spec.objective.evaluate(best.path),
+                    best.violation, true, "IPOPT (local continuous)", best.yaw);
+            pending = ipoptOutcome(job, job.ipoptBest, System.nanoTime() - startNanos);
+        } else if (prog != null && job != null && prog.haveBest()) {
             finishRecord(recording, SolveRunRecord.STATUS_STOPPED_BEST, null, null, null, prog.bestSolver(), null);
             pending = finalizeBest(job, prog.bestYaws(), prog.bestSolver());
         } else {
@@ -911,6 +968,8 @@ public final class AngleSolverEngine {
     public SolveResult liveBestResult() {
         SolveProgress p = currentProgress;
         Job job = currentJob;
+        if (job != null && job.ipoptBest != null)
+            return ipoptOutcome(job, job.ipoptBest, System.nanoTime() - startNanos).result;
         if (p == null || job == null || !p.haveBest()) return null;
         int v = p.version();
         if (liveResult == null || v != liveVersion) {
@@ -959,6 +1018,7 @@ public final class AngleSolverEngine {
     private LiveTrajectory liveTraj;
     private int liveTrajVersion = -1;
     private long liveTrajSeq;
+    private LocalIpoptSolver.Result liveIpoptBest;
 
     public GraphRunState graphRunState() {
         GraphContext c = currentGraphContext;
@@ -986,6 +1046,14 @@ public final class AngleSolverEngine {
     public LiveTrajectory liveTrajectory() {
         SolveProgress p = currentProgress;
         Job job = currentJob;
+        if (job != null && job.ipoptBest != null) {
+            LocalIpoptSolver.Result best = job.ipoptBest;
+            if (best != liveIpoptBest) {
+                liveIpoptBest = best;
+                liveTraj = new LiveTrajectory(++liveTrajSeq, job.startTick, best.path.posX, best.path.posZ, true);
+            }
+            return liveTraj;
+        }
         if (p == null || job == null || !p.haveBest()) {
             liveTraj = null;
             liveTrajVersion = -1;
@@ -1016,7 +1084,64 @@ public final class AngleSolverEngine {
         return runJob(fallback, cancel, progress, fallbackRec);
     }
 
+    private Outcome runIpopt(Job job, AtomicBoolean cancel, RunRecording rec) {
+        long begin = System.nanoTime();
+        LocalIpoptSolver.Result solved;
+        try {
+            solved = new LocalIpoptSolver().solve(job.ipopt, cancel, best -> job.ipoptBest = best);
+        } catch (java.io.IOException error) {
+            solved = null;
+            if (cancel.get()) return null;
+            if (job.ipoptBest != null) {
+                LocalIpoptSolver.Result best = job.ipoptBest;
+                finishRecord(rec, SolveRunRecord.STATUS_SOLVED, job.spec.objective.evaluate(best.path),
+                        best.violation, true, "IPOPT (local continuous)", best.yaw);
+                Outcome kept = ipoptOutcome(job, best, System.nanoTime() - begin);
+                kept.result.addDetail("Worker stopped", error.getMessage());
+                return kept;
+            }
+            SolveResult failed = ipoptFailure(job, "Local runtime error: " + error.getMessage());
+            finishRecord(rec, SolveRunRecord.STATUS_FAILED, null, null, null, "IPOPT (local continuous)", null);
+            return new Outcome(failed, null);
+        }
+        if (cancel.get() || solved == null) return null;
+        long elapsed = System.nanoTime() - begin;
+        if (solved.yaw == null) {
+            SolveResult failed = ipoptFailure(job, solved.status);
+            failed.setDurationNanos(elapsed);
+            failed.setDurationMs(elapsed / 1_000_000L);
+            finishRecord(rec, SolveRunRecord.STATUS_FAILED, null, null, null, "IPOPT (local continuous)", null);
+            return new Outcome(failed, null);
+        }
+        finishRecord(rec, SolveRunRecord.STATUS_SOLVED, job.spec.objective.evaluate(solved.path),
+                solved.violation, true, "IPOPT (local continuous)", solved.yaw);
+        return ipoptOutcome(job, solved, elapsed);
+    }
+
+    private SolveResult ipoptFailure(Job job, String status) {
+        SolveResult failed = new SolveResult(false, 0, job.uiConstraints.size(), job.startTick + 1, job.landingTick + 1);
+        failed.setSolver("IPOPT (local continuous)");
+        failed.setNoticeLabel("No feasible solution found");
+        failed.setNotice(status);
+        failed.addDetail("Setup", "Set PKC_IPOPT_PYTHON to a Python executable with CasADi and NumPy installed");
+        return failed;
+    }
+
+    private Outcome ipoptOutcome(Job job, LocalIpoptSolver.Result solved, long elapsed) {
+        SolveResult result = assembleResult(job, solved.yaw, solved.yaw, solved.path,
+                "IPOPT (local continuous)", elapsed, Double.NaN);
+        result.addDetail("IPOPT status", solved.status);
+        result.addDetail("Continuous violation", Double.toString(solved.violation));
+        result.addDetail("Recorded wall hits", Integer.toString(job.ipopt.contacts.size()));
+        result.addDetail("Inertia threshold", Double.toString(job.ipopt.threshold));
+        result.addDetail("Start", "Fixed to the current simulation state");
+        result.setNoticeLabel("Continuous solution");
+        result.setNotice("Validated with the continuous model. Apply reruns the game simulation; game arithmetic can differ.");
+        return new Outcome(result, planOf(job, solved.yaw, solved.path, job.spec.asScenario(), false));
+    }
+
     private Outcome runJob(Job job, AtomicBoolean cancel, SolveProgress progress, RunRecording rec) {
+        if (job.ipopt != null) return runIpopt(job, cancel, rec);
         JumpSpec spec = job.spec;
         lastSpecDebug = spec;
         JumpPhysicsInputs sc = spec.asScenario();
@@ -1147,7 +1272,7 @@ public final class AngleSolverEngine {
 
     private static Plan planOf(Job job, double[] yaws, ForwardPath path, JumpPhysicsInputs sc, boolean lockYaws) {
         return new Plan(job.startTick, yaws, job.strafeMask, job.force45Mask, 1, path, sc.startPos, lockYaws,
-                job.freeStartYaw);
+                job.freeStartYaw, job.ipopt != null);
     }
 
 
@@ -1282,6 +1407,10 @@ public final class AngleSolverEngine {
         result.setFinishedAt(formatClock());
         result.setSolver(solver);
         addBaseDetails(result, solveNanos);
+        if (job.ipopt != null) {
+            result.getDetails().removeIf(detail -> "Model".equals(detail.label));
+            result.addDetail("Model", "Continuous with prescribed wall contacts");
+        }
         if (!Double.isNaN(dualGap)) result.addDetail("Dual bound gap", ConstraintText.fixedStat(dualGap));
         result.addDetail("Jumps", Integer.toString(countJumps(sc)));
         if (countJumps(sc) > 1 && job.useWindowSolver) {
@@ -1513,7 +1642,10 @@ public final class AngleSolverEngine {
                 double dx = (s.position.x - prev.position.x) - (p.path.posX[k] - p.path.posX[k - 1]);
                 double dz = (s.position.z - prev.position.z) - (p.path.posZ[k] - p.path.posZ[k - 1]);
                 if (Math.abs(dx) <= APPLY_MATCH_TOL && Math.abs(dz) <= APPLY_MATCH_TOL) continue;
-                publishDeviation(p.startTick, t);
+                if (p.continuous) {
+                    state.setApplyDeviation("Game simulation differs from the continuous solution at T" + (t + 1)
+                            + ". Inspect the simulated path for game validity.", AngleSolverState.DeviationKind.OTHER, t);
+                } else publishDeviation(p.startTick, t);
                 return;
             }
         }
@@ -1748,8 +1880,9 @@ public final class AngleSolverEngine {
             else unmet.add(ca.absTick);
             outs.add(outcome(ca.c, ca.absTick, found, ok, objectiveSense(job.spec.objective, ca.c, ca.segTick)));
         }
+        double acceptance = job.ipopt != null ? LocalIpoptSolver.FEASIBILITY_TOLERANCE : FEAS_TOL;
         boolean success = feasible
-                && JumpConstraintCompiler.compile(job.spec).maxViolation(gameFacings, path) <= FEAS_TOL;
+                && JumpConstraintCompiler.compile(job.spec).maxViolation(gameFacings, path) <= acceptance;
         SolveResult r = new SolveResult(success, met, total, job.startTick + 1, job.landingTick + 1);
         r.getOutcomes().addAll(outs);
         for (int t : unmet) r.addUnmetTick(t);

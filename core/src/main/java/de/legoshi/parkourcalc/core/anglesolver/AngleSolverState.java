@@ -50,6 +50,8 @@ public final class AngleSolverState {
         }
     }
 
+    public enum Backend { PIPELINE, IPOPT_LOCAL }
+
     /** Solve effort. FAST returns the first byte-exact feasible solution (lowest latency). THOROUGH
      *  ("Optimize" in the UI; the constant keeps its name so old saves load) spends a time budget on the
      *  best objective it can find. CUSTOM exposes every knob. */
@@ -139,6 +141,9 @@ public final class AngleSolverState {
     private double customAngleDeg = 0.0;
     private CustomAngleType customAngleType = CustomAngleType.POSITION;
     private Effort effort = Effort.FAST;
+    private Backend backend = Backend.PIPELINE;
+    private boolean ipoptInertia = true;
+    private boolean ipoptRecordedWalls = true;
     private boolean stopOnFeasible = true;
     private boolean legalMode;
     private int budgetMs = DEFAULT_BUDGET_MS;
@@ -245,6 +250,18 @@ public final class AngleSolverState {
     public void setCustomAngleType(CustomAngleType type) {
         this.customAngleType = type != null ? type : CustomAngleType.POSITION;
     }
+
+    public Backend getBackend() { return backend; }
+
+    public void setBackend(Backend backend) { this.backend = backend == null ? Backend.PIPELINE : backend; }
+
+    public boolean isIpoptInertia() { return ipoptInertia; }
+
+    public void setIpoptInertia(boolean enabled) { ipoptInertia = enabled; }
+
+    public boolean isIpoptRecordedWalls() { return ipoptRecordedWalls; }
+
+    public void setIpoptRecordedWalls(boolean enabled) { ipoptRecordedWalls = enabled; }
 
     public Effort getEffort() {
         return effort;
@@ -735,6 +752,9 @@ public final class AngleSolverState {
         customAngleDeg = 0.0;
         customAngleType = CustomAngleType.POSITION;
         effort = Effort.FAST;
+        backend = Backend.PIPELINE;
+        ipoptInertia = true;
+        ipoptRecordedWalls = true;
         stopOnFeasible = true;
         legalMode = false;
         budgetMs = DEFAULT_BUDGET_MS;

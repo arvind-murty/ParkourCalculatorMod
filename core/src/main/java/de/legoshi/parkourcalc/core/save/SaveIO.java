@@ -193,6 +193,9 @@ public final class SaveIO {
         state.setCustomAngleType(parseEnum(AngleSolverState.CustomAngleType.class, a.customAngleType, AngleSolverState.CustomAngleType.POSITION));
         AngleSolverState.Effort effort = parseEnum(AngleSolverState.Effort.class, a.effort, AngleSolverState.Effort.FAST);
         state.setEffort(effort);
+        state.setBackend(parseEnum(AngleSolverState.Backend.class, a.backend, AngleSolverState.Backend.PIPELINE));
+        state.setIpoptInertia(a.ipoptInertia == null || a.ipoptInertia);
+        state.setIpoptRecordedWalls(a.ipoptRecordedWalls == null || a.ipoptRecordedWalls);
         state.setStopOnFeasible(a.stopOnFeasible != null && a.stopOnFeasible);
         state.setLegalMode(a.legalMode != null && a.legalMode);
         if (a.budgetMs != null) state.setBudgetMs(a.budgetMs);
@@ -569,6 +572,9 @@ public final class SaveIO {
         a.customAngleDeg = s.getCustomAngleDeg();
         a.customAngleType = s.getCustomAngleType().name();
         a.effort = s.getEffort().name();
+        a.backend = s.getBackend() == AngleSolverState.Backend.PIPELINE ? null : s.getBackend().name();
+        a.ipoptInertia = s.isIpoptInertia() ? null : false;
+        a.ipoptRecordedWalls = s.isIpoptRecordedWalls() ? null : false;
         a.stopOnFeasible = s.isStopOnFeasible();
         a.legalMode = s.isLegalMode();
         a.optimizeSeconds = s.getOptimizeSeconds();

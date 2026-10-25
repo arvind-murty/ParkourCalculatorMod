@@ -72,6 +72,9 @@ public final class SaveFile {
         public Boolean customAngle;
         public Double customAngleDeg;
         public String customAngleType;
+        public String backend;
+        public Boolean ipoptInertia;
+        public Boolean ipoptRecordedWalls;
         public String effort;                            // absent in old files -> FAST
         public Boolean stopOnFeasible;                   // absent in old files -> false
         public Boolean legalMode;                        // absent in old files -> false

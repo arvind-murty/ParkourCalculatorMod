@@ -251,6 +251,17 @@ public final class AngleSolverWindow implements RenderInterface {
     }
 
     private void renderGeneral(int rowCount, float labelW, float scale) {
+        int backend = segmentedRow("Solver", "backend", new String[] {"Pipeline", "IPOPT (local)"},
+                state.getBackend().ordinal(), labelW);
+        if (backend >= 0) state.setBackend(AngleSolverState.Backend.values()[backend]);
+        if (state.getBackend() == AngleSolverState.Backend.IPOPT_LOCAL) {
+            if (Controls.checkbox("Inertia zeroing", state.isIpoptInertia()))
+                state.setIpoptInertia(!state.isIpoptInertia());
+            if (Controls.checkbox("Recorded wall hits", state.isIpoptRecordedWalls()))
+                state.setIpoptRecordedWalls(!state.isIpoptRecordedWalls());
+            TooltipUtil.onHover("Prescribe wall hits from the current simulation at their recorded ticks.");
+            ImGui.textDisabled("Continuous model; local Python/CasADi required");
+        }
         ticksRow(rowCount, labelW, scale);
         int span = state.getLandingTick() - state.getStartTick();
         if (span > LONG_SPAN_WARN_TICKS) longSpanWarning(span, scale);
@@ -265,7 +276,10 @@ public final class AngleSolverWindow implements RenderInterface {
         if (sp >= 0) state.setDefaultSprint(AngleSolverState.SprintMode.values()[sp]);
         state.pruneRedundantOverrides();
 
-        if (state.isCustomBudget()) presetRow(labelW, scale);
+        if (state.getBackend() == AngleSolverState.Backend.IPOPT_LOCAL) {
+            budgetRow(labelW, scale);
+            TooltipUtil.onHover("IPOPT uses 10 seconds when the budget is zero. Includes worker startup.");
+        } else if (state.isCustomBudget()) presetRow(labelW, scale);
         else budgetRow(labelW, scale);
     }
 
@@ -529,7 +543,9 @@ public final class AngleSolverWindow implements RenderInterface {
         if (Controls.sliderFloat("##budgetSlider", budgetSliderBuf, 0f, sliderMax, "%.1f s")) {
             state.setBudgetMs(Math.round(budgetSliderBuf[0] * 10f) * 100);
         }
-        TooltipUtil.onHover(BUDGET_TIP);
+        TooltipUtil.onHover(state.getBackend() == AngleSolverState.Backend.IPOPT_LOCAL
+                ? "Local IPOPT time limit including startup. Zero uses 10 seconds and stops at the first feasible path. From one second, optimize the objective."
+                : BUDGET_TIP);
 
         ImGui.sameLine(0, gap);
         if (!budgetFieldActive && state.getBudgetMs() != lastSyncedBudgetMs) {
