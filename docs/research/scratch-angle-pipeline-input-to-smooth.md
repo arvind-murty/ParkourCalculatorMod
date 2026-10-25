@@ -1373,3 +1373,8 @@ Clarification: staged cap affects the closed-form dual runs. SLP still generates
 ### Jump29 lead-up clarification
 
 Current staged baseline: nominal29–38 (10 jumps), actual ticks222..352, failed at cap1000 in836.4ms. Nominal29–35 (7 jumps), actual222..305, then succeeded through centered SLP in217.2ms, committing jump29 through state241. Thus the failure of a horizon ending352 already occurs from29; that window does not include the X356 wall. Source: staged windows.csv rows first_jump29. Added29 to the lead-up table.
+
+
+### Jump28 lead-up clarification
+
+Current staged baseline, cap1000: nominal28–37 (10 jumps), actual209..338, failed in1425.6ms. Nominal28–34 (7 jumps), actual209..293, succeeded through SLP in282.9ms and committed through222. This10-jump failure ends338, before jump38 starts333 has completed, and before jump39/X356. Source: staged windows.csv first_jump28; added28 to lead-up table.
