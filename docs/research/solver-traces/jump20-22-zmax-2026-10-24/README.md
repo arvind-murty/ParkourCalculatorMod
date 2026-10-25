@@ -88,3 +88,7 @@ Source-matched /tmp/pkc-endpoints-fixed, current production including restored S
 ```
 
 One focused test, zero failures, Gradle about2s. Iterative probe development repeated it to add controls and diagnostics; final artifacts reflect the final version. No full suite, full-route rerun or user j127 fixture change. Solver misses are recorded outcomes, not assertion failures.
+
+## Follow-up: exact cancellation at132
+
+[Signed objective and multiplier decomposition](costate132-explanation.md) reconstructs the saved costate bit-for-bit. No new optimization run.
