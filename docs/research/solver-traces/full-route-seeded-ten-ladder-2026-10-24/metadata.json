@@ -1,0 +1,25 @@
+{
+  "head": "fad79e1b824e3139511bc2eedff18c356c5aa033",
+  "window_ladder": [
+    10,
+    7,
+    5,
+    3,
+    2,
+    1
+  ],
+  "commit_ladder": [
+    3,
+    1
+  ],
+  "margin": 0.0003,
+  "outer_deadline": null,
+  "production_seed_commit": "e14dfe4",
+  "production_retention_commit": "c392645",
+  "decoder_changed": false,
+  "run_worktree": "/tmp/pkc-endpoints-fixed",
+  "input": "/Users/arvindmurty/Downloads/LinkcraftII_Competition_01/real/11.json",
+  "input_sha256": "af5d2d1bc6e0ab466f1b6cf309f3a26e76e4a63765ac8b15ff02fb4ad55d28bf",
+  "user_j127_fixture": "pre-existing modification, untouched",
+  "note": "Production defaults already start at10; previous full probe explicitly chose7. No source change needed."
+}

@@ -110,3 +110,8 @@ The [sharper-smoothing experiment](linkcraft-real11-eps24-experiment.md) changes
 ## Latest inventory and seeded full-route result, 2026-10-24
 
 Start with the [current inventory](full-route-seeded-inventory-2026-10-24/INVENTORY.md) and [full-route report](full-route-seeded-inventory-2026-10-24/README.md). Production now has validated intermediate retention (c392645) and assumed-model-feasible conditional inertia compensation (e14dfe4). The latter was previously test-only; it now reproduces direct j13/j14 successes. Decoder default remains unchanged. Full808-tick seven-ladder fixed .0003 run still misses: commit3 stuck before jump39/state351; commit1 before jump14/state90;47.09s; final route replay not reached. Every window, objective, dual rung and committed state/yaw is archived with source lines. Manual turnaround/window objective experiments are not automatically applied. The user j127 fixture modification is unrelated and was not staged.
+
+
+## Latest full-route configuration: normal ten-jump ladder
+
+User restored10,7,5,3,2,1, keeping fixed .0003 and current production seeding/retention. [Complete ten-ladder run](full-route-seeded-ten-ladder-2026-10-24/README.md): commit3 stuck before jump26/state205; commit1 before jump25/state196;161.386s; no final full-route replay reached. Only ladder changed from preceding seeded7 run. Source defaults already start10, so no production edit. All attempts and committed state/velocity/yaw data preserved; user j127 unchanged.
