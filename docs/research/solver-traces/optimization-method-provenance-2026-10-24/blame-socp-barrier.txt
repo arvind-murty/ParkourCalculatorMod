@@ -1,0 +1,25 @@
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 246)         double nu = 2.0 * n + p;
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 247)         double mu = centeringMu(lambda, tau, gx, gz);
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 248)         boolean converged = false;
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 249)         boolean aborted = false;
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 250)         int iters = 0;
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 251)         int numericFailOuters = 0;
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 252)         outer:
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 253)         for (int outer = 0; outer < MAX_OUTER && !converged; outer++) {
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 254)             boolean numericFail = false;
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 255)             for (int inner = 0; inner < MAX_INNER; inner++) {
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 256)                 iters++;
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 257)                 gradient(lambda, tau, gx, gz, mu, gLam, gTau);
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 258)                 if (!assembleHessian(lambda, tau, gx, gz, mu, S, Mlt, Dtt)) {
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 259)                     fail(FAIL_DET, iters, mu);
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 260)                     numericFail = true;
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 261)                     break;
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 262)                 }
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 263)                 if (!factor(S, L)) {
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 264)                     fail(FAIL_CHOLESKY, iters, mu);
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 265)                     numericFail = true;
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 266)                     break;
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 267)                 }
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 268)                 newtonDir(gLam, gTau, Mlt, Dtt, L, rhsLam, dLam, dTau);
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 269)                 double dec = 0.0;
+be584eda (Legoshi 2026-08-28 12:21:44 +0200 270)                 for (int j = 0; j < m; j++) dec -= gLam[j] * dLam[j];

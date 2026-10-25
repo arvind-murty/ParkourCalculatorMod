@@ -1,0 +1,41 @@
+bafa94e9 (Legoshi 2026-07-24 15:31:05 +0200 174)         for (int outer = 0; outer < cfg.outerIters; outer++) {
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 175)             if (cancel.get()) return Double.NaN;
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 176)             double lip = rho * powerLambdaMax(axis, coef, n) + 1.0e-9;
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 177)             double step = 1.0 / lip;
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 178)             System.arraycopy(ux, 0, px, 0, n);
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 179)             System.arraycopy(uz, 0, pz, 0, n);
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 180)             System.arraycopy(ux, 0, yx, 0, n);
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 181)             System.arraycopy(uz, 0, yz, 0, n);
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 182)             double tk = 1.0;
+bafa94e9 (Legoshi 2026-07-24 15:31:05 +0200 183)             for (int inner = 0; inner < cfg.innerIters; inner++) {
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 184)                 for (int t = 0; t < n; t++) {
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 185)                     gxv[t] = -cx[t];
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 186)                     gzv[t] = -cz[t];
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 187)                 }
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 188)                 for (int j = 0; j < m; j++) {
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 189)                     double[] cj = coef[j];
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 190)                     double[] y = axis[j] == 0 ? yx : yz;
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 191)                     double g = -b[j];
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 192)                     for (int t = 0; t < n; t++) g += cj[t] * y[t];
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 193)                     double mult = lambda[j] + rho * g;
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 194)                     if (mult <= 0.0) continue;
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 195)                     double[] gv = axis[j] == 0 ? gxv : gzv;
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 196)                     for (int t = 0; t < n; t++) gv[t] += mult * cj[t];
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 197)                 }
+2e64e994 (Legoshi 2026-09-27 12:16:47 +0200 198)                 double tk1 = 0.5 * (1.0 + StrictMath.sqrt(1.0 + 4.0 * tk * tk));
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 199)                 double beta = (tk - 1.0) / tk1;
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 200)                 tk = tk1;
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 201)                 for (int t = 0; t < n; t++) {
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 202)                     double nx = yx[t] - step * gxv[t];
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 203)                     double nz = yz[t] - step * gzv[t];
+2e64e994 (Legoshi 2026-09-27 12:16:47 +0200 204)                     double nrm = StrictMath.sqrt(nx * nx + nz * nz);
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 205)                     if (nrm > mMag[t]) {
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 206)                         double s = mMag[t] / nrm;
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 207)                         nx *= s;
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 208)                         nz *= s;
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 209)                     }
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 210)                     yx[t] = nx + beta * (nx - px[t]);
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 211)                     yz[t] = nz + beta * (nz - pz[t]);
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 212)                     px[t] = nx;
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 213)                     pz[t] = nz;
+d35c2865 (Legoshi 2026-07-03 18:17:16 +0200 214)                 }

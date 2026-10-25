@@ -31,6 +31,8 @@ Paths in this table are relative to `core/src/main/java/de/legoshi/parkourcalc/c
 
 ## Existing optimization methods: code and explanations
 
+Read [the method inventory and rationale](angle-solver-methods-and-rationale.md) for the four continuous numerical implementations, why each was introduced, Git blame and PR provenance, supporting search mechanisms and retired methods. This review distinguishes documented motivation from structural inference and keeps inertia handling outside the current initial-solve scope.
+
 | Method | Implementation and background |
 | --- | --- |
 | “Closed form” / dual chain | `ClosedFormSolve`, `CostateDualSolver`, engine `dualChain`: iteratively optimize wall multipliers, recover yaw from per-tick costates, infer inertia outcomes, and retry fixed patterns with threshold bands. It is not a one-shot formula. Read [theory](solver-traces/angle-dual-feasibility-theory.md), [Newton audit](dual-newton-iteration-audit.md), [Hessian notes](dual-newton-hessian-handoff.md). Actual numerical step is damped Cholesky Newton plus projected-gradient fallback; the truncated-eigen class description is stale. |

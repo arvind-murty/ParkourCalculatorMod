@@ -1,0 +1,38 @@
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 59)     static Result solve(double[][] a, double[] viol, double[] obj, double tr, boolean phase1, double sCap, int maxIter) {
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 60)         TrustRegionLp lp = new TrustRegionLp(a, viol, tr);
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 61)         return lp.run(obj, phase1, sCap, maxIter);
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 62)     }
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 63)
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 64)     private Result run(double[] obj, boolean phase1, double sCap, int maxIter) {
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 65)         int jStar = 0;
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 66)         for (int j = 1; j < m; j++) {
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 67)             if (-rhs[j] > -rhs[jStar]) jStar = j;
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 68)         }
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 69)         for (int v = 0; v < total; v++) state[v] = 0;
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 70)         for (int j = 0; j < m; j++) {
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 71)             basis[j] = j == jStar ? sVar : 2 * n + 1 + j;
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 72)             state[basis[j]] = 2;
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 73)         }
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 74)         refactor();
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 75)         cost[sVar] = 1.0;
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 76)         int iters = iterate(maxIter, phase1 ? Double.NEGATIVE_INFINITY : sCap);
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 77)         if (iters < 0) return null;
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 78)         double sVal = currentS();
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 79)         if (phase1) {
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 80)             return new Result(extractD(), sVal);
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 81)         }
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 82)         if (sVal > sCap + EPS_FEAS) return null;
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 83)         sHi = sCap;
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 84)         cost[sVar] = 0.0;
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 85)         if (obj != null) {
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 86)             for (int v = 0; v < n; v++) {
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 87)                 cost[v] = obj[v];
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 88)                 cost[n + v] = -obj[v];
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 89)             }
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 90)         }
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 91)         bland = false;
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 92)         stall = 0;
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 93)         lastZ = Double.POSITIVE_INFINITY;
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 94)         int it2 = iterate(maxIter - iters, Double.NEGATIVE_INFINITY);
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 95)         if (it2 < 0) return null;
+538c92bf (Leg0shii 2026-08-21 20:18:19 +0200 96)         return new Result(extractD(), sCap);
