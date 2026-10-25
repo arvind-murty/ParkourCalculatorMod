@@ -1,6 +1,6 @@
 # Investigation inventory and recovery map
 
-2026-10-24. Branch `codex/first30-margin-trace-bookkeeping`. Scope is every investigation change since the parent of e67a2ac, the first SLP-inertia trace commit, through production seeding e14dfe4, plus this run's trace-label addition. Exact starting reference is in [metadata](inventory-metadata.json); [commits.tsv](commits.tsv) lists96 commits and [changed-files.tsv](changed-files.tsv) lists1259 committed paths, mostly archived CSVs and docs. These counts describe the snapshot before committing this report. [Production patch](production-source.patch) and [stat](production-diff.stat) capture all ten modified/added production files. Historical experiments remain separately committed.
+2026-10-24. Branch `codex/first30-margin-trace-bookkeeping`. Scope is every investigation change since the parent of e67a2ac, the first SLP-inertia trace commit, through production seeding e14dfe4, plus this run's trace-label addition. Exact starting reference is in [metadata](inventory-metadata.json); [commits.tsv](commits.tsv) lists96 commits and [changed-files.tsv](changed-files.tsv) lists1259 committed paths, mostly archived CSVs and docs. These counts describe the snapshot before committing this report. [Production patch](production-source.patch.gz) and [stat](production-diff.stat) capture all ten modified/added production files. Historical experiments remain separately committed.
 
 ## Working tree and environment
 

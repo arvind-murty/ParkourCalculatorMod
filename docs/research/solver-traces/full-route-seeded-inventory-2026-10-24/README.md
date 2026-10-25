@@ -1,6 +1,6 @@
 # Full808-tick solve with retained candidates and conditional inertia seeds
 
-2026-10-24. [Complete change inventory](INVENTORY.md), [raw commits](commits.tsv), [changed files](changed-files.tsv), [production patch](production-source.patch).
+2026-10-24. [Complete change inventory](INVENTORY.md), [raw commits](commits.tsv), [changed files](changed-files.tsv), [production patch](production-source.patch.gz).
 
 ## Active run
 
