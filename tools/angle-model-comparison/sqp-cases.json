@@ -1,0 +1,17 @@
+[
+  {"name":"j111", "source":"core/src/test/resources/captures/hpk/d9/j111_0bm_Trapdoor_to_Trapdoor_Cross_Neo.json"},
+  {"name":"j119", "source":"core/src/test/resources/captures/hpk/d9/j119_Head_Waza_to_Anvil.json"},
+  {"name":"j120", "source":"core/src/test/resources/captures/hpk/d9/j120_3bm_5.0625b-0.5.json"},
+  {"name":"j121", "source":"core/src/test/resources/captures/hpk/d9/j121_3jmm_Double_Winged_Neo__0.5.json"},
+  {"name":"j122", "source":"core/src/test/resources/captures/hpk/d9/j122_1.5b_Head_Butterfly_Neo.json"},
+  {"name":"j128", "source":"core/src/test/resources/captures/hpk/d9/j128_Head_to_Head_Neo_1bl.json"},
+  {"name":"j021", "source":"core/src/test/resources/captures/j021-rinav1-01.json"},
+  {"name":"j335", "source":"core/src/test/resources/captures/hpk/d10/j335_1bmhh_Single_Fencegat_Butterfly_Neo.json"},
+  {"name":"j346", "source":"core/src/test/resources/captures/hpk/d10/j346_1bm_Squeeze_to_Squeeze_Butterfly_Neo.json"},
+  {"name":"loopmm", "source":"core/src/test/resources/captures/loopmm-3jump-lands.json"},
+  {"name":"loopmm-tight", "source":"core/src/test/resources/captures/loopmm-tight-t39.json"},
+  {"name":"real11-60-Xmax", "source":"docs/research/solver-traces/jump39-baseline-handoff-2026-10-24/real11-input.json.gz", "ticks":60, "axis":"X", "sense":"MAX"},
+  {"name":"real11-100-Xmax", "source":"docs/research/solver-traces/jump39-baseline-handoff-2026-10-24/real11-input.json.gz", "ticks":100, "axis":"X", "sense":"MAX"},
+  {"name":"real11-100-Zmax", "source":"docs/research/solver-traces/jump39-baseline-handoff-2026-10-24/real11-input.json.gz", "ticks":100, "axis":"Z", "sense":"MAX"},
+  {"name":"real11-t132-178-Zmax", "source":"docs/research/solver-traces/jump39-baseline-handoff-2026-10-24/real11-input.json.gz", "from":132, "ticks":46, "axis":"Z", "sense":"MAX", "entry":[733.2993911151426,12.424009289414908,-1095.0468786224278,0.00005327436713965728,0.24813599859094576,-0.3022178746735658,258.95065]}
+]

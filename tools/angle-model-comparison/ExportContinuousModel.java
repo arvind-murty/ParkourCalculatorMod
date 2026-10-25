@@ -79,27 +79,44 @@ public final class ExportContinuousModel {
         if (spec == null) throw new IllegalStateException("Cannot compile " + source);
         JumpPhysicsInputs physics = spec.asScenario().copy();
         physics.startBox = null;
-        JumpLinearModel linear = new JumpLinearModel(physics);
-        int n = entry.has("ticks") ? entry.get("ticks").getAsInt() : physics.numTicks;
-        if (n <= 0 || n > physics.numTicks) throw new IllegalArgumentException("Invalid prefix: " + n);
-        double[] magnitude = new double[n];
-        double[] friction = new double[n];
-        double[] base = new double[n];
+        int originalTicks = physics.numTicks;
         double[] yaw = new double[physics.numTicks];
         double previous = physics.startYaw;
         for (int t = 0; t < physics.numTicks; t++) {
             InputRow row = inputs.getRows().get(state.getStartTick() + t);
             if (row.getYaw() != null) previous = row.isYawLocked() ? row.getYaw() : previous + row.getYaw();
             yaw[t] = previous;
-            if (t < n) {
-                magnitude[t] = linear.mMag(t);
-                friction[t] = linear.friction(t);
-                base[t] = linear.baseArg(t);
-            }
+        }
+        int from = entry.has("from") ? entry.get("from").getAsInt() : 0;
+        if (from < 0 || from >= originalTicks) throw new IllegalArgumentException("Invalid start: " + from);
+        if (from > 0) {
+            JsonArray start = entry.getAsJsonArray("entry");
+            if (start == null || start.size() != 7) throw new IllegalArgumentException("A sliced case needs x/y/z/vx/vy/vz/yaw");
+            physics = physics.slice(from, start.get(0).getAsDouble(), start.get(1).getAsDouble(),
+                    start.get(2).getAsDouble(), start.get(3).getAsDouble(), start.get(4).getAsDouble(),
+                    start.get(5).getAsDouble(), start.get(6).getAsFloat());
+            yaw = Arrays.copyOfRange(yaw, from, yaw.length);
+        }
+        JumpLinearModel linear = new JumpLinearModel(physics);
+        int n = entry.has("ticks") ? entry.get("ticks").getAsInt() : physics.numTicks;
+        if (n <= 0 || n > physics.numTicks) throw new IllegalArgumentException("Invalid prefix: " + n);
+        double[] magnitude = new double[n];
+        double[] friction = new double[n];
+        double[] base = new double[n];
+        for (int t = 0; t < n; t++) {
+            magnitude[t] = linear.mMag(t);
+            friction[t] = linear.friction(t);
+            base[t] = linear.baseArg(t);
         }
         List<JumpConstraint> walls = new ArrayList<>();
         int droppedFacing = 0;
         for (JumpConstraint wall : spec.constraints) {
+            if (wall.t1 < from && (wall.t2 == null || wall.t2 < from)) continue;
+            if (wall.t1 < from || (wall.t2 != null && wall.t2 < from)) {
+                throw new IllegalArgumentException("Cross-start row needs a committed value: " + wall.name);
+            }
+            wall = new JumpConstraint(wall.mode, wall.t1 - from, wall.t2 == null ? null : wall.t2 - from,
+                    wall.op, wall.cmp, wall.rhs, wall.name, wall.pin);
             if (wall.t1 > n || (wall.t2 != null && wall.t2 > n)) continue;
             if (wall.mode == JumpConstraint.Mode.F) {
                 droppedFacing++;
@@ -115,8 +132,8 @@ public final class ExportContinuousModel {
         result.addProperty("source", entry.get("source").getAsString());
         result.addProperty("sha256", hex(MessageDigest.getInstance("SHA-256").digest(bytes)));
         result.addProperty("ticks", n);
-        result.addProperty("originalTicks", physics.numTicks);
-        result.addProperty("startTick", state.getStartTick());
+        result.addProperty("originalTicks", originalTicks);
+        result.addProperty("startTick", state.getStartTick() + from);
         result.addProperty("omittedFacingRows", droppedFacing);
         result.addProperty("inputMode", state.getDefaultInputs().name());
         result.addProperty("sprintMode", state.getDefaultSprint().name());
@@ -136,6 +153,17 @@ public final class ExportContinuousModel {
         }
         if (entry.has("sense")) objective.addProperty("sense", entry.get("sense").getAsString());
         result.add("objective", objective);
+        JumpPhysicsInputs serializable = physics.copy();
+        serializable.slipPerTick = null;
+        JsonObject scenario = GSON.toJsonTree(serializable).getAsJsonObject();
+        JsonArray slip = new JsonArray();
+        for (int t = 0; t < n; t++) {
+            if (Double.isNaN(physics.slipAt(t))) slip.add(com.google.gson.JsonNull.INSTANCE);
+            else slip.add(GSON.toJsonTree(physics.slipAt(t)));
+        }
+        scenario.add("slipPerTick", slip);
+        scenario.addProperty("numTicks", n);
+        result.add("scenario", scenario);
         JsonArray oracles = new JsonArray();
         Random random = new Random(42);
         for (int sample = 0; sample < 3; sample++) {

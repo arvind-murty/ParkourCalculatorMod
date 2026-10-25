@@ -13,7 +13,50 @@ gradle.projectsEvaluated {
         classpath = core.sourceSets.test.runtimeClasspath + core.files(new File(experiment, 'build/classes'))
         mainClass = 'de.legoshi.parkourcalc.anglesolver.harness.ExportContinuousModel'
         args gradle.rootProject.projectDir.absolutePath,
-                new File(experiment, 'cases.json').absolutePath,
-                new File(experiment, 'build/problems.json').absolutePath
+                new File(gradle.rootProject.projectDir,
+                        gradle.rootProject.findProperty('pkcComparisonCases') ?: 'tools/angle-model-comparison/cases.json').absolutePath,
+                new File(gradle.rootProject.projectDir,
+                        gradle.rootProject.findProperty('pkcComparisonOutput') ?: 'tools/angle-model-comparison/build/problems.json').absolutePath
+    }
+    def baselineRef = 'c190c2f6faa8a5745044f3e4f9938f96e3c1ba44'
+    def baselineSources = new File(experiment, 'build/native-sources')
+    core.tasks.register('generateContinuousBaseline') {
+        doLast {
+            baselineSources.mkdirs()
+            ['CostateDualSolver', 'TrustRegionLp', 'SlpSolve'].each { name ->
+                def path = "core/src/main/java/de/legoshi/parkourcalc/core/anglesolver/solver/${name}.java"
+                def content = gradle.rootProject.providers.exec {
+                    workingDir gradle.rootProject.projectDir
+                    commandLine 'git', 'show', "${baselineRef}:${path}"
+                }.standardOutput.asText.get()
+                if (name == 'SlpSolve') {
+                    content = content.replace('SlpSolve', 'MainContinuousSlp')
+                            .replace('sc.toGameFacings(Angles.wrapAll(theta))', 'Angles.wrapAll(theta)')
+                            .replace('sc.toGameFacings(Angles.wrapAll(cand))', 'Angles.wrapAll(cand)')
+                            .replace('sc.toGameFacings(yaws)', 'yaws')
+                            .replace('exact.forward(sc, gf)', 'NativeBaseline.continuousForward(sc, gf)')
+                            .replace('exact.forward(sc, cgf)', 'NativeBaseline.continuousForward(sc, cgf)')
+                    if (content.contains('exact.forward(') || content.contains('sc.toGameFacings(')) {
+                        throw new GradleException('Unadapted game replay remains in the continuous baseline')
+                    }
+                    name = 'MainContinuousSlp'
+                }
+                new File(baselineSources, "${name}.java").text = content
+            }
+        }
+    }
+    core.tasks.register('compileContinuousBaseline', JavaCompile) {
+        dependsOn core.tasks.named('testClasses'), core.tasks.named('generateContinuousBaseline')
+        source baselineSources, new File(experiment, 'NativeBaseline.java')
+        classpath = core.sourceSets.test.runtimeClasspath
+        destinationDirectory = new File(experiment, 'build/native-classes')
+        options.release = 8
+    }
+    core.tasks.register('runContinuousBaseline', JavaExec) {
+        dependsOn core.tasks.named('compileContinuousBaseline')
+        classpath = core.files(new File(experiment, 'build/native-classes')) + core.sourceSets.test.runtimeClasspath
+        mainClass = 'de.legoshi.parkourcalc.core.anglesolver.solver.NativeBaseline'
+        args new File(experiment, 'build/sqp-native-input.json').absolutePath,
+                new File(experiment, 'build/sqp-native-results.json').absolutePath, baselineRef
     }
 }
