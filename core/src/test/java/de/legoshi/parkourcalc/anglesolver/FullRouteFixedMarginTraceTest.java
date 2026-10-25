@@ -36,6 +36,7 @@ public class FullRouteFixedMarginTraceTest {
     }
 
     private void runProbe(int window, String label) throws Exception {
+        int commit = Integer.getInteger("pkc.fullRouteCommit", 3);
         label = label + System.getProperty("pkc.fullRouteLabel", "");
         org.junit.Assume.assumeTrue("opt in with -Dpkc.fullRouteProbe=true", Boolean.getBoolean("pkc.fullRouteProbe"));
         String path = System.getenv("PKC_TRACE_INPUT");
@@ -57,7 +58,7 @@ public class FullRouteFixedMarginTraceTest {
 
         SolverTrace.enable("linkcraft-real11-full-fixed0003-" + label + "-ladder");
         SolverTrace.solveStart("full route margin=0.0003 windows="
-                + (window == 10 ? "10,7,5,3,2,1" : "7,5,3,2,1") + " commits=3,1 deadline=none");
+                + (window == 10 ? "10,7,5,3,2,1" : "7,5,3,2,1") + " commits=" + (commit == 1 ? "1" : commit + ",1") + " deadline=none");
         SolverTrace.log("INPUT", "rows=%d ticks=%d constraints=%d objective=%s/%s@%d",
                 inputs.size(), spec.asScenario().numTicks, spec.constraints.size(), spec.objective.axis,
                 spec.objective.sense, spec.objective.tick);
@@ -65,7 +66,7 @@ public class FullRouteFixedMarginTraceTest {
         long startNanos = System.nanoTime();
         try {
             double[] result = LongRunSolver.solve(ExactJumpModel.forMcVersion(file.mcVersion), spec, 0.0,
-                    new AtomicBoolean(false), LongRunSolver.LongRunConfig.of(window, 3).withFixedMargin(0.0003));
+                    new AtomicBoolean(false), LongRunSolver.LongRunConfig.of(window, commit).withFixedMargin(0.0003));
             SolverTrace.log("RESULT", "solved=%s yaws=%d ms=%.3f", result != null, result == null ? 0 : result.length,
                     (System.nanoTime() - startNanos) / 1e6);
             if (result != null) {

@@ -1330,3 +1330,10 @@ Identical-entry cold retry, with intermediate retention still enabled, succeeds:
 ## 2026-10-24: decoder fallback commented out and focused retry
 
 [Full before/after evidence](solver-traces/commit1-no-decoder-fallback-2026-10-24/README.md). Per user request, objective-direction substitution below costate norm1e-9 is commented out in FacingPrefold.expand and JumpLinearModel.recoverAlongCostate. Ordinary atan2 recovery remains even at exactly zero. Same state77 Z/min@91 probe: seeded terminal miss drops2.729172 to.007339308, but production still rejects it. It obeys all assumed zeroing thresholds; remaining continuous violations are X79 lower by.001556768 and X89 lower by.007339308. Prefix replay misses.001565975 at79. NO_DESCENT still occurs at70; cap unchanged. Cold retry still succeeds via retention, now saving iteration158 instead of152, improving minimized final Z by about.00001496. Its terminal161 is still invalid. No cold production fallback added; no full route rerun or full suite. All probe data preserved separately.
+
+
+## 2026-10-24: full commit1 rerun without decoder fallback
+
+[Full report, all windows, objective types, timings, committed states and archived raw trace](solver-traces/full-route-commit1-no-decoder-2026-10-24/README.md). Same normal10,7,5,3,2,1 ladder and fixed.0003 margin, cap10000, EPS2=1e-24, conditional seeding and intermediate retention enabled. Decoder substitutions remain commented out; no cold fallback added. Commit1 only, starting from original route. Direct LongRun, no outer deadline.
+
+Result: committed jumps1–38, stopped before jump39/state351 after317.605s. All6 horizons failed from351: end493/450/441/412/388/373, each trying four coordinate objectives and SLP. Proposed commit exit365 was not reached.97 attempted windows,391 objective/SLP calls,38 accepted commits:26 closed form and12 SLP. No final original-route replay reached. Previous fallback-enabled commit1 stopped before11/state77, but routes now diverge earlier and this is not an identical-entry control. Probe property pkc.fullRouteCommit=1 selects only1; its omitted default remains3,1. No full suite, user fixture untouched.

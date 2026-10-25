@@ -1,0 +1,35 @@
+{
+  "head": "74f5b09df2a807b009b785974c7eb9a31f8e16e2",
+  "input": "/Users/arvindmurty/Downloads/LinkcraftII_Competition_01/real/11.json",
+  "input_sha256": "af5d2d1bc6e0ab466f1b6cf309f3a26e76e4a63765ac8b15ff02fb4ad55d28bf",
+  "window_ladder": [
+    10,
+    7,
+    5,
+    3,
+    2,
+    1
+  ],
+  "commit_ladder": [
+    1
+  ],
+  "fixed_margin": 0.0003,
+  "dual_cap": 10000,
+  "eps2": 1e-24,
+  "seeding": true,
+  "retention": true,
+  "decoder_fallback": false,
+  "outer_deadline": null,
+  "objective_policy": "first unconstrained airborne state; all original rows retained",
+  "source_hashes": {
+    "LongRunSolver": "34b0b61f9ae590f58b92c164e4e93cbc120e7d232b21e790a5df8abeb2454be9",
+    "ClosedFormSolve": "63a0ae4a9bad907dd01d9bda8d87690d41dc38314b774d1325292f9a9ee299c0",
+    "CostateDualSolver": "367e69d1083cf9eb0ec1f51aa446fc22e6a408a122811b3d7e846e7894c21b2f",
+    "InertiaRetrySeed": "388183628290bcea071d1ec15a18825b6a1605fb6b897530c2a9552f331b4968",
+    "DualCandidateRetention": "5dd10da8c0ce1137c621abec9057aa191355bd9cff77e672511edf0b05bec0cc",
+    "WindowCandidateValidation": "5f7b3fea87e89d397fd9a4f5f9cee022f16fa03a716a47d66b625fc0dd0619f5",
+    "FacingPrefold": "470cb055b714b6c014982079f85af6d24d092960e50e38410e41000c307e8e63",
+    "JumpLinearModel": "3932db5bb723e390ecc8d694aa658a31269e9b0266aae284a51f6447166b8a0a"
+  },
+  "runner": "/tmp/pkc-endpoints-fixed"
+}
