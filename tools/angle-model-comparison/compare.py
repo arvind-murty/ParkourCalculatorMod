@@ -483,7 +483,7 @@ def compare(args):
     rows = [{key: value for key, value in row.items() if key not in ("yaw", "positions", "final", "history")} for row in report["results"]]
     keys = list(dict.fromkeys(key for row in rows for key in row))
     with args.output.with_suffix(".csv").open("w", newline="") as stream:
-        writer = csv.DictWriter(stream, fieldnames=keys)
+        writer = csv.DictWriter(stream, fieldnames=keys, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 

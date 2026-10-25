@@ -1,5 +1,9 @@
 import math
+import gzip
+import hashlib
+import json
 import unittest
+from pathlib import Path
 
 import numpy as np
 
@@ -30,6 +34,23 @@ def solve(case, formulation):
 
 
 class ComparisonTest(unittest.TestCase):
+    def test_saved_benchmark_witnesses_meet_the_frozen_physical_model(self):
+        root = Path(__file__).parent / "benchmarks/sqp-2026-10-25"
+        data = gzip.decompress((root / "problems.json.gz").read_bytes())
+        saved = json.loads((root / "witnesses.json").read_text())
+        self.assertEqual(hashlib.sha256(data).hexdigest(), saved["problemsSha256"])
+        cases = {case["name"]: case for case in json.loads(data)}
+        self.assertEqual(len(cases), 15)
+        self.assertEqual(len(saved["witnesses"]), 14)
+        for witness in saved["witnesses"]:
+            case = cases[witness["case"]]
+            angle = np.array(case["base"]) + np.deg2rad(witness["yaw"])
+            controls = np.array(case["magnitude"])[:, None] * np.column_stack((np.cos(angle), np.sin(angle)))
+            positions = np.array(witness["positions"]) - case["position"]
+            result = validate_candidate(case, positions, controls, saved["tolerance"])
+            self.assertTrue(result["feasible"], witness["case"])
+            self.assertAlmostEqual(result["objective"], witness["objective"], places=8)
+
     def test_sqp_constraint_jacobians_match_finite_differences(self):
         case = fixture([0.1, 0.026, 0.0], velocity=(0.17, -0.09), walls=[
             {"mode": "X", "t1": 3, "cmp": "LE", "rhs": 7.8},
