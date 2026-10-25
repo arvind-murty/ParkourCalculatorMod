@@ -61,7 +61,7 @@ public class FullRouteFixedMarginTraceTest {
         SolverTrace.log("INPUT", "rows=%d ticks=%d constraints=%d objective=%s/%s@%d",
                 inputs.size(), spec.asScenario().numTicks, spec.constraints.size(), spec.objective.axis,
                 spec.objective.sense, spec.objective.tick);
-        SolverTrace.log("POLICY", "fixed windows; remove matching endpoint bounds for window solve/commit validation only; final replay checks all original rows");
+        SolverTrace.log("POLICY", "nominal jump windows; extend provisional objective to first unconstrained airborne tick; retain all rows including final replay");
         long startNanos = System.nanoTime();
         try {
             double[] result = LongRunSolver.solve(ExactJumpModel.forMcVersion(file.mcVersion), spec, 0.0,
