@@ -1368,3 +1368,8 @@ Clarification: staged cap affects the closed-form dual runs. SLP still generates
 ## 2026-10-24: compiled constraints and windows for jumps30–50
 
 [Authoritative exported tables](solver-traces/jump30-50-route-map-2026-10-24/README.md). Rebuilt exact archived input through current engine; exported all636 compiled constraints, jump boundaries and per-tick input physics, no optimization rerun. Current jumpBoundaries returns76 segments, correcting earlier prose count74;30–50 ranges match the actual full-run labels. Initial export assertion caught the stale count and the corrected focused export passes; both records preserved. At starts37/38 accepted horizons319..352 and333..352 omit the first39 wall at356. Entry351 X702.302172 requires X356<=700.425, a negative-X displacement1.877172 in five inputs. No reachability conclusion yet. Boundary-position rows are displayed with the jump ending at that state, while input ranges are half-open. Exact float walls/duplicates preserved in CSV.
+
+
+### Jump29 lead-up clarification
+
+Current staged baseline: nominal29–38 (10 jumps), actual ticks222..352, failed at cap1000 in836.4ms. Nominal29–35 (7 jumps), actual222..305, then succeeded through centered SLP in217.2ms, committing jump29 through state241. Thus the failure of a horizon ending352 already occurs from29; that window does not include the X356 wall. Source: staged windows.csv rows first_jump29. Added29 to the lead-up table.

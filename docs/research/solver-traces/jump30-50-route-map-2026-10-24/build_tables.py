@@ -35,7 +35,7 @@ for b in bs:
 source=p.parent/'full-route-commit1-staged-caps-2026-10-24'
 w=list(csv.DictReader((source/'windows.csv').open()))
 lines=['# Accepted windows leading into39, current staged baseline','','Every accepted row uses cap1000 and commits one nominal jump. All larger windows listed as failed below were tried first from the same row entry. Their objective calls and inertia attempts are in the original run. Actual inputs are [start,end); objective is evaluated at end.','','| Starting jump |Failed nominal window sizes first |Accepted nominal window |Actual input horizon |Accepted method/objective |Committed exit state |','|---:|---|---|---|---|---:|']
-for j in range(30,39):
+for j in range(29,39):
     rows=[r for r in w if int(r['first_jump'])==j and r['dual_cap']=='1000']
     a=next(r for r in rows if r['method']!='miss')
     failed=', '.join(str(int(r['last_jump'])-j+1) for r in rows if r['method']=='miss')

@@ -4,6 +4,7 @@ Every accepted row uses cap1000 and commits one nominal jump. All larger windows
 
 | Starting jump |Failed nominal window sizes first |Accepted nominal window |Actual input horizon |Accepted method/objective |Committed exit state |
 |---:|---|---|---|---|---:|
+|29 |10 |29–35 |222–305 |SLP |241 |
 |30 |10 |30–36 |241–320 |SLP |250 |
 |31 |10 |31–37 |250–338 |Z/MAX |259 |
 |32 |10 |32–38 |259–352 |Z/MIN |271 |
