@@ -1,0 +1,16 @@
+{
+  "implementation_commit": "2a218a0690bb16cbd1cff1f8f5b5bdda711c07e1",
+  "validation_reference": "02844f45872604b21d0d139736d3ae0163454156",
+  "entry": "exact reconstructed state132 from staged baseline committed inputs",
+  "endpoints": [
+    178,
+    169
+  ],
+  "commit_input_ticks": 23,
+  "cf_cap": 1000,
+  "cf_margin": 0.0003,
+  "SLP_validation": "full-window Minecraft replay, no continuous veto or prefix bypass",
+  "closed_form_validation": "unchanged whole-window continuous plus prefix Minecraft replay",
+  "production_seed_numerics": "existing altered dual seed cap10000,eps2=1e-24,decoder fallback disabled retained",
+  "scope": "one focused comparison probe; no full route or full suite"
+}

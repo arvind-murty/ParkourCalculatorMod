@@ -1,0 +1,46 @@
+
+> Task :core:compileJava
+warning: [options] source value 8 is obsolete and will be removed in a future release
+warning: [options] target value 8 is obsolete and will be removed in a future release
+warning: [options] To suppress warnings about obsolete options, use -Xlint:-options.
+3 warnings
+
+> Task :core:processResources NO-SOURCE
+> Task :core:classes
+
+> Task :core:compileTestJava FAILED
+warning: [options] source value 8 is obsolete and will be removed in a future release
+warning: [options] target value 8 is obsolete and will be removed in a future release
+warning: [options] To suppress warnings about obsolete options, use -Xlint:-options.
+/private/tmp/pkc-endpoints-fixed/core/src/test/java/de/legoshi/parkourcalc/core/anglesolver/solver/WindowCandidateValidationTest.java:99: error: cannot find symbol
+        cfg.replayTickLimit = 1;
+           ^
+  symbol:   variable replayTickLimit
+  location: variable cfg of type Config
+1 error
+3 warnings
+
+[Incubating] Problems report is available at: file:///private/tmp/pkc-endpoints-fixed/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':core:compileTestJava' (registered by plugin class 'org.gradle.api.plugins.JavaBasePlugin').
+> Compilation failed; see the compiler output below.
+  warning: [options] target value 8 is obsolete and will be removed in a future release
+  warning: [options] source value 8 is obsolete and will be removed in a future release
+  /private/tmp/pkc-endpoints-fixed/core/src/test/java/de/legoshi/parkourcalc/core/anglesolver/solver/WindowCandidateValidationTest.java:99: error: cannot find symbol
+          cfg.replayTickLimit = 1;
+             ^
+    symbol:   variable replayTickLimit
+    location: variable cfg of type Config
+  warning: [options] To suppress warnings about obsolete options, use -Xlint:-options.
+  1 error
+  3 warnings
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 2s
+2 actionable tasks: 2 executed

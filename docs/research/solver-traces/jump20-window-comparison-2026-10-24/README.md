@@ -1,5 +1,7 @@
 # Identical-entry comparison:20–22 misses,20–21 succeeds
 
+**Follow-up implemented:** [SLP replay-only validation restoration](../jump20-slp-replay-validation-2026-10-24/README.md). This file preserves the preceding continuous-veto baseline; under restored validation20–22 is accepted.
+
 2026-10-24. Focused replay of the current staged full run at tick132. No production changes. [Probe](../../../../core/src/test/java/de/legoshi/parkourcalc/core/anglesolver/solver/Jump20WindowComparisonProbeTest.java), [trace](solver-trace.txt), [Gradle output](probe.log), [JUnit result](focused-result.xml). One focused test executed twice (second execution corrects CSV quoting for pattern strings); solver outcomes identical. No full suite or full-route rerun.
 
 ## Identical entry
