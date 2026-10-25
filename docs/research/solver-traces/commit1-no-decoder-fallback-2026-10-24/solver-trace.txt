@@ -1,0 +1,33 @@
+      1.81  t1   CF      pass=0 pattern=free n=14 m=26 robust
+     12.87  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=2.048
+     13.18  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00315221337075
+     13.32  t1   CF      rung margin=3.00e-04 iters=120 pg=6.080e-10 dual=2.255811949 viol=3.152e-03 ms=10.229 stop=PROJECTED_GRADIENT finalPg=6.080e-10
+     13.44  t1   CF-SEED source assumedViolation=0.00000000000 eligible=true
+     13.64  t1   CF      pass=1 pattern=x@7-13+z@5 n=14 m=26 robust
+     13.86  t1   CF-SEED applied rows=41 costateError=3.331e-16
+     16.08  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=0.510
+     16.21  t1   CF-CHECK margin=3.00e-04 replayViol=0.00156597479622 modelViol=0.00733930804950
+     16.33  t1   CF      rung margin=3.00e-04 iters=70 pg=4.072e-03 dual=2.193890567 viol=7.339e-03 ms=2.361 stop=NO_DESCENT finalPg=6.315e-03
+     16.46  t1   CF-SEED source assumedViolation=0.00733930804961 eligible=false
+     16.69  t1   CF      pass=1 no improvement (viol=7.339e-03), stop
+     16.82  t1   CF      fallback bestViol=3.152e-03 us=15538.3
+     16.93  t1   CF      pass=0 pattern=free n=14 m=26 robust
+     19.34  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=0.447
+     19.48  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00315221337075
+     19.58  t1   CF      rung margin=3.00e-04 iters=120 pg=6.080e-10 dual=2.255811949 viol=3.152e-03 ms=2.459 stop=PROJECTED_GRADIENT finalPg=6.080e-10
+     19.65  t1   CF      pass=1 pattern=x@7-13+z@5 n=14 m=26 robust
+     23.36  t1   CF-INCUMBENT iteration=151 score=-1091.25976167 violation=0.000e+00
+     23.60  t1   CF-INCUMBENT iteration=152 score=-1091.25982934 violation=0.000e+00
+     23.83  t1   CF-INCUMBENT iteration=158 score=-1091.25984430 violation=0.000e+00
+     23.99  t1   CF-RETENTION iteration=158 improvements=3 auditMs=1.557
+     24.28  t1   CF      retained iteration=158 improvements=3 auditMs=1.557
+     24.39  t1   CF-CHECK margin=3.00e-04 replayViol=0.00000000000 modelViol=0.00000000000
+     24.49  t1   CF      rung margin=3.00e-04 iters=161 pg=1.686e-03 dual=2.193891153 viol=0.000e+00 ms=4.623 certified stop=NO_DESCENT finalPg=7.773e-03
+     46.18  t1   CF-SEED source assumedViolation=0.00000000000 eligible=true
+     46.43  t1   CF-SEED applied rows=41 costateError=3.331e-16
+     54.42  t1   CF-SEED source assumedViolation=0.00733930804961 eligible=false
+     65.72  t1   CF-SEED source assumedViolation=0.00000000000 eligible=true
+     77.45  t1   CF-INCUMBENT iteration=151 score=-1091.25976167 violation=0.000e+00
+     77.66  t1   CF-INCUMBENT iteration=152 score=-1091.25982934 violation=0.000e+00
+     78.14  t1   CF-INCUMBENT iteration=158 score=-1091.25984430 violation=0.000e+00
+     83.07  t1   CF-SEED source assumedViolation=0.00925689625501 eligible=false

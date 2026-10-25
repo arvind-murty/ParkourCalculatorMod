@@ -1,0 +1,3 @@
+pass,pattern,iters,stop,continuous_violation,prefix_violation,fixed_violation
+0,free,120,PROJECTED_GRADIENT,0.003152213370753998,0.0,0.0
+1,x@7-13+z@5,161,NO_DESCENT,0.009256896254896674,0.002706447349737573,0.00925689625501036

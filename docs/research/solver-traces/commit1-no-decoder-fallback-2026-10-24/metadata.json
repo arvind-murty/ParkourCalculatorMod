@@ -1,0 +1,17 @@
+{
+  "implementation_head": "c7f38d9a80f1a1279190d4d8327edfab90a1306e",
+  "control_commit": "a8bebf3",
+  "from_tick": 77,
+  "objective": "Z/MIN@91",
+  "commit_through_tick": 80,
+  "margin": 0.0003,
+  "dual_cap": 10000,
+  "eps2": 1e-24,
+  "seeding_controls": [
+    true,
+    false
+  ],
+  "retention": true,
+  "change": "Objective-direction substitution below costate norm1e-9 commented out in FacingPrefold.expand and JumpLinearModel.recoverAlongCostate. Raw atan2 recovery remains, including at zero.",
+  "scope": "Focused shortest window; no full route or full suite."
+}
