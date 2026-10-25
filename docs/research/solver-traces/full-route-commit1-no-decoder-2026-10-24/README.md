@@ -57,3 +57,7 @@ From /tmp/pkc-endpoints-fixed with source hashes from metadata:
 ```
 
 Executed asynchronously with output redirected throughout. One focused test, zero assertion failures; Gradle5m20s. `pkc.fullRouteCommit` defaults to3, preserving the probe's previous3,1 behavior when omitted. Commit1 avoids the commit3 sweep and starts from the original route entry.
+
+## Timing follow-up
+
+[Detailed accounting and per-start table](timing-breakdown.md), [CSV](timing-by-start.csv). Generated from this saved trace without rerunning.
