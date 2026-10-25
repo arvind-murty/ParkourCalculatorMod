@@ -1,0 +1,24 @@
+{
+  "baseCommit": "9bc4d24479056edb010053ea32bee311b064b4a9",
+  "runtime": {
+    "python": "3.12.2",
+    "casadi": "3.8.1",
+    "numpy": "2.5.4"
+  },
+  "files": {
+    "standalone/ipopt/worker.py": "a3c1d2e988689fa3bda31f9b9c9e766782e26331157b2def7f8f0693caa214c2",
+    "standalone/ipopt/solver.py": "0aac043dfe7ba620da6e48db33283c5bc3b40c6ce58836f09b74e4fd1c1cecaf",
+    "standalone/ipopt/requirements.txt": "f8b4c4a5c89a18c6b1a22c5cce808e6c69d1269cfe77693c1476997cdb85b97c",
+    "standalone/ipopt/__init__.py": "3bb4d5384b21d6e71f5ce57d7e18cde8156bf834d3541195fb5343d1def2ad13",
+    "standalone/ipopt/export.gradle": "e1e3b087a39e91798d791418b3551e76c2ae4b0e880c010a651eb007468ecf94",
+    "standalone/ipopt/model.py": "944096154f8bcae340903ef981231cec0769ac493f018bc162208c53c9d89529",
+    "standalone/ipopt/README.md": "1f64b677d6cc233bc8d5a99040b72e2cb92048c01e89f1fecc856e7fd600bba3",
+    "standalone/ipopt/solve.py": "6fd243c81b330e896125c513ca0a9028dc6fd92ab8e712932e8776cd057213cb",
+    "standalone/ipopt/tests/test_model.py": "7e0716db14fa407baba5454dccc2e75ea8afcf0b46c17ec849ec2eecc321e170",
+    "standalone/ipopt/tests/test_solver.py": "207ba3f07bee83160a6c126c12aea10cd154ae0de0e49a92c441b20272700e9f",
+    "standalone/ipopt/tests/test_integration.py": "30609f98d3420c64d65b748174b50723df7fbc392956a75c57d5f34f8320e710",
+    "standalone/ipopt/java/ExportStandaloneIpopt.java": "98044702c188e83aea27e810e65f87bbcfd8207d31a0a9283511b34322197133",
+    "standalone/ipopt/fixtures/real11-400.json.gz": "dbce6f9aa78f05d999761e730339cccd6865dc26b5ed155a3df60caec1249234",
+    "standalone/ipopt/fixtures/real11-200.json.gz": "30890f4cb6af23f01e761c50d399f452cb167e7fcfd90def88b953a1bdb36a7b"
+  }
+}

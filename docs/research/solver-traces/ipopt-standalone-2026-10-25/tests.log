@@ -1,0 +1,29 @@
+test_explicit_fixed_inertia_pattern (test_integration.IntegrationTests.test_explicit_fixed_inertia_pattern) ... ok
+test_inconsistent_rows_return_unknown (test_integration.IntegrationTests.test_inconsistent_rows_return_unknown) ... ok
+test_known_optimum_with_relative_position_and_facing_rows (test_integration.IntegrationTests.test_known_optimum_with_relative_position_and_facing_rows) ... ok
+test_real11_200_and_400_with_all_rows_and_contacts (test_integration.IntegrationTests.test_real11_200_and_400_with_all_rows_and_contacts) ... ok
+test_contact_from_wrong_side_is_rejected (test_model.ModelTests.test_contact_from_wrong_side_is_rejected) ... ok
+test_contact_resets_only_normal_velocity (test_model.ModelTests.test_contact_resets_only_normal_velocity) ... ok
+test_continuous_carry_and_inertia_are_distinct (test_model.ModelTests.test_continuous_carry_and_inertia_are_distinct) ... ok
+test_custom_motion_objective_uses_displacement (test_model.ModelTests.test_custom_motion_objective_uses_displacement) ... ok
+test_facing_relative_and_cross_axis_rows (test_model.ModelTests.test_facing_relative_and_cross_axis_rows) ... ok
+test_fixed_pattern_is_checked_against_automatic_threshold (test_model.ModelTests.test_fixed_pattern_is_checked_against_automatic_threshold) ... ok
+test_malformed_requests_fail_before_starting_worker (test_model.ModelTests.test_malformed_requests_fail_before_starting_worker) ... ok
+test_nonfinite_and_wrong_size_candidates_are_rejected (test_model.ModelTests.test_nonfinite_and_wrong_size_candidates_are_rejected) ... ok
+test_prepare_copies_request_and_hash_excludes_execution_settings (test_model.ModelTests.test_prepare_copies_request_and_hash_excludes_execution_settings) ... ok
+test_subtolerance_missed_contact_never_resets_velocity (test_model.ModelTests.test_subtolerance_missed_contact_never_resets_velocity) ... ok
+test_sum_of_world_positions_keeps_both_offsets (test_model.ModelTests.test_sum_of_world_positions_keeps_both_offsets) ... ok
+test_active_cancellation_discards_candidate (test_solver.ProcessTests.test_active_cancellation_discards_candidate) ... ok
+test_cli_writes_structured_error_atomically (test_solver.ProcessTests.test_cli_writes_structured_error_atomically) ... ok
+test_first_feasible_stop_and_callback (test_solver.ProcessTests.test_first_feasible_stop_and_callback) ... ok
+test_malformed_output_and_missing_runtime_are_errors (test_solver.ProcessTests.test_malformed_output_and_missing_runtime_are_errors) ... ok
+test_timeout_retains_validated_incumbent (test_solver.ProcessTests.test_timeout_retains_validated_incumbent) ... ok
+test_timeout_stops_worker_that_never_reads_large_request (test_solver.ProcessTests.test_timeout_stops_worker_that_never_reads_large_request) ... ok
+test_worker_success_does_not_override_failed_facing_constraint (test_solver.ProcessTests.test_worker_success_does_not_override_failed_facing_constraint) ... ok
+
+----------------------------------------------------------------------
+Ran 22 tests in 5.275s
+
+OK
+real11 200 seconds 0.581 objective 737.5142588031705 violation 0.0
+real11 400 seconds 3.209 objective 691.4017522466784 violation 0.0
