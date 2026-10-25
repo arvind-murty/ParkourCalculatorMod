@@ -1383,3 +1383,8 @@ Current staged baseline, cap1000: nominal28–37 (10 jumps), actual209..338, fai
 ## 2026-10-24: current staged starts20–30, every window/objective
 
 [Full table](solver-traces/full-route-commit1-staged-caps-2026-10-24/windows-and-solves-20-30.md) and filtered per-objective timings persisted from existing logs, no rerun. All these attempts use cap1000, commit1. Starts20/21 succeed via Z/min/Z/max respectively on2-jump windows. Every accepted start22–30 is centered SLP after all four closed-form coordinate objectives miss. Starts23/24/26/27 accept10-jump windows;28/29/30 reject10 and accept7 through SLP. Nominal21–25 is a cached miss from21–27 because both actual horizons are155..210 with the same seed/prefix.
+
+
+## Standalone input-constraint table, all jumps
+
+[All jumps: ticks, jump numbers and authored constraints](linkcraft-real11-all-jumps-input-constraints.md). Covers all76 segments from archived real/11.json, preserving every authored comparison and numeric bound. Shared boundary rows identify both adjacent jumps. No solver-generated rows, solve results or timings are included.
