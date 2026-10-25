@@ -456,6 +456,7 @@ public final class FacingPrefold {
             }
             double gx = costateX[v];
             double gz = costateZ[v];
+            /*
             if (gx * gx + gz * gz < 1.0e-18) {
                 boolean max = obj.sense == Objective.Sense.MAX;
                 if (obj.isCustomAngle()) {
@@ -470,6 +471,7 @@ public final class FacingPrefold {
                     gz = max ? 1.0 : -1.0;
                 }
             }
+            */
             yaws[t] = lin.recoverYawDeg(identity ? t : repOf[v], gx, gz);
             if (!identity) {
                 double off = offset[t] - offset[repOf[v]];

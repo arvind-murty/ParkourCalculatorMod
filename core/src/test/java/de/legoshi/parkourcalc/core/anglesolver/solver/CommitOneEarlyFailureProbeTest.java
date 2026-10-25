@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Category(SlowSolverTests.class)
 public class CommitOneEarlyFailureProbeTest {
     private static final Path ROOT=Paths.get("/Users/arvindmurty/CS/ParkourCalculatorMod");
-    private static final Path OUT=ROOT.resolve("docs/research/solver-traces/commit1-early-failure-2026-10-24");
+    private static final Path OUT=ROOT.resolve(System.getProperty("pkc.commitOneEarlyOutput", "docs/research/solver-traces/commit1-early-failure-2026-10-24"));
     private static void write(String name,List<String> rows) throws Exception {Files.write(OUT.resolve(name),rows,StandardCharsets.UTF_8);}
     private static String csv(Object... values) {StringJoiner s=new StringJoiner(",");for(Object v:values)s.add(String.valueOf(v));return s.toString();}
     private static double[] array(Object obj,String name)throws Exception {Field f=obj.getClass().getDeclaredField(name);f.setAccessible(true);return (double[])f.get(obj);}

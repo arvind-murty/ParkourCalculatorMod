@@ -574,6 +574,7 @@ public final class JumpLinearModel {
         for (int t = 0; t < n; t++) {
             double x = gx[t];
             double z = gz[t];
+            /*
             if (x * x + z * z < 1.0e-18) {
                 if (obj.isCustomAngle()) {
                     double rad = Angles.rad(obj.customYaw);
@@ -584,6 +585,7 @@ public final class JumpLinearModel {
                     z = axisX ? 0.0 : (max ? 1.0 : -1.0);
                 }
             }
+            */
             yaws[t] = recoverYawDeg(t, x, z);
         }
         return yaws;
