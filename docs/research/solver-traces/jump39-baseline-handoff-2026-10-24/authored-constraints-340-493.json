@@ -1,0 +1,1400 @@
+[
+  {
+    "tick": 359,
+    "constraints": [
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 700.4250000119209,
+        "hi": 701.3000000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1114.3000000119207,
+        "hi": -1112.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 351,
+    "constraints": [],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 357,
+    "constraints": [
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 700.4250000119209,
+        "hi": 701.3000000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 366,
+    "constraints": [
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1114.3000000119207,
+        "hi": -1112.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 367,
+    "constraints": [
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1114.3000000119207,
+        "hi": -1112.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 698.6999999880792,
+        "hi": 700.3000000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 368,
+    "constraints": [
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1114.3000000119207,
+        "hi": -1112.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 698.6999999880792,
+        "hi": 700.3000000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 369,
+    "constraints": [
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1114.3000000119207,
+        "hi": -1112.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 698.6999999880792,
+        "hi": 700.3000000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 382,
+    "constraints": [
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 694.6999999880792,
+        "hi": 696.3000000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1116.3000000119207,
+        "hi": -1114.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 372,
+    "constraints": [],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 370,
+    "constraints": [
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1114.3000000119207,
+        "hi": -1112.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 698.6999999880792,
+        "hi": 700.3000000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 350,
+    "constraints": [
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 701.6999999880792,
+        "hi": 703.3000000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1112.3000000119207,
+        "hi": -1110.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 356,
+    "constraints": [
+      {
+        "range": false,
+        "field": "X",
+        "op": "LE",
+        "value": 700.4250000119209,
+        "lo": 0.0,
+        "hi": 0.0,
+        "loInclusive": false,
+        "hiInclusive": false,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1114.0,
+        "hi": -1113.0,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 365,
+    "constraints": [],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 384,
+    "constraints": [
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 694.6999999880792,
+        "hi": 696.3000000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1116.3000000119207,
+        "hi": -1114.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 387,
+    "constraints": [],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 380,
+    "constraints": [
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 694.6999999880792,
+        "hi": 696.3000000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1116.3000000119207,
+        "hi": -1114.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 381,
+    "constraints": [
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 694.6999999880792,
+        "hi": 696.3000000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1116.3000000119207,
+        "hi": -1114.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 371,
+    "constraints": [
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1114.3000000119207,
+        "hi": -1112.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 698.6999999880792,
+        "hi": 700.3000000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 383,
+    "constraints": [
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 694.6999999880792,
+        "hi": 696.3000000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1116.3000000119207,
+        "hi": -1114.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 385,
+    "constraints": [
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 694.6999999880792,
+        "hi": 696.3000000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1116.3000000119207,
+        "hi": -1114.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 395,
+    "constraints": [
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 691.0,
+        "hi": 691.97,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": false,
+        "field": "Z",
+        "op": "LE",
+        "value": -1116.574999988079,
+        "lo": 0.0,
+        "hi": 0.0,
+        "loInclusive": false,
+        "hiInclusive": false,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 386,
+    "constraints": [
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 694.6999999880792,
+        "hi": 696.3000000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1116.3000000119207,
+        "hi": -1114.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 403,
+    "constraints": [
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 690.6999999880792,
+        "hi": 692.3000000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1117.3000000119207,
+        "hi": -1116.5749999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 406,
+    "constraints": [],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 410,
+    "constraints": [
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 690.6999999880792,
+        "hi": 692.3000000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1118.3000000119207,
+        "hi": -1116.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 424,
+    "constraints": [
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 691.6999999880792,
+        "hi": 691.9,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1122.699999988079,
+        "hi": -1121.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 407,
+    "constraints": [],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 408,
+    "constraints": [],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 409,
+    "constraints": [],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 411,
+    "constraints": [],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 437,
+    "constraints": [
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 691.5749999880792,
+        "hi": 691.6999999880791,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1124.3000000119207,
+        "hi": -1122.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 438,
+    "constraints": [
+      {
+        "range": false,
+        "field": "X",
+        "op": "LE",
+        "value": 691.6999999880791,
+        "lo": 0.0,
+        "hi": 0.0,
+        "loInclusive": false,
+        "hiInclusive": false,
+        "disabled": false,
+        "vsDz": false
+      }
+    ],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 439,
+    "constraints": [
+      {
+        "range": false,
+        "field": "X",
+        "op": "LE",
+        "value": 691.6999999880791,
+        "lo": 0.0,
+        "hi": 0.0,
+        "loInclusive": false,
+        "hiInclusive": false,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 440,
+    "constraints": [
+      {
+        "range": false,
+        "field": "X",
+        "op": "LE",
+        "value": 691.6999999880791,
+        "lo": 0.0,
+        "hi": 0.0,
+        "loInclusive": false,
+        "hiInclusive": false,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 442,
+    "constraints": [
+      {
+        "range": false,
+        "field": "X",
+        "op": "LT",
+        "value": 692.6999999880791,
+        "lo": 0.0,
+        "hi": 0.0,
+        "loInclusive": false,
+        "hiInclusive": false,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 443,
+    "constraints": [
+      {
+        "range": false,
+        "field": "X",
+        "op": "LT",
+        "value": 692.6999999880791,
+        "lo": 0.0,
+        "hi": 0.0,
+        "loInclusive": false,
+        "hiInclusive": false,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 444,
+    "constraints": [
+      {
+        "range": false,
+        "field": "X",
+        "op": "LT",
+        "value": 692.6999999880791,
+        "lo": 0.0,
+        "hi": 0.0,
+        "loInclusive": false,
+        "hiInclusive": false,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 445,
+    "constraints": [
+      {
+        "range": false,
+        "field": "X",
+        "op": "LT",
+        "value": 692.6999999880791,
+        "lo": 0.0,
+        "hi": 0.0,
+        "loInclusive": false,
+        "hiInclusive": false,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": false,
+        "field": "Z",
+        "op": "GE",
+        "value": -1123.074999988079,
+        "lo": 0.0,
+        "hi": 0.0,
+        "loInclusive": false,
+        "hiInclusive": false,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 446,
+    "constraints": [
+      {
+        "range": false,
+        "field": "X",
+        "op": "LT",
+        "value": 692.6999999880791,
+        "lo": 0.0,
+        "hi": 0.0,
+        "loInclusive": false,
+        "hiInclusive": false,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": false,
+        "field": "Z",
+        "op": "GE",
+        "value": -1123.074999988079,
+        "lo": 0.0,
+        "hi": 0.0,
+        "loInclusive": false,
+        "hiInclusive": false,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1124.3000000119207,
+        "hi": -1122.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 447,
+    "constraints": [
+      {
+        "range": false,
+        "field": "X",
+        "op": "LT",
+        "value": 692.6999999880791,
+        "lo": 0.0,
+        "hi": 0.0,
+        "loInclusive": false,
+        "hiInclusive": false,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": false,
+        "field": "Z",
+        "op": "GE",
+        "value": -1123.074999988079,
+        "lo": 0.0,
+        "hi": 0.0,
+        "loInclusive": false,
+        "hiInclusive": false,
+        "disabled": false,
+        "vsDz": false
+      }
+    ],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 448,
+    "constraints": [
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 692.7,
+        "hi": 694.3000000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1124.3000000119207,
+        "hi": -1122.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": false,
+        "field": "Z",
+        "op": "GE",
+        "value": -1123.074999988079,
+        "lo": 0.0,
+        "hi": 0.0,
+        "loInclusive": false,
+        "hiInclusive": false,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 473,
+    "constraints": [
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 699.6999999880792,
+        "hi": 701.3000000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1128.3000000119207,
+        "hi": -1126.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 460,
+    "constraints": [
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 696.6999999880792,
+        "hi": 698.3000000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1124.3000000119207,
+        "hi": -1122.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 461,
+    "constraints": [
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 696.6999999880792,
+        "hi": 698.3000000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1124.3000000119207,
+        "hi": -1122.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 462,
+    "constraints": [
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 696.6999999880792,
+        "hi": 698.3000000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1124.3000000119207,
+        "hi": -1122.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 463,
+    "constraints": [
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 697.6999999880792,
+        "hi": 699.0749999880791,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1124.3000000119207,
+        "hi": -1122.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 464,
+    "constraints": [],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 449,
+    "constraints": [],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 489,
+    "constraints": [
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 700.6999999880792,
+        "hi": 701.0749999880791,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1132.699999988079,
+        "hi": -1131.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 490,
+    "constraints": [],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 491,
+    "constraints": [
+      {
+        "range": false,
+        "field": "X",
+        "op": "LE",
+        "value": 701.0749999880791,
+        "lo": 0.0,
+        "hi": 0.0,
+        "loInclusive": false,
+        "hiInclusive": false,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 474,
+    "constraints": [],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 476,
+    "constraints": [],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 492,
+    "constraints": [
+      {
+        "range": false,
+        "field": "X",
+        "op": "LE",
+        "value": 701.0749999880791,
+        "lo": 0.0,
+        "hi": 0.0,
+        "loInclusive": false,
+        "hiInclusive": false,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 475,
+    "constraints": [
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1128.3000000119207,
+        "hi": -1126.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 699.6999999880792,
+        "hi": 701.3000000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 425,
+    "constraints": [],
+    "override": {
+      "slipperiness": "DEFAULT",
+      "added": [],
+      "removed": []
+    }
+  },
+  {
+    "tick": 426,
+    "constraints": [
+      {
+        "range": false,
+        "field": "X",
+        "op": "LE",
+        "value": 691.5749999880791,
+        "lo": 0.0,
+        "hi": 0.0,
+        "loInclusive": false,
+        "hiInclusive": false,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 429,
+    "constraints": [
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1124.0,
+        "hi": -1123.0,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": false,
+        "field": "X",
+        "op": "GE",
+        "value": 691.5749999880791,
+        "lo": 0.0,
+        "hi": 0.0,
+        "loInclusive": false,
+        "hiInclusive": false,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  },
+  {
+    "tick": 364,
+    "constraints": [
+      {
+        "range": true,
+        "field": "X",
+        "op": "IN",
+        "value": 0.0,
+        "lo": 699.6999999880792,
+        "hi": 700.4250000119208,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      },
+      {
+        "range": true,
+        "field": "Z",
+        "op": "IN",
+        "value": 0.0,
+        "lo": -1114.3000000119207,
+        "hi": -1112.6999999880793,
+        "loInclusive": true,
+        "hiInclusive": true,
+        "disabled": false,
+        "vsDz": false
+      }
+    ]
+  }
+]

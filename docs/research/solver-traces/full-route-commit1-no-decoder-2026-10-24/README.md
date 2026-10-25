@@ -61,3 +61,7 @@ Executed asynchronously with output redirected throughout. One focused test, zer
 ## Timing follow-up
 
 [Detailed accounting and per-start table](timing-breakdown.md), [CSV](timing-by-start.csv). Generated from this saved trace without rerunning.
+
+### Iteration-count scope clarification
+
+The recorded dual-run and iteration totals count the logged closed-form rungs. They exclude the separate dual solve used to initialize SLP. That seed uses the CostateDualSolver default cap10000 at margin0, even during the optional1000 stage; its time is inside the SLP objective-call timing. See the [jump39 handoff](../jump39-baseline-handoff-2026-10-24/README.md).

@@ -1,5 +1,7 @@
 # Linkcraft real/11 margin investigation handoff
 
+**Current handoff (2026-10-24): [jump39 baselines and next investigation](jump39-baseline-handoff-2026-10-24/README.md).** The latest staged1000/10000 commit1 run commits38 jumps in93.032s and stops at state351. Both baseline entry states, all90 objective calls,175 closed-form inertia attempts and36 SLP starts are inventoried there, with source links and the exact input archive. Earlier30-jump normal-margin success below is historical context, not a solved route through39.
+
 Date: 2026-10-23  
 Branch: `codex/first30-margin-trace-bookkeeping`  
 Historical baseline: `f980e29` (`experiment(solver): record normal-margin 7-window trace`)
@@ -161,3 +163,10 @@ Result: committed jumps1–38, stopped before jump39/state351 after317.605s. All
 [Full report and reproducible artifacts](full-route-commit1-staged-caps-2026-10-24/README.md). Implementation b84931e adds optional LongRunConfig.withDualIterationLadder; default single10000 remains. At each committed entry, exhaust windows10,7,5,3,2,1 with cap1000, then retry them with10000 only if all fail. Same entry on retry, cap-specific cache, optimizer restarts rather than resumes. Per-window objective order, SLP, fixed margin.0003, EPS2=1e-24, disabled decoder substitution, conditional seeding and intermediate retention unchanged.
 
 Focused full commit1 run:93.032s versus317.605s,70.7% lower elapsed, same38 committed jumps then stop before39/state351. All38 accepted windows use1000. Only39 triggers10000; that adds19.738s after all1000 windows fail. No final original-route replay reached.106 windows,435 objective/SLP calls,848 dual runs,1,050,626 iterations versus4,987,427 baseline. Accepted27 CF and11 SLP. Generated paths differ; equal progress is not equal path quality or an identical-entry control. All attempts, budget stages, timings, committed states and compressed raw trace persisted. No full suite, user fixture untouched.
+
+
+## 2026-10-24: preserved jump39 baseline handoff
+
+[Read this before new probes](jump39-baseline-handoff-2026-10-24/README.md). Existing archived traces extracted without rerunning. Optional staged cap code b84931e and results8b9806b already committed. Per-window scheduling, objective order, fixed margin, acceptance, conditional seed eligibility, all absolute/relative zeroing patterns and stopping reasons are recorded for both distinct states351. At39 neither run ever has a seed-eligible CF source or retained valid candidate. SLP ordinary+aware attempts all fail phase1, with X356 showing about.688 violation. The predecessor accepted38-only window ends352 and does not include356. Exact focus-state reconstruction and reachability checks remain next work, not conclusions.
+
+Scope correction: reported dual iteration/run totals are logged CF rungs; SLP constructs its own margin0 dual seed with default10000 cap, even in a1000 CF stage. Its time is included in the SLP objective call, before the SLP-start timer. Source and trace citations are in the new handoff.

@@ -1,0 +1,91 @@
+run,dual_cap,nominal_jumps,end_tick,constraints,commit_through,objective,outcome,ms,trace_line
+single10000,10000,10,493,135,365,primary Z/MAX@142,miss,42.559,15186
+single10000,10000,10,493,135,365,alternate Z/MIN@142,miss,5811.840,15206
+single10000,10000,10,493,135,365,alternate X/MAX@142,miss,32.291,15231
+single10000,10000,10,493,135,365,alternate X/MIN@142,miss,23.857,15246
+single10000,10000,10,493,135,365,fallback SLP Z/MAX@142,miss,106.632,15412
+single10000,10000,7,450,105,365,primary Z/MAX@99,miss,3137.206,15435
+single10000,10000,7,450,105,365,alternate Z/MIN@99,miss,1436.213,15455
+single10000,10000,7,450,105,365,alternate X/MAX@99,miss,680.233,15470
+single10000,10000,7,450,105,365,alternate X/MIN@99,miss,6.994,15485
+single10000,10000,7,450,105,365,fallback SLP Z/MAX@99,miss,695.811,15629
+single10000,10000,5,441,89,365,primary Z/MAX@90,miss,2034.442,15652
+single10000,10000,5,441,89,365,alternate Z/MIN@90,miss,2095.285,15672
+single10000,10000,5,441,89,365,alternate X/MAX@90,miss,1174.241,15692
+single10000,10000,5,441,89,365,alternate X/MIN@90,miss,1565.469,15717
+single10000,10000,5,441,89,365,fallback SLP Z/MAX@90,miss,28.951,15865
+single10000,10000,3,412,74,365,primary Z/MAX@61,miss,653.882,15888
+single10000,10000,3,412,74,365,alternate Z/MIN@61,miss,389.062,15903
+single10000,10000,3,412,74,365,alternate X/MAX@61,miss,514.238,15923
+single10000,10000,3,412,74,365,alternate X/MIN@61,miss,366.687,15938
+single10000,10000,3,412,74,365,fallback SLP Z/MAX@61,miss,198.731,16104
+single10000,10000,2,388,63,365,primary Z/MAX@37,miss,113.892,16122
+single10000,10000,2,388,63,365,alternate Z/MIN@37,miss,196.690,16142
+single10000,10000,2,388,63,365,alternate X/MAX@37,miss,239.521,16157
+single10000,10000,2,388,63,365,alternate X/MIN@37,miss,337.841,16177
+single10000,10000,2,388,63,365,fallback SLP Z/MAX@37,miss,13.438,16311
+single10000,10000,1,373,35,365,primary Z/MAX@22,miss,56.793,16329
+single10000,10000,1,373,35,365,alternate Z/MIN@22,miss,59.278,16344
+single10000,10000,1,373,35,365,alternate X/MAX@22,miss,27.182,16359
+single10000,10000,1,373,35,365,alternate X/MIN@22,miss,59.548,16374
+single10000,10000,1,373,35,365,fallback SLP Z/MAX@22,miss,20.247,16516
+staged,1000,10,493,135,365,primary Z/MAX@142,miss,15.907,15458
+staged,1000,10,493,135,365,alternate Z/MIN@142,miss,249.009,15473
+staged,1000,10,493,135,365,alternate X/MAX@142,miss,11.601,15483
+staged,1000,10,493,135,365,alternate X/MIN@142,miss,31.057,15503
+staged,1000,10,493,135,365,fallback SLP Z/MAX@142,miss,167.847,15669
+staged,1000,7,450,105,365,primary Z/MAX@99,miss,192.961,15688
+staged,1000,7,450,105,365,alternate Z/MIN@99,miss,202.194,15703
+staged,1000,7,450,105,365,alternate X/MAX@99,miss,324.561,15728
+staged,1000,7,450,105,365,alternate X/MIN@99,miss,150.652,15748
+staged,1000,7,450,105,365,fallback SLP Z/MAX@99,miss,760.841,15892
+staged,1000,5,441,89,365,primary Z/MAX@90,miss,213.597,15916
+staged,1000,5,441,89,365,alternate Z/MIN@90,miss,129.898,15931
+staged,1000,5,441,89,365,alternate X/MAX@90,miss,84.766,15946
+staged,1000,5,441,89,365,alternate X/MIN@90,miss,91.460,15961
+staged,1000,5,441,89,365,fallback SLP Z/MAX@90,miss,651.080,16105
+staged,1000,3,412,74,365,primary Z/MAX@61,miss,59.193,16124
+staged,1000,3,412,74,365,alternate Z/MIN@61,miss,70.488,16144
+staged,1000,3,412,74,365,alternate X/MAX@61,miss,43.534,16159
+staged,1000,3,412,74,365,alternate X/MIN@61,miss,59.963,16179
+staged,1000,3,412,74,365,fallback SLP Z/MAX@61,miss,211.879,16327
+staged,1000,2,388,63,365,primary Z/MAX@37,miss,53.289,16356
+staged,1000,2,388,63,365,alternate Z/MIN@37,miss,22.661,16371
+staged,1000,2,388,63,365,alternate X/MAX@37,miss,25.544,16386
+staged,1000,2,388,63,365,alternate X/MIN@37,miss,35.821,16406
+staged,1000,2,388,63,365,fallback SLP Z/MAX@37,miss,12.410,16550
+staged,1000,1,373,35,365,primary Z/MAX@22,miss,5.083,16569
+staged,1000,1,373,35,365,alternate Z/MIN@22,miss,5.585,16584
+staged,1000,1,373,35,365,alternate X/MAX@22,miss,1.117,16599
+staged,1000,1,373,35,365,alternate X/MIN@22,miss,6.425,16614
+staged,1000,1,373,35,365,fallback SLP Z/MAX@22,miss,19.709,16780
+staged,10000,10,493,135,365,primary Z/MAX@142,miss,15.839,16794
+staged,10000,10,493,135,365,alternate Z/MIN@142,miss,2042.058,16809
+staged,10000,10,493,135,365,alternate X/MAX@142,miss,10.646,16819
+staged,10000,10,493,135,365,alternate X/MIN@142,miss,30.569,16839
+staged,10000,10,493,135,365,fallback SLP Z/MAX@142,miss,158.565,17005
+staged,10000,7,450,105,365,primary Z/MAX@99,miss,1504.055,17024
+staged,10000,7,450,105,365,alternate Z/MIN@99,miss,2337.474,17044
+staged,10000,7,450,105,365,alternate X/MAX@99,miss,2598.673,17064
+staged,10000,7,450,105,365,alternate X/MIN@99,miss,735.872,17084
+staged,10000,7,450,105,365,fallback SLP Z/MAX@99,miss,899.563,17228
+staged,10000,5,441,89,365,primary Z/MAX@90,miss,1691.607,17252
+staged,10000,5,441,89,365,alternate Z/MIN@90,miss,1199.228,17267
+staged,10000,5,441,89,365,alternate X/MAX@90,miss,849.569,17282
+staged,10000,5,441,89,365,alternate X/MIN@90,miss,1590.223,17302
+staged,10000,5,441,89,365,fallback SLP Z/MAX@90,miss,684.765,17446
+staged,10000,3,412,74,365,primary Z/MAX@61,miss,678.252,17470
+staged,10000,3,412,74,365,alternate Z/MIN@61,miss,396.227,17485
+staged,10000,3,412,74,365,alternate X/MAX@61,miss,316.648,17500
+staged,10000,3,412,74,365,alternate X/MIN@61,miss,711.602,17520
+staged,10000,3,412,74,365,fallback SLP Z/MAX@61,miss,211.790,17668
+staged,10000,2,388,63,365,primary Z/MAX@37,miss,91.114,17682
+staged,10000,2,388,63,365,alternate Z/MIN@37,miss,201.838,17702
+staged,10000,2,388,63,365,alternate X/MAX@37,miss,342.436,17722
+staged,10000,2,388,63,365,alternate X/MIN@37,miss,237.555,17737
+staged,10000,2,388,63,365,fallback SLP Z/MAX@37,miss,12.696,17881
+staged,10000,1,373,35,365,primary Z/MAX@22,miss,54.053,17900
+staged,10000,1,373,35,365,alternate Z/MIN@22,miss,55.861,17915
+staged,10000,1,373,35,365,alternate X/MAX@22,miss,1.167,17930
+staged,10000,1,373,35,365,alternate X/MIN@22,miss,57.351,17945
+staged,10000,1,373,35,365,fallback SLP Z/MAX@22,miss,19.941,18111

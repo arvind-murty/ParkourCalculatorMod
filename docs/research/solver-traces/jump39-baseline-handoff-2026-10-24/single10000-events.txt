@@ -1,0 +1,927 @@
+15161:  295485.23  t1   LRS-WIN commit=1 jumps=[38,48) ticks=[351,493) seed=(702.301967261052,-1111.839635559697;-0.000002268767,-0.269424831020) yaw=224.999984741 constraints=135 replayTicks=14
+15162:  295485.25  t1   LRS-AIR nominalEnd=490 objectiveTick=493 extension=3 final=false
+15163:  295485.28  t1   LRS-PREFLIGHT primary Z/MAX@142 directCap=false
+15164:  295485.29  t1   LRS-OBJ begin primary Z/MAX@142
+15165:  295485.36  t1   CF      pass=0 pattern=free n=142 m=135 robust
+15166:  295493.67  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=0.270
+15167:  295493.74  t1   CF-CHECK margin=3.00e-04 replayViol=1.30753586354 modelViol=21.4414454599
+15168:  295493.75  t1   CF      rung margin=3.00e-04 iters=22 pg=2.142e+01 dual=-11.673172679 viol=2.144e+01 ms=8.270 stop=DIVERGENCE_STALL finalPg=2.142e+01
+15169:  295494.14  t1   CF-SEED source assumedViolation=21.4199089141 eligible=false
+15170:  295494.19  t1   CF      pass=1 pattern=x@0,@28,@44+z@15,@18,@118 n=142 m=135 robust
+15171:  295504.99  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=0.342
+15172:  295505.06  t1   CF-CHECK margin=3.00e-04 replayViol=3.96210077190 modelViol=19.7425441452
+15173:  295505.07  t1   CF      rung margin=3.00e-04 iters=29 pg=1.951e+01 dual=-13.306712461 viol=1.974e+01 ms=10.734 stop=DIVERGENCE_STALL finalPg=1.951e+01
+15174:  295505.48  t1   CF-SEED source assumedViolation=19.5064945585 eligible=false
+15175:  295505.51  t1   CF      pass=2 pattern=x@0,@36,@47+z@97-100 n=142 m=135 robust
+15176:  295515.43  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=0.342
+15177:  295515.50  t1   CF-CHECK margin=3.00e-04 replayViol=0.789044869358 modelViol=13.5840964398
+15178:  295515.51  t1   CF      rung margin=3.00e-04 iters=27 pg=1.522e+01 dual=-8.633682589 viol=1.358e+01 ms=9.896 stop=DIVERGENCE_STALL finalPg=1.522e+01
+15179:  295515.95  t1   CF-SEED source assumedViolation=15.2238900782 eligible=false
+15180:  295516.00  t1   CF      pass=3 pattern=x@0,@83,@140-141+z@86,@96 n=142 m=135 robust
+15181:  295527.28  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=0.354
+15182:  295527.34  t1   CF-CHECK margin=3.00e-04 replayViol=0.816936497801 modelViol=9.15622424890
+15183:  295527.35  t1   CF      rung margin=3.00e-04 iters=28 pg=8.245e+00 dual=-12.547911293 viol=9.156e+00 ms=11.252 stop=DIVERGENCE_STALL finalPg=8.245e+00
+15184:  295527.76  t1   CF-SEED source assumedViolation=8.24435411251 eligible=false
+15185:  295527.83  t1   CF      fallback bestViol=9.156e+00 us=42507.3
+15186:  295527.85  t1   LRS-OBJ end primary Z/MAX@142 result=miss ms=42.559
+15187:  295527.86  t1   LRS-PREFLIGHT alternate Z/MIN@142 directCap=false
+15188:  295527.87  t1   LRS-OBJ begin alternate Z/MIN@142
+15189:  295527.88  t1   CF      pass=0 pattern=free n=142 m=135 robust
+15190:  297341.21  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=112.237
+15191:  297341.41  t1   CF-CHECK margin=3.00e-04 replayViol=0.731464128166 modelViol=2.67597451157
+15192:  297341.45  t1   CF      rung margin=3.00e-04 iters=10000 pg=3.138e+00 dual=21.243864400 viol=2.676e+00 ms=1813.494 stop=ITERATION_LIMIT finalPg=2.634e+00
+15193:  297342.99  t1   CF-SEED source assumedViolation=2.63364123263 eligible=false
+15194:  297343.05  t1   CF      pass=1 pattern=x@0,@56,@60-73,@83,@141+z@12,@84,@98 n=142 m=135 robust
+15195:  299175.59  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=110.213
+15196:  299175.71  t1   CF-CHECK margin=3.00e-04 replayViol=0.712174571486 modelViol=2.12453122446
+15197:  299175.72  t1   CF      rung margin=3.00e-04 iters=10000 pg=1.636e+00 dual=21.145317809 viol=2.125e+00 ms=1832.563 stop=ITERATION_LIMIT finalPg=1.918e+00
+15198:  299176.16  t1   CF-SEED source assumedViolation=1.91803044302 eligible=false
+15199:  299176.20  t1   CF      pass=2 pattern=x@0,@51,@74+z@45,@49,@84 n=142 m=135 robust
+15200:  301339.08  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=116.090
+15201:  301339.19  t1   CF-CHECK margin=3.00e-04 replayViol=0.730301005911 modelViol=3.37808571628
+15202:  301339.20  t1   CF      rung margin=3.00e-04 iters=10000 pg=3.770e+00 dual=21.196399208 viol=3.378e+00 ms=2162.916 stop=ITERATION_LIMIT finalPg=3.114e+00
+15203:  301339.63  t1   CF-SEED source assumedViolation=3.11395075573 eligible=false
+15204:  301339.67  t1   CF      pass=2 no improvement (viol=3.378e+00), stop
+15205:  301339.68  t1   CF      fallback bestViol=2.125e+00 us=5811799.3
+15206:  301339.71  t1   LRS-OBJ end alternate Z/MIN@142 result=miss ms=5811.840
+15207:  301339.73  t1   LRS-PREFLIGHT alternate X/MAX@142 directCap=false
+15208:  301339.74  t1   LRS-OBJ begin alternate X/MAX@142
+15209:  301339.76  t1   CF      pass=0 pattern=free n=142 m=135 robust
+15210:  301349.12  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=0.305
+15211:  301349.20  t1   CF-CHECK margin=3.00e-04 replayViol=1.73616120986 modelViol=30.7668604558
+15212:  301349.21  t1   CF      rung margin=3.00e-04 iters=25 pg=3.079e+01 dual=1.741837136 viol=3.077e+01 ms=9.340 stop=DIVERGENCE_STALL finalPg=3.079e+01
+15213:  301349.63  t1   CF-SEED source assumedViolation=30.7911986501 eligible=false
+15214:  301349.66  t1   CF      pass=1 pattern=x@0+z@3,@61-66 n=142 m=135 robust
+15215:  301354.96  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=0.152
+15216:  301354.99  t1   CF-CHECK margin=3.00e-04 replayViol=0.696940217634 modelViol=15.5523736821
+15217:  301355.00  t1   CF      rung margin=3.00e-04 iters=14 pg=1.998e+01 dual=1.811761190 viol=1.555e+01 ms=5.232 stop=DIVERGENCE_STALL finalPg=1.998e+01
+15218:  301355.37  t1   CF-SEED source assumedViolation=19.9761702681 eligible=false
+15219:  301355.40  t1   CF      pass=2 pattern=x@0,@51+z@9 n=142 m=135 robust
+15220:  301363.98  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=0.240
+15221:  301364.04  t1   CF-CHECK margin=3.00e-04 replayViol=0.690520594928 modelViol=7.26236795466
+15222:  301364.06  t1   CF      rung margin=3.00e-04 iters=23 pg=7.530e+00 dual=2.771477428 viol=7.262e+00 ms=8.589 stop=DIVERGENCE_STALL finalPg=7.530e+00
+15223:  301364.45  t1   CF-SEED source assumedViolation=7.53011560363 eligible=false
+15224:  301364.48  t1   CF      pass=3 pattern=x@0,@51,@53-55+z@87 n=142 m=135 robust
+15225:  301371.49  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=0.177
+15226:  301371.55  t1   CF-CHECK margin=3.00e-04 replayViol=1.67712105865 modelViol=33.1648693580
+15227:  301371.56  t1   CF      rung margin=3.00e-04 iters=16 pg=3.217e+01 dual=1.966311692 viol=3.316e+01 ms=7.009 stop=DIVERGENCE_STALL finalPg=3.217e+01
+15228:  301371.98  t1   CF-SEED source assumedViolation=32.1671799423 eligible=false
+15229:  301372.00  t1   CF      pass=3 no improvement (viol=3.316e+01), stop
+15230:  301372.01  t1   CF      fallback bestViol=7.262e+00 us=32250.4
+15231:  301372.03  t1   LRS-OBJ end alternate X/MAX@142 result=miss ms=32.291
+15232:  301372.04  t1   LRS-PREFLIGHT alternate X/MIN@142 directCap=false
+15233:  301372.05  t1   LRS-OBJ begin alternate X/MIN@142
+15234:  301372.07  t1   CF      pass=0 pattern=free n=142 m=135 robust
+15235:  301383.73  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=0.359
+15236:  301383.81  t1   CF-CHECK margin=3.00e-04 replayViol=1.10791701084 modelViol=7.94779662007
+15237:  301383.82  t1   CF      rung margin=3.00e-04 iters=29 pg=7.948e+00 dual=9.630654536 viol=7.948e+00 ms=11.666 stop=DIVERGENCE_STALL finalPg=7.948e+00
+15238:  301384.23  t1   CF-SEED source assumedViolation=7.94779551359 eligible=false
+15239:  301384.27  t1   CF      pass=1 pattern=x@0,@31,@84+z@140-141 n=142 m=135 robust
+15240:  301395.35  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=0.343
+15241:  301395.42  t1   CF-CHECK margin=3.00e-04 replayViol=1.75900941341 modelViol=19.0264416039
+15242:  301395.43  t1   CF      rung margin=3.00e-04 iters=29 pg=1.903e+01 dual=7.231280396 viol=1.903e+01 ms=11.083 stop=DIVERGENCE_STALL finalPg=1.903e+01
+15243:  301395.86  t1   CF-SEED source assumedViolation=19.0264377789 eligible=false
+15244:  301395.88  t1   CF      pass=1 no improvement (viol=1.903e+01), stop
+15245:  301395.89  t1   CF      fallback bestViol=7.948e+00 us=23821.6
+15246:  301395.91  t1   LRS-OBJ end alternate X/MIN@142 result=miss ms=23.857
+15247:  301395.92  t1   LRS-OBJ begin fallback SLP Z/MAX@142
+15248:  301405.76  t1   SLP     start n=142 m=135 seed=dual budget=40/60 bestEffort=false inertiaAware=false fold=-
+15250:  301410.70  t1   SLP     lp#1 phase=1 tr=30.0 step=30.0 pred=1.508e+01 viol=2.383e+01->1.377e+01 worst=X@447[t=96,slack=23.8313,value=23.831257947]->X@440[t=89,slack=13.7700,value=13.769971102] t24-25=- obj=-1120.149321234->-1116.769460710 accept
+15252:  301420.90  t1   SLP     lp#2 phase=1 tr=45.0 step=45.0 pred=4.503e+00 viol=1.377e+01->7.166e+00 worst=X@440[t=89,slack=13.7700,value=13.769971102]->Z@489hi[t=138,slack=7.16626,value=7.166263008] t24-25=- obj=-1116.769460710->-1123.225309106 accept
+15254:  301433.57  t1   SLP     lp#3 phase=1 tr=45.0 step=45.0 pred=2.046e+00 viol=7.166e+00->4.965e+00 worst=Z@489hi[t=138,slack=7.16626,value=7.166263008]->Z@489hi[t=138,slack=4.96527,value=4.965271404] t24-25=- obj=-1123.225309106->-1125.838986372 accept
+15256:  301446.10  t1   SLP     lp#4 phase=1 tr=45.0 step=45.0 pred=1.013e+00 viol=4.965e+00->3.385e+00 worst=Z@489hi[t=138,slack=4.96527,value=4.965271404]->Z@489hi[t=138,slack=3.38473,value=3.384733942] t24-25=- obj=-1125.838986372->-1127.748676923 accept
+15258:  301449.38  t1   SLP     lp#5 phase=1 tr=45.0 step=45.0 pred=4.276e-01 viol=3.385e+00->3.070e+00 worst=Z@489hi[t=138,slack=3.38473,value=3.384733942]->Z@489hi[t=138,slack=3.06975,value=3.069753195] t24-25=- obj=-1127.748676923->-1128.107436668 accept
+15260:  301452.18  t1   SLP     lp#6 phase=1 tr=45.0 step=45.0 pred=6.563e-01 viol=3.070e+00->1.381e+00 worst=Z@489hi[t=138,slack=3.06975,value=3.069753195]->X@395hi[t=44,slack=1.38063,value=1.380627218] t24-25=- obj=-1128.107436668->-1129.891227372 accept
+15262:  301455.10  t1   SLP     lp#7 phase=1 tr=45.0 step=45.0 pred=4.200e-01 viol=1.381e+00->1.961e+00 worst=X@395hi[t=44,slack=1.38063,value=1.380627218]->Z@489hi[t=138,slack=1.96057,value=1.960573255] t24-25=- obj=-1129.891227372->-1129.189899004 reject
+15264:  301457.40  t1   SLP     lp#8 phase=1 tr=22.5 step=22.5 pred=6.258e-01 viol=1.381e+00->1.147e+00 worst=X@395hi[t=44,slack=1.38063,value=1.380627218]->Z@489hi[t=138,slack=1.14726,value=1.147255784] t24-25=- obj=-1129.891227372->-1130.033596739 accept
+15266:  301458.83  t1   SLP     lp#9 phase=1 tr=45.0 step=45.0 pred=5.895e-01 viol=1.147e+00->1.136e+00 worst=Z@489hi[t=138,slack=1.14726,value=1.147255784]->X@447[t=96,slack=1.13625,value=1.136248666] t24-25=- obj=-1130.033596739->-1130.338207656 accept
+15268:  301460.94  t1   SLP     lp#10 phase=1 tr=45.0 step=45.0 pred=4.502e-01 viol=1.136e+00->1.360e+00 worst=X@447[t=96,slack=1.13625,value=1.136248666]->Z@489hi[t=138,slack=1.36032,value=1.360321395] t24-25=- obj=-1130.338207656->-1129.791595388 reject
+15270:  301462.11  t1   SLP     lp#11 phase=1 tr=22.5 step=22.5 pred=6.051e-01 viol=1.136e+00->8.376e-01 worst=X@447[t=96,slack=1.13625,value=1.136248666]->Z@489hi[t=138,slack=0.837616,value=0.837616481] t24-25=- obj=-1130.338207656->-1130.345662964 accept
+15272:  301463.20  t1   SLP     lp#12 phase=1 tr=45.0 step=45.0 pred=6.415e-01 viol=8.376e-01->1.134e+00 worst=Z@489hi[t=138,slack=0.837616,value=0.837616481]->X@395hi[t=44,slack=1.13418,value=1.134178567] t24-25=- obj=-1130.345662964->-1130.351346202 reject
+15274:  301464.61  t1   SLP     lp#13 phase=1 tr=22.5 step=22.5 pred=6.496e-01 viol=8.376e-01->9.549e-01 worst=Z@489hi[t=138,slack=0.837616,value=0.837616481]->X@395hi[t=44,slack=0.954861,value=0.954860932] t24-25=- obj=-1130.345662964->-1130.413137619 reject
+15276:  301465.64  t1   SLP     lp#14 phase=1 tr=11.3 step=11.3 pred=6.707e-01 viol=8.376e-01->7.394e-01 worst=Z@489hi[t=138,slack=0.837616,value=0.837616481]->X@395hi[t=44,slack=0.739361,value=0.739360655] t24-25=- obj=-1130.345662964->-1130.510105503 accept
+15278:  301466.52  t1   SLP     lp#15 phase=1 tr=22.5 step=22.5 pred=6.488e-01 viol=7.394e-01->8.786e-01 worst=X@395hi[t=44,slack=0.739361,value=0.739360655]->X@447[t=96,slack=0.878596,value=0.878596009] t24-25=- obj=-1130.510105503->-1130.392431503 reject
+15280:  301467.30  t1   SLP     lp#16 phase=1 tr=11.3 step=11.3 pred=6.712e-01 viol=7.394e-01->7.235e-01 worst=X@395hi[t=44,slack=0.739361,value=0.739360655]->Z@489hi[t=138,slack=0.723491,value=0.723491281] t24-25=- obj=-1130.510105503->-1130.463213098 accept
+15282:  301468.43  t1   SLP     lp#17 phase=1 tr=22.5 step=22.5 pred=6.496e-01 viol=7.235e-01->9.402e-01 worst=Z@489hi[t=138,slack=0.723491,value=0.723491281]->X@395hi[t=44,slack=0.940168,value=0.940168433] t24-25=- obj=-1130.463213098->-1130.427868859 reject
+15284:  301469.25  t1   SLP     lp#18 phase=1 tr=11.3 step=11.3 pred=6.707e-01 viol=7.235e-01->7.439e-01 worst=Z@489hi[t=138,slack=0.723491,value=0.723491281]->X@395hi[t=44,slack=0.743936,value=0.743936029] t24-25=- obj=-1130.463213098->-1130.515345435 reject
+15286:  301469.91  t1   SLP     lp#19 phase=1 tr=5.63 step=5.63 pred=6.824e-01 viol=7.235e-01->6.907e-01 worst=Z@489hi[t=138,slack=0.723491,value=0.723491281]->Z@489hi[t=138,slack=0.690686,value=0.690686314] t24-25=- obj=-1130.463213098->-1130.496018064 accept
+15288:  301470.55  t1   SLP     lp#20 phase=1 tr=11.3 step=11.3 pred=6.853e-01 viol=6.907e-01->7.082e-01 worst=Z@489hi[t=138,slack=0.690686,value=0.690686314]->X@356[t=5,slack=0.708179,value=0.708179439] t24-25=- obj=-1130.496018064->-1130.539227692 reject
+15290:  301471.18  t1   SLP     lp#21 phase=1 tr=5.63 step=5.63 pred=6.867e-01 viol=6.907e-01->6.924e-01 worst=Z@489hi[t=138,slack=0.690686,value=0.690686314]->X@356[t=5,slack=0.692421,value=0.692421153] t24-25=- obj=-1130.496018064->-1130.515823600 reject
+15292:  301471.77  t1   SLP     lp#22 phase=1 tr=2.81 step=2.81 pred=6.874e-01 viol=6.907e-01->6.888e-01 worst=Z@489hi[t=138,slack=0.690686,value=0.690686314]->X@356[t=5,slack=0.688815,value=0.688814762] t24-25=- obj=-1130.496018064->-1130.498618596 accept
+15294:  301472.53  t1   SLP     lp#23 phase=1 tr=5.63 step=5.63 pred=6.842e-01 viol=6.888e-01->6.955e-01 worst=X@356[t=5,slack=0.688815,value=0.688814762]->X@395hi[t=44,slack=0.695492,value=0.695492261] t24-25=- obj=-1130.498618596->-1130.529435460 reject
+15296:  301473.11  t1   SLP     lp#24 phase=1 tr=2.81 step=2.81 pred=6.865e-01 viol=6.888e-01->6.880e-01 worst=X@356[t=5,slack=0.688815,value=0.688814762]->X@356[t=5,slack=0.687962,value=0.687962391] t24-25=- obj=-1130.498618596->-1130.531596564 accept
+15298:  301473.82  t1   SLP     lp#25 phase=1 tr=5.63 step=5.63 pred=6.868e-01 viol=6.880e-01->6.925e-01 worst=X@356[t=5,slack=0.687962,value=0.687962391]->X@356[t=5,slack=0.692529,value=0.692529440] t24-25=- obj=-1130.531596564->-1130.508392239 reject
+15300:  301474.40  t1   SLP     lp#26 phase=1 tr=2.81 step=2.81 pred=6.874e-01 viol=6.880e-01->6.888e-01 worst=X@356[t=5,slack=0.687962,value=0.687962391]->X@356[t=5,slack=0.688815,value=0.688814762] t24-25=- obj=-1130.531596564->-1130.497958368 reject
+15302:  301475.00  t1   SLP     lp#27 phase=1 tr=1.41 step=1.41 pred=6.877e-01 viol=6.880e-01->6.880e-01 worst=X@356[t=5,slack=0.687962,value=0.687962391]->X@356[t=5,slack=0.688031,value=0.688030528] t24-25=- obj=-1130.531596564->-1130.531822745 reject
+15304:  301475.61  t1   SLP     lp#28 phase=1 tr=0.703 step=0.703 pred=6.878e-01 viol=6.880e-01->6.879e-01 worst=X@356[t=5,slack=0.687962,value=0.687962391]->X@356[t=5,slack=0.687907,value=0.687906942] t24-25=- obj=-1130.531596564->-1130.532276634 accept
+15306:  301476.22  t1   SLP     lp#29 phase=1 tr=1.41 step=1.41 pred=6.875e-01 viol=6.879e-01->6.879e-01 worst=X@356[t=5,slack=0.687907,value=0.687906942]->X@356[t=5,slack=0.687867,value=0.687867458] t24-25=- obj=-1130.532276634->-1130.499166036 accept
+15308:  301476.77  t1   SLP     lp#30 phase=1 tr=2.81 step=2.81 pred=6.871e-01 viol=6.879e-01->6.886e-01 worst=X@356[t=5,slack=0.687867,value=0.687867458]->X@356[t=5,slack=0.688563,value=0.688563463] t24-25=- obj=-1130.499166036->-1130.531357975 reject
+15310:  301477.42  t1   SLP     lp#31 phase=1 tr=1.41 step=1.41 pred=6.875e-01 viol=6.879e-01->6.879e-01 worst=X@356[t=5,slack=0.687867,value=0.687867458]->X@356[t=5,slack=0.687857,value=0.687857303] t24-25=- obj=-1130.499166036->-1130.531797641 accept
+15312:  301478.12  t1   SLP     lp#32 phase=1 tr=2.81 step=2.81 pred=6.872e-01 viol=6.879e-01->6.886e-01 worst=X@356[t=5,slack=0.687857,value=0.687857303]->X@356[t=5,slack=0.688594,value=0.688593862] t24-25=- obj=-1130.531797641->-1130.499582410 reject
+15314:  301478.65  t1   SLP     lp#33 phase=1 tr=1.41 step=1.41 pred=6.875e-01 viol=6.879e-01->6.879e-01 worst=X@356[t=5,slack=0.687857,value=0.687857303]->X@356[t=5,slack=0.687867,value=0.687867458] t24-25=- obj=-1130.531797641->-1130.499338043 reject
+15316:  301479.13  t1   SLP     lp#34 phase=1 tr=0.703 step=0.703 pred=6.877e-01 viol=6.879e-01->6.878e-01 worst=X@356[t=5,slack=0.687857,value=0.687857303]->X@356[t=5,slack=0.687773,value=0.687772784] t24-25=- obj=-1130.531797641->-1130.514018992 accept
+15318:  301479.65  t1   SLP     lp#35 phase=1 tr=1.41 step=1.41 pred=6.877e-01 viol=6.878e-01->6.880e-01 worst=X@356[t=5,slack=0.687773,value=0.687772784]->X@356[t=5,slack=0.688034,value=0.688033684] t24-25=- obj=-1130.514018992->-1130.531978564 reject
+15320:  301480.18  t1   SLP     lp#36 phase=1 tr=0.703 step=0.703 pred=6.877e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687773,value=0.687772784]->Z@463lo[t=112,slack=0.687845,value=-0.687844974] t24-25=- obj=-1130.514018992->-1130.532295782 reject
+15322:  301480.65  t1   SLP     lp#37 phase=1 tr=0.352 step=0.352 pred=6.877e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687773,value=0.687772784]->X@356[t=5,slack=0.687771,value=0.687770860] t24-25=- obj=-1130.514018992->-1130.527811432 accept
+15324:  301481.12  t1   SLP     lp#38 phase=1 tr=0.703 step=0.703 pred=6.877e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687771,value=0.687770860]->X@356[t=5,slack=0.687801,value=0.687801195] t24-25=- obj=-1130.527811432->-1130.504767846 reject
+15326:  301481.60  t1   SLP     lp#39 phase=1 tr=0.352 step=0.352 pred=6.877e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687771,value=0.687770860]->X@356[t=5,slack=0.687764,value=0.687763602] t24-25=- obj=-1130.527811432->-1130.516289585 accept
+15328:  301482.12  t1   SLP     lp#40 phase=1 tr=0.703 step=0.703 pred=6.877e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687764,value=0.687763602]->X@356[t=5,slack=0.687823,value=0.687822893] t24-25=- obj=-1130.516289585->-1130.532268257 reject
+15329:  301482.15  t1   SLP     phase1 infeasible viol=6.878e-01 lps=40 ms=76.4
+15330:  301482.19  t1   SLP     start n=142 m=135 seed=given budget=40/60 bestEffort=false inertiaAware=true fold=-
+15332:  301482.90  t1   SLP     lp#1 phase=1 tr=30.0 step=30.0 pred=6.865e-01 viol=6.878e-01->1.049e+00 worst=X@356[t=5,slack=0.687764,value=0.687763602]->X@447[t=96,slack=1.04921,value=1.049211652] t24-25=- obj=-1130.516289585->-1130.379111671 reject
+15334:  301483.67  t1   SLP     lp#2 phase=1 tr=15.0 step=15.0 pred=6.871e-01 viol=6.878e-01->7.276e-01 worst=X@356[t=5,slack=0.687764,value=0.687763602]->X@356[t=5,slack=0.727627,value=0.727627353] t24-25=- obj=-1130.516289585->-1130.502039787 reject
+15336:  301484.26  t1   SLP     lp#3 phase=1 tr=7.50 step=7.50 pred=6.874e-01 viol=6.878e-01->6.976e-01 worst=X@356[t=5,slack=0.687764,value=0.687763602]->X@356[t=5,slack=0.697611,value=0.697610828] t24-25=- obj=-1130.516289585->-1130.524564023 reject
+15338:  301484.80  t1   SLP     lp#4 phase=1 tr=3.75 step=3.75 pred=6.876e-01 viol=6.878e-01->6.901e-01 worst=X@356[t=5,slack=0.687764,value=0.687763602]->X@356[t=5,slack=0.690144,value=0.690143781] t24-25=- obj=-1130.516289585->-1130.505497724 reject
+15340:  301485.34  t1   SLP     lp#5 phase=1 tr=1.88 step=1.88 pred=6.877e-01 viol=6.878e-01->6.883e-01 worst=X@356[t=5,slack=0.687764,value=0.687763602]->X@356[t=5,slack=0.688319,value=0.688318528] t24-25=- obj=-1130.516289585->-1130.531910181 reject
+15342:  301485.96  t1   SLP     lp#6 phase=1 tr=0.938 step=0.938 pred=6.877e-01 viol=6.878e-01->6.879e-01 worst=X@356[t=5,slack=0.687764,value=0.687763602]->X@356[t=5,slack=0.687881,value=0.687881444] t24-25=- obj=-1130.516289585->-1130.532038420 reject
+15344:  301486.45  t1   SLP     lp#7 phase=1 tr=0.469 step=0.469 pred=6.877e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687764,value=0.687763602]->X@356[t=5,slack=0.687783,value=0.687783060] t24-25=- obj=-1130.516289585->-1130.531572116 reject
+15346:  301486.93  t1   SLP     lp#8 phase=1 tr=0.234 step=0.234 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687764,value=0.687763602]->X@356[t=5,slack=0.687763,value=0.687763373] t24-25=- obj=-1130.516289585->-1130.523830954 accept
+15348:  301487.41  t1   SLP     lp#9 phase=1 tr=0.469 step=0.469 pred=6.877e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687763,value=0.687763373]->X@356[t=5,slack=0.687784,value=0.687783554] t24-25=- obj=-1130.523830954->-1130.505264859 reject
+15350:  301487.90  t1   SLP     lp#10 phase=1 tr=0.234 step=0.234 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687763,value=0.687763373]->X@356[t=5,slack=0.687763,value=0.687763430] t24-25=- obj=-1130.523830954->-1130.514667276 reject
+15352:  301488.38  t1   SLP     lp#11 phase=1 tr=0.117 step=0.117 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687763,value=0.687763373]->X@356[t=5,slack=0.687761,value=0.687761041] t24-25=- obj=-1130.523830954->-1130.519229645 accept
+15354:  301488.86  t1   SLP     lp#12 phase=1 tr=0.234 step=0.234 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687761041]->X@356[t=5,slack=0.687768,value=0.687768462] t24-25=- obj=-1130.519229645->-1130.525039588 reject
+15356:  301489.34  t1   SLP     lp#13 phase=1 tr=0.117 step=0.117 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687761041]->X@356[t=5,slack=0.687762,value=0.687762154] t24-25=- obj=-1130.519229645->-1130.522076442 reject
+15358:  301489.81  t1   SLP     lp#14 phase=1 tr=0.0586 step=0.0586 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687761041]->X@356[t=5,slack=0.687761,value=0.687761014] t24-25=- obj=-1130.519229645->-1130.520730683 accept
+15360:  301490.28  t1   SLP     lp#15 phase=1 tr=0.117 step=0.117 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687761014]->X@356[t=5,slack=0.687762,value=0.687761740] t24-25=- obj=-1130.520730683->-1130.516772865 reject
+15362:  301490.76  t1   SLP     lp#16 phase=1 tr=0.0586 step=0.0586 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687761014]->X@356[t=5,slack=0.687761,value=0.687760754] t24-25=- obj=-1130.520730683->-1130.518772277 accept
+15364:  301491.24  t1   SLP     lp#17 phase=1 tr=0.117 step=0.117 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760754]->X@356[t=5,slack=0.687762,value=0.687762441] t24-25=- obj=-1130.518772277->-1130.522533810 reject
+15366:  301491.72  t1   SLP     lp#18 phase=1 tr=0.0586 step=0.0586 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760754]->X@356[t=5,slack=0.687761,value=0.687761014] t24-25=- obj=-1130.518772277->-1130.520730683 reject
+15368:  301492.20  t1   SLP     lp#19 phase=1 tr=0.0293 step=0.0293 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760754]->X@356[t=5,slack=0.687761,value=0.687760667] t24-25=- obj=-1130.518772277->-1130.519653327 accept
+15370:  301492.68  t1   SLP     lp#20 phase=1 tr=0.0586 step=0.0586 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760667]->X@356[t=5,slack=0.687761,value=0.687761032] t24-25=- obj=-1130.519653327->-1130.517012484 reject
+15372:  301493.16  t1   SLP     lp#21 phase=1 tr=0.0293 step=0.0293 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760667]->X@356[t=5,slack=0.687761,value=0.687760747] t24-25=- obj=-1130.519653327->-1130.518363717 reject
+15374:  301493.64  t1   SLP     lp#22 phase=1 tr=0.0146 step=0.0146 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760667]->X@356[t=5,slack=0.687761,value=0.687760650] t24-25=- obj=-1130.519653327->-1130.519075867 accept
+15376:  301494.13  t1   SLP     lp#23 phase=1 tr=0.0293 step=0.0293 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760650]->X@356[t=5,slack=0.687761,value=0.687760844] t24-25=- obj=-1130.519075867->-1130.517808414 reject
+15378:  301494.62  t1   SLP     lp#24 phase=1 tr=0.0146 step=0.0146 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760650]->X@356[t=5,slack=0.687761,value=0.687760743] t24-25=- obj=-1130.519075867->-1130.518463024 reject
+15380:  301495.17  t1   SLP     lp#25 phase=1 tr=0.00732 step=0.00732 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760650]->X@356[t=5,slack=0.687761,value=0.687760642] t24-25=- obj=-1130.519075867->-1130.518681217 accept
+15382:  301495.66  t1   SLP     lp#26 phase=1 tr=0.0146 step=0.0146 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760642]->X@356[t=5,slack=0.687761,value=0.687760663] t24-25=- obj=-1130.518681217->-1130.519311746 reject
+15384:  301496.19  t1   SLP     lp#27 phase=1 tr=0.00732 step=0.00732 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760642]->X@356[t=5,slack=0.687761,value=0.687760647] t24-25=- obj=-1130.518681217->-1130.519094306 reject
+15386:  301496.67  t1   SLP     lp#28 phase=1 tr=0.00366 step=0.00366 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760642]->X@356[t=5,slack=0.687761,value=0.687760645] t24-25=- obj=-1130.518681217->-1130.518878150 reject
+15388:  301497.14  t1   SLP     lp#29 phase=1 tr=0.00183 step=0.00183 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760642]->X@356[t=5,slack=0.687761,value=0.687760643] t24-25=- obj=-1130.518681217->-1130.518877508 reject
+15390:  301497.64  t1   SLP     lp#30 phase=1 tr=0.000916 step=0.000916 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760642]->X@356[t=5,slack=0.687761,value=0.687760643] t24-25=- obj=-1130.518681217->-1130.518877508 reject
+15392:  301498.12  t1   SLP     lp#31 phase=1 tr=0.000458 step=0.000458 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760642]->X@356[t=5,slack=0.687761,value=0.687760643] t24-25=- obj=-1130.518681217->-1130.518877508 reject
+15394:  301498.59  t1   SLP     lp#32 phase=1 tr=0.000229 step=0.000229 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760642]->X@356[t=5,slack=0.687761,value=0.687760642] t24-25=- obj=-1130.518681217->-1130.518858419 reject
+15396:  301499.07  t1   SLP     lp#33 phase=1 tr=0.000114 step=0.000114 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760642]->X@356[t=5,slack=0.687761,value=0.687760642] t24-25=- obj=-1130.518681217->-1130.518858419 reject
+15398:  301499.58  t1   SLP     lp#34 phase=1 tr=5.72e-05 step=5.72e-05 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760642]->X@356[t=5,slack=0.687761,value=0.687760642] t24-25=- obj=-1130.518681217->-1130.518858419 reject
+15400:  301500.11  t1   SLP     lp#35 phase=1 tr=2.86e-05 step=2.86e-05 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760642]->X@356[t=5,slack=0.687761,value=0.687760642] t24-25=- obj=-1130.518681217->-1130.518858419 reject
+15402:  301500.59  t1   SLP     lp#36 phase=1 tr=1.43e-05 step=1.43e-05 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760642]->X@356[t=5,slack=0.687761,value=0.687760642] t24-25=- obj=-1130.518681217->-1130.518681217 reject
+15404:  301501.06  t1   SLP     lp#37 phase=1 tr=7.15e-06 step=7.15e-06 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760642]->X@356[t=5,slack=0.687761,value=0.687760642] t24-25=- obj=-1130.518681217->-1130.518681217 reject
+15406:  301501.56  t1   SLP     lp#38 phase=1 tr=3.58e-06 step=3.58e-06 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760642]->X@356[t=5,slack=0.687761,value=0.687760642] t24-25=- obj=-1130.518681217->-1130.518681217 reject
+15408:  301502.04  t1   SLP     lp#39 phase=1 tr=1.79e-06 step=1.79e-06 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760642]->X@356[t=5,slack=0.687761,value=0.687760642] t24-25=- obj=-1130.518681217->-1130.518681217 reject
+15410:  301502.51  t1   SLP     lp#40 phase=1 tr=8.94e-07 step=8.94e-07 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760642]->X@356[t=5,slack=0.687761,value=0.687760642] t24-25=- obj=-1130.518681217->-1130.518681217 reject
+15411:  301502.53  t1   SLP     phase1 infeasible viol=6.878e-01 lps=40 ms=20.3
+15412:  301502.55  t1   LRS-OBJ end fallback SLP result=miss ms=106.632
+15413:  301502.58  t1   LRS     commit=1 window i=38 we=48 ticks=142 cons=135 last=false -> miss ms=6017.3
+15414:  301502.71  t1   LRS-WIN commit=1 jumps=[38,45) ticks=[351,450) seed=(702.301967261052,-1111.839635559697;-0.000002268767,-0.269424831020) yaw=224.999984741 constraints=105 replayTicks=14
+15415:  301502.72  t1   LRS-AIR nominalEnd=449 objectiveTick=450 extension=1 final=false
+15416:  301502.76  t1   LRS-PREFLIGHT primary Z/MAX@99 directCap=false
+15417:  301502.77  t1   LRS-OBJ begin primary Z/MAX@99
+15418:  301502.79  t1   CF      pass=0 pattern=free n=99 m=105 robust
+15419:  302372.80  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=78.493
+15420:  302372.87  t1   CF-CHECK margin=3.00e-04 replayViol=0.717132399822 modelViol=1.80465765983
+15421:  302372.89  t1   CF      rung margin=3.00e-04 iters=10000 pg=2.115e+00 dual=-7.923962194 viol=1.805e+00 ms=870.047 stop=ITERATION_LIMIT finalPg=1.743e+00
+15422:  302373.09  t1   CF-SEED source assumedViolation=1.75247541201 eligible=false
+15423:  302373.11  t1   CF      pass=1 pattern=x@0,@31,@59-73+z@26 n=99 m=105 robust
+15424:  303359.82  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=78.555
+15425:  303359.89  t1   CF-CHECK margin=3.00e-04 replayViol=0.711465790557 modelViol=1.14288122283
+15426:  303359.90  t1   CF      rung margin=3.00e-04 iters=10000 pg=7.118e-01 dual=-8.481784384 viol=1.143e+00 ms=986.720 stop=ITERATION_LIMIT finalPg=7.118e-01
+15427:  303360.13  t1   CF-SEED source assumedViolation=0.711475369476 eligible=false
+15428:  303360.16  t1   CF      pass=2 pattern=x@0,@87+z@49,@51 n=99 m=105 robust
+15429:  304639.65  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=81.940
+15430:  304639.72  t1   CF-CHECK margin=3.00e-04 replayViol=0.730838415811 modelViol=2.06491041171
+15431:  304639.73  t1   CF      rung margin=3.00e-04 iters=10000 pg=1.987e+00 dual=-7.634331461 viol=2.065e+00 ms=1279.508 stop=ITERATION_LIMIT finalPg=2.690e+00
+15432:  304639.93  t1   CF-SEED source assumedViolation=2.68931348497 eligible=false
+15433:  304639.95  t1   CF      pass=2 no improvement (viol=2.065e+00), stop
+15434:  304639.96  t1   CF      fallback bestViol=1.143e+00 us=3137173.9
+15435:  304639.98  t1   LRS-OBJ end primary Z/MAX@99 result=miss ms=3137.206
+15436:  304639.99  t1   LRS-PREFLIGHT alternate Z/MIN@99 directCap=false
+15437:  304640.00  t1   LRS-OBJ begin alternate Z/MIN@99
+15438:  304640.01  t1   CF      pass=0 pattern=free n=99 m=105 robust
+15439:  304642.97  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=0.174
+15440:  304642.99  t1   CF-CHECK margin=3.00e-04 replayViol=0.691359541463 modelViol=9.06848191578
+15441:  304643.00  t1   CF      rung margin=3.00e-04 iters=19 pg=9.060e+00 dual=11.667314995 viol=9.068e+00 ms=2.935 stop=DIVERGENCE_STALL finalPg=9.060e+00
+15442:  304643.20  t1   CF-SEED source assumedViolation=9.06011504071 eligible=false
+15443:  304643.22  t1   CF      pass=1 pattern=x@0,@61-73,@81+z@54 n=99 m=105 robust
+15444:  305274.57  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=79.934
+15445:  305274.65  t1   CF-CHECK margin=3.00e-04 replayViol=0.704341014460 modelViol=3.02039571421
+15446:  305274.66  t1   CF      rung margin=3.00e-04 iters=10000 pg=1.798e+00 dual=11.003463546 viol=3.020e+00 ms=631.382 stop=ITERATION_LIMIT finalPg=2.758e+00
+15447:  305274.91  t1   CF-SEED source assumedViolation=2.75737594859 eligible=false
+15448:  305274.94  t1   CF      pass=2 pattern=x@0,@52,@61-87+z@44,@49 n=99 m=105 robust
+15449:  306075.82  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=75.655
+15450:  306075.89  t1   CF-CHECK margin=3.00e-04 replayViol=0.703502354287 modelViol=3.94969154556
+15451:  306075.90  t1   CF      rung margin=3.00e-04 iters=10000 pg=2.038e+00 dual=11.430067902 viol=3.950e+00 ms=800.882 stop=ITERATION_LIMIT finalPg=3.399e+00
+15452:  306076.16  t1   CF-SEED source assumedViolation=3.39879200023 eligible=false
+15453:  306076.18  t1   CF      pass=2 no improvement (viol=3.950e+00), stop
+15454:  306076.19  t1   CF      fallback bestViol=3.020e+00 us=1436176.4
+15455:  306076.21  t1   LRS-OBJ end alternate Z/MIN@99 result=miss ms=1436.213
+15456:  306076.23  t1   LRS-PREFLIGHT alternate X/MAX@99 directCap=false
+15457:  306076.23  t1   LRS-OBJ begin alternate X/MAX@99
+15458:  306076.25  t1   CF      pass=0 pattern=free n=99 m=105 robust
+15459:  306752.01  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=75.416
+15460:  306752.09  t1   CF-CHECK margin=3.00e-04 replayViol=0.712240187449 modelViol=1.18629004353
+15461:  306752.10  t1   CF      rung margin=3.00e-04 iters=10000 pg=2.036e+00 dual=-8.431284633 viol=1.186e+00 ms=675.780 stop=ITERATION_LIMIT finalPg=1.187e+00
+15462:  306752.30  t1   CF-SEED source assumedViolation=1.18628996579 eligible=false
+15463:  306752.33  t1   CF      pass=1 pattern=x@0,@52,@88 n=99 m=105 robust
+15464:  306756.18  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=0.181
+15465:  306756.22  t1   CF-CHECK margin=3.00e-04 replayViol=0.694017775231 modelViol=5.92738436546
+15466:  306756.22  t1   CF      rung margin=3.00e-04 iters=23 pg=5.925e+00 dual=-7.848414519 viol=5.927e+00 ms=3.839 stop=DIVERGENCE_STALL finalPg=5.925e+00
+15467:  306756.42  t1   CF-SEED source assumedViolation=5.92488210089 eligible=false
+15468:  306756.43  t1   CF      pass=1 no improvement (viol=5.927e+00), stop
+15469:  306756.44  t1   CF      fallback bestViol=1.186e+00 us=680192.8
+15470:  306756.47  t1   LRS-OBJ end alternate X/MAX@99 result=miss ms=680.233
+15471:  306756.48  t1   LRS-PREFLIGHT alternate X/MIN@99 directCap=false
+15472:  306756.49  t1   LRS-OBJ begin alternate X/MIN@99
+15473:  306756.50  t1   CF      pass=0 pattern=free n=99 m=105 robust
+15474:  306759.07  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=0.176
+15475:  306759.09  t1   CF-CHECK margin=3.00e-04 replayViol=0.693475447374 modelViol=8.87693364539
+15476:  306759.10  t1   CF      rung margin=3.00e-04 iters=22 pg=8.882e+00 dual=11.963831757 viol=8.877e+00 ms=2.558 stop=DIVERGENCE_STALL finalPg=8.882e+00
+15477:  306759.30  t1   CF-SEED source assumedViolation=8.88195537623 eligible=false
+15478:  306759.31  t1   CF      pass=1 pattern=x@0,@67+z@89-98 n=99 m=105 robust
+15479:  306763.15  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=0.228
+15480:  306763.21  t1   CF-CHECK margin=3.00e-04 replayViol=1.47302060651 modelViol=10.5886053505
+15481:  306763.22  t1   CF      rung margin=3.00e-04 iters=29 pg=1.059e+01 dual=12.378586978 viol=1.059e+01 ms=3.855 stop=DIVERGENCE_STALL finalPg=1.059e+01
+15482:  306763.44  t1   CF-SEED source assumedViolation=10.5886053505 eligible=false
+15483:  306763.46  t1   CF      pass=1 no improvement (viol=1.059e+01), stop
+15484:  306763.46  t1   CF      fallback bestViol=8.877e+00 us=6965.3
+15485:  306763.48  t1   LRS-OBJ end alternate X/MIN@99 result=miss ms=6.994
+15486:  306763.49  t1   LRS-OBJ begin fallback SLP Z/MAX@99
+15487:  307409.53  t1   SLP     start n=99 m=105 seed=dual budget=40/60 bestEffort=false inertiaAware=false fold=-
+15489:  307411.02  t1   SLP     lp#1 phase=1 tr=30.0 step=30.0 pred=1.295e+00 viol=3.600e+00->1.950e+00 worst=X@437hi[t=86,slack=3.60022,value=3.600219335]->X@395hi[t=44,slack=1.94965,value=1.949646509] t24-25=- obj=-1121.291942896->-1119.813889368 accept
+15491:  307412.63  t1   SLP     lp#2 phase=1 tr=45.0 step=45.0 pred=5.248e-01 viol=1.950e+00->1.907e+00 worst=X@395hi[t=44,slack=1.94965,value=1.949646509]->X@437hi[t=86,slack=1.90705,value=1.907053609] t24-25=- obj=-1119.813889368->-1120.827434675 accept
+15493:  307413.31  t1   SLP     lp#3 phase=1 tr=45.0 step=45.0 pred=4.222e-01 viol=1.907e+00->1.573e+00 worst=X@437hi[t=86,slack=1.90705,value=1.907053609]->X@437hi[t=86,slack=1.57317,value=1.573167722] t24-25=- obj=-1120.827434675->-1121.202762744 accept
+15495:  307413.95  t1   SLP     lp#4 phase=1 tr=45.0 step=45.0 pred=5.115e-01 viol=1.573e+00->1.622e+00 worst=X@437hi[t=86,slack=1.57317,value=1.573167722]->X@437hi[t=86,slack=1.62245,value=1.622445296] t24-25=- obj=-1121.202762744->-1121.184212975 reject
+15497:  307414.48  t1   SLP     lp#5 phase=1 tr=22.5 step=22.5 pred=6.180e-01 viol=1.573e+00->9.234e-01 worst=X@437hi[t=86,slack=1.57317,value=1.573167722]->X@437hi[t=86,slack=0.923360,value=0.923360274] t24-25=- obj=-1121.202762744->-1121.214718689 accept
+15499:  307415.02  t1   SLP     lp#6 phase=1 tr=45.0 step=45.0 pred=6.079e-01 viol=9.234e-01->1.142e+00 worst=X@437hi[t=86,slack=0.923360,value=0.923360274]->X@426[t=75,slack=1.14228,value=1.142284814] t24-25=- obj=-1121.214718689->-1121.227891141 reject
+15501:  307415.80  t1   SLP     lp#7 phase=1 tr=22.5 step=22.5 pred=6.224e-01 viol=9.234e-01->9.443e-01 worst=X@437hi[t=86,slack=0.923360,value=0.923360274]->X@426[t=75,slack=0.944299,value=0.944299000] t24-25=- obj=-1121.214718689->-1121.197847396 reject
+15503:  307416.51  t1   SLP     lp#8 phase=1 tr=11.3 step=11.3 pred=6.654e-01 viol=9.234e-01->7.639e-01 worst=X@437hi[t=86,slack=0.923360,value=0.923360274]->X@395hi[t=44,slack=0.763908,value=0.763908140] t24-25=- obj=-1121.214718689->-1121.218625451 accept
+15505:  307416.94  t1   SLP     lp#9 phase=1 tr=22.5 step=22.5 pred=6.830e-01 viol=7.639e-01->8.172e-01 worst=X@395hi[t=44,slack=0.763908,value=0.763908140]->X@380hi[t=29,slack=0.817202,value=0.817201978] t24-25=- obj=-1121.218625451->-1121.335612895 reject
+15507:  307417.38  t1   SLP     lp#10 phase=1 tr=11.3 step=11.3 pred=6.856e-01 viol=7.639e-01->7.084e-01 worst=X@395hi[t=44,slack=0.763908,value=0.763908140]->X@356[t=5,slack=0.708424,value=0.708423928] t24-25=- obj=-1121.218625451->-1121.298807384 accept
+15509:  307417.88  t1   SLP     lp#11 phase=1 tr=22.5 step=22.5 pred=6.224e-01 viol=7.084e-01->9.263e-01 worst=X@356[t=5,slack=0.708424,value=0.708423928]->X@395hi[t=44,slack=0.926320,value=0.926320078] t24-25=- obj=-1121.298807384->-1121.197937025 reject
+15511:  307418.37  t1   SLP     lp#12 phase=1 tr=11.3 step=11.3 pred=6.654e-01 viol=7.084e-01->6.970e-01 worst=X@356[t=5,slack=0.708424,value=0.708423928]->X@395hi[t=44,slack=0.696956,value=0.696955672] t24-25=- obj=-1121.298807384->-1121.234923693 accept
+15513:  307418.80  t1   SLP     lp#13 phase=1 tr=22.5 step=22.5 pred=6.830e-01 viol=6.970e-01->7.736e-01 worst=X@395hi[t=44,slack=0.696956,value=0.696955672]->X@356[t=5,slack=0.773628,value=0.773628039] t24-25=- obj=-1121.234923693->-1121.351911137 reject
+15515:  307419.23  t1   SLP     lp#14 phase=1 tr=11.3 step=11.3 pred=6.856e-01 viol=6.970e-01->7.084e-01 worst=X@395hi[t=44,slack=0.696956,value=0.696955672]->X@356[t=5,slack=0.708424,value=0.708423928] t24-25=- obj=-1121.234923693->-1121.315105627 reject
+15517:  307419.67  t1   SLP     lp#15 phase=1 tr=5.63 step=5.63 pred=6.868e-01 viol=6.970e-01->6.926e-01 worst=X@395hi[t=44,slack=0.696956,value=0.696955672]->X@356[t=5,slack=0.692572,value=0.692571951] t24-25=- obj=-1121.234923693->-1121.280420098 accept
+15519:  307420.29  t1   SLP     lp#16 phase=1 tr=11.3 step=11.3 pred=6.722e-01 viol=6.926e-01->7.507e-01 worst=X@356[t=5,slack=0.692572,value=0.692571951]->X@395hi[t=44,slack=0.750679,value=0.750678588] t24-25=- obj=-1121.280420098->-1121.270377783 reject
+15521:  307420.69  t1   SLP     lp#17 phase=1 tr=5.63 step=5.63 pred=6.824e-01 viol=6.926e-01->7.016e-01 worst=X@356[t=5,slack=0.692572,value=0.692571951]->X@395hi[t=44,slack=0.701556,value=0.701555792] t24-25=- obj=-1121.280420098->-1121.238266719 reject
+15523:  307421.00  t1   SLP     lp#18 phase=1 tr=2.81 step=2.81 pred=6.875e-01 viol=6.926e-01->6.889e-01 worst=X@356[t=5,slack=0.692572,value=0.692571951]->X@356[t=5,slack=0.688911,value=0.688911363] t24-25=- obj=-1121.280420098->-1121.237235928 accept
+15525:  307421.65  t1   SLP     lp#19 phase=1 tr=5.63 step=5.63 pred=6.838e-01 viol=6.889e-01->7.120e-01 worst=X@356[t=5,slack=0.688911,value=0.688911363]->X@426[t=75,slack=0.711977,value=0.711977248] t24-25=- obj=-1121.237235928->-1121.257684006 reject
+15527:  307422.15  t1   SLP     lp#20 phase=1 tr=2.81 step=2.81 pred=6.863e-01 viol=6.889e-01->6.912e-01 worst=X@356[t=5,slack=0.688911,value=0.688911363]->X@395hi[t=44,slack=0.691183,value=0.691182638] t24-25=- obj=-1121.237235928->-1121.238202743 reject
+15529:  307422.51  t1   SLP     lp#21 phase=1 tr=1.41 step=1.41 pred=6.876e-01 viol=6.889e-01->6.880e-01 worst=X@356[t=5,slack=0.688911,value=0.688911363]->X@356[t=5,slack=0.687986,value=0.687985976] t24-25=- obj=-1121.237235928->-1121.237979270 accept
+15531:  307423.22  t1   SLP     lp#22 phase=1 tr=2.81 step=2.81 pred=6.869e-01 viol=6.880e-01->6.937e-01 worst=X@356[t=5,slack=0.687986,value=0.687985976]->X@426[t=75,slack=0.693652,value=0.693652292] t24-25=- obj=-1121.237979270->-1121.260206909 reject
+15533:  307423.77  t1   SLP     lp#23 phase=1 tr=1.41 step=1.41 pred=6.874e-01 viol=6.880e-01->6.895e-01 worst=X@356[t=5,slack=0.687986,value=0.687985976]->Z@448hi[t=97,slack=0.689481,value=0.689481462] t24-25=- obj=-1121.237979270->-1121.236235051 reject
+15535:  307424.16  t1   SLP     lp#24 phase=1 tr=0.703 step=0.703 pred=6.877e-01 viol=6.880e-01->6.879e-01 worst=X@356[t=5,slack=0.687986,value=0.687985976]->X@395hi[t=44,slack=0.687946,value=0.687946040] t24-25=- obj=-1121.237979270->-1121.237889557 accept
+15537:  307424.89  t1   SLP     lp#25 phase=1 tr=1.41 step=1.41 pred=6.876e-01 viol=6.879e-01->6.890e-01 worst=X@395hi[t=44,slack=0.687946,value=0.687946040]->X@395hi[t=44,slack=0.689002,value=0.689002093] t24-25=- obj=-1121.237889557->-1121.250987046 reject
+15539:  307425.51  t1   SLP     lp#26 phase=1 tr=0.703 step=0.703 pred=6.877e-01 viol=6.879e-01->6.900e-01 worst=X@395hi[t=44,slack=0.687946,value=0.687946040]->Z@448hi[t=97,slack=0.689953,value=0.689953263] t24-25=- obj=-1121.237889557->-1121.235834558 reject
+15541:  307426.03  t1   SLP     lp#27 phase=1 tr=0.352 step=0.352 pred=6.877e-01 viol=6.879e-01->6.881e-01 worst=X@395hi[t=44,slack=0.687946,value=0.687946040]->Z@448hi[t=97,slack=0.688113,value=0.688113219] t24-25=- obj=-1121.237889557->-1121.237679807 reject
+15543:  307426.54  t1   SLP     lp#28 phase=1 tr=0.176 step=0.176 pred=6.878e-01 viol=6.879e-01->6.878e-01 worst=X@395hi[t=44,slack=0.687946,value=0.687946040]->Z@448hi[t=97,slack=0.687779,value=0.687779095] t24-25=- obj=-1121.237889557->-1121.238000244 accept
+15545:  307427.15  t1   SLP     lp#29 phase=1 tr=0.352 step=0.352 pred=6.877e-01 viol=6.878e-01->6.897e-01 worst=Z@448hi[t=97,slack=0.687779,value=0.687779095]->Z@395[t=44,slack=0.689730,value=0.689730079] t24-25=- obj=-1121.238000244->-1121.239829114 reject
+15547:  307427.75  t1   SLP     lp#30 phase=1 tr=0.176 step=0.176 pred=6.878e-01 viol=6.878e-01->6.887e-01 worst=Z@448hi[t=97,slack=0.687779,value=0.687779095]->Z@395[t=44,slack=0.688713,value=0.688713198] t24-25=- obj=-1121.238000244->-1121.238878632 reject
+15549:  307428.48  t1   SLP     lp#31 phase=1 tr=0.0879 step=0.0879 pred=6.878e-01 viol=6.878e-01->6.884e-01 worst=Z@448hi[t=97,slack=0.687779,value=0.687779095]->Z@395[t=44,slack=0.688359,value=0.688358948] t24-25=- obj=-1121.238000244->-1121.238247384 reject
+15551:  307429.14  t1   SLP     lp#32 phase=1 tr=0.0439 step=0.0439 pred=6.878e-01 viol=6.878e-01->6.880e-01 worst=Z@448hi[t=97,slack=0.687779,value=0.687779095]->Z@395[t=44,slack=0.688034,value=0.688033719] t24-25=- obj=-1121.238000244->-1121.238080034 reject
+15553:  307429.71  t1   SLP     lp#33 phase=1 tr=0.0220 step=0.0220 pred=6.878e-01 viol=6.878e-01->6.879e-01 worst=Z@448hi[t=97,slack=0.687779,value=0.687779095]->Z@395[t=44,slack=0.687946,value=0.687946079] t24-25=- obj=-1121.238000244->-1121.237921071 reject
+15555:  307430.23  t1   SLP     lp#34 phase=1 tr=0.0110 step=0.0110 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=Z@448hi[t=97,slack=0.687779,value=0.687779095]->Z@448hi[t=97,slack=0.687835,value=0.687834602] t24-25=- obj=-1121.238000244->-1121.237944531 reject
+15557:  307430.67  t1   SLP     lp#35 phase=1 tr=0.00549 step=0.00549 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=Z@448hi[t=97,slack=0.687779,value=0.687779095]->X@395hi[t=44,slack=0.687776,value=0.687775975] t24-25=- obj=-1121.238000244->-1121.238028767 accept
+15559:  307431.36  t1   SLP     lp#36 phase=1 tr=0.0110 step=0.0110 pred=6.878e-01 viol=6.878e-01->6.879e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->Z@448hi[t=97,slack=0.687856,value=0.687855807] t24-25=- obj=-1121.238028767->-1121.237923979 reject
+15561:  307431.99  t1   SLP     lp#37 phase=1 tr=0.00549 step=0.00549 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->Z@448hi[t=97,slack=0.687805,value=0.687805236] t24-25=- obj=-1121.238028767->-1121.237974550 reject
+15563:  307432.58  t1   SLP     lp#38 phase=1 tr=0.00275 step=0.00275 pred=6.878e-01 viol=6.878e-01->6.880e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->Z@448hi[t=97,slack=0.687952,value=0.687951576] t24-25=- obj=-1121.238028767->-1121.237828418 reject
+15565:  307433.05  t1   SLP     lp#39 phase=1 tr=0.00137 step=0.00137 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->X@395hi[t=44,slack=0.687776,value=0.687775975] t24-25=- obj=-1121.238028767->-1121.238028767 reject
+15567:  307433.46  t1   SLP     lp#40 phase=1 tr=0.000687 step=0.000687 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->X@395hi[t=44,slack=0.687776,value=0.687775975] t24-25=- obj=-1121.238028767->-1121.238025028 reject
+15568:  307433.49  t1   SLP     phase1 infeasible viol=6.878e-01 lps=40 ms=24.0
+15569:  307433.52  t1   SLP     start n=99 m=105 seed=given budget=40/60 bestEffort=false inertiaAware=true fold=-
+15571:  307434.00  t1   SLP     lp#1 phase=1 tr=30.0 step=30.0 pred=6.862e-01 viol=6.878e-01->9.760e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->X@395hi[t=44,slack=0.976048,value=0.976047511] t24-25=- obj=-1121.238028767->-1121.149466332 reject
+15573:  307435.15  t1   SLP     lp#2 phase=1 tr=15.0 step=15.0 pred=6.865e-01 viol=6.878e-01->9.056e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->X@395hi[t=44,slack=0.905603,value=0.905603215] t24-25=- obj=-1121.238028767->-1121.300212869 reject
+15575:  307435.83  t1   SLP     lp#3 phase=1 tr=7.50 step=7.50 pred=6.871e-01 viol=6.878e-01->7.325e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->X@395hi[t=44,slack=0.732473,value=0.732472748] t24-25=- obj=-1121.238028767->-1121.308230887 reject
+15577:  307436.51  t1   SLP     lp#4 phase=1 tr=3.75 step=3.75 pred=6.875e-01 viol=6.878e-01->7.179e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->Z@395[t=44,slack=0.717899,value=0.717899159] t24-25=- obj=-1121.238028767->-1121.238437188 reject
+15579:  307437.12  t1   SLP     lp#5 phase=1 tr=1.88 step=1.88 pred=6.876e-01 viol=6.878e-01->6.904e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->X@395hi[t=44,slack=0.690356,value=0.690355538] t24-25=- obj=-1121.238028767->-1121.252726220 reject
+15581:  307437.75  t1   SLP     lp#6 phase=1 tr=0.938 step=0.938 pred=6.877e-01 viol=6.878e-01->6.883e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->X@395hi[t=44,slack=0.688289,value=0.688288838] t24-25=- obj=-1121.238028767->-1121.245458863 reject
+15583:  307438.36  t1   SLP     lp#7 phase=1 tr=0.469 step=0.469 pred=6.877e-01 viol=6.878e-01->6.880e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->Z@395[t=44,slack=0.687967,value=0.687967203] t24-25=- obj=-1121.238028767->-1121.241699938 reject
+15585:  307438.97  t1   SLP     lp#8 phase=1 tr=0.234 step=0.234 pred=6.878e-01 viol=6.878e-01->6.880e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->Z@395[t=44,slack=0.687963,value=0.687962501] t24-25=- obj=-1121.238028767->-1121.239724554 reject
+15587:  307439.59  t1   SLP     lp#9 phase=1 tr=0.117 step=0.117 pred=6.878e-01 viol=6.878e-01->6.880e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->Z@395[t=44,slack=0.688000,value=0.688000420] t24-25=- obj=-1121.238028767->-1121.238695423 reject
+15589:  307440.20  t1   SLP     lp#10 phase=1 tr=0.0586 step=0.0586 pred=6.878e-01 viol=6.878e-01->6.879e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->Z@395[t=44,slack=0.687883,value=0.687882996] t24-25=- obj=-1121.238028767->-1121.238378145 reject
+15591:  307440.81  t1   SLP     lp#11 phase=1 tr=0.0293 step=0.0293 pred=6.878e-01 viol=6.878e-01->6.879e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->Z@395[t=44,slack=0.687910,value=0.687910324] t24-25=- obj=-1121.238028767->-1121.238102893 reject
+15593:  307441.42  t1   SLP     lp#12 phase=1 tr=0.0146 step=0.0146 pred=6.878e-01 viol=6.878e-01->6.879e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->Z@395[t=44,slack=0.687894,value=0.687893663] t24-25=- obj=-1121.238028767->-1121.237995390 reject
+15595:  307442.03  t1   SLP     lp#13 phase=1 tr=0.00732 step=0.00732 pred=6.878e-01 viol=6.878e-01->6.879e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->Z@395[t=44,slack=0.687918,value=0.687917559] t24-25=- obj=-1121.238028767->-1121.237909589 reject
+15597:  307442.58  t1   SLP     lp#14 phase=1 tr=0.00366 step=0.00366 pred=6.878e-01 viol=6.878e-01->6.880e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->Z@448hi[t=97,slack=0.687967,value=0.687967278] t24-25=- obj=-1121.238028767->-1121.237812508 reject
+15599:  307443.05  t1   SLP     lp#15 phase=1 tr=0.00183 step=0.00183 pred=6.878e-01 viol=6.878e-01->6.880e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->Z@448hi[t=97,slack=0.687982,value=0.687981681] t24-25=- obj=-1121.238028767->-1121.237798313 reject
+15601:  307443.53  t1   SLP     lp#16 phase=1 tr=0.000916 step=0.000916 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->X@395hi[t=44,slack=0.687776,value=0.687775975] t24-25=- obj=-1121.238028767->-1121.238028767 reject
+15603:  307443.93  t1   SLP     lp#17 phase=1 tr=0.000458 step=0.000458 pred=6.878e-01 viol=6.878e-01->6.879e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->Z@448hi[t=97,slack=0.687892,value=0.687892166] t24-25=- obj=-1121.238028767->-1121.237887620 reject
+15605:  307444.44  t1   SLP     lp#18 phase=1 tr=0.000229 step=0.000229 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->X@395hi[t=44,slack=0.687776,value=0.687775975] t24-25=- obj=-1121.238028767->-1121.238028767 reject
+15607:  307444.96  t1   SLP     lp#19 phase=1 tr=0.000114 step=0.000114 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->X@395hi[t=44,slack=0.687776,value=0.687775975] t24-25=- obj=-1121.238028767->-1121.238028767 reject
+15609:  307446.36  t1   SLP     lp#20 phase=1 tr=5.72e-05 step=5.72e-05 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->X@395hi[t=44,slack=0.687776,value=0.687775975] t24-25=- obj=-1121.238028767->-1121.238028767 reject
+15611:  307447.77  t1   SLP     lp#21 phase=1 tr=2.86e-05 step=2.86e-05 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->X@395hi[t=44,slack=0.687776,value=0.687775975] t24-25=- obj=-1121.238028767->-1121.238028767 reject
+15613:  307449.16  t1   SLP     lp#22 phase=1 tr=1.43e-05 step=1.43e-05 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->X@395hi[t=44,slack=0.687776,value=0.687775975] t24-25=- obj=-1121.238028767->-1121.238025028 reject
+15615:  307450.55  t1   SLP     lp#23 phase=1 tr=7.15e-06 step=7.15e-06 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->X@395hi[t=44,slack=0.687776,value=0.687775975] t24-25=- obj=-1121.238028767->-1121.238028767 reject
+15617:  307451.99  t1   SLP     lp#24 phase=1 tr=3.58e-06 step=3.58e-06 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->X@395hi[t=44,slack=0.687776,value=0.687775975] t24-25=- obj=-1121.238028767->-1121.238028767 reject
+15619:  307453.38  t1   SLP     lp#25 phase=1 tr=1.79e-06 step=1.79e-06 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->X@395hi[t=44,slack=0.687776,value=0.687775975] t24-25=- obj=-1121.238028767->-1121.238028767 reject
+15621:  307454.89  t1   SLP     lp#26 phase=1 tr=8.94e-07 step=8.94e-07 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->X@395hi[t=44,slack=0.687776,value=0.687775975] t24-25=- obj=-1121.238028767->-1121.238028767 reject
+15623:  307456.32  t1   SLP     lp#27 phase=1 tr=4.47e-07 step=4.47e-07 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->X@395hi[t=44,slack=0.687776,value=0.687775975] t24-25=- obj=-1121.238028767->-1121.238028767 reject
+15625:  307457.74  t1   SLP     lp#28 phase=1 tr=2.24e-07 step=2.24e-07 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->X@395hi[t=44,slack=0.687776,value=0.687775975] t24-25=- obj=-1121.238028767->-1121.238028767 reject
+15627:  307459.26  t1   SLP     lp#29 phase=1 tr=1.12e-07 step=1.12e-07 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@395hi[t=44,slack=0.687776,value=0.687775975]->X@395hi[t=44,slack=0.687776,value=0.687775975] t24-25=- obj=-1121.238028767->-1121.238028767 reject
+15628:  307459.28  t1   SLP     phase1 infeasible viol=6.878e-01 lps=29 ms=25.8
+15629:  307459.30  t1   LRS-OBJ end fallback SLP result=miss ms=695.811
+15630:  307459.33  t1   LRS     commit=1 window i=38 we=45 ticks=99 cons=105 last=false -> miss ms=5956.6
+15631:  307459.47  t1   LRS-WIN commit=1 jumps=[38,43) ticks=[351,441) seed=(702.301967261052,-1111.839635559697;-0.000002268767,-0.269424831020) yaw=224.999984741 constraints=89 replayTicks=14
+15632:  307459.47  t1   LRS-AIR nominalEnd=438 objectiveTick=441 extension=3 final=false
+15633:  307459.53  t1   LRS-PREFLIGHT primary Z/MAX@90 directCap=false
+15634:  307459.53  t1   LRS-OBJ begin primary Z/MAX@90
+15635:  307459.55  t1   CF      pass=0 pattern=free n=90 m=89 robust
+15636:  308074.59  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=67.916
+15637:  308075.08  t1   CF-CHECK margin=3.00e-04 replayViol=0.715447632981 modelViol=2.39684662615
+15638:  308075.10  t1   CF      rung margin=3.00e-04 iters=10000 pg=3.263e+00 dual=-7.414457094 viol=2.397e+00 ms=615.498 stop=ITERATION_LIMIT finalPg=2.376e+00
+15639:  308075.27  t1   CF-SEED source assumedViolation=2.37593816618 eligible=false
+15640:  308075.30  t1   CF      pass=1 pattern=x@0,@15,@57-71,@75-89+z@33,@35 n=90 m=89 robust
+15641:  308709.45  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=71.018
+15642:  308709.53  t1   CF-CHECK margin=3.00e-04 replayViol=0.731775354560 modelViol=1.73466770558
+15643:  308709.54  t1   CF      rung margin=3.00e-04 iters=10000 pg=1.385e+00 dual=-7.867494975 viol=1.735e+00 ms=634.175 stop=ITERATION_LIMIT finalPg=1.340e+00
+15644:  308709.76  t1   CF-SEED source assumedViolation=1.33942571350 eligible=false
+15645:  308709.80  t1   CF      pass=2 pattern=x@0,@55-74+z@42 n=90 m=89 robust
+15646:  309493.65  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=69.124
+15647:  309493.72  t1   CF-CHECK margin=3.00e-04 replayViol=0.708248360178 modelViol=2.11100434818
+15648:  309493.74  t1   CF      rung margin=3.00e-04 iters=10000 pg=1.602e+00 dual=-7.615647751 viol=2.111e+00 ms=783.877 stop=ITERATION_LIMIT finalPg=2.626e+00
+15649:  309493.93  t1   CF-SEED source assumedViolation=2.62609842181 eligible=false
+15650:  309493.95  t1   CF      pass=2 no improvement (viol=2.111e+00), stop
+15651:  309493.95  t1   CF      fallback bestViol=1.735e+00 us=2034406.8
+15652:  309493.98  t1   LRS-OBJ end primary Z/MAX@90 result=miss ms=2034.442
+15653:  309493.99  t1   LRS-PREFLIGHT alternate Z/MIN@90 directCap=false
+15654:  309493.99  t1   LRS-OBJ begin alternate Z/MIN@90
+15655:  309494.01  t1   CF      pass=0 pattern=free n=90 m=89 robust
+15656:  310170.78  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=69.912
+15657:  310170.85  t1   CF-CHECK margin=3.00e-04 replayViol=0.726802805015 modelViol=3.69107878057
+15658:  310170.86  t1   CF      rung margin=3.00e-04 iters=10000 pg=1.219e+00 dual=14.047246608 viol=3.691e+00 ms=676.804 stop=ITERATION_LIMIT finalPg=3.692e+00
+15659:  310171.04  t1   CF-SEED source assumedViolation=3.69132360655 eligible=false
+15660:  310171.07  t1   CF      pass=1 pattern=x@0,@53-55,@60-89+z@43 n=90 m=89 robust
+15661:  310873.55  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=70.996
+15662:  310873.67  t1   CF-CHECK margin=3.00e-04 replayViol=0.749535077513 modelViol=1.80666367327
+15663:  310873.69  t1   CF      rung margin=3.00e-04 iters=10000 pg=4.021e+00 dual=13.812625116 viol=1.807e+00 ms=702.547 stop=ITERATION_LIMIT finalPg=1.807e+00
+15664:  310873.91  t1   CF-SEED source assumedViolation=1.80666367326 eligible=false
+15665:  310873.94  t1   CF      pass=2 pattern=x@0,@54-55,@60-89+z@15,@44,@51 n=90 m=89 robust
+15666:  311588.94  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=69.389
+15667:  311589.01  t1   CF-CHECK margin=3.00e-04 replayViol=0.720809891800 modelViol=2.10971468063
+15668:  311589.02  t1   CF      rung margin=3.00e-04 iters=10000 pg=3.205e+00 dual=13.913225550 viol=2.110e+00 ms=715.018 stop=ITERATION_LIMIT finalPg=2.226e+00
+15669:  311589.24  t1   CF-SEED source assumedViolation=2.22610074346 eligible=false
+15670:  311589.26  t1   CF      pass=2 no improvement (viol=2.110e+00), stop
+15671:  311589.26  t1   CF      fallback bestViol=1.807e+00 us=2095253.1
+15672:  311589.28  t1   LRS-OBJ end alternate Z/MIN@90 result=miss ms=2095.285
+15673:  311589.29  t1   LRS-PREFLIGHT alternate X/MAX@90 directCap=false
+15674:  311589.30  t1   LRS-OBJ begin alternate X/MAX@90
+15675:  311589.32  t1   CF      pass=0 pattern=free n=90 m=89 robust
+15676:  311969.00  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=63.670
+15677:  311969.06  t1   CF-CHECK margin=3.00e-04 replayViol=0.711237417918 modelViol=1.13496833844
+15678:  311969.07  t1   CF      rung margin=3.00e-04 iters=10000 pg=1.193e+00 dual=-10.889075901 viol=1.135e+00 ms=379.704 stop=ITERATION_LIMIT finalPg=1.135e+00
+15679:  311969.24  t1   CF-SEED source assumedViolation=1.13496836707 eligible=false
+15680:  311969.27  t1   CF      pass=1 pattern=x@0,@79,@86 n=90 m=89 robust
+15681:  312353.53  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=61.915
+15682:  312353.60  t1   CF-CHECK margin=3.00e-04 replayViol=0.711214906783 modelViol=0.995192716214
+15683:  312353.61  t1   CF      rung margin=3.00e-04 iters=10000 pg=2.147e+00 dual=-10.804427010 viol=9.952e-01 ms=384.295 stop=ITERATION_LIMIT finalPg=1.023e+00
+15684:  312353.78  t1   CF-SEED source assumedViolation=1.02319698790 eligible=false
+15685:  312353.81  t1   CF      pass=2 pattern=x@0,@66+z@15 n=90 m=89 robust
+15686:  312763.15  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=62.416
+15687:  312763.22  t1   CF-CHECK margin=3.00e-04 replayViol=0.711532374096 modelViol=1.18849599551
+15688:  312763.23  t1   CF      rung margin=3.00e-04 iters=10000 pg=9.061e-01 dual=-10.755122058 viol=1.188e+00 ms=409.365 stop=ITERATION_LIMIT finalPg=1.172e+00
+15689:  312763.46  t1   CF-SEED source assumedViolation=1.17195352008 eligible=false
+15690:  312763.51  t1   CF      pass=2 no improvement (viol=1.188e+00), stop
+15691:  312763.52  t1   CF      fallback bestViol=9.952e-01 us=1174208.1
+15692:  312763.54  t1   LRS-OBJ end alternate X/MAX@90 result=miss ms=1174.241
+15693:  312763.56  t1   LRS-PREFLIGHT alternate X/MIN@90 directCap=false
+15694:  312763.56  t1   LRS-OBJ begin alternate X/MIN@90
+15695:  312763.58  t1   CF      pass=0 pattern=free n=90 m=89 robust
+15696:  313302.88  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=64.351
+15697:  313302.96  t1   CF-CHECK margin=3.00e-04 replayViol=0.710412563665 modelViol=6.05291436757
+15698:  313302.97  t1   CF      rung margin=3.00e-04 iters=10000 pg=4.187e+00 dual=13.089320414 viol=6.053e+00 ms=539.340 stop=ITERATION_LIMIT finalPg=6.035e+00
+15699:  313303.13  t1   CF-SEED source assumedViolation=6.03455775112 eligible=false
+15700:  313303.16  t1   CF      pass=1 pattern=x@0,@11,@50+z@17 n=90 m=89 robust
+15701:  313602.11  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=64.324
+15702:  313602.18  t1   CF-CHECK margin=3.00e-04 replayViol=0.711060382863 modelViol=2.78188870004
+15703:  313602.19  t1   CF      rung margin=3.00e-04 iters=10000 pg=7.114e-01 dual=-121.120264466 viol=2.782e+00 ms=298.982 stop=ITERATION_LIMIT finalPg=2.611e+00
+15704:  313602.37  t1   CF-SEED source assumedViolation=2.61066604905 eligible=false
+15705:  313602.39  t1   CF      pass=2 pattern=x@0,@51,@60,@79 n=90 m=89 robust
+15706:  313971.84  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=63.757
+15707:  313971.97  t1   CF-CHECK margin=3.00e-04 replayViol=0.719914329125 modelViol=0.719934008878
+15708:  313971.99  t1   CF      rung margin=3.00e-04 iters=10000 pg=7.202e-01 dual=11.920200060 viol=7.199e-01 ms=369.538 stop=ITERATION_LIMIT finalPg=7.202e-01
+15709:  313972.17  t1   CF-SEED source assumedViolation=0.719934008878 eligible=false
+15710:  313972.20  t1   CF      pass=3 pattern=x@0,@52,@60,@79 n=90 m=89 robust
+15711:  314328.70  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=62.654
+15712:  314328.81  t1   CF-CHECK margin=3.00e-04 replayViol=0.711533320431 modelViol=1.05459260730
+15713:  314328.82  t1   CF      rung margin=3.00e-04 iters=10000 pg=8.570e-01 dual=11.718729162 viol=1.055e+00 ms=356.571 stop=ITERATION_LIMIT finalPg=1.008e+00
+15714:  314329.00  t1   CF-SEED source assumedViolation=1.00794076095 eligible=false
+15715:  314329.01  t1   CF      pass=3 no improvement (viol=1.055e+00), stop
+15716:  314329.02  t1   CF      fallback bestViol=7.199e-01 us=1565437.9
+15717:  314329.03  t1   LRS-OBJ end alternate X/MIN@90 result=miss ms=1565.469
+15718:  314329.04  t1   LRS-OBJ begin fallback SLP Z/MAX@90
+15719:  314330.87  t1   SLP     start n=90 m=89 seed=dual budget=40/60 bestEffort=false inertiaAware=false fold=-
+15721:  314333.14  t1   SLP     lp#1 phase=1 tr=30.0 step=30.0 pred=2.021e+00 viol=7.894e+00->3.160e+00 worst=Z@437hi[t=86,slack=7.89433,value=7.894332345]->X@395hi[t=44,slack=3.16029,value=3.160293541] t24-25=- obj=-1113.356586815->-1118.847154109 accept
+15723:  314335.50  t1   SLP     lp#2 phase=1 tr=45.0 step=45.0 pred=3.685e-01 viol=3.160e+00->2.292e+00 worst=X@395hi[t=44,slack=3.16029,value=3.160293541]->X@426[t=75,slack=2.29243,value=2.292434667] t24-25=- obj=-1118.847154109->-1119.401482271 accept
+15725:  314335.92  t1   SLP     lp#3 phase=1 tr=45.0 step=45.0 pred=5.910e-01 viol=2.292e+00->1.639e+00 worst=X@426[t=75,slack=2.29243,value=2.292434667]->X@395hi[t=44,slack=1.63934,value=1.639337187] t24-25=- obj=-1119.401482271->-1121.016251197 accept
+15727:  314336.33  t1   SLP     lp#4 phase=1 tr=45.0 step=45.0 pred=3.665e-01 viol=1.639e+00->1.643e+00 worst=X@395hi[t=44,slack=1.63934,value=1.639337187]->X@395hi[t=44,slack=1.64261,value=1.642614206] t24-25=- obj=-1121.016251197->-1121.259062487 reject
+15729:  314336.79  t1   SLP     lp#5 phase=1 tr=22.5 step=22.5 pred=6.567e-01 viol=1.639e+00->1.092e+00 worst=X@395hi[t=44,slack=1.63934,value=1.639337187]->X@395hi[t=44,slack=1.09204,value=1.092036202] t24-25=- obj=-1121.016251197->-1121.259084790 accept
+15731:  314337.37  t1   SLP     lp#6 phase=1 tr=45.0 step=45.0 pred=5.631e-01 viol=1.092e+00->1.696e+00 worst=X@395hi[t=44,slack=1.09204,value=1.092036202]->X@426[t=75,slack=1.69619,value=1.696186831] t24-25=- obj=-1121.259084790->-1121.321876150 reject
+15733:  314337.89  t1   SLP     lp#7 phase=1 tr=22.5 step=22.5 pred=6.061e-01 viol=1.092e+00->1.022e+00 worst=X@395hi[t=44,slack=1.09204,value=1.092036202]->X@395hi[t=44,slack=1.02177,value=1.021769584] t24-25=- obj=-1121.259084790->-1121.522988013 accept
+15735:  314338.20  t1   SLP     lp#8 phase=1 tr=45.0 step=45.0 pred=5.910e-01 viol=1.022e+00->1.233e+00 worst=X@395hi[t=44,slack=1.02177,value=1.021769584]->X@395hi[t=44,slack=1.23302,value=1.233024669] t24-25=- obj=-1121.522988013->-1122.035076096 reject
+15737:  314338.49  t1   SLP     lp#9 phase=1 tr=22.5 step=22.5 pred=6.437e-01 viol=1.022e+00->8.382e-01 worst=X@395hi[t=44,slack=1.02177,value=1.021769584]->X@395hi[t=44,slack=0.838207,value=0.838207389] t24-25=- obj=-1121.522988013->-1121.825435450 accept
+15739:  314338.86  t1   SLP     lp#10 phase=1 tr=45.0 step=45.0 pred=5.631e-01 viol=8.382e-01->1.411e+00 worst=X@395hi[t=44,slack=0.838207,value=0.838207389]->X@395hi[t=44,slack=1.41069,value=1.410691908] t24-25=- obj=-1121.825435450->-1121.454302310 reject
+15741:  314339.29  t1   SLP     lp#11 phase=1 tr=22.5 step=22.5 pred=6.061e-01 viol=8.382e-01->9.221e-01 worst=X@395hi[t=44,slack=0.838207,value=0.838207389]->X@395hi[t=44,slack=0.922133,value=0.922133394] t24-25=- obj=-1121.825435450->-1121.561894259 reject
+15743:  314339.57  t1   SLP     lp#12 phase=1 tr=11.3 step=11.3 pred=6.705e-01 viol=8.382e-01->7.571e-01 worst=X@395hi[t=44,slack=0.838207,value=0.838207389]->X@395hi[t=44,slack=0.757114,value=0.757114068] t24-25=- obj=-1121.825435450->-1121.587145754 accept
+15745:  314340.01  t1   SLP     lp#13 phase=1 tr=22.5 step=22.5 pred=6.519e-01 viol=7.571e-01->1.132e+00 worst=X@395hi[t=44,slack=0.757114,value=0.757114068]->X@440[t=89,slack=1.13153,value=1.131526848] t24-25=- obj=-1121.587145754->-1121.740955248 reject
+15747:  314340.46  t1   SLP     lp#14 phase=1 tr=11.3 step=11.3 pred=6.718e-01 viol=7.571e-01->7.780e-01 worst=X@395hi[t=44,slack=0.757114,value=0.757114068]->X@395hi[t=44,slack=0.778049,value=0.778049381] t24-25=- obj=-1121.587145754->-1121.724717262 reject
+15749:  314341.07  t1   SLP     lp#15 phase=1 tr=5.63 step=5.63 pred=6.823e-01 viol=7.571e-01->7.024e-01 worst=X@395hi[t=44,slack=0.757114,value=0.757114068]->X@395hi[t=44,slack=0.702370,value=0.702370341] t24-25=- obj=-1121.587145754->-1121.613091014 accept
+15751:  314341.62  t1   SLP     lp#16 phase=1 tr=11.3 step=11.3 pred=6.859e-01 viol=7.024e-01->7.656e-01 worst=X@395hi[t=44,slack=0.702370,value=0.702370341]->X@395hi[t=44,slack=0.765579,value=0.765578772] t24-25=- obj=-1121.613091014->-1121.623723651 reject
+15753:  314342.06  t1   SLP     lp#17 phase=1 tr=5.63 step=5.63 pred=6.869e-01 viol=7.024e-01->7.067e-01 worst=X@395hi[t=44,slack=0.702370,value=0.702370341]->X@395hi[t=44,slack=0.706663,value=0.706663199] t24-25=- obj=-1121.613091014->-1121.618173918 reject
+15755:  314342.53  t1   SLP     lp#18 phase=1 tr=2.81 step=2.81 pred=6.875e-01 viol=7.024e-01->6.925e-01 worst=X@395hi[t=44,slack=0.702370,value=0.702370341]->X@395hi[t=44,slack=0.692507,value=0.692507106] t24-25=- obj=-1121.613091014->-1121.615588907 accept
+15757:  314342.81  t1   SLP     lp#19 phase=1 tr=5.63 step=5.63 pred=6.840e-01 viol=6.925e-01->6.897e-01 worst=X@395hi[t=44,slack=0.692507,value=0.692507106]->X@356[t=5,slack=0.689681,value=0.689680785] t24-25=- obj=-1121.615588907->-1121.630586465 accept
+15759:  314343.24  t1   SLP     lp#20 phase=1 tr=11.3 step=11.3 pred=6.767e-01 viol=6.897e-01->7.459e-01 worst=X@356[t=5,slack=0.689681,value=0.689680785]->X@395hi[t=44,slack=0.745905,value=0.745904591] t24-25=- obj=-1121.630586465->-1121.672291746 reject
+15761:  314343.65  t1   SLP     lp#21 phase=1 tr=5.63 step=5.63 pred=6.832e-01 viol=6.897e-01->6.925e-01 worst=X@356[t=5,slack=0.689681,value=0.689680785]->X@395hi[t=44,slack=0.692507,value=0.692507106] t24-25=- obj=-1121.630586465->-1121.615588907 reject
+15763:  314343.95  t1   SLP     lp#22 phase=1 tr=2.81 step=2.81 pred=6.864e-01 viol=6.897e-01->6.959e-01 worst=X@356[t=5,slack=0.689681,value=0.689680785]->Z@395[t=44,slack=0.695913,value=0.695913180] t24-25=- obj=-1121.630586465->-1121.603590739 reject
+15765:  314344.29  t1   SLP     lp#23 phase=1 tr=1.41 step=1.41 pred=6.881e-01 viol=6.897e-01->6.884e-01 worst=X@356[t=5,slack=0.689681,value=0.689680785]->X@356[t=5,slack=0.688418,value=0.688417799] t24-25=- obj=-1121.630586465->-1121.612083806 accept
+15767:  314344.60  t1   SLP     lp#24 phase=1 tr=2.81 step=2.81 pred=6.866e-01 viol=6.884e-01->7.062e-01 worst=X@356[t=5,slack=0.688418,value=0.688417799]->Z@395[t=44,slack=0.706248,value=0.706247850] t24-25=- obj=-1121.612083806->-1121.605008273 reject
+15769:  314345.01  t1   SLP     lp#25 phase=1 tr=1.41 step=1.41 pred=6.875e-01 viol=6.884e-01->7.065e-01 worst=X@356[t=5,slack=0.688418,value=0.688417799]->Z@395[t=44,slack=0.706462,value=0.706462411] t24-25=- obj=-1121.612083806->-1121.591942647 reject
+15771:  314345.35  t1   SLP     lp#26 phase=1 tr=0.703 step=0.703 pred=6.880e-01 viol=6.884e-01->7.077e-01 worst=X@356[t=5,slack=0.688418,value=0.688417799]->Z@429hi[t=78,slack=0.707742,value=0.707742261] t24-25=- obj=-1121.612083806->-1121.590643462 reject
+15773:  314345.76  t1   SLP     lp#27 phase=1 tr=0.352 step=0.352 pred=6.882e-01 viol=6.884e-01->7.065e-01 worst=X@356[t=5,slack=0.688418,value=0.688417799]->Z@429hi[t=78,slack=0.706543,value=0.706542852] t24-25=- obj=-1121.612083806->-1121.591842871 reject
+15775:  314346.01  t1   SLP     lp#28 phase=1 tr=0.176 step=0.176 pred=6.883e-01 viol=6.884e-01->7.079e-01 worst=X@356[t=5,slack=0.688418,value=0.688417799]->Z@429hi[t=78,slack=0.707882,value=0.707881608] t24-25=- obj=-1121.612083806->-1121.590504115 reject
+15777:  314346.26  t1   SLP     lp#29 phase=1 tr=0.0879 step=0.0879 pred=6.884e-01 viol=6.884e-01->7.072e-01 worst=X@356[t=5,slack=0.688418,value=0.688417799]->Z@429hi[t=78,slack=0.707176,value=0.707175605] t24-25=- obj=-1121.612083806->-1121.591210118 reject
+15779:  314346.47  t1   SLP     lp#30 phase=1 tr=0.0439 step=0.0439 pred=6.884e-01 viol=6.884e-01->7.062e-01 worst=X@356[t=5,slack=0.688418,value=0.688417799]->Z@429hi[t=78,slack=0.706190,value=0.706189952] t24-25=- obj=-1121.612083806->-1121.592195771 reject
+15781:  314346.73  t1   SLP     lp#31 phase=1 tr=0.0220 step=0.0220 pred=6.884e-01 viol=6.884e-01->7.056e-01 worst=X@356[t=5,slack=0.688418,value=0.688417799]->Z@429hi[t=78,slack=0.705640,value=0.705639628] t24-25=- obj=-1121.612083806->-1121.592746095 reject
+15783:  314346.95  t1   SLP     lp#32 phase=1 tr=0.0110 step=0.0110 pred=6.884e-01 viol=6.884e-01->6.884e-01 worst=X@356[t=5,slack=0.688418,value=0.688417799]->X@356[t=5,slack=0.688411,value=0.688410780] t24-25=- obj=-1121.612083806->-1121.611838163 accept
+15785:  314347.18  t1   SLP     lp#33 phase=1 tr=0.0220 step=0.0220 pred=6.884e-01 viol=6.884e-01->7.059e-01 worst=X@356[t=5,slack=0.688411,value=0.688410780]->Z@429hi[t=78,slack=0.705915,value=0.705914799] t24-25=- obj=-1121.611838163->-1121.592470924 reject
+15787:  314347.48  t1   SLP     lp#34 phase=1 tr=0.0110 step=0.0110 pred=6.884e-01 viol=6.884e-01->7.056e-01 worst=X@356[t=5,slack=0.688411,value=0.688410780]->Z@429hi[t=78,slack=0.705640,value=0.705639628] t24-25=- obj=-1121.611838163->-1121.592746095 reject
+15789:  314347.70  t1   SLP     lp#35 phase=1 tr=0.00549 step=0.00549 pred=6.884e-01 viol=6.884e-01->7.055e-01 worst=X@356[t=5,slack=0.688411,value=0.688410780]->Z@429hi[t=78,slack=0.705502,value=0.705502031] t24-25=- obj=-1121.611838163->-1121.592883692 reject
+15791:  314347.92  t1   SLP     lp#36 phase=1 tr=0.00275 step=0.00275 pred=6.884e-01 viol=6.884e-01->6.884e-01 worst=X@356[t=5,slack=0.688411,value=0.688410780]->X@356[t=5,slack=0.688411,value=0.688410507] t24-25=- obj=-1121.611838163->-1121.611853981 accept
+15793:  314348.14  t1   SLP     lp#37 phase=1 tr=0.00549 step=0.00549 pred=6.884e-01 viol=6.884e-01->7.055e-01 worst=X@356[t=5,slack=0.688411,value=0.688410507]->Z@429hi[t=78,slack=0.705482,value=0.705482204] t24-25=- obj=-1121.611853981->-1121.592903519 reject
+15795:  314348.38  t1   SLP     lp#38 phase=1 tr=0.00275 step=0.00275 pred=6.884e-01 viol=6.884e-01->7.055e-01 worst=X@356[t=5,slack=0.688411,value=0.688410507]->Z@429hi[t=78,slack=0.705502,value=0.705502031] t24-25=- obj=-1121.611853981->-1121.592883692 reject
+15797:  314348.61  t1   SLP     lp#39 phase=1 tr=0.00137 step=0.00137 pred=6.884e-01 viol=6.884e-01->7.055e-01 worst=X@356[t=5,slack=0.688411,value=0.688410507]->Z@429hi[t=78,slack=0.705542,value=0.705542278] t24-25=- obj=-1121.611853981->-1121.592843445 reject
+15799:  314348.88  t1   SLP     lp#40 phase=1 tr=0.000687 step=0.000687 pred=6.884e-01 viol=6.884e-01->7.055e-01 worst=X@356[t=5,slack=0.688411,value=0.688410507]->Z@429hi[t=78,slack=0.705542,value=0.705542278] t24-25=- obj=-1121.611853981->-1121.592843445 reject
+15800:  314348.92  t1   SLP     phase1 infeasible viol=6.884e-01 lps=40 ms=18.1
+15801:  314348.96  t1   SLP     start n=90 m=89 seed=given budget=40/60 bestEffort=false inertiaAware=true fold=-
+15803:  314349.32  t1   SLP     lp#1 phase=1 tr=30.0 step=30.0 pred=6.726e-01 viol=6.884e-01->1.180e+00 worst=X@356[t=5,slack=0.688411,value=0.688410507]->X@395hi[t=44,slack=1.17958,value=1.179575895] t24-25=- obj=-1121.611853981->-1121.269844817 reject
+15805:  314349.72  t1   SLP     lp#2 phase=1 tr=15.0 step=15.0 pred=6.788e-01 viol=6.884e-01->8.382e-01 worst=X@356[t=5,slack=0.688411,value=0.688410507]->Z@429hi[t=78,slack=0.838232,value=0.838232371] t24-25=- obj=-1121.611853981->-1121.471506185 reject
+15807:  314350.04  t1   SLP     lp#3 phase=1 tr=7.50 step=7.50 pred=6.836e-01 viol=6.884e-01->7.393e-01 worst=X@356[t=5,slack=0.688411,value=0.688410507]->Z@429hi[t=78,slack=0.739315,value=0.739315291] t24-25=- obj=-1121.611853981->-1121.563411125 reject
+15809:  314350.37  t1   SLP     lp#4 phase=1 tr=3.75 step=3.75 pred=6.860e-01 viol=6.884e-01->7.047e-01 worst=X@356[t=5,slack=0.688411,value=0.688410507]->Z@429hi[t=78,slack=0.704666,value=0.704665520] t24-25=- obj=-1121.611853981->-1121.593720203 reject
+15811:  314351.60  t1   SLP     lp#5 phase=1 tr=1.88 step=1.88 pred=6.872e-01 viol=6.884e-01->7.049e-01 worst=X@356[t=5,slack=0.688411,value=0.688410507]->Z@429hi[t=78,slack=0.704864,value=0.704863869] t24-25=- obj=-1121.611853981->-1121.593521854 reject
+15813:  314351.95  t1   SLP     lp#6 phase=1 tr=0.938 step=0.938 pred=6.878e-01 viol=6.884e-01->7.049e-01 worst=X@356[t=5,slack=0.688411,value=0.688410507]->Z@429hi[t=78,slack=0.704936,value=0.704935703] t24-25=- obj=-1121.611853981->-1121.593450020 reject
+15815:  314352.20  t1   SLP     lp#7 phase=1 tr=0.469 step=0.469 pred=6.881e-01 viol=6.884e-01->7.084e-01 worst=X@356[t=5,slack=0.688411,value=0.688410507]->Z@429hi[t=78,slack=0.708379,value=0.708379253] t24-25=- obj=-1121.611853981->-1121.590006470 reject
+15817:  314352.46  t1   SLP     lp#8 phase=1 tr=0.234 step=0.234 pred=6.883e-01 viol=6.884e-01->7.078e-01 worst=X@356[t=5,slack=0.688411,value=0.688410507]->Z@429hi[t=78,slack=0.707752,value=0.707751617] t24-25=- obj=-1121.611853981->-1121.590634106 reject
+15819:  314352.71  t1   SLP     lp#9 phase=1 tr=0.117 step=0.117 pred=6.883e-01 viol=6.884e-01->7.076e-01 worst=X@356[t=5,slack=0.688411,value=0.688410507]->Z@429hi[t=78,slack=0.707579,value=0.707578865] t24-25=- obj=-1121.611853981->-1121.590806382 reject
+15821:  314352.93  t1   SLP     lp#10 phase=1 tr=0.0586 step=0.0586 pred=6.884e-01 viol=6.884e-01->7.069e-01 worst=X@356[t=5,slack=0.688411,value=0.688410507]->Z@429hi[t=78,slack=0.706858,value=0.706858095] t24-25=- obj=-1121.611853981->-1121.591527628 reject
+15823:  314353.16  t1   SLP     lp#11 phase=1 tr=0.0293 step=0.0293 pred=6.884e-01 viol=6.884e-01->7.062e-01 worst=X@356[t=5,slack=0.688411,value=0.688410507]->Z@429hi[t=78,slack=0.706209,value=0.706209034] t24-25=- obj=-1121.611853981->-1121.592176689 reject
+15825:  314353.38  t1   SLP     lp#12 phase=1 tr=0.0146 step=0.0146 pred=6.884e-01 viol=6.884e-01->7.058e-01 worst=X@356[t=5,slack=0.688411,value=0.688410507]->Z@429hi[t=78,slack=0.705757,value=0.705757383] t24-25=- obj=-1121.611853981->-1121.592628340 reject
+15827:  314353.64  t1   SLP     lp#13 phase=1 tr=0.00732 step=0.00732 pred=6.884e-01 viol=6.884e-01->7.057e-01 worst=X@356[t=5,slack=0.688411,value=0.688410507]->Z@429hi[t=78,slack=0.705659,value=0.705658703] t24-25=- obj=-1121.611853981->-1121.592727020 reject
+15829:  314353.87  t1   SLP     lp#14 phase=1 tr=0.00366 step=0.00366 pred=6.884e-01 viol=6.884e-01->7.055e-01 worst=X@356[t=5,slack=0.688411,value=0.688410507]->Z@429hi[t=78,slack=0.705482,value=0.705482204] t24-25=- obj=-1121.611853981->-1121.592903519 reject
+15831:  314354.10  t1   SLP     lp#15 phase=1 tr=0.00183 step=0.00183 pred=6.884e-01 viol=6.884e-01->7.055e-01 worst=X@356[t=5,slack=0.688411,value=0.688410507]->Z@429hi[t=78,slack=0.705521,value=0.705521106] t24-25=- obj=-1121.611853981->-1121.592864617 reject
+15833:  314354.32  t1   SLP     lp#16 phase=1 tr=0.000916 step=0.000916 pred=6.884e-01 viol=6.884e-01->7.055e-01 worst=X@356[t=5,slack=0.688411,value=0.688410507]->Z@429hi[t=78,slack=0.705542,value=0.705542278] t24-25=- obj=-1121.611853981->-1121.592843445 reject
+15835:  314354.54  t1   SLP     lp#17 phase=1 tr=0.000458 step=0.000458 pred=6.884e-01 viol=6.884e-01->6.884e-01 worst=X@356[t=5,slack=0.688411,value=0.688410507]->X@356[t=5,slack=0.688410,value=0.688410088] t24-25=- obj=-1121.611853981->-1121.611837098 accept
+15837:  314354.77  t1   SLP     lp#18 phase=1 tr=0.000916 step=0.000916 pred=6.884e-01 viol=6.884e-01->7.055e-01 worst=X@356[t=5,slack=0.688410,value=0.688410088]->Z@429hi[t=78,slack=0.705542,value=0.705542278] t24-25=- obj=-1121.611837098->-1121.592843445 reject
+15839:  314355.00  t1   SLP     lp#19 phase=1 tr=0.000458 step=0.000458 pred=6.884e-01 viol=6.884e-01->7.055e-01 worst=X@356[t=5,slack=0.688410,value=0.688410088]->Z@429hi[t=78,slack=0.705542,value=0.705542278] t24-25=- obj=-1121.611837098->-1121.592843445 reject
+15841:  314355.23  t1   SLP     lp#20 phase=1 tr=0.000229 step=0.000229 pred=6.884e-01 viol=6.884e-01->7.055e-01 worst=X@356[t=5,slack=0.688410,value=0.688410088]->Z@429hi[t=78,slack=0.705542,value=0.705542278] t24-25=- obj=-1121.611837098->-1121.592843445 reject
+15843:  314355.47  t1   SLP     lp#21 phase=1 tr=0.000114 step=0.000114 pred=6.884e-01 viol=6.884e-01->6.884e-01 worst=X@356[t=5,slack=0.688410,value=0.688410088]->X@356[t=5,slack=0.688410,value=0.688410088] t24-25=- obj=-1121.611837098->-1121.611853976 reject
+15845:  314355.71  t1   SLP     lp#22 phase=1 tr=5.72e-05 step=5.72e-05 pred=6.884e-01 viol=6.884e-01->6.884e-01 worst=X@356[t=5,slack=0.688410,value=0.688410088]->X@356[t=5,slack=0.688410,value=0.688410088] t24-25=- obj=-1121.611837098->-1121.611837098 reject
+15847:  314355.94  t1   SLP     lp#23 phase=1 tr=2.86e-05 step=2.86e-05 pred=6.884e-01 viol=6.884e-01->6.884e-01 worst=X@356[t=5,slack=0.688410,value=0.688410088]->X@356[t=5,slack=0.688410,value=0.688410088] t24-25=- obj=-1121.611837098->-1121.611853976 reject
+15849:  314356.17  t1   SLP     lp#24 phase=1 tr=1.43e-05 step=1.43e-05 pred=6.884e-01 viol=6.884e-01->6.884e-01 worst=X@356[t=5,slack=0.688410,value=0.688410088]->X@356[t=5,slack=0.688410,value=0.688410088] t24-25=- obj=-1121.611837098->-1121.611837098 reject
+15851:  314356.46  t1   SLP     lp#25 phase=1 tr=7.15e-06 step=7.15e-06 pred=6.884e-01 viol=6.884e-01->6.884e-01 worst=X@356[t=5,slack=0.688410,value=0.688410088]->X@356[t=5,slack=0.688410,value=0.688410088] t24-25=- obj=-1121.611837098->-1121.611853976 reject
+15853:  314356.79  t1   SLP     lp#26 phase=1 tr=3.58e-06 step=3.58e-06 pred=6.884e-01 viol=6.884e-01->6.884e-01 worst=X@356[t=5,slack=0.688410,value=0.688410088]->X@356[t=5,slack=0.688410,value=0.688410088] t24-25=- obj=-1121.611837098->-1121.611853976 reject
+15855:  314357.03  t1   SLP     lp#27 phase=1 tr=1.79e-06 step=1.79e-06 pred=6.884e-01 viol=6.884e-01->6.884e-01 worst=X@356[t=5,slack=0.688410,value=0.688410088]->X@356[t=5,slack=0.688410,value=0.688410088] t24-25=- obj=-1121.611837098->-1121.611853976 reject
+15857:  314357.27  t1   SLP     lp#28 phase=1 tr=8.94e-07 step=8.94e-07 pred=6.884e-01 viol=6.884e-01->6.884e-01 worst=X@356[t=5,slack=0.688410,value=0.688410088]->X@356[t=5,slack=0.688410,value=0.688410088] t24-25=- obj=-1121.611837098->-1121.611837098 reject
+15859:  314357.50  t1   SLP     lp#29 phase=1 tr=4.47e-07 step=4.47e-07 pred=6.884e-01 viol=6.884e-01->6.884e-01 worst=X@356[t=5,slack=0.688410,value=0.688410088]->X@356[t=5,slack=0.688410,value=0.688410088] t24-25=- obj=-1121.611837098->-1121.611837098 reject
+15861:  314357.72  t1   SLP     lp#30 phase=1 tr=2.24e-07 step=2.24e-07 pred=6.884e-01 viol=6.884e-01->6.884e-01 worst=X@356[t=5,slack=0.688410,value=0.688410088]->X@356[t=5,slack=0.688410,value=0.688410088] t24-25=- obj=-1121.611837098->-1121.611837098 reject
+15863:  314357.95  t1   SLP     lp#31 phase=1 tr=1.12e-07 step=1.12e-07 pred=6.884e-01 viol=6.884e-01->6.884e-01 worst=X@356[t=5,slack=0.688410,value=0.688410088]->X@356[t=5,slack=0.688410,value=0.688410088] t24-25=- obj=-1121.611837098->-1121.611837098 reject
+15864:  314357.97  t1   SLP     phase1 infeasible viol=6.884e-01 lps=31 ms=9.0
+15865:  314357.99  t1   LRS-OBJ end fallback SLP result=miss ms=28.951
+15866:  314358.01  t1   LRS     commit=1 window i=38 we=43 ticks=90 cons=89 last=false -> miss ms=6898.5
+15867:  314358.16  t1   LRS-WIN commit=1 jumps=[38,41) ticks=[351,412) seed=(702.301967261052,-1111.839635559697;-0.000002268767,-0.269424831020) yaw=224.999984741 constraints=74 replayTicks=14
+15868:  314358.17  t1   LRS-AIR nominalEnd=406 objectiveTick=412 extension=6 final=false
+15869:  314358.22  t1   LRS-PREFLIGHT primary Z/MAX@61 directCap=false
+15870:  314358.23  t1   LRS-OBJ begin primary Z/MAX@61
+15871:  314358.25  t1   CF      pass=0 pattern=free n=61 m=74 robust
+15872:  314593.71  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=43.161
+15873:  314593.77  t1   CF-CHECK margin=3.00e-04 replayViol=0.713327986480 modelViol=1.93787344310
+15874:  314593.79  t1   CF      rung margin=3.00e-04 iters=10000 pg=1.609e+00 dual=-2.578723811 viol=1.938e+00 ms=235.499 stop=ITERATION_LIMIT finalPg=1.938e+00
+15875:  314593.87  t1   CF-SEED source assumedViolation=1.93787344276 eligible=false
+15876:  314593.89  t1   CF      pass=1 pattern=x@0,@58-60 n=61 m=74 robust
+15877:  314862.74  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=40.361
+15878:  314862.80  t1   CF-CHECK margin=3.00e-04 replayViol=0.711198039623 modelViol=1.65692360574
+15879:  314862.82  t1   CF      rung margin=3.00e-04 iters=10000 pg=1.821e+00 dual=-2.474048035 viol=1.657e+00 ms=268.878 stop=ITERATION_LIMIT finalPg=1.657e+00
+15880:  314862.91  t1   CF-SEED source assumedViolation=1.65692360575 eligible=false
+15881:  314862.93  t1   CF      pass=2 pattern=x@0,@12,@58-60 n=61 m=74 robust
+15882:  315011.88  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=39.602
+15883:  315011.97  t1   CF-CHECK margin=3.00e-04 replayViol=0.711170380880 modelViol=1.76989396476
+15884:  315011.98  t1   CF      rung margin=3.00e-04 iters=10000 pg=7.450e-01 dual=-3.354710573 viol=1.770e+00 ms=149.003 stop=ITERATION_LIMIT finalPg=1.754e+00
+15885:  315012.07  t1   CF-SEED source assumedViolation=1.75368309302 eligible=false
+15886:  315012.09  t1   CF      pass=2 no improvement (viol=1.770e+00), stop
+15887:  315012.09  t1   CF      fallback bestViol=1.657e+00 us=653848.0
+15888:  315012.11  t1   LRS-OBJ end primary Z/MAX@61 result=miss ms=653.882
+15889:  315012.13  t1   LRS-PREFLIGHT alternate Z/MIN@61 directCap=false
+15890:  315012.13  t1   LRS-OBJ begin alternate Z/MIN@61
+15891:  315012.15  t1   CF      pass=0 pattern=free n=61 m=74 robust
+15892:  315169.80  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=38.330
+15893:  315169.87  t1   CF-CHECK margin=3.00e-04 replayViol=0.709403295778 modelViol=0.931377890415
+15894:  315169.88  t1   CF      rung margin=3.00e-04 iters=10000 pg=1.318e+00 dual=5.777468793 viol=9.314e-01 ms=157.697 stop=ITERATION_LIMIT finalPg=9.514e-01
+15895:  315169.97  t1   CF-SEED source assumedViolation=0.951099303905 eligible=false
+15896:  315169.99  t1   CF      pass=1 pattern=x@0,@58-60+z@10,@43,@46 n=61 m=74 robust
+15897:  315400.98  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=41.997
+15898:  315401.05  t1   CF-CHECK margin=3.00e-04 replayViol=0.711263341532 modelViol=1.59560862116
+15899:  315401.06  t1   CF      rung margin=3.00e-04 iters=10000 pg=1.960e+00 dual=0.986397981 viol=1.596e+00 ms=231.023 stop=ITERATION_LIMIT finalPg=2.706e+00
+15900:  315401.16  t1   CF-SEED source assumedViolation=2.70582739558 eligible=false
+15901:  315401.17  t1   CF      pass=1 no improvement (viol=1.596e+00), stop
+15902:  315401.18  t1   CF      fallback bestViol=9.314e-01 us=389030.7
+15903:  315401.20  t1   LRS-OBJ end alternate Z/MIN@61 result=miss ms=389.062
+15904:  315401.21  t1   LRS-PREFLIGHT alternate X/MAX@61 directCap=false
+15905:  315401.21  t1   LRS-OBJ begin alternate X/MAX@61
+15906:  315401.23  t1   CF      pass=0 pattern=free n=61 m=74 robust
+15907:  315563.65  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=34.223
+15908:  315563.72  t1   CF-CHECK margin=3.00e-04 replayViol=0.710628187049 modelViol=1.17088070933
+15909:  315563.76  t1   CF      rung margin=3.00e-04 iters=10000 pg=1.484e+00 dual=-9.783980652 viol=1.171e+00 ms=162.484 stop=ITERATION_LIMIT finalPg=1.171e+00
+15910:  315563.87  t1   CF-SEED source assumedViolation=1.17088070933 eligible=false
+15911:  315563.90  t1   CF      pass=1 pattern=x@0+z@57-60 n=61 m=74 robust
+15912:  315730.95  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=37.710
+15913:  315731.02  t1   CF-CHECK margin=3.00e-04 replayViol=0.710543758069 modelViol=0.979227329085
+15914:  315731.03  t1   CF      rung margin=3.00e-04 iters=10000 pg=1.019e+00 dual=-10.080934597 viol=9.792e-01 ms=167.088 stop=ITERATION_LIMIT finalPg=9.898e-01
+15915:  315731.12  t1   CF-SEED source assumedViolation=0.989469094012 eligible=false
+15916:  315731.16  t1   CF      pass=2 pattern=x@0+z@15,@57-60 n=61 m=74 robust
+15917:  315915.22  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=37.100
+15918:  315915.29  t1   CF-CHECK margin=3.00e-04 replayViol=0.721347424472 modelViol=1.42569723306
+15919:  315915.30  t1   CF      rung margin=3.00e-04 iters=10000 pg=7.217e-01 dual=-14.036506970 viol=1.426e+00 ms=184.094 stop=ITERATION_LIMIT finalPg=1.426e+00
+15920:  315915.40  t1   CF-SEED source assumedViolation=1.42569723272 eligible=false
+15921:  315915.41  t1   CF      pass=2 no improvement (viol=1.426e+00), stop
+15922:  315915.42  t1   CF      fallback bestViol=9.792e-01 us=514194.2
+15923:  315915.46  t1   LRS-OBJ end alternate X/MAX@61 result=miss ms=514.238
+15924:  315915.51  t1   LRS-PREFLIGHT alternate X/MIN@61 directCap=false
+15925:  315915.52  t1   LRS-OBJ begin alternate X/MIN@61
+15926:  315915.54  t1   CF      pass=0 pattern=free n=61 m=74 robust
+15927:  316124.10  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=42.853
+15928:  316124.17  t1   CF-CHECK margin=3.00e-04 replayViol=0.708908566845 modelViol=0.708925174724
+15929:  316124.18  t1   CF      rung margin=3.00e-04 iters=10000 pg=8.557e-01 dual=12.087074609 viol=7.089e-01 ms=208.597 stop=ITERATION_LIMIT finalPg=7.092e-01
+15930:  316124.27  t1   CF-SEED source assumedViolation=0.708918580660 eligible=false
+15931:  316124.29  t1   CF      pass=1 pattern=x@0+z@57-60 n=61 m=74 robust
+15932:  316281.95  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=36.625
+15933:  316282.03  t1   CF-CHECK margin=3.00e-04 replayViol=0.711260420793 modelViol=0.711282701156
+15934:  316282.06  t1   CF      rung margin=3.00e-04 iters=10000 pg=7.895e-01 dual=11.572805115 viol=7.113e-01 ms=157.721 stop=ITERATION_LIMIT finalPg=7.116e-01
+15935:  316282.16  t1   CF-SEED source assumedViolation=0.711282701156 eligible=false
+15936:  316282.18  t1   CF      pass=1 no improvement (viol=7.113e-01), stop
+15937:  316282.19  t1   CF      fallback bestViol=7.089e-01 us=366648.9
+15938:  316282.21  t1   LRS-OBJ end alternate X/MIN@61 result=miss ms=366.687
+15939:  316282.23  t1   LRS-OBJ begin fallback SLP Z/MAX@61
+15940:  316466.96  t1   SLP     start n=61 m=74 seed=dual budget=40/60 bestEffort=false inertiaAware=false fold=-
+15942:  316467.33  t1   SLP     lp#1 phase=1 tr=30.0 step=30.0 pred=6.120e-01 viol=1.617e+00->8.680e-01 worst=Z@410hi[t=59,slack=1.61672,value=1.616720076]->Z@410hi[t=59,slack=0.867956,value=0.867955557] t24-25=- obj=-1114.318877640->-1115.070024766 accept
+15944:  316467.58  t1   SLP     lp#2 phase=1 tr=45.0 step=45.0 pred=4.481e-01 viol=8.680e-01->8.054e-01 worst=Z@410hi[t=59,slack=0.867956,value=0.867955557]->X@356[t=5,slack=0.805399,value=0.805398870] t24-25=- obj=-1115.070024766->-1115.542907493 accept
+15946:  316467.75  t1   SLP     lp#3 phase=1 tr=45.0 step=45.0 pred=4.593e-01 viol=8.054e-01->8.872e-01 worst=X@356[t=5,slack=0.805399,value=0.805398870]->X@395hi[t=44,slack=0.887235,value=0.887235454] t24-25=- obj=-1115.542907493->-1115.282466978 reject
+15948:  316467.91  t1   SLP     lp#4 phase=1 tr=22.5 step=22.5 pred=6.086e-01 viol=8.054e-01->6.952e-01 worst=X@356[t=5,slack=0.805399,value=0.805398870]->X@356[t=5,slack=0.695191,value=0.695191331] t24-25=- obj=-1115.542907493->-1115.259104384 accept
+15950:  316468.09  t1   SLP     lp#5 phase=1 tr=45.0 step=45.0 pred=6.479e-01 viol=6.952e-01->1.181e+00 worst=X@356[t=5,slack=0.695191,value=0.695191331]->X@395hi[t=44,slack=1.18101,value=1.181008927] t24-25=- obj=-1115.259104384->-1115.159833483 reject
+15952:  316468.30  t1   SLP     lp#6 phase=1 tr=22.5 step=22.5 pred=6.563e-01 viol=6.952e-01->9.440e-01 worst=X@356[t=5,slack=0.695191,value=0.695191331]->X@395hi[t=44,slack=0.944021,value=0.944020977] t24-25=- obj=-1115.259104384->-1115.198714415 reject
+15954:  316468.50  t1   SLP     lp#7 phase=1 tr=11.3 step=11.3 pred=6.740e-01 viol=6.952e-01->7.558e-01 worst=X@356[t=5,slack=0.695191,value=0.695191331]->X@395hi[t=44,slack=0.755764,value=0.755763965] t24-25=- obj=-1115.259104384->-1115.239699405 reject
+15956:  316468.68  t1   SLP     lp#8 phase=1 tr=5.63 step=5.63 pred=6.846e-01 viol=6.952e-01->7.081e-01 worst=X@356[t=5,slack=0.695191,value=0.695191331]->Z@410hi[t=59,slack=0.708143,value=0.708142775] t24-25=- obj=-1115.259104384->-1115.228329755 reject
+15958:  316468.85  t1   SLP     lp#9 phase=1 tr=2.81 step=2.81 pred=6.899e-01 viol=6.952e-01->7.015e-01 worst=X@356[t=5,slack=0.695191,value=0.695191331]->Z@410hi[t=59,slack=0.701518,value=0.701518262] t24-25=- obj=-1115.259104384->-1115.234475863 reject
+15960:  316469.01  t1   SLP     lp#10 phase=1 tr=1.41 step=1.41 pred=6.925e-01 viol=6.952e-01->6.977e-01 worst=X@356[t=5,slack=0.695191,value=0.695191331]->Z@410hi[t=59,slack=0.697702,value=0.697702032] t24-25=- obj=-1115.259104384->-1115.238292093 reject
+15962:  316469.17  t1   SLP     lp#11 phase=1 tr=0.703 step=0.703 pred=6.939e-01 viol=6.952e-01->6.954e-01 worst=X@356[t=5,slack=0.695191,value=0.695191331]->Z@410hi[t=59,slack=0.695350,value=0.695350050] t24-25=- obj=-1115.259104384->-1115.240644075 reject
+15964:  316469.30  t1   SLP     lp#12 phase=1 tr=0.352 step=0.352 pred=6.945e-01 viol=6.952e-01->6.946e-01 worst=X@356[t=5,slack=0.695191,value=0.695191331]->X@356[t=5,slack=0.694553,value=0.694553284] t24-25=- obj=-1115.259104384->-1115.243430584 accept
+15966:  316469.48  t1   SLP     lp#13 phase=1 tr=0.703 step=0.703 pred=6.933e-01 viol=6.946e-01->6.958e-01 worst=X@356[t=5,slack=0.694553,value=0.694553284]->Z@410hi[t=59,slack=0.695849,value=0.695849372] t24-25=- obj=-1115.243430584->-1115.240144753 reject
+15968:  316469.65  t1   SLP     lp#14 phase=1 tr=0.352 step=0.352 pred=6.939e-01 viol=6.946e-01->6.951e-01 worst=X@356[t=5,slack=0.694553,value=0.694553284]->Z@410hi[t=59,slack=0.695147,value=0.695146879] t24-25=- obj=-1115.243430584->-1115.240847246 reject
+15970:  316469.82  t1   SLP     lp#15 phase=1 tr=0.176 step=0.176 pred=6.942e-01 viol=6.946e-01->6.948e-01 worst=X@356[t=5,slack=0.694553,value=0.694553284]->Z@410hi[t=59,slack=0.694832,value=0.694832277] t24-25=- obj=-1115.243430584->-1115.241161848 reject
+15972:  316469.97  t1   SLP     lp#16 phase=1 tr=0.0879 step=0.0879 pred=6.944e-01 viol=6.946e-01->6.946e-01 worst=X@356[t=5,slack=0.694553,value=0.694553284]->Z@410hi[t=59,slack=0.694637,value=0.694637485] t24-25=- obj=-1115.243430584->-1115.241356640 reject
+15974:  316470.12  t1   SLP     lp#17 phase=1 tr=0.0439 step=0.0439 pred=6.945e-01 viol=6.946e-01->6.945e-01 worst=X@356[t=5,slack=0.694553,value=0.694553284]->Z@410hi[t=59,slack=0.694523,value=0.694523499] t24-25=- obj=-1115.243430584->-1115.241470626 accept
+15976:  316470.31  t1   SLP     lp#18 phase=1 tr=0.0879 step=0.0879 pred=6.943e-01 viol=6.945e-01->6.947e-01 worst=Z@410hi[t=59,slack=0.694523,value=0.694523499]->Z@410hi[t=59,slack=0.694678,value=0.694677931] t24-25=- obj=-1115.241470626->-1115.241316194 reject
+15978:  316470.50  t1   SLP     lp#19 phase=1 tr=0.0439 step=0.0439 pred=6.944e-01 viol=6.945e-01->6.946e-01 worst=Z@410hi[t=59,slack=0.694523,value=0.694523499]->Z@410hi[t=59,slack=0.694580,value=0.694579762] t24-25=- obj=-1115.241470626->-1115.241414363 reject
+15980:  316470.69  t1   SLP     lp#20 phase=1 tr=0.0220 step=0.0220 pred=6.944e-01 viol=6.945e-01->6.946e-01 worst=Z@410hi[t=59,slack=0.694523,value=0.694523499]->Z@410hi[t=59,slack=0.694552,value=0.694551514] t24-25=- obj=-1115.241470626->-1115.241442611 reject
+15982:  316470.88  t1   SLP     lp#21 phase=1 tr=0.0110 step=0.0110 pred=6.945e-01 viol=6.945e-01->6.945e-01 worst=Z@410hi[t=59,slack=0.694523,value=0.694523499]->Z@410hi[t=59,slack=0.694517,value=0.694517264] t24-25=- obj=-1115.241470626->-1115.241476861 accept
+15984:  316471.07  t1   SLP     lp#22 phase=1 tr=0.0220 step=0.0220 pred=6.944e-01 viol=6.945e-01->6.945e-01 worst=Z@410hi[t=59,slack=0.694517,value=0.694517264]->Z@410hi[t=59,slack=0.694505,value=0.694505014] t24-25=- obj=-1115.241476861->-1115.241489111 accept
+15986:  316471.25  t1   SLP     lp#23 phase=1 tr=0.0439 step=0.0439 pred=6.943e-01 viol=6.945e-01->6.945e-01 worst=Z@410hi[t=59,slack=0.694505,value=0.694505014]->Z@410hi[t=59,slack=0.694522,value=0.694521952] t24-25=- obj=-1115.241489111->-1115.241472174 reject
+15988:  316471.55  t1   SLP     lp#24 phase=1 tr=0.0220 step=0.0220 pred=6.944e-01 viol=6.945e-01->6.945e-01 worst=Z@410hi[t=59,slack=0.694505,value=0.694505014]->Z@410hi[t=59,slack=0.694493,value=0.694493260] t24-25=- obj=-1115.241489111->-1115.241500865 accept
+15990:  316471.76  t1   SLP     lp#25 phase=1 tr=0.0439 step=0.0439 pred=6.943e-01 viol=6.945e-01->6.945e-01 worst=Z@410hi[t=59,slack=0.694493,value=0.694493260]->Z@410hi[t=59,slack=0.694470,value=0.694470371] t24-25=- obj=-1115.241500865->-1115.241523754 accept
+15992:  316471.95  t1   SLP     lp#26 phase=1 tr=0.0879 step=0.0879 pred=6.942e-01 viol=6.945e-01->6.945e-01 worst=Z@410hi[t=59,slack=0.694470,value=0.694470371]->Z@410hi[t=59,slack=0.694510,value=0.694509949] t24-25=- obj=-1115.241523754->-1115.241484176 reject
+15994:  316472.14  t1   SLP     lp#27 phase=1 tr=0.0439 step=0.0439 pred=6.942e-01 viol=6.945e-01->6.944e-01 worst=Z@410hi[t=59,slack=0.694470,value=0.694470371]->Z@410hi[t=59,slack=0.694409,value=0.694408784] t24-25=- obj=-1115.241523754->-1115.241585341 accept
+15996:  316472.33  t1   SLP     lp#28 phase=1 tr=0.0879 step=0.0879 pred=6.941e-01 viol=6.944e-01->6.944e-01 worst=Z@410hi[t=59,slack=0.694409,value=0.694408784]->Z@410hi[t=59,slack=0.694411,value=0.694410845] t24-25=- obj=-1115.241585341->-1115.241583281 reject
+15998:  316472.52  t1   SLP     lp#29 phase=1 tr=0.0439 step=0.0439 pred=6.942e-01 viol=6.944e-01->6.943e-01 worst=Z@410hi[t=59,slack=0.694409,value=0.694408784]->Z@410hi[t=59,slack=0.694348,value=0.694348476] t24-25=- obj=-1115.241585341->-1115.241645649 accept
+16000:  316472.71  t1   SLP     lp#30 phase=1 tr=0.0879 step=0.0879 pred=6.940e-01 viol=6.943e-01->6.944e-01 worst=Z@410hi[t=59,slack=0.694348,value=0.694348476]->Z@410hi[t=59,slack=0.694353,value=0.694353411] t24-25=- obj=-1115.241645649->-1115.241640714 reject
+16002:  316472.90  t1   SLP     lp#31 phase=1 tr=0.0439 step=0.0439 pred=6.941e-01 viol=6.943e-01->6.942e-01 worst=Z@410hi[t=59,slack=0.694348,value=0.694348476]->Z@410hi[t=59,slack=0.694249,value=0.694249400] t24-25=- obj=-1115.241645649->-1115.241744726 accept
+16004:  316473.09  t1   SLP     lp#32 phase=1 tr=0.0879 step=0.0879 pred=6.939e-01 viol=6.942e-01->6.943e-01 worst=Z@410hi[t=59,slack=0.694249,value=0.694249400]->Z@410hi[t=59,slack=0.694297,value=0.694297416] t24-25=- obj=-1115.241744726->-1115.241696709 reject
+16006:  316473.28  t1   SLP     lp#33 phase=1 tr=0.0439 step=0.0439 pred=6.940e-01 viol=6.942e-01->6.942e-01 worst=Z@410hi[t=59,slack=0.694249,value=0.694249400]->Z@410hi[t=59,slack=0.694192,value=0.694192022] t24-25=- obj=-1115.241744726->-1115.241802103 accept
+16008:  316473.49  t1   SLP     lp#34 phase=1 tr=0.0879 step=0.0879 pred=6.939e-01 viol=6.942e-01->6.942e-01 worst=Z@410hi[t=59,slack=0.694192,value=0.694192022]->Z@410hi[t=59,slack=0.694243,value=0.694242991] t24-25=- obj=-1115.241802103->-1115.241751134 reject
+16010:  316473.69  t1   SLP     lp#35 phase=1 tr=0.0439 step=0.0439 pred=6.939e-01 viol=6.942e-01->6.941e-01 worst=Z@410hi[t=59,slack=0.694192,value=0.694192022]->Z@410hi[t=59,slack=0.694136,value=0.694136056] t24-25=- obj=-1115.241802103->-1115.241858069 accept
+16012:  316473.88  t1   SLP     lp#36 phase=1 tr=0.0879 step=0.0879 pred=6.938e-01 viol=6.941e-01->6.941e-01 worst=Z@410hi[t=59,slack=0.694136,value=0.694136056]->Z@410hi[t=59,slack=0.694149,value=0.694149495] t24-25=- obj=-1115.241858069->-1115.241844630 reject
+16014:  316474.10  t1   SLP     lp#37 phase=1 tr=0.0439 step=0.0439 pred=6.939e-01 viol=6.941e-01->6.941e-01 worst=Z@410hi[t=59,slack=0.694136,value=0.694136056]->Z@410hi[t=59,slack=0.694082,value=0.694081716] t24-25=- obj=-1115.241858069->-1115.241912410 accept
+16016:  316474.30  t1   SLP     lp#38 phase=1 tr=0.0879 step=0.0879 pred=6.937e-01 viol=6.941e-01->6.941e-01 worst=Z@410hi[t=59,slack=0.694082,value=0.694081716]->Z@410hi[t=59,slack=0.694058,value=0.694057671] t24-25=- obj=-1115.241912410->-1115.241936455 accept
+16018:  316474.50  t1   SLP     lp#39 phase=1 tr=0.176 step=0.176 pred=6.935e-01 viol=6.941e-01->6.941e-01 worst=Z@410hi[t=59,slack=0.694058,value=0.694057671]->Z@410hi[t=59,slack=0.694147,value=0.694147274] t24-25=- obj=-1115.241936455->-1115.241846851 reject
+16020:  316474.70  t1   SLP     lp#40 phase=1 tr=0.0879 step=0.0879 pred=6.936e-01 viol=6.941e-01->6.940e-01 worst=Z@410hi[t=59,slack=0.694058,value=0.694057671]->Z@410hi[t=59,slack=0.693959,value=0.693958679] t24-25=- obj=-1115.241936455->-1115.242035446 accept
+16021:  316474.71  t1   SLP     phase1 infeasible viol=6.940e-01 lps=40 ms=7.8
+16022:  316474.76  t1   SLP     start n=61 m=74 seed=given budget=40/60 bestEffort=false inertiaAware=true fold=-
+16024:  316475.00  t1   SLP     lp#1 phase=1 tr=30.0 step=30.0 pred=6.591e-01 viol=6.940e-01->1.092e+00 worst=Z@410hi[t=59,slack=0.693959,value=0.693958679]->X@395hi[t=44,slack=1.09249,value=1.092491146] t24-25=- obj=-1115.242035446->-1115.246355710 reject
+16026:  316475.26  t1   SLP     lp#2 phase=1 tr=15.0 step=15.0 pred=6.704e-01 viol=6.940e-01->8.377e-01 worst=Z@410hi[t=59,slack=0.693959,value=0.693958679]->X@395hi[t=44,slack=0.837739,value=0.837738748] t24-25=- obj=-1115.242035446->-1115.272040241 reject
+16028:  316475.47  t1   SLP     lp#3 phase=1 tr=7.50 step=7.50 pred=6.820e-01 viol=6.940e-01->7.217e-01 worst=Z@410hi[t=59,slack=0.693959,value=0.693958679]->X@395hi[t=44,slack=0.721735,value=0.721734927] t24-25=- obj=-1115.242035446->-1115.285484553 reject
+16030:  316475.67  t1   SLP     lp#4 phase=1 tr=3.75 step=3.75 pred=6.878e-01 viol=6.940e-01->6.904e-01 worst=Z@410hi[t=59,slack=0.693959,value=0.693958679]->X@356[t=5,slack=0.690351,value=0.690350874] t24-25=- obj=-1115.242035446->-1115.273493232 accept
+16032:  316475.84  t1   SLP     lp#5 phase=1 tr=7.50 step=7.50 pred=6.867e-01 viol=6.904e-01->6.969e-01 worst=X@356[t=5,slack=0.690351,value=0.690350874]->X@356[t=5,slack=0.696888,value=0.696888189] t24-25=- obj=-1115.273493232->-1115.511690921 reject
+16034:  316475.98  t1   SLP     lp#6 phase=1 tr=3.75 step=3.75 pred=6.885e-01 viol=6.904e-01->6.911e-01 worst=X@356[t=5,slack=0.690351,value=0.690350874]->X@356[t=5,slack=0.691078,value=0.691078088] t24-25=- obj=-1115.273493232->-1115.393015132 reject
+16036:  316476.12  t1   SLP     lp#7 phase=1 tr=1.88 step=1.88 pred=6.894e-01 viol=6.904e-01->6.901e-01 worst=X@356[t=5,slack=0.690351,value=0.690350874]->X@356[t=5,slack=0.690080,value=0.690079597] t24-25=- obj=-1115.273493232->-1115.333413151 accept
+16038:  316476.28  t1   SLP     lp#8 phase=1 tr=3.75 step=3.75 pred=6.870e-01 viol=6.901e-01->7.089e-01 worst=X@356[t=5,slack=0.690080,value=0.690079597]->Z@410hi[t=59,slack=0.708949,value=0.708949078] t24-25=- obj=-1115.333413151->-1115.227566953 reject
+16040:  316476.42  t1   SLP     lp#9 phase=1 tr=1.88 step=1.88 pred=6.885e-01 viol=6.901e-01->6.892e-01 worst=X@356[t=5,slack=0.690080,value=0.690079597]->X@356[t=5,slack=0.689165,value=0.689164583] t24-25=- obj=-1115.333413151->-1115.262455943 accept
+16042:  316476.58  t1   SLP     lp#10 phase=1 tr=3.75 step=3.75 pred=6.878e-01 viol=6.892e-01->6.904e-01 worst=X@356[t=5,slack=0.689165,value=0.689164583]->X@356[t=5,slack=0.690379,value=0.690378944] t24-25=- obj=-1115.262455943->-1115.354961208 reject
+16044:  316476.72  t1   SLP     lp#11 phase=1 tr=1.88 step=1.88 pred=6.885e-01 viol=6.892e-01->6.891e-01 worst=X@356[t=5,slack=0.689165,value=0.689164583]->X@356[t=5,slack=0.689137,value=0.689137042] t24-25=- obj=-1115.262455943->-1115.308864025 accept
+16046:  316476.88  t1   SLP     lp#12 phase=1 tr=3.75 step=3.75 pred=6.864e-01 viol=6.891e-01->7.013e-01 worst=X@356[t=5,slack=0.689137,value=0.689137042]->Z@410hi[t=59,slack=0.701251,value=0.701250761] t24-25=- obj=-1115.308864025->-1115.235320765 reject
+16048:  316477.04  t1   SLP     lp#13 phase=1 tr=1.88 step=1.88 pred=6.877e-01 viol=6.891e-01->7.156e-01 worst=X@356[t=5,slack=0.689137,value=0.689137042]->Z@410hi[t=59,slack=0.715573,value=0.715573354] t24-25=- obj=-1115.308864025->-1115.220839374 reject
+16050:  316477.18  t1   SLP     lp#14 phase=1 tr=0.938 step=0.938 pred=6.884e-01 viol=6.891e-01->6.886e-01 worst=X@356[t=5,slack=0.689137,value=0.689137042]->X@356[t=5,slack=0.688599,value=0.688599289] t24-25=- obj=-1115.308864025->-1115.273315128 accept
+16052:  316477.34  t1   SLP     lp#15 phase=1 tr=1.88 step=1.88 pred=6.878e-01 viol=6.886e-01->7.087e-01 worst=X@356[t=5,slack=0.688599,value=0.688599289]->Z@410hi[t=59,slack=0.708741,value=0.708740743] t24-25=- obj=-1115.273315128->-1115.227750473 reject
+16054:  316477.50  t1   SLP     lp#16 phase=1 tr=0.938 step=0.938 pred=6.882e-01 viol=6.886e-01->7.159e-01 worst=X@356[t=5,slack=0.688599,value=0.688599289]->Z@410hi[t=59,slack=0.715900,value=0.715900030] t24-25=- obj=-1115.273315128->-1115.220511969 reject
+16056:  316477.64  t1   SLP     lp#17 phase=1 tr=0.469 step=0.469 pred=6.884e-01 viol=6.886e-01->7.119e-01 worst=X@356[t=5,slack=0.688599,value=0.688599289]->Z@410hi[t=59,slack=0.711890,value=0.711889877] t24-25=- obj=-1115.273315128->-1115.224499118 reject
+16058:  316477.78  t1   SLP     lp#18 phase=1 tr=0.234 step=0.234 pred=6.885e-01 viol=6.886e-01->7.049e-01 worst=X@356[t=5,slack=0.688599,value=0.688599289]->Z@410hi[t=59,slack=0.704880,value=0.704880218] t24-25=- obj=-1115.273315128->-1115.231508777 reject
+16060:  316477.92  t1   SLP     lp#19 phase=1 tr=0.117 step=0.117 pred=6.886e-01 viol=6.886e-01->6.886e-01 worst=X@356[t=5,slack=0.688599,value=0.688599289]->X@356[t=5,slack=0.688555,value=0.688555308] t24-25=- obj=-1115.273315128->-1115.268947823 accept
+16062:  316478.06  t1   SLP     lp#20 phase=1 tr=0.234 step=0.234 pred=6.885e-01 viol=6.886e-01->7.096e-01 worst=X@356[t=5,slack=0.688555,value=0.688555308]->Z@410hi[t=59,slack=0.709638,value=0.709638031] t24-25=- obj=-1115.268947823->-1115.226750964 reject
+16064:  316478.20  t1   SLP     lp#21 phase=1 tr=0.117 step=0.117 pred=6.885e-01 viol=6.886e-01->7.055e-01 worst=X@356[t=5,slack=0.688555,value=0.688555308]->Z@410hi[t=59,slack=0.705511,value=0.705511123] t24-25=- obj=-1115.268947823->-1115.230877872 reject
+16066:  316478.35  t1   SLP     lp#22 phase=1 tr=0.0586 step=0.0586 pred=6.885e-01 viol=6.886e-01->7.034e-01 worst=X@356[t=5,slack=0.688555,value=0.688555308]->Z@410hi[t=59,slack=0.703368,value=0.703367568] t24-25=- obj=-1115.268947823->-1115.233021427 reject
+16068:  316478.49  t1   SLP     lp#23 phase=1 tr=0.0293 step=0.0293 pred=6.885e-01 viol=6.886e-01->6.885e-01 worst=X@356[t=5,slack=0.688555,value=0.688555308]->X@356[t=5,slack=0.688544,value=0.688543929] t24-25=- obj=-1115.268947823->-1115.267502443 accept
+16070:  316478.63  t1   SLP     lp#24 phase=1 tr=0.0586 step=0.0586 pred=6.885e-01 viol=6.885e-01->7.040e-01 worst=X@356[t=5,slack=0.688544,value=0.688543929]->Z@410hi[t=59,slack=0.704039,value=0.704039187] t24-25=- obj=-1115.267502443->-1115.232349808 reject
+16072:  316478.78  t1   SLP     lp#25 phase=1 tr=0.0293 step=0.0293 pred=6.885e-01 viol=6.885e-01->7.032e-01 worst=X@356[t=5,slack=0.688544,value=0.688543929]->Z@410hi[t=59,slack=0.703221,value=0.703220852] t24-25=- obj=-1115.267502443->-1115.233168143 reject
+16074:  316478.92  t1   SLP     lp#26 phase=1 tr=0.0146 step=0.0146 pred=6.885e-01 viol=6.885e-01->6.885e-01 worst=X@356[t=5,slack=0.688544,value=0.688543929]->X@356[t=5,slack=0.688540,value=0.688539743] t24-25=- obj=-1115.267502443->-1115.267088337 accept
+16076:  316479.06  t1   SLP     lp#27 phase=1 tr=0.0293 step=0.0293 pred=6.885e-01 viol=6.885e-01->7.039e-01 worst=X@356[t=5,slack=0.688540,value=0.688539743]->Z@410hi[t=59,slack=0.703870,value=0.703870193] t24-25=- obj=-1115.267088337->-1115.232518802 reject
+16078:  316479.20  t1   SLP     lp#28 phase=1 tr=0.0146 step=0.0146 pred=6.885e-01 viol=6.885e-01->7.033e-01 worst=X@356[t=5,slack=0.688540,value=0.688539743]->Z@410hi[t=59,slack=0.703294,value=0.703294210] t24-25=- obj=-1115.267088337->-1115.233094785 reject
+16080:  316479.35  t1   SLP     lp#29 phase=1 tr=0.00732 step=0.00732 pred=6.885e-01 viol=6.885e-01->7.031e-01 worst=X@356[t=5,slack=0.688540,value=0.688539743]->Z@410hi[t=59,slack=0.703086,value=0.703086409] t24-25=- obj=-1115.267088337->-1115.233302586 reject
+16082:  316479.50  t1   SLP     lp#30 phase=1 tr=0.00366 step=0.00366 pred=6.885e-01 viol=6.885e-01->6.885e-01 worst=X@356[t=5,slack=0.688540,value=0.688539743]->X@356[t=5,slack=0.688538,value=0.688537839] t24-25=- obj=-1115.267088337->-1115.266841227 accept
+16084:  316479.64  t1   SLP     lp#31 phase=1 tr=0.00732 step=0.00732 pred=6.885e-01 viol=6.885e-01->7.031e-01 worst=X@356[t=5,slack=0.688538,value=0.688537839]->Z@410hi[t=59,slack=0.703098,value=0.703098263] t24-25=- obj=-1115.266841227->-1115.233290732 reject
+16086:  316479.78  t1   SLP     lp#32 phase=1 tr=0.00366 step=0.00366 pred=6.885e-01 viol=6.885e-01->7.031e-01 worst=X@356[t=5,slack=0.688538,value=0.688537839]->Z@410hi[t=59,slack=0.703086,value=0.703086409] t24-25=- obj=-1115.266841227->-1115.233302586 reject
+16088:  316479.94  t1   SLP     lp#33 phase=1 tr=0.00183 step=0.00183 pred=6.885e-01 viol=6.885e-01->6.885e-01 worst=X@356[t=5,slack=0.688538,value=0.688537839]->X@356[t=5,slack=0.688538,value=0.688537839] t24-25=- obj=-1115.266841227->-1115.266841227 reject
+16090:  316480.09  t1   SLP     lp#34 phase=1 tr=0.000916 step=0.000916 pred=6.885e-01 viol=6.885e-01->6.885e-01 worst=X@356[t=5,slack=0.688538,value=0.688537839]->X@356[t=5,slack=0.688538,value=0.688537839] t24-25=- obj=-1115.266841227->-1115.266841227 reject
+16092:  316480.23  t1   SLP     lp#35 phase=1 tr=0.000458 step=0.000458 pred=6.885e-01 viol=6.885e-01->6.885e-01 worst=X@356[t=5,slack=0.688538,value=0.688537839]->X@356[t=5,slack=0.688538,value=0.688537839] t24-25=- obj=-1115.266841227->-1115.266841227 reject
+16094:  316480.37  t1   SLP     lp#36 phase=1 tr=0.000229 step=0.000229 pred=6.885e-01 viol=6.885e-01->6.885e-01 worst=X@356[t=5,slack=0.688538,value=0.688537839]->X@356[t=5,slack=0.688538,value=0.688537839] t24-25=- obj=-1115.266841227->-1115.266841227 reject
+16096:  316480.51  t1   SLP     lp#37 phase=1 tr=0.000114 step=0.000114 pred=6.885e-01 viol=6.885e-01->6.885e-01 worst=X@356[t=5,slack=0.688538,value=0.688537839]->X@356[t=5,slack=0.688538,value=0.688537839] t24-25=- obj=-1115.266841227->-1115.266841227 reject
+16098:  316480.65  t1   SLP     lp#38 phase=1 tr=5.72e-05 step=5.72e-05 pred=6.885e-01 viol=6.885e-01->6.885e-01 worst=X@356[t=5,slack=0.688538,value=0.688537839]->X@356[t=5,slack=0.688538,value=0.688537839] t24-25=- obj=-1115.266841227->-1115.266841227 reject
+16100:  316480.79  t1   SLP     lp#39 phase=1 tr=2.86e-05 step=2.86e-05 pred=6.885e-01 viol=6.885e-01->6.885e-01 worst=X@356[t=5,slack=0.688538,value=0.688537839]->X@356[t=5,slack=0.688538,value=0.688537839] t24-25=- obj=-1115.266841227->-1115.266841227 reject
+16102:  316480.93  t1   SLP     lp#40 phase=1 tr=1.43e-05 step=1.43e-05 pred=6.885e-01 viol=6.885e-01->6.885e-01 worst=X@356[t=5,slack=0.688538,value=0.688537839]->X@356[t=5,slack=0.688538,value=0.688537839] t24-25=- obj=-1115.266841227->-1115.266841227 reject
+16103:  316480.95  t1   SLP     phase1 infeasible viol=6.885e-01 lps=40 ms=6.2
+16104:  316480.96  t1   LRS-OBJ end fallback SLP result=miss ms=198.731
+16105:  316480.98  t1   LRS     commit=1 window i=38 we=41 ticks=61 cons=74 last=false -> miss ms=2122.8
+16106:  316481.09  t1   LRS-WIN commit=1 jumps=[38,40) ticks=[351,388) seed=(702.301967261052,-1111.839635559697;-0.000002268767,-0.269424831020) yaw=224.999984741 constraints=63 replayTicks=14
+16107:  316481.10  t1   LRS-AIR nominalEnd=381 objectiveTick=388 extension=7 final=false
+16108:  316481.13  t1   LRS-PREFLIGHT primary Z/MAX@37 directCap=false
+16109:  316481.14  t1   LRS-OBJ begin primary Z/MAX@37
+16110:  316481.15  t1   CF      pass=0 pattern=free n=37 m=63 robust
+16111:  316579.20  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=23.535
+16112:  316579.26  t1   CF-CHECK margin=3.00e-04 replayViol=0.708145443915 modelViol=1.16098905357
+16113:  316579.27  t1   CF      rung margin=3.00e-04 iters=10000 pg=8.160e-01 dual=-5.037944372 viol=1.161e+00 ms=98.084 stop=ITERATION_LIMIT finalPg=1.161e+00
+16114:  316579.31  t1   CF-SEED source assumedViolation=1.16098905357 eligible=false
+16115:  316579.33  t1   CF      pass=1 pattern=x@0 n=37 m=63 robust
+16116:  316594.84  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=3.889
+16117:  316594.92  t1   CF-CHECK margin=3.00e-04 replayViol=0.711102890781 modelViol=0.711110556871
+16118:  316594.93  t1   CF      rung margin=3.00e-04 iters=1653 pg=7.114e-01 dual=-156959.887583617 viol=7.111e-01 ms=15.568 stop=RECOVERED_INPUT_STALL finalPg=7.114e-01
+16119:  316594.97  t1   CF-SEED source assumedViolation=0.711110556870 eligible=false
+16120:  316595.01  t1   CF      pass=1 pattern fixed point, stop
+16121:  316595.02  t1   CF      fallback bestViol=7.111e-01 us=113864.0
+16122:  316595.03  t1   LRS-OBJ end primary Z/MAX@37 result=miss ms=113.892
+16123:  316595.05  t1   LRS-PREFLIGHT alternate Z/MIN@37 directCap=false
+16124:  316595.05  t1   LRS-OBJ begin alternate Z/MIN@37
+16125:  316595.07  t1   CF      pass=0 pattern=free n=37 m=63 robust
+16126:  316649.18  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=23.167
+16127:  316649.24  t1   CF-CHECK margin=3.00e-04 replayViol=0.711102890781 modelViol=0.980002141381
+16128:  316649.26  t1   CF      rung margin=3.00e-04 iters=10000 pg=7.114e-01 dual=-3.047022943 viol=9.800e-01 ms=54.155 stop=ITERATION_LIMIT finalPg=7.114e-01
+16129:  316649.30  t1   CF-SEED source assumedViolation=0.980014914438 eligible=false
+16130:  316649.33  t1   CF      pass=1 pattern=x@0,@36+z@10,@18 n=37 m=63 robust
+16131:  316729.11  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=23.890
+16132:  316729.17  t1   CF-CHECK margin=3.00e-04 replayViol=0.711102890781 modelViol=0.711110697039
+16133:  316729.19  t1   CF      rung margin=3.00e-04 iters=10000 pg=7.114e-01 dual=-2.402671346 viol=7.111e-01 ms=79.815 stop=ITERATION_LIMIT finalPg=7.114e-01
+16134:  316729.23  t1   CF-SEED source assumedViolation=0.711110697039 eligible=false
+16135:  316729.25  t1   CF      pass=2 pattern=x@0,@36 n=37 m=63 robust
+16136:  316791.60  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=24.465
+16137:  316791.66  t1   CF-CHECK margin=3.00e-04 replayViol=0.711125363238 modelViol=0.978982447272
+16138:  316791.67  t1   CF      rung margin=3.00e-04 iters=10000 pg=7.114e-01 dual=-1.945843767 viol=9.790e-01 ms=62.387 stop=ITERATION_LIMIT finalPg=7.114e-01
+16139:  316791.71  t1   CF-SEED source assumedViolation=0.978982447271 eligible=false
+16140:  316791.72  t1   CF      pass=2 no improvement (viol=9.790e-01), stop
+16141:  316791.73  t1   CF      fallback bestViol=7.111e-01 us=196662.5
+16142:  316791.75  t1   LRS-OBJ end alternate Z/MIN@37 result=miss ms=196.690
+16143:  316791.76  t1   LRS-PREFLIGHT alternate X/MAX@37 directCap=false
+16144:  316791.76  t1   LRS-OBJ begin alternate X/MAX@37
+16145:  316791.78  t1   CF      pass=0 pattern=free n=37 m=63 robust
+16146:  316907.98  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=22.470
+16147:  316908.04  t1   CF-CHECK margin=3.00e-04 replayViol=0.711192844075 modelViol=0.711206418129
+16148:  316908.06  t1   CF      rung margin=3.00e-04 iters=10000 pg=8.566e-01 dual=-17.995790538 viol=7.112e-01 ms=116.248 stop=ITERATION_LIMIT finalPg=7.115e-01
+16149:  316908.10  t1   CF-SEED source assumedViolation=0.711199824065 eligible=false
+16150:  316908.12  t1   CF      pass=1 pattern=x@0+z@34-36 n=37 m=63 robust
+16151:  317031.13  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=23.084
+16152:  317031.20  t1   CF-CHECK margin=3.00e-04 replayViol=0.718302125093 modelViol=1.42342867705
+16153:  317031.21  t1   CF      rung margin=3.00e-04 iters=10000 pg=1.020e+00 dual=-80.582073203 viol=1.423e+00 ms=123.053 stop=ITERATION_LIMIT finalPg=1.424e+00
+16154:  317031.25  t1   CF-SEED source assumedViolation=1.42342867705 eligible=false
+16155:  317031.26  t1   CF      pass=1 no improvement (viol=1.423e+00), stop
+16156:  317031.27  t1   CF      fallback bestViol=7.112e-01 us=239491.6
+16157:  317031.29  t1   LRS-OBJ end alternate X/MAX@37 result=miss ms=239.521
+16158:  317031.30  t1   LRS-PREFLIGHT alternate X/MIN@37 directCap=false
+16159:  317031.31  t1   LRS-OBJ begin alternate X/MIN@37
+16160:  317031.32  t1   CF      pass=0 pattern=free n=37 m=63 robust
+16161:  317130.03  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=23.660
+16162:  317130.09  t1   CF-CHECK margin=3.00e-04 replayViol=0.710842841747 modelViol=1.94884199366
+16163:  317130.10  t1   CF      rung margin=3.00e-04 iters=10000 pg=7.111e-01 dual=6.966904948 viol=1.949e+00 ms=98.730 stop=ITERATION_LIMIT finalPg=7.111e-01
+16164:  317130.14  t1   CF-SEED source assumedViolation=1.94885480134 eligible=false
+16165:  317130.16  t1   CF      pass=1 pattern=x@0+z@34-36 n=37 m=63 robust
+16166:  317242.04  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=24.421
+16167:  317242.11  t1   CF-CHECK margin=3.00e-04 replayViol=0.699938916297 modelViol=0.924624488632
+16168:  317242.12  t1   CF      rung margin=3.00e-04 iters=10000 pg=1.523e+00 dual=7.461752275 viol=9.246e-01 ms=111.926 stop=ITERATION_LIMIT finalPg=9.155e-01
+16169:  317242.16  t1   CF-SEED source assumedViolation=0.915245799223 eligible=false
+16170:  317242.18  t1   CF      pass=2 pattern=x@0,@11+z@33-36 n=37 m=63 robust
+16171:  317368.99  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=24.506
+16172:  317369.05  t1   CF-CHECK margin=3.00e-04 replayViol=0.704156176616 modelViol=1.53734893834
+16173:  317369.06  t1   CF      rung margin=3.00e-04 iters=10000 pg=1.668e+00 dual=5.166117038 viol=1.537e+00 ms=126.843 stop=ITERATION_LIMIT finalPg=1.019e+00
+16174:  317369.11  t1   CF-SEED source assumedViolation=1.01848612701 eligible=false
+16175:  317369.12  t1   CF      pass=2 no improvement (viol=1.537e+00), stop
+16176:  317369.13  t1   CF      fallback bestViol=9.246e-01 us=337811.2
+16177:  317369.15  t1   LRS-OBJ end alternate X/MIN@37 result=miss ms=337.841
+16178:  317369.16  t1   LRS-OBJ begin fallback SLP Z/MAX@37
+16179:  317376.36  t1   SLP     start n=37 m=63 seed=dual budget=40/60 bestEffort=false inertiaAware=false fold=-
+16181:  317376.52  t1   SLP     lp#1 phase=1 tr=30.0 step=29.1 pred=6.160e-01 viol=7.111e-01->7.374e-01 worst=X@356[t=5,slack=0.711080,value=0.711080418]->X@356[t=5,slack=0.737406,value=0.737405980] t24-25=- obj=-1113.945048585->-1113.262346831 reject
+16183:  317376.63  t1   SLP     lp#2 phase=1 tr=15.0 step=15.0 pred=6.497e-01 viol=7.111e-01->6.902e-01 worst=X@356[t=5,slack=0.711080,value=0.711080418]->X@356[t=5,slack=0.690155,value=0.690155044] t24-25=- obj=-1113.945048585->-1113.293129945 accept
+16185:  317376.74  t1   SLP     lp#3 phase=1 tr=30.0 step=30.0 pred=6.507e-01 viol=6.902e-01->8.114e-01 worst=X@356[t=5,slack=0.690155,value=0.690155044]->X@356[t=5,slack=0.811428,value=0.811427652] t24-25=- obj=-1113.293129945->-1114.582867991 reject
+16187:  317376.83  t1   SLP     lp#4 phase=1 tr=15.0 step=15.0 pred=6.704e-01 viol=6.902e-01->7.111e-01 worst=X@356[t=5,slack=0.690155,value=0.690155044]->X@356[t=5,slack=0.711080,value=0.711080418] t24-25=- obj=-1113.293129945->-1113.985744251 reject
+16189:  317376.93  t1   SLP     lp#5 phase=1 tr=7.50 step=7.50 pred=6.803e-01 viol=6.902e-01->6.905e-01 worst=X@356[t=5,slack=0.690155,value=0.690155044]->X@356[t=5,slack=0.690461,value=0.690460739] t24-25=- obj=-1113.293129945->-1113.624965332 reject
+16191:  317377.02  t1   SLP     lp#6 phase=1 tr=3.75 step=3.75 pred=6.852e-01 viol=6.902e-01->6.878e-01 worst=X@356[t=5,slack=0.690155,value=0.690155044]->X@356[t=5,slack=0.687763,value=0.687763053] t24-25=- obj=-1113.293129945->-1113.461019227 accept
+16193:  317377.13  t1   SLP     lp#7 phase=1 tr=7.50 step=7.50 pred=6.874e-01 viol=6.878e-01->7.091e-01 worst=X@356[t=5,slack=0.687763,value=0.687763053]->Z@386hi[t=35,slack=0.709149,value=0.709148698] t24-25=- obj=-1113.461019227->-1113.236846371 reject
+16195:  317377.22  t1   SLP     lp#8 phase=1 tr=3.75 step=3.75 pred=6.876e-01 viol=6.878e-01->6.902e-01 worst=X@356[t=5,slack=0.687763,value=0.687763053]->X@356[t=5,slack=0.690155,value=0.690155044] t24-25=- obj=-1113.461019227->-1113.293129945 reject
+16197:  317377.31  t1   SLP     lp#9 phase=1 tr=1.88 step=1.88 pred=6.877e-01 viol=6.878e-01->6.883e-01 worst=X@356[t=5,slack=0.687763,value=0.687763053]->X@356[t=5,slack=0.688324,value=0.688323732] t24-25=- obj=-1113.461019227->-1113.364137256 reject
+16199:  317377.40  t1   SLP     lp#10 phase=1 tr=0.938 step=0.938 pred=6.877e-01 viol=6.878e-01->6.879e-01 worst=X@356[t=5,slack=0.687763,value=0.687763053]->X@356[t=5,slack=0.687884,value=0.687883619] t24-25=- obj=-1113.461019227->-1113.399776714 reject
+16201:  317377.49  t1   SLP     lp#11 phase=1 tr=0.469 step=0.469 pred=6.877e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687763,value=0.687763053]->X@356[t=5,slack=0.687784,value=0.687783760] t24-25=- obj=-1113.461019227->-1113.417495903 reject
+16203:  317377.59  t1   SLP     lp#12 phase=1 tr=0.234 step=0.234 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687763,value=0.687763053]->X@356[t=5,slack=0.687763,value=0.687763303] t24-25=- obj=-1113.461019227->-1113.449928726 reject
+16205:  317377.68  t1   SLP     lp#13 phase=1 tr=0.117 step=0.117 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687763,value=0.687763053]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.461019227->-1113.455345010 accept
+16207:  317377.77  t1   SLP     lp#14 phase=1 tr=0.234 step=0.234 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687770,value=0.687770286] t24-25=- obj=-1113.455345010->-1113.466435525 reject
+16209:  317377.85  t1   SLP     lp#15 phase=1 tr=0.117 step=0.117 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687763,value=0.687763053] t24-25=- obj=-1113.455345010->-1113.461019227 reject
+16211:  317377.95  t1   SLP     lp#16 phase=1 tr=0.0586 step=0.0586 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687761189] t24-25=- obj=-1113.455345010->-1113.458182149 reject
+16213:  317378.16  t1   SLP     lp#17 phase=1 tr=0.0293 step=0.0293 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760800] t24-25=- obj=-1113.455345010->-1113.456892546 reject
+16215:  317378.26  t1   SLP     lp#18 phase=1 tr=0.0146 step=0.0146 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760671] t24-25=- obj=-1113.455345010->-1113.456118778 reject
+16217:  317378.36  t1   SLP     lp#19 phase=1 tr=0.00732 step=0.00732 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455860875 reject
+16219:  317378.45  t1   SLP     lp#20 phase=1 tr=0.00366 step=0.00366 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760654] t24-25=- obj=-1113.455345010->-1113.455602942 reject
+16221:  317378.54  t1   SLP     lp#21 phase=1 tr=0.00183 step=0.00183 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760654] t24-25=- obj=-1113.455345010->-1113.455602942 reject
+16223:  317378.64  t1   SLP     lp#22 phase=1 tr=0.000916 step=0.000916 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16225:  317378.73  t1   SLP     lp#23 phase=1 tr=0.000458 step=0.000458 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16227:  317378.83  t1   SLP     lp#24 phase=1 tr=0.000229 step=0.000229 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16229:  317378.92  t1   SLP     lp#25 phase=1 tr=0.000114 step=0.000114 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16231:  317379.01  t1   SLP     lp#26 phase=1 tr=5.72e-05 step=5.72e-05 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16233:  317379.10  t1   SLP     lp#27 phase=1 tr=2.86e-05 step=2.86e-05 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16235:  317379.19  t1   SLP     lp#28 phase=1 tr=1.43e-05 step=1.43e-05 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16237:  317379.28  t1   SLP     lp#29 phase=1 tr=7.15e-06 step=7.15e-06 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16239:  317379.37  t1   SLP     lp#30 phase=1 tr=3.58e-06 step=3.58e-06 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16241:  317379.45  t1   SLP     lp#31 phase=1 tr=1.79e-06 step=1.79e-06 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16243:  317379.54  t1   SLP     lp#32 phase=1 tr=8.94e-07 step=8.94e-07 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16245:  317379.63  t1   SLP     lp#33 phase=1 tr=4.47e-07 step=4.47e-07 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16247:  317379.72  t1   SLP     lp#34 phase=1 tr=2.24e-07 step=2.24e-07 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16249:  317379.81  t1   SLP     lp#35 phase=1 tr=1.12e-07 step=1.12e-07 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16250:  317379.83  t1   SLP     phase1 infeasible viol=6.878e-01 lps=35 ms=3.5
+16251:  317379.85  t1   SLP     start n=37 m=63 seed=given budget=40/60 bestEffort=false inertiaAware=true fold=-
+16253:  317379.97  t1   SLP     lp#1 phase=1 tr=30.0 step=30.0 pred=6.877e-01 viol=6.878e-01->8.471e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.847065,value=0.847065139] t24-25=- obj=-1113.455345010->-1114.580722597 reject
+16255:  317380.07  t1   SLP     lp#2 phase=1 tr=15.0 step=15.0 pred=6.878e-01 viol=6.878e-01->7.283e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.728262,value=0.728262219] t24-25=- obj=-1113.455345010->-1114.151709382 reject
+16257:  317380.16  t1   SLP     lp#3 phase=1 tr=7.50 step=7.50 pred=6.878e-01 viol=6.878e-01->6.979e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.697930,value=0.697929536] t24-25=- obj=-1113.455345010->-1113.806658040 reject
+16259:  317380.25  t1   SLP     lp#4 phase=1 tr=3.75 step=3.75 pred=6.878e-01 viol=6.878e-01->6.903e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.690302,value=0.690301875] t24-25=- obj=-1113.455345010->-1113.620854290 reject
+16261:  317380.35  t1   SLP     lp#5 phase=1 tr=1.88 step=1.88 pred=6.878e-01 viol=6.878e-01->6.884e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.688396,value=0.688396134] t24-25=- obj=-1113.455345010->-1113.554034651 reject
+16263:  317380.44  t1   SLP     lp#6 phase=1 tr=0.938 step=0.938 pred=6.878e-01 viol=6.878e-01->6.879e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687919,value=0.687918550] t24-25=- obj=-1113.455345010->-1113.520495464 reject
+16265:  317380.53  t1   SLP     lp#7 phase=1 tr=0.469 step=0.469 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687800,value=0.687800169] t24-25=- obj=-1113.455345010->-1113.477525764 reject
+16267:  317380.62  t1   SLP     lp#8 phase=1 tr=0.234 step=0.234 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687770,value=0.687770286] t24-25=- obj=-1113.455345010->-1113.466435525 reject
+16269:  317380.71  t1   SLP     lp#9 phase=1 tr=0.117 step=0.117 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687763,value=0.687763053] t24-25=- obj=-1113.455345010->-1113.461019227 reject
+16271:  317380.81  t1   SLP     lp#10 phase=1 tr=0.0586 step=0.0586 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687761189] t24-25=- obj=-1113.455345010->-1113.458182149 reject
+16273:  317380.90  t1   SLP     lp#11 phase=1 tr=0.0293 step=0.0293 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760800] t24-25=- obj=-1113.455345010->-1113.456892546 reject
+16275:  317380.99  t1   SLP     lp#12 phase=1 tr=0.0146 step=0.0146 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760671] t24-25=- obj=-1113.455345010->-1113.456118778 reject
+16277:  317381.08  t1   SLP     lp#13 phase=1 tr=0.00732 step=0.00732 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455860875 reject
+16279:  317381.17  t1   SLP     lp#14 phase=1 tr=0.00366 step=0.00366 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760654] t24-25=- obj=-1113.455345010->-1113.455602942 reject
+16281:  317381.26  t1   SLP     lp#15 phase=1 tr=0.00183 step=0.00183 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760654] t24-25=- obj=-1113.455345010->-1113.455602942 reject
+16283:  317381.35  t1   SLP     lp#16 phase=1 tr=0.000916 step=0.000916 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16285:  317381.45  t1   SLP     lp#17 phase=1 tr=0.000458 step=0.000458 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16287:  317381.54  t1   SLP     lp#18 phase=1 tr=0.000229 step=0.000229 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16289:  317381.63  t1   SLP     lp#19 phase=1 tr=0.000114 step=0.000114 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16291:  317381.72  t1   SLP     lp#20 phase=1 tr=5.72e-05 step=5.72e-05 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16293:  317381.81  t1   SLP     lp#21 phase=1 tr=2.86e-05 step=2.86e-05 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16295:  317381.91  t1   SLP     lp#22 phase=1 tr=1.43e-05 step=1.43e-05 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16297:  317382.00  t1   SLP     lp#23 phase=1 tr=7.15e-06 step=7.15e-06 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16299:  317382.09  t1   SLP     lp#24 phase=1 tr=3.58e-06 step=3.58e-06 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16301:  317382.19  t1   SLP     lp#25 phase=1 tr=1.79e-06 step=1.79e-06 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16303:  317382.28  t1   SLP     lp#26 phase=1 tr=8.94e-07 step=8.94e-07 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16305:  317382.39  t1   SLP     lp#27 phase=1 tr=4.47e-07 step=4.47e-07 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16307:  317382.48  t1   SLP     lp#28 phase=1 tr=2.24e-07 step=2.24e-07 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16309:  317382.57  t1   SLP     lp#29 phase=1 tr=1.12e-07 step=1.12e-07 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760637]->X@356[t=5,slack=0.687761,value=0.687760637] t24-25=- obj=-1113.455345010->-1113.455345010 reject
+16310:  317382.58  t1   SLP     phase1 infeasible viol=6.878e-01 lps=29 ms=2.7
+16311:  317382.60  t1   LRS-OBJ end fallback SLP result=miss ms=13.438
+16312:  317382.61  t1   LRS     commit=1 window i=38 we=40 ticks=37 cons=63 last=false -> miss ms=901.5
+16313:  317382.78  t1   LRS-WIN commit=1 jumps=[38,39) ticks=[351,373) seed=(702.301967261052,-1111.839635559697;-0.000002268767,-0.269424831020) yaw=224.999984741 constraints=35 replayTicks=14
+16314:  317382.79  t1   LRS-AIR nominalEnd=365 objectiveTick=373 extension=8 final=false
+16315:  317382.84  t1   LRS-PREFLIGHT primary Z/MAX@22 directCap=false
+16316:  317382.84  t1   LRS-OBJ begin primary Z/MAX@22
+16317:  317382.86  t1   CF      pass=0 pattern=free n=22 m=35 robust
+16318:  317410.84  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=10.687
+16319:  317410.91  t1   CF-CHECK margin=3.00e-04 replayViol=0.711186656561 modelViol=1.44810773303
+16320:  317410.92  t1   CF      rung margin=3.00e-04 iters=10000 pg=7.116e-01 dual=-15.683199916 viol=1.448e+00 ms=28.038 stop=ITERATION_LIMIT finalPg=1.448e+00
+16321:  317410.94  t1   CF-SEED source assumedViolation=1.44810773303 eligible=false
+16322:  317410.96  t1   CF      pass=1 pattern=x@0,@19-21 n=22 m=35 robust
+16323:  317439.51  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=10.568
+16324:  317439.57  t1   CF-CHECK margin=3.00e-04 replayViol=0.711213473961 modelViol=1.44774465876
+16325:  317439.58  t1   CF      rung margin=3.00e-04 iters=10000 pg=7.116e-01 dual=-15.568266916 viol=1.448e+00 ms=28.592 stop=ITERATION_LIMIT finalPg=1.448e+00
+16326:  317439.60  t1   CF-SEED source assumedViolation=1.44774465876 eligible=false
+16327:  317439.61  t1   CF      pass=1 pattern fixed point, stop
+16328:  317439.62  t1   CF      fallback bestViol=1.448e+00 us=56765.8
+16329:  317439.64  t1   LRS-OBJ end primary Z/MAX@22 result=miss ms=56.793
+16330:  317439.65  t1   LRS-PREFLIGHT alternate Z/MIN@22 directCap=false
+16331:  317439.66  t1   LRS-OBJ begin alternate Z/MIN@22
+16332:  317439.67  t1   CF      pass=0 pattern=free n=22 m=35 robust
+16333:  317469.03  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=11.800
+16334:  317469.09  t1   CF-CHECK margin=3.00e-04 replayViol=0.710642479992 modelViol=0.710658417578
+16335:  317469.10  t1   CF      rung margin=3.00e-04 iters=10000 pg=2.216e+00 dual=-67.693281419 viol=7.107e-01 ms=29.407 stop=ITERATION_LIMIT finalPg=7.110e-01
+16336:  317469.12  t1   CF-SEED source assumedViolation=0.710651823515 eligible=false
+16337:  317469.14  t1   CF      pass=1 pattern=x@0,@19-21 n=22 m=35 robust
+16338:  317498.79  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=11.056
+16339:  317498.86  t1   CF-CHECK margin=3.00e-04 replayViol=0.710694379669 modelViol=0.710714861631
+16340:  317498.87  t1   CF      rung margin=3.00e-04 iters=10000 pg=2.216e+00 dual=-70.819659884 viol=7.107e-01 ms=29.707 stop=ITERATION_LIMIT finalPg=7.110e-01
+16341:  317498.90  t1   CF-SEED source assumedViolation=0.710714861631 eligible=false
+16342:  317498.91  t1   CF      pass=1 no improvement (viol=7.107e-01), stop
+16343:  317498.92  t1   CF      fallback bestViol=7.107e-01 us=59251.6
+16344:  317498.94  t1   LRS-OBJ end alternate Z/MIN@22 result=miss ms=59.278
+16345:  317498.95  t1   LRS-PREFLIGHT alternate X/MAX@22 directCap=false
+16346:  317498.95  t1   LRS-OBJ begin alternate X/MAX@22
+16347:  317498.97  t1   CF      pass=0 pattern=free n=22 m=35 robust
+16348:  317499.52  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=0.191
+16349:  317499.53  t1   CF-CHECK margin=3.00e-04 replayViol=0.733743305561 modelViol=0.733766484215
+16350:  317499.54  t1   CF      rung margin=3.00e-04 iters=185 pg=7.341e-01 dual=-5.717750710 viol=7.338e-01 ms=0.545 stop=RECOVERED_INPUT_STALL finalPg=7.341e-01
+16351:  317499.56  t1   CF-SEED source assumedViolation=0.733759890152 eligible=false
+16352:  317499.57  t1   CF      pass=1 pattern=x@0+z@19-21 n=22 m=35 robust
+16353:  317526.01  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=11.173
+16354:  317526.06  t1   CF-CHECK margin=3.00e-04 replayViol=0.715444613625 modelViol=0.715457497806
+16355:  317526.07  t1   CF      rung margin=3.00e-04 iters=10000 pg=1.188e+00 dual=-9.341401780 viol=7.155e-01 ms=26.488 stop=ITERATION_LIMIT finalPg=1.018e+00
+16356:  317526.10  t1   CF-SEED source assumedViolation=0.715457497806 eligible=false
+16357:  317526.11  t1   CF      pass=1 pattern fixed point, stop
+16358:  317526.12  t1   CF      fallback bestViol=7.155e-01 us=27153.1
+16359:  317526.14  t1   LRS-OBJ end alternate X/MAX@22 result=miss ms=27.182
+16360:  317526.15  t1   LRS-PREFLIGHT alternate X/MIN@22 directCap=false
+16361:  317526.16  t1   LRS-OBJ begin alternate X/MIN@22
+16362:  317526.17  t1   CF      pass=0 pattern=free n=22 m=35 robust
+16363:  317555.35  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=12.602
+16364:  317555.40  t1   CF-CHECK margin=3.00e-04 replayViol=0.711124873363 modelViol=1.66141195191
+16365:  317555.41  t1   CF      rung margin=3.00e-04 iters=10000 pg=7.115e-01 dual=-13.544487167 viol=1.661e+00 ms=29.217 stop=ITERATION_LIMIT finalPg=1.662e+00
+16366:  317555.43  t1   CF-SEED source assumedViolation=1.66142472497 eligible=false
+16367:  317555.45  t1   CF      pass=1 pattern=x@0+z@19-21 n=22 m=35 robust
+16368:  317585.59  t1   CF-RETENTION iteration=-1 improvements=0 auditMs=12.626
+16369:  317585.64  t1   CF-CHECK margin=3.00e-04 replayViol=0.711124873363 modelViol=1.66141217963
+16370:  317585.65  t1   CF      rung margin=3.00e-04 iters=10000 pg=7.115e-01 dual=-13.739295865 viol=1.661e+00 ms=30.173 stop=ITERATION_LIMIT finalPg=1.662e+00
+16371:  317585.67  t1   CF-SEED source assumedViolation=1.66141217963 eligible=false
+16372:  317585.68  t1   CF      pass=1 no improvement (viol=1.661e+00), stop
+16373:  317585.69  t1   CF      fallback bestViol=1.661e+00 us=59521.1
+16374:  317585.71  t1   LRS-OBJ end alternate X/MIN@22 result=miss ms=59.548
+16375:  317585.71  t1   LRS-OBJ begin fallback SLP Z/MAX@22
+16376:  317602.75  t1   SLP     start n=22 m=35 seed=dual budget=40/60 bestEffort=false inertiaAware=false fold=-
+16378:  317602.88  t1   SLP     lp#1 phase=1 tr=30.0 step=29.9 pred=6.156e-01 viol=7.113e-01->7.476e-01 worst=X@356[t=5,slack=0.711292,value=0.711292453]->X@356[t=5,slack=0.747601,value=0.747601322] t24-25=- obj=-1112.164756965->-1111.305575322 reject
+16380:  317602.93  t1   SLP     lp#2 phase=1 tr=15.0 step=15.0 pred=6.496e-01 viol=7.113e-01->6.901e-01 worst=X@356[t=5,slack=0.711292,value=0.711292453]->X@356[t=5,slack=0.690087,value=0.690087044] t24-25=- obj=-1112.164756965->-1111.465301626 accept
+16382:  317602.98  t1   SLP     lp#3 phase=1 tr=30.0 step=30.0 pred=6.512e-01 viol=6.901e-01->8.119e-01 worst=X@356[t=5,slack=0.690087,value=0.690087044]->X@356[t=5,slack=0.811949,value=0.811949481] t24-25=- obj=-1111.465301626->-1112.827952947 reject
+16384:  317603.03  t1   SLP     lp#4 phase=1 tr=15.0 step=15.0 pred=6.706e-01 viol=6.901e-01->7.113e-01 worst=X@356[t=5,slack=0.690087,value=0.690087044]->X@356[t=5,slack=0.711292,value=0.711292453] t24-25=- obj=-1111.465301626->-1112.164756965 reject
+16386:  317603.07  t1   SLP     lp#5 phase=1 tr=7.50 step=7.50 pred=6.804e-01 viol=6.901e-01->6.905e-01 worst=X@356[t=5,slack=0.690087,value=0.690087044]->X@356[t=5,slack=0.690540,value=0.690540354] t24-25=- obj=-1111.465301626->-1111.816677123 reject
+16388:  317603.11  t1   SLP     lp#6 phase=1 tr=3.75 step=3.75 pred=6.852e-01 viol=6.901e-01->6.878e-01 worst=X@356[t=5,slack=0.690087,value=0.690087044]->X@356[t=5,slack=0.687766,value=0.687765687] t24-25=- obj=-1111.465301626->-1111.641016601 accept
+16390:  317603.16  t1   SLP     lp#7 phase=1 tr=7.50 step=7.50 pred=6.873e-01 viol=6.878e-01->6.975e-01 worst=X@356[t=5,slack=0.687766,value=0.687765687]->X@356[t=5,slack=0.697484,value=0.697483728] t24-25=- obj=-1111.641016601->-1111.290479497 reject
+16392:  317603.21  t1   SLP     lp#8 phase=1 tr=3.75 step=3.75 pred=6.875e-01 viol=6.878e-01->6.901e-01 worst=X@356[t=5,slack=0.687766,value=0.687765687]->X@356[t=5,slack=0.690087,value=0.690087044] t24-25=- obj=-1111.641016601->-1111.465301626 reject
+16394:  317603.25  t1   SLP     lp#9 phase=1 tr=1.88 step=1.88 pred=6.877e-01 viol=6.878e-01->6.883e-01 worst=X@356[t=5,slack=0.687766,value=0.687765687]->X@356[t=5,slack=0.688288,value=0.688288245] t24-25=- obj=-1111.641016601->-1111.553193751 reject
+16396:  317603.30  t1   SLP     lp#10 phase=1 tr=0.938 step=0.938 pred=6.877e-01 viol=6.878e-01->6.879e-01 worst=X@356[t=5,slack=0.687766,value=0.687765687]->X@356[t=5,slack=0.687869,value=0.687868567] t24-25=- obj=-1111.641016601->-1111.597012653 reject
+16398:  317603.34  t1   SLP     lp#11 phase=1 tr=0.469 step=0.469 pred=6.877e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687766,value=0.687765687]->X@356[t=5,slack=0.687777,value=0.687776996] t24-25=- obj=-1111.641016601->-1111.619091672 reject
+16400:  317603.39  t1   SLP     lp#12 phase=1 tr=0.234 step=0.234 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687766,value=0.687765687]->X@356[t=5,slack=0.687762,value=0.687761514] t24-25=- obj=-1111.641016601->-1111.629966392 accept
+16402:  317603.43  t1   SLP     lp#13 phase=1 tr=0.469 step=0.469 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687762,value=0.687761514]->X@356[t=5,slack=0.687790,value=0.687790018] t24-25=- obj=-1111.629966392->-1111.652046266 reject
+16404:  317603.47  t1   SLP     lp#14 phase=1 tr=0.234 step=0.234 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687762,value=0.687761514]->X@356[t=5,slack=0.687766,value=0.687765687] t24-25=- obj=-1111.629966392->-1111.641016601 reject
+16406:  317603.52  t1   SLP     lp#15 phase=1 tr=0.117 step=0.117 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687762,value=0.687761514]->X@356[t=5,slack=0.687761,value=0.687761123] t24-25=- obj=-1111.629966392->-1111.635569010 accept
+16408:  317603.56  t1   SLP     lp#16 phase=1 tr=0.234 step=0.234 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687761123]->X@356[t=5,slack=0.687767,value=0.687766809] t24-25=- obj=-1111.635569010->-1111.624539250 reject
+16410:  317603.60  t1   SLP     lp#17 phase=1 tr=0.117 step=0.117 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687761123]->X@356[t=5,slack=0.687762,value=0.687761514] t24-25=- obj=-1111.635569010->-1111.629966392 reject
+16412:  317603.64  t1   SLP     lp#18 phase=1 tr=0.0586 step=0.0586 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687761123]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.635569010->-1111.632777931 accept
+16414:  317603.69  t1   SLP     lp#19 phase=1 tr=0.117 step=0.117 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687763,value=0.687762658] t24-25=- obj=-1111.632777931->-1111.636553815 reject
+16416:  317603.73  t1   SLP     lp#20 phase=1 tr=0.0586 step=0.0586 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687761088] t24-25=- obj=-1111.632777931->-1111.634734230 reject
+16418:  317603.77  t1   SLP     lp#21 phase=1 tr=0.0293 step=0.0293 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760755] t24-25=- obj=-1111.632777931->-1111.633677491 reject
+16420:  317603.82  t1   SLP     lp#22 phase=1 tr=0.0146 step=0.0146 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760658] t24-25=- obj=-1111.632777931->-1111.633296078 reject
+16422:  317603.86  t1   SLP     lp#23 phase=1 tr=0.00732 step=0.00732 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760647] t24-25=- obj=-1111.632777931->-1111.632958411 reject
+16424:  317603.90  t1   SLP     lp#24 phase=1 tr=0.00366 step=0.00366 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760649] t24-25=- obj=-1111.632777931->-1111.632936530 reject
+16426:  317603.94  t1   SLP     lp#25 phase=1 tr=0.00183 step=0.00183 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760649] t24-25=- obj=-1111.632777931->-1111.632778640 reject
+16428:  317603.99  t1   SLP     lp#26 phase=1 tr=0.000916 step=0.000916 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760645] t24-25=- obj=-1111.632777931->-1111.632798456 reject
+16430:  317604.03  t1   SLP     lp#27 phase=1 tr=0.000458 step=0.000458 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16432:  317604.07  t1   SLP     lp#28 phase=1 tr=0.000229 step=0.000229 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16434:  317604.12  t1   SLP     lp#29 phase=1 tr=0.000114 step=0.000114 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16436:  317604.16  t1   SLP     lp#30 phase=1 tr=5.72e-05 step=5.72e-05 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16438:  317604.20  t1   SLP     lp#31 phase=1 tr=2.86e-05 step=2.86e-05 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16440:  317604.24  t1   SLP     lp#32 phase=1 tr=1.43e-05 step=1.43e-05 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16442:  317604.29  t1   SLP     lp#33 phase=1 tr=7.15e-06 step=7.15e-06 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16444:  317604.33  t1   SLP     lp#34 phase=1 tr=3.58e-06 step=3.58e-06 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16446:  317604.37  t1   SLP     lp#35 phase=1 tr=1.79e-06 step=1.79e-06 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16448:  317604.42  t1   SLP     lp#36 phase=1 tr=8.94e-07 step=8.94e-07 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16450:  317604.46  t1   SLP     lp#37 phase=1 tr=4.47e-07 step=4.47e-07 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16452:  317604.50  t1   SLP     lp#38 phase=1 tr=2.24e-07 step=2.24e-07 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16454:  317604.54  t1   SLP     lp#39 phase=1 tr=1.12e-07 step=1.12e-07 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16455:  317604.55  t1   SLP     phase1 infeasible viol=6.878e-01 lps=39 ms=1.8
+16456:  317604.57  t1   SLP     start n=22 m=35 seed=given budget=40/60 bestEffort=false inertiaAware=true fold=-
+16458:  317604.63  t1   SLP     lp#1 phase=1 tr=30.0 step=30.0 pred=6.877e-01 viol=6.878e-01->8.470e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.846963,value=0.846963363] t24-25=- obj=-1111.632777931->-1112.570298461 reject
+16460:  317604.67  t1   SLP     lp#2 phase=1 tr=15.0 step=15.0 pred=6.877e-01 viol=6.878e-01->7.282e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.728234,value=0.728233783] t24-25=- obj=-1111.632777931->-1112.118128353 reject
+16462:  317604.72  t1   SLP     lp#3 phase=1 tr=7.50 step=7.50 pred=6.877e-01 viol=6.878e-01->6.979e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.697903,value=0.697902990] t24-25=- obj=-1111.632777931->-1111.877467176 reject
+16464:  317604.77  t1   SLP     lp#4 phase=1 tr=3.75 step=3.75 pred=6.878e-01 viol=6.878e-01->6.903e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.690295,value=0.690294683] t24-25=- obj=-1111.632777931->-1111.755452558 reject
+16466:  317604.81  t1   SLP     lp#5 phase=1 tr=1.88 step=1.88 pred=6.878e-01 viol=6.878e-01->6.884e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.688389,value=0.688389469] t24-25=- obj=-1111.632777931->-1111.694069413 reject
+16468:  317604.86  t1   SLP     lp#6 phase=1 tr=0.938 step=0.938 pred=6.878e-01 viol=6.878e-01->6.879e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687917,value=0.687916809] t24-25=- obj=-1111.632777931->-1111.663496083 reject
+16470:  317604.90  t1   SLP     lp#7 phase=1 tr=0.469 step=0.469 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687799,value=0.687798526] t24-25=- obj=-1111.632777931->-1111.648058921 reject
+16472:  317604.95  t1   SLP     lp#8 phase=1 tr=0.234 step=0.234 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687770,value=0.687769870] t24-25=- obj=-1111.632777931->-1111.640486849 reject
+16474:  317605.00  t1   SLP     lp#9 phase=1 tr=0.117 step=0.117 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687763,value=0.687762658] t24-25=- obj=-1111.632777931->-1111.636553815 reject
+16476:  317605.04  t1   SLP     lp#10 phase=1 tr=0.0586 step=0.0586 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687761088] t24-25=- obj=-1111.632777931->-1111.634734230 reject
+16478:  317605.09  t1   SLP     lp#11 phase=1 tr=0.0293 step=0.0293 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760755] t24-25=- obj=-1111.632777931->-1111.633677491 reject
+16480:  317605.14  t1   SLP     lp#12 phase=1 tr=0.0146 step=0.0146 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760658] t24-25=- obj=-1111.632777931->-1111.633296078 reject
+16482:  317605.19  t1   SLP     lp#13 phase=1 tr=0.00732 step=0.00732 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760647] t24-25=- obj=-1111.632777931->-1111.632958411 reject
+16484:  317605.24  t1   SLP     lp#14 phase=1 tr=0.00366 step=0.00366 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760649] t24-25=- obj=-1111.632777931->-1111.632936530 reject
+16486:  317605.29  t1   SLP     lp#15 phase=1 tr=0.00183 step=0.00183 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760649] t24-25=- obj=-1111.632777931->-1111.632778640 reject
+16488:  317605.33  t1   SLP     lp#16 phase=1 tr=0.000916 step=0.000916 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760645] t24-25=- obj=-1111.632777931->-1111.632798456 reject
+16490:  317605.38  t1   SLP     lp#17 phase=1 tr=0.000458 step=0.000458 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16492:  317605.43  t1   SLP     lp#18 phase=1 tr=0.000229 step=0.000229 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16494:  317605.48  t1   SLP     lp#19 phase=1 tr=0.000114 step=0.000114 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16496:  317605.52  t1   SLP     lp#20 phase=1 tr=5.72e-05 step=5.72e-05 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16498:  317605.57  t1   SLP     lp#21 phase=1 tr=2.86e-05 step=2.86e-05 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16500:  317605.61  t1   SLP     lp#22 phase=1 tr=1.43e-05 step=1.43e-05 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16502:  317605.66  t1   SLP     lp#23 phase=1 tr=7.15e-06 step=7.15e-06 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16504:  317605.70  t1   SLP     lp#24 phase=1 tr=3.58e-06 step=3.58e-06 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16506:  317605.75  t1   SLP     lp#25 phase=1 tr=1.79e-06 step=1.79e-06 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16508:  317605.80  t1   SLP     lp#26 phase=1 tr=8.94e-07 step=8.94e-07 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16510:  317605.85  t1   SLP     lp#27 phase=1 tr=4.47e-07 step=4.47e-07 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16512:  317605.90  t1   SLP     lp#28 phase=1 tr=2.24e-07 step=2.24e-07 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16514:  317605.94  t1   SLP     lp#29 phase=1 tr=1.12e-07 step=1.12e-07 pred=6.878e-01 viol=6.878e-01->6.878e-01 worst=X@356[t=5,slack=0.687761,value=0.687760640]->X@356[t=5,slack=0.687761,value=0.687760640] t24-25=- obj=-1111.632777931->-1111.632777931 reject
+16515:  317605.95  t1   SLP     phase1 infeasible viol=6.878e-01 lps=29 ms=1.4
+16516:  317605.96  t1   LRS-OBJ end fallback SLP result=miss ms=20.247
+16517:  317605.97  t1   LRS     commit=1 window i=38 we=39 ticks=22 cons=35 last=false -> miss ms=223.2
+16518:  317606.01  t1   LRS-STUCK commit=1 nextJump=39 tick=351
+16519:  317606.05  t1   RESULT  solved=false yaws=0 ms=317605.258

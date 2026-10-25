@@ -27,8 +27,8 @@ Fixed margin.0003, EPS2=1e-24, decoder fallback disabled, normal free-air object
 |Stop |Before39/state351 |Before39/state351 |
 |Attempted nominal windows |97 |106 |
 |Objective/SLP calls |391 |435 |
-|Dual runs |795 |848 |
-|Dual iterations |4,987,427 |1,050,626 |
+|Logged CF dual runs |795 |848 |
+|Logged CF dual iterations |4,987,427 |1,050,626 |
 |Accepted CF windows |26 |27 |
 |Accepted SLP windows |12 |11 |
 
@@ -74,3 +74,7 @@ In /tmp/pkc-endpoints-fixed with source hashes recorded in metadata, run asynchr
 ```
 
 Gradle1m35s, solver93.031823s. One focused test, zero assertion failures; solver miss is an allowed experiment outcome. No solver settings changed during execution. Baseline source and run artifacts are preserved in the sibling full-route-commit1-no-decoder directory.
+
+### Iteration-count scope clarification
+
+The recorded dual-run and iteration totals count the logged closed-form rungs. They exclude the separate dual solve used to initialize SLP. That seed uses the CostateDualSolver default cap10000 at margin0, even during the optional1000 stage; its time is inside the SLP objective-call timing. See the [jump39 handoff](../jump39-baseline-handoff-2026-10-24/README.md).

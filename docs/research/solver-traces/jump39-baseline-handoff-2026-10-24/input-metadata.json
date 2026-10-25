@@ -1,0 +1,7 @@
+{
+  "source": "/Users/arvindmurty/Downloads/LinkcraftII_Competition_01/real/11.json",
+  "sha256": "af5d2d1bc6e0ab466f1b6cf309f3a26e76e4a63765ac8b15ff02fb4ad55d28bf",
+  "archive": "real11-input.json.gz",
+  "constraints_excerpt": "authored-constraints-340-493.json",
+  "excerpt_kind": "Authored saved constraints and overrides, not the compiled/expanded solver rows."
+}
