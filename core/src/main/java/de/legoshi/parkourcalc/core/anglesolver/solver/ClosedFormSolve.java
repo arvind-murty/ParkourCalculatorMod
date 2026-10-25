@@ -47,6 +47,7 @@ public final class ClosedFormSolve {
         public int dualMaxIterations = 10000;
         public CostateDualSolver.IterationObserver dualIterationObserver;
         public boolean retainIntermediateCandidates = true;
+        public boolean seedInertiaRetries = true;
 
         public int maxInertiaPasses = 4;
 
@@ -108,7 +109,7 @@ public final class ClosedFormSolve {
         JumpConstraintCompiler.Compiled compiled = JumpConstraintCompiler.compile(spec, cfg.replayTickLimit);
         for (int[] signs : crossSignCombos(spec.constraints)) {
             Result rs = runLadder(exact, spec, sc, compiled, feasTol, cancel, cfg.margins, true, zeroX, zeroZ,
-                    System.nanoTime(), cfg, pre, signs);
+                    System.nanoTime(), cfg, pre, signs, null);
             if (rs != null && rs.feasible) return rs;
             if (cancel.get()) break;
         }
@@ -488,6 +489,7 @@ public final class ClosedFormSolve {
                                            FacingPrefold pre) {
         long t0 = System.nanoTime();
         JumpConstraintCompiler.Compiled compiled = JumpConstraintCompiler.compile(spec, cfg.replayTickLimit);
+        InertiaRetrySeed retrySeed = cfg.seedInertiaRetries ? new InertiaRetrySeed() : null;
 
         int n = sc.numTicks;
         boolean[] zeroX = null;
@@ -501,7 +503,7 @@ public final class ClosedFormSolve {
             }
             Result r = null;
             for (int[] signs : crossSignCombos(spec.constraints)) {
-                Result rs = runLadder(exact, spec, sc, compiled, feasTol, cancel, margins, ascending, zeroX, zeroZ, t0, cfg, pre, signs);
+                Result rs = runLadder(exact, spec, sc, compiled, feasTol, cancel, margins, ascending, zeroX, zeroZ, t0, cfg, pre, signs, retrySeed);
                 if (rs != null && (r == null || rs.feasible || rs.violation < r.violation)) r = rs;
                 if ((r != null && r.feasible) || cancel.get()) break;
             }
@@ -570,7 +572,7 @@ public final class ClosedFormSolve {
     private static Result runLadder(ExactJumpModel exact, JumpSpec spec, JumpPhysicsInputs sc,
                                     JumpConstraintCompiler.Compiled compiled, double feasTol, AtomicBoolean cancel,
                                     double[] margins, boolean ascending, boolean[] zeroX, boolean[] zeroZ, long t0,
-                                    Config cfg, FacingPrefold pre, int[] crossSigns) {
+                                    Config cfg, FacingPrefold pre, int[] crossSigns, InertiaRetrySeed retrySeed) {
         JumpLinearModel lin = new JumpLinearModel(sc, zeroX, zeroZ);
         double[] cx = new double[lin.n];
         double[] cz = new double[lin.n];
@@ -581,6 +583,7 @@ public final class ClosedFormSolve {
         if (trivialInfeasible[0]) return null;
         double vBound = exact.perAxisInertia() ? exact.inertiaThreshold()
                 : exact.inertiaThreshold() / StrictMath.sqrt(2.0);
+        int authoredCount = walls.size();
         walls.addAll(lin.velocityWalls(vBound));
 
         FacingPrefold.Reduced red = pre.reduce(cx, cz, lin.mMagAll(), walls);
@@ -597,7 +600,7 @@ public final class ClosedFormSolve {
         double[] bestLambda = null;
         WindowCandidateValidation validation = cfg.replayTickLimit < lin.n
                 ? new WindowCandidateValidation(exact, spec, cfg.replayTickLimit) : null;
-        double[] warm = null;
+        double[] warm = retrySeed != null && pre.isIdentity() ? retrySeed.forModel(red, authoredCount) : null;
         int rungStall = 0;
         for (double margin : margins) {
             if (cancel.get()) return null;
@@ -670,6 +673,7 @@ public final class ClosedFormSolve {
         if (DEBUG) System.out.printf("  CLOSED FALLBACK %.2fus bestViol=%.2e%n",
                 (System.nanoTime() - t0) / 1e3, bestViol);
         if (bestYaws == null) return null;
+        if (retrySeed != null) retrySeed.capture(exact, spec, lin, pre, red, authoredCount, bestYaws, bestLambda);
         return withCostates(new Result(bestYaws, bestViol, false), lin, cx, cz, walls, bestLambda);
     }
 
