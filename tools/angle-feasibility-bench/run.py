@@ -17,7 +17,7 @@ from model import compile_problem, load_export
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_EXPORT = ROOT / "tools/angle-model-comparison/build/real11-problems.json"
+DEFAULT_EXPORT = Path(__file__).resolve().parent / "benchmarks/real11-2026-10-25/problems.json.gz"
 
 
 def choose_start(problem, label):
@@ -71,7 +71,7 @@ def parent(args):
                 output = directory / (str(ticks) + "-" + start + "-" + method + ".json")
                 command = [sys.executable, str(Path(__file__).resolve()), "--worker", "--export", str(args.export),
                            "--ticks", str(ticks), "--start", start, "--method", method, "--seconds", str(args.seconds),
-                           "--max-nodes", str(args.max_nodes), "--output", str(output)]
+                           "--max-nodes", str(args.max_nodes), "--seed", str(args.seed), "--output", str(output)]
                 began = time.perf_counter()
                 try:
                     completed = subprocess.run(command, capture_output=True, text=True, timeout=args.seconds + 45)
@@ -86,7 +86,9 @@ def parent(args):
                 result["process_seconds"] = time.perf_counter() - began
                 results.append({k: v for k, v in result.items() if k not in ("witness", "log")})
                 (directory / "summary.json").write_text(json.dumps(results, indent=2))
-                print(json.dumps({k: result.get(k) for k in ("case", "method", "start", "status", "seconds", "nodes", "validation")}), flush=True)
+                compact = {k: result.get(k) for k in ("case", "method", "start", "status", "seconds", "nodes")}
+                compact["validation"] = {k: result.get("validation", {}).get(k) for k in ("feasible", "minimum_slack", "max_violation")}
+                print(json.dumps(compact), flush=True)
 
 
 def main():

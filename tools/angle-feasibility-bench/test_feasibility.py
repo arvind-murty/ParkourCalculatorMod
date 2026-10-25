@@ -4,10 +4,11 @@ from pathlib import Path
 import numpy as np
 
 from model import compile_problem, load_export
-from restrictions import inner_conic, row_ranges, solve
+from restrictions import inner_conic, outer_conic, row_ranges, solve, trig_range
 
 
 ROOT = Path(__file__).resolve().parents[2]
+EXPORT = Path(__file__).resolve().parent / "benchmarks/real11-2026-10-25/problems.json.gz"
 
 
 def example(walls, ticks=1, magnitude=None, position=None, velocity=None):
@@ -25,7 +26,7 @@ def wall(axis, cmp, rhs, t1=1, t2=None, op="PLUS"):
 
 class FeasibilityTests(unittest.TestCase):
     def test_java_recurrence_oracles(self):
-        data = load_export(ROOT / "tools/angle-model-comparison/build/real11-problems.json", ROOT)[0]
+        data = load_export(EXPORT, ROOT)[0]
         for ticks in (60, 100, 200, 808):
             problem = compile_problem(data, ticks)
             for oracle in data["oracles"]:
@@ -67,6 +68,29 @@ class FeasibilityTests(unittest.TestCase):
                 self.assertTrue(np.all(residual >= lo - 1e-12))
                 self.assertTrue(np.all(residual <= hi + 1e-12))
 
+    def test_quadratic_upper_bounds_enclose_nonlinear_rows(self):
+        problem = example([wall("X", "GE", .2, 3), wall("Z", "LE", .7, 2)], ticks=3)
+        rng = np.random.default_rng(24)
+        for i in range(10):
+            anchor = rng.uniform(-5, 5, 3)
+            lower, upper = anchor - .7, anchor + .9
+            unused, curvature = trig_range(-problem.a, -problem.b, lower, upper)
+            curvature = np.maximum(curvature, 0)
+            for j in range(50):
+                theta = rng.uniform(lower, upper)
+                delta = theta - anchor
+                bound = problem.residuals(anchor) + problem.jacobian(anchor) @ delta + curvature @ (delta * delta) / 2
+                self.assertTrue(np.all(problem.residuals(theta) <= bound + 1e-12))
+
+    def test_disk_outer_bound_preserves_feasible_arcs_across_wrap(self):
+        problem = example([wall("X", "GE", -.8), wall("Z", "LE", .1)])
+        witness = np.array([4.])
+        self.assertTrue(problem.validate(witness)["feasible"])
+        angle, record = outer_conic(problem, witness - .1, witness + .1, witness, 2)
+        self.assertIsNotNone(angle, record)
+        self.assertLessEqual(record["maximum_control_norm"], 1 + 1e-7)
+        self.assertTrue(problem.validate(angle)["feasible"])
+
     def test_zero_input_ticks_and_magnitude(self):
         problem = example([wall("X", "GE", -.5, 3)], ticks=3, magnitude=[1, 0, .2])
         theta = np.array([.2, -2.0, .7])
@@ -76,13 +100,13 @@ class FeasibilityTests(unittest.TestCase):
         self.assertLess(problem.validate(theta)["magnitude_error"], 1e-14)
 
     def test_waypoint_seed_does_not_use_authored_angles(self):
-        data = load_export(ROOT / "tools/angle-model-comparison/build/real11-problems.json")[0]
+        data = load_export(EXPORT)[0]
         first = compile_problem(data, 100).waypoint_angles()
         changed = dict(data, yaw=[0] * data["ticks"])
         np.testing.assert_array_equal(first, compile_problem(changed, 100).waypoint_angles())
 
     def test_prefix_retains_original_walls_without_goal_removal(self):
-        data = load_export(ROOT / "tools/angle-model-comparison/build/real11-problems.json")[0]
+        data = load_export(EXPORT)[0]
         for ticks, count in ((100, 83), (200, 195)):
             problem = compile_problem(data, ticks)
             self.assertEqual(count, len(problem.walls))

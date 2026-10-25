@@ -1,0 +1,132 @@
+{
+  "created_utc": "2026-10-25T20:59:13.339497+00:00",
+  "cpu": "Apple M1 Pro",
+  "threads": 1,
+  "prefix_code_commit": "46383f6",
+  "revised_code_hashes": {
+    "test_feasibility.py": "71f29bee2ccdbacf6dcf446b24c2742b9d31f251872de3887fbb45d47f499628",
+    "baselines.py": "88a79616d807916459ae13680508793fefd76a6bd24072e32b39f2caa10e1223",
+    "run.py": "e85824e94b315a81fd09a18ebf34d426a029611cb96c6bc1fdb837d7b1d84120",
+    "model.py": "45b1b49084512a6805b102646fb4dcf4044a560115917cada480f4ba8fb1c9e9",
+    "verify.py": "7db7616bdcd129020b1045b257841900d18920ee48dd54c038e9c414b7cbb7d5",
+    "restrictions.py": "c1773cbb8a16b86365393c71dc3a8e2f7162945044553cb07718febd75614292",
+    "requirements.txt": "52307197b0bdac5eb3598a10f8536c51e8ebf748d26a9a6060777f2ff1b71713"
+  },
+  "packages": {
+    "numpy": "2.5.4",
+    "scipy": "1.16.3",
+    "casadi": "3.8.1",
+    "clarabel": "0.11.1",
+    "pyscipopt": "6.3.0"
+  },
+  "main_timing_set": "serial",
+  "overlapping_exploration": [
+    "random-overlap",
+    "ablation-overlap"
+  ],
+  "sets": {
+    "initial": {
+      "horizons": [
+        60,
+        100,
+        200
+      ],
+      "starts": [
+        "waypoints"
+      ],
+      "methods": [
+        "inner",
+        "ipopt",
+        "scip"
+      ],
+      "seconds": 5,
+      "max_nodes": 128,
+      "code": "46383f6"
+    },
+    "conic": {
+      "horizons": [
+        60,
+        100,
+        200
+      ],
+      "starts": [
+        "waypoints"
+      ],
+      "methods": [
+        "inner",
+        "ipopt",
+        "scip"
+      ],
+      "seconds": 10,
+      "max_nodes": 512
+    },
+    "random-overlap": {
+      "horizons": [
+        100,
+        200
+      ],
+      "starts": [
+        "random-0",
+        "random-1",
+        "random-2",
+        "random-3",
+        "random-4"
+      ],
+      "methods": [
+        "inner",
+        "ipopt"
+      ],
+      "seconds": 15,
+      "max_nodes": 2048
+    },
+    "ablation-overlap": {
+      "horizons": [
+        100,
+        200
+      ],
+      "starts": [
+        "waypoints",
+        "authored"
+      ],
+      "methods": [
+        "inner-no-outer"
+      ],
+      "seconds": 10,
+      "max_nodes": 2048
+    },
+    "serial": {
+      "horizons": [
+        100,
+        200
+      ],
+      "starts": [
+        "waypoints",
+        "random-0",
+        "random-1",
+        "random-2",
+        "random-3",
+        "random-4"
+      ],
+      "methods": [
+        "inner",
+        "ipopt"
+      ],
+      "seconds": 15,
+      "max_nodes": 2048
+    },
+    "stretch": {
+      "horizons": [
+        808
+      ],
+      "starts": [
+        "waypoints"
+      ],
+      "methods": [
+        "inner",
+        "ipopt"
+      ],
+      "seconds": 30,
+      "max_nodes": 2048
+    }
+  }
+}

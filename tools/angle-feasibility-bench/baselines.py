@@ -16,9 +16,9 @@ def ipopt(problem, initial, seconds=30, seed=0):
     solver = ca.nlpsol("baseline", "ipopt", {"x": theta, "f": ca.MX(0), "g": residual}, options)
     build_seconds = time.perf_counter() - built
     started = time.perf_counter()
-    initial = (np.asarray(initial) + np.pi) % (2 * np.pi) - np.pi
+    initial = np.asarray(initial)
     try:
-        result = solver(x0=initial, lbx=-np.pi, ubx=np.pi, lbg=-np.inf, ubg=-1e-7)
+        result = solver(x0=initial, lbg=-np.inf, ubg=-1e-7)
         candidate = np.asarray(result["x"]).ravel()
         stats = solver.stats()
         check = problem.validate(candidate)
@@ -42,7 +42,7 @@ def scip(problem, initial, seconds=30, seed=0):
     model.setIntParam("parallel/maxnthreads", 1)
     model.setIntParam("randomization/randomseedshift", int(seed))
     model.setRealParam("numerics/feastol", 1e-9)
-    theta = [model.addVar(lb=-np.pi, ub=np.pi, name="theta_" + str(t)) for t in range(problem.ticks)]
+    theta = [model.addVar(lb=float(initial[t] - np.pi), ub=float(initial[t] + np.pi), name="theta_" + str(t)) for t in range(problem.ticks)]
     x = [cos(t) for t in theta]
     z = [sin(t) for t in theta]
     for j, wall in enumerate(problem.walls):
@@ -51,8 +51,7 @@ def scip(problem, initial, seconds=30, seed=0):
         model.addCons(quicksum(terms) <= float(problem.rhs[j] - 1e-7), name="wall_" + str(j))
     model.setObjective(0)
     solution = model.createSol()
-    wrapped = (np.asarray(initial) + np.pi) % (2 * np.pi) - np.pi
-    for variable, value in zip(theta, wrapped):
+    for variable, value in zip(theta, initial):
         model.setSolVal(solution, variable, float(value))
     model.addSol(solution, free=True)
     build_seconds = time.perf_counter() - built

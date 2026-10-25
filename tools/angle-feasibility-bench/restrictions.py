@@ -5,7 +5,6 @@ import time
 import clarabel
 import numpy as np
 from scipy import sparse
-from scipy.optimize import linprog
 
 
 def trig_range(a, b, lower, upper):
@@ -80,28 +79,35 @@ def inner_conic(problem, anchor, lower, upper, seconds, guard=1e-7):
     return candidate, record
 
 
-def outer_lp(problem, lower, upper, preference, seconds):
+def outer_conic(problem, lower, upper, preference, seconds):
     n = problem.ticks
     px = np.cos(preference)
     pz = np.sin(preference)
     matrices = [sparse.csc_matrix(np.hstack((problem.a, problem.b)))]
     vectors = [problem.rhs]
-    directions = np.arange(16) * (2 * np.pi / 16)
-    for phi in directions:
-        matrices.append(sparse.hstack((np.cos(phi) * sparse.eye(n), np.sin(phi) * sparse.eye(n)), format="csc"))
-        vectors.append(np.ones(n))
     center = (lower + upper) / 2
     half = (upper - lower) / 2
     matrices.append(sparse.hstack((-sparse.diags(np.cos(center)), -sparse.diags(np.sin(center))), format="csc"))
     vectors.append(-np.cos(np.minimum(half, np.pi)))
     xlo, xhi = trig_range(np.ones(n), np.zeros(n), lower, upper)
     zlo, zhi = trig_range(np.zeros(n), np.ones(n), lower, upper)
-    bounds = list(zip(np.r_[xlo, zlo] - 1e-12, np.r_[xhi, zhi] + 1e-12))
-    result = linprog(-np.r_[px, pz], A_ub=sparse.vstack(matrices, format="csc"), b_ub=np.concatenate(vectors),
-                     bounds=bounds, method="highs", options={"time_limit": max(seconds, .001),
-                     "primal_feasibility_tolerance": 1e-9, "dual_feasibility_tolerance": 1e-9})
-    record = {"status": int(result.status), "message": result.message}
-    if result.x is None:
+    matrices.extend((sparse.eye(2 * n, format="csc"), -sparse.eye(2 * n, format="csc")))
+    vectors.extend((np.r_[xhi, zhi] + 1e-12, -np.r_[xlo, zlo] + 1e-12))
+    count = sum(len(vector) for vector in vectors)
+    cone_rows = np.r_[3 * np.arange(n) + 1, 3 * np.arange(n) + 2]
+    matrices.append(sparse.csc_matrix((-np.ones(2 * n), (cone_rows, np.arange(2 * n))), shape=(3 * n, 2 * n)))
+    vectors.append(np.tile([1., 0., 0.], n))
+    settings = clarabel.DefaultSettings()
+    settings.verbose = False
+    settings.max_threads = 1
+    settings.time_limit = max(seconds, .001)
+    settings.tol_feas = settings.tol_gap_abs = settings.tol_gap_rel = 1e-9
+    cones = [clarabel.NonnegativeConeT(count)] + [clarabel.SecondOrderConeT(3) for t in range(n)]
+    solver = clarabel.DefaultSolver(sparse.csc_matrix((2 * n, 2 * n)), -np.r_[px, pz],
+                                     sparse.vstack(matrices, format="csc"), np.concatenate(vectors), cones, settings)
+    result = solver.solve()
+    record = {"status": str(result.status), "iterations": result.iterations, "solve_seconds": result.solve_time}
+    if str(result.status) not in ("Solved", "AlmostSolved"):
         return None, record
     x, z = result.x[:n], result.x[n:]
     angle = np.arctan2(z, x)
@@ -109,6 +115,8 @@ def outer_lp(problem, lower, upper, preference, seconds):
     angle = np.clip(angle, lower, upper)
     angle = np.where(np.hypot(x, z) < 1e-5, np.clip(preference, lower, upper), angle)
     record["minimum_control_norm"] = float(np.min(np.hypot(x, z)))
+    record["maximum_control_norm"] = float(np.max(np.hypot(x, z)))
+    record["control_norms"] = np.hypot(x, z).tolist()
     record["guidance_violation"] = float(np.max(problem.residuals(angle), initial=-np.inf))
     return angle, record
 
@@ -136,10 +144,10 @@ def solve(problem, initial, seconds=30, max_nodes=128, use_outer=True):
             continue
         guidance = preference
         if use_outer:
-            guidance, outer = outer_lp(problem, lower, upper, preference, min(2, deadline - time.perf_counter()))
+            guidance, outer = outer_conic(problem, lower, upper, preference, min(2, deadline - time.perf_counter()))
             node["outer"] = outer
-            if guidance is None and outer["status"] == 2:
-                node["pruned"] = "numerical outer LP"
+            if guidance is None and outer["status"] == "PrimalInfeasible":
+                node["pruned"] = "numerical outer cone"
                 logs.append(node)
                 continue
             if guidance is None:
@@ -165,6 +173,8 @@ def solve(problem, initial, seconds=30, max_nodes=128, use_outer=True):
         residual = problem.residuals(guidance)
         score = np.maximum(residual, 0) + 1e-4
         importance = (score @ np.hypot(problem.a, problem.b)) * (upper - lower) ** 2
+        if use_outer and "control_norms" in node["outer"]:
+            importance *= np.maximum(1 - np.array(node["outer"]["control_norms"]), 1e-6)
         split = int(np.argmax(importance))
         if upper[split] - lower[split] < 1e-7:
             continue
