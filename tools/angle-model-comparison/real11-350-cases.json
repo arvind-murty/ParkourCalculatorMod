@@ -1,0 +1,7 @@
+[
+  {
+    "name": "linkcraft-real11-first350",
+    "source": "tools/angle-model-comparison/fixtures/linkcraft-real11-no-facing.json",
+    "ticks": 350
+  }
+]

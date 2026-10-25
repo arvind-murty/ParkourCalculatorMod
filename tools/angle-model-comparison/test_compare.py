@@ -38,6 +38,25 @@ def solve(case, formulation):
 
 
 class ComparisonTest(unittest.TestCase):
+    def test_saved_real11_first350_witness_is_physically_feasible(self):
+        root = Path(__file__).parent / "benchmarks/real11-first350-2026-10-25"
+        data = gzip.decompress((root / "problems.json.gz").read_bytes())
+        case = json.loads(data)[0]
+        saved = json.loads((root / "witness.json").read_text())
+        self.assertEqual(hashlib.sha256(data).hexdigest(), saved["problemsSha256"])
+        self.assertEqual(case["ticks"], 350)
+        self.assertEqual(len(case["walls"]), 273)
+        self.assertEqual(case["facingWalls"], [])
+        self.assertEqual(case["objective"]["tick"], 350)
+        self.assertTrue(all(max(row["t1"], row.get("t2", 0)) <= 350 for row in case["walls"]))
+        witness = saved["witness"]
+        angle = np.array(case["base"]) + np.deg2rad(witness["yaw"])
+        controls = np.array(case["magnitude"])[:, None] * np.column_stack((np.cos(angle), np.sin(angle)))
+        positions = np.array(witness["positions"]) - case["position"]
+        result = validate_candidate(case, positions, controls, saved["tolerance"])
+        self.assertTrue(result["feasible"])
+        self.assertAlmostEqual(result["objective"], 703.3000000119208, places=8)
+
     def test_saved_real11_copy_and_interval_infeasibility_bound(self):
         root = Path(__file__).parent / "benchmarks/real11-full-2026-10-25"
         data = gzip.decompress((root / "problems.json.gz").read_bytes())
