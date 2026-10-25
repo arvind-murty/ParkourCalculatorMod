@@ -40,10 +40,25 @@ public final class LongRunSolver {
         final int[] commitLadder;
         /** Optional probe override for closed-form margins; null preserves the standard ladders. */
         private Double fixedMargin;
+        private int[] dualIterationLadder = {10000};
         public LongRunConfig withFixedMargin(double margin) {
             if (!Double.isFinite(margin) || margin < 0) throw new IllegalArgumentException("invalid margin");
             LongRunConfig copy = new LongRunConfig(windowLadder.clone(), commitLadder.clone());
             copy.fixedMargin = margin;
+            copy.dualIterationLadder = dualIterationLadder.clone();
+            return copy;
+        }
+
+        public LongRunConfig withDualIterationLadder(int... caps) {
+            if (caps == null || caps.length == 0) throw new IllegalArgumentException("empty iteration ladder");
+            int previous = 0;
+            for (int cap : caps) {
+                if (cap <= previous) throw new IllegalArgumentException("iteration caps must increase");
+                previous = cap;
+            }
+            LongRunConfig copy = new LongRunConfig(windowLadder.clone(), commitLadder.clone());
+            copy.fixedMargin = fixedMargin;
+            copy.dualIterationLadder = caps.clone();
             return copy;
         }
 
@@ -203,109 +218,113 @@ public final class LongRunSolver {
             if (deadlineNanos > 0L && System.nanoTime() >= deadlineNanos) return null;
             boolean advanced = false;
             // Try the largest window that solves; shrink on failure for robustness near the run's end / hard spots.
-            int prevWe = -1;
-            for (int w : config.windowLadder) {
-                int we = Math.min(i + w, jumps);
-                if (we == prevWe) continue; // several ladder sizes clamp to the same window near the end: solve it once
-                prevWe = we;
-                boolean last = (we == jumps);
-                int a = bounds[i], nominalEnd = bounds[we];
-                int c = last ? nominalEnd : freeAirObjectiveTick(spec, nominalEnd);
-                if (c < 0) {
-                    if (SolverTrace.on()) SolverTrace.log("LRS-AIR", "no free airborne objective from=%d routeEnd=%d", nominalEnd, n);
-                    continue;
-                }
-                int ce = last ? we : Math.min(i + Math.min(commitJumps, w), jumps);
-                int commitTicks = bounds[ce] - a;
-                JumpPhysicsInputs win = sliceScenario(sc, a, c, seedPos, seedVel, seedYaw);
-                List<JumpConstraint> cons = sliceConstraints(spec, a, c, seedYaw);
-                if (SolverTrace.on()) {
-                    SolverTrace.log("LRS-WIN", "commit=%d jumps=[%d,%d) ticks=[%d,%d) seed=(%.12f,%.12f;%.12f,%.12f) yaw=%.9f constraints=%d replayTicks=%d",
-                            commitJumps, i, we, a, c, seedPos.x, seedPos.z, seedVel.x, seedVel.z, seedYaw, cons.size(), commitTicks);
-                    SolverTrace.log("LRS-AIR", "nominalEnd=%d objectiveTick=%d extension=%d final=%s", nominalEnd, c, c - nominalEnd, last);
-                    if (c - a <= 10) for (JumpConstraint jc : cons) {
-                        SolverTrace.log("LRS-CONS", "%s %s t=%d%s %s rhs=%.12f",
-                                jc.name, jc.mode, jc.t1, jc.t2 == null ? "" : "/" + jc.t2,
-                                jc.cmp, jc.rhs);
+            budgetSearch:
+            for (int dualCap : config.dualIterationLadder) {
+                int prevWe = -1;
+                for (int w : config.windowLadder) {
+                    int we = Math.min(i + w, jumps);
+                    if (we == prevWe) continue; // several ladder sizes clamp to the same window near the end: solve it once
+                    prevWe = we;
+                    boolean last = (we == jumps);
+                    int a = bounds[i], nominalEnd = bounds[we];
+                    int c = last ? nominalEnd : freeAirObjectiveTick(spec, nominalEnd);
+                    if (c < 0) {
+                        if (SolverTrace.on()) SolverTrace.log("LRS-AIR", "no free airborne objective from=%d routeEnd=%d", nominalEnd, n);
+                        continue;
                     }
-                }
-                Objective obj = last
-                        ? new Objective(spec.objective.axis, spec.objective.sense, c - a)   // last window: real objective
-                        : new Objective(JumpPhysicsInputs.Axis.Z, Objective.Sense.MAX, c - a); // lead-in: any feasible
-                String winKey = windowKey(a, c, last, commitTicks, seedPos, seedVel, seedYaw)
-                        + ":margin=" + config.fixedMargin + ":objectivePlacement=freeAir-v1";
-                double[] cachedWin = windows.map.get(winKey);
-                double[] yaws;
-                if (cachedWin != null) {
-                    yaws = cachedWin == WINDOW_MISS ? null : cachedWin.clone();
+                    int ce = last ? we : Math.min(i + Math.min(commitJumps, w), jumps);
+                    int commitTicks = bounds[ce] - a;
+                    JumpPhysicsInputs win = sliceScenario(sc, a, c, seedPos, seedVel, seedYaw);
+                    List<JumpConstraint> cons = sliceConstraints(spec, a, c, seedYaw);
                     if (SolverTrace.on()) {
-                        SolverTrace.log("LRS", "commit=%d window i=%d we=%d cached -> %s",
-                                commitJumps, i, we, yaws != null ? "solved" : "miss");
-                    }
-                } else {
-                    long winT0 = SolverTrace.on() ? System.nanoTime() : 0L;
-                    yaws = solveWindow(exact, win, cons, obj, last, commitTicks, cancel,
-                            deadlineNanos, config.fixedMargin);
-                    if (cancel == null || !cancel.get()) {
-                        windows.map.put(winKey, yaws == null ? WINDOW_MISS
-                                : yaws.clone());
-                    }
-                    if (SolverTrace.on()) {
-                        SolverTrace.log("LRS", "commit=%d window i=%d we=%d ticks=%d cons=%d last=%s -> %s ms=%.1f",
-                                commitJumps, i, we, c - a, cons.size(), last, yaws != null ? "solved" : "miss",
-                                (System.nanoTime() - winT0) / 1.0e6);
-                    }
-                }
-                if (i == 0 && freeBox != null) {
-                    Object cached = retryCache.get(we);
-                    FreeStartSolve.Result fr;
-                    if (cached != null) {
-                        fr = cached == FREE_RETRY_MISS ? null : (FreeStartSolve.Result) cached;
-                    } else {
-                        JumpPhysicsInputs freeSc = FreeStartSolve.copyWithStart(sc, seedPos.x, seedPos.z);
-                        freeSc.startBox = new StartBox(seedPos.x, seedPos.z, seedVel.x, seedVel.z,
-                                freeBox.pxLo, freeBox.pxHi, freeBox.pzLo, freeBox.pzHi,
-                                seedVel.x, seedVel.x, seedVel.z, seedVel.z);
-                        List<JumpConstraint> upTo = new ArrayList<>();
-                        int hiTick = c;
-                        for (JumpConstraint jc : spec.constraints) {
-                            int lim = jc.mode == JumpConstraint.Mode.F ? hiTick - 1 : hiTick;
-                            if (jc.t1 <= lim && (jc.t2 == null || jc.t2 <= lim)) upTo.add(jc);
+                        SolverTrace.log("LRS-WIN", "commit=%d jumps=[%d,%d) ticks=[%d,%d) seed=(%.12f,%.12f;%.12f,%.12f) yaw=%.9f constraints=%d replayTicks=%d",
+                                commitJumps, i, we, a, c, seedPos.x, seedPos.z, seedVel.x, seedVel.z, seedYaw, cons.size(), commitTicks);
+                        SolverTrace.log("LRS-AIR", "nominalEnd=%d objectiveTick=%d extension=%d final=%s", nominalEnd, c, c - nominalEnd, last);
+                        SolverTrace.log("LRS-BUDGET", "cap=%d", dualCap);
+                        if (c - a <= 10) for (JumpConstraint jc : cons) {
+                            SolverTrace.log("LRS-CONS", "%s %s t=%d%s %s rhs=%.12f",
+                                    jc.name, jc.mode, jc.t1, jc.t2 == null ? "" : "/" + jc.t2,
+                                    jc.cmp, jc.rhs);
                         }
-                        Objective freeObj = last ? spec.objective
-                                : new Objective(JumpPhysicsInputs.Axis.Z, Objective.Sense.MAX, c);
-                        fr = FreeStartSolve.solveJoint(exact, new JumpSpec(freeSc, upTo, freeObj), 0.0, cancel,
-                                deadlineNanos);
-                        retryCache.put(we, fr == null ? FREE_RETRY_MISS : fr);
+                    }
+                    Objective obj = last
+                            ? new Objective(spec.objective.axis, spec.objective.sense, c - a)   // last window: real objective
+                            : new Objective(JumpPhysicsInputs.Axis.Z, Objective.Sense.MAX, c - a); // lead-in: any feasible
+                    String winKey = windowKey(a, c, last, commitTicks, seedPos, seedVel, seedYaw)
+                            + ":margin=" + config.fixedMargin + ":objectivePlacement=freeAir-v1:dualCap=" + dualCap;
+                    double[] cachedWin = windows.map.get(winKey);
+                    double[] yaws;
+                    if (cachedWin != null) {
+                        yaws = cachedWin == WINDOW_MISS ? null : cachedWin.clone();
                         if (SolverTrace.on()) {
-                            SolverTrace.log("FREE", "window free retry we=%d cons=%d -> %s",
-                                    we, upTo.size(), fr != null && fr.feasible ? "solved" : "miss");
+                            SolverTrace.log("LRS", "commit=%d window i=%d we=%d cached -> %s",
+                                    commitJumps, i, we, yaws != null ? "solved" : "miss");
+                        }
+                    } else {
+                        long winT0 = SolverTrace.on() ? System.nanoTime() : 0L;
+                        yaws = solveWindow(exact, win, cons, obj, last, commitTicks, cancel,
+                                deadlineNanos, config.fixedMargin, dualCap);
+                        if (cancel == null || !cancel.get()) {
+                            windows.map.put(winKey, yaws == null ? WINDOW_MISS
+                                    : yaws.clone());
+                        }
+                        if (SolverTrace.on()) {
+                            SolverTrace.log("LRS", "commit=%d window i=%d we=%d ticks=%d cons=%d last=%s -> %s ms=%.1f",
+                                    commitJumps, i, we, c - a, cons.size(), last, yaws != null ? "solved" : "miss",
+                                    (System.nanoTime() - winT0) / 1.0e6);
                         }
                     }
-                    if (fr != null && fr.feasible) {
-                        chosenStart[0] = fr.startX;
-                        chosenStart[1] = fr.startZ;
-                        win = FreeStartSolve.copyWithStart(sc, fr.startX, fr.startZ);
-                        yaws = Angles.wrapAll(fr.yaws);
+                    if (i == 0 && freeBox != null) {
+                        Object cached = retryCache.get(we);
+                        FreeStartSolve.Result fr;
+                        if (cached != null) {
+                            fr = cached == FREE_RETRY_MISS ? null : (FreeStartSolve.Result) cached;
+                        } else {
+                            JumpPhysicsInputs freeSc = FreeStartSolve.copyWithStart(sc, seedPos.x, seedPos.z);
+                            freeSc.startBox = new StartBox(seedPos.x, seedPos.z, seedVel.x, seedVel.z,
+                                    freeBox.pxLo, freeBox.pxHi, freeBox.pzLo, freeBox.pzHi,
+                                    seedVel.x, seedVel.x, seedVel.z, seedVel.z);
+                            List<JumpConstraint> upTo = new ArrayList<>();
+                            int hiTick = c;
+                            for (JumpConstraint jc : spec.constraints) {
+                                int lim = jc.mode == JumpConstraint.Mode.F ? hiTick - 1 : hiTick;
+                                if (jc.t1 <= lim && (jc.t2 == null || jc.t2 <= lim)) upTo.add(jc);
+                            }
+                            Objective freeObj = last ? spec.objective
+                                    : new Objective(JumpPhysicsInputs.Axis.Z, Objective.Sense.MAX, c);
+                            fr = FreeStartSolve.solveJoint(exact, new JumpSpec(freeSc, upTo, freeObj), 0.0, cancel,
+                                    deadlineNanos);
+                            retryCache.put(we, fr == null ? FREE_RETRY_MISS : fr);
+                            if (SolverTrace.on()) {
+                                SolverTrace.log("FREE", "window free retry we=%d cons=%d -> %s",
+                                        we, upTo.size(), fr != null && fr.feasible ? "solved" : "miss");
+                            }
+                        }
+                        if (fr != null && fr.feasible) {
+                            chosenStart[0] = fr.startX;
+                            chosenStart[1] = fr.startZ;
+                            win = FreeStartSolve.copyWithStart(sc, fr.startX, fr.startZ);
+                            yaws = Angles.wrapAll(fr.yaws);
+                        }
                     }
+                    if (yaws == null) continue;
+                    // Commit the first commitJumps jumps (all of them for the final window), chaining the exact exit.
+                    double[] wgf = win.toGameFacings(yaws);
+                    ForwardPath wp = exact.forward(win, wgf);
+                    if (SolverTrace.on()) for (int k = 0; k <= commitTicks; k++) {
+                        int tick = a + k;
+                        SolverTrace.log("LRS-COMMIT-PATH", "jump=%d tick=%d x=%.12f z=%.12f vx=%.12f vz=%.12f yaw=%s",
+                                i, tick, wp.posX[k], wp.posZ[k], wp.velX[k], wp.velZ[k],
+                                k < wgf.length ? SolverTrace.fmt("%.9f", wgf[k]) : "-");
+                    }
+                    System.arraycopy(wgf, 0, gf, a, commitTicks);
+                    seedPos = new Vec3dCore(wp.posX[commitTicks], wp.posY[commitTicks], wp.posZ[commitTicks]);
+                    seedVel = new Vec3dCore(wp.velX[commitTicks], wp.velY[commitTicks], wp.velZ[commitTicks]);
+                    seedYaw = (float) wgf[commitTicks - 1];
+                    i = ce;
+                    advanced = true;
+                    break budgetSearch;
                 }
-                if (yaws == null) continue;
-                // Commit the first commitJumps jumps (all of them for the final window), chaining the exact exit.
-                double[] wgf = win.toGameFacings(yaws);
-                ForwardPath wp = exact.forward(win, wgf);
-                if (SolverTrace.on()) for (int k = 0; k <= commitTicks; k++) {
-                    int tick = a + k;
-                    SolverTrace.log("LRS-COMMIT-PATH", "jump=%d tick=%d x=%.12f z=%.12f vx=%.12f vz=%.12f yaw=%s",
-                            i, tick, wp.posX[k], wp.posZ[k], wp.velX[k], wp.velZ[k],
-                            k < wgf.length ? SolverTrace.fmt("%.9f", wgf[k]) : "-");
-                }
-                System.arraycopy(wgf, 0, gf, a, commitTicks);
-                seedPos = new Vec3dCore(wp.posX[commitTicks], wp.posY[commitTicks], wp.posZ[commitTicks]);
-                seedVel = new Vec3dCore(wp.velX[commitTicks], wp.velY[commitTicks], wp.velZ[commitTicks]);
-                seedYaw = (float) wgf[commitTicks - 1];
-                i = ce;
-                advanced = true;
-                break;
             }
             if (!advanced) {
                 if (SolverTrace.on()) SolverTrace.log("LRS-STUCK", "commit=%d nextJump=%d tick=%d",
@@ -356,7 +375,14 @@ public final class LongRunSolver {
     private static double[] solveWindow(ExactJumpModel exact, JumpPhysicsInputs win, List<JumpConstraint> cons,
                                         Objective first, boolean last, int commitTicks, AtomicBoolean cancel,
                                         long deadlineNanos, Double fixedMargin) {
+        return solveWindow(exact, win, cons, first, last, commitTicks, cancel, deadlineNanos, fixedMargin, 10000);
+    }
+
+    private static double[] solveWindow(ExactJumpModel exact, JumpPhysicsInputs win, List<JumpConstraint> cons,
+                                        Objective first, boolean last, int commitTicks, AtomicBoolean cancel,
+                                        long deadlineNanos, Double fixedMargin, int dualCap) {
         ClosedFormSolve.Config closed = new ClosedFormSolve.Config();
+        closed.dualMaxIterations = dualCap;
         if (fixedMargin != null) {
             closed.margins = new double[]{fixedMargin};
             closed.marginsRobust = new double[]{fixedMargin};

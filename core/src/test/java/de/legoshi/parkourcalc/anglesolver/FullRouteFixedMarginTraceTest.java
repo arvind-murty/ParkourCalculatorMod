@@ -37,6 +37,10 @@ public class FullRouteFixedMarginTraceTest {
 
     private void runProbe(int window, String label) throws Exception {
         int commit = Integer.getInteger("pkc.fullRouteCommit", 3);
+        String capsText = System.getProperty("pkc.fullRouteDualCaps", "10000");
+        String[] parts = capsText.split(",");
+        int[] caps = new int[parts.length];
+        for (int i = 0; i < parts.length; i++) caps[i] = Integer.parseInt(parts[i]);
         label = label + System.getProperty("pkc.fullRouteLabel", "");
         org.junit.Assume.assumeTrue("opt in with -Dpkc.fullRouteProbe=true", Boolean.getBoolean("pkc.fullRouteProbe"));
         String path = System.getenv("PKC_TRACE_INPUT");
@@ -63,10 +67,11 @@ public class FullRouteFixedMarginTraceTest {
                 inputs.size(), spec.asScenario().numTicks, spec.constraints.size(), spec.objective.axis,
                 spec.objective.sense, spec.objective.tick);
         SolverTrace.log("POLICY", "nominal jump windows; extend provisional objective to first unconstrained airborne tick; retain all rows including final replay");
+        SolverTrace.log("POLICY", "dualIterationLadder=%s; exhaust windows before increasing cap", capsText);
         long startNanos = System.nanoTime();
         try {
             double[] result = LongRunSolver.solve(ExactJumpModel.forMcVersion(file.mcVersion), spec, 0.0,
-                    new AtomicBoolean(false), LongRunSolver.LongRunConfig.of(window, commit).withFixedMargin(0.0003));
+                    new AtomicBoolean(false), LongRunSolver.LongRunConfig.of(window, commit).withFixedMargin(0.0003).withDualIterationLadder(caps));
             SolverTrace.log("RESULT", "solved=%s yaws=%d ms=%.3f", result != null, result == null ? 0 : result.length,
                     (System.nanoTime() - startNanos) / 1e6);
             if (result != null) {
