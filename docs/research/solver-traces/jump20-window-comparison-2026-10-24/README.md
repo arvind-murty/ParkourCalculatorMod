@@ -58,7 +58,7 @@ Only one SLP attempt starts. No inertia-aware retry is invoked: that retry is in
 
 At the Z inertia threshold check at134:
 
-| Path |Pre-check Z velocity |Outcome |
+| Path |Incoming Z momentum before the check |Outcome |
 |---|---:|---|
 |Continuous |-.004994065627665957 |Abs below.005, zero |
 |Minecraft replay |-.005006673567427913 |Abs above.005, survives |
@@ -97,3 +97,7 @@ Source-matched /tmp/pkc-endpoints-fixed with production b84931e and current diag
 ```
 
 Execution was asynchronous, redirected to file. Instrumentation changes timing; the original window wall times remain145.1ms and16.4ms in the staged full-run trace. No full suite. User j127 fixture untouched.
+
+## Terminology: incoming momentum versus this tick’s movement
+
+The reported ±.005 quantities are incoming Z momentum at tick134, before inertia zeroing and before this tick’s acceleration. The code calls this `velZ[134]`; it is not Z displacement produced by input134. For the rejected SLP candidate, Minecraft Z displacement over134→135 is+.01997835672614201, and the carried Z momentum at135 is+.018180305144646698 after drag. The continuous equivalents are+.02498516670175377 and+.022736501698647934. Its Minecraft X displacement over134→135 is+.1739656109353973. Thus this recorded candidate does not move.549 blocks along Z on134. Source:178-last-candidate-ticks.csv. Use incoming momentum for the threshold-check quantities in explanations.
