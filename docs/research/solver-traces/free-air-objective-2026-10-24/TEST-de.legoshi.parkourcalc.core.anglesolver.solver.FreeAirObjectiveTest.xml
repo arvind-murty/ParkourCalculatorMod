@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="de.legoshi.parkourcalc.core.anglesolver.solver.FreeAirObjectiveTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-25T02:54:02.590Z" hostname="Arvinds-MacBook-Pro-2.local" time="0.117">
+  <properties/>
+  <testcase name="keepsAnAlreadyFreeAirborneTick" classname="de.legoshi.parkourcalc.core.anglesolver.solver.FreeAirObjectiveTest" time="0.002"/>
+  <testcase name="probeRealRouteObjectiveTicks" classname="de.legoshi.parkourcalc.core.anglesolver.solver.FreeAirObjectiveTest" time="0.111"/>
+  <testcase name="skipsGroundTicksEvenWhenTheyHaveNoConstraint" classname="de.legoshi.parkourcalc.core.anglesolver.solver.FreeAirObjectiveTest" time="0.001"/>
+  <testcase name="skipsEveryConstraintKindAndBothReferencesOfRelativeRows" classname="de.legoshi.parkourcalc.core.anglesolver.solver.FreeAirObjectiveTest" time="0.0"/>
+  <testcase name="selectionDoesNotDependOnObjectiveAxisOrSense" classname="de.legoshi.parkourcalc.core.anglesolver.solver.FreeAirObjectiveTest" time="0.0"/>
+  <testcase name="doesNotInventTicksBeyondTheAuthoredRoute" classname="de.legoshi.parkourcalc.core.anglesolver.solver.FreeAirObjectiveTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

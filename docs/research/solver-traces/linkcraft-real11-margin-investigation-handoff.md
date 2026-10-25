@@ -115,3 +115,8 @@ Start with the [current inventory](full-route-seeded-inventory-2026-10-24/INVENT
 ## Latest full-route configuration: normal ten-jump ladder
 
 User restored10,7,5,3,2,1, keeping fixed .0003 and current production seeding/retention. [Complete ten-ladder run](full-route-seeded-ten-ladder-2026-10-24/README.md): commit3 stuck before jump26/state205; commit1 before jump25/state196;161.386s; no final full-route replay reached. Only ladder changed from preceding seeded7 run. Source defaults already start10, so no production edit. All attempts and committed state/velocity/yaw data preserved; user j127 unchanged.
+
+
+## Superseding objective policy: unconstrained airborne state
+
+Current implementation3d4557e replaces endpoint-bound deletion. [Policy and checks](free-air-objective-2026-10-24/README.md), [current differences versus recorded production](free-air-objective-2026-10-24/comparison-to-prod.md). Scan forward from each nominal provisional end to first airborne tick with no original constraint referencing it (any axis/sense/mode, both row references). Extend lookahead and retain all rows; commit boundary unchanged. Terminal route objective stays authored. This is not an automatic turnaround-region detector. Sample88->91,99->104.20 focused checks pass; full route has not been rerun under this new rule. Older ten/seven full-run results used cap deletion and must not be attributed to this policy. User j127 unchanged.

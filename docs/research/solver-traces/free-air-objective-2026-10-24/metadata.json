@@ -1,0 +1,8 @@
+{
+  "production_baseline": "02844f45872604b21d0d139736d3ae0163454156",
+  "implementation": "3d4557e2a9eb88bc2de882af0a9f643b79399846",
+  "input_sha256": "af5d2d1bc6e0ab466f1b6cf309f3a26e76e4a63765ac8b15ff02fb4ad55d28bf",
+  "tests": 20,
+  "full_route_rerun": false,
+  "user_fixture": "pre-existing j127 modification untouched"
+}
