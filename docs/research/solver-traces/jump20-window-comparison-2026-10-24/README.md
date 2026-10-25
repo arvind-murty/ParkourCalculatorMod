@@ -106,3 +106,12 @@ The reported ±.005 quantities are incoming Z momentum at tick134, before inerti
 ### SLP local model versus validation,20–22
 
 This attempt is ordinary SLP (`inertiaAware=false`), so its local LP derivatives use an unpatterned model. However, every current/proposed candidate is scored with ExactJumpModel, including the actual Minecraft inertia checks. The final game path keeps incoming Z134 momentum-.00500667357. Evaluating the same continuous angle candidate with double-precision trig yields incoming Z134 momentum-.00499406563, so that continuous simulation zeroes it and misses the rows. This is a second validation of the same candidate, not a new continuous optimization or an inertia-aware retry. The local solve, game candidate checking and final shared continuous validation must be distinguished.
+
+
+## SLP acceptance policy: replay already drives the solve
+
+Verified directly in SlpSolve: every current iterate and LP proposal is converted with toGameFacings(wrapAll(...)), run through ExactJumpModel.forward, and scored against all window LP constraint rows. Phase1 can accept an infeasible proposal if it improves replay violation; ordinary feasibility-returning mode validates before returning a solution. Thus the local continuous derivative approximation is not the acceptance oracle.
+
+The extra whole-window continuous veto was added by this investigation and is not necessary to establish Minecraft replay feasibility for SLP. Recommended policy if changed: restore full-window compiled replay validation (`compile(spec)`), remove the added phase1 prefix-plus-continuous bypass, and remove the final continuous veto. Merely deleting the continuous veto while leaving the prefix-only final compiler would not fully restore production SLP validation. Keep full-route original replay validation. Closed-form intermediate continuous acceptance is a separate policy; no need to change it together.
+
+For the isolated20–22 SLP candidate, full-window replay already has worst signed violation-.001755934 and therefore would pass replay-only acceptance. This shows that candidate is game-valid under the current mapping; it does not establish that later receding-horizon windows or final whole-route mapping succeed. No production code or acceptance policy was changed in this discussion.
