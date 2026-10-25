@@ -1400,3 +1400,8 @@ Current staged baseline, cap1000: nominal28–37 (10 jumps), actual209..338, fai
 ### Momentum terminology for the20–22 threshold mismatch
 
 At134 the numbers-.00499406563 and-.00500667357 refer to incoming Z momentum BEFORE the threshold check and this tick’s acceleration (`ForwardPath.velZ[134]`), not position change during134. For this rejected SLP candidate the actual Minecraft displacement134→135 is DX+.173965611,DZ+.019978357; carried Z momentum at135 is+.018180305. Continuous DZ+.024985167, next momentum+.022736502. These data do not show a Z displacement of.549 on that tick. Values verified from the saved candidate tick CSV; no new solve.
+
+
+### SLP local model versus validation,20–22
+
+This attempt is ordinary SLP (`inertiaAware=false`), so its local LP derivatives use an unpatterned model. However, every current/proposed candidate is scored with ExactJumpModel, including the actual Minecraft inertia checks. The final game path keeps incoming Z134 momentum-.00500667357. Evaluating the same continuous angle candidate with double-precision trig yields incoming Z134 momentum-.00499406563, so that continuous simulation zeroes it and misses the rows. This is a second validation of the same candidate, not a new continuous optimization or an inertia-aware retry. The local solve, game candidate checking and final shared continuous validation must be distinguished.

@@ -101,3 +101,8 @@ Execution was asynchronous, redirected to file. Instrumentation changes timing; 
 ## Terminology: incoming momentum versus this tick’s movement
 
 The reported ±.005 quantities are incoming Z momentum at tick134, before inertia zeroing and before this tick’s acceleration. The code calls this `velZ[134]`; it is not Z displacement produced by input134. For the rejected SLP candidate, Minecraft Z displacement over134→135 is+.01997835672614201, and the carried Z momentum at135 is+.018180305144646698 after drag. The continuous equivalents are+.02498516670175377 and+.022736501698647934. Its Minecraft X displacement over134→135 is+.1739656109353973. Thus this recorded candidate does not move.549 blocks along Z on134. Source:178-last-candidate-ticks.csv. Use incoming momentum for the threshold-check quantities in explanations.
+
+
+### SLP local model versus validation,20–22
+
+This attempt is ordinary SLP (`inertiaAware=false`), so its local LP derivatives use an unpatterned model. However, every current/proposed candidate is scored with ExactJumpModel, including the actual Minecraft inertia checks. The final game path keeps incoming Z134 momentum-.00500667357. Evaluating the same continuous angle candidate with double-precision trig yields incoming Z134 momentum-.00499406563, so that continuous simulation zeroes it and misses the rows. This is a second validation of the same candidate, not a new continuous optimization or an inertia-aware retry. The local solve, game candidate checking and final shared continuous validation must be distinguished.
