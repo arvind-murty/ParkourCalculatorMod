@@ -3,6 +3,11 @@ import hashlib
 import json
 import math
 
+if __package__:
+    from .ladder import CAP, branch as cap_branch, clamp, vertical_carry, vertical_step
+else:
+    from ladder import CAP, branch as cap_branch, clamp, vertical_carry, vertical_step
+
 
 TOLERANCE = 1e-7
 
@@ -105,6 +110,61 @@ def prepare(request):
         for row in pattern:
             if not isinstance(row, list) or len(row) != 2 or any(type(b) is not int or b not in (-1, 0, 1, 2) for b in row):
                 raise ValueError('Inertia branches must be -1, 0, 1, or 2 for each axis')
+    if 'ladderTicks' in problem:
+        flags = problem['ladderTicks']
+        if not isinstance(flags, list) or len(flags) != n + 1 or any(type(v) is not bool for v in flags):
+            raise ValueError('ladderTicks needs one boolean per state, including the final state')
+    if 'ladderPattern' in problem:
+        if 'ladderTicks' not in problem:
+            raise ValueError('ladderPattern requires ladderTicks')
+        pattern = problem['ladderPattern']
+        if not isinstance(pattern, list) or len(pattern) != n:
+            raise ValueError('ladderPattern needs one row per input tick')
+        for t, row in enumerate(pattern):
+            if (not isinstance(row, list) or len(row) != 2
+                    or any(type(b) is not int or b not in (-1, 0, 1) for b in row)
+                    or not problem['ladderTicks'][t] and any(row)):
+                raise ValueError('Ladder branches must be -1, 0 or 1, and zero outside ladder ticks')
+    if 'vertical' in problem:
+        config = problem['vertical']
+        if not isinstance(config, dict) or config.get('profile') != 'minecraft-1.8.9':
+            raise ValueError('vertical requires the minecraft-1.8.9 profile')
+        for key in ('position', 'velocity'):
+            number(config.get(key), 'vertical.' + key)
+        for key in ('onGround', 'previousHorizontalCollision'):
+            if type(config.get(key)) is not bool:
+                raise ValueError('vertical.' + key + ' must be a boolean')
+        config.setdefault('threshold', 0.005)
+        if number(config['threshold'], 'vertical.threshold') < 0:
+            raise ValueError('vertical.threshold must be nonnegative')
+        for key in ('sneak', 'jumpVelocity'):
+            if not isinstance(config.get(key), list) or len(config[key]) != n:
+                raise ValueError('vertical.' + key + ' needs one value per input tick')
+        if any(type(v) is not bool for v in config['sneak']):
+            raise ValueError('vertical.sneak must contain booleans')
+        for value in config['jumpVelocity']:
+            if value is not None and number(value, 'vertical.jumpVelocity') < 0:
+                raise ValueError('Jump velocities must be nonnegative or null')
+        config.setdefault('contacts', [])
+        if not isinstance(config['contacts'], list):
+            raise ValueError('vertical.contacts must be a list')
+        seen_y = set()
+        for contact in config['contacts']:
+            if not isinstance(contact, dict):
+                raise ValueError('Malformed vertical contact')
+            state = integer(contact.get('state'), 'vertical contact state', 1, n)
+            number(contact.get('plane'), 'vertical contact plane')
+            if type(contact.get('direction')) is not int or contact['direction'] not in (-1, 1) or state in seen_y:
+                raise ValueError('Invalid or duplicate vertical contact')
+            if type(contact.get('step', False)) is not bool or contact.get('step', False) and contact['direction'] != -1:
+                raise ValueError('A prescribed step must be a lower contact')
+            seen_y.add(state)
+        for key in ('referencePosition', 'referenceVelocity'):
+            if key in config:
+                if not isinstance(config[key], list) or len(config[key]) != n + 1:
+                    raise ValueError('vertical.' + key + ' needs one value per state')
+                for value in config[key]:
+                    number(value, 'vertical.' + key)
     json.dumps(problem, allow_nan=False)
     return problem
 
@@ -133,9 +193,17 @@ def validate(problem, yaw):
     contacts = {(c['state'], c['axis']): c for c in problem['contacts']}
     threshold = problem['threshold']
     missed, wrong_side, mismatches = [], [], []
+    ladder = problem.get('ladderTicks', [False] * (n + 1))
+    caps, cap_mismatches = [], []
+    vertical = problem.get('vertical')
+    previous_hits = [vertical['previousHorizontalCollision'] if vertical else False]
+    y, vy = ([vertical['position']], [vertical['velocity']]) if vertical else ([], [])
+    grounded = [vertical['onGround']] if vertical else []
+    vertical_failures = []
     for t in range(n):
         angle = problem['base'][t] + math.radians(yaw[t])
-        move, next_velocity = [], []
+        move, next_velocity, tick_caps = [], [], []
+        hit = False
         for axis in range(2):
             incoming = velocities[t][axis]
             zero = abs(incoming) < threshold
@@ -145,6 +213,15 @@ def validate(problem, yaw):
                     mismatches.append({'tick': t, 'axis': axis, 'incoming': incoming, 'branch': branch})
             direction = math.cos(angle) if axis == 0 else math.sin(angle)
             displacement = (0 if zero else incoming) + problem['magnitude'][t] * direction
+            tick_caps.append(cap_branch(displacement) if ladder[t] else 0)
+            if 'ladderPattern' in problem and ladder[t]:
+                b = problem['ladderPattern'][t][axis]
+                valid = (displacement <= -CAP if b == -1 else displacement >= CAP if b == 1
+                         else -CAP <= displacement <= CAP)
+                if not valid:
+                    cap_mismatches.append({'tick': t, 'axis': axis, 'raw': displacement, 'branch': b})
+            if ladder[t]:
+                displacement = clamp(displacement)
             proposed = positions[t][axis] + displacement
             carry = problem['friction'][t] * displacement
             contact = contacts.get((t + 1, axis))
@@ -156,6 +233,7 @@ def validate(problem, yaw):
                 if reach < 0:
                     missed.append({'state': t + 1, 'axis': axis, 'shortBy': -reach})
                 if approach <= TOLERANCE and reach >= 0:
+                    hit |= reach > 0
                     proposed, carry = contact['plane'], 0.0
             number(proposed, 'replayed position')
             number(carry, 'replayed velocity')
@@ -163,7 +241,22 @@ def validate(problem, yaw):
             next_velocity.append(carry)
         positions.append(move)
         velocities.append(next_velocity)
+        caps.append(tick_caps)
+        previous_hits.append(hit)
+        if vertical:
+            yn, ymove, ground, failures = vertical_step(vertical, t, y[t], vy[t], ladder[t],
+                                                       grounded[t], TOLERANCE)
+            y.append(yn)
+            vy.append(vertical_carry(ymove, ladder[t + 1], previous_hits[t + 1]))
+            grounded.append(ground)
+            vertical_failures.extend(failures)
     worst, worst_name = 0.0, None
+    if vertical:
+        for key, values, label in [('referencePosition', y, 'Y'), ('referenceVelocity', vy, 'VY')]:
+            for state, expected in enumerate(vertical.get(key, [])):
+                violation = abs(values[state] - expected)
+                if violation > worst:
+                    worst, worst_name = violation, label + '@' + str(state)
     for wall in problem['walls']:
         mode, t1, t2 = wall['mode'], wall['t1'], wall.get('t2')
         if mode in ('X', 'Z'):
@@ -197,7 +290,16 @@ def validate(problem, yaw):
             point = [point[a] - positions[tick - 1][a] for a in range(2)]
         value = -math.sin(angle) * point[0] + math.cos(angle) * point[1]
     number(value, 'objective')
-    return {'feasible': worst <= TOLERANCE and not missed and not wrong_side and not mismatches,
+    result = {'feasible': worst <= TOLERANCE and not missed and not wrong_side and not mismatches
+              and not cap_mismatches and not vertical_failures,
             'violation': worst, 'worstConstraint': worst_name, 'objective': value,
             'missedContacts': missed, 'wrongSideContacts': wrong_side, 'patternMismatches': mismatches,
             'yaw': yaw[:], 'positions': positions, 'velocity': velocities}
+    if 'ladderTicks' in problem:
+        result.update(ladderPattern=caps, ladderPatternMismatches=cap_mismatches)
+    if vertical:
+        result.update(y=y, vy=vy, onGround=grounded, horizontalCollision=previous_hits,
+                      verticalFailures=vertical_failures,
+                      resume={'y': y[-1], 'vy': vy[-1], 'onGround': grounded[-1],
+                              'previousHorizontalCollision': previous_hits[-1]})
+    return result
