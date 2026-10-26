@@ -192,3 +192,7 @@ The user clarified the two example entry cases: both have uncapped horizontal mo
 ## Reindexing ladder climbing at tick start, 2026-10-26
 
 The user clarified that upward climb movement occurs on the following tick and can be modeled using its start state. Revised the ladder plan to use one occupancy array at tick boundaries: the after-move occupancy of tick `t-1` is exactly the before-move occupancy of tick `t`. The incoming climb velocity for tick `t` depends on that occupancy and the previous horizontal collision, or can simply be carried in `vy[t]`. Caps use the same start-state occupancy. Computing the climb carry at tick start is equivalent if it precedes current inertia/jump processing; substituting the current tick's collision would move climbing early. Removed the suggestion that two independent ladder schedules are necessary. No solver code changed or tests were rerun for this clarification.
+
+## Confirmed previous-collision state contract, 2026-10-26
+
+The user confirmed that the needed collision datum is the after-movement horizontal collision from the previous tick. Recorded its tick indexing and seam/resume implications in the ladder implementation plan. Current movement generates the flag for the next state; current ladder occupancy combines with the previous flag to establish climb carry when reconstructed at tick start. No code or tests changed.
