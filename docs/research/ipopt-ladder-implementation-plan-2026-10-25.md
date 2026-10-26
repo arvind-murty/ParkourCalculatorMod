@@ -45,7 +45,7 @@ The probe source and stdout are archived as `solver-traces/ipopt-standalone-2026
 
 ### 1. Export a sufficient standalone problem
 
-Extend our own exporter/request format with the game profile, initial Y/vertical velocity, jump/sneak inputs and any needed resume state; prescribed ladder-before-move flags; and a small world snapshot containing climbable cells, collision AABBs, friction properties and player dimensions. Capture the ladder-after-move/climb condition separately where available. Existing live surface overrides can seed the before-move schedule without changing the mod's UI.
+Extend our own exporter/request format with the game profile, initial Y/vertical velocity, jump/sneak inputs and any needed resume state; prescribed ladder-before-move flags; and a small world snapshot containing climbable cells, collision AABBs, friction properties and player dimensions. Represent ladder occupancy once per state boundary, `L[0..n]`, and preserve the horizontal collision flag for each movement, `H[0..n-1]`. The occupancy after movement `t` is the same state as the occupancy before movement `t+1`; it need not be a separate event schedule. Existing live surface overrides can seed the before-move schedule without changing the mod's UI.
 
 The world snapshot must cover the trajectory region to be validated, including alternate paths; leaving its coverage cannot be treated as entering known empty space. Existing 200/400 compiled fixtures lack this geometry. Their recorded Y/velocity can seed a first experiment, but a recorded Y trace is an explicit fixed-path assumption, not complete vertical validation after horizontal changes.
 
@@ -53,7 +53,7 @@ The world snapshot must cover the trajectory region to be validated, including a
 
 Add a standalone replay module, separate from the smooth IPOPT equations. Match the selected game's activation predicate, inertia checks including Y, jump, ladder caps, collision movement, collision-triggered climbing, sneak holding, gravity and drag. Reuse the mod's constants and per-tick state conventions and compare against the actual simulator's captured trace. Include ground/ceiling clipping, stepping and sneak edge behavior for the world features supported by the fixture; unsupported features must not be silently modeled as air.
 
-Replay must report ladder-before and ladder-after flags, saturation branches, contacts, ground/jump state, positions and stored velocities. Changes in ground/jump/sprint state can require recompiling the horizontal acceleration/friction arrays rather than merely changing ladder flags. This is the main additional physics work beyond the current horizontal replay.
+Replay must report ladder occupancy at each state boundary, saturation branches, per-movement collision flags/contacts, ground/jump state, positions and stored velocities. Changes in ground/jump/sprint state can require recompiling the horizontal acceleration/friction arrays rather than merely changing ladder flags. This is the main additional physics work beyond the current horizontal replay.
 
 ### 3. Add fixed cap branches to the horizontal NLP
 
@@ -65,7 +65,7 @@ Y can be replayed outside IPOPT for a fixed event schedule. Correct occupancy/gr
 
 ### 4. Extend continuation to discover and repair schedules
 
-Replay an initial path, infer ladder occupancy/cap branches alongside inertia and contacts, solve the fixed event pattern, then replay again. Check before- and after-move membership as well as unintended entry on ticks declared ordinary. Refresh changed schedules and try adjacent regimes within the budget. Preserve the best fully validated incumbent and any alternative schedules; a failed fixed schedule is unknown for the broader problem.
+Replay an initial path, infer ladder occupancy/cap branches alongside inertia and contacts, solve the fixed event pattern, then replay again. Check ladder membership at every state boundary, as well as unintended entry on states declared ordinary. Use the next state's occupancy and the preceding movement's horizontal collision to establish the climb carry for that next state. Refresh changed schedules and try adjacent regimes within the budget. Preserve the best fully validated incumbent and any alternative schedules; a failed fixed schedule is unknown for the broader problem.
 
 The NLP can add membership/selected outside-face rows to reduce schedule drift, with scalar replay authoritative at cell boundaries. Actual vertical replay is required before claiming a physically valid full solution. A fixed-schedule horizontal-cap milestone is useful earlier, but its narrower assumptions should remain explicit.
 
@@ -80,3 +80,11 @@ Recommended order: export an explicit schedule and vertical reference, implement
 Both example approaches start outside the ladder, so the entry tick applies no ladder horizontal caps. In the slower, non-colliding entry, normal air vertical movement applies. In the faster entry with a horizontal hit and ladder occupancy after movement, the climb rule sets Y motion to .2 before gravity/drag, carrying approximately +.1176 into the next tick. The climb rule does not retroactively change the entry tick's displacement.
 
 Both examples end that tick on the ladder. Consequently the second tick applies the ladder horizontal cap independently to both X and Z after acceleration and before movement. This includes any large tangential X component, even if Z caused the wall hit. The wall collision separately resets its normal velocity component. The before-move ladder flag controls the horizontal caps; the post-move ladder/contact condition controls the climb velocity carried forward. This clarification changes no implemented physics or earlier probe results.
+
+## Tick-boundary formulation, 2026-10-26
+
+The user correctly pointed out that the climb displacement occurs on the following tick. The earlier explanation mixed the tick-end velocity assignment with the tick that uses that velocity for movement. We can use one ladder occupancy value `L[t]` at the start of each tick, rather than separate before/after schedules. Minecraft's query after movement `t-1` evaluates the same position as the start-of-tick query `L[t]`.
+
+Horizontal caps on movement `t` use `L[t]`. The climb velocity used by that movement is the incoming `vy[t]`; the prior transition established it using `H[t-1] && L[t]`. In the loaded, normal 1.8.9 movement branch, that condition produces approximately `(0.2 - 0.08) * (double) 0.98F = +0.1176` as the incoming vertical carry. A replay can defer this climb-carry calculation to construction of state `t`, using `L[t]` and the previous collision flag, before applying this tick's inertia/jump processing. This is a reindexing of the same dynamics, not an immediate upward displacement on entry.
+
+Ladder occupancy alone does not imply climbing: retain the previous movement's horizontal collision or the already computed incoming Y velocity. Using the current movement's eventual collision to alter its own upward displacement would shift climbing one tick early. With the tick-boundary formulation, we do not need an independently inferred after-move ladder variable or an extra physical event between ticks. No production physics changed for this documentation clarification.

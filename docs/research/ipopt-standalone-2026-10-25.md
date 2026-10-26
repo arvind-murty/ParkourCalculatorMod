@@ -188,3 +188,7 @@ The concrete support plan, exact source provenance, geometry probe results, scop
 ## Ladder entry timing clarification
 
 The user clarified the two example entry cases: both have uncapped horizontal movement on the first tick and both cap X and Z on the second tick, assuming the reported post-entry ladder occupancy. The slower entry uses normal air vertical movement; the entry that also hits a wall carries approximately +.1176 Y velocity after the climb assignment and gravity/drag. A large tangential X component is capped on the second tick too. Recorded this explicitly in the ladder plan. No production code or model behavior changed; no additional tests were needed for this clarification.
+
+## Reindexing ladder climbing at tick start, 2026-10-26
+
+The user clarified that upward climb movement occurs on the following tick and can be modeled using its start state. Revised the ladder plan to use one occupancy array at tick boundaries: the after-move occupancy of tick `t-1` is exactly the before-move occupancy of tick `t`. The incoming climb velocity for tick `t` depends on that occupancy and the previous horizontal collision, or can simply be carried in `vy[t]`. Caps use the same start-state occupancy. Computing the climb carry at tick start is equivalent if it precedes current inertia/jump processing; substituting the current tick's collision would move climbing early. Removed the suggestion that two independent ladder schedules are necessary. No solver code changed or tests were rerun for this clarification.
