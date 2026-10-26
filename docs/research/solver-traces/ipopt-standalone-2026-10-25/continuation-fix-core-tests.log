@@ -1,0 +1,109 @@
+Starting a Gradle Daemon (subsequent builds will be faster)
+Running Stonecutter 0.9.8
+
+> Configure project :loader-fabric:1.20.4
+Fabric Loom: 1.17.21
+
+> Configure project :loader-fabric:1.21.3
+Fabric Loom: 1.17.21
+
+> Configure project :loader-fabric:26.3
+Fabric Loom: 1.17.21
+Failed to parse fabric.mod.json: /Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-standalone/loader-fabric/src/client/resources/fabric.mod.json
+
+> Configure project :loader-forge:1.12.2
+[Unimined] Plugin Version: 1.4.1
+[Unimined/MinecraftDownloader] retrieving version metadata
+[Unimined/Minecraft :loader-forge:1.12.2:main] Applying minecraft config for source set 'main'
+[Unimined/ForgeTransformer] Selected FG3
+[Unimined/Forge] Using FG3 transformer
+[Unimined/ForgeTransformer] FG3 does not support custom mcp_config (searge) version specification. Using 1.12.2-20200226.224830 from userdev.
+Overwriting dependency searge
+[Unimined/Minecraft :loader-forge:1.12.2:main] Applying FG3MinecraftTransformer
+[Unimined/ForgeTransformer] Attempting inject forge userdev into minecraft jar
+[Unimined/Minecraft :loader-forge:1.12.2:main] Applying run configs
+Merging client and server jars...
+[Unimined/Forge] transforming minecraft jar for FG3
+[Unimined/JarMod :loader-forge:1.12.2:source set 'main'] Adding mappings for added inner class ain$22, {official=ain$22, searge=net/minecraft/item/Item$22, mcp=net/minecraft/item/Item$22}
+[Unimined/JarMod :loader-forge:1.12.2:source set 'main'] Adding mappings for added inner class anh$FlowerEntry, {official=anh$FlowerEntry, searge=net/minecraft/world/biome/Biome$FlowerEntry, mcp=net/minecraft/world/biome/Biome$FlowerEntry}
+[Unimined/JarMod :loader-forge:1.12.2:source set 'main'] Adding mappings for added inner class anp$1, {official=anp$1, searge=net/minecraft/world/biome/BiomeHills$1, mcp=net/minecraft/world/biome/BiomeHills$1}
+[Unimined/JarMod :loader-forge:1.12.2:source set 'main'] Adding mappings for added inner class anp$EmeraldGenerator, {official=anp$EmeraldGenerator, searge=net/minecraft/world/biome/BiomeHills$EmeraldGenerator, mcp=net/minecraft/world/biome/BiomeHills$EmeraldGenerator}
+[Unimined/JarMod :loader-forge:1.12.2:source set 'main'] Adding mappings for added inner class awu$Builder, {official=awu$Builder, searge=net/minecraft/block/state/BlockStateContainer$Builder, mcp=net/minecraft/block/state/BlockStateContainer$Builder}
+[Unimined/JarMod :loader-forge:1.12.2:source set 'main'] Adding mappings for added inner class aym$WorldSleepResult, {official=aym$WorldSleepResult, searge=net/minecraft/world/WorldProvider$WorldSleepResult, mcp=net/minecraft/world/WorldProvider$WorldSleepResult}
+[Unimined/JarMod :loader-forge:1.12.2:source set 'main'] Adding mappings for added inner class c$4, {official=c$4, searge=net/minecraft/crash/CrashReportCategory$4, mcp=net/minecraft/crash/CrashReportCategory$4}
+[Unimined/JarMod :loader-forge:1.12.2:source set 'main'] Adding mappings for added inner class c$5, {official=c$5, searge=net/minecraft/crash/CrashReportCategory$5, mcp=net/minecraft/crash/CrashReportCategory$5}
+[Unimined/JarMod :loader-forge:1.12.2:source set 'main'] Adding mappings for added inner class ot$1, {official=ot$1, searge=net/minecraft/server/management/PlayerChunkMapEntry$1, mcp=net/minecraft/server/management/PlayerChunkMapEntry$1}
+[Unimined/ForgeTransformer] Applying ATs [forge_at.cfg, /Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-standalone/loader-forge/src/main/resources/META-INF/parkourcalculator_1.12.2_at.cfg]
+[Unimined/ForgeTransformer] Using user access transformer /Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-standalone/loader-forge/src/main/resources/META-INF/parkourcalculator_1.12.2_at.cfg
+[Unimined/ModRemapper] Remapping mods from searge to mcp
+[Unimined/ModRemapper] No mods found for remapping
+
+> Configure project :loader-forge:1.8.9
+[Unimined] Plugin Version: 1.4.1
+[Unimined/MinecraftDownloader] retrieving version metadata
+[Unimined/Minecraft :loader-forge:1.8.9:main] Applying minecraft config for source set 'main'
+[Unimined/ForgeTransformer] Selected FG2
+[Unimined/Forge] Using FG2 transformer
+Overwriting dependency searge
+[Unimined/Minecraft :loader-forge:1.8.9:main] Applying FG2MinecraftTransformer
+[Unimined/Minecraft :loader-forge:1.8.9:main] Applying run configs
+[Unimined/Forge] transforming minecraft jar for FG2
+[Unimined/JarMod :loader-forge:1.8.9:source set 'main'] Adding mappings for added inner class ady$FlowerEntry, {official=ady$FlowerEntry, searge=net/minecraft/world/biome/BiomeGenBase$FlowerEntry, mcp=net/minecraft/world/biome/BiomeGenBase$FlowerEntry}
+[Unimined/JarMod :loader-forge:1.8.9:source set 'main'] Adding mappings for added inner class aee$1, {official=aee$1, searge=net/minecraft/world/biome/BiomeGenHills$1, mcp=net/minecraft/world/biome/BiomeGenHills$1}
+[Unimined/JarMod :loader-forge:1.8.9:source set 'main'] Adding mappings for added inner class aee$EmeraldGenerator, {official=aee$EmeraldGenerator, searge=net/minecraft/world/biome/BiomeGenHills$EmeraldGenerator, mcp=net/minecraft/world/biome/BiomeGenHills$EmeraldGenerator}
+[Unimined/JarMod :loader-forge:1.8.9:source set 'main'] Adding mappings for added inner class afh$5, {official=afh$5, searge=net/minecraft/block/Block$5, mcp=net/minecraft/block/Block$5}
+[Unimined/JarMod :loader-forge:1.8.9:source set 'main'] Adding mappings for added inner class afh$6, {official=afh$6, searge=net/minecraft/block/Block$6, mcp=net/minecraft/block/Block$6}
+[Unimined/JarMod :loader-forge:1.8.9:source set 'main'] Adding mappings for added inner class afh$7, {official=afh$7, searge=net/minecraft/block/Block$7, mcp=net/minecraft/block/Block$7}
+[Unimined/JarMod :loader-forge:1.8.9:source set 'main'] Adding mappings for added inner class c$4, {official=c$4, searge=net/minecraft/crash/CrashReportCategory$4, mcp=net/minecraft/crash/CrashReportCategory$4}
+[Unimined/JarMod :loader-forge:1.8.9:source set 'main'] Adding mappings for added inner class c$5, {official=c$5, searge=net/minecraft/crash/CrashReportCategory$5, mcp=net/minecraft/crash/CrashReportCategory$5}
+[Unimined/JarMod :loader-forge:1.8.9:source set 'main'] Adding mappings for added inner class kb$5$1, {official=kb$5$1, searge=net/minecraft/init/Bootstrap$5$1, mcp=net/minecraft/init/Bootstrap$5$1}
+[Unimined/JarMod :loader-forge:1.8.9:source set 'main'] Adding mappings for added inner class lc$a$1, {official=lc$a$1, searge=net/minecraft/server/management/PlayerManager$PlayerInstance$1, mcp=net/minecraft/server/management/PlayerManager$PlayerInstance$1}
+[Unimined/JarMod :loader-forge:1.8.9:source set 'main'] Adding mappings for added inner class lc$a$2, {official=lc$a$2, searge=net/minecraft/server/management/PlayerManager$PlayerInstance$2, mcp=net/minecraft/server/management/PlayerManager$PlayerInstance$2}
+[Unimined/JarMod :loader-forge:1.8.9:source set 'main'] Adding mappings for added inner class yj$2, {official=yj$2, searge=net/minecraft/item/ItemArmor$2, mcp=net/minecraft/item/ItemArmor$2}
+[Unimined/JarMod :loader-forge:1.8.9:source set 'main'] Adding mappings for added inner class zw$18, {official=zw$18, searge=net/minecraft/item/Item$18, mcp=net/minecraft/item/Item$18}
+[Unimined/ForgeTransformer] Applying ATs [forge_at.cfg, /Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-standalone/loader-forge/src/main/resources/META-INF/parkourcalculator_1.8.9_at.cfg]
+[Unimined/ForgeTransformer] Using user access transformer /Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-standalone/loader-forge/src/main/resources/META-INF/parkourcalculator_1.8.9_at.cfg
+[Unimined/ModRemapper] Remapping mods from searge to mcp
+[Unimined/ModRemapper] No mods found for remapping
+
+> Task :core:compileJava UP-TO-DATE
+> Task :core:processResources UP-TO-DATE
+> Task :core:classes UP-TO-DATE
+> Task :core:compileTestJava UP-TO-DATE
+> Task :core:processTestResources UP-TO-DATE
+> Task :core:testClasses UP-TO-DATE
+
+> Task :core:test
+
+CrossJvmDeterminismTest > searchPathIsBitIdenticalAcrossJvms FAILED
+    java.lang.AssertionError at CrossJvmDeterminismTest.java:54
+
+InertiaFoldingTest > loopmmInertiaTermDropsOutOfFoldedModel FAILED
+    java.lang.AssertionError at InertiaFoldingTest.java:48
+
+CostateSmoothingScaleTest > bothRecoveryPathsUseObjectiveDirectionOnlyForVanishingCostates FAILED
+    java.lang.AssertionError at CostateSmoothingScaleTest.java:26
+
+791 tests completed, 3 failed, 33 skipped
+
+> Task :core:test FAILED
+
+[Incubating] Problems report is available at: file:///Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-standalone/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':core:test'.
+> There were failing tests. See the report at: file:///Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-standalone/core/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.6.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 21s
+5 actionable tasks: 1 executed, 4 up-to-date

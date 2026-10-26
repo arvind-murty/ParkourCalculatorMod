@@ -40,6 +40,18 @@ def solve(request, *, seconds=None, stop_on_feasible=None, python_executable=Non
     cancelled = False
     process = None
 
+    def accept(candidate):
+        nonlocal best, first_feasible
+        if not candidate['feasible']:
+            return
+        direction = 1 if problem['objective']['sense'] == 'MAX' else -1
+        if best is None or direction * candidate['objective'] > direction * best['objective']:
+            if first_feasible is None:
+                first_feasible = time.monotonic() - started
+            best = candidate
+            if on_incumbent is not None:
+                on_incumbent(json.loads(json.dumps(best)))
+
     def publish(kind, value):
         try:
             messages.put_nowait((kind, value))
@@ -80,9 +92,19 @@ def solve(request, *, seconds=None, stop_on_feasible=None, python_executable=Non
         except (OSError, ValueError) as failure:
             publish('io_error', 'Could not write worker request: ' + str(failure))
 
+    if cancel_event is None or not cancel_event.is_set():
+        try:
+            seed = validate(problem, problem['yaw'])
+        except (ValueError, TypeError, OverflowError):
+            seed = None
+        if seed is not None:
+            accept(seed)
+
     try:
         if cancel_event is not None and cancel_event.is_set():
             cancelled, termination = True, 'cancelled'
+        elif best is not None and problem['stopOnFeasible']:
+            termination = 'first_feasible'
         else:
             import os
             environment = os.environ.copy()
@@ -127,16 +149,10 @@ def solve(request, *, seconds=None, stop_on_feasible=None, python_executable=Non
                             last_rejection = {k: v for k, v in candidate.items()
                                               if k not in ('yaw', 'positions', 'velocity')}
                             continue
-                        direction = 1 if problem['objective']['sense'] == 'MAX' else -1
-                        if best is None or direction * candidate['objective'] > direction * best['objective']:
-                            if first_feasible is None:
-                                first_feasible = time.monotonic() - started
-                            best = candidate
-                            if on_incumbent is not None:
-                                on_incumbent(json.loads(json.dumps(best)))
-                            if problem['stopOnFeasible']:
-                                termination = 'first_feasible'
-                                break
+                        accept(candidate)
+                        if problem['stopOnFeasible']:
+                            termination = 'first_feasible'
+                            break
                     elif message_type == 'phase':
                         phases.append(message)
                     elif message_type == 'done':

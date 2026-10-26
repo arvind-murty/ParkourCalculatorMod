@@ -127,3 +127,42 @@ The next implementation priority should be to keep the best independently valida
 The evidence supports fast useful optimization of this fixture conditional on a suitable inertia pattern. It does not yet establish reliable near-optimal optimization across captures, nor a global optimum. IPOPT's official documentation describes a method targeting a local solution: https://www.coin-or.org/Ipopt/ . A broader objective-quality benchmark remains needed.
 
 Reproduction: run `python3 docs/research/solver-traces/ipopt-standalone-2026-10-25/seed-optimization-diagnostic.py --python /path/to/the/casadi/python`. The runner uses only the standard library and starts the existing worker runtime without altering its environment installation. Both diagnostic scripts, the five result gzip files, five compressed phase/candidate traces, summary JSON and numerical comparison JSON are archived in that directory. Python syntax checks passed. No production solver or mod files changed.
+
+## Implemented incumbent-preserving continuation fix
+
+The user authorized fixing the regression. Production changes remain entirely within the isolated standalone worktree. The mod, Java solver, loader trees, source captures and the other agent's handoff remain unchanged.
+
+`continuation.py` now owns the worker's validated incumbent and continuation policy. Every nominally feasible NLP iterate is eligible for actual automatic-inertia replay, rather than only nominal objective improvements. Only actual feasible improvements are published. The parent continues independently validating every worker candidate. A phase retains its best nominally feasible iterate for continuation; if it never finds one, it returns its input seed. It no longer passes a failed final iterate to subsequent pattern inference.
+
+Once an actual valid path exists, the continuation loop derives the full inertia pattern from that path's scalar replayed stored velocities and optimizes from its facings. Failed attempts cannot displace that incumbent. A successful polish is recorded for the specific incumbent, avoiding repeating it when an alternative attempt does not improve the best path. Explicit inertia patterns and threshold-zero requests still use their requested single-phase solve. Constraint equations, branch guards, contact reach rules and validation tolerances are unchanged.
+
+The parent validates the initial facings before launching a child, calls the incumbent callback for an accepted seed, and preserves it through timeout, a weaker candidate or worker/runtime failure. Feasibility-only requests can return an already valid seed without launching IPOPT. Cancellation still discards the result. Worker failure with an accepted seed returns feasible with the failure details retained, consistently with the previous behavior for accepted worker candidates.
+
+`--initial-solution` now preserves the input request's original facings as optional `fallbackYaw`, unless the caller already supplied a fallback. The automatic-inertia worker gives a distinct initial attempt 40% of its remaining budget and explores the alternative with the remaining time, sharing the validated incumbent. An API caller can also supply `fallbackYaw`; its length and finite values are checked, and it is excluded from the physical problem hash. The fallback is useful extra coverage, but the regression is also fixed without it. Phase diagnostics now name the phase kind and initial/fallback attempt, so feasibility and optimization progress can be inspected separately. Success remains a local result, without a global-optimality certificate.
+
+### Results after the fix
+
+All runs use the same local runtime, original 400-tick physical problem, .005 inertia, every compiled row and prescribed contact. The no-inertia seed is the same saved path used in the failed warm-start experiment. The poor valid inertial seed is the old 691.2422668156 result. Results below include parent validation and process cleanup.
+
+| Case | Seconds | X objective | Maximum compiled-row violation |
+| --- | ---: | ---: | ---: |
+| Default 200-tick optimization | 0.819 | 737.5142588032 | 0 |
+| Default 400-tick optimization | 3.373 | 691.4017522467 | 0 |
+| No-inertia seed, 400 ticks, without fallback | 3.762 | 691.4017522748 | 0 |
+| No-inertia seed, 400 ticks, with fallback | 5.745 | 691.4017522748 | 0 |
+| Old poor valid seed, polish its actual pattern | 0.890 | 691.3930032028 | 0 |
+| No-inertia seed, first-feasible mode with fallback | 2.833 | 691.2190320644 | 0 |
+
+The no-fallback measurement is a separate direct API run. The other five were measured sequentially in a single run, without the test suite running alongside them. An earlier CLI call exercising `--initial-solution` also returned the same 691.4017522748 objective in 5.928 seconds. The restored warm result differs from the previous good cold result by about +2.8e-8 blocks, closing the .159485-block regression. The old poor valid seed by itself still optimizes to 691.3930032028 under its own pattern, about .008749 below the good cold path; that remaining pattern/local-solution difference is not hidden by the fix or claimed to be a global gap.
+
+The no-fallback warm path used a successful carry phase (85 iterations), zero-event phase (272) and complete-pattern phase (382). Its full pattern has 58 zeroed and 742 surviving axis/tick entries. The fallback explores the original carry/zero-event route and keeps the stronger warm incumbent; the repeat polish is skipped. The default cold route continues to reach its prior objective. First-feasible mode stops earlier and yields a materially weaker endpoint than optimization, as expected. These are measurements on this fixture, not a broad optimization-reliability benchmark.
+
+### Verification and archived evidence
+
+All 30 standalone test methods pass with the actual worker runtime; the final run takes 16.390 seconds. This includes three real11 warm subcases: no-inertia seed without fallback (3.585 s), no-inertia seed with fallback (5.759 s), and direct polishing of the old valid inertia seed (.878 s). Both no-inertia subcases assert objective >= 691.4017 and the valid-seed polish asserts >= 691.3929. They independently replay the returned facings and compare all saved position/velocity arrays. The ordinary 200/400 cases, known optimum, contradictory rows and explicit pattern tests also pass.
+
+Deterministic continuation tests cover a phase that emits a valid path and then fails at an invalid iterate, actual-pattern polishing, fallback exploration even after a successful initial polish, minimization, and explicit-pattern preservation. Process tests cover valid-seed retention through timeout and runtime error, refusal to replace a seed with a weaker result, feasibility without worker startup, invalid-seed rejection, cancellation and the existing protocol/CLI cases. The standard-library run passes its 25 tests with five actual-worker methods skipped. Python compilation and `git diff --check` pass.
+
+The required Java fast gate was also attempted with JDK 21: 791 tests completed, three failed and 33 were skipped. The failures are `CrossJvmDeterminismTest.searchPathIsBitIdenticalAcrossJvms` (closed-form golden hash 7622806883939910482 vs expected 7100074979304643135), `InertiaFoldingTest.loopmmInertiaTermDropsOutOfFoldedModel` (clamp-free difference 2.6337802410125732e-5 vs expected > .01), and `CostateSmoothingScaleTest.bothRecoveryPathsUseObjectiveDirectionOnlyForVanishingCostates` (expected 0, got 180). All Java code, tests and resources in this checkout exactly match the pre-fix HEAD, verified with `git diff HEAD` over core and both loader trees. These failures are in unchanged native code; the Java gate is not reported as passing. No native solver fixes or unrelated slow-suite work were added.
+
+Saved evidence is `continuation-fix-results.json.gz` (five sequential runs), `continuation-fix-no-fallback-result.json.gz`, `continuation-fix-tests.log` and `continuation-fix-core-tests.log` beside the prior traces. All six accepted trajectories were independently replayed and their positions/velocities matched their saved arrays. The small production test fixture `standalone/ipopt/fixtures/real11-400-warm-yaws.json.gz` copies only the two seed facing arrays from the prior archived results. The earlier diagnostic scripts describe the phase interface at commit `84a2f17`; reproduce those historical measurements at that commit. Current reproduction uses the standalone README CLI and test commands.

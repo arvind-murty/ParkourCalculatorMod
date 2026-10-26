@@ -91,7 +91,8 @@ class ModelTests(unittest.TestCase):
 
     def test_malformed_requests_fail_before_starting_worker(self):
         mutations = [('ticks', True), ('magnitude', [-1, 0]), ('friction', [1.1, 0.5]),
-                     ('threshold', -0.1), ('walls', 'wrong'), ('contacts', [None]), ('seconds', float('inf'))]
+                     ('threshold', -0.1), ('walls', 'wrong'), ('contacts', [None]), ('seconds', float('inf')),
+                     ('fallbackYaw', [0]), ('fallbackYaw', [0, float('nan')])]
         for key, value in mutations:
             request = problem()
             request[key] = value
@@ -104,7 +105,7 @@ class ModelTests(unittest.TestCase):
         ready = prepare(original)
         self.assertEqual(original, snapshot)
         other = copy.deepcopy(ready)
-        other.update(seconds=8, yaw=[20, 30], stopOnFeasible=True)
+        other.update(seconds=8, yaw=[20, 30], fallbackYaw=[10, 15], stopOnFeasible=True)
         self.assertEqual(fingerprint(ready), fingerprint(other))
         other['threshold'] = 0.005
         self.assertNotEqual(fingerprint(ready), fingerprint(other))

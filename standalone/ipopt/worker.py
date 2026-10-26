@@ -7,6 +7,11 @@ import time
 import casadi as ca
 import numpy as np
 
+try:
+    from .continuation import run
+except ImportError:
+    from continuation import run
+
 
 def send(message):
     sys.stdout.write(json.dumps(message, allow_nan=False, separators=(',', ':')) + '\n')
@@ -37,13 +42,14 @@ def forward(problem, yaw, threshold, pattern=None):
 
 
 class Monitor(ca.Callback):
-    def __init__(self, nx, ng, decode, lower, upper, stop):
+    def __init__(self, nx, ng, decode, lower, upper, stop, on_candidate):
         ca.Callback.__init__(self)
         self.nx, self.ng, self.decode = nx, ng, decode
         self.lower, self.upper = np.array(lower), np.array(upper)
         self.stop = stop
+        self.on_candidate = on_candidate
         self.best = math.inf
-        self.last_yaw = None
+        self.best_yaw = None
         self.construct('monitor', {})
 
     def get_n_in(self):
@@ -72,11 +78,11 @@ class Monitor(ca.Callback):
             return False
         violation = max(float(np.max(self.lower - values, initial=0)),
                         float(np.max(values - self.upper, initial=0)))
-        self.last_yaw = np.array(self.decode(x)).ravel().tolist()
-        if violation <= 1e-8 and f < self.best:
-            self.best = f
-            send({'type': 'candidate', 'yaw': self.last_yaw})
-            return True
+        if violation <= 1e-8:
+            yaw = np.array(self.decode(x)).ravel().tolist()
+            if f < self.best:
+                self.best, self.best_yaw = f, yaw
+            return self.on_candidate(yaw)
         return False
 
     def eval(self, arguments):
@@ -86,8 +92,9 @@ class Monitor(ca.Callback):
         return [1 if accepted and self.stop else 0]
 
 
-def phase(problem, yaw, pattern, seconds, stop):
+def phase(problem, yaw, pattern, seconds, stop, on_candidate, kind, seed_name):
     started = time.monotonic()
+    pattern = np.array(pattern, dtype=int)
     n = problem['ticks']
     seed_p, seed_v, _ = forward(problem, yaw, problem['threshold'], pattern)
     variables, initial, rows, lower, upper = [], [], [], [], []
@@ -177,7 +184,7 @@ def phase(problem, yaw, pattern, seconds, stop):
     cost *= -1 if objective['sense'] == 'MAX' else 1
     x, g = ca.vertcat(*variables), ca.vertcat(*rows)
     decode = ca.Function('decode', [x], [ca.vertcat(*facings)])
-    monitor = Monitor(x.numel(), g.numel(), decode, lower, upper, stop)
+    monitor = Monitor(x.numel(), g.numel(), decode, lower, upper, stop, on_candidate)
     solver = ca.nlpsol('local_ipopt', 'ipopt', {'x': x, 'g': g, 'f': cost}, {
         'print_time': False, 'error_on_fail': False, 'iteration_callback': monitor,
         'ipopt.print_level': 0, 'ipopt.sb': 'yes', 'ipopt.max_wall_time': max(0.01, seconds),
@@ -189,40 +196,18 @@ def phase(problem, yaw, pattern, seconds, stop):
     stats = solver.stats()
     send({'type': 'phase', 'status': stats['return_status'], 'iterations': stats['iter_count'],
           'seconds': time.monotonic() - started, 'zeros': int(np.count_nonzero(pattern == 0)),
-          'survivors': int(np.count_nonzero(np.abs(pattern) == 1))})
-    return np.array(decode(solution['x'])).ravel().tolist(), stats['return_status']
+          'survivors': int(np.count_nonzero(np.abs(pattern) == 1)), 'kind': kind, 'seed': seed_name})
+    return monitor.best_yaw if monitor.best_yaw is not None else yaw, stats['return_status']
 
 
 def main():
     problem = json.loads(sys.stdin.readline())
     if problem['version'] != 1:
         raise ValueError('Unsupported protocol version')
-    end = time.monotonic() + problem['seconds']
-    yaw = problem['yaw']
-    free = np.full((problem['ticks'], 2), 2, dtype=int)
     with contextlib.redirect_stdout(sys.stderr):
         ca.nlpsol('check_ipopt', 'ipopt', {'x': ca.SX.sym('x'), 'f': 0},
                   {'print_time': False, 'ipopt.print_level': 0, 'ipopt.sb': 'yes'})
-    if 'inertiaPattern' in problem:
-        _, status = phase(problem, yaw, np.array(problem['inertiaPattern'], dtype=int),
-                          max(0.01, end - time.monotonic()), problem['stopOnFeasible'])
-    elif problem['threshold'] == 0:
-        _, status = phase(problem, yaw, free, max(0.01, end - time.monotonic()), problem['stopOnFeasible'])
-    else:
-        yaw, status = phase(problem, yaw, free, max(0.01, (end - time.monotonic()) * 0.3), False)
-        remaining = end - time.monotonic()
-        if remaining > 0.05:
-            _, _, pattern = forward(problem, yaw, problem['threshold'])
-            pattern[pattern != 0] = 2
-            yaw, status = phase(problem, yaw, pattern, remaining * 0.35, False)
-        for attempt in range(3):
-            remaining = end - time.monotonic()
-            if remaining < 0.05:
-                break
-            _, _, pattern = forward(problem, yaw, problem['threshold'])
-            yaw, status = phase(problem, yaw, pattern, remaining, problem['stopOnFeasible'])
-            if status in ('Solve_Succeeded', 'Solved_To_Acceptable_Level', 'User_Requested_Stop'):
-                break
+    status = run(problem, phase, lambda yaw: forward(problem, yaw, problem['threshold'])[2].tolist(), send)
     send({'type': 'done', 'status': status})
 
 

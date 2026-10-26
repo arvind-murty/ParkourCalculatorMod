@@ -18,8 +18,10 @@ class ProcessTests(unittest.TestCase):
             return solver.solve(request or problem(), **options)
 
     def test_timeout_stops_worker_that_never_reads_large_request(self):
+        request = problem(4000)
+        request['walls'] = [{'mode': 'F', 't1': 0, 'cmp': 'EQ', 'rhs': 90}]
         start = time.monotonic()
-        result = self.run_worker('import time; time.sleep(30)', problem(4000), seconds=0.1)
+        result = self.run_worker('import time; time.sleep(30)', request, seconds=0.1)
         self.assertLess(time.monotonic() - start, 2)
         self.assertEqual(result['status'], 'unknown')
         self.assertEqual(result['termination'], 'time_limit')
@@ -54,22 +56,53 @@ class ProcessTests(unittest.TestCase):
         self.assertEqual(result['diagnostics']['rejectedCandidates'], 1)
 
     def test_malformed_output_and_missing_runtime_are_errors(self):
-        result = self.run_worker('print("broken")')
+        request = problem()
+        request['walls'] = [{'mode': 'F', 't1': 0, 'cmp': 'EQ', 'rhs': 90}]
+        result = self.run_worker('print("broken")', request)
         self.assertEqual(result['status'], 'error')
         self.assertEqual(result['termination'], 'protocol_error')
         with tempfile.TemporaryDirectory() as directory:
-            result = solver.solve(problem(), python_executable=str(pathlib.Path(directory) / 'missing'))
+            result = solver.solve(request, python_executable=str(pathlib.Path(directory) / 'missing'))
         self.assertEqual(result['status'], 'error')
         self.assertEqual(result['termination'], 'runtime_error')
 
     def test_first_feasible_stop_and_callback(self):
         seen = []
+        request = problem()
+        request.update(velocity=[0, 0], magnitude=[0.1, 0.1], base=[0, 0], yaw=[180, 180],
+                       walls=[{'mode': 'X', 't1': 2, 'cmp': 'GE', 'rhs': 0.1}])
         result = self.run_worker('import time; print(\'{"type":"candidate","yaw":[0,0]}\',flush=True); time.sleep(30)',
-                                 stop_on_feasible=True, on_incumbent=seen.append)
+                                 request, stop_on_feasible=True, on_incumbent=seen.append)
         self.assertEqual(result['termination'], 'first_feasible')
         self.assertEqual(len(seen), 1)
         seen[0]['yaw'][0] = 90
         self.assertEqual(result['candidate']['yaw'][0], 0)
+
+    def test_valid_seed_survives_timeout_without_worker_candidates(self):
+        seen = []
+        result = self.run_worker('import time; time.sleep(30)', seconds=0.2, on_incumbent=seen.append)
+        self.assertEqual(result['status'], 'feasible')
+        self.assertEqual(result['termination'], 'time_limit')
+        self.assertEqual(result['candidate']['yaw'], [0, 0])
+        self.assertEqual(len(seen), 1)
+
+    def test_valid_seed_satisfies_feasibility_without_starting_worker(self):
+        with mock.patch.object(solver.subprocess, 'Popen') as start:
+            result = solver.solve(problem(), stop_on_feasible=True)
+        start.assert_not_called()
+        self.assertEqual(result['termination'], 'first_feasible')
+        self.assertTrue(result['feasible'])
+
+    def test_valid_seed_survives_runtime_error_and_weaker_worker_candidate(self):
+        request = problem()
+        request.update(velocity=[0, 0], magnitude=[0.1, 0.1], base=[0, 0])
+        result = self.run_worker('print(\'{"type":"candidate","yaw":[180,180]}\')', request)
+        self.assertAlmostEqual(result['candidate']['objective'], 0.25)
+        with tempfile.TemporaryDirectory() as directory:
+            result = solver.solve(request, python_executable=str(pathlib.Path(directory) / 'missing'))
+        self.assertTrue(result['feasible'])
+        self.assertEqual(result['termination'], 'runtime_error')
+        self.assertIsNotNone(result['error'])
 
     def test_cli_writes_structured_error_atomically(self):
         with tempfile.TemporaryDirectory() as directory:

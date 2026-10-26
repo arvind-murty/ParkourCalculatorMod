@@ -60,6 +60,31 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(result['candidate']['patternMismatches'], [])
         self.assertEqual(result['candidate']['positions'][2][0], 0)
 
+    def test_real11_warm_start_recovers_objective_and_polishes_valid_seed(self):
+        directory = pathlib.Path(__file__).parents[1] / 'fixtures'
+        with gzip.open(directory / 'real11-400.json.gz', 'rt') as stream:
+            original = json.load(stream)
+        with gzip.open(directory / 'real11-400-warm-yaws.json.gz', 'rt') as stream:
+            seeds = json.load(stream)
+        for key, minimum, fallback in [('noInertia', 691.4017, False),
+                                       ('noInertia', 691.4017, True),
+                                       ('inertiaIncumbent', 691.3929, False)]:
+            with self.subTest(seed=key, fallback=fallback):
+                request = dict(original, yaw=seeds[key])
+                if fallback:
+                    request['fallbackYaw'] = original['yaw']
+                result = solve(request, seconds=10, python_executable=RUNTIME)
+                self.assertTrue(result['feasible'], result)
+                self.assertGreaterEqual(result['candidate']['objective'], minimum)
+                replay = validate(prepare(request), result['candidate']['yaw'])
+                self.assertTrue(replay['feasible'])
+                self.assertEqual(replay['positions'], result['candidate']['positions'])
+                self.assertEqual(replay['velocity'], result['candidate']['velocity'])
+                self.assertIn('incumbent_polish' if key == 'inertiaIncumbent' else 'zero_events',
+                              [p['kind'] for p in result['phases']])
+                print('real11 warm', key, 'fallback', fallback, 'seconds', round(result['elapsedSeconds'], 3),
+                      'objective', replay['objective'], 'violation', replay['violation'])
+
 
 if __name__ == '__main__':
     unittest.main()

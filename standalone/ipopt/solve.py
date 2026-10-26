@@ -57,6 +57,7 @@ def main():
         if args.no_recorded_walls:
             request['contacts'] = []
         if args.initial_solution:
+            request.setdefault('fallbackYaw', request['yaw'])
             request['yaw'] = read_json(args.initial_solution)['candidate']['yaw']
         result = solve(request, seconds=args.seconds, stop_on_feasible=True if args.feasibility_only else None,
                        python_executable=args.python_executable, cancel_event=cancel)

@@ -31,6 +31,12 @@ def prepare(request):
             raise ValueError(key + ' has the wrong length')
         for value in values:
             number(value, key)
+    if 'fallbackYaw' in problem:
+        values = problem['fallbackYaw']
+        if not isinstance(values, list) or len(values) != n:
+            raise ValueError('fallbackYaw has the wrong length')
+        for value in values:
+            number(value, 'fallbackYaw')
     if any(m < 0 for m in problem['magnitude']):
         raise ValueError('Acceleration magnitudes must be nonnegative')
     if any(f < 0 or f > 1 for f in problem['friction']):
@@ -104,7 +110,7 @@ def prepare(request):
 
 
 def fingerprint(problem):
-    physical = {k: v for k, v in problem.items() if k not in ('seconds', 'yaw', 'stopOnFeasible', 'source', 'maxIterations')}
+    physical = {k: v for k, v in problem.items() if k not in ('seconds', 'yaw', 'fallbackYaw', 'stopOnFeasible', 'source', 'maxIterations')}
     return hashlib.sha256(json.dumps(physical, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
 
 
