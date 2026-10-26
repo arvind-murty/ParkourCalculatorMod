@@ -2,6 +2,8 @@
 
 ## Why the optimized 400-input replay is unknown, 2026-10-26
 
+Terminology clarification: in this experiment IPOPT does not discover collisions. The request prescribes wall-hit ticks/planes, and its model applies blocked-axis velocity resets and ladder behavior. The missing consequence is wall-triggered sprint cancellation and the resulting carried air-acceleration change. This is an incomplete physical model/coefficient compilation in our pipeline; IPOPT solves the supplied model, while exact replay exposes its inconsistency. The new scene-based replay can discover contacts when geometry is supplied, but the 400-input diagnostic used declared contacts.
+
 User instruction: keep future work as local commits and do not push unless explicitly requested again. The prior push was an incorrect carry-forward of earlier permission. This investigation makes no product-code change and will not be pushed.
 
 The 400-input candidate still matches the current ladder fixture's physical problem hash. Independently running the scalar continuous validator accepts it with zero violation and objective 691.5810209171883. The unknown verdict belongs to subsequent exact replay/angle realization, whose five-second repair budget expired, not to an IPOPT convergence failure or an infeasibility certificate.
