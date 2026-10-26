@@ -57,3 +57,5 @@ The current model deliberately fixes the discovered ladder and contact schedule.
 ## Fork publication, 2026-10-26
 
 The user requested pushing the completed work to their fork. Verified that `origin` is `https://github.com/arvind-murty/ParkourCalculatorMod.git`, the authenticated account is `arvind-murty`, and the isolated branch is `feature/ipopt-standalone`. The implementation head is `cc04e70`, preceded by the scalar and optimizer commits above. The branch did not previously exist on the fork. Publication uses `git push -u origin feature/ipopt-standalone`, with no force push. This turn adds only this publication record; the existing validation results remain applicable.
+
+The first HTTPS upload failed with HTTP 400 and left the branch absent remotely. Retrying with per-command `http.version=HTTP/1.1` and `http.postBuffer=524288000` succeeded, created the fork branch and established upstream tracking. These overrides do not change persistent Git configuration. No pull request was requested or opened.
