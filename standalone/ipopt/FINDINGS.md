@@ -77,3 +77,72 @@ Key implementation findings: surface samples for input t are recorded on state t
 The user requested physics/model guidance for the autonomous agent's block-sequence planner. Added [RUN_TICKS_PHYSICS_HANDOFF.md](RUN_TICKS_PHYSICS_HANDOFF.md), linked from the general handoff. Inspected the local MCPK mirror, JumpPhysicsInputs/JumpLinearModel/ExactJumpModel, support/constraint derivation and the existing run-tick controller/search/filter/settings/tests. The handoff explains support-expanded center bounds, strict edge overlap, Y-before-X/Z landing timing, jump/landing ground-friction transitions, state carry, input/array/reference reindexing and model-vs-world acceptance.
 
 Important search findings: RunTicksRows marks any non-JUMP row with explicit DEFAULT ground override, regardless of keys; minimize enumeration starts at the configured maxTicks rather than automatically zero; the unconstrained count cap is 40 as an implementation policy; the controller prunes unsuccessful/time-limited solves through recordFailure. These are not guarantees of physical impossibility or global minimum run ticks. The handoff recommends preserving cheaper unknown cases, declaring the searched input/timing family and reporting a witnessed upper bound separately from a certified minimum. JumpPhysicsInputs.copy shares many arrays and requires care in independent candidate construction. Documentation only; no solver behavior changed or numerical suites rerun.
+
+## Replay-first investigation, 2026-10-26
+
+The user clarified three layers: orchestration, solving and replay. They assigned replay priority to this agent while the solver-input interface remains undecided. The target is a completed solve converted by intelligent probing of exact Minecraft angles, validated in Minecraft and exported as a mod-loadable TAS. Updated MOD_INTEGRATION_PLAN.md so this supersedes the previous compiler-first order. Current input construction, backend UI and autonomous search do not need to be settled first.
+
+### 1. The reusable replay path
+
+SimulationRunner.simulate resets the loader Simulator, snapshots state 0, applies each InputRow and records state/checkpoint t+1. simulateFrom restores checkpoint t and replays its tail. LazyEntitySimulator applies the actual per-row keys/effects, locked absolute float yaw or relative float yaw, then ticks the loader entity. ForgeSimulator/FabricSimulator bind that entity to an available Minecraft world and run the corresponding MC update/tick. Their SimulatorEntity implementations delegate collision movement to superclass move/moveEntity and travel, while sampling medium/friction and maintaining sprint/input state.
+
+This is the right source for actual movement/collision validation. It already has ground/wall/ladder/step behavior via Minecraft, unlike the collision-free ExactJumpModel. Lifting the core driver is straightforward, but the loader entity still needs the correct Minecraft runtime and world. It cannot become a plain standalone Python replay merely by copying the Java source. A headless world/runtime or exported-scene physics engine would be a separate project. A mod-hosted scratch replay service is the smallest route to real Minecraft validation.
+
+The visible TAS playback path is separate: PlaybackController plus loader PlaybackBridge drives the real player in supported singleplayer or a client replica in multiplayer. It handles tick scheduling, pause, warmup, effects and camera interpolation. It should be an eventual end-user playback cross-check, not the inner search oracle that repeatedly teleports or drives the real player. Fast simulation is not limited to real-time 20 Hz playback.
+
+Fresh simulator starts perform two neutral settle ticks, then restore supplied position/velocity and optional StartResumeState. PlaybackController also distinguishes a fresh start from an already settled carried checkpoint. Preserve these semantics rather than adding an extra neutral tick to a solved window. Full in-memory checkpoints capture more fields than portable StartResumeState: for example legacy landMovementFactor, width/height and fallDistance are in entity checkpoints. An independently saved mid-route window therefore needs verified resume equivalence; initial implementation can preserve the original TAS prefix.
+
+### 2. Deterministic yaw conversion is not intelligent realization
+
+JumpPhysicsInputs.toGameFacingsInto mirrors how Apply writes relative float deltas and the game accumulates them, or casts locked rows to absolute floats. It is deterministic realization of row semantics, not constraint-aware correction of the continuous path. AngleSolverEngine.writeYawRows and ApplyYawRowsTest pin the same chain. Simply casting every continuous absolute angle to float can disagree with relative-row accumulation.
+
+PlaybackController deliberately preserves raw physics yaw separately from the display's shortest-turn interpolation. Its code notes that 45 and -315 need not select identical sine buckets. Do not normalize all exported physical yaws modulo 360 as an assumed identity, and do not validate only the displayed camera angles.
+
+FacingLattice provides exact movement sine/cosine indices, joint-cell IDs/intervals and nearby cell representatives. Legacy movement and sprint-jump boost use different radian casts, so a jump cell can depend on four indices, not just one ideal angle bucket. It supports a separate 26.x index path as well; version-specific candidate enumeration must be preserved. Neighbor candidates should be deduplicated by realized joint cells and checked against original facing/relative-facing constraints.
+
+Within-cell representative choice still matters for original F/dF restrictions and for subsequent relative-yaw accumulation. Cell deduplication is not permission to discard the feasible part of a cell because one arbitrary representative misses a facing pin. Preserve/intersect cell intervals with facing restrictions and verify the actual accumulated sequence when realizing representatives.
+
+CertifiedBnb.realizeCombo is a useful precise serialization reference: it tries nearby absolute values in ULP steps until float delta accumulation lands on the chosen joint-cell identity, rather than assuming a selected float representative can always be written back unchanged. It is private certification code; use it as a pattern without changing certified B&B or importing its search machinery into replay. Absolute locked rows can remove delta-accumulation error in a newly generated TAS, but they do not remove sine-table/float-physics drift from the continuous solution. A patch to an existing template must respect the chosen row-lock policy.
+
+### 3. Existing probing/repair components and limits
+
+| Source | Reusable part | Limitation |
+| --- | --- | --- |
+| FacingLattice | Version-aware cell IDs, intervals and adjacent representatives. | Candidate generation, not an acceptance/search policy. |
+| BucketWalk | Cell-center baseline, exact finite probes, violation-driven integer bucket moves and refinement. | Its scoring is bound to the authored collision-free model and its linear rows; methods are partly package-private. |
+| WrapWindowIls | Nearby joint-cell probing and violation-reducing search from an infeasible exact seed, with optional reaccumulated scoring. | Uses ExactJumpModel and its supported scenario; no real world contacts, and its broader wrap/kick options should not be adopted implicitly. |
+| LeafSnap | Single/pair-cell enumeration and exact rescoring of feasible candidates. | Returns null if the initial exact path violates constraints. It is objective polish, not the initial continuous-to-game feasibility repair. |
+| BucketAscentPolish | Full wrap/toGameFacings/forward scoring and tail updates. | Also starts from feasibility and scores the supplied model. |
+| StrafeSideRealization | Verified effective A/D key/yaw changes and preservation of objective when requested. | It is a distinct key-realization policy, not generic angle correction. Keep it explicit when inputs are fixed. |
+
+There is no single ready-made public function that takes an arbitrary continuous IPOPT world path and returns a validated Minecraft TAS. Most primitives already exist, but they need a replay scorer appropriate to walls/ladders and a service-level acceptance/export loop. ExactJumpModel handles authored ladder caps but does not clip world walls, land onto actual block tops or implement collision-induced climbing. Using it without that distinction would attribute real model differences to angle rounding.
+
+A suitable realizer first establishes the deterministic baseline, enumerates nearby exact cells, evaluates the actual executed float-yaw chain and reduces original constraint violations. It then considers objective quality and secondary path/velocity drift, retaining current best candidates under a deadline. Single-tick probes can be followed by limited coupled probes when tight constraints require compensation. Checkpointed tail replay is useful, but state t must be restored before changing input t. Preserve all game state and the scene identity. Failure to realize a witness is unresolved, not a proof that no game path exists.
+
+The user's reported deterministic drift above .001 versus intelligent realization near .0001 is a useful benchmark target, not a measurement newly reproduced in this turn. Measure constraint residuals, objective loss and path drift separately. An exported path can legitimately differ from the continuous path while satisfying every requested constraint. Conversely, small final endpoint drift does not establish intermediate/facing/support feasibility.
+
+### 4. Validation should evaluate the actual artifact
+
+AngleSolverEngine.checkApplyDeviation compares simulated X/Z displacements against the native plan at 1e-9 and explicitly ignores the model's nonphysical Y. It is a divergence diagnostic, not a full validator for an IPOPT world solve. It does not replace checking original positional/relative/facing constraints, required support/route conditions and actual replay events.
+
+Reuse original constraints or JumpConstraintCompiler against actual replay state arrays and actual executed facings, preserving the specified semantics. The native engine uses strict inequality feasibility and authored EQ corridors of +/-1e-4; standalone numeric acceptance is 1e-7. These are different concepts from path-to-path closeness. Report them explicitly rather than setting one universal .0001 slack. World events that were only solver hypotheses can differ while a real replay still succeeds; report those differences to orchestration instead of silently rewriting its inputs or declaring all event changes impossible.
+
+There is a further native-facing nuance: addFacingCell compiles some native F/first-dF pins to the whole equivalent joint-cell interval, while the UI's original EQ check uses its +/-1e-4 reporting corridor. Native result success is based on the compiled spec, not simply every original panel outcome. The standalone exporter deliberately restores typed pin corridors. Reusing the native compiled spec or success flag wholesale could therefore change IPOPT's requested facing semantics. The replay service should retain and evaluate the original requested rows explicitly.
+
+The final acceptance chain should be realized candidate rows, real Minecraft replay, SaveIO serialization, SaveIO load/apply, and replay of those exact reloaded rows. Preserve effective keys, bit-identical float yaw chains and initial state through the file round trip. Any later key/angle edit invalidates the earlier replay report.
+
+### 5. TAS export is already implemented in the mod
+
+SaveFile is the canonical version-1 schema. SaveIO.buildSaveFile and saveJson produce normal saves; applyRowsTo and the corresponding load path restore InputRows. SaveController.saveSelectionAsNewTas demonstrates non-destructive row export, solver-constraint reindexing and supplied start/resume state. Reuse these instead of inventing a second Python TAS serializer or replacing the live document to save it.
+
+The export needs effective keys, raw physical float yaw representation/locks, start XYZ/full velocity/raw yaw/pitch, game profile and appropriate StartResumeState, plus effects and relevant metadata. AngleSolverEngine.apply shows how FORCE_45 masks are realized as keys. A solver's magnitude/base arrays or yaw output alone do not uniquely identify these inputs. The first replay adapter can accept a source TAS template plus a solution and selected window; the future solver-input API can remain undecided.
+
+SaveIO.velOf deliberately interprets a legacy zero start velocity without resume data as ground-rest velocity. With an explicit resume block it preserves zero as zero. Exporting a true zero-velocity start or a mid-air slice must respect this convention. parseSafe only deserializes; the normal load path also checks required fields and format version. A syntactically valid JSON file is not proof that its rows reproduce the validated game path.
+
+### 6. Source navigation and verification
+
+Key files are core/anglesolver/solver/FacingLattice.java, JumpPhysicsInputs.java, WrapWindowIls.java, LeafSnap.java, BucketWalk.java, StrafeSideRealization.java and CertifiedBnb.realizeCombo; core/PlaybackController.java; core/sim/SimulationRunner.java and LazyEntitySimulator.java; loader Forge/Fabric simulator/entity/bridge classes; core/save/SaveIO.java and SaveFile.java; core/SaveController.java and AngleSolverEngine's writeYawRows/apply/checkApplyDeviation. Paths are rooted under core/src/main/java/de/legoshi/parkourcalc or the corresponding loader tree.
+
+Ran the existing focused Java suites for FacingLattice, ApplyYawRows, FirstTickDeltaFacing, ApplyForce45Inputs, StrafeSideRealization, ApplyDeviation, InputRowSaveRoundTrip, SaveFieldRoundTrip, SaveSelectionAsTas and ReplayStartDelay. All 61 tests across ten classes passed with zero failures/errors/skips on JDK 21 (Java 8 source). These establish the inspected helper/save behaviors; they do not test the proposed new realizer or constitute a live Minecraft replay. No Minecraft client was launched and no production code changed during this investigation.
+
+Next implementation: an isolated replay service taking a completed solve and TAS template, with cell probing through an exact/replay scorer, original-constraint reporting and SaveIO-based output that is reloaded and revalidated. Compiler/backend-selection work is deferred until the replay slice is useful.

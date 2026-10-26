@@ -2,6 +2,21 @@
 
 Prepared 2026-10-26 on feature/ipopt-mod-integration, starting from handoff commit 4089be9. This is a detailed implementation plan, not a report that the proposed adapters exist. Autonomous input/route search is owned by the other agent. This agent owns the implementation that captures Minecraft state, compiles fixed-input problems, invokes the existing solver, realizes output rows, obtains game replay feedback and connects those operations to the mod.
 
+## Updated priority from the user: replay first
+
+The user clarified that orchestration is primarily owned by the other agent, the solving layer is largely built, and the solver's input interface is still undecided. Our immediate work should therefore start after an existing solve: intelligently realize nearby exact Minecraft angle cells, replay the resulting inputs in the real simulator, check the original constraints and export a TAS JSON accepted by the mod. This takes priority over the compiler/process/backend-selection order below. Those phases remain reference material for later integration, not prerequisites to replay development.
+
+The immediate service accepts a completed solution plus effective input rows, complete initial state, constraints/objective and world/profile context. These data can initially come from a source TAS/template and solved-window indices, independently of the future orchestration interface. A bare array of angles cannot reconstruct keys, initial Y/resume state or geometry. Start with whole-template output retaining the unchanged prefix; a standalone mid-route slice needs a separate resume-equivalence check.
+
+Immediate implementation checkpoints:
+
+1. Reuse exact angle-cell enumeration and TAS float-yaw semantics to build a constraint-aware realizer. A deterministic float cast or nearest bucket is only a baseline. Probe nearby movement/boost joint cells, check F/dF rows, and repair an initially infeasible snapped path before objective polish. Keep input keys fixed unless an explicitly permitted strafe-side realization is part of the request.
+2. Reuse Simulator/SimulationRunner and loader SimulatorEntity for actual world replay, isolated from the live TAS/player. ExactJumpModel can cheaply score collision-free intervals but is not a wall/ladder/landing world oracle. Reuse checkpointed tail replay with validated state restoration for expensive probes.
+3. Reuse SaveIO/SaveFile and effective key/yaw realization to write the final TAS. Reload that exact JSON, replay the reloaded rows, evaluate the original constraints and record final achieved objective/residuals. The exported artifact, rather than a pre-serialization angle array, is the acceptance target.
+4. Benchmark deterministic conversion versus cell probing on matching inputs/scenes. Report max constraint violation, objective change, trajectory drift, changed discrete events and runtime separately. The user's approximately 1e-4 reconstruction target is a measurement goal; preserve the requested constraint/equality semantics and do not claim that nearby cells always yield a witness.
+
+The detailed source investigation and the 61-test helper verification are recorded in FINDINGS.md under the replay-first investigation. No replay adapter has been implemented yet, and no live Minecraft validation is claimed.
+
 ## Recommendation and first milestone
 
 Build a complete short-window round trip before adding route search, elaborate world extraction or broad UI configuration:
