@@ -6,6 +6,7 @@ import unittest
 
 from standalone.autonomy import find_route, prepare_route, schedule
 from standalone.autonomy.block_profiles import compile_open_air_route
+from standalone.autonomy.block_search import compile_block_path, find_blocks, prepare_scene
 from standalone.autonomy.compiler import JavaCompiler
 from standalone.autonomy.route import supports
 
@@ -17,6 +18,60 @@ FIXTURES = Path(__file__).parents[1] / 'fixtures'
 
 @unittest.skipUnless(CONFIG and RUNTIME, 'Set PKC_RUN_TICKS_COMPILER and PKC_IPOPT_PYTHON')
 class IntegrationTests(unittest.TestCase):
+    def test_selected_block_path_can_require_an_added_ground_input(self):
+        request = json.loads((FIXTURES / 'blocks-required-run.json').read_text())
+        with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
+            result = find_blocks(request, compiler, seconds=15, route_seconds=5,
+                                 candidate_seconds=1, retries=0, python_executable=RUNTIME)
+        self.assertEqual(result['status'], 'feasible', result)
+        self.assertEqual(result['best']['allocation'], [1])
+        self.assertEqual(result['best']['plan']['ticks'], 13)
+        self.assertFalse(result['minimumRunTicksProven'])
+
+    def test_only_endpoints_are_fixed_and_remote_supports_are_pruned(self):
+        request = json.loads((FIXTURES / 'blocks-route-choice.json').read_text())
+        original = copy.deepcopy(request)
+        with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
+            result = find_blocks(request, compiler, seconds=25, route_seconds=4,
+                                 candidate_seconds=1, retries=0, python_executable=RUNTIME)
+        self.assertEqual(result['status'], 'feasible', result)
+        self.assertEqual(result['best']['blockIds'], ['start', 'middle', 'goal'])
+        self.assertEqual(result['best']['cost'], 0)
+        self.assertNotIn('remote', result['graph']['distanceToGoal'])
+        self.assertGreater(result['pruning']['horizontalEdges'], 0)
+        self.assertEqual(request, original)
+        self.assertFalse(result['assumptions']['routeOrderSupplied'])
+        self.assertFalse(result['assumptions']['airtimesSupplied'])
+        best = result['best']
+        self.assertEqual(best['route']['airtimes'], [12, 12])
+        self.assertFalse(any(w['mode'] == 'F' for w in best['plan']['walls']))
+        for state, block, kind in best['plan']['supportChecks']:
+            self.assertTrue(supports(best['route']['blocks'][block], *best['candidate']['positions'][state], kind=kind))
+
+    def test_route_pool_matches_exhaustive_small_family_with_coupled_momentum(self):
+        request = json.loads((FIXTURES / 'blocks-momentum-choice.json').read_text())
+        scene = prepare_scene(request)
+        exhaustive = []
+        with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
+            for path in [['start', 'goal']] + [['start', b['id'], 'goal'] for b in request['blocks'] if b['id'] != 'goal']:
+                route = compile_block_path(scene, path)['route']
+                result = find_route(route, compiler, seconds=5, candidate_seconds=1,
+                                    retries=0, python_executable=RUNTIME)
+                self.assertNotEqual(result['status'], 'error', result)
+                if result['best'] is not None:
+                    exhaustive.append((result['best']['cost'], path))
+            first_leg = compile_block_path(scene, ['start', 'tempting'])['route']
+            reached = find_route(first_leg, compiler, seconds=5, candidate_seconds=1,
+                                 retries=0, python_executable=RUNTIME)
+            self.assertEqual(reached['status'], 'feasible', reached)
+            pooled = find_blocks(request, compiler, seconds=20, route_seconds=4,
+                                 candidate_seconds=1, retries=0, python_executable=RUNTIME)
+        self.assertTrue(exhaustive)
+        self.assertEqual(pooled['status'], 'feasible', pooled)
+        self.assertIn((pooled['best']['cost'], pooled['best']['blockIds']), exhaustive)
+        self.assertEqual(pooled['best']['blockIds'], ['start', 'around', 'goal'])
+        self.assertEqual(pooled['best']['cost'], min(cost for cost, _ in exhaustive))
+
     def test_blocks_without_supplied_airtimes_feed_the_existing_run_search(self):
         request = json.loads((FIXTURES / 'blocks-flat-two-jumps.json').read_text())
         self.assertNotIn('airtimes', request)
