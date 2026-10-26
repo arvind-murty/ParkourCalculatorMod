@@ -1,5 +1,9 @@
 # Standalone IPOPT findings
 
+## Short autonomous-agent handoff, 2026-10-26
+
+Added [RECENT_REPLAY_HANDOFF.md](RECENT_REPLAY_HANDOFF.md) at the user's request and linked it prominently from the older handoff. It records local commit/worktree provenance, wall-aware sprint compilation and air-factor lag, the compile/solve/replay pipeline, reindex/recompile requirements for run-tick search, KEEP versus FORCE_45, API locations, validated 200/400 results and current scene/profile limitations. No message was sent to another agent and no other worktree was changed. Documentation-only; prior verification remains applicable. The handoff is committed locally and is not pushed.
+
 ## Mod movement audit, shared compilation and current limitations, 2026-10-26
 
 The user directed us to port the mod's actual movement behavior, then accepted the supported replay scope and requested explicit documentation of limitations. Added [MOVEMENT_PORT.md](MOVEMENT_PORT.md) as the source map and capability/limitation ledger, linked from README, REPLAY and the autonomous-agent handoff. It distinguishes static-scene collision discovery from declared-contact replay, states that real11 has no complete scene snapshot, identifies unported mechanics and explains the continuous-model/exact-angle boundary. All work in this turn is local; no push is authorized or performed.
