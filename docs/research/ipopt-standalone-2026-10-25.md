@@ -70,3 +70,30 @@ A cap pattern has three branches per ladder tick/axis: negative saturation (`r <
 Recommended first implementation: fix the ladder-tick schedule, infer saturation branches from an initial trajectory, solve with branch membership rows, and independently replay the actual clamp for acceptance. If a pattern fails, or optimization reaches a switching boundary, try adjacent branches within the time budget. A failed fixed pattern remains unknown for the broader problem. Unlike inertia zeroing, adjacent cap branches agree on their boundary, so strict disjointness guards are unnecessary for their physical consistency. A valid fixed branch can still miss a better objective under another branch.
 
 A direct min/max clamp is another useful benchmark, but introduces derivative kinks. IPOPT's documented formulation expects twice continuously differentiable objective and constraint functions: https://www.coin-or.org/Ipopt/ . It should not be assumed that direct clamps will have the same robustness as the branch-fixed smooth NLP. The ladder occupancy schedule is a separate input: recorded wall hits alone do not determine whether a player is on a ladder. No cap implementation or solver behavior changed during this design discussion.
+
+## Discovering ladder schedules and reusing baseline solutions
+
+The current standalone request contains prescribed horizontal contact planes, not ladder activation geometry or a vertical trajectory. The native angle model's ladder flag is also a per-tick medium override, rather than an automatic geometry query. The actual Minecraft simulator has the world geometry and delegates activation to Minecraft. Consequently the existing standalone fixture cannot yet discover ladder occupancy by itself. A wall hit is insufficient evidence that a tick is on a ladder.
+
+With version-correct ladder activation regions and vertical state supplied, a replay can classify ladder ticks. Use the activation predicate, not merely intersection with the thin solid collision box. The mirrored 1.8 reference distinguishes the player's coordinates being inside the ladder voxel from the ladder's physical collision box. Initially a captured vertical trace could be an explicit approximation; changes in horizontal collisions and climbing can alter that trace, so a complete physical check needs vertical replay too.
+
+A practical extension is to solve a baseline, replay with automatic inertia and ladder clamping, freeze the inferred ladder schedule and cap/zeroing branches, then solve the resulting smooth NLP. The next path must be replayed again with automatic detection. Check both that declared ladder ticks remain on ladders and that nominally ordinary ticks did not enter a ladder region. If occupancy changes, refresh the schedule and try nearby assignments within the budget. Adding membership constraints can reduce schedule drift; enforcing nonmembership requires selecting an outside face or handling the alternative regions. The same general refinement approach as inertia applies, but ladder activation depends on position including Y, whereas inertia branches depend on velocity. A failed fixed schedule is unknown for the broader problem.
+
+Previous solutions can already supply facings through `--initial-solution`; the worker reconstructs position and velocity guesses under the current phase's physics. This is a primal seed, not reuse of IPOPT dual multipliers. A prior no-inertia/no-cap candidate must be validated under the new physics before it qualifies as an incumbent. It can remain a useful initial guess even if invalid. Likewise a failed baseline is not a proof that the model with caps and inertia is infeasible: these physical modifications are not automatically nested relaxations.
+
+### Measured no-inertia warm start
+
+Both runs below used the saved `real11-400-no-inertia-result.json.gz` facings, restored the fixture's .005 inertia threshold, retained all constraints and prescribed contacts, and allowed 10 seconds. They used the same existing Python 3.12.2 / CasADi 3.8.1 runtime read-only. No ladder cap is implemented, so this measures no-inertia reuse only.
+
+| Seed and mode | Total seconds | First valid seconds | Final X objective | Maximum compiled-row violation |
+| --- | ---: | ---: | ---: | ---: |
+| No-inertia seed, first feasible | 1.145 | 1.039 | 691.0763522907 | 0 |
+| No-inertia seed, optimize | 10.110 | 1.075 | 691.2422668156 | 0 |
+| Earlier default seed, first feasible | 1.441 | not separately tabulated | 691.0763522496 | 0 |
+| Earlier default seed, optimize | 3.334 | not separately tabulated | 691.4017522467 | 0 |
+
+Warm feasibility was about .30 seconds faster in these individual runs. Warm optimization reached the time limit with an objective about .15949 blocks worse than the earlier default-seed solve. The zero-event phase hit its phase time limit and two subsequent complete fixed-pattern phases reported local infeasibility. The parent retained a valid incumbent. Two invalid candidates were rejected; the final rejected one missed the wall at state 356 by .04003531862701948 under automatic inertia replay despite its near-optimal nominal objective.
+
+Thus warm starts are supported and useful candidates, but this example does not support making them the only search route. Retaining a default or alternative seed alongside the warm seed is a reasonable future policy. These are single measurements, not a statistical speed claim. Both saved accepted candidates were independently replayed again after completion; positions and stored velocities exactly matched their saved arrays and every compiled row passed. The two complete results are archived beside the earlier results as `real11-400-warm-inertia-result.json.gz` and `real11-400-warm-feasibility-result.json.gz`.
+
+No production solver, mod, ladder geometry export or cap implementation changed in this turn. Only this research record and the two measured result artifacts were added.
