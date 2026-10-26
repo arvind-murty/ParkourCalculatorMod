@@ -39,4 +39,15 @@ gradle.projectsEvaluated {
                     (core.findProperty('ipoptGiveBack') ?: '0.0001').toString()]
         }
     }
+    core.tasks.register('compileStandaloneIpoptPhysics', JavaExec) {
+        dependsOn core.tasks.named('compileStandaloneIpoptExport')
+        workingDir gradle.rootProject.projectDir
+        classpath = replayClasspath + core.files(new File(standalone, 'build/classes'))
+        mainClass = 'de.legoshi.parkourcalc.anglesolver.harness.CompileStandaloneIpoptPhysics'
+        doFirst {
+            def required = ['ipoptCapture', 'ipoptInput', 'ipoptOutput']
+            required.each { if (!core.findProperty(it)) throw new GradleException('Set -P' + it + '=/path/to/file.json') }
+            args required.collect { core.property(it).toString() }
+        }
+    }
 }

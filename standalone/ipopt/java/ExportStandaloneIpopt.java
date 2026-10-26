@@ -12,6 +12,7 @@ import de.legoshi.parkourcalc.core.sim.TickState;
 import de.legoshi.parkourcalc.core.ui.BoxController;
 import de.legoshi.parkourcalc.core.ui.InputData;
 import de.legoshi.parkourcalc.core.ui.InputRow;
+import de.legoshi.parkourcalc.forge.core.replay.FixedMovementCompiler;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -73,7 +74,7 @@ public final class ExportStandaloneIpopt {
         JumpPhysicsInputs physics = spec.asScenario();
         JumpLinearModel linear = new JumpLinearModel(physics);
         double[] magnitude = new double[ticks], friction = new double[ticks], base = new double[ticks], yaw = new double[ticks];
-        double previous = physics.startYaw;
+        float previous = physics.startYaw;
         for (int t = 0; t < ticks; t++) {
             magnitude[t] = linear.mMag(t);
             friction[t] = linear.friction(t);
@@ -135,7 +136,9 @@ public final class ExportStandaloneIpopt {
         request.put("source", metadata);
         Path output = Paths.get(args[1]).toAbsolutePath();
         Files.createDirectories(output.getParent());
-        Files.write(output, (GSON.toJson(request) + "\n").getBytes(StandardCharsets.UTF_8));
+        com.google.gson.JsonObject exported = GSON.toJsonTree(request).getAsJsonObject();
+        if ("1.8.9".equals(file.mcVersion)) exported = FixedMovementCompiler.compile(file, exported);
+        Files.write(output, (GSON.toJson(exported) + "\n").getBytes(StandardCharsets.UTF_8));
         System.out.println("Exported " + ticks + " ticks and " + constraints.size() + " constraint rows to " + output);
     }
 

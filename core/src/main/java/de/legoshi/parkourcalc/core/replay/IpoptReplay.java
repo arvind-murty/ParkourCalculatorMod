@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import de.legoshi.parkourcalc.core.anglesolver.Medium;
-import de.legoshi.parkourcalc.core.anglesolver.Slipperiness;
 import de.legoshi.parkourcalc.core.anglesolver.solver.*;
 import de.legoshi.parkourcalc.core.save.SaveFile;
 import de.legoshi.parkourcalc.core.save.SaveIO;
@@ -111,25 +110,8 @@ public final class IpoptReplay {
             if (row.yaw != null) require(Float.isFinite(row.yaw), "Nonfinite template yaw");
             if (t < start) continue;
             int k = t - start;
-            SaveFile.Override override = override(t);
-            String slip = override != null && override.slipperiness != null ? override.slipperiness
-                    : file.angleSolver != null && file.angleSolver.defaultSlipperiness != null ? file.angleSolver.defaultSlipperiness : "AIR";
-            ground[k] = Slipperiness.valueOf(slip).slip < 1;
-            String mode = override != null && override.inputs != null ? override.inputs : source.get("inputMode").getAsString();
-            require("KEEP".equals(mode) || "FORCE_45".equals(mode), "Unsupported input mode " + mode);
-            if ("FORCE_45".equals(mode)) {
-                require(!row.keys.contains("SNEAK"), "Force 45 with Sneak needs an explicitly compiled input policy");
-                setKey(row, "W", true);
-                setKey(row, "S", false);
-                setKey(row, "SPRINT", true);
-                boolean strafe = !(row.keys.contains("JUMP") && ground[k]);
-                boolean right = file.angleSolver != null && "D".equals(file.angleSolver.strafeSide);
-                setKey(row, "A", strafe && !right);
-                setKey(row, "D", strafe && right);
-            }
-            String sprint = override != null && override.sprint != null ? override.sprint : source.get("sprintMode").getAsString();
-            require("ALWAYS".equals(sprint) || "NEVER".equals(sprint) || "DERIVE".equals(sprint), "Unsupported sprint mode");
-            if ("KEEP".equals(mode) && !"DERIVE".equals(sprint)) setKey(row, "SPRINT", "ALWAYS".equals(sprint));
+            ground[k] = ReplayRows.slipperiness(file, t) < 1;
+            ReplayRows.realize(file, t, source);
             row.yaw = (float) finite(solution.getAsJsonArray("yaw"), k);
             require(Float.isFinite(row.yaw), "Yaw outside float range");
             row.yawLocked = true;
@@ -338,17 +320,6 @@ public final class IpoptReplay {
         report.add("baseline", GSON.toJsonTree(baseline));
         report.add("final", GSON.toJsonTree(best));
         return report;
-    }
-
-    private SaveFile.Override override(int tick) {
-        if (file.angleSolver != null && file.angleSolver.ticks != null)
-            for (SaveFile.Tick t : file.angleSolver.ticks) if (t.tick == tick) return t.override;
-        return null;
-    }
-
-    private static void setKey(SaveFile.Row row, String key, boolean enabled) {
-        row.keys.removeIf(key::equals);
-        if (enabled) row.keys.add(key);
     }
 
     private static int integer(JsonObject object, String key) {

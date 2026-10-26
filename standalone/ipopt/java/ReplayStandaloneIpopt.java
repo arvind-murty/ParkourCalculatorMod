@@ -48,9 +48,9 @@ public final class ReplayStandaloneIpopt {
         return a.toAbsolutePath().normalize().equals(b.toAbsolutePath().normalize()) || Files.exists(a) && Files.exists(b) && Files.isSameFile(a, b);
     }
 
-    private static JsonObject object(Path path) throws Exception { return new JsonParser().parse(read(path)).getAsJsonObject(); }
+    static JsonObject object(Path path) throws Exception { return new JsonParser().parse(read(path)).getAsJsonObject(); }
 
-    private static String read(Path path) throws Exception {
+    static String read(Path path) throws Exception {
         try (InputStream in = path.toString().endsWith(".gz") ? new GZIPInputStream(Files.newInputStream(path)) : Files.newInputStream(path);
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             byte[] bytes = new byte[8192];
@@ -60,7 +60,7 @@ public final class ReplayStandaloneIpopt {
         }
     }
 
-    private static void write(Path path, String json) throws Exception {
+    static void write(Path path, String json) throws Exception {
         Files.createDirectories(path.getParent());
         Path temporary = Files.createTempFile(path.getParent(), ".ipopt-replay-", ".tmp");
         try {
