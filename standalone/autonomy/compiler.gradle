@@ -1,0 +1,24 @@
+gradle.afterProject { core ->
+    if (core.path != ':core') return
+    def autonomy = new File(core.rootProject.projectDir, 'standalone/autonomy')
+    def output = new File(autonomy, 'build/classes')
+    core.tasks.register('compileRunTicksPhysics', JavaCompile) {
+        dependsOn core.tasks.named('classes')
+        source new File(autonomy, 'java')
+        classpath = core.sourceSets.test.runtimeClasspath
+        destinationDirectory = output
+        options.release = 8
+    }
+    core.tasks.register('prepareRunTicksCompiler') {
+        dependsOn core.tasks.named('compileRunTicksPhysics')
+        doLast {
+            def command = [new File(System.getProperty('java.home'), 'bin/java').absolutePath,
+                           '-cp', (core.sourceSets.test.runtimeClasspath + core.files(output)).asPath,
+                           'de.legoshi.parkourcalc.autonomy.CompileRunTicksPhysics']
+            def config = new File(autonomy, 'build/compiler.json')
+            config.parentFile.mkdirs()
+            config.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson([command: command])) + '\n'
+            logger.lifecycle('Run-ticks compiler: ' + config)
+        }
+    }
+}
