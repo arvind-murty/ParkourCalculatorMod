@@ -9,8 +9,10 @@ import numpy as np
 
 try:
     from .continuation import run
+    from .ladder import CAP
 except ImportError:
     from continuation import run
+    from ladder import CAP
 
 
 def send(message):
@@ -18,12 +20,15 @@ def send(message):
     sys.stdout.flush()
 
 
-def forward(problem, yaw, threshold, pattern=None):
+def forward(problem, yaw, threshold, pattern=None, cap_pattern=None, details=False):
     n = problem['ticks']
     positions = np.zeros((n + 1, 2))
     velocities = np.zeros((n + 1, 2))
     velocities[0] = problem['velocity']
     chosen = np.full((n, 2), 2, dtype=int)
+    cap_choices = np.zeros((n, 2), dtype=int)
+    raw_moves = np.zeros((n, 2))
+    ladder = problem.get('ladderTicks', [False] * (n + 1))
     contacts = {(c['state'], c['axis']): c for c in problem['contacts']}
     angles = np.array(problem['base']) + np.deg2rad(yaw)
     controls = np.array(problem['magnitude'])[:, None] * np.column_stack((np.cos(angles), np.sin(angles)))
@@ -31,6 +36,11 @@ def forward(problem, yaw, threshold, pattern=None):
         chosen[t] = np.where(np.abs(velocities[t]) < threshold, 0, np.where(velocities[t] >= 0, 1, -1))
         carry = np.where((chosen if pattern is None else pattern)[t] == 0, 0, velocities[t])
         move = carry + controls[t]
+        raw_moves[t] = move
+        if ladder[t]:
+            cap_choices[t] = np.where(move < -CAP, -1, np.where(move > CAP, 1, 0))
+            move = (np.clip(move, -CAP, CAP) if cap_pattern is None
+                    else np.where(np.array(cap_pattern[t]) == 0, move, np.array(cap_pattern[t]) * CAP))
         positions[t + 1] = positions[t] + move
         velocities[t + 1] = problem['friction'][t] * move
         for a in range(2):
@@ -38,7 +48,7 @@ def forward(problem, yaw, threshold, pattern=None):
             if contact:
                 positions[t + 1, a] = contact['plane'] - problem['position'][a]
                 velocities[t + 1, a] = 0
-    return positions, velocities, chosen
+    return (positions, velocities, chosen, cap_choices, raw_moves) if details else (positions, velocities, chosen)
 
 
 class Monitor(ca.Callback):
@@ -92,11 +102,12 @@ class Monitor(ca.Callback):
         return [1 if accepted and self.stop else 0]
 
 
-def phase(problem, yaw, pattern, seconds, stop, on_candidate, kind, seed_name):
+def fixed_phase(problem, yaw, pattern, seconds, stop, on_candidate, kind, seed_name, caps, attempt):
     started = time.monotonic()
     pattern = np.array(pattern, dtype=int)
     n = problem['ticks']
-    seed_p, seed_v, _ = forward(problem, yaw, problem['threshold'], pattern)
+    seed_p, seed_v, _ = forward(problem, yaw, problem['threshold'], pattern, caps)
+    ladder = problem.get('ladderTicks', [False] * (n + 1))
     variables, initial, rows, lower, upper = [], [], [], [], []
     contacts = {(c['state'], c['axis']): c for c in problem['contacts']}
 
@@ -127,7 +138,18 @@ def phase(problem, yaw, pattern, seconds, stop, on_candidate, kind, seed_name):
         control = problem['magnitude'][t] * ca.vertcat(ca.cos(angle), ca.sin(angle))
         carry = ca.vertcat(*[0 if pattern[t, a] == 0 else v[t][a] for a in range(2)])
         pn, vn = variable('p' + str(t), seed_p[t + 1]), variable('v' + str(t), seed_v[t + 1])
-        proposed = p[t] + carry + control
+        raw = carry + control
+        movement = []
+        for a in range(2):
+            b = caps[t][a] if ladder[t] else 0
+            if ladder[t]:
+                if b:
+                    row(b * raw[a], CAP, math.inf)
+                else:
+                    row(raw[a], -CAP, CAP)
+            movement.append(b * CAP if b else raw[a])
+        displacement = ca.vertcat(*movement)
+        proposed = p[t] + displacement
         for a in range(2):
             contact = contacts.get((t + 1, a))
             if contact:
@@ -138,7 +160,7 @@ def phase(problem, yaw, pattern, seconds, stop, on_candidate, kind, seed_name):
                 row(contact['direction'] * (p[t][a] - plane), -math.inf, 0)
             else:
                 row(pn[a] - proposed[a], 0, 0)
-                row(vn[a] - problem['friction'][t] * (carry[a] + control[a]), 0, 0)
+                row(vn[a] - problem['friction'][t] * displacement[a], 0, 0)
         p.append(pn)
         v.append(vn)
 
@@ -196,8 +218,58 @@ def phase(problem, yaw, pattern, seconds, stop, on_candidate, kind, seed_name):
     stats = solver.stats()
     send({'type': 'phase', 'status': stats['return_status'], 'iterations': stats['iter_count'],
           'seconds': time.monotonic() - started, 'zeros': int(np.count_nonzero(pattern == 0)),
-          'survivors': int(np.count_nonzero(np.abs(pattern) == 1)), 'kind': kind, 'seed': seed_name})
-    return monitor.best_yaw if monitor.best_yaw is not None else yaw, stats['return_status']
+          'survivors': int(np.count_nonzero(np.abs(pattern) == 1)), 'kind': kind, 'seed': seed_name,
+          'ladderSaturated': sum(b != 0 for row_values in caps for b in row_values), 'capAttempt': attempt})
+    return monitor.best_yaw if monitor.best_yaw is not None else yaw, stats['return_status'], monitor.best
+
+
+def phase(problem, yaw, pattern, seconds, stop, on_candidate, kind, seed_name):
+    end = time.monotonic() + seconds
+    has_ladders = any(problem.get('ladderTicks', []))
+    explicit = problem.get('ladderPattern')
+    caps = explicit if explicit is not None else forward(problem, yaw, problem['threshold'], pattern,
+                                                        details=True)[3].tolist()
+    queue, seen = [(yaw, caps)], set()
+    best, best_cost, best_status = yaw, math.inf, 'Not_Started'
+    attempt = 0
+    limit = 4 if has_ladders and explicit is None else 1
+    while queue and attempt < limit:
+        if end - time.monotonic() < 0.05:
+            break
+        seed_yaw, chosen_caps = queue.pop(0)
+        key = tuple(tuple(row) for row in chosen_caps)
+        if key in seen:
+            continue
+        seen.add(key)
+        remaining = end - time.monotonic()
+        budget = remaining * 0.65 if has_ladders and explicit is None and attempt < 3 else remaining
+        result, status, cost = fixed_phase(problem, seed_yaw, pattern, budget, stop, on_candidate,
+                                           kind, seed_name, chosen_caps, attempt)
+        attempt += 1
+        if cost < best_cost:
+            best, best_cost, best_status = result, cost, status
+        elif best_status == 'Not_Started':
+            best_status = status
+        if explicit is not None or not has_ladders or status == 'User_Requested_Stop':
+            break
+        _, _, _, inferred, raw = forward(problem, result, problem['threshold'], pattern,
+                                          chosen_caps, details=True)
+        if not np.array_equal(inferred, chosen_caps):
+            queue.append((result, inferred.tolist()))
+        adjacent = [list(row) for row in chosen_caps]
+        changed = False
+        for t, active in enumerate(problem['ladderTicks'][:-1]):
+            if not active:
+                continue
+            for a in range(2):
+                if abs(abs(raw[t, a]) - CAP) <= 2e-6:
+                    adjacent[t][a] = 0 if chosen_caps[t][a] else 1 if raw[t, a] >= 0 else -1
+                    changed = True
+        if changed:
+            queue.append((result, adjacent))
+        if not math.isfinite(cost):
+            queue.append((seed_yaw, [[0, 0] for _ in range(problem['ticks'])]))
+    return best, best_status
 
 
 def main():

@@ -85,6 +85,18 @@ class IntegrationTests(unittest.TestCase):
                 print('real11 warm', key, 'fallback', fallback, 'seconds', round(result['elapsedSeconds'], 3),
                       'objective', replay['objective'], 'violation', replay['violation'])
 
+    def test_ladder_branch_changes_preserve_optimization_and_explicit_patterns(self):
+        request = problem(1)
+        request.update(velocity=[0, 0], magnitude=[0.2], base=[0], yaw=[90],
+                       ladderTicks=[True, True])
+        result = solve(request, seconds=3, python_executable=RUNTIME)
+        self.assertTrue(result['feasible'], result)
+        self.assertAlmostEqual(result['candidate']['objective'], 0.15000000596046448, places=7)
+        request['ladderPattern'] = [[0, 1]]
+        result = solve(request, seconds=3, python_executable=RUNTIME)
+        self.assertTrue(result['feasible'], result)
+        self.assertAlmostEqual(result['candidate']['objective'], math.sqrt(0.2 ** 2 - 0.15000000596046448 ** 2), places=6)
+
 
 if __name__ == '__main__':
     unittest.main()

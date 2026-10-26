@@ -76,7 +76,7 @@ class LadderModelTests(unittest.TestCase):
         self.assertEqual(result['vy'][1], REST_CARRY)
         request['vertical']['sneak'] = [False]
         self.assertAlmostEqual(validate(prepare(request), [0])['y'][1], -0.15)
-        request['vertical'].update(velocity=-0.1, jumpVelocity=[0.42],
+        request['vertical'].update(velocity=-0.1, jumpVelocity=[0.42], onGround=True,
                                    contacts=[{'state': 1, 'plane': 0.2, 'direction': 1}])
         result = validate(prepare(request), [0])
         self.assertTrue(result['feasible'])
@@ -92,6 +92,11 @@ class LadderModelTests(unittest.TestCase):
         self.assertTrue(validate(prepare(request), [0])['feasible'])
         request['vertical']['contacts'][0]['plane'] = 0.7
         self.assertFalse(validate(prepare(request), [0])['feasible'])
+        request['vertical'].update(jumpVelocity=[0.42], referencePosition=[0, 0.5])
+        request['vertical']['contacts'][0]['plane'] = 0.5
+        result = validate(prepare(request), [0])
+        self.assertTrue(result['feasible'])
+        self.assertFalse(result['onGround'][1])
 
     def test_resume_preserves_climb_carry_and_previous_collision(self):
         request = problem(3)

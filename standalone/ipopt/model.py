@@ -216,8 +216,9 @@ def validate(problem, yaw):
             tick_caps.append(cap_branch(displacement) if ladder[t] else 0)
             if 'ladderPattern' in problem and ladder[t]:
                 b = problem['ladderPattern'][t][axis]
-                valid = (displacement <= -CAP if b == -1 else displacement >= CAP if b == 1
-                         else -CAP <= displacement <= CAP)
+                valid = (displacement <= -CAP + TOLERANCE if b == -1
+                         else displacement >= CAP - TOLERANCE if b == 1
+                         else -CAP - TOLERANCE <= displacement <= CAP + TOLERANCE)
                 if not valid:
                     cap_mismatches.append({'tick': t, 'axis': axis, 'raw': displacement, 'branch': b})
             if ladder[t]:
@@ -296,7 +297,8 @@ def validate(problem, yaw):
             'missedContacts': missed, 'wrongSideContacts': wrong_side, 'patternMismatches': mismatches,
             'yaw': yaw[:], 'positions': positions, 'velocity': velocities}
     if 'ladderTicks' in problem:
-        result.update(ladderPattern=caps, ladderPatternMismatches=cap_mismatches)
+        result.update(ladderPattern=caps, ladderPatternMismatches=cap_mismatches,
+                      horizontalCollision=previous_hits)
     if vertical:
         result.update(y=y, vy=vy, onGround=grounded, horizontalCollision=previous_hits,
                       verticalFailures=vertical_failures,

@@ -45,14 +45,17 @@ def vertical_step(config, tick, position, velocity, on_ladder, grounded, toleran
     carry = movement
     ground = False
     failures = []
+    if config['jumpVelocity'][tick] is not None and not grounded:
+        failures.append({'state': tick, 'reason': 'jump_requires_ground'})
     for contact in config['contacts']:
         if contact['state'] != tick + 1:
             continue
         plane, direction = contact['plane'], contact['direction']
         if contact.get('step', False):
-            valid = grounded and movement < 0 and 0 < plane - position <= f32(0.6) + tolerance
+            valid = ((grounded or movement < 0) and movement < plane - position
+                     and 0 < plane - position <= f32(0.6) + tolerance)
             if valid:
-                proposed, carry, ground = plane, 0.0, True
+                proposed, carry, ground = plane, 0.0, movement < 0
             else:
                 failures.append({'state': tick + 1, 'reason': 'invalid_step'})
         else:

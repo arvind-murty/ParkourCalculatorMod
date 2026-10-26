@@ -147,7 +147,8 @@ def solve(request, *, seconds=None, stop_on_feasible=None, python_executable=Non
                         if not candidate['feasible']:
                             rejected += 1
                             last_rejection = {k: v for k, v in candidate.items()
-                                              if k not in ('yaw', 'positions', 'velocity')}
+                                              if k not in ('yaw', 'positions', 'velocity', 'y', 'vy', 'onGround',
+                                                           'horizontalCollision', 'ladderPattern')}
                             continue
                         accept(candidate)
                         if problem['stopOnFeasible']:
