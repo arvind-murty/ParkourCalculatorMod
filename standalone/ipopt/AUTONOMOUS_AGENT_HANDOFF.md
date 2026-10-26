@@ -10,6 +10,8 @@ The integration agent's isolated checkout is `/Users/arvindmurty/CS/ParkourCalcu
 
 The detailed integration sequence is in [MOD_INTEGRATION_PLAN.md](MOD_INTEGRATION_PLAN.md). Its first shared deliveries are a reusable fixed-input compiler/process client and a portable scene/start snapshot, before full UI integration. Candidate-row realization and actual Minecraft replay feedback follow. These are planned capabilities; until they land, use the existing compiled request/API and fixtures described below.
 
+For the current block-sequence/minimum-run-ticks task, read [RUN_TICKS_PHYSICS_HANDOFF.md](RUN_TICKS_PHYSICS_HANDOFF.md). It links the in-repo physics mirror and existing run-tick implementation, and explains support geometry, Y-first landing timing, inserted-row coefficients/reindexing and why unresolved cheaper solves prevent a minimum certificate.
+
 The published clean solver is `origin/feature/ipopt-clean`. It adds only `standalone/ipopt/` to upstream main. `feature/ipopt-standalone` at `5ef088b` is the preserved research archive, containing inherited native solver experiments, benchmark tools and extensive traces. Do not merge that archive just to obtain IPOPT. Neither `tools/angle-model-comparison` nor `tools/angle-feasibility-bench` is required by this package.
 
 To create a fresh autonomous worktree using only the clean baseline, run from an existing clone:
