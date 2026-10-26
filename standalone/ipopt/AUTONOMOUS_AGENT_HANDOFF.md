@@ -8,6 +8,8 @@ The autonomous-solve agent owns reducing the information a user must supply: dis
 
 The integration agent's isolated checkout is `/Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-mod-integration`, branch `feature/ipopt-mod-integration`, created from `feature/ipopt-clean` at `498ecc1`. Do not edit that checkout from the autonomous agent. Work in your own worktree. Prefer separate autonomy modules consuming the public solver API; coordinate shared request-schema or numerical-model changes rather than editing the same files concurrently. Do not change the other native-solver agent's handoff or checkout.
 
+The detailed integration sequence is in [MOD_INTEGRATION_PLAN.md](MOD_INTEGRATION_PLAN.md). Its first shared deliveries are a reusable fixed-input compiler/process client and a portable scene/start snapshot, before full UI integration. Candidate-row realization and actual Minecraft replay feedback follow. These are planned capabilities; until they land, use the existing compiled request/API and fixtures described below.
+
 The published clean solver is `origin/feature/ipopt-clean`. It adds only `standalone/ipopt/` to upstream main. `feature/ipopt-standalone` at `5ef088b` is the preserved research archive, containing inherited native solver experiments, benchmark tools and extensive traces. Do not merge that archive just to obtain IPOPT. Neither `tools/angle-model-comparison` nor `tools/angle-feasibility-bench` is required by this package.
 
 To create a fresh autonomous worktree using only the clean baseline, run from an existing clone:
