@@ -1,5 +1,26 @@
 # Standalone IPOPT findings
 
+## Why the optimized 400-input replay is unknown, 2026-10-26
+
+User instruction: keep future work as local commits and do not push unless explicitly requested again. The prior push was an incorrect carry-forward of earlier permission. This investigation makes no product-code change and will not be pushed.
+
+The 400-input candidate still matches the current ladder fixture's physical problem hash. Independently running the scalar continuous validator accepts it with zero violation and objective 691.5810209171883. The unknown verdict belongs to subsequent exact replay/angle realization, whose five-second repair budget expired, not to an IPOPT convergence failure or an infeasibility certificate.
+
+The primary failure is an inconsistent sprint assumption in the compiled optimization coefficients, not merely float angle realization. Every airborne coefficient through the first ladder uses magnitude approximately 0.026. FORCE_45 in the native compiler authors sprint=true, and its `healWallHitSprint` policy is designed to restore sprint after hits the native solver is expected to avoid. This policy does not fit the standalone fixed-contact problem, which deliberately requires those wall hits while climbing.
+
+Observed exact timeline from the realized candidate:
+
+- State 136 has the first ladder/wall hit. Sprint is still true on that completed movement.
+- Processing input 136 observes the preceding horizontal collision and cancels sprint. State 137 records sprint=false. Legacy air acceleration uses a carried movement factor, so the lower approximately 0.020 acceleration takes effect starting input 137. The first capped ticks mask some of the discrepancy; later ladder movement diverges.
+- At state 152, exact X is 0.174005654 blocks above the continuous candidate. By state 189 the difference is 0.269037127 blocks.
+- The required negative-X wall at state 190 is at X=736.4250000119209. The exact uncorrected path reaches only X=736.6725760013390, missing by 0.247575989418 blocks. It actually reaches that declared wall at state 193, three states late. This denies the expected earlier climb carry and subsequently invalidates the remaining declared vertical contacts. The large final Y error is a cascade after leaving the declared event schedule, not evidence that every earlier movement formula is wrong or a prediction from a complete scene.
+
+A diagnostic counterfactual changed only the local replay's incoming air-sprint factor to always use sprint acceleration, matching the optimization's assumption. All declared contact reach failures disappeared, the state-190 wall hit occurred correctly, and the maximum overall position difference from the continuous path fell to 0.00119029446 blocks. Remaining original-row violation was about 0.000602279 at Z@98hi. Thus ordinary float/sine-table realization still needs correction, but it is separate from the much larger sprint-model discrepancy. The counterfactual was confined to temporary probe code and is not a proposed physics change.
+
+Correct next implementation: compile/regenerate the fixed-contact request's acceleration coefficients using the actual wall-aware sprint/input state and legacy movement-factor carry, solve that physically consistent problem, then use angle realization for the smaller residual differences. Keep the native solver's route-avoidance policy unchanged for the other agent. Spending more time snapping the current solution cannot repair the underlying coefficient mismatch reliably.
+
+Evidence: `/tmp/pkc-real11-unknown-explanation.txt`, `/tmp/pkc-real11-unknown-first-ladder.txt`, `/tmp/pkc-real11-unknown-counterfactual.txt`, and the previous `/tmp/pkc-real11-ipopt-local-report.json`. Temporary probe sources are `/tmp/ExplainReal11.java`, `/tmp/ExplainReal11FirstLadder.java`, `/tmp/CounterfactualSprintReplayOracle.java` and `/tmp/ExplainReal11Counterfactual.java`. No Minecraft was launched; the existing compiled local replay and standalone scalar validator supplied these checks. No full numerical suites were repeated for this documentation-only diagnosis.
+
 ## Implemented local replay and scene discovery, 2026-10-26
 
 The user approved local collision discovery after clarifying that wall clipping means stopping the player's movement at a wall. Implemented `StaticScene` for supplied inert collision AABBs, ladder cells, surface friction and explicit geometry coverage. It ports the supported 1.8.9 Y/X/Z clipping order, both step-up alternatives, sneak edge guards, collision flags, blocked-axis velocity resets and post-contact ladder climb carry. Movement queries leaving the supplied bounds fail rather than assuming unseen air. The scene format and local API/CLI are documented in [REPLAY.md](REPLAY.md).
