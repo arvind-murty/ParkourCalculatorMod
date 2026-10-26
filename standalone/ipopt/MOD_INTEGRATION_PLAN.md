@@ -171,7 +171,7 @@ Each item can be one or more ordinary commits. No amending/rebasing of the resea
 
 ## Test and validation policy
 
-Run the 47-test standalone suite with an actual worker when the compiler/protocol/solver adapter changes could affect its behavior. For Java changes run core fast tests; run the required slow tier when native solver/model code or captures are touched, and the very-slow tier when native certification or pipeline fire/guard ordering can change. Maintain Java 8 compatibility in core and exercise its Java 8 launcher for the process adapter. A protocol-only fake worker should cover failure behavior without expensive numerical solves in every unit test.
+Run the 47-test standalone suite with an actual worker when the compiler/protocol/solver adapter changes could affect its behavior. For Java changes run core fast tests. AGENTS.md requires the slow tier for changes under core/.../anglesolver, including a new IPOPT adapter, or to model/capture resources. Add the very-slow tier when native certification or pipeline fire/guard ordering can change. Maintain Java 8 compatibility in core and exercise its Java 8 launcher for the process adapter. A protocol-only fake worker should cover failure behavior without expensive numerical solves in every unit test.
 
 The last clean baseline had 47 standalone tests passing and core fast 849 tests with zero failures/errors and two skipped. Its Java exporter exactly matched the saved 400-input physical request. The handoff smoke checks passed from this worktree. Those are baseline evidence, not verification of the integration proposed here.
 
