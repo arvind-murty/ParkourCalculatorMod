@@ -6,7 +6,7 @@
 
 Given an initial state, an ordered sequence of blocks/supports and relevant surrounding collision geometry, derive candidate transition profiles and the positional constraints needed to visit them. Pass each resulting route to the existing run-ticks search and numerical solver. The output is an accepted continuous trajectory with its chosen transition profiles and run allocation.
 
-An ordered route remains supplied initially. Choosing the route through an arbitrary world is later work. Block solving removes the remaining manually supplied air times and contact/obstacle conditions, rather than replacing the angle optimizer or run-ticks allocator.
+The current prototype still consumes an ordered route. The next route-selection experiment uses a small explicit set of candidate supports; choosing a route through an arbitrary world remains later work. Block solving removes the remaining manually supplied block order, air times and contact/obstacle conditions in stages, rather than replacing the angle optimizer or run-ticks allocator.
 
 ```text
 block/support geometry + initial state + ordered route
@@ -57,6 +57,8 @@ if compiled["status"] == "derived":
 `compiler` is the existing `JavaCompiler` described in README.md. The example demonstrates the orchestration composition; it does not introduce another worker or solver schema.
 
 ## Next milestones
+
+The [Stratfinder investigation](STRATFINDER_INVESTIGATION.md) checks both our native search and Curryocity's external tool. Neither already solves block routes. The immediate next experiment is an optimistic support/profile graph plus a shared pool of route prefixes, using conservative reach checks and the current ordered-route solver as the inner evaluator. Keep several momentum/approach alternatives per block; do not use a single visited flag or a no-turn failure to discard a free-turn route. Start with ordinary profiles and compare against exhaustive enumeration of a small explicit support set before extending the profile families below.
 
 1. **Ordinary profiles and support correctness.** First slice implemented. Extend from declared support planes to explicit finite support collision geometry, keeping plain jump fixtures without captured schedules. Check that earlier descending crossings cannot be skipped unless corresponding outside-support conditions are generated. Initial open-air output supplies only the destination floor event and is not yet a general solid-block scene solve.
 2. **Ceiling and stair-boost profile candidates.** Derive possible ceiling contacts from head clearance and footprint overlap. Model the user's stair-boost abstraction as a short jump profile, often 2 inputs, plus the positional entry constraints that make it applicable. Keep ordinary, ceiling-cancelled and step-cancelled alternatives distinct where geometry permits more than one. The old fixture's 1-input grounded step is a separate non-jump event, not a substitute for this family.
