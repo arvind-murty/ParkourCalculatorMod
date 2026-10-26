@@ -53,3 +53,7 @@ The requested native fast gate `:core:test` ran as well: 791 tests, 3 failures, 
 Logs, full result trajectories and a provenance/fixture-hash manifest are archived in [ipopt-ladder-2026-10-26](solver-traces/ipopt-ladder-2026-10-26/provenance.json). Usage and the schema are documented in [the standalone README](../../standalone/ipopt/README.md). Work remains isolated on `feature/ipopt-standalone`; commits 1 and 2 are `15dc24b` and `052595b`, followed by the capture/fixtures commit containing this record.
 
 The current model deliberately fixes the discovered ladder and contact schedule. It does not validate supporting block geometry or rediscover ladder occupancy after the optimized route changes. General world replay and schedule discovery remain deferred after the user's instruction to use climbing ticks from the JSON. The NLP remains local optimization with bounded cap-regime trials, not a global optimum or infeasibility certificate.
+
+## Fork publication, 2026-10-26
+
+The user requested pushing the completed work to their fork. Verified that `origin` is `https://github.com/arvind-murty/ParkourCalculatorMod.git`, the authenticated account is `arvind-murty`, and the isolated branch is `feature/ipopt-standalone`. The implementation head is `cc04e70`, preceded by the scalar and optimizer commits above. The branch did not previously exist on the fork. Publication uses `git push -u origin feature/ipopt-standalone`, with no force push. This turn adds only this publication record; the existing validation results remain applicable.
