@@ -1,5 +1,17 @@
 # Standalone IPOPT findings
 
+## Recommended next integration steps, 2026-10-26
+
+The highest-priority next milestone is a complete real11 static scene snapshot and end-to-end scene-based replay. Existing 200/400 results validate the declared contact schedule; supplying geometry closes the largest remaining validation gap. Implement a one-time mod export of collision AABBs, ladder cells, friction cells, profile/start/resume information and explicit coverage bounds. Planner-provided scenes should use the same existing schema. Routine solving/testing remains local after capture; no live client is needed on each solve.
+
+Then run the recorded TAS against the snapshot before checking optimized outputs. Require movement-state agreement with captured ground truth and verify the optimized TAS against actual discovered collisions plus every original constraint. Preserve enough event detail for a failed replay to identify the state/input, collision axis/plane or ground/ladder change; supply the discovered schedule back to orchestration for recompilation. The integration layer owns this physical feedback, while the other agent owns route/input retries.
+
+The next integration priority is exact state handoff between short windows: expose replay-derived exit velocity, ground/wall state, yaw, sprint/input timers, carried air factor, jump cooldown and bounding-box state. Test slicing/restoring at ground, wall and ladder transitions against one continuous local replay. Orchestration should splice replay-accepted windows using this complete carried state rather than only the optimizer's X/Z positions and velocities.
+
+Finally stabilize a single standalone compile/solve/realize/validate/export interface with explicit accepted/unknown/error results and structured failure/event/exit-state data. Keep the current subtools inspectable for reproduction. Grow the regression corpus across representative 50-200-input windows and scene/seam edge cases. Additional movement ports should follow concrete route requirements in the limitations ledger; optimizing process-call overhead, adding mod UI and tuning the numerical optimizer are lower priority than completing scene validation and state handoff.
+
+Planning only; no implementation or tests changed in this turn. These notes are committed locally without pushing.
+
 ## Short autonomous-agent handoff, 2026-10-26
 
 Added [RECENT_REPLAY_HANDOFF.md](RECENT_REPLAY_HANDOFF.md) at the user's request and linked it prominently from the older handoff. It records local commit/worktree provenance, wall-aware sprint compilation and air-factor lag, the compile/solve/replay pipeline, reindex/recompile requirements for run-tick search, KEEP versus FORCE_45, API locations, validated 200/400 results and current scene/profile limitations. No message was sent to another agent and no other worktree was changed. Documentation-only; prior verification remains applicable. The handoff is committed locally and is not pushed.
