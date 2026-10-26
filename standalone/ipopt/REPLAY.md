@@ -4,6 +4,8 @@ Replay runs locally in Java. It needs no Minecraft client, server, world directo
 
 The initial profile is Minecraft 1.8.9. It reuses `ExactJumpModel` for float movement arithmetic, the Minecraft sine table, inertia and ladder caps, and `PlayerSprintMachine` for actual row input processing. A movement callback supplies collision results without changing the existing solver's default collision-free path.
 
+The current capability boundary, source map and unported mechanics are listed in [MOVEMENT_PORT.md](MOVEMENT_PORT.md). Collision discovery is implemented for the supported static scene; a complete local replica of every Minecraft movement type is not yet implemented.
+
 ## Two sources of contacts
 
 **Declared contacts** reuse an IPOPT problem's horizontal contacts, vertical contacts and ladder flags. They check reach/approach, place the player on the declared plane and zero the blocked velocity component. A wall hit in a ladder sets the upward carry for the next input tick. Missing a declared contact adds a replay violation; a contact is not granted merely because the optimizer requested it. This mode supports source.startTick = 0. It validates the specified event model and does not discover other obstacles.
@@ -35,9 +37,11 @@ Boxes are world-space `[minX,minY,minZ,maxX,maxY,maxZ]` collision AABBs. Split m
 
 The scene can be produced by the block planner or a future one-time world geometry exporter. Current real11 fixtures contain no complete scene, so their whole-route regression uses declared contacts. Do not infer arbitrary obstacle geometry from the captured trajectory or describe that test as scene discovery parity.
 
-The profile excludes fluids, webs, entity interactions, block changes, teleports, damage, bouncing blocks and other block callbacks. Only Speed, Slowness and Jump Boost row effects are accepted. Other scene fields/effects are rejected. Input resume supports sprint state, previous keys, jump cooldown and standard legacy air factors; a stuck/web resume is rejected. Repeated jump keys use the normal cooldown, although the pipeline's intended inputs are taps. Pitch does not affect the supported horizontal movement.
+The profile excludes fluids, webs, soulsand callbacks, entity interactions, block changes, teleports, damage, bouncing blocks and other block callbacks. Speed, Slowness, Jump Boost and Blindness row effects are accepted. Other scene fields/effects are rejected. Input resume supports sprint state, previous keys, jump cooldown and standard legacy air factors; a stuck/web resume is rejected. Repeated jump keys use the normal cooldown, although the pipeline's intended inputs are taps. Pitch does not affect the supported horizontal movement.
 
 ## Replay and export an existing result
+
+Compile the problem with the mod input state before solving it, particularly when walls can cancel sprint. The exporter does this for 1.8.9; existing legacy benchmark requests need the separate recompilation step in [MOVEMENT_PORT.md](MOVEMENT_PORT.md). Compilation and replay now share the input/sprint/cooldown state and row-realization policy. Re-solving the corrected real11 200/400 cases produces replay-accepted TASes; this supersedes the earlier unknown result from inconsistent sprint coefficients.
 
 Use the existing Gradle init script:
 
