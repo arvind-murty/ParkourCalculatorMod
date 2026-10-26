@@ -157,6 +157,8 @@ Ladder ticks stay fixed when the path changes. Climb-proven cells infer a schedu
 
 ## Validation and limits
 
+Optional local Java replay supports exact movement arithmetic with declared contacts or discovery against a supplied static collision scene, neighboring-angle repair and `SaveIO` TAS export. It requires no running Minecraft client. See [REPLAY.md](REPLAY.md) for scene format, commands, regression evidence and supported mechanics. Continuous Python acceptance and local replay acceptance remain separate results.
+
 The parent validator uses standard-library scalar arithmetic in world coordinates. It reconstructs the path from returned facings, including actual automatic inertia and conditional wall clipping, and checks every requested row. The CasADi worker uses separate sparse state variables and relative positions. Returned positions or success flags are not trusted for acceptance.
 
 These are local optimizations and prescribed-contact continuous trajectories. They are not global optimality or infeasibility certificates, general collision detection, or byte-exact Minecraft validation. Small authored constraints can disagree with the continuous coefficients: the original full real11 route has a recorded mismatch near states 651/652. The solver keeps its tolerances and reports the failed search. Prefer the intended shorter spans and validate realized game behavior separately.
