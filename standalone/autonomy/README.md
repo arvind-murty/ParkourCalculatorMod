@@ -1,0 +1,114 @@
+# Run ticks over a block route
+
+Status, 2026-10-26: **run ticks are prototyped** within the continuous model. [RUN_TICKS_PLAN.md](RUN_TICKS_PLAN.md) records what works, the measured results and deferred work. Current orchestration work has moved to the [block solver](BLOCK_SOLVER_PLAN.md). Replay export and game integration are outside this milestone.
+
+This headless planner implements the first-failing-jump heuristic over the existing standalone IPOPT solver:
+
+1. Try zero added run ticks before each jump.
+2. At a failing jump, try one run tick, then two, and so on.
+3. Before retrying the jump, solve the extended run-up with support constraints on the current block.
+4. Backtrack to the preceding jump when run support cannot be found within the retries/budget or a configured run limit is reached.
+5. Keep the previous prefix as a warm guess, but let IPOPT reoptimize its facings. No facing constraints are added, including during run-up.
+
+A successful independently validated IPOPT solution with correctly compiled movement and constraints is the success criterion for this module. Air times, landing blocks and additional positional conditions are supplied assumptions. Generating those profiles and conditions belongs to the block solver. Unsupported numerical features are rejected rather than silently dropped.
+
+The default returns the first full feasible allocation. `--improve` continues backtracking below the incumbent total to look for a lower count. A positive result is the best found under the search and model, not automatically a certified minimum. Unknown attempts are recorded separately from interval reach contradictions. The result's `minimumProven` is currently true only when the witnessed count reaches the explicit nonnegative/RT lower bound.
+
+`kinds` can contain `walk_off` or `step` as well as `jump`. A walk-off's departure input starts grounded, uses ground acceleration/drag, and has no jump boost. Its following inputs are airborne. Its airtime includes the grounded departure input. The mandatory departure is part of the supplied transition; the cost still counts only additional run ticks before it. A source-exit constraint prevents a claimed walk-off from staying on its original support. `walkOffExits` can supply an axis/direction for this constraint; otherwise the first heuristic selects the exit toward the next region. Alternate exit-face enumeration is not implemented yet. A prescribed step is one grounded non-jump input with a post-horizontal target check; results separately report mandatory ground inputs and optional delays.
+
+## Setup and run
+
+From the isolated worktree root, prepare the coefficient compiler once:
+
+```sh
+./gradlew --configure-on-demand \
+  -Dorg.gradle.java.home=/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home \
+  -I standalone/autonomy/compiler.gradle :core:prepareRunTicksCompiler
+
+python3.12 -m venv .venv-ipopt
+.venv-ipopt/bin/python -m pip install -r standalone/ipopt/requirements.txt
+
+.venv-ipopt/bin/python -m standalone.autonomy.solve \
+  --input standalone/autonomy/fixtures/backtrack.json \
+  --output standalone/autonomy/build/result.json \
+  --seconds 30 --candidate-seconds 2
+```
+
+Use another valid JDK 21 path on another machine. The generated `standalone/autonomy/build/compiler.json` contains a local Java launch command and must be regenerated after moving worktrees or changing the core compiler. The Java process derives usable block footprints with the existing `ConstraintDeriver.deriveFootprint`/`SupportOverlap` code, then compiles candidate ground/jump/input arrays through `JumpPhysicsInputs` and `JumpLinearModel`. The planner assigns those derived bounds to landing/run ticks; it does not implement another block-geometry derivation. Explicit center regions pass through without being expanded again. The optional `--python` argument selects a separate worker interpreter.
+
+The CLI writes the full result atomically and prints a short summary. Exit codes match the standalone API: 0 feasible, 2 unknown, 3 error, 130 cancelled without an incumbent. Cancellation during an improving search retains an already accepted complete route, with termination `cancelled`.
+
+## Route format
+
+```json
+{
+  "version": 1,
+  "initial": {
+    "position": [0.7, 1, 0.5],
+    "velocity": [0, -0.0784000015258789, 0],
+    "yaw": -90
+  },
+  "blocks": [
+    {"id": "start", "bounds": [0, 1, 0, 1], "top": 1},
+    {"id": "goal", "bounds": [4, 5, 0, 1], "top": 1}
+  ],
+  "airtimes": [12],
+  "runBounds": [[0, 6]],
+  "maxTotalRunTicks": 6
+}
+```
+
+Positions/velocities are X,Y,Z. Each support's bounds are minX,maxX,minZ,maxZ. `airtimes[i]` is the supplied valid input count from takeoff to first-grounded state on the next block. A run count excludes the jump input. Zero means jump immediately at that grounded state. The initial run-up counts toward the total.
+
+`runBounds` defaults to 0 through `maxTotalRunTicks` for each jump; the total defaults to 40. These are configurable search limits. With free turning, a player may be able to keep circling on a support, so the planner does not interpret that limit as the block's physical maximum. `supportClearance` defaults to 1e-6 blocks and can be explicitly set to zero for strict-overlap-only acceptance. The default family holds W and sprint; `inputs.sprint` can disable sprint and `inputs.incomingSprint` describes the prior input's sprint state. These are declared effective policies, not a live client key-state compiler. All per-tick facings remain free.
+
+The first family uses normal 1.8.9 movement, no effects, prescribed valid airtimes, and rectangular supports. The default is W-only. Set `inputs.force45` to true for the existing Force 45 policy: diagonal movement except on grounded jump inputs, with all facings free. Heights are route metadata and initial-height checks; the run-ticks module does not derive or verify Y flight physics. It does not derive obstacle collisions, ceiling contacts, step-assist, ladder occupancy, fluids, or finite solid block side faces. It can consume prescribed short-jump/contact profiles and positional rows. A nonempty `obstacles` list is rejected. The result explicitly reports `validationLevel: continuous_horizontal_support_with_supplied_airtimes` and `gameReplay: not_run`; the latter is provenance, not a missing acceptance step for this continuous prototype.
+
+For a captured course without picked geometry, `centerBounds` can supply an authored allowable player-center rectangle instead of block `bounds`. It is not expanded by the player half-width again and is not represented as measured block geometry. Such results report `continuous_horizontal_declared_regions_with_supplied_airtimes`. Extra X/Z rules can be anchored to a leg's departure or run input with `constraints`; those rules follow retiming and no F rules are accepted.
+
+Horizontal support is checked before the landing-producing input's horizontal movement, and on each run input that must retain grounded state. The next jump itself is allowed to use the previous input's grounded flag, preserving one-tick walk-off jumps. Every accepted candidate is independently replayed by the standalone scalar validator and checked with strict AABB support overlap, using the widened legacy float half-width. This establishes the declared continuous support model, not byte-exact game feasibility.
+
+## Search behavior
+
+The planner solves prefixes from the original initial state, carrying momentum through all earlier jumps. It does not reset the player at each block or freeze a single prefix's exit state. Failed jump candidates cause an increment at that jump. An unresolved run-up probe is retried, then causes heuristic backtracking with an unresolved record; it does not establish that every longer or differently seeded run-up is physically impossible.
+
+Before IPOPT, a conservative per-axis interval screen can reject an unreachable support row. Its carry interval includes both survival and zero carry, and its control interval includes every facing. It therefore covers automatic per-axis inertia in the declared continuous model. It is deliberately loose and never drops inertia to assume that extra travel is always helpful. Contacts, ladders, and vertical requests bypass this screen. A rejected run-only prefix excludes its longer run-only extensions under the same earlier allocation; a rejected jump prefix only advances that jump's run count.
+
+Each IPOPT probe uses the configured per-candidate seconds. Unknowns receive up to `--retries` retries, default one, with increased budget and a fallback guess. The outer deadline covers compilation and numerical probes. Worker errors stop the search rather than masquerading as impossible jumps. The original route object and live TAS are never edited.
+
+Result `best` contains allocation, optional-delay cost, independently replayed trajectory and facings, phase/event mapping, and compiled problem hash. `mandatoryGroundTicks` counts prescribed step inputs; `best.groundRunTicks` adds those to the searched delays. `attempts` records compact jump/run probes and diagnostics; `unresolved` contains unknown prefixes that could still beat the best total. `unknownAttempts` includes every unresolved attempt made, including equal/more expensive ones.
+
+## Verification
+
+```sh
+python3 -m unittest discover -s standalone/autonomy/tests -v
+
+PKC_RUN_TICKS_COMPILER="$PWD/standalone/autonomy/build/compiler.json" \
+PKC_IPOPT_PYTHON="$PWD/.venv-ipopt/bin/python" \
+python3 -m unittest discover -s standalone/autonomy/tests -v
+```
+
+The real integration cases find `[0,0]` on two jumps, `[1]` when one initial run tick is required, `[2,0]` after backtracking from a second jump with RT=0, and `[0,0]` on a turning route requiring IPOPT adjustment. Unit cases cover backtracking, unknown support, lower-total improvement, limits, cancellation, event remapping, independent arrays, and free facings. A seeded randomized screen check retains 150 known per-axis-inertia/turning witnesses.
+
+The current worktree's untouched native core suite has three existing failures: CrossJvmDeterminismTest, InertiaFoldingTest, and CostateSmoothingScaleTest. The standalone/autonomy work does not change core sources. Record those separately from this module's tests rather than modifying another agent's numerical work.
+
+## Linkcraft 11 experiment
+
+The copied `fixtures/linkcraft11-j5-j9.json` covers source states 55 through 80: jumps 5 through 9, plus the walk-off at input 64. Its input is the support footprints, captured entry position/velocity, Force 45, and supplied transition types/durations. The original 13 extra authored scalar X/Z rules are discarded. Constraints are generated from the supplied support regions and run allocation. Recorded facings are absent; initial yaw is only a zero-valued guess. The fixture's footprints come from the save's landing regions and are identified as declared center regions rather than measured block shapes.
+
+```sh
+.venv-ipopt/bin/python -m standalone.autonomy.solve \
+  --input standalone/autonomy/fixtures/linkcraft11-j5-j9.json \
+  --output standalone/autonomy/build/linkcraft-result.json \
+  --seconds 60 --candidate-seconds 3
+```
+
+The original allocation is `[0,0,0,0,0,1]`: five jump transitions and one mandatory walk-off, with one optional run input before the last jump. The footprint-only planner found `[0,0,0,0,0,0]` in about 0.47 seconds, shortening the supplied 25-input section to 24 inputs. Acceptance uses the unchanged 1e-7 scalar tolerance plus the independent support/exit predicates. This is a successful numerical solve under the declared timing/footprint model.
+
+The walk-off starts at local input 9: grounded with no Jump, followed by three air inputs, landing at state 13. Its compiled acceleration magnitude is about .13 rather than the approximately .3274 sprint-jump input magnitude. The accepted departure lies outside the source region. As a separate earlier diagnostic, the original recorded facings on the original allocation pass even the original 13 additional scalar rules with zero violation; those facings were not fed to search.
+
+`python3 -m standalone.autonomy.linkcraft --input /path/to/real/11.json --output /path/to/section.json --start 55 --end 80` regenerates the small fixture. Without expanded mode the extractor rejects missing complete landing regions and grounded height changes.
+
+The full jumps 0-16 experiment is now implemented and documented in [experiments/linkcraft11-j0-j16/README.md](experiments/linkcraft11-j0-j16/README.md). It succeeds in about 81 seconds with 12 ground run inputs, including one mandatory step, and zero final scalar violation. It exercises incrementing and backtracking at the late jumps rather than relying on the easy zero-run subsection.
+
+For full-route extraction, `--expanded` records explicit assumptions for missing normal grid blocks, extends a same-width coplanar standing strip from grounded samples, and preserves step/early-entry contact phases. A landing region and standing region may differ: `standingBounds` is raw support geometry for run inputs, while `centerBounds` is the landing region. The Java adapter derives both with the existing footprint helper. `landingPhases` selects pre/post-horizontal landing checks; `contactEntries` keeps the player outside a target until the prescribed crossing and inside at its entry state. These are block-derived positional conditions, not facing constraints.

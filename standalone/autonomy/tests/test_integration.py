@@ -5,6 +5,7 @@ from pathlib import Path
 import unittest
 
 from standalone.autonomy import find_route, prepare_route, schedule
+from standalone.autonomy.block_profiles import compile_open_air_route
 from standalone.autonomy.compiler import JavaCompiler
 from standalone.autonomy.route import supports
 
@@ -16,6 +17,19 @@ FIXTURES = Path(__file__).parents[1] / 'fixtures'
 
 @unittest.skipUnless(CONFIG and RUNTIME, 'Set PKC_RUN_TICKS_COMPILER and PKC_IPOPT_PYTHON')
 class IntegrationTests(unittest.TestCase):
+    def test_blocks_without_supplied_airtimes_feed_the_existing_run_search(self):
+        request = json.loads((FIXTURES / 'blocks-flat-two-jumps.json').read_text())
+        self.assertNotIn('airtimes', request)
+        compiled = compile_open_air_route(request)
+        self.assertEqual(compiled['status'], 'derived')
+        self.assertEqual(compiled['route']['airtimes'], [12, 12])
+        with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
+            result = find_route(compiled['route'], compiler, seconds=25, candidate_seconds=3,
+                                retries=0, python_executable=RUNTIME)
+        self.assertEqual(result['status'], 'feasible', result)
+        self.assertEqual(result['best']['allocation'], [0, 0])
+        self.assertLessEqual(result['best']['candidate']['violation'], 1e-7)
+
     def test_java_compiles_ground_jump_and_air_with_the_existing_model(self):
         r = prepare_route(json.loads((FIXTURES / 'one-required-run-tick.json').read_text()))
         plan = schedule(r, [1])
