@@ -49,6 +49,8 @@ The scene producer must not encode unsupported block behavior as an inert box an
 
 ## Validation boundaries
 
+Final validation against the actual world belongs to the mod. The standalone result is a TAS JSON checked against the supplied movement/block contract, which the user can import and replay in Minecraft later. A complete scene export is optional for this workflow. Conditional accuracy requires that declarations cover all relevant swept obstructions and support/contact/ladder/friction states; endpoint bounds alone do not establish that completeness.
+
 **Declared-contact replay** checks the supplied wall/Y contacts and ladder schedule; it does not discover other obstacles. It currently requires source.startTick = 0. Reach/approach failures and changed ground/contact assumptions reject acceptance. It provides a strong movement regression for the recorded real11 route, but it is not a proof about all blocks in the actual world.
 
 **Scene replay** discovers contacts from supplied collision shapes, ladder cells and friction cells. Its bounds are an explicit assertion that all relevant geometry, including empty space, is supplied. Queries leaving coverage fail. The current real11 fixtures have no complete scene snapshot, so the real11 400-tick result uses declared contacts; scene discovery is separately tested with supplied geometry.

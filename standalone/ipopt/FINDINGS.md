@@ -1,5 +1,15 @@
 # Standalone IPOPT findings
 
+## Validation boundary clarified by the user, 2026-10-26
+
+The user assigned final validation against the actual Minecraft world to the mod. The standalone pipeline should solve, realize exact executable inputs, validate against its declared block/movement contract and export the existing mod-loadable TAS JSON. The user can load that file in Minecraft later for inspection and actual-world validation. A complete scene export and in-world parity run are therefore not prerequisites for this standalone milestone; the preceding scene-capture-first priority is superseded.
+
+Accuracy is conditional on the supplied contract being complete for the supported physics. Constraints must cover potential obstructions over the swept player volume between tick states, required contact reach/approach and face extents, ground/support/ceiling/step transitions, friction and ladder occupancy/climb timing. Endpoint position bounds alone do not establish those properties. All collision consequences, input/sprint carry and resume state must be consistent. The replay cannot prove the absence of undeclared blocks or validate unported block callbacks; those remain in the documented limitations and final mod/world check.
+
+Next priorities under this boundary: make the declared-event/clearance assumptions explicit and checkable; ensure one standalone command produces a reloaded/revalidated SaveIO TAS and useful failure report; verify exact state handoff between windows. A supplied static scene remains an optional stronger local validation backend, not a mandatory dependency. The mod already consumes the save schema used by the exporter, so manual import/replay is the final step rather than a new input format.
+
+Documentation-only clarification; no numerical behavior or tests changed. Local commit only, no push.
+
 ## Recommended next integration steps, 2026-10-26
 
 The highest-priority next milestone is a complete real11 static scene snapshot and end-to-end scene-based replay. Existing 200/400 results validate the declared contact schedule; supplying geometry closes the largest remaining validation gap. Implement a one-time mod export of collision AABBs, ladder cells, friction cells, profile/start/resume information and explicit coverage bounds. Planner-provided scenes should use the same existing schema. Routine solving/testing remains local after capture; no live client is needed on each solve.

@@ -1,5 +1,7 @@
 # Replay and movement handoff, 2026-10-26
 
+Latest boundary: final actual-world validation belongs to the mod. Standalone should validate the declared block/movement contract and export the existing TAS JSON; the user imports and inspects it in Minecraft later. A complete scene export is optional. For conditional local accuracy, declarations must cover swept clearance and support/contact/ladder/friction behavior, not just endpoint bounds. Integration priorities are explicit contract checks, reliable JSON handoff and exact window state carry.
+
 Implementation: `/Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-mod-integration`, branch `feature/ipopt-mod-integration`. Relevant commits: `133b48c` (local replay), `af12801` (correct movement compilation), `264f6b9` (limitations/source map). The latest commits are local, so do not assume the remote has them. Inspect/import changes into your own worktree; do not edit this integration checkout. No pushes without an explicit user request.
 
 **Important fix:** required wall hits cancel sprint. Legacy air acceleration carries the previous tick's sprint factor, so its decrease/recovery lags one tick. Old real11 benchmark arrays assume sprint through these hits. Recompile them before game replay; their old feasibility/objective claims do not describe the corrected physics.
