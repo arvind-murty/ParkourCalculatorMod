@@ -3,6 +3,9 @@ import json
 import math
 import os
 import pathlib
+import subprocess
+import sys
+import tempfile
 import unittest
 
 from standalone.ipopt.model import prepare, validate
@@ -96,6 +99,41 @@ class IntegrationTests(unittest.TestCase):
         result = solve(request, seconds=3, python_executable=RUNTIME)
         self.assertTrue(result['feasible'], result)
         self.assertAlmostEqual(result['candidate']['objective'], math.sqrt(0.2 ** 2 - 0.15000000596046448 ** 2), places=6)
+
+    def test_real11_ladders_and_vertical_replay(self):
+        for ticks, minimum in [(200, 737.51), (400, 691.57)]:
+            with self.subTest(ticks=ticks):
+                path = pathlib.Path(__file__).parents[1] / 'fixtures' / ('real11-' + str(ticks) + '-ladders.json.gz')
+                with gzip.open(path, 'rt') as stream:
+                    request = json.load(stream)
+                result = solve(request, seconds=10, python_executable=RUNTIME)
+                self.assertTrue(result['feasible'], result)
+                candidate = validate(prepare(request), result['candidate']['yaw'])
+                self.assertTrue(candidate['feasible'])
+                self.assertGreaterEqual(candidate['objective'], minimum)
+                self.assertEqual(candidate['verticalFailures'], [])
+                self.assertEqual(candidate['ladderPatternMismatches'], [])
+                self.assertEqual(candidate['y'], request['vertical']['referencePosition'])
+                self.assertEqual(candidate['vy'], request['vertical']['referenceVelocity'])
+                for t, active in enumerate(request['ladderTicks'][:-1]):
+                    if active:
+                        self.assertTrue(all(abs(candidate['positions'][t + 1][a] - candidate['positions'][t][a])
+                                            <= 0.15000000596046448 + 1e-7 for a in range(2)))
+                print('real11 ladder', ticks, 'seconds', round(result['elapsedSeconds'], 3),
+                      'objective', candidate['objective'], 'violation', candidate['violation'])
+
+    def test_cli_attaches_ladder_capture(self):
+        directory = pathlib.Path(__file__).parents[1] / 'fixtures'
+        with tempfile.TemporaryDirectory() as target:
+            output = pathlib.Path(target) / 'result.json'
+            completed = subprocess.run([sys.executable, '-m', 'standalone.ipopt.solve', '--python', RUNTIME,
+                                        '--input', str(directory / 'real11-200.json.gz'), '--seconds', '10',
+                                        '--ladder-capture', str(directory / 'real11-ladder-evidence.json.gz'),
+                                        '--output', str(output)], capture_output=True, text=True, timeout=15)
+            self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+            result = json.loads(output.read_text())
+            self.assertEqual(len(result['candidate']['y']), 201)
+            self.assertEqual(result['candidate']['verticalFailures'], [])
 
 
 if __name__ == '__main__':

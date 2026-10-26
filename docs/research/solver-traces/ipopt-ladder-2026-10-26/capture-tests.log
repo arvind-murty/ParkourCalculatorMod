@@ -1,0 +1,10 @@
+test_climb_signatures_include_entry_and_idle_ladder_states (standalone.ipopt.tests.test_capture.CaptureTests.test_climb_signatures_include_entry_and_idle_ladder_states) ... ok
+test_mid_climb_start_preserves_incoming_velocity_and_previous_hit (standalone.ipopt.tests.test_capture.CaptureTests.test_mid_climb_start_preserves_incoming_velocity_and_previous_hit) ... ok
+test_profile_range_and_initial_state_mismatches_are_rejected (standalone.ipopt.tests.test_capture.CaptureTests.test_profile_range_and_initial_state_mismatches_are_rejected) ... ok
+test_vertical_reference_failure_cannot_be_accepted_as_feasible (standalone.ipopt.tests.test_capture.CaptureTests.test_vertical_reference_failure_cannot_be_accepted_as_feasible) ... ok
+test_vertical_reference_replays_capture_exactly (standalone.ipopt.tests.test_capture.CaptureTests.test_vertical_reference_replays_capture_exactly) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.036s
+
+OK

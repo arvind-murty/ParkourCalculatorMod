@@ -1,0 +1,101 @@
+{
+  "sourceCapture": "/Users/arvindmurty/Downloads/LinkcraftII_Competition_01/real/11.json",
+  "sourceFileSha256": "af5d2d1bc6e0ab466f1b6cf309f3a26e76e4a63765ac8b15ff02fb4ad55d28bf",
+  "workerPython": "/Users/arvindmurty/CS/ParkourCalculatorMod/tools/angle-model-comparison/.venv/bin/python",
+  "workerVersions": {
+    "python": "3.12.2",
+    "casadi": "3.8.1",
+    "numpy": "2.5.4"
+  },
+  "secondsPerSolve": 10,
+  "sourceAndOriginalFixturesUnchanged": true,
+  "model": "prescribed ladder occupancy, horizontal and vertical contacts, tapped jumps, per-axis inertia, full original constraints",
+  "fixtures": {
+    "real11-200-ladders.json.gz": "feaa00f2ac1c8cfb832450c6ec98334431b0a4b0235a0dc46237048debe14405",
+    "real11-400-ladders.json.gz": "5752e14d237540ab795a665f8c3dda881bb2ca9b39b58eb8b6140f8821102530",
+    "real11-ladder-evidence.json.gz": "326eebedb16e4d4fca25690886dd7c278988258093e6fe4de53d304e085980f9"
+  },
+  "standaloneTests": {
+    "passed": 47,
+    "seconds": 24.231,
+    "followUpMalformedCaptureTests": 5
+  },
+  "coreTests": {
+    "run": 791,
+    "failed": 3,
+    "skipped": 33,
+    "baselineFailures": [
+      "CrossJvmDeterminismTest.searchPathIsBitIdenticalAcrossJvms",
+      "InertiaFoldingTest.loopmmInertiaTermDropsOutOfFoldedModel",
+      "CostateSmoothingScaleTest.bothRecoveryPathsUseObjectiveDirectionOnlyForVanishingCostates"
+    ]
+  },
+  "results": [
+    {
+      "ticks": 200,
+      "seed": "cold",
+      "result": "real11-200-cold-result.json.gz",
+      "problemSha256": "4c90614f32e3982f3f61dc666542d59c258b603bb86991a52214da84ce804177",
+      "feasible": true,
+      "objective": 737.5142588029789,
+      "elapsedSeconds": 0.7501924149692059,
+      "violation": 0.0,
+      "exactRecordedY": true,
+      "exactRecordedVy": true,
+      "exactRecordedGround": true,
+      "ladderInputTicks": 22,
+      "verticalContacts": 50,
+      "stepContacts": 8,
+      "resume": {
+        "y": 21.166109260938214,
+        "vy": 0.08307781780646721,
+        "onGround": false,
+        "previousHorizontalCollision": false
+      }
+    },
+    {
+      "ticks": 400,
+      "seed": "cold",
+      "result": "real11-400-cold-result.json.gz",
+      "problemSha256": "22e39bbfb06c0bb5f8d3fab8df1aa4fa814e83529f44af5e8cea7da242205975",
+      "feasible": true,
+      "objective": 691.5810209171883,
+      "elapsedSeconds": 3.5609321296215057,
+      "violation": 0.0,
+      "exactRecordedY": true,
+      "exactRecordedVy": true,
+      "exactRecordedGround": true,
+      "ladderInputTicks": 34,
+      "verticalContacts": 81,
+      "stepContacts": 9,
+      "resume": {
+        "y": 16.603555084146286,
+        "vy": 0.11760000228881837,
+        "onGround": false,
+        "previousHorizontalCollision": true
+      }
+    },
+    {
+      "ticks": 400,
+      "seed": "warmNoInertiaWithFallback",
+      "result": "real11-400-warmNoInertiaWithFallback-result.json.gz",
+      "problemSha256": "22e39bbfb06c0bb5f8d3fab8df1aa4fa814e83529f44af5e8cea7da242205975",
+      "feasible": true,
+      "objective": 691.5810209161803,
+      "elapsedSeconds": 3.67700058221817,
+      "violation": 0.0,
+      "exactRecordedY": true,
+      "exactRecordedVy": true,
+      "exactRecordedGround": true,
+      "ladderInputTicks": 34,
+      "verticalContacts": 81,
+      "stepContacts": 9,
+      "resume": {
+        "y": 16.603555084146286,
+        "vy": 0.11760000228881837,
+        "onGround": false,
+        "previousHorizontalCollision": true
+      }
+    }
+  ]
+}

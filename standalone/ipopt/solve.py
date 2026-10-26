@@ -9,8 +9,10 @@ import threading
 
 if __package__:
     from .solver import solve
+    from .capture import attach_capture
 else:
     from solver import solve
+    from capture import attach_capture
 
 
 def read_json(path):
@@ -45,6 +47,8 @@ def main():
     parser.add_argument('--threshold', type=float)
     parser.add_argument('--no-recorded-walls', action='store_true')
     parser.add_argument('--initial-solution', type=pathlib.Path)
+    parser.add_argument('--ladder-capture', type=pathlib.Path)
+    parser.add_argument('--capture-start', type=int)
     args = parser.parse_args()
     cancel = threading.Event()
     import signal
@@ -59,6 +63,10 @@ def main():
         if args.initial_solution:
             request.setdefault('fallbackYaw', request['yaw'])
             request['yaw'] = read_json(args.initial_solution)['candidate']['yaw']
+        if args.ladder_capture:
+            request = attach_capture(request, read_json(args.ladder_capture), args.capture_start)
+        elif args.capture_start is not None:
+            raise ValueError('--capture-start requires --ladder-capture')
         result = solve(request, seconds=args.seconds, stop_on_feasible=True if args.feasibility_only else None,
                        python_executable=args.python_executable, cancel_event=cancel)
     except (ValueError, KeyError, TypeError, OSError) as error:

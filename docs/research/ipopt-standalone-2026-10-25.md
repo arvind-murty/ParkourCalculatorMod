@@ -196,3 +196,7 @@ The user clarified that upward climb movement occurs on the following tick and c
 ## Confirmed previous-collision state contract, 2026-10-26
 
 The user confirmed that the needed collision datum is the after-movement horizontal collision from the previous tick. Recorded its tick indexing and seam/resume implications in the ladder implementation plan. Current movement generates the flag for the next state; current ladder occupancy combines with the previous flag to establish climb carry when reconstructed at tick start. No code or tests changed.
+
+## Prescribed ladder implementation, 2026-10-26
+
+Implemented standalone ladder caps in the sparse NLP, bounded cap-regime exploration, independent vertical replay with prescribed floor/ceiling/step contacts, captured ladder/Y attachment, tapped jump inputs and resumable state. The user redirected geometry discovery to the climbing ticks in Real11, so ladder occupancy remains prescribed from captured evidence. Separate copied 200/400 fixtures solve and pass every continuous-model row; their Y positions, stored Y velocities and ground states exactly match the capture. All 47 standalone tests pass. The Java fast gate retains its three previously recorded failures. Full implementation details, final timings, scope limits and archived evidence are in [the implementation record](ipopt-ladder-implementation-2026-10-26.md).
