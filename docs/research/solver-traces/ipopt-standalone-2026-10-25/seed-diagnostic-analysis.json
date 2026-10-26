@@ -1,0 +1,43 @@
+{
+  "carryPhaseYawRmsDifferenceDegrees": 10.745944774176406,
+  "carryPhaseYawMaxDifferenceDegrees": 119.64104843176722,
+  "carryPhaseTicksDifferingOverOneDegree": 77,
+  "carryInferredZeroDifferences": [
+    {
+      "tick": 201,
+      "axis": "Z",
+      "cold": 2,
+      "warm": 0
+    },
+    {
+      "tick": 238,
+      "axis": "Z",
+      "cold": 0,
+      "warm": 2
+    },
+    {
+      "tick": 246,
+      "axis": "Z",
+      "cold": 0,
+      "warm": 2
+    },
+    {
+      "tick": 255,
+      "axis": "X",
+      "cold": 2,
+      "warm": 0
+    },
+    {
+      "tick": 257,
+      "axis": "X",
+      "cold": 0,
+      "warm": 2
+    }
+  ],
+  "carryPhaseColdNominalEndpoint": 691.4017529226171,
+  "carryPhaseWarmNominalEndpoint": 691.4017530096013,
+  "priorWarmIncumbent": 691.2422668155506,
+  "polishedWarmIncumbent": 691.3930032027768,
+  "coldBest": 691.4017522466784,
+  "noInertiaSeedGoodPattern": 691.4017521829334
+}
