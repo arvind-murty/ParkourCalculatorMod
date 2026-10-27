@@ -10,6 +10,36 @@ from standalone.ipopt.model import fingerprint
 
 
 class BlockRouteWitnessTests(unittest.TestCase):
+    def test_saved_runoffs_validate_no_jump_physics_and_actual_source_exits(self):
+        root = Path(__file__).parents[1]
+        artifacts = root / 'experiments' / 'runoff-profiles'
+        summaries = json.loads((artifacts / 'summary.json').read_text())
+        for label, summary in summaries.items():
+            with self.subTest(label=label):
+                request = prepare(json.loads((artifacts / (label + '-request.json')).read_text()))
+                result = json.loads((artifacts / (label + '-result.json')).read_text())
+                fixture = root / 'fixtures' / summary['fixture']
+                self.assertEqual(hashlib.sha256(fixture.read_bytes()).hexdigest(), summary['fixtureSha256'])
+                self.assertEqual(fingerprint(request), summary['fullProblemHash'])
+                best = result['best']
+                checked = validate(request, best['candidate']['yaw'])
+                self.assertTrue(checked['feasible'], checked)
+                self.assertEqual(checked['onGround'], best['plan']['grounded'] + [True])
+                self.assertEqual(checked['y'], best['candidate']['y'])
+                self.assertEqual(contact_conflicts(best['contactChecks'], best['plan'], checked), [])
+                for state, block, kind in best['plan']['supportChecks']:
+                    self.assertTrue(supports(best['route']['blocks'][block], *checked['positions'][state], kind=kind))
+                for state, block in best['plan']['exitChecks']:
+                    self.assertFalse(supports(best['route']['blocks'][block], *checked['positions'][state], kind='run'))
+                jump_inputs = [i for i, jumping in enumerate(best['plan']['jump']) if jumping]
+                self.assertEqual(jump_inputs, summary['jumpInputs'])
+                self.assertEqual(best['plan']['ticks'], summary['ticks'])
+                self.assertEqual(best['route']['airtimes'], summary['airtimes'])
+                self.assertEqual([p['profileKind'] for p in best['profiles']], summary['profileKinds'])
+                for event, profile in zip(best['plan']['events'], best['profiles']):
+                    if profile['profileKind'] == 'run_off':
+                        self.assertTrue(all(v is None for v in request['vertical']['jumpVelocity'][event['jump']:event['landing']]))
+
     def test_saved_height_and_stair_routes_include_valid_retimed_y_contacts(self):
         root = Path(__file__).parents[1]
         artifacts = root / 'experiments' / 'height-and-stairs'

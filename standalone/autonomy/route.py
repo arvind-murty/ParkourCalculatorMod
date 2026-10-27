@@ -48,7 +48,7 @@ def prepare_route(request):
     if not isinstance(kinds, list) or len(kinds) != len(airtimes) or any(k not in ('jump', 'walk_off', 'step') for k in kinds):
         raise ValueError('Transition kinds must be jump, walk_off or step')
     for value, kind in zip(airtimes, kinds):
-        integer(value, 'airtime', 1 if kind == 'step' else 2, 200)
+        integer(value, 'airtime', 2 if kind == 'jump' else 1, 200)
         if kind == 'step' and value != 1:
             raise ValueError('A prescribed step takes one grounded movement input')
     phases = route.setdefault('landingPhases', ['post' if k == 'step' else 'pre' for k in kinds])

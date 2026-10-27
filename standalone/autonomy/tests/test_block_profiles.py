@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import unittest
 
-from standalone.autonomy.block_profiles import compile_open_air_route, ordinary_jump_profile, stair_jump_profile
+from standalone.autonomy.block_profiles import compile_open_air_route, ordinary_jump_profile, runoff_profile, stair_jump_profile
 from standalone.ipopt.ladder import REST_CARRY
 from standalone.ipopt.model import prepare, validate
 
@@ -12,6 +12,33 @@ FIXTURE = Path(__file__).parents[1] / 'fixtures' / 'blocks-flat-two-jumps.json'
 
 
 class BlockProfileTests(unittest.TestCase):
+    def test_runoff_profiles_use_the_same_vertical_model_without_a_jump_impulse(self):
+        for drop, expected in [(.0625, 1), (.125, 2), (.25, 3), (.5, 4), (1, 5)]:
+            with self.subTest(drop=drop):
+                profile = runoff_profile(2, 2 - drop)
+                self.assertEqual(profile['airtime'], expected)
+                self.assertEqual(profile['jump'], [False] * expected)
+                self.assertEqual(profile['grounded'], [True] + [False] * (expected - 1) + [True])
+                request = prepare({'version': 1, 'ticks': expected, 'position': [0, 0], 'velocity': [0, 0],
+                                   'magnitude': [0] * expected, 'friction': [.91] * expected,
+                                   'base': [0] * expected, 'yaw': [0] * expected,
+                                   'objective': {'axis': 'X', 'sense': 'MAX', 'tick': expected},
+                                   'vertical': {'profile': 'minecraft-1.8.9', 'position': 2, 'velocity': REST_CARRY,
+                                                'onGround': True, 'previousHorizontalCollision': False,
+                                                'sneak': [False] * expected, 'jumpVelocity': [None] * expected,
+                                                'contacts': profile['contacts'],
+                                                'referencePosition': profile['position'],
+                                                'referenceVelocity': profile['velocity']}})
+                result = validate(request, [0] * expected)
+                self.assertTrue(result['feasible'], result)
+                self.assertEqual(result['onGround'], profile['grounded'])
+                self.assertLess(profile['airtime'], ordinary_jump_profile(2, 2 - drop)['airtime'])
+
+    def test_runoff_cannot_rise_and_respects_its_simulation_horizon(self):
+        self.assertIsNone(runoff_profile(1, 1))
+        self.assertIsNone(runoff_profile(1, 1.5))
+        self.assertIsNone(runoff_profile(1, 0, max_inputs=2))
+
     def test_half_block_stair_has_a_takeoff_and_one_airborne_input(self):
         profile = stair_jump_profile(1, 1.5)
         self.assertEqual(profile['airtime'], 2)

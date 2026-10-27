@@ -2,7 +2,7 @@ import copy
 import unittest
 
 from standalone.autonomy.block_contacts import avoid_contact_rows, contact_conflicts, floor_checks
-from standalone.autonomy.block_profiles import ordinary_jump_profile, stair_jump_profile
+from standalone.autonomy.block_profiles import ordinary_jump_profile, runoff_profile, stair_jump_profile
 from standalone.autonomy.block_search import compile_block_path, prepare_scene
 from standalone.autonomy.route import schedule
 
@@ -16,6 +16,21 @@ def descending_scene():
 
 
 class FloorContactTests(unittest.TestCase):
+    def test_runoff_checks_the_departure_floor_on_its_first_input(self):
+        scene = prepare_scene(descending_scene())
+        profile = runoff_profile(2, 1)
+        profile['profileKind'] = 'run_off'
+        checks = floor_checks(scene, ['start', 'goal'], [profile])
+        self.assertIn(('start', 0), [(c['block']['id'], c['offset']) for c in checks if c['reason'] == 'earlier_floor'])
+
+    def test_no_jump_first_movement_uses_its_own_step_eligibility(self):
+        scene = prepare_scene(descending_scene())
+        scene['blocks'].append({'id': 'low_step', 'bounds': [3, 4, 0, 1], 'top': 2.25})
+        fall = floor_checks(scene, ['start', 'goal'], [runoff_profile(2, 1)])
+        jump = floor_checks(scene, ['start', 'goal'], [ordinary_jump_profile(2, 1)])
+        self.assertTrue(any(c['block']['id'] == 'low_step' and c['reason'] == 'unplanned_stair' for c in fall))
+        self.assertFalse(any(c['block']['id'] == 'low_step' and c['reason'] == 'unplanned_stair' for c in jump))
+
     def test_ordinary_profile_must_avoid_an_unplanned_first_movement_stair_cancel(self):
         scene = descending_scene()
         scene['blocks'][1]['top'] = 2.5

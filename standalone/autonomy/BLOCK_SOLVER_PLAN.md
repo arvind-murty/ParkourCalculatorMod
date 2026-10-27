@@ -6,7 +6,7 @@
 
 Given an initial state, an ordered sequence of blocks/supports and relevant surrounding collision geometry, derive candidate transition profiles and the positional constraints needed to visit them. Pass each resulting route to the existing run-ticks search and numerical solver. The output is an accepted continuous trajectory with its chosen transition profiles and run allocation.
 
-The original run-ticks API consumes an ordered route. The [route-selection prototype](BLOCK_ROUTE_SEARCH.md) now chooses intermediate supports from an unordered set at different heights, with only the start and goal fixed, and selects ordinary or short stair profiles. Inputs stay sprint-jump plus sprint 45; their facings remain free. Choosing a route through an arbitrary world and deriving ceiling/obstacle profiles remain later work. Block solving removes the remaining manually supplied block order, air times and contact/obstacle conditions in stages, rather than replacing the angle optimizer or run-ticks allocator.
+The original run-ticks API consumes an ordered route. The [route-selection prototype](BLOCK_ROUTE_SEARCH.md) now chooses intermediate supports from an unordered set at different heights, with only the start and goal fixed, and selects ordinary jumps, short stairs or no-jump run-offs. Inputs stay sprint-jump plus sprint 45; their facings remain free. Choosing a route through an arbitrary world and deriving ceiling/obstacle profiles remain later work. Block solving removes the remaining manually supplied block order, air times and contact/obstacle conditions in stages, rather than replacing the angle optimizer or run-ticks allocator.
 
 ```text
 block/support geometry + initial state + ordered route
@@ -18,7 +18,7 @@ block/support geometry + initial state + ordered route
 
 The three layers remain distinct: orchestration generates the discrete alternatives, the solver optimizes facings for one numerical request, and replay can consume a chosen result later. Orchestration owns the adapter between profiles and solver requests. It does not depend on recorded facings or a game replay service.
 
-The search objective is now fixed by user ruling: minimize total elapsed inputs, then optimize the configured numerical objective among equal-duration routes and allocations. [SEARCH_OBJECTIVE.md](SEARCH_OBJECTIVE.md) supersedes the earlier first-feasible/run-count-first block-route policy. Normal support-before-horizontal tick ordering is always modeled, including a jump starting beyond an edge. Run-off is a separate no-jump transition: supplied run-offs work in the ordered-route adapter, while automatic run-off profile generation remains unimplemented.
+The search objective is now fixed by user ruling: minimize total elapsed inputs, then optimize the configured numerical objective among equal-duration routes and allocations. [SEARCH_OBJECTIVE.md](SEARCH_OBJECTIVE.md) supersedes the earlier first-feasible/run-count-first block-route policy. Normal support-before-horizontal tick ordering is always modeled, including a jump starting beyond an edge. Run-off is another no-jump profile in that search: Y-derived fall time, compiled movement constants, a profile-specific reach bound and four source-exit alternatives. The ordered-route adapter retains the legacy `walk_off` serialization.
 
 ## What exists and what does not
 
@@ -28,14 +28,14 @@ The search objective is now fixed by user ruling: minimize total elapsed inputs,
 | Single-support footprints and wall-face derivation | Existing Java `ConstraintDeriver` and `SupportOverlap`; reuse them |
 | Scalar Y recurrence and prescribed floor/ceiling/step contacts | Existing `standalone.ipopt.ladder`; reuse it |
 | Ordinary open-air air time from source/target heights | First profile-compiler slice implemented in `block_profiles.py` |
-| Intermediate support selection with fixed endpoints and sprint-jump/sprint-45 inputs | Implemented for the ordinary/stair support-plane family in `block_search.py`, including repeated visits |
+| Intermediate support selection with fixed endpoints and sprint-jump/sprint-45 inputs | Implemented for the ordinary/stair/run-off support-plane family in `block_search.py`, including repeated visits |
 | Optimistic transition bounds, reverse goal reachability and a route-prefix pool | Implemented, with separate accounting for heuristic pool drops and unknown numerical attempts |
 | Different-height route edges and earlier-floor consistency | Implemented with the existing Y simulation and bounded outside-face positional branching |
 | Short half-block staircase profiles and their entry constraints | Implemented as takeoff plus one air input, with ordinary alternatives retained and run contacts retimed |
-| Run-off profiles, leaving a support without jumping | Supplied transitions supported as legacy `walk_off`; automatic fall-profile generation and route selection not implemented |
+| Run-off profiles, leaving a support without jumping | Automatically derived for lower supports, with all four exit faces, motion-specific reach pruning and shared route/run search; supplied `walk_off` remains compatible |
 | Finite solid side faces, general obstacle corridors and collision consistency | Not implemented in the new block path |
 | Ceiling placement/contact selection and ceiling-induced cancellation | Next pass |
-| Choosing among ordinary/stair profiles and their approach faces, with per-path run-count search | Implemented for the current floor/contact family; broader profile families remain later work |
+| Choosing among ordinary/stair/run-off profiles and their approach/exit faces, with per-path run-count search | Implemented for the current floor/contact family; broader profile families remain later work |
 | Arbitrary block-route discovery, ladders, fluids and effects | Later extensions |
 
 ## First slice: ordinary open-air profiles

@@ -6,7 +6,7 @@ from collections import deque
 
 from standalone.ipopt.model import integer, number
 from .block_contacts import floor_checks, solve_contact_branches
-from .block_profiles import compile_open_air_route, ordinary_jump_profile, stair_jump_profile
+from .block_profiles import compile_open_air_route, ordinary_jump_profile, runoff_profile, stair_jump_profile
 from .route import prepare_route
 from .ranking import candidate_rank, objective_spec
 
@@ -124,20 +124,29 @@ def build_transition_graph(scene, compiler, *, seconds=5):
             if key not in profile_cache:
                 ordinary = ordinary_jump_profile(*key, max_inputs=scene['maxFlightInputs'])
                 stair = stair_jump_profile(*key) if scene['stairBoost'] else None
+                runoff = runoff_profile(*key, max_inputs=scene['maxFlightInputs'])
                 profile_cache[key] = [('ordinary', ordinary, None)] if ordinary is not None else []
                 if stair is not None:
                     profile_cache[key].extend(('stair', stair, {'axis': axis, 'direction': direction})
                                               for axis in ('X', 'Z') for direction in (-1, 1))
-            options = profile_cache[key]
+                if runoff is not None:
+                    profile_cache[key].extend(('run_off', runoff, {'axis': axis, 'direction': direction})
+                                              for axis in ('X', 'Z') for direction in (-1, 1))
+            delta = {'X': (target['bounds'][0] + target['bounds'][1] - source['bounds'][0] - source['bounds'][1]) / 2,
+                     'Z': (target['bounds'][2] + target['bounds'][3] - source['bounds'][2] - source['bounds'][3]) / 2}
+            options = sorted(profile_cache[key], key=lambda option:
+                             (option[0], (1 if option[0] == 'stair' else -1) *
+                              option[2]['direction'] * delta[option[2]['axis']] if option[2] else 0))
             if not options:
                 rejected.append({'source': source['id'], 'target': target['id'],
-                                 'reason': 'ordinary_profile_not_generated'})
+                                 'reason': 'profile_not_generated'})
                 continue
             for kind, profile, face in options:
                 n = profile['airtime']
-                if n not in flight_bounds:
+                motion_key = ('jump:' if profile['jump'][0] else 'run_off:') + str(n)
+                if motion_key not in flight_bounds:
                     flight = compiler.compile(scene, {'grounded': [True] + [False] * (n - 1),
-                                                       'jump': [True] + [False] * (n - 1)}, remaining())
+                                                       'jump': profile['jump']}, remaining())
                     if len(flight['magnitude']) != n or len(flight['friction']) != n:
                         raise ValueError('Invalid flight-bound coefficients')
                     if any(not math.isfinite(m) or not math.isfinite(f) or m < 0 or not 0 <= f < 1
@@ -152,8 +161,9 @@ def build_transition_graph(scene, compiler, *, seconds=5):
                     radius = travel + movement_after_support_check
                     padding = 1e-8 * (1 + radius) + 1e-12 * (1 + coordinate_scale) * (n + 1)
                     number(radius + padding, 'horizontal reach bound')
-                    flight_bounds[n] = {'travel': travel, 'radius': radius + padding}
-                radius = flight_bounds[n]['radius']
+                    flight_bounds[motion_key] = {'travel': travel, 'radius': radius + padding,
+                                                 'magnitude': flight['magnitude'], 'friction': flight['friction']}
+                radius = flight_bounds[motion_key]['radius']
                 gap = minimum_distance(bounds[source['id']], bounds[target['id']])
                 if gap > radius:
                     rejected.append({'source': source['id'], 'target': target['id'],
@@ -166,7 +176,8 @@ def build_transition_graph(scene, compiler, *, seconds=5):
                     profiles[source['id']][target['id']] = profile
                 edge_id = 'e' + str(len(transitions))
                 transitions[edge_id] = {'source': source['id'], 'target': target['id'], 'profileKind': kind,
-                                        'profile': profile, 'entryFace': face}
+                                        'profile': profile, 'entryFace': face if kind == 'stair' else None,
+                                        'exitFace': face if kind == 'run_off' else None, 'motionKey': motion_key}
                 edge_options[source['id']][target['id']].append(edge_id)
     reverse = {block: [] for block in ids}
     for source, targets in adjacency.items():
@@ -194,7 +205,7 @@ def build_transition_graph(scene, compiler, *, seconds=5):
             'transitions': transitions, 'edgeOptions': edge_options,
             'flightInputsToGoal': flight_to_goal, 'flightBounds': flight_bounds,
             'rejectedEdges': rejected,
-            'profileLimitReached': any(r['reason'] == 'ordinary_profile_not_generated' for r in rejected),
+            'profileLimitReached': any(r['reason'] == 'profile_not_generated' for r in rejected),
             'bound': {'storedSpeedNorm': speed, 'movementAfterSupportCheck': movement_after_support_check,
                       'flightTravelToLandingCheck': max((b['travel'] for b in flight_bounds.values()), default=0),
                       'radius': max((b['radius'] for b in flight_bounds.values()), default=0)}}
@@ -214,7 +225,7 @@ def compile_block_path(scene, block_ids, transitions=None):
     if transitions is not None:
         if len(transitions) != len(block_ids) - 1:
             raise ValueError('One transition is required per selected edge')
-        selected, entries = [], []
+        selected, entries, exits, kinds = [], [], [], []
         for leg, transition in enumerate(transitions):
             if transition['source'] != block_ids[leg] or transition['target'] != block_ids[leg + 1]:
                 raise ValueError('Selected transition does not match the support path')
@@ -224,10 +235,13 @@ def compile_block_path(scene, block_ids, transitions=None):
             selected.append(profile)
             entries.append(dict(transition['entryFace'], outsideFrom=0, outsideThrough=0, enter=1)
                            if transition['entryFace'] else None)
+            exits.append(transition.get('exitFace'))
+            kinds.append('walk_off' if transition['profileKind'] == 'run_off' else 'jump')
         route = prepare_route({'version': 1, 'initial': scene['initial'], 'blocks': blocks,
                                'inputs': scene['inputs'], 'objective': scene['objective'],
                                'airtimes': [p['airtime'] for p in selected],
-                               'contactEntries': entries, 'maxTotalRunTicks': scene['maxTotalRunTicks'],
+                               'kinds': kinds, 'contactEntries': entries, 'walkOffExits': exits,
+                               'maxTotalRunTicks': scene['maxTotalRunTicks'],
                                'runBounds': [[0, scene['maxRunTicksPerJump']] for _ in selected],
                                'supportClearance': scene['supportClearance']})
         route['profileDerivation'] = {'kind': 'selected_height_profiles', 'suppliedAirtimes': False,
@@ -358,7 +372,7 @@ def search_block_paths(scene, graph, evaluate, *, seconds=60, improve=False, can
             'minimumTicksProven': best is not None and best['plan']['ticks'] == initial_tick_bound,
             'objectiveOptimalityProven': False, 'objective': scene['objective'],
             'pruning': {'horizontalEdges': sum(r.get('reason') == 'optimistic_horizontal_reach' for r in graph['rejectedEdges']),
-                        'profileEdges': sum(r.get('reason') == 'ordinary_profile_not_generated' for r in graph['rejectedEdges']),
+                        'profileEdges': sum(r.get('reason') == 'profile_not_generated' for r in graph['rejectedEdges']),
                         'horizonPrefixes': horizon_prunes, 'tickBoundPrefixes': tick_prunes,
                         'disconnectedPrefixes': disconnected_prunes, 'heuristicPoolDrops': pool_drops},
             'remainingPrefixes': len(pending), 'searchPolicy': 'total_ticks_then_objective'}
@@ -408,7 +422,7 @@ def find_blocks(request, compiler, *, seconds=60, route_seconds=8, candidate_sec
                                 cancel_event=cancel_event, on_attempt=on_attempt)
     result.update(elapsedSeconds=time.monotonic() - started, graph=graph, scene=scene,
                   validationLevel='continuous_support_planes_with_floor_checks',
-                  assumptions={'solidSideFaces': False, 'ceilings': False, 'stairBoost': scene['stairBoost'],
+                  assumptions={'solidSideFaces': False, 'ceilings': False, 'stairBoost': scene['stairBoost'], 'runOff': True,
                                'inputPolicy': 'sprint_jump_sprint_45', 'facings': 'free',
                                'routeOrderSupplied': False, 'airtimesSupplied': False,
                                'otherFloorContacts': 'checked_at_generated_crossings'})

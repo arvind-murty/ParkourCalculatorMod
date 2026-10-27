@@ -79,6 +79,37 @@ class BlockSceneTests(unittest.TestCase):
 
 
 class TransitionGraphTests(unittest.TestCase):
+    def test_runoff_has_a_smaller_candidate_radius_than_the_jump_to_the_same_height(self):
+        request = scene()
+        request['sceneModel'] = 'support_planes'
+        request['blocks'] = [request['blocks'][0], {'id': 'goal', 'bounds': [5, 6, 0, 1], 'top': .5}]
+        topology = build_transition_graph(request, Coefficients())
+        options = [topology['transitions'][e] for e in topology['edgeOptions']['start']['goal']]
+        self.assertTrue(options)
+        self.assertTrue(all(e['profileKind'] == 'ordinary' for e in options))
+        self.assertLess(topology['flightBounds']['run_off:4']['radius'], topology['flightBounds']['jump:13']['radius'])
+        self.assertTrue(any(r.get('profileKind') == 'run_off' for r in topology['rejectedEdges']))
+
+    def test_equal_duration_profiles_keep_distinct_jump_and_no_jump_coefficients(self):
+        request = scene()
+        request['sceneModel'] = 'support_planes'
+        request['blocks'] = [request['blocks'][0], {'id': 'goal', 'bounds': [1, 2, 0, 1], 'top': .875},
+                             {'id': 'step', 'bounds': [1, 2, 0, 1], 'top': 1.5}]
+        request = prepare_scene(request)
+        topology = build_transition_graph(request, Coefficients())
+        fall = topology['flightBounds']['run_off:2']
+        jump = topology['flightBounds']['jump:2']
+        self.assertLess(fall['magnitude'][0], jump['magnitude'][0])
+        self.assertLess(fall['radius'], jump['radius'])
+        option = next(topology['transitions'][e] for e in topology['edgeOptions']['start']['goal']
+                      if topology['transitions'][e]['profileKind'] == 'run_off')
+        compiled = compile_block_path(request, ['start', 'goal'], transitions=[option])
+        self.assertEqual(compiled['route']['kinds'], ['walk_off'])
+        self.assertEqual(compiled['route']['contactEntries'], [None])
+        plan = schedule(compiled['route'], [1])
+        self.assertFalse(any(plan['jump']))
+        self.assertIn((1, 0), plan['exitChecks'])
+
     def test_stair_and_ordinary_profiles_remain_separate_options_for_the_same_blocks(self):
         request = scene()
         request['sceneModel'] = 'support_planes'

@@ -3,8 +3,7 @@ import heapq
 import time
 
 from standalone.ipopt import prepare, validate
-from standalone.ipopt.ladder import f32, vertical_move
-from .block_profiles import stair_jump_profile
+from standalone.ipopt.ladder import f32, vertical_move, vertical_step
 from .route import center_bounds, supports
 from .ranking import candidate_rank
 from .search import find_route
@@ -15,7 +14,8 @@ def floor_checks(scene, block_ids, profiles):
     by_id = {b['id']: b for b in scene['blocks']}
     for leg, profile in enumerate(profiles):
         target_top = by_id[block_ids[leg + 1]]['top']
-        config = {'threshold': .005, 'jumpVelocity': [f32(.42)] + [None] * (profile['airtime'] - 1),
+        jumps = profile.get('jump', [True] + [False] * (profile['airtime'] - 1))
+        config = {'threshold': .005, 'jumpVelocity': [f32(.42) if j else None for j in jumps],
                   'sneak': [False] * profile['airtime']}
         for offset in range(profile['airtime']):
             y = profile['position'][offset]
@@ -29,7 +29,9 @@ def floor_checks(scene, block_ids, profiles):
                     checks.append({'leg': leg, 'offset': offset, 'block': copy.deepcopy(block), 'reason': 'earlier_floor'})
         for block in scene['blocks']:
             selected_step = profile.get('profileKind') == 'stair' and block['id'] == block_ids[leg + 1]
-            if not selected_step and stair_jump_profile(profile['position'][0], block['top']) is not None:
+            step_config = dict(config, contacts=[{'state': 1, 'plane': block['top'], 'direction': -1, 'step': True}])
+            _, _, _, failures = vertical_step(step_config, 0, profile['position'][0], profile['velocity'][0], False, True, 0)
+            if not selected_step and not failures:
                 checks.append({'leg': leg, 'offset': 1, 'block': copy.deepcopy(block), 'reason': 'unplanned_stair'})
     return checks
 
