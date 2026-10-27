@@ -20,6 +20,19 @@ FIXTURES = Path(__file__).parents[1] / 'fixtures'
 
 @unittest.skipUnless(CONFIG and RUNTIME, 'Set PKC_RUN_TICKS_COMPILER and PKC_IPOPT_PYTHON')
 class IntegrationTests(unittest.TestCase):
+    def test_shared_scene_bridge_detects_swept_walls_and_releases_below_the_bottom(self):
+        geometry = {'version': 1, 'profile': 'minecraft-1.8.9', 'bounds': [-5, -5, -5, 10, 10, 10],
+                    'solids': [[1, 0, -3, 2, 5, 3]], 'stepHeight': .6}
+        with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
+            blocked = compiler.check_scene(geometry, [[.5, 1, .5], [3.5, 1, .5]],
+                                           [[3, 0, 0]], [False, False], 2)
+            clear = compiler.check_scene(geometry, [[.5, -2, .5], [3.5, -2, .5]],
+                                         [[3, 0, 0]], [False, False], 2)
+        self.assertFalse(blocked['feasible'])
+        self.assertEqual(blocked['clips'][0]['axis'], 0)
+        self.assertEqual(blocked['clips'][0]['box'], geometry['solids'][0])
+        self.assertTrue(clear['feasible'], clear)
+
     def test_runoff_competes_as_a_shorter_profile_in_the_same_route_search(self):
         request = json.loads((FIXTURES / 'blocks-runoff.json').read_text())
         with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:

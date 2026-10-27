@@ -19,6 +19,11 @@ public class StaticSceneTest {
         assertEquals(0.2, hit.velocity.z, 0);
         assertTrue(hit.horizontalCollision);
         assertTrue(hit.onGround);
+        assertEquals(2, hit.clips.size());
+        assertEquals(1, hit.clips.get(0).axis);
+        assertEquals(0, hit.clips.get(1).axis);
+        assertEquals(1, hit.clips.get(1).obstacle.min.x, 0);
+        assertThrows(UnsupportedOperationException.class, () -> hit.clips.clear());
     }
 
     @Test public void entryAndExitFacesDoNotUseAnEpsilonOverlap() {
@@ -42,6 +47,7 @@ public class StaticSceneTest {
         StaticScene scene = scene("["+floor+"]", "");
         StaticScene.Contact step = scene.move(scene.startBox(new Vec3dCore(0.5,1,0.5)), new Vec3dCore(0.8,-0.0784,0), true, false);
         assertTrue(step.stepped);
+        assertTrue(step.clips.isEmpty());
         assertEquals(1.5, step.position.y, 0);
         assertFalse(step.horizontalCollision);
         StaticScene low = scene("["+floor+",[-2,2.8,-2,3,4,3]]", "");
