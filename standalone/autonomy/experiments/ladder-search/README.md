@@ -34,3 +34,6 @@ python3 -m unittest \
 ```
 
 The saved facings are outputs and revalidation witnesses. Cold searches use only the geometry fixtures. Earlier unresolved entry probes, bounded route/schedule pools, local IPOPT and one ladder interaction per route mean neither minimum time nor global infeasibility is proved. Replay/angle realization/TAS export are outside this continuous-model acceptance.
+
+
+Verification checkpoint: the full orchestration gate passed 174 tests in 240.831 seconds with both runtime variables set. The final bridge/evidence subset passed 13 tests, including a new coplanar-face regression. The numerical suite passed 51 tests. Native core retained its three documented baseline failures.

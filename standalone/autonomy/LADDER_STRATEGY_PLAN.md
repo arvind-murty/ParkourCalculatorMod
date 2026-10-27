@@ -224,3 +224,10 @@ Remaining work:
 - Ordinary profiles can carry their pre-generated ceiling/step contacts, but this ladder-family evaluator does not jointly generate independent reversal hits, climb-time ceiling contacts or contact-selected steps. Unsupported contact choices fail shared acceptance.
 - The current adapter starts grounded with clear prior input/contact state, normal inert 1.8.9 surfaces and supplied complete geometry. Effects, fluids, callbacks and extra resume history remain unsupported.
 - The worker's existing continuous clamp regimes are reused. Float-facing realization, game replay and TAS export remain owned by the replay layer.
+
+
+## Final integration verification
+
+Feature commits: `46f0f52` for the shared compiler/ranking foundation and `d6ee0a4` for the complete route evaluator, fixtures and saved evidence. The full real orchestration gate passed 174 tests in 240.831 seconds, including five cold searches and existing route/obstacle/contact regressions. A final 13-case bridge/evidence gate passed in 6.495 seconds and includes one subsequently added coplanar-face regression, bringing current discovery to 175 cases, all verified. The generator now has 39 focused cases; the numerical suite passed all 51 cases in 26.077 seconds. Shared helper rebuilding passed. Native core repeated its three existing failures among 798 tests, 33 skipped, with native solver and numerical worker sources unchanged.
+
+Regression fixes preserved optional ladder metadata compatibility for old saved routes. Coplanar multipart contact acceptance requires both matching face planes and overlap with the declared finite part at the proper movement stage. Saved witnesses with wrong hit timing, membership or Y carry fail independent acceptance.
