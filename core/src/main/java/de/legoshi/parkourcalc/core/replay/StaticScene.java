@@ -43,8 +43,9 @@ public final class StaticScene {
         public final boolean blockedX;
         public final boolean blockedZ;
         public final List<Clip> clips;
+        public final List<Clip> stepTriggers;
 
-        private Contact(AABB box, Vec3dCore velocity, boolean ground, boolean blockedX, boolean blockedZ, boolean vertical, boolean stepped, List<Clip> clips) {
+        private Contact(AABB box, Vec3dCore velocity, boolean ground, boolean blockedX, boolean blockedZ, boolean vertical, boolean stepped, List<Clip> clips, List<Clip> stepTriggers) {
             this.box = box;
             this.position = center(box);
             this.velocity = velocity;
@@ -55,6 +56,7 @@ public final class StaticScene {
             this.verticalCollision = vertical;
             this.stepped = stepped;
             this.clips = Collections.unmodifiableList(new ArrayList<>(clips));
+            this.stepTriggers = Collections.unmodifiableList(new ArrayList<>(stepTriggers));
         }
     }
 
@@ -119,6 +121,7 @@ public final class StaticScene {
         }
         List<AABB> obstacles = collisions(sweep(original, x, y, z));
         List<Clip> clips = new ArrayList<>();
+        List<Clip> stepTriggers = new ArrayList<>();
         AABB moved = original;
         y = clip(obstacles, moved, y, 1, clips);
         moved = offset(moved, 0, y, 0);
@@ -153,6 +156,7 @@ public final class StaticScene {
                 y = sy;
                 z = sz;
                 stepped = true;
+                stepTriggers.addAll(clips);
                 clips.clear();
             }
         }
@@ -161,7 +165,7 @@ public final class StaticScene {
         Vec3dCore carry = new Vec3dCore(expectedX != x ? 0 : velocity.x,
                 vertical ? 0 : velocity.y, expectedZ != z ? 0 : velocity.z);
         if (horizontal && ladder(center(moved))) carry = new Vec3dCore(carry.x, 0.2, carry.z);
-        return new Contact(moved, carry, vertical && expectedY < 0, expectedX != x, expectedZ != z, vertical, stepped, clips);
+        return new Contact(moved, carry, vertical && expectedY < 0, expectedX != x, expectedZ != z, vertical, stepped, clips, stepTriggers);
     }
 
     private List<AABB> collisions(AABB area) {

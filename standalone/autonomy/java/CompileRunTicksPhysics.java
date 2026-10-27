@@ -93,7 +93,14 @@ public final class CompileRunTicksPhysics {
                 result.put("positionError", error);
                 result.put("actualPosition", new double[]{hit.position.x, hit.position.y, hit.position.z});
                 List<Map<String, Object>> clips = new ArrayList<>();
-                for (StaticScene.Clip clip : hit.clips) {
+                List<StaticScene.Clip> diagnostics = hit.stepped ? hit.stepTriggers : hit.clips;
+                for (int i = 0; i < diagnostics.size(); i++) {
+                    StaticScene.Clip clip = diagnostics.get(i);
+                    boolean superseded = false;
+                    for (int j = i + 1; j < diagnostics.size(); j++) {
+                        if (diagnostics.get(j).axis == clip.axis) superseded = true;
+                    }
+                    if (superseded || hit.stepped && clip.axis == 1) continue;
                     if (clip.axis == 1 && StrictMath.abs(hit.position.y - expected.y) <= 1e-7
                             && hit.onGround == request.expectedGround[t + 1]) continue;
                     Map<String, Object> item = new LinkedHashMap<>();

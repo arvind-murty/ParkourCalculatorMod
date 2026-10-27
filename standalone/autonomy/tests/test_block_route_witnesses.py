@@ -1,15 +1,52 @@
 import hashlib
 import json
+import os
 from pathlib import Path
 import unittest
 
-from standalone.autonomy.route import supports
+from standalone.autonomy.route import schedule, supports
 from standalone.autonomy.block_contacts import contact_conflicts
+from standalone.autonomy.compiler import JavaCompiler
+from standalone.autonomy.obstacle_geometry import check_geometry
 from standalone.ipopt import prepare, validate
 from standalone.ipopt.model import fingerprint
 
 
 class BlockRouteWitnessTests(unittest.TestCase):
+    @unittest.skipUnless(os.environ.get('PKC_RUN_TICKS_COMPILER'), 'Set PKC_RUN_TICKS_COMPILER')
+    def test_saved_obstacle_routes_pass_numerical_and_shared_swept_collision_checks(self):
+        root = Path(__file__).parents[1]
+        artifacts = root / 'experiments' / 'obstacle-avoidance'
+        summaries = json.loads((artifacts / 'summary.json').read_text())
+        with JavaCompiler(json.loads(Path(os.environ['PKC_RUN_TICKS_COMPILER']).read_text())) as compiler:
+            for label, summary in summaries.items():
+                with self.subTest(label=label):
+                    fixture = root / 'fixtures' / summary['fixture']
+                    self.assertEqual(hashlib.sha256(fixture.read_bytes()).hexdigest(), summary['fixtureSha256'])
+                    result = json.loads((artifacts / (label + '-result.json')).read_text())
+                    self.assertEqual(result['status'], summary['status'])
+                    if summary['status'] == 'unknown':
+                        self.assertIsNone(result['best'])
+                        continue
+                    request = prepare(json.loads((artifacts / (label + '-request.json')).read_text()))
+                    self.assertEqual(fingerprint(request), summary['fullProblemHash'])
+                    best = result['best']
+                    checked = validate(request, best['candidate']['yaw'])
+                    self.assertTrue(checked['feasible'], checked)
+                    plan = schedule(best['route'], best['allocation'])
+                    self.assertEqual(fingerprint(prepare(dict(request, walls=plan['walls']))), fingerprint(request))
+                    self.assertEqual(plan['ticks'], summary['ticks'])
+                    self.assertEqual(checked['onGround'], plan['grounded'] + [True])
+                    self.assertEqual(contact_conflicts(best['contactChecks'], plan, checked), [])
+                    for state, block, kind in plan['supportChecks']:
+                        self.assertTrue(supports(best['route']['blocks'][block], *checked['positions'][state], kind=kind))
+                    for state, block in plan['exitChecks']:
+                        self.assertFalse(supports(best['route']['blocks'][block], *checked['positions'][state], kind='run'))
+                    vertical = {key: checked[key] for key in ('y', 'vy', 'onGround')}
+                    vertical['vertical'] = request['vertical']
+                    geometry = check_geometry(result['scene']['collisionScene'], plan, checked, vertical, compiler, 3)
+                    self.assertTrue(geometry['feasible'], geometry)
+
     def test_saved_runoffs_validate_no_jump_physics_and_actual_source_exits(self):
         root = Path(__file__).parents[1]
         artifacts = root / 'experiments' / 'runoff-profiles'

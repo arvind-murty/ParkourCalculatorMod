@@ -5,7 +5,7 @@ from standalone.ipopt import prepare, solve, validate
 from standalone.ipopt.model import fingerprint, number
 from .route import initial_guess, prepare_route, schedule, supports
 from .screen import contradiction
-from .ranking import objective_seed
+from .ranking import objective_seed, passage_seed
 
 
 def search_allocations(route, evaluate, *, seconds=60, improve=False, rank_equal_cost=False,
@@ -150,6 +150,8 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
     def evaluate(allocation, stage, parent, available):
         start = time.monotonic()
         plan = schedule(route, allocation, stage)
+        if plan['passageFailures']:
+            return {'status': 'blocked', 'plan': plan, 'certificate': {'reason': 'passage_timing'}}
         if not plan['ticks']:
             return {'status': 'feasible', 'candidate': {'yaw': [], 'positions': [[route['initial']['position'][0],
                                                                                  route['initial']['position'][2]]]},
@@ -166,6 +168,8 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
             if impossible:
                 return {'status': 'blocked', 'plan': plan, 'certificate': impossible,
                         'problemHash': fingerprint(problem)}
+            if route['passages']:
+                problem['yaw'] = passage_seed(problem, route, plan)
             polish = optimize_goal and stage == 'jump' and len(allocation) == len(route['airtimes'])
             fallback = objective_seed(problem) if polish else initial_guess(route, plan)
             if fallback != problem['yaw']:
@@ -214,4 +218,5 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
     result['mandatoryGroundTicks'] = sum(kind == 'step' for kind in route['kinds'])
     if result['best'] is not None:
         result['best']['groundRunTicks'] = result['best']['cost'] + result['mandatoryGroundTicks']
+        result['best']['route'] = copy.deepcopy(route)
     return result

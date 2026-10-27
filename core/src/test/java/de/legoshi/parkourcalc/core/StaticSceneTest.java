@@ -48,6 +48,7 @@ public class StaticSceneTest {
         StaticScene.Contact step = scene.move(scene.startBox(new Vec3dCore(0.5,1,0.5)), new Vec3dCore(0.8,-0.0784,0), true, false);
         assertTrue(step.stepped);
         assertTrue(step.clips.isEmpty());
+        assertTrue(step.stepTriggers.stream().anyMatch(clip -> clip.axis == 0));
         assertEquals(1.5, step.position.y, 0);
         assertFalse(step.horizontalCollision);
         StaticScene low = scene("["+floor+",[-2,2.8,-2,3,4,3]]", "");

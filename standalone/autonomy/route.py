@@ -131,6 +131,8 @@ def prepare_route(request):
         if row.get('cmp') not in ('GE', 'LE', 'EQ'):
             raise ValueError('Invalid route comparison')
         number(row.get('rhs'), 'constraint rhs')
+    from .blockages import validate_passages
+    validate_passages(route)
     return route
 
 
@@ -255,9 +257,12 @@ def schedule(route, allocation, stage='jump'):
                 raise ValueError('Constraint lies beyond its transition')
         walls.append({'mode': row['mode'], 't1': tick, 'cmp': row['cmp'], 'rhs': row['rhs'],
                       'name': row.get('name', 'route:' + str(row['leg']))})
+    from .blockages import compile_passages
+    passage_rows, passage_failures = compile_passages(route, events)
+    walls.extend(passage_rows)
     return {'ticks': state, 'grounded': grounded, 'jump': jump, 'events': events,
             'supportChecks': supports_at, 'exitChecks': exit_checks, 'walls': walls,
-            'allocation': list(allocation), 'stage': stage}
+            'allocation': list(allocation), 'stage': stage, 'passageFailures': passage_failures}
 
 
 def initial_guess(route, plan, parent=None):

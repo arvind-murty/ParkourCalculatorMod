@@ -1,6 +1,6 @@
 # Run-off source support and obstacle behavior
 
-2026-10-26. User correction to the run-off prototype: a run-off shares the scheduling/profile search with jumps, but requires additional source-block constraints. Source clearance after departure belongs to the future Y-aware obstacle implementation. A shorter no-jump profile alone does not establish a collision-valid run-off.
+2026-10-26. User correction to the run-off prototype: a run-off shares the scheduling/profile search with jumps, but requires additional source-block constraints. Source clearance after departure is now checked in collision-box mode through the shared finite scene collision helper; support-plane mode retains its earlier limitation. A shorter no-jump profile alone does not establish a collision-valid run-off.
 
 ## Departure constraints implemented now
 
@@ -34,9 +34,9 @@ The static predicates describe the required disjunction, not a complete collisio
 
 ## Current boundary and implementation follow-up
 
-The [obstacle and blockage design](OBSTACLES_AND_BLOCKAGES.md) extends these requirements into the joint route/contact search. All six directed edge timing classes have been checked against Minecraft's own offset methods, and the integration agent's shared scene collision helper is now available in this branch. Orchestration still needs to generate the finite obstacle constraints.
+The [obstacle and blockage design](OBSTACLES_AND_BLOCKAGES.md) extends these requirements into the joint route/contact search. All six directed edge timing classes have been checked against Minecraft's own offset methods. [Collision-box mode](OBSTACLE_SEARCH.md) now generates directed blockage constraints and checks all supplied finite solids with the integration agent's shared scene collision helper.
 
-The current support-plane schema supplies horizontal footprints and top heights, but no source bottom or full collision sub-boxes. Earlier-floor exclusions only detect selected descending top-plane crossings; they do not prevent later side penetration below that plane. The current implementation checks departure clearance and does not yet implement the subsequent Y-dependent source-obstacle conditions. Results expose `runOffSourceObstacle: departure_exit_only_pending_y_obstacles`. Do not infer a bottom from the top, or claim collision-valid run-offs from these plane-only solves.
+The legacy support-plane schema supplies horizontal footprints and top heights, but no source bottom or full collision sub-boxes. Earlier-floor exclusions only detect selected descending top-plane crossings; they do not prevent later side penetration below that plane. That mode still checks departure clearance only and exposes `runOffSourceObstacle: departure_exit_only_pending_y_obstacles`. Collision-box mode checks subsequent source collisions during actual Y overlap and reports `checked_during_y_overlap`; its five-input side-run-off fixture leaves the near edge with one added run. Do not infer a bottom from the top, or claim collision-valid run-offs from these plane-only solves.
 
 When implementing obstacles and ceilings:
 

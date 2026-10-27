@@ -10,6 +10,7 @@ from standalone.autonomy.block_search import compile_block_path, find_blocks, pr
 from standalone.autonomy.compiler import JavaCompiler
 from standalone.autonomy.route import initial_guess, supports
 from standalone.autonomy.block_contacts import validate_vertical_schedule
+from standalone.autonomy.obstacle_geometry import BODY_HEIGHT, check_geometry
 from standalone.ipopt import prepare, validate
 
 
@@ -20,6 +21,61 @@ FIXTURES = Path(__file__).parents[1] / 'fixtures'
 
 @unittest.skipUnless(CONFIG and RUNTIME, 'Set PKC_RUN_TICKS_COMPILER and PKC_IPOPT_PYTHON')
 class IntegrationTests(unittest.TestCase):
+    def test_full_obstacle_geometry_finds_cross_and_wide_neos_and_checks_both_models(self):
+        with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
+            for fixture, kind in [('obstacle-cross-neo.json', 'cross_neo'), ('obstacle-wide-neo.json', 'wide_neo')]:
+                with self.subTest(fixture=fixture):
+                    request = json.loads((FIXTURES / fixture).read_text())
+                    result = find_blocks(request, compiler, seconds=35, route_seconds=25,
+                                         candidate_seconds=1, retries=0, python_executable=RUNTIME)
+                    self.assertEqual(result['status'], 'feasible', result)
+                    best = result['best']
+                    self.assertEqual(best['plan']['ticks'], 12)
+                    self.assertIn(kind, [p['kind'] for p in best['passages']])
+                    self.assertTrue(best['geometryCheck']['feasible'])
+                    coefficients = compiler.compile(best['route'], best['plan'], 2)
+                    problem = prepare(dict(coefficients, version=1, ticks=best['plan']['ticks'],
+                                           position=request['initial']['position'][::2],
+                                           velocity=request['initial']['velocity'][::2], yaw=best['candidate']['yaw'],
+                                           walls=best['plan']['walls'], vertical=best['vertical'],
+                                           objective={'axis': 'X', 'sense': 'MAX', 'tick': best['plan']['ticks']}))
+                    self.assertTrue(validate(problem, best['candidate']['yaw'])['feasible'])
+                    vertical = validate_vertical_schedule(best['route'], best['profiles'], best['plan'])
+                    self.assertTrue(check_geometry(result['scene']['collisionScene'], best['plan'], best['candidate'],
+                                                   vertical, compiler, 3)['feasible'])
+                    self.assertFalse(any(w['mode'] == 'F' for w in problem['walls']))
+                    self.assertTrue(result['minimumTicksProven'])
+
+    def test_source_runoff_can_leave_the_near_side_and_stays_clear_while_y_overlaps(self):
+        request = json.loads((FIXTURES / 'obstacle-runoff-side.json').read_text())
+        with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
+            result = find_blocks(request, compiler, seconds=20, route_seconds=5,
+                                 candidate_seconds=1, retries=0, python_executable=RUNTIME)
+        self.assertEqual(result['status'], 'feasible', result)
+        best = result['best']
+        self.assertEqual(best['route']['kinds'], ['walk_off'])
+        self.assertEqual(best['plan']['ticks'], 5)
+        self.assertEqual(best['allocation'], [1])
+        self.assertEqual(best['route']['walkOffExits'], [{'axis': 'Z', 'direction': 1}])
+        for tick in range(best['plan']['events'][0]['jump'], best['plan']['ticks'] + 1):
+            if best['candidate']['y'][tick] < 1 and best['candidate']['y'][tick] + BODY_HEIGHT > 0:
+                self.assertFalse(supports(best['route']['blocks'][0], *best['candidate']['positions'][tick]))
+        self.assertTrue(best['geometryCheck']['feasible'])
+
+    def test_ceiling_can_be_passed_under_and_a_sealed_wall_is_never_accepted(self):
+        with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
+            for name, status in [('obstacle-under-ceiling.json', 'feasible'), ('obstacle-blocked.json', 'unknown')]:
+                request = json.loads((FIXTURES / name).read_text())
+                result = find_blocks(request, compiler, seconds=15, route_seconds=5,
+                                     candidate_seconds=1, retries=0, python_executable=RUNTIME)
+                self.assertEqual(result['status'], status, result)
+                if status == 'feasible':
+                    self.assertTrue(result['best']['geometryCheck']['feasible'])
+                    self.assertEqual(result['best']['plan']['ticks'], 12)
+                else:
+                    self.assertIsNone(result['best'])
+                    self.assertTrue(any(a['obstacleSearch']['verticalFacesPruned'] == 2 for a in result['attempts']))
+
     def test_shared_scene_bridge_detects_swept_walls_and_releases_below_the_bottom(self):
         geometry = {'version': 1, 'profile': 'minecraft-1.8.9', 'bounds': [-5, -5, -5, 10, 10, 10],
                     'solids': [[1, 0, -3, 2, 5, 3]], 'stepHeight': .6}
