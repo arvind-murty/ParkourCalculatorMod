@@ -423,6 +423,7 @@ def find_blocks(request, compiler, *, seconds=60, route_seconds=8, candidate_sec
     result.update(elapsedSeconds=time.monotonic() - started, graph=graph, scene=scene,
                   validationLevel='continuous_support_planes_with_floor_checks',
                   assumptions={'solidSideFaces': False, 'ceilings': False, 'stairBoost': scene['stairBoost'], 'runOff': True,
+                               'runOffSourceObstacle': 'departure_exit_only_pending_y_obstacles',
                                'inputPolicy': 'sprint_jump_sprint_45', 'facings': 'free',
                                'routeOrderSupplied': False, 'airtimesSupplied': False,
                                'otherFloorContacts': 'checked_at_generated_crossings'})

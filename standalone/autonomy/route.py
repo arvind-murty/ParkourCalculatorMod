@@ -183,6 +183,8 @@ def schedule(route, allocation, stage='jump'):
         grounded.extend([True] + [False] * (airtime - 1))
         jump.extend([route['kinds'][i] == 'jump'] + [False] * (airtime - 1))
         if route['kinds'][i] == 'walk_off':
+            if fire > 0:
+                supports_at.append((fire - 1, i, 'run'))
             exit_checks.append((fire, i))
         state += airtime
         supports_at.append((state if route['landingPhases'][i] == 'post' else state - 1, i + 1, 'landing'))
