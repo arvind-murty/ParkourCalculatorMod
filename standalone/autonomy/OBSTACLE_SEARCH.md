@@ -1,6 +1,6 @@
 # Collision-box obstacle avoidance
 
-2026-10-26. Implemented the geometry, height pruning and avoidance slices of [OBSTACLES_AND_BLOCKAGES.md](OBSTACLES_AND_BLOCKAGES.md). The route search now accepts actual collision volumes, tries directed blockage chains and validates accepted continuous trajectories through the shared scene collision helper. Intentional horizontal/ceiling-hit profile generation remains separate work.
+Updated 2026-10-27. Implemented the geometry, height pruning and avoidance slices of [OBSTACLES_AND_BLOCKAGES.md](OBSTACLES_AND_BLOCKAGES.md). The route search now accepts actual collision volumes, tries directed blockage chains and validates accepted continuous trajectories through the shared scene collision helper. [One-input wall reversals and ceiling profiles](ONE_TICK_CONTACT_PLAN.md) are now implemented through the corrected shared movement compiler.
 
 ## Input
 
@@ -30,7 +30,10 @@ Use `sceneModel: collision_boxes`. Supply each block's actual world-space collis
   "maxBlockagesPerObstacle": 3,
   "maxHorizontalBlockagesPerObstacle": 2,
   "maxVerticalBlockagesPerObstacle": 2,
-  "maxPassageCandidates": 128
+  "maxPassageCandidates": 128,
+  "maxWallHits": 2,
+  "maxWallHitCandidates": 24,
+  "ceilingHits": true
 }
 ```
 
@@ -38,7 +41,7 @@ Box order is `[minX,minY,minZ,maxX,maxY,maxZ]`. The adapter derives candidate to
 
 The normalized result retains collision solids, support provenance and finite coverage bounds. A query outside coverage returns unknown for that branch. The model is normal 1.8.9 movement on static inert boxes with normal friction and step height. Unsupported ladder/surface/callback declarations are not silently accepted by this scene adapter. The legacy `support_planes` modes still work and retain their explicitly narrower acceptance scope.
 
-This avoidance slice declares a clear initial input state with the supplied position/velocity/yaw and effective sprint policy, without an incoming wall hit or held-jump cooldown. Additional initial resume fields are rejected. Extending that contract uses the shared movement compiler and input-state implementation together with intentional-contact profiles.
+This adapter declares a clear initial input state with the supplied position/velocity/yaw and effective sprint policy, without an incoming wall hit or held-jump cooldown. Additional initial resume fields are rejected. Collision-box profiles use the shared movement compiler and input-state implementation. Additional initial resume fields remain outside this adapter.
 
 ## Candidate generation and constraints
 
@@ -73,9 +76,9 @@ Run-offs include their source in the same solid set. Departure clearance alone n
 
 Total elapsed inputs remain the primary rank; the numerical objective ranks equal-time witnesses. Goal branches continue after the first witness and preserve the best accepted time/objective result. Normal failure, budget exhaustion and an excluded passage family are unknown, not general infeasibility.
 
-`maxContactBranches` bounds the combined floor/blockage branch search. `maxPassageCandidates` bounds retained alternatives per discovered obstruction, with additional explicit bounds on timing-state expansion and its queue. `attempts[].obstacleSearch` reports generated candidates, reach pruning, vertical-face pruning, dropped candidates/timings, incomplete generation and accepted strategy kinds. `best.passages` stores the selected faces, blockage types, physical block IDs and gates. `best.blockageTimeline` merges their absolute gate states for review, including separate first/second states for consecutive-state handoffs. `best.blockageUsage` reports horizontal, vertical and total counts per physical block. `best.geometryCheck` records final shared-scene acceptance. A deadline retains an already validated incumbent.
+`maxContactBranches` bounds the combined floor/blockage/wall-hit branch search. `maxWallHits` defaults to two selected wall hits per route and `maxWallHitCandidates` to 24 retained candidates; zero wall hits disables that family. `ceilingHits` defaults to true and adds one-ceiling profiles to the transition graph. `best.hitEvents`, `best.ceilingEvents` and `best.plan.sceneContacts` expose the selected relative/absolute events. `attempts[].wallHitSearch` reports generation, candidate drops and tested branches. These limits are separate from per-block blockage caps. `maxPassageCandidates` bounds retained alternatives per discovered obstruction, with additional explicit bounds on timing-state expansion and its queue. `attempts[].obstacleSearch` reports generated candidates, reach pruning, vertical-face pruning, dropped candidates/timings, incomplete generation and accepted strategy kinds. `best.passages` stores the selected faces, blockage types, physical block IDs and gates. `best.blockageTimeline` merges their absolute gate states for review, including separate first/second states for consecutive-state handoffs. `best.blockageUsage` reports horizontal, vertical and total counts per physical block. `best.geometryCheck` records final shared-scene acceptance. A deadline retains an already validated incumbent.
 
-`minimumTicksProven` only compares a witness with the static graph bound for the declared current profile family. It is not a certificate over omitted wall/ceiling-contact profiles or every Minecraft strategy. `objectiveOptimalityProven` remains false. Passage complexity, numerical budgets and queue/candidate caps are explicit scope limits.
+`minimumTicksProven` only compares a witness with the static graph bound for the declared current profile family. It is not a certificate over omitted contact-selected steps, sustained-contact families or every Minecraft strategy. `objectiveOptimalityProven` remains false. Passage complexity, numerical budgets and queue/candidate caps are explicit scope limits.
 
 ## Run and measured cases
 
@@ -93,6 +96,6 @@ The actual IPOPT/Java integration tests find a 12-input cross neo, a 12-input wi
 
 ## Next contact families
 
-The current numerical worker can prescribe X/Z and Y contacts, but this route search does not yet generate intentional wall or ceiling hits. Such hits must use the integration agent's `FixedMovementCompiler`/`ReplayInputState`, including collision-driven sprint cancellation and air-factor carry. The current constant-effective-sprint coefficient adapter is used only for paths whose shared-scene check confirms no horizontal collision. No second sprint state machine is introduced.
+The route search now reuses existing numerical X/Z and Y contacts with the integration agent's corrected `FixedMovementCompiler`/`ReplayInputState`. Side-wall reversals use one clipped input and normal-side avoidance before/after; ceiling profiles regenerate Y and landing time. Actual intended movement, finite face/timing and collision masks pass shared scene checks. The shared compiler handles sprint loss and air-factor recovery. The constant-effective-sprint adapter remains only for legacy ordered/support-plane models.
 
-Next add those contact alternatives, their finite-face guards and the resulting Y-profile changes. Refresh time bounds when introducing shorter ceiling/contact profiles. Replay, float-angle realization and TAS export remain with the integration agent.
+Generated ceiling durations are included before time bounds are computed. [Saved contact results](experiments/one-tick-contacts/README.md) cover a wall reversal, a three-input bonk and a simultaneous Y/X hit. Next broaden multi-leg evidence, generalize same-solid approach/exit corridors and handle contact-selected steps. Ladders/vines remain deferred. Replay, float-angle realization and TAS export remain with the integration agent.

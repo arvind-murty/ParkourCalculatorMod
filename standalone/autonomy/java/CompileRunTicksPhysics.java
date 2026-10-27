@@ -99,6 +99,12 @@ public final class CompileRunTicksPhysics {
             double error = StrictMath.max(StrictMath.abs(hit.position.x - expected.x),
                     StrictMath.max(StrictMath.abs(hit.position.y - expected.y), StrictMath.abs(hit.position.z - expected.z)));
             boolean contactMismatch = false;
+            if (!hit.stepped && hit.verticalCollision && request.movement[t][1] > 0) {
+                boolean selected = false;
+                if (request.contacts != null) for (PlannedContact event : request.contacts)
+                    if (event.state == t + 1 && event.axis == 1) selected = true;
+                if (!selected) contactMismatch = true;
+            }
             for (int axis : new int[]{0, 2}) {
                 boolean actual = axis == 0 ? hit.blockedX : hit.blockedZ;
                 PlannedContact selected = null;

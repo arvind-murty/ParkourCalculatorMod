@@ -1,6 +1,6 @@
 # Obstacles, contacts and directed blockages
 
-2026-10-26. Investigated against the mod, its cached Minecraft 1.8.9 movement code, the earlier block solver and the integration agent's current helpers. The geometry/height/avoidance slices are now implemented in [OBSTACLE_SEARCH.md](OBSTACLE_SEARCH.md). Intentional wall/ceiling-contact profile generation remains the next slice. The existing run-ticks and route-search interfaces remain the inner search.
+2026-10-26. Investigated against the mod, its cached Minecraft 1.8.9 movement code, the earlier block solver and the integration agent's current helpers. The geometry/height/avoidance slices are now implemented in [OBSTACLE_SEARCH.md](OBSTACLE_SEARCH.md). One-input wall reversals and ceiling profiles are implemented as recorded in [ONE_TICK_CONTACT_PLAN.md](ONE_TICK_CONTACT_PLAN.md); general contact-selected steps and climbing remain later work. The existing run-ticks and route-search interfaces remain the inner search.
 
 ## Findings grounded in code
 
@@ -128,7 +128,7 @@ Left/right is relative to the current approach and onward route, while the colli
 
 ## 3. Hit versus avoid is another branch
 
-The next implementation slice is narrowed to [one-input side-wall reversals and ceiling hits](ONE_TICK_CONTACT_PLAN.md). Each selected hit needs finite reach/overlap guards and avoidance before and after it so actual clipping matches the compiled tick. Sustained ladder/vine contact is deferred. One input is per hit episode, not per route; contact budgets remain separate from blockage caps.
+The implemented contact slice is narrowed to [one-input side-wall reversals and ceiling hits](ONE_TICK_CONTACT_PLAN.md). Each selected hit needs finite reach/overlap guards and avoidance before and after it so actual clipping matches the compiled tick. Sustained ladder/vine contact is deferred. One input is per hit episode, not per route; contact budgets remain separate from blockage caps.
 
 For a relevant block, retain avoidance and legal contact alternatives. Do not declare every collision a failure or force every apparently useful contact.
 
