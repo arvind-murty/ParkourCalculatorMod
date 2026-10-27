@@ -34,6 +34,8 @@ The static predicates describe the required disjunction, not a complete collisio
 
 ## Current boundary and implementation follow-up
 
+The [obstacle and blockage design](OBSTACLES_AND_BLOCKAGES.md) extends these requirements into the joint route/contact search. All six directed edge timing classes have been checked against Minecraft's own offset methods, and the integration agent's shared scene collision helper is now available in this branch. Orchestration still needs to generate the finite obstacle constraints.
+
 The current support-plane schema supplies horizontal footprints and top heights, but no source bottom or full collision sub-boxes. Earlier-floor exclusions only detect selected descending top-plane crossings; they do not prevent later side penetration below that plane. The current implementation checks departure clearance and does not yet implement the subsequent Y-dependent source-obstacle conditions. Results expose `runOffSourceObstacle: departure_exit_only_pending_y_obstacles`. Do not infer a bottom from the top, or claim collision-valid run-offs from these plane-only solves.
 
 When implementing obstacles and ceilings:
