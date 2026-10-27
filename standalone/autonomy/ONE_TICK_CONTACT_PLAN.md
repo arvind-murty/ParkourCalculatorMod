@@ -1,6 +1,6 @@
 # One-input wall and ceiling contacts
 
-2026-10-27. Planned next slice, not implemented. This refines [OBSTACLES_AND_BLOCKAGES.md](OBSTACLES_AND_BLOCKAGES.md) using the user's contact families. Existing avoidance and interleaved blockages remain implemented as described in [OBSTACLE_SEARCH.md](OBSTACLE_SEARCH.md).
+2026-10-27. Shared movement compilation and prescribed-event scene validation are implemented; automatic one-input contact discovery remains in progress. This refines [OBSTACLES_AND_BLOCKAGES.md](OBSTACLES_AND_BLOCKAGES.md) using the user's contact families. Existing avoidance and interleaved blockages remain implemented as described in [OBSTACLE_SEARCH.md](OBSTACLE_SEARCH.md).
 
 ## Contact families and scope
 
@@ -65,7 +65,13 @@ Regeneration changes horizontal overlap windows, landing time, later event offse
 
 ## Compilation and independent acceptance
 
+Reuse the Real 11 prototype's existing `standalone/ipopt/worker.py` prescribed X/Z contact rows, `model.py` scalar validation and `ladder.py` vertical contact recurrence. Its ladder regressions already cover wall detection, normal reset and carried climb velocity. No new contact integrator is needed. Ladder/vine route generation remains deferred.
+
+The sprint/air-factor bug is already fixed by the integration agent in `af12801`, documented in `RECENT_REPLAY_HANDOFF.md`. Historical Real 11 arrays predate that correction; recompile schedules through the corrected compiler rather than copying their coefficients. Do not implement a second fix.
+
 Import the reviewed shared `FixedMovementCompiler`, `ReplayInputState` and required dependencies from `feature/ipopt-mod-integration`; retain the existing sprint machine and exact input arithmetic. Do not duplicate them in Python. Compile after selecting keys, runs, ground and contacts, and compile again when any of those assumptions changes. A hit and an avoidance branch need their own movement arrays.
+
+The standalone helper now materializes unchanged shared Java sources from pinned commit `f057c0ce9b454ae1ce2706843bb141cce799b5cb` into ignored build storage and compiles them in an isolated helper classpath. Its newer core APIs do not replace this worktree's native solver files. The local extended `StaticScene` remains the shared collision source. The Git object must be available to rebuild; no network download or mutable checkout is used. The movement-contract validator and its four tests were imported from `af12801` unchanged. The first checkpoint passed 113 orchestration tests and seven focused movement/contact checks.
 
 The compiler accounts for next-input sprint cancellation and delayed air-factor recovery. The plan must not approximate those effects by switching one friction constant on the hit input. Validate the returned movement contract against the solved schedule.
 
@@ -95,4 +101,4 @@ Generate plausible beneficial contacts even if the current witness has no collis
 - Run insertion moves contact and pre/post avoidance together; another obstacle's passage may interleave on either side of the event.
 - A faster bonk branch survives graph pruning even when the ordinary collision-free branch already succeeds.
 
-Acceptance remains a valid continuous-model IPOPT solve under correctly generated movement and finite geometry, independently checked against the shared movement/collision contract. Game end-to-end testing, angle realization, replay and TAS export retain their existing separate ownership. This file records a plan; it adds no new tested contact capability.
+Acceptance remains a valid continuous-model IPOPT solve under correctly generated movement and finite geometry, independently checked against the shared movement/collision contract. Game end-to-end testing, angle realization, replay and TAS export retain their existing separate ownership. Automatic contact candidates described here require the subsequent implementation checkpoints.

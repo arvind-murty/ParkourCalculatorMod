@@ -83,10 +83,15 @@ def check_geometry(geometry, plan, candidate, vertical, compiler, seconds):
     positions = [[xz[0], y, xz[1]] for xz, y in zip(candidate['positions'], vertical['y'])]
     movement = []
     for tick in range(plan['ticks']):
-        movement.append([positions[tick + 1][0] - positions[tick][0],
+        raw = candidate.get('rawMovement')
+        movement.append([raw[tick][0] if raw is not None else positions[tick + 1][0] - positions[tick][0],
                          vertical_move(vertical['vertical'], tick, vertical['vy'][tick], False),
-                         positions[tick + 1][2] - positions[tick][2]])
-    checked = compiler.check_scene(geometry, positions, movement, vertical['onGround'], seconds)
+                         raw[tick][1] if raw is not None else positions[tick + 1][2] - positions[tick][2]])
+    if plan.get('sceneContacts'):
+        checked = compiler.check_scene(geometry, positions, movement, vertical['onGround'], seconds,
+                                       contacts=plan['sceneContacts'])
+    else:
+        checked = compiler.check_scene(geometry, positions, movement, vertical['onGround'], seconds)
     if not checked['feasible'] and checked.get('clips'):
         clip = checked['clips'][0]
         checked['solidIndex'] = geometry['solids'].index(clip['box'])

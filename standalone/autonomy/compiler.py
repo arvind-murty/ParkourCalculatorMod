@@ -24,6 +24,8 @@ class JavaCompiler:
 
     def compile(self, route, plan, seconds):
         message = {'grounded': plan['grounded'], 'jump': plan['jump'], 'inputs': route['inputs']}
+        if route.get('sharedMovement'):
+            message.update(sharedMovement=True, contacts=plan.get('sceneContacts', []))
         return self._exchange(message, seconds)
 
     def derive_footprints(self, route, seconds):
@@ -32,9 +34,9 @@ class JavaCompiler:
     def derive_standing_footprints(self, route, seconds):
         return self._exchange({'action': 'standingFootprints', 'blocks': route['blocks']}, seconds)['footprints']
 
-    def check_scene(self, scene, positions, movement, ground, seconds):
+    def check_scene(self, scene, positions, movement, ground, seconds, contacts=None):
         return self._exchange({'action': 'sceneCheck', 'scene': scene, 'positions': positions,
-                               'movement': movement, 'expectedGround': ground}, seconds)
+                               'movement': movement, 'expectedGround': ground, 'contacts': contacts or []}, seconds)
 
     def _exchange(self, message, seconds):
         import queue

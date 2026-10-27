@@ -165,6 +165,28 @@ def prepare(request):
                     raise ValueError('vertical.' + key + ' needs one value per state')
                 for value in config[key]:
                     number(value, 'vertical.' + key)
+    if 'movement' in problem:
+        movement = problem['movement']
+        if (not isinstance(movement, dict) or movement.get('profile') != 'minecraft-1.8.9'
+                or movement.get('compiler') != 'mod-input-state-v1'):
+            raise ValueError('Unsupported compiled movement profile')
+        for key, length in [('horizontalCollision', n + 1), ('ground', n), ('sprinting', n), ('airSprinting', n)]:
+            values = movement.get(key)
+            if not isinstance(values, list) or len(values) != length or any(type(v) is not bool for v in values):
+                raise ValueError('movement.' + key + ' has the wrong length or type')
+        for key in ('moveForward', 'moveStrafe'):
+            values = movement.get(key)
+            if not isinstance(values, list) or len(values) != n:
+                raise ValueError('movement.' + key + ' needs one value per input tick')
+            for value in values:
+                number(value, 'movement.' + key)
+        expected_hits = {c['state'] for c in problem['contacts']}
+        if any(value != (t in expected_hits) for t, value in enumerate(movement['horizontalCollision']) if t > 0):
+            raise ValueError('Compiled movement collision schedule disagrees with declared contacts')
+        if 'vertical' in problem:
+            if (movement['horizontalCollision'][0] != problem['vertical']['previousHorizontalCollision']
+                    or movement['ground'][0] != problem['vertical']['onGround']):
+                raise ValueError('Compiled movement initial state disagrees with the vertical state')
     json.dumps(problem, allow_nan=False)
     return problem
 
@@ -196,7 +218,9 @@ def validate(problem, yaw):
     ladder = problem.get('ladderTicks', [False] * (n + 1))
     caps, cap_mismatches = [], []
     vertical = problem.get('vertical')
-    previous_hits = [vertical['previousHorizontalCollision'] if vertical else False]
+    movement = problem.get('movement')
+    movement_mismatches = []
+    previous_hits = [vertical['previousHorizontalCollision'] if vertical else movement['horizontalCollision'][0] if movement else False]
     y, vy = ([vertical['position']], [vertical['velocity']]) if vertical else ([], [])
     grounded = [vertical['onGround']] if vertical else []
     vertical_failures = []
@@ -244,6 +268,8 @@ def validate(problem, yaw):
         velocities.append(next_velocity)
         caps.append(tick_caps)
         previous_hits.append(hit)
+        if movement and hit != movement['horizontalCollision'][t + 1]:
+            movement_mismatches.append({'state': t + 1, 'reason': 'horizontal_collision_schedule'})
         if vertical:
             yn, ymove, ground, failures = vertical_step(vertical, t, y[t], vy[t], ladder[t],
                                                        grounded[t], TOLERANCE)
@@ -251,6 +277,8 @@ def validate(problem, yaw):
             vy.append(vertical_carry(ymove, ladder[t + 1], previous_hits[t + 1]))
             grounded.append(ground)
             vertical_failures.extend(failures)
+            if movement and grounded[t] != movement['ground'][t]:
+                movement_mismatches.append({'state': t, 'reason': 'ground_schedule'})
     worst, worst_name = 0.0, None
     if vertical:
         for key, values, label in [('referencePosition', y, 'Y'), ('referenceVelocity', vy, 'VY')]:
@@ -292,10 +320,12 @@ def validate(problem, yaw):
         value = -math.sin(angle) * point[0] + math.cos(angle) * point[1]
     number(value, 'objective')
     result = {'feasible': worst <= TOLERANCE and not missed and not wrong_side and not mismatches
-              and not cap_mismatches and not vertical_failures,
+              and not cap_mismatches and not vertical_failures and not movement_mismatches,
             'violation': worst, 'worstConstraint': worst_name, 'objective': value,
             'missedContacts': missed, 'wrongSideContacts': wrong_side, 'patternMismatches': mismatches,
             'yaw': yaw[:], 'positions': positions, 'velocity': velocities}
+    if movement:
+        result.update(movementMismatches=movement_mismatches, horizontalCollision=previous_hits)
     if 'ladderTicks' in problem:
         result.update(ladderPattern=caps, ladderPatternMismatches=cap_mismatches,
                       horizontalCollision=previous_hits)

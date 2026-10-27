@@ -1,4 +1,5 @@
 import copy
+import math
 import time
 
 from standalone.ipopt import prepare, solve, validate
@@ -162,6 +163,7 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                            position=[route['initial']['position'][0], route['initial']['position'][2]],
                            velocity=[route['initial']['velocity'][0], route['initial']['velocity'][2]],
                            yaw=initial_guess(route, plan, parent), threshold=.005, walls=plan['walls'],
+                           contacts=plan.get('contacts', []),
                            objective=dict(route['objective'], tick=plan['ticks']))
             problem = prepare(problem)
             impossible = contradiction(problem)
@@ -199,6 +201,13 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                                   for tick, index in plan['exitChecks']
                                   if supports(route['blocks'][index], *candidate['positions'][tick], kind='run'))
                     if candidate['feasible'] and not failed:
+                        candidate['rawMovement'] = [[(value if abs(value) >= problem['threshold'] else 0)
+                            + problem['magnitude'][t] * (math.cos(angle) if axis == 0 else math.sin(angle))
+                            for axis, value in enumerate(candidate['velocity'][t])]
+                            for t, yaw in enumerate(candidate['yaw'])
+                            for angle in [problem['base'][t] + math.radians(yaw)]]
+                        if 'movement' in problem:
+                            candidate['movement'] = problem['movement']
                         return {'status': 'feasible', 'candidate': candidate, 'plan': plan,
                                 'problemHash': fingerprint(problem), 'diagnostics': diagnostics}
                     diagnostics[-1]['supportFailures'] = failed
