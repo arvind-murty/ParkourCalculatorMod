@@ -1,6 +1,7 @@
 import copy
 import math
 import time
+from collections import deque
 
 from standalone.ipopt import prepare, validate
 from standalone.ipopt.model import integer
@@ -29,7 +30,7 @@ def straight_line_score(coefficients, ladder, exit_state):
 
 
 def rank_ladder_schedules(schedules, compiler, *, seconds=10, max_ranked=2048, representatives=4,
-                          inputs=None, cancel_event=None):
+                          inputs=None, cancel_event=None, screen=None):
     integer(max_ranked, 'max ranked schedules', 1, 200000)
     integer(representatives, 'representatives', 1, 10000)
     deadline = time.monotonic() + seconds
@@ -37,7 +38,16 @@ def rank_ladder_schedules(schedules, compiler, *, seconds=10, max_ranked=2048, r
                                                           'incomingSprint': False, 'force45': True}}
     cache, ranked = {}, []
     termination = 'exhausted'
-    ordered = sorted(enumerate(schedules), key=lambda item: (item[1]['ticks'], item[1]['postExitTicks']))
+    screened, evaluated = 0, 0
+    buckets = {}
+    for item in sorted(enumerate(schedules), key=lambda item: (item[1]['ticks'], item[1]['postExitTicks'])):
+        buckets.setdefault((item[1]['ticks'], item[1]['postExitTicks']), deque()).append(item)
+    active, ordered = deque(buckets.values()), []
+    while active:
+        bucket = active.popleft()
+        ordered.append(bucket.popleft())
+        if bucket:
+            active.append(bucket)
     for original, schedule in ordered:
         if cancel_event is not None and cancel_event.is_set():
             termination = 'cancelled'
@@ -53,9 +63,18 @@ def rank_ladder_schedules(schedules, compiler, *, seconds=10, max_ranked=2048, r
         key = (tuple(plan['grounded']), tuple(plan['jump']), tuple(plan['sneak']),
                tuple(plan['ladderTicks']), tuple(schedule['hit']))
         if key not in cache:
-            cache[key] = compiler.compile(route, plan, remaining)
+            try:
+                cache[key] = compiler.compile(route, plan, remaining)
+            except TimeoutError:
+                termination = 'deadline'
+                break
+        evaluated += 1
+        if screen is not None and screen(schedule, cache[key]) is not None:
+            screened += 1
+            continue
         score = straight_line_score(cache[key], schedule['ladderTicks'], schedule['exitState'])
-        ranked.append({'schedule': copy.deepcopy(schedule), 'score': score, 'sourceIndex': original})
+        ranked.append({'schedule': copy.deepcopy(schedule), 'score': score, 'sourceIndex': original,
+                       'coefficients': cache[key]})
     ranked.sort(key=lambda r: (r['schedule']['ticks'], r['schedule']['postExitTicks'], -r['score']['distance'],
                               -r['score']['exitSpeed'], -r['score']['finalSpeed'], r['sourceIndex']))
     counts, diversity, preferred, backups = {}, set(), [], []
@@ -71,4 +90,5 @@ def rank_ladder_schedules(schedules, compiler, *, seconds=10, max_ranked=2048, r
             backups.append(row)
     return {'ranked': preferred, 'backups': backups, 'termination': termination,
             'rankedCount': len(ranked), 'compilationCount': len(cache),
-            'unrankedCount': len(schedules) - len(ranked), 'acceptance': 'ranking_proxy_only'}
+            'screenedOut': screened, 'evaluatedCount': evaluated,
+            'unrankedCount': len(schedules) - evaluated, 'acceptance': 'ranking_proxy_only'}

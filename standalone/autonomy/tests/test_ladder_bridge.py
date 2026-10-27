@@ -69,6 +69,34 @@ class LadderBridgeTests(unittest.TestCase):
         self.assertFalse(self.compiler.check_scene(scene, positions, [[.3, 0, 0]], [False, False], 5,
                                                  contacts=contacts, **contract)['feasible'])
 
+    def test_first_clamped_sneak_can_preserve_progress_better_than_late_sneak(self):
+        route = {'sharedMovement': True, 'inputs': {'forward': .98, 'strafe': 0, 'sprint': True,
+                                                   'incomingSprint': False, 'force45': True}}
+        plan = {'grounded': [True, False, False, False], 'jump': [True, False, False, False],
+                'ladderTicks': [False, True, True, True, True],
+                'sceneContacts': [{'state': s, 'axis': 0} for s in (2, 3, 4)]}
+        scores = []
+        for tick in (1, 3):
+            p = dict(plan, sneak=[t == tick for t in range(4)])
+            coefficients = self.compiler.compile(route, p, 5)
+            scores.append(straight_line_score(coefficients, p['ladderTicks'], 3))
+        self.assertGreater(scores[0]['distance'], scores[1]['distance'])
+
+    def test_coplanar_climb_parts_require_the_declared_face_plane_and_overlap(self):
+        lower, upper = [1, 0, -1, 2, 2, 2], [1, 2, -1, 2, 4, 2]
+        scene = {'version': 1, 'profile': 'minecraft-1.8.9', 'bounds': [-5, -5, -5, 5, 10, 5],
+                 'solids': [lower, upper]}
+        plane = 1 - HALF_WIDTH
+        positions, movement = [[.6, 1.8, .5], [plane, 1.8, .5]], [[.15, 0, 0]]
+        contact = {'state': 1, 'axis': 0, 'plane': plane, 'direction': 1, 'box': upper}
+        checked = self.compiler.check_scene(scene, positions, movement, [False, False], 5, contacts=[contact])
+        self.assertTrue(checked['feasible'], checked)
+        for wrong in ([2, 2, -1, 3, 4, 2], [1, 4, -1, 2, 5, 2], [1, 2, 3, 2, 4, 4]):
+            with self.subTest(box=wrong):
+                checked = self.compiler.check_scene(scene, positions, movement, [False, False], 5,
+                                                     contacts=[dict(contact, box=wrong)])
+                self.assertFalse(checked['feasible'])
+
     def test_ranked_pool_preserves_backups_and_does_not_change_schedules(self):
         request = json.loads(Path('standalone/autonomy/fixtures/ladder-schedule-generator.json').read_text())
         request['maxSchedules'] = 20

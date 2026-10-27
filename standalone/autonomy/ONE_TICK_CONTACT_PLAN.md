@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | Side-wall hit | Cancel the wall-normal velocity quickly, then move in the opposite normal direction | One input with X or Z clipping |
 | Ceiling hit | Cancel upward velocity and shorten the time to the next landing | One input with upward Y clipping |
-| Ladder/vine climbing | Sustain contact to climb | Deferred |
+| Ladder/vine climbing | Sustain contact to climb | Implemented separately in [LADDER_STRATEGY_PLAN.md](LADDER_STRATEGY_PLAN.md) |
 
 One input describes each selected hit episode, not a limit of one contact in the whole route. Sustained wall pressing, sliding with repeated normal clipping and climbing are outside this slice. Separate selected episodes may occur later. Existing per-block H2/V2/combined3 caps count blockage transitions, not wall contacts; do not silently change that definition. Contact/event candidate budgets must be reported separately.
 
@@ -69,7 +69,7 @@ Implemented: `ceilingHits` defaults to true in collision-box mode. Every relevan
 
 ## Compilation and independent acceptance
 
-Reuse the Real 11 prototype's existing `standalone/ipopt/worker.py` prescribed X/Z contact rows, `model.py` scalar validation and `ladder.py` vertical contact recurrence. Its ladder regressions already cover wall detection, normal reset and carried climb velocity. No new contact integrator is needed. Ladder/vine route generation remains deferred.
+Reuse the Real 11 prototype's existing `standalone/ipopt/worker.py` prescribed X/Z contact rows, `model.py` scalar validation and `ladder.py` vertical contact recurrence. Its ladder regressions already cover wall detection, normal reset and carried climb velocity. No new contact integrator is needed. Ladder/vine route generation is now implemented separately; see [LADDER_STRATEGY_PLAN.md](LADDER_STRATEGY_PLAN.md).
 
 The sprint/air-factor bug is already fixed by the integration agent in `af12801`, documented in `RECENT_REPLAY_HANDOFF.md`. Historical Real 11 arrays predate that correction; recompile schedules through the corrected compiler rather than copying their coefficients. Do not implement a second fix.
 
@@ -79,7 +79,7 @@ The standalone helper now materializes unchanged shared Java sources from pinned
 
 The compiler accounts for next-input sprint cancellation and delayed air-factor recovery. The plan must not approximate those effects by switching one friction constant on the hit input. Validate the returned movement contract against the solved schedule.
 
-Implemented: `obstacle_geometry.check_geometry` obtains raw intended X/Z from the compiled scalar trajectory and uses shared `StaticScene` resolution. The Java scene-check action matches selected contacts instead of rejecting every horizontal collision. Resolved positions, normal reset/tangential carry, Y/ground and selected collision masks must agree; extra hits, unplanned steps and uncovered scene queries remain rejected. Ladder inputs will additionally need clamping before collision resolution, as specified in [LADDER_STRATEGY_PLAN.md](LADDER_STRATEGY_PLAN.md).
+Implemented: `obstacle_geometry.check_geometry` obtains raw intended X/Z from the compiled scalar trajectory and uses shared `StaticScene` resolution. The Java scene-check action matches selected contacts instead of rejecting every horizontal collision. Resolved positions, normal reset/tangential carry, Y/ground and selected collision masks must agree; extra hits, unplanned steps and uncovered scene queries remain rejected. Ladder inputs now apply clamping before collision resolution, as specified in [LADDER_STRATEGY_PLAN.md](LADDER_STRATEGY_PLAN.md).
 
 Checking raw movement is necessary even when a numerical contact has anchored the endpoint correctly: feeding only the shortened displacement into the collision helper would present mere arrival at the plane and lose the collision that determines sprint state.
 
@@ -114,6 +114,6 @@ Final gate: **120 orchestration tests passed in 101.636 s** with Java/IPOPT inte
 - Generalize a wall reversal's same-side corridor to approach/exit blockage chains around that same solid. Current generation does not claim same-leg corner rounding after a hit.
 - Broaden multi-leg/repeated-contact benchmarks and measure candidate drops before increasing event/queue limits. Distinct episodes are representable, but saved cold evidence currently covers single reversals and one coupled ceiling/wall input.
 - Add contact-selected step/ceiling competition and more complex vertical skeletons. Existing selected stair profiles still depend on shared scene acceptance; general step discovery is not added here.
-- Ladder/vine route generation is now the next planned family in [LADDER_STRATEGY_PLAN.md](LADDER_STRATEGY_PLAN.md). Reuse existing numerical mechanics, generate many cheap input/Y schedules, then solve promising candidates. Its consecutive climb hits are separate from this reversal family.
+- Ladder/vine route generation is now implemented as a separate family in [LADDER_STRATEGY_PLAN.md](LADDER_STRATEGY_PLAN.md). Reuse existing numerical mechanics, generate many cheap input/Y schedules, then solve promising candidates. Its consecutive climb hits are separate from this reversal family.
 - Replace the pinned shared-source build dependency with the eventual common integrated source tree when both branches are combined. Until then the pinned Git object is required for rebuilding and native sources remain untouched.
 - Improve unknown reasons and broaden real-course geometry coverage. Bounded candidates, branches and local IPOPT failures do not establish infeasibility or global objective optimality.

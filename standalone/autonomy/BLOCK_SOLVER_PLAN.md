@@ -37,7 +37,8 @@ The search objective is now fixed by user ruling: minimize total elapsed inputs,
 | Finite solid side faces, blockage corridors and collision consistency | Avoidance implemented for normal inert collision boxes; cross neo/wide neo chains and all six edge timings; one-input intentional wall reversals now generated through the shared movement compiler |
 | Ceiling avoidance and contact selection | Avoidance and one-input underside contacts implemented in collision-box mode; shortened durations enter graph bounds |
 | Choosing among ordinary/stair/run-off profiles and their approach/exit faces, with per-path run-count search | Implemented for the current floor/contact family; broader profile families remain later work |
-| Geometry discovery beyond the supplied scene, ladders, fluids and effects | Later extensions |
+| One ladder/vine interaction with ordinary prefix/suffix | Implemented; see [ladder plan](LADDER_STRATEGY_PLAN.md) |
+| Geometry discovery beyond the supplied scene, multiple ladder interactions, fluids and effects | Later extensions |
 
 ## Historical first slice: ordinary open-air profiles
 

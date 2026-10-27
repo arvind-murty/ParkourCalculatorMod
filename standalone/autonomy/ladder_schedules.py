@@ -150,7 +150,7 @@ def prepare_ladder_request(request):
         raise ValueError('Supply 1 through 64 validated entry windows')
     seen = set()
     for entry in entries:
-        if not isinstance(entry, dict) or set(entry) - {'family', 'channel', 'firstValidatedState', 'unresolvedStates'}:
+        if not isinstance(entry, dict) or set(entry) - {'family', 'channel', 'firstValidatedState', 'unresolvedStates', 'firstHitLowerBounds'}:
             raise ValueError('Invalid entry window')
         if entry.get('family') not in ('front', 'side'):
             raise ValueError('Entry family must be front or side')
@@ -164,6 +164,14 @@ def prepare_ladder_request(request):
             raise ValueError('Invalid unresolved entry states')
         for earlier in unresolved:
             integer(earlier, 'unresolved earlier entry', 0, state - 1)
+        bounds = entry.get('firstHitLowerBounds', {})
+        if not isinstance(bounds, dict):
+            raise ValueError('First hit lower bounds require an entry-state mapping')
+        for key, value in bounds.items():
+            if not isinstance(key, str) or not key.isdecimal():
+                raise ValueError('First hit lower bound keys require decimal entry states')
+            integer(int(key), 'bounded entry state', state, n - 1)
+            integer(value, 'first hit lower bound', 0, n)
     kinds = config.setdefault('exitKinds', ['side', 'top'])
     if not isinstance(kinds, list) or not kinds or any(k not in ('side', 'top') for k in kinds) or len(set(kinds)) != len(kinds):
         raise ValueError('Exit kinds must be unique side/top choices')
@@ -196,7 +204,7 @@ def _context_skeletons(context, stats):
         seen.add(tuple(variant['hit']))
         stats['skeletonOrigins'] += 1
         yield dict(context, **variant)
-    for first in range(max(0, entry - 1), exit_state - 1):
+    for first in range(max(0, entry - 1, context.get('firstHitLowerBound', 0)), exit_state - 1):
         for end in range(exit_state - 1, first, -1):
             for variant in climb_variants(first, end, n):
                 stats['skeletonOrigins'] += 1
@@ -281,6 +289,7 @@ def generate_ladder_schedules(request, *, cancel_event=None):
                 for kind in config['exitKinds']:
                     contexts.append({'entryFamily': entry['family'], 'entryChannel': entry['channel'],
                                      'entryState': state, 'entryDelay': state - entry['firstValidatedState'],
+                                     'firstHitLowerBound': entry.get('firstHitLowerBounds', {}).get(str(state), 0),
                                      'exitState': exit_state, 'exitKind': kind, 'ticks': config['maxInputs']})
     stream = _round_robin(_context_skeletons(c, stats) for c in contexts)
     skeletons, skeleton_limited = [], False

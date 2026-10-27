@@ -67,7 +67,7 @@ class ObstacleGeometryTests(unittest.TestCase):
                     if change == 'bad_support':
                         request['blocks'][1]['top'] = 1
                     else:
-                        request['collisionScene']['ladders'] = [[0, 0, 0]]
+                        request['collisionScene']['fluids'] = [[0, 0, 0]]
                 with self.assertRaises(ValueError):
                     prepare_scene(request)
 

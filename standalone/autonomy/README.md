@@ -8,7 +8,7 @@ The [collision-box obstacle search](OBSTACLE_SEARCH.md) now implements height pr
 
 [ONE_TICK_CONTACT_PLAN.md](ONE_TICK_CONTACT_PLAN.md) records the implemented side-wall reversals and ceiling cancellations, before/after avoidance, shared sprint compilation, saved results and remaining gaps. Ladder/vine climbing remains deferred.
 
-[LADDER_STRATEGY_PLAN.md](LADDER_STRATEGY_PLAN.md) records the implemented standalone schedule generator and its 37 focused unit tests: entry/fall/Sneak/consecutive-climb/exit schedules, Y traces and timing groups. Numerical entry probes, horizontal ranking and ladder route integration remain planned; generated schedules declare vertical-only validation.
+[LADDER_STRATEGY_PLAN.md](LADDER_STRATEGY_PLAN.md) records the implemented schedule generator, numerical entry probes, cap-aware ranking and one-interaction ladder route integration. Pure generator results retain vertical-only validation; accepted full routes additionally pass the shared finite scene and movement contract.
 
 Its expanded generator covers front/side entry, solver-found entry times plus up to five delayed inputs, optional one-input stops at the beginning/end of climbing and arbitrary interspersed non-climb Sneak masks. Equal total/post-exit airtimes are grouped for straight-line horizontal ranking, with explicit cap-aware first-input Sneak priority and diverse geometry backups.
 
@@ -90,7 +90,7 @@ Horizontal support is checked before the landing-producing input's horizontal mo
 
 The planner solves prefixes from the original initial state, carrying momentum through all earlier jumps. It does not reset the player at each block or freeze a single prefix's exit state. Failed jump candidates cause an increment at that jump. An unresolved run-up probe is retried, then causes heuristic backtracking with an unresolved record; it does not establish that every longer or differently seeded run-up is physically impossible.
 
-Before IPOPT, a conservative per-axis interval screen can reject an unreachable support row. Its carry interval includes both survival and zero carry, and its control interval includes every facing. It therefore covers automatic per-axis inertia in the declared continuous model. It is deliberately loose and never drops inertia to assume that extra travel is always helpful. Contacts, ladders, and vertical requests bypass this screen. A rejected run-only prefix excludes its longer run-only extensions under the same earlier allocation; a rejected jump prefix only advances that jump's run count.
+Before IPOPT, a conservative per-axis interval screen can reject an unreachable support row. Its carry interval includes both survival and zero carry, and its control interval includes every facing. It therefore covers automatic per-axis inertia in the declared continuous model. It is deliberately loose and never drops inertia to assume that extra travel is always helpful. Prescribed contacts anchor the relevant position/carry intervals, and ladder inputs clamp their movement intervals. Vertical state is validated separately with the existing scalar Y engine. A rejected run-only prefix excludes its longer run-only extensions under the same earlier allocation; a rejected jump prefix only advances that jump's run count.
 
 Each IPOPT probe uses the configured per-candidate seconds. Unknowns receive up to `--retries` retries, default one, with increased budget and a fallback guess. The outer deadline covers compilation and numerical probes. Worker errors stop the search rather than masquerading as impossible jumps. The original route object and live TAS are never edited.
 
@@ -130,3 +130,18 @@ The run-off starts at local input 9: grounded with no Jump, followed by three ai
 The full jumps 0-16 experiment is now implemented and documented in [experiments/linkcraft11-j0-j16/README.md](experiments/linkcraft11-j0-j16/README.md). It succeeds in about 81 seconds with 12 ground run inputs, including one mandatory step, and zero final scalar violation. It exercises incrementing and backtracking at the late jumps rather than relying on the easy zero-run subsection.
 
 For full-route extraction, `--expanded` records explicit assumptions for missing normal grid blocks, extends a same-width coplanar standing strip from grounded samples, and preserves step/early-entry contact phases. A landing region and standing region may differ: `standingBounds` is raw support geometry for run inputs, while `centerBounds` is the landing region. The Java adapter derives both with the existing footprint helper. `landingPhases` selects pre/post-horizontal landing checks; `contactEntries` keeps the player outside a target until the prescribed crossing and inside at its entry state. These are block-derived positional conditions, not facing constraints.
+
+
+## Ladder and vine route search
+
+Collision-box requests can now declare `climbableCells: [[x,y,z], ...]` and optional `ladderSearch` budgets. The planner discovers front/side entry timing, generates climb/fall/Sneak/stop schedules, ranks promising timing groups and solves one ladder interaction with ordinary approach/exit jumps in a common continuous problem. Actual thin ladder boxes remain solids; vine cells do not create fictional collision boxes. Final acceptance checks all supplied cells/solids, exact chosen hits, component caps, Y and stored carry through the shared compiler/scene helper.
+
+See [the detailed plan and implemented limits](LADDER_STRATEGY_PLAN.md) and [five saved geometry-only experiments](experiments/ladder-search/README.md). A direct side-entry result includes two chosen Sneak inputs. One ladder interaction per route is currently supported; minimum-time/objective proofs remain false.
+
+```sh
+PKC_IPOPT_PYTHON="$PWD/.venv-ipopt/bin/python" \
+python3 -m standalone.autonomy.solve_blocks \
+  --input standalone/autonomy/fixtures/ladder-side-entry.json \
+  --output standalone/autonomy/build/ladder-side-entry-result.json \
+  --seconds 60 --route-seconds 30 --candidate-seconds 1 --retries 0
+```

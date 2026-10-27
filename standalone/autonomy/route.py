@@ -135,6 +135,8 @@ def prepare_route(request):
     validate_passages(route)
     from .hit_events import validate_hits
     validate_hits(route)
+    from .ladder_events import validate_ladder_events
+    validate_ladder_events(route)
     return route
 
 
@@ -265,10 +267,18 @@ def schedule(route, allocation, stage='jump'):
     from .hit_events import compile_hits
     contacts, scene_contacts, hit_rows = compile_hits(route, events)
     walls.extend(hit_rows)
+    extra = {}
+    if route.get('ladderEvents'):
+        from .ladder_events import compile_ladder_events
+        ladder_rows, ladder_contacts, ladder_scene, ladder, sneak = compile_ladder_events(route, events, state)
+        walls.extend(ladder_rows)
+        contacts.extend(ladder_contacts)
+        scene_contacts.extend(ladder_scene)
+        extra = {'ladderTicks': ladder, 'sneak': sneak}
     return {'ticks': state, 'grounded': grounded, 'jump': jump, 'events': events,
             'supportChecks': supports_at, 'exitChecks': exit_checks, 'walls': walls,
             'allocation': list(allocation), 'stage': stage, 'passageFailures': passage_failures,
-            'contacts': contacts, 'sceneContacts': scene_contacts}
+            'contacts': contacts, 'sceneContacts': scene_contacts, **extra}
 
 
 def initial_guess(route, plan, parent=None):

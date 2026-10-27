@@ -19,11 +19,11 @@ def floor_checks(scene, block_ids, profiles):
         target_top = by_id[block_ids[leg + 1]]['top']
         jumps = profile.get('jump', [True] + [False] * (profile['airtime'] - 1))
         config = {'threshold': .005, 'jumpVelocity': [f32(.42) if j else None for j in jumps],
-                  'sneak': [False] * profile['airtime']}
+                  'sneak': profile.get('sneak', [False] * profile['airtime'])}
         for offset in range(profile['airtime']):
             y = profile['position'][offset]
             next_y = profile['position'][offset + 1]
-            movement = vertical_move(config, offset, profile['velocity'][offset], False)
+            movement = vertical_move(config, offset, profile['velocity'][offset], profile.get('ladderTicks', [False] * (profile['airtime'] + 1))[offset])
             if movement >= 0:
                 continue
             for block in scene['blocks']:
@@ -73,9 +73,16 @@ def validate_vertical_schedule(route, profiles, plan):
                 'velocity': route['initial']['velocity'][1], 'onGround': True,
                 'previousHorizontalCollision': False, 'threshold': .005,
                 'jumpVelocity': [f32(.42) if jump else None for jump in plan['jump']],
-                'sneak': [False] * n, 'contacts': sorted(contacts, key=lambda contact: contact['state'])}
+                'sneak': plan.get('sneak', [False] * n), 'contacts': sorted(contacts, key=lambda contact: contact['state'])}
+    x, synthetic_hits = 0., []
+    hit_states = {c['state'] for c in plan.get('contacts', [])}
+    for t in range(n):
+        x += .05 if t + 1 in hit_states else .1
+        if t + 1 in hit_states:
+            synthetic_hits.append({'state': t + 1, 'axis': 0, 'direction': 1, 'plane': x})
     problem = prepare({'version': 1, 'ticks': n, 'position': [0, 0], 'velocity': [0, 0],
-                       'magnitude': [0] * n, 'friction': [.91] * n, 'base': [0] * n, 'yaw': [0] * n,
+                       'magnitude': [.1] * n, 'friction': [0] * n, 'base': [0] * n, 'yaw': [0] * n,
+                       'contacts': synthetic_hits, 'ladderTicks': plan.get('ladderTicks', [False] * (n + 1)),
                        'objective': {'axis': 'X', 'sense': 'MAX', 'tick': n}, 'vertical': vertical})
     checked = validate(problem, problem['yaw'])
     return {'feasible': checked['feasible'] and checked['onGround'] == plan['grounded'] + [True],
