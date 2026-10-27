@@ -7,6 +7,8 @@ from standalone.ipopt.ladder import f32, vertical_move, vertical_step
 from .route import center_bounds, supports
 from .ranking import candidate_rank
 from .search import find_route
+from .blockages import passage_options, passage_y_valid
+from .obstacle_geometry import check_geometry
 
 
 def floor_checks(scene, block_ids, profiles):
@@ -81,9 +83,10 @@ def validate_vertical_schedule(route, profiles, plan):
 
 def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candidate_seconds, retries,
                            max_branches, improve=False, rank_equal_cost=False, optimize_goal=False,
-                           python_executable=None, cancel_event=None):
+                           python_executable=None, cancel_event=None, geometry=None, motion_bound=None,
+                           max_blockages=2, max_passage_candidates=128):
     deadline = time.monotonic() + seconds
-    queue, seen, serial = [(0.0, 0, [])], {()}, 0
+    queue, seen, serial = [(0.0, 0, [], route.get('passages', []))], {()}, 0
     attempts, inner_attempts = [], []
     best_result = None
     termination = 'contact_search_exhausted'
@@ -98,9 +101,10 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
         if remaining <= 0:
             termination = 'deadline'
             break
-        score, _, rows = heapq.heappop(queue)
+        score, _, rows, passages = heapq.heappop(queue)
         branch = copy.deepcopy(route)
         branch['constraints'].extend(rows)
+        branch['passages'] = passages
         if best_result is not None:
             branch['maxTotalRunTicks'] = min(branch['maxTotalRunTicks'], best_result['best']['cost'])
         result = find_route(branch, compiler, seconds=remaining, candidate_seconds=candidate_seconds,
@@ -110,6 +114,8 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
         inner_attempts.extend(result['attempts'])
         conflicts = contact_conflicts(checks, result['best']['plan'], result['best']['candidate']) if result['best'] else []
         attempts.append({'status': result['status'], 'constraintCount': len(rows),
+                         'passageCount': len(passages),
+                         'passageKinds': [p['kind'] for p in passages],
                          'conflicts': [{'block': c['block']['id'], 'state': c['state'], 'reason': c['reason']}
                                        for c in conflicts], 'termination': result['termination']})
         if result['status'] in ('error', 'cancelled'):
@@ -126,7 +132,56 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                 attempts[-1]['status'] = 'unknown'
                 attempts[-1]['termination'] = 'vertical_schedule_mismatch'
                 continue
-            result['best'].update(route=branch, profiles=profiles, contactChecks=checks)
+            if any(not passage_y_valid(p, result['best']['plan']['events'][p['leg']], profiles[p['leg']]) for p in passages):
+                attempts[-1].update(status='unknown', termination='passage_y_mismatch')
+                continue
+            if geometry is not None:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    termination = 'deadline'
+                    break
+                try:
+                    checked = check_geometry(geometry, result['best']['plan'], result['best']['candidate'],
+                                             vertical, compiler, remaining)
+                except TimeoutError:
+                    termination = 'geometry_deadline'
+                    break
+                except (ValueError, RuntimeError, OSError) as error:
+                    if best_result is not None:
+                        best_result.update(termination='geometry_error', error=str(error),
+                                           attempts=inner_attempts, contactAttempts=attempts)
+                        return best_result
+                    return {'status': 'error', 'termination': 'geometry_check', 'error': str(error),
+                            'best': None, 'attempts': inner_attempts, 'contactAttempts': attempts}
+                attempts[-1]['geometryCheck'] = checked
+                if not checked['feasible']:
+                    attempts[-1]['status'] = 'unknown'
+                    if 'solidIndex' not in checked:
+                        attempts[-1]['termination'] = checked['reason']
+                        continue
+                    plan = result['best']['plan']
+                    leg = next(i for i, event in enumerate(plan['events'])
+                               if event['landed'] <= checked['tick'] < event['landing'])
+                    index = checked['solidIndex']
+                    alternatives = passage_options(geometry['solids'][index], index, leg, profiles[leg], branch,
+                                                   plan, result['best']['candidate'], motion_bound,
+                                                   max_blockages=max_blockages, max_candidates=max_passage_candidates,
+                                                   deadline=deadline)
+                    attempts[-1]['passageGeneration'] = {k: v for k, v in alternatives.items() if k != 'options'}
+                    for option in alternatives['options']:
+                        new_passages = [p for p in passages if (p['leg'], p['solidIndex']) != (leg, index)] + [option['passage']]
+                        key = (tuple(sorted((r['leg'], r['offset'], r['mode'], r['cmp'], r['rhs']) for r in rows)),
+                               tuple(sorted((p['leg'], p['solidIndex'], tuple((f['axis'], f['direction'], f['plane']) for f in p['faces']),
+                                             tuple(p['gates'])) for p in new_passages)))
+                        if key in seen:
+                            continue
+                        seen.add(key)
+                        serial += 1
+                        heapq.heappush(queue, (score + option['score'], serial, rows, new_passages))
+                    continue
+                result['best']['geometryCheck'] = checked
+            result['best'].update(route=result['best'].get('route', branch), profiles=profiles, contactChecks=checks)
+            result['best']['passages'] = passages
             result['best']['vertical'] = vertical['vertical']
             result['best']['candidate'].update({key: vertical[key] for key in ('y', 'vy', 'onGround')})
             result.update(attempts=inner_attempts, contactAttempts=attempts)
@@ -138,13 +193,15 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
         conflict = conflicts[0]
         for row in avoid_contact_rows(conflict, max(route['supportClearance'], 2e-7)):
             new_rows = rows + [row]
-            key = tuple(sorted((r['leg'], r['offset'], r['mode'], r['cmp'], r['rhs']) for r in new_rows))
+            key = (tuple(sorted((r['leg'], r['offset'], r['mode'], r['cmp'], r['rhs']) for r in new_rows)),
+                   tuple(sorted((p['leg'], p['solidIndex'], tuple((f['axis'], f['direction'], f['plane']) for f in p['faces']),
+                                 tuple(p['gates'])) for p in passages)))
             if key in seen:
                 continue
             seen.add(key)
             serial += 1
             delta = abs(conflict['position'][0 if row['mode'] == 'X' else 1] - row['rhs'])
-            heapq.heappush(queue, (score + delta, serial, new_rows))
+            heapq.heappush(queue, (score + delta, serial, new_rows, passages))
     if queue and len(attempts) >= max_branches:
         termination = 'contact_branch_limit'
     if best_result is not None:

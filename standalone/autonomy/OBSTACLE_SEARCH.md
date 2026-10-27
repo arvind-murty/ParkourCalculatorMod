@@ -1,0 +1,92 @@
+# Collision-box obstacle avoidance
+
+2026-10-26. Implemented the geometry, height pruning and avoidance slices of [OBSTACLES_AND_BLOCKAGES.md](OBSTACLES_AND_BLOCKAGES.md). The route search now accepts actual collision volumes, tries directed blockage chains and validates accepted continuous trajectories through the shared scene collision helper. Intentional horizontal/ceiling-hit profile generation remains separate work.
+
+## Input
+
+Use `sceneModel: collision_boxes`. Supply each block's actual world-space collision sub-boxes once, plus the region whose geometry is supplied:
+
+```json
+{
+  "version": 1,
+  "sceneModel": "collision_boxes",
+  "geometryBounds": [-10, -10, -10, 20, 20, 20],
+  "initial": {
+    "position": [0.5, 1, 0.5],
+    "velocity": [0, -0.0784000015258789, 0],
+    "yaw": 0
+  },
+  "startBlock": "start",
+  "goalBlock": "goal",
+  "blocks": [
+    {"id": "start", "boxes": [[0, 0, 0, 1, 1, 1]]},
+    {"id": "wall", "boxes": [[1.7, 0, 0.25, 2, 4, 0.75]]},
+    {"id": "goal", "boxes": [[3, 0, 0, 4, 1, 1]]}
+  ],
+  "maxJumps": 1,
+  "maxRunTicksPerJump": 0,
+  "maxTotalRunTicks": 0,
+  "maxContactBranches": 24,
+  "maxBlockagesPerObstacle": 2,
+  "maxPassageCandidates": 128
+}
+```
+
+Box order is `[minX,minY,minZ,maxX,maxY,maxZ]`. The adapter derives candidate top supports and a shared `StaticScene` description from those boxes. A multipart block produces separate support IDs `id#0`, `id#1`, etc.; start/goal IDs must identify the desired part. Its disjoint parts remain separate solids and support footprints. A single-part block keeps its ID.
+
+The normalized result retains collision solids, support provenance and finite coverage bounds. A query outside coverage returns unknown for that branch. The model is normal 1.8.9 movement on static inert boxes with normal friction and step height. Unsupported ladder/surface/callback declarations are not silently accepted by this scene adapter. The legacy `support_planes` modes still work and retain their explicitly narrower acceptance scope.
+
+This avoidance slice declares a clear initial input state with the supplied position/velocity/yaw and effective sprint policy, without an incoming wall hit or held-jump cooldown. Additional initial resume fields are rejected. Extending that contract uses the shared movement compiler and input-state implementation together with intentional-contact profiles.
+
+## Candidate generation and constraints
+
+The first landing filter uses the existing Y model's normal jump height, approximately 1.249187 blocks. A higher top is excluded as a landing from that launch, while its volume remains an obstacle. The chosen Y trace then determines whether over/under faces can be used and when. A tall wall with neither vertical option leaves only horizontal passages; reachable tops and ceilings retain horizontal alternatives.
+
+For each obstruction found by the shared collider, the planner generates face chains rather than independent arbitrary walls:
+
+- One horizontal blockage is a **cross neo**.
+- Two horizontal blockages are a **wide neo**.
+- Chains using Y faces describe passing over or under. A chain may contain both vertical and horizontal blockages; the neo name counts horizontal ones.
+- The default maximum is two total blockage transitions per obstacle passage. `maxBlockagesPerObstacle` can extend this to three/four. Zero-transition branches represent staying outside one face.
+
+The six legacy timing templates are preserved: X->Z, Y->X and Y->Z require an outside-both state; Z->X, X->Y and Z->Y permit consecutive-state handoffs. Every face also has a signed boundary, and the approach/exit intervals remain outside their chosen faces. The face can change at a later corner, so leaving one side does not create a permanent half-plane wall.
+
+Passage gates are relative to the transition's departure. Adding runs retimes the gates and all associated rows; extending the run-up also extends the first outside-face interval. Both earlier facings and run allocation remain adjustable. Geometry-derived waypoint guesses account for carried velocity using the existing scalar model and compiled friction; these guesses add no facing constraints.
+
+Height masks and conservative forward/backward reach envelopes prune impossible face/time choices. Between-gate movement bounds exclude corner pairs requiring more movement than the profile can supply. On the first leg, the fixed initial state and allowed ground runs tighten the bound further. Side preference ranks remaining candidates by adjustment to the current trajectory; it does not delete the other side. The existing per-axis interval screen still rejects impossible compiled rows before IPOPT.
+
+## Acceptance and shared implementation
+
+For every complete candidate, orchestration validates the horizontal numerical request, strict support/exit predicates and the generated Y schedule. It then sends the intended X/Z displacements and raw Y movement to the existing Java `StaticScene` helper. That helper resolves actual Y-X-Z clipping, both step alternatives and body-volume clearance against all supplied solids. Orchestration compares the resulting positions and ground state with the declared profile and rejects every unplanned horizontal hit. It does not instantiate another movement engine or export/replay a TAS.
+
+Collision diagnostics identify the actual limiting sub-box and axis. Step diagnostics identify which side obstruction triggered a selected step attempt. A mismatch generates a new blockage branch, subject to the declared budget. The outer solve does not trust the trajectory or feasibility flag returned by IPOPT.
+
+Run-offs include their source in the same solid set. Departure clearance alone no longer admits later source penetration. Source avoidance is active while the body overlaps its finite Y span, including on later route legs, and allows passage underneath once the head clears the actual bottom. The side-run-off fixture leaves a nearby Z edge with one added run instead of traveling to the far X edge.
+
+## Search limits and output
+
+Total elapsed inputs remain the primary rank; the numerical objective ranks equal-time witnesses. Goal branches continue after the first witness and preserve the best accepted time/objective result. Normal failure, budget exhaustion and an excluded passage family are unknown, not general infeasibility.
+
+`maxContactBranches` bounds the combined floor/blockage branch search. `maxPassageCandidates` bounds retained alternatives per discovered obstruction, with additional explicit bounds on timing-state expansion and its queue. `attempts[].obstacleSearch` reports generated candidates, reach pruning, vertical-face pruning, dropped candidates/timings, incomplete generation and accepted strategy kinds. `best.passages` stores the selected faces, blockage types and gates. `best.geometryCheck` records final shared-scene acceptance. A deadline retains an already validated incumbent.
+
+`minimumTicksProven` only compares a witness with the static graph bound for the declared current profile family. It is not a certificate over omitted wall/ceiling-contact profiles or every Minecraft strategy. `objectiveOptimalityProven` remains false. Passage complexity, numerical budgets and queue/candidate caps are explicit scope limits.
+
+## Run and measured cases
+
+Prepare the Java coefficient compiler as in [README.md](README.md), including rebuilding it after this change, then:
+
+```sh
+PKC_IPOPT_PYTHON="$PWD/.venv-ipopt/bin/python" \
+python3 -m standalone.autonomy.solve_blocks \
+  --input standalone/autonomy/fixtures/obstacle-wide-neo.json \
+  --output standalone/autonomy/build/wide-neo-result.json \
+  --seconds 35 --route-seconds 25 --candidate-seconds 1 --retries 0
+```
+
+The actual IPOPT/Java integration tests find a 12-input cross neo, a 12-input wide neo, a five-input side run-off and a 12-input passage under a ceiling. A tall, broad wall retains no reachable passage in that fixed single-jump family and is never accepted. [Saved requests and results](experiments/obstacle-avoidance/README.md) include independent scalar and shared swept-collision checks. Gate compilation is also cross-checked against all 24 signed cases from the Minecraft-method probe.
+
+## Next contact families
+
+The current numerical worker can prescribe X/Z and Y contacts, but this route search does not yet generate intentional wall or ceiling hits. Such hits must use the integration agent's `FixedMovementCompiler`/`ReplayInputState`, including collision-driven sprint cancellation and air-factor carry. The current constant-effective-sprint coefficient adapter is used only for paths whose shared-scene check confirms no horizontal collision. No second sprint state machine is introduced.
+
+Next add those contact alternatives, their finite-face guards and the resulting Y-profile changes. Refresh time bounds when introducing shorter ceiling/contact profiles. Replay, float-angle realization and TAS export remain with the integration agent.

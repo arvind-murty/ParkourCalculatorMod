@@ -6,7 +6,8 @@ from collections import deque
 
 from standalone.ipopt.model import integer, number
 from .block_contacts import floor_checks, solve_contact_branches
-from .block_profiles import compile_open_air_route, ordinary_jump_profile, runoff_profile, stair_jump_profile
+from .block_profiles import compile_open_air_route, normal_jump_height, ordinary_jump_profile, runoff_profile, stair_jump_profile
+from .obstacle_geometry import normalize_geometry
 from .route import prepare_route
 from .ranking import candidate_rank, objective_spec
 
@@ -17,19 +18,29 @@ def prepare_scene(request):
         raise ValueError('Expected a block scene')
     allowed = {'version', 'sceneModel', 'initial', 'blocks', 'startBlock', 'goalBlock', 'inputs',
                'maxJumps', 'maxPrefixes', 'maxQueuedPrefixes', 'maxRunTicksPerJump', 'maxTotalRunTicks',
-               'maxFlightInputs', 'maxContactBranches', 'stairBoost', 'supportClearance', 'objective'}
+               'maxFlightInputs', 'maxContactBranches', 'stairBoost', 'supportClearance', 'objective',
+               'geometryBounds', 'collisionScene', 'maxBlockagesPerObstacle', 'maxPassageCandidates'}
     extra = set(scene) - allowed
     if extra:
         raise ValueError('Unsupported block-scene fields: ' + ', '.join(sorted(extra)))
-    if scene.get('sceneModel') not in ('coplanar_support_planes', 'support_planes'):
-        raise ValueError('Declare a support_planes or coplanar_support_planes scene; solid side faces are not modeled')
+    if scene.get('sceneModel') not in ('coplanar_support_planes', 'support_planes', 'collision_boxes'):
+        raise ValueError('Declare a support_planes, coplanar_support_planes or collision_boxes scene')
     scene['objective'] = objective_spec(scene.get('objective'))
     blocks = scene.get('blocks')
     if not isinstance(blocks, list) or not 2 <= len(blocks) <= 64:
         raise ValueError('Supply 2 through 64 candidate supports')
+    solid_scene = scene['sceneModel'] == 'collision_boxes'
+    if solid_scene:
+        scene = normalize_geometry(scene)
+        blocks = scene['blocks']
+        if len(blocks) > 64:
+            raise ValueError('Supply at most 64 collision sub-boxes')
+    elif 'collisionScene' in scene or 'geometryBounds' in scene:
+        raise ValueError('Full geometry requires sceneModel=collision_boxes')
     ids = []
     for block in blocks:
-        if not isinstance(block, dict) or set(block) - {'id', 'bounds', 'top'}:
+        fields = {'id', 'bounds', 'top', 'sourceBlock', 'solidIndex'} if solid_scene else {'id', 'bounds', 'top'}
+        if not isinstance(block, dict) or set(block) - fields:
             raise ValueError('Each candidate is one rectangular support with id, bounds and top')
         if not isinstance(block.get('id'), str) or not block['id']:
             raise ValueError('Each candidate support needs a nonempty ID')
@@ -56,6 +67,11 @@ def prepare_scene(request):
                                  ('maxRunTicksPerJump', 6, 0, 1000), ('maxTotalRunTicks', 12, 0, 1000),
                                  ('maxFlightInputs', 200, 2, 200), ('maxContactBranches', 16, 1, 256)]:
         integer(scene.setdefault(key, default), key, lo, hi)
+    if solid_scene:
+        integer(scene.setdefault('maxBlockagesPerObstacle', 2), 'maxBlockagesPerObstacle', 0, 4)
+        integer(scene.setdefault('maxPassageCandidates', 128), 'maxPassageCandidates', 1, 4096)
+    elif 'maxBlockagesPerObstacle' in scene or 'maxPassageCandidates' in scene:
+        raise ValueError('Blockage limits require collision_boxes geometry')
     ordered = [blocks[ids.index(scene['startBlock'])]] + [b for b in blocks if b['id'] != scene['startBlock']]
     checked = prepare_route({'version': scene.get('version'), 'initial': scene.get('initial'),
                              'blocks': ordered, 'airtimes': [12] * (len(blocks) - 1),
@@ -65,6 +81,8 @@ def prepare_scene(request):
         raise ValueError('Use sceneModel=support_planes for different support heights')
     scene['inputs'] = checked['inputs']
     scene['initial'] = checked['initial']
+    if solid_scene and set(scene['initial']) - {'position', 'velocity', 'yaw'}:
+        raise ValueError('Collision-box avoidance requires a clear initial input state; additional resume fields need shared movement compilation')
     scene['supportClearance'] = checked['supportClearance']
     return scene
 
@@ -121,6 +139,9 @@ def build_transition_graph(scene, compiler, *, seconds=5):
         for target in scene['blocks']:
             remaining()
             key = (source['top'], target['top'])
+            if key[1] - key[0] > normal_jump_height() + 1e-9 * (1 + abs(key[0]) + abs(key[1])):
+                rejected.append({'source': source['id'], 'target': target['id'], 'reason': 'jump_height'})
+                continue
             if key not in profile_cache:
                 ordinary = ordinary_jump_profile(*key, max_inputs=scene['maxFlightInputs'])
                 stair = stair_jump_profile(*key) if scene['stairBoost'] else None
@@ -207,6 +228,7 @@ def build_transition_graph(scene, compiler, *, seconds=5):
             'rejectedEdges': rejected,
             'profileLimitReached': any(r['reason'] == 'profile_not_generated' for r in rejected),
             'bound': {'storedSpeedNorm': speed, 'movementAfterSupportCheck': movement_after_support_check,
+                      'groundMagnitude': magnitude[0], 'groundFriction': friction[0],
                       'flightTravelToLandingCheck': max((b['travel'] for b in flight_bounds.values()), default=0),
                       'radius': max((b['radius'] for b in flight_bounds.values()), default=0)}}
 
@@ -220,6 +242,7 @@ def compile_block_path(scene, block_ids, transitions=None):
         if block_id not in by_id:
             raise ValueError('Unknown support in candidate path')
         block = copy.deepcopy(by_id[block_id])
+        block = {key: block[key] for key in ('id', 'bounds', 'top')}
         block['id'] = block_id + '@' + str(index)
         blocks.append(block)
     if transitions is not None:
@@ -336,6 +359,14 @@ def search_block_paths(scene, graph, evaluate, *, seconds=60, improve=False, can
                       'innerProbes': len(result.get('attempts', [])),
                       'contactBranches': len(result.get('contactAttempts', [])), 'error': result.get('error')}
             record['unresolvedAllocations'] = len(result.get('unresolved', [])) + len(result.get('unresolvedEqualCost', []))
+            if scene['sceneModel'] == 'collision_boxes':
+                contacts = result.get('contactAttempts', [])
+                generations = [a['passageGeneration'] for a in contacts if 'passageGeneration' in a]
+                record['obstacleSearch'] = {key: sum(a.get(key, 0) for a in generations)
+                                           for key in ('generated', 'candidateDrops', 'timingPoolDrops', 'reachPruned', 'verticalFacesPruned')}
+                record['obstacleSearch']['generationIncomplete'] = any(a.get('generationIncomplete') for a in generations)
+                record['obstacleSearch']['acceptedKinds'] = sorted({kind for a in contacts if a.get('geometryCheck', {}).get('feasible')
+                                                                    for kind in a['passageKinds']})
             attempts.append(record)
             if on_attempt is not None:
                 on_attempt(copy.deepcopy(record))
@@ -372,6 +403,7 @@ def search_block_paths(scene, graph, evaluate, *, seconds=60, improve=False, can
             'minimumTicksProven': best is not None and best['plan']['ticks'] == initial_tick_bound,
             'objectiveOptimalityProven': False, 'objective': scene['objective'],
             'pruning': {'horizontalEdges': sum(r.get('reason') == 'optimistic_horizontal_reach' for r in graph['rejectedEdges']),
+                        'heightEdges': sum(r.get('reason') == 'jump_height' for r in graph['rejectedEdges']),
                         'profileEdges': sum(r.get('reason') == 'profile_not_generated' for r in graph['rejectedEdges']),
                         'horizonPrefixes': horizon_prunes, 'tickBoundPrefixes': tick_prunes,
                         'disconnectedPrefixes': disconnected_prunes, 'heuristicPoolDrops': pool_drops},
@@ -415,7 +447,11 @@ def find_blocks(request, compiler, *, seconds=60, route_seconds=8, candidate_sec
                                       seconds=min(route_seconds, available), candidate_seconds=candidate_seconds,
                                       retries=retries, max_branches=scene['maxContactBranches'], improve=goal,
                                       rank_equal_cost=goal, optimize_goal=goal,
-                                      python_executable=python_executable, cancel_event=cancel_event)
+                                      python_executable=python_executable, cancel_event=cancel_event,
+                                      geometry=scene.get('collisionScene'),
+                                      motion_bound=dict(graph['bound'], flightBounds=graph['flightBounds']),
+                                      max_blockages=scene.get('maxBlockagesPerObstacle', 2),
+                                      max_passage_candidates=scene.get('maxPassageCandidates', 128))
 
     remaining = seconds - (time.monotonic() - started)
     result = search_block_paths(scene, graph, evaluate, seconds=max(.001, remaining), improve=improve,
@@ -427,4 +463,9 @@ def find_blocks(request, compiler, *, seconds=60, route_seconds=8, candidate_sec
                                'inputPolicy': 'sprint_jump_sprint_45', 'facings': 'free',
                                'routeOrderSupplied': False, 'airtimesSupplied': False,
                                'otherFloorContacts': 'checked_at_generated_crossings'})
+    if scene['sceneModel'] == 'collision_boxes':
+        result['validationLevel'] = 'continuous_profile_with_shared_scene_collision_checks'
+        result['assumptions'].update(solidSideFaces=True, runOffSourceObstacle='checked_during_y_overlap',
+                                     ceilings=True, ceilingContactProfiles=False,
+                                     intentionalWallHits=False, maxBlockagesPerObstacle=scene['maxBlockagesPerObstacle'])
     return result

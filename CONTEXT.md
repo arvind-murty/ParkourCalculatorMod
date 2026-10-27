@@ -171,7 +171,13 @@ A jump with no obstacles, completable without turning (apart from using 45 straf
 A jump that goes around a wall; the number is the wall length (a 2b neo is a "double neo"). Variants: winged neo (wall extended outwards), nix neo (wall and landing extended), reverse nix neo (wall and momentum extended), butterfly neo (panes on its side).
 
 **Cross neo**:
-A jump that goes around a corner.
+A passage with one horizontal blockage, crossing the edge between an X-normal face and a Z-normal face.
+
+**Wide neo**:
+A passage with two horizontal blockages, going around a side of an obstacle.
+
+**Blockage**:
+A directed passage around the common edge of two signed collision faces. The faces can have X, Y or Z normals. Legacy Y-X-Z movement order determines whether clearance beyond both faces must occur at one state or can occur at consecutive states. A horizontal blockage joins X-normal and Z-normal faces.
 
 **Squeeze jump**:
 A jump through a small gap.

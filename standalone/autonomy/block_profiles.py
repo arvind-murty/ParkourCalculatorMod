@@ -1,8 +1,14 @@
 import copy
+from functools import lru_cache
 
 from standalone.ipopt.ladder import REST_CARRY, f32, vertical_carry, vertical_step
 from standalone.ipopt.model import integer, number
 from .route import prepare_route
+
+
+@lru_cache(maxsize=1)
+def normal_jump_height():
+    return max(ordinary_jump_profile(0, 0)['position'])
 
 
 def ordinary_jump_profile(source_top, target_top, *, max_inputs=200):

@@ -1,6 +1,6 @@
 # Obstacles, contacts and directed blockages
 
-2026-10-26. Investigated against the mod, its cached Minecraft 1.8.9 movement code, the earlier block solver and the integration agent's current helpers. This is the proposed next orchestration design. General obstacle/contact enumeration is not implemented yet. The existing run-ticks and route-search interfaces remain the inner search.
+2026-10-26. Investigated against the mod, its cached Minecraft 1.8.9 movement code, the earlier block solver and the integration agent's current helpers. The geometry/height/avoidance slices are now implemented in [OBSTACLE_SEARCH.md](OBSTACLE_SEARCH.md). Intentional wall/ceiling-contact profile generation remains the next slice. The existing run-ticks and route-search interfaces remain the inner search.
 
 ## Findings grounded in code
 
@@ -29,7 +29,7 @@ The old `SweptCollision` is recoverable from `538c92b^`. It gets the ordinary Y-
 
 The integration branch already supplies better shared machinery:
 
-- `core/.../replay/StaticScene.java`: finite inert sub-boxes, sequential clipping, both step alternatives, collision flags, normal velocity reset and coverage checks. This class and its seven regression tests have been imported unchanged into this worktree from `f057c0c`.
+- `core/.../replay/StaticScene.java`: finite inert sub-boxes, sequential clipping, both step alternatives, collision flags, normal velocity reset and coverage checks. This class and its seven regression tests were imported unchanged from `f057c0c`; it now also exposes clipping and step-trigger diagnostics for orchestration.
 - `forge-core/.../replay/ReplayInputState.java`: the existing `PlayerSprintMachine`, processed inputs and previous air-factor state.
 - `forge-core/.../replay/FixedMovementCompiler.java`: movement arrays compiled from fixed keys, ground and contact assumptions, using the existing exact kernel. Its Python movement contract rejects changed contact/ground schedules.
 
