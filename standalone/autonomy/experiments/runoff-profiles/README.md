@@ -17,4 +17,6 @@ Each `*-request.json` is a self-contained continuous numerical request with gene
 
 The saved request's yaw is the found witness for convenient validation. Re-solving it is warm validation, not a cold route-search reproduction. Use the [block-route CLI](../../BLOCK_ROUTE_SEARCH.md) with the fixtures under `../../fixtures` for cold selection. The reported times include graph compilation and search using the persistent Java coefficient compiler and the actual IPOPT runtime.
 
+These saved results predate the explicit preceding-state run-off support rows; that state is already checked by their run or landing rows. Their departure exit is checked, but subsequent Y-dependent source-obstacle clearance is not. Leaving a nearer side edge may avoid the first fixture's four forward run inputs. That alternative needs full source obstacle geometry and constraints, not a permanent departure half-plane. See [run-off obstacle requirements](../../RUN_OFF_OBSTACLES.md).
+
 Neither result reaches its graph-only tick lower bound, so neither claims a proven minimum. The numerical objective is also locally optimized under a budget. These are continuous support-plane results; ceiling and general finite side-collision modeling remain separate work.

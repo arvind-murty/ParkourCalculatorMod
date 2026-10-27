@@ -33,6 +33,7 @@ The search objective is now fixed by user ruling: minimize total elapsed inputs,
 | Different-height route edges and earlier-floor consistency | Implemented with the existing Y simulation and bounded outside-face positional branching |
 | Short half-block staircase profiles and their entry constraints | Implemented as takeoff plus one air input, with ordinary alternatives retained and run contacts retimed |
 | Run-off profiles, leaving a support without jumping | Automatically derived for lower supports, with all four exit faces, motion-specific reach pruning and shared route/run search; supplied `walk_off` remains compatible |
+| Run-off source as an obstacle after departure, only during vertical overlap | Deferred with Y-aware obstacles/ceilings; [constraints and tests](RUN_OFF_OBSTACLES.md) specify the required finite-volume behavior |
 | Finite solid side faces, general obstacle corridors and collision consistency | Not implemented in the new block path |
 | Ceiling placement/contact selection and ceiling-induced cancellation | Next pass |
 | Choosing among ordinary/stair/run-off profiles and their approach/exit faces, with per-path run-count search | Implemented for the current floor/contact family; broader profile families remain later work |
