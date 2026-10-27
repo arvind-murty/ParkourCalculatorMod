@@ -133,6 +133,8 @@ def prepare_route(request):
         number(row.get('rhs'), 'constraint rhs')
     from .blockages import validate_passages
     validate_passages(route)
+    from .hit_events import validate_hits
+    validate_hits(route)
     return route
 
 
@@ -260,9 +262,13 @@ def schedule(route, allocation, stage='jump'):
     from .blockages import compile_passages
     passage_rows, passage_failures = compile_passages(route, events)
     walls.extend(passage_rows)
+    from .hit_events import compile_hits
+    contacts, scene_contacts, hit_rows = compile_hits(route, events)
+    walls.extend(hit_rows)
     return {'ticks': state, 'grounded': grounded, 'jump': jump, 'events': events,
             'supportChecks': supports_at, 'exitChecks': exit_checks, 'walls': walls,
-            'allocation': list(allocation), 'stage': stage, 'passageFailures': passage_failures}
+            'allocation': list(allocation), 'stage': stage, 'passageFailures': passage_failures,
+            'contacts': contacts, 'sceneContacts': scene_contacts}
 
 
 def initial_guess(route, plan, parent=None):

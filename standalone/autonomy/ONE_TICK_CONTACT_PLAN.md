@@ -1,6 +1,6 @@
 # One-input wall and ceiling contacts
 
-2026-10-27. Shared movement compilation and prescribed-event scene validation are implemented; automatic one-input contact discovery remains in progress. This refines [OBSTACLES_AND_BLOCKAGES.md](OBSTACLES_AND_BLOCKAGES.md) using the user's contact families. Existing avoidance and interleaved blockages remain implemented as described in [OBSTACLE_SEARCH.md](OBSTACLE_SEARCH.md).
+2026-10-27. Shared movement compilation, prescribed-event scene validation and automatic side-wall reversals are implemented. Ceiling discovery remains in progress. This refines [OBSTACLES_AND_BLOCKAGES.md](OBSTACLES_AND_BLOCKAGES.md) using the user's contact families. Existing avoidance and interleaved blockages remain implemented as described in [OBSTACLE_SEARCH.md](OBSTACLE_SEARCH.md).
 
 ## Contact families and scope
 
@@ -52,6 +52,8 @@ The finite overlap guards follow the actual Y-X-Z sweep:
 Use strict body/box interval overlap on both tangential axes. An X/Z pair on the same input is a composite selected event, resolved in order; Z guards use X after its clipping. A successful step can replace provisional side clipping, so the scene helper must confirm the final movement outcome rather than accept an apparent wall intersection.
 
 For a simple reversal while the face remains relevant, before-hit rows keep the trajectory on its approach side through p[t]. The selected input alone can attempt to cross it. The next result p[t+2] moves back onto the approach side, with an explicit outward normal displacement guard. Subsequent no-hit constraints cover the remaining relevant interval. If the route later rounds an edge, hand this interval to ordinary blockage choices rather than extending an infinite wall through the rest of the course.
+
+The first implemented family holds the same approach-side half-plane within this leg's Y-overlap intervals. Same-leg rounding of the contacted solid remains an extension; it is not claimed by these reversal candidates. All other solids retain their usual passage/scene checks. `maxWallHits` defaults to two selected hits per route and `maxWallHitCandidates` to 24 retained candidates; the joint `maxContactBranches` cap still applies. Separate physical blocks can be hit on one input, and later legs can select another episode. Generated/dropped candidates and tested hit branches are reported. The [saved reversal checkpoint](experiments/one-tick-contacts/README.md) and cold X/Z, both-sign regressions establish the first family.
 
 In general the finite solid can be avoided through another face, including above or below it. Reuse outside-face chains and same/consecutive-state gates before and after the hit, split at the selected contact. Do not force the hit-state body outside the touched face, drop the obstacle for adjacent inputs, or only check the immediately preceding/following input. The event and avoidance intervals must retime together when run inputs are inserted.
 
