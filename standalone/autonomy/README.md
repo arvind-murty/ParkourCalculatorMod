@@ -2,6 +2,8 @@
 
 Status, 2026-10-26: **run ticks are prototyped** within the continuous model. [RUN_TICKS_PLAN.md](RUN_TICKS_PLAN.md) records what works, the measured results and deferred work. Current orchestration work has moved to the [block solver](BLOCK_SOLVER_PLAN.md). Replay export and game integration are outside this milestone.
 
+The next [obstacle/blockage design](OBSTACLES_AND_BLOCKAGES.md) covers finite collision boxes, landing versus obstruction roles, six directed corner timings and hit/avoid profile search. It reuses the integration agent's collision and movement helpers; the shared `StaticScene` and its regression tests are now imported into this worktree.
+
 The [block-route search prototype](BLOCK_ROUTE_SEARCH.md) accepts fixed start/goal supports and an unordered set of intermediate supports, keeps sprint-jump/sprint-45 inputs fixed, chooses height-dependent ordinary jumps, short stairs or no-jump run-offs, checks their floor/entry conditions and selects a route through this run-ticks evaluator. Use `sceneModel: support_planes` for different heights and `python3 -m standalone.autonomy.solve_blocks`; `standalone.autonomy.solve` remains the ordered-route entry. Short stairs use a takeoff plus one air input, and all accepted profile schedules pass the existing continuous Y validator. Ceilings remain deferred.
 
 Block-route search ranks [total elapsed ticks first, then objective](SEARCH_OBJECTIVE.md), and continues across tied routes/profiles/allocations. The first-feasible and run-count improvement behavior below describes the standalone ordered-route CLI, not the block-route stopping policy.

@@ -66,6 +66,8 @@ if compiled["status"] == "derived":
 
 ## Next milestones
 
+The [obstacle and blockage design](OBSTACLES_AND_BLOCKAGES.md) now specifies full collision sub-boxes, profile-dependent support/obstacle roles, all six directed edge timings, hit/avoid alternatives and admissible total-input bounds. It reuses the integration agent's scene and movement helpers. The shared scene class/tests are imported; general blockage/contact search remains the next implementation work.
+
 The [Stratfinder investigation](STRATFINDER_INVESTIGATION.md) checks both our native search and Curryocity's external tool. Its first proposed experiment is implemented: an optimistic support/profile graph plus a shared pool of route prefixes, using conservative reach checks and the current ordered-route solver as the inner evaluator. Different arrivals and contact profiles remain distinct; neither a visited flag nor a no-turn failure removes a free-turn route. The initial coplanar checkpoint passed a comparison with exhaustive enumeration of a small explicit support set; height-dependent and short stair profiles now pass independent full-model acceptance. Ceilings are the next pass, as requested.
 
 1. **Ordinary profiles and support correctness.** Height-dependent route profiles and earlier-floor exclusions are implemented. Every descending crossing of an earlier support is checked, and a conflicting candidate branches over outside-face positional conditions. Extend from this support-plane model to explicit finite support side geometry separately. The standalone ordinary-profile helper still only supplies the destination floor event; scene-level contact checks belong to the route orchestrator.
