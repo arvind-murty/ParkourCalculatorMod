@@ -40,6 +40,11 @@ public final class CompileRunTicksPhysics {
         boolean[] expectedGround;
         boolean sharedMovement;
         PlannedContact[] contacts;
+        boolean[] sneak;
+        boolean[] ladderTicks;
+        double[][] velocities;
+        double[] friction;
+        JsonObject vertical;
     }
 
     public static final class PlannedContact {
@@ -84,10 +89,27 @@ public final class CompileRunTicksPhysics {
         }
         Map<String, Object> result = new LinkedHashMap<>();
         AABB body = scene.startBox(vector(request.positions[0]));
+        if (request.ladderTicks != null && (request.ladderTicks.length != n + 1
+                || scene.ladder(vector(request.positions[0])) != request.ladderTicks[0])) {
+            result.put("feasible", false);
+            result.put("reason", "initial_ladder_membership");
+            return result;
+        }
         for (int t = 0; t < n; t++) {
+            if (scene.ladder(new Vec3dCore((body.min.x + body.max.x) / 2, body.min.y, (body.min.z + body.max.z) / 2))
+                    && (StrictMath.abs(request.movement[t][0]) > (double) .15F
+                    || StrictMath.abs(request.movement[t][2]) > (double) .15F
+                    || request.movement[t][1] < -.15
+                    || request.sneak != null && request.sneak[t] && request.movement[t][1] < 0)) {
+                result.put("feasible", false);
+                result.put("tick", t);
+                result.put("reason", "ladder_cap_contract");
+                return result;
+            }
             StaticScene.Contact hit;
             try {
-                hit = scene.move(body, vector(request.movement[t]), request.expectedGround[t], false);
+                hit = scene.move(body, vector(request.movement[t]), request.expectedGround[t],
+                        request.sneak != null && request.sneak[t]);
             } catch (IllegalArgumentException error) {
                 result.put("feasible", false);
                 result.put("tick", t);
@@ -99,6 +121,15 @@ public final class CompileRunTicksPhysics {
             double error = StrictMath.max(StrictMath.abs(hit.position.x - expected.x),
                     StrictMath.max(StrictMath.abs(hit.position.y - expected.y), StrictMath.abs(hit.position.z - expected.z)));
             boolean contactMismatch = false;
+            boolean occupancyMismatch = request.ladderTicks != null
+                    && scene.ladder(hit.position) != request.ladderTicks[t + 1];
+            double velocityError = 0;
+            if (request.velocities != null) {
+                Vec3dCore expectedVelocity = vector(request.velocities[t + 1]);
+                velocityError = StrictMath.max(StrictMath.abs(hit.velocity.x * request.friction[t] - expectedVelocity.x),
+                        StrictMath.max(StrictMath.abs((hit.velocity.y - 0.08) * (double) 0.98F - expectedVelocity.y),
+                                StrictMath.abs(hit.velocity.z * request.friction[t] - expectedVelocity.z)));
+            }
             if (!hit.stepped && hit.verticalCollision && request.movement[t][1] > 0) {
                 boolean selected = false;
                 if (request.contacts != null) for (PlannedContact event : request.contacts)
@@ -119,14 +150,17 @@ public final class CompileRunTicksPhysics {
                 double coordinate = event.axis == 0 ? hit.position.x : event.axis == 1 ? hit.position.y : hit.position.z;
                 if (last == null || last.requested == last.resolved || last.requested * event.direction <= 0
                         || StrictMath.abs(coordinate - event.plane) > 1e-7
-                        || event.box != null && !sameBox(last.obstacle, event.box)) contactMismatch = true;
+                        || event.box != null && !sameBox(last.obstacle, event.box)
+                        && !sameFace(last.obstacle, event, body, hit)) contactMismatch = true;
             }
-            if (contactMismatch || error > 1e-7 || hit.onGround != request.expectedGround[t + 1]) {
+            if (contactMismatch || occupancyMismatch || velocityError > 1e-7 || error > 1e-7 || hit.onGround != request.expectedGround[t + 1]) {
                 result.put("feasible", false);
                 result.put("tick", t);
                 result.put("reason", hit.stepped ? "unplanned_step" : "scene_collision");
                 result.put("positionError", error);
                 result.put("contactMismatch", contactMismatch);
+                result.put("occupancyMismatch", occupancyMismatch);
+                result.put("velocityError", velocityError);
                 result.put("actualPosition", new double[]{hit.position.x, hit.position.y, hit.position.z});
                 List<Map<String, Object>> clips = new ArrayList<>();
                 List<StaticScene.Clip> diagnostics = hit.stepped ? hit.stepTriggers : hit.clips;
@@ -158,6 +192,22 @@ public final class CompileRunTicksPhysics {
     private static boolean sameBox(AABB box, double[] values) {
         return values.length == 6 && box.min.x == values[0] && box.min.y == values[1]
                 && box.min.z == values[2] && box.max.x == values[3] && box.max.y == values[4] && box.max.z == values[5];
+    }
+
+    private static boolean sameFace(AABB box, PlannedContact contact, AABB before, StaticScene.Contact hit) {
+        double lo = contact.axis == 0 ? box.min.x : contact.axis == 2 ? box.min.z : box.min.y;
+        double hi = contact.axis == 0 ? box.max.x : contact.axis == 2 ? box.max.z : box.max.y;
+        double width = contact.axis == 1 ? StaticScene.HEIGHT : StaticScene.HALF_WIDTH;
+        double plane = contact.direction > 0 ? lo - width : hi + (contact.axis == 1 ? 0 : width);
+        double x = contact.axis == 2 ? hit.position.x : (before.min.x + before.max.x) / 2;
+        double y = hit.position.y;
+        double z = (before.min.z + before.max.z) / 2;
+        double[] expected = contact.box;
+        boolean overlapX = x + StaticScene.HALF_WIDTH > expected[0] && x - StaticScene.HALF_WIDTH < expected[3];
+        boolean overlapY = y + StaticScene.HEIGHT > expected[1] && y < expected[4];
+        boolean overlapZ = z + StaticScene.HALF_WIDTH > expected[2] && z - StaticScene.HALF_WIDTH < expected[5];
+        return plane == contact.plane && (contact.axis == 0 ? overlapY && overlapZ
+                : contact.axis == 2 ? overlapX && overlapY : overlapX && overlapZ);
     }
 
     private static Vec3dCore vector(double[] values) {
@@ -210,13 +260,15 @@ public final class CompileRunTicksPhysics {
             row.keys.add("W");
             if (request.inputs.sprint) row.keys.add("SPRINT");
             if (request.jump[t]) row.keys.add("JUMP");
+            if (request.sneak != null && request.sneak[t]) row.keys.add("SNEAK");
             if (request.inputs.force45 && !(request.jump[t] && request.grounded[t])) row.keys.add("A");
             file.rows.add(row);
-            if (request.grounded[t]) {
+            if (request.grounded[t] || request.ladderTicks != null && request.ladderTicks[t]) {
                 SaveFile.Tick tick = new SaveFile.Tick();
                 tick.tick = t;
                 tick.override = new SaveFile.Override();
-                tick.override.slipperiness = "DEFAULT";
+                tick.override.slipperiness = request.grounded[t] ? "DEFAULT" : "AIR";
+                if (request.ladderTicks != null && request.ladderTicks[t]) tick.override.medium = "LADDER";
                 file.angleSolver.ticks.add(tick);
             }
         }
@@ -226,6 +278,8 @@ public final class CompileRunTicksPhysics {
         source.addProperty("sprintMode", "DERIVE");
         problem.add("source", source);
         problem.addProperty("ticks", n);
+        if (request.ladderTicks != null) problem.add("ladderTicks", GSON.toJsonTree(request.ladderTicks));
+        if (request.vertical != null) problem.add("vertical", request.vertical);
         List<Map<String, Object>> contacts = new ArrayList<>();
         if (request.contacts != null) for (PlannedContact contact : request.contacts) {
             if (contact.axis == 1) continue;
@@ -238,6 +292,7 @@ public final class CompileRunTicksPhysics {
         Map<String, Object> result = new LinkedHashMap<>();
         for (String key : new String[]{"magnitude", "friction", "base", "movement"})
             result.put(key, compiled.get(key));
+        if (compiled.has("vertical")) result.put("vertical", compiled.get("vertical"));
         result.put("model", "FixedMovementCompiler:mod-input-state-v1:f057c0c");
         return result;
     }
