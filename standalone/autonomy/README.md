@@ -8,6 +8,8 @@ The [collision-box obstacle search](OBSTACLE_SEARCH.md) now implements height pr
 
 [ONE_TICK_CONTACT_PLAN.md](ONE_TICK_CONTACT_PLAN.md) records the implemented side-wall reversals and ceiling cancellations, before/after avoidance, shared sprint compilation, saved results and remaining gaps. Ladder/vine climbing remains deferred.
 
+[LADDER_STRATEGY_PLAN.md](LADDER_STRATEGY_PLAN.md) specifies the next family: generate and rank entry/fall/Sneak/consecutive-climb/exit schedules, derive Y with existing physics, then solve promising schedules with exact cell/contact/clamp guards. It is a plan, not an implemented climbing route search.
+
 The [block-route search prototype](BLOCK_ROUTE_SEARCH.md) accepts fixed start/goal supports and an unordered set of intermediate supports, keeps sprint-jump/sprint-45 inputs fixed, chooses height-dependent ordinary jumps, short stairs or no-jump run-offs, checks their floor/entry conditions and selects a route through this run-ticks evaluator. Use `sceneModel: support_planes` for different heights and `python3 -m standalone.autonomy.solve_blocks`; `standalone.autonomy.solve` remains the ordered-route entry. Short stairs use a takeoff plus one air input, and all accepted profile schedules pass the existing continuous Y validator. Collision-box mode adds wall reversals, ceiling bonks and full finite-volume checks.
 
 Block-route search ranks [total elapsed ticks first, then objective](SEARCH_OBJECTIVE.md), and continues across tied routes/profiles/allocations. The first-feasible and run-count improvement behavior below describes the standalone ordered-route CLI, not the block-route stopping policy.
