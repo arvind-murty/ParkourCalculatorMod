@@ -6,7 +6,7 @@ Checkpoint, 2026-10-26. Implementation is committed through `7bf8263` on `codex/
 
 1. Read repository `AGENTS.md` and `CONTEXT.md`, then this file.
 2. Read [OBSTACLE_SEARCH.md](OBSTACLE_SEARCH.md) for the implemented interface and [OBSTACLES_AND_BLOCKAGES.md](OBSTACLES_AND_BLOCKAGES.md) for the contact-family design.
-3. The next implementation task is intentional X/Z contact generation through the integration agent's shared movement compiler. Then add Y/ceiling-contact profile generation and update time bounds. Avoidance and interleaved blockage search are already implemented.
+3. Read [ONE_TICK_CONTACT_PLAN.md](ONE_TICK_CONTACT_PLAN.md), the subsequent user refinement: side-wall velocity reversals and ceiling cancellations each use one clipped input, with avoidance before/after to enforce exact contact timing. Ladders/vines remain deferred. Integrate shared movement compilation and raw-displacement event validation, then generate X/Z reversals and Y/ceiling profiles and update time bounds. Avoidance and interleaved blockage search are already implemented.
 
 Our isolated worktree is `/Users/arvindmurty/CS/ParkourCalculatorMod-run-ticks`. The other agent owns `/Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-mod-integration`, branch `feature/ipopt-mod-integration`. The main `/Users/arvindmurty/CS/ParkourCalculatorMod` checkout also has concurrent work. Make our edits and commits only in our worktree. The user explicitly authorized importing the other agent's shared changes when needed; no additional permission is required. Do not modify that checkout or duplicate its physics/input implementations.
 
