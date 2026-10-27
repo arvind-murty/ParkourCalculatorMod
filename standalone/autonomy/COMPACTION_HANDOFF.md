@@ -1,12 +1,12 @@
 # Orchestration compaction handoff
 
-Checkpoint, 2026-10-26. Implementation is committed through `7bf8263` on `codex/run-ticks-planning`. This document is a subsequent documentation checkpoint. No unfinished implementation or uncommitted experiment needs recovering.
+Updated checkpoint, 2026-10-27, on `codex/run-ticks-planning`. Run-tick/route/avoidance work and one-input wall/ceiling contact generation are implemented. Feature commits include `139991f` (shared movement compilation) and `375eefa` (wall reversals); the subsequent ceiling feature commit contains this updated handoff. Read the current Git log for its hash. No partially implemented feature needs recovering.
 
 ## Resume here
 
 1. Read repository `AGENTS.md` and `CONTEXT.md`, then this file.
 2. Read [OBSTACLE_SEARCH.md](OBSTACLE_SEARCH.md) for the implemented interface and [OBSTACLES_AND_BLOCKAGES.md](OBSTACLES_AND_BLOCKAGES.md) for the contact-family design.
-3. Read [ONE_TICK_CONTACT_PLAN.md](ONE_TICK_CONTACT_PLAN.md), the subsequent user refinement: side-wall velocity reversals and ceiling cancellations each use one clipped input, with avoidance before/after to enforce exact contact timing. Ladders/vines remain deferred. Integrate shared movement compilation and raw-displacement event validation, then generate X/Z reversals and Y/ceiling profiles and update time bounds. Avoidance and interleaved blockage search are already implemented.
+3. Read [ONE_TICK_CONTACT_PLAN.md](ONE_TICK_CONTACT_PLAN.md): shared movement compilation, one-input side-wall reversals, ceiling cancellations, exact event matching and shorter-profile time bounds are implemented. Before/after avoidance enforces contact timing. Ladders/vines remain deferred. Next work is broader coupled evidence, same-solid approach/exit corridor generalization and contact-selected steps, not another wall physics implementation.
 
 Our isolated worktree is `/Users/arvindmurty/CS/ParkourCalculatorMod-run-ticks`. The other agent owns `/Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-mod-integration`, branch `feature/ipopt-mod-integration`. The main `/Users/arvindmurty/CS/ParkourCalculatorMod` checkout also has concurrent work. Make our edits and commits only in our worktree. The user explicitly authorized importing the other agent's shared changes when needed; no additional permission is required. Do not modify that checkout or duplicate its physics/input implementations.
 
@@ -30,7 +30,7 @@ User rule: commit every added feature. Do not add code comments/docstrings or em
 ### Ordered run ticks and generated transition profiles
 
 - Immutable route preparation, incremental/backtracking run search, independent candidate arrays, relative event retiming and conservative per-axis inertia/reach screens.
-- Existing Java `ConstraintDeriver`/`SupportOverlap` produce support footprints; `JumpPhysicsInputs`/`JumpLinearModel` compile current collision-free movement arrays.
+- Existing Java `ConstraintDeriver`/`SupportOverlap` produce support footprints; `JumpPhysicsInputs`/`JumpLinearModel` retain legacy ordered/support-plane compilation. Collision-box profiles use the corrected shared `FixedMovementCompiler`.
 - Ordinary Y profiles derive from source/target heights using the existing scalar Y engine. Flat, +.5, +1 and -1 transitions use 12, 10, 9 and 14 inputs.
 - Half-block stair boosts are two-input profiles: grounded takeoff plus one air input, with entry constraints and Y cancellation. This differs from the legacy supplied `step`, one grounded non-jump input.
 - Automatic run-off profiles have no jump impulse, grounded incoming departure constants, following air inputs and Y-derived fall time. Drops of .0625, .125, .25, .5 and 1 use 1, 2, 3, 4 and 5 inputs respectively. Duration includes the first input, not just fully airborne inputs.
@@ -61,7 +61,7 @@ User rule: commit every added feature. Do not add code comments/docstrings or em
 ### Acceptance and reuse
 
 - The integration agent's `core/.../replay/StaticScene.java` and seven tests were imported unchanged in `8cd2aaa`, then extended with clipping/step-trigger diagnostics. The movement algorithm is shared, not reimplemented in Python.
-- The persistent Java compiler also exposes `sceneCheck`. Python supplies intended X/Z displacements and raw Y movement. The shared helper resolves Y-X-Z collisions and both step alternatives; resulting positions/ground state must agree with the declared profile, with no unplanned horizontal collision.
+- The persistent Java compiler also exposes `sceneCheck`. Python supplies intended X/Z displacements and raw Y movement. The shared helper resolves Y-X-Z collisions and both step alternatives; resulting positions/ground state must agree with the declared profile and exactly selected hit mask, with no unplanned horizontal or upward Y collision.
 - Every accepted collision-box trajectory passes the independent scalar model, strict support/exit checks, Y schedule and shared swept collision checks. Full-tick endpoint clearance alone is insufficient.
 - Run-off sources remain ordinary finite solids throughout the route. Their avoidance is active only during actual body-volume Y overlap, including later legs. Passing below is allowed once the head clears the actual bottom. Legacy support-plane mode still lacks that volume.
 
@@ -77,26 +77,27 @@ User rule: commit every added feature. Do not add code comments/docstrings or em
 - Horizontal clipping cancels sprint through the next input's previous-collision flag. Legacy air-factor changes/recovery lag another tick. Do not accept a wall-hit branch using current constant-effective-sprint arrays.
 - Current work is a continuous model. Do not upgrade that claim to byte-exact executable Minecraft/TAS acceptance; that is the other layer.
 
-## Concrete gaps
+## Current intentional-contact checkpoint
 
-1. **Intentional X/Z hits are not generated.** The numerical worker supports prescribed contacts, but orchestration still needs finite-face reach/overlap guards and shared wall-aware movement compilation. Current geometry acceptance rejects horizontal hits.
-2. **Intentional ceiling/Y-hit profiles are not generated.** Ceiling avoidance is implemented; bonks and resulting shorter air times are not. Existing stair profiles remain a limited selected family, not general automatic contact discovery.
-3. **Shared movement compiler not wired here yet.** The current `CompileRunTicksPhysics` assumes a fixed effective sprint policy, suitable for the accepted no-horizontal-hit family. `FixedMovementCompiler`/`ReplayInputState` on the other branch handle contact-driven sprint changes and must be reused before enabling wall hits.
-4. **Restricted state/mechanics.** Collision-box mode declares a clear initial input state; extra resume fields, incoming wall-hit/cooldown history, ladder/special-surface/fluid/callback declarations are rejected. Only normal static inert geometry is modeled by this adapter.
-5. **Bounded search, local numerical optimization.** Branch/queue/candidate/timing caps and timeouts can miss valid routes and interleavings. Complexity/side scores are ordering hints. There is no global objective certificate.
-6. **Proof scope.** `minimumTicksProven` only means a witness reaches the current profile graph's lower bound. It does not cover omitted intentional-contact families or every game strategy. `objectiveOptimalityProven` is false.
-7. **Benchmarks remain small.** New finite-geometry obstacle cases are synthetic. The interleaved case covers two obstructions, but dense multi-obstacle courses and full Linkcraft geometry remain untested in this mode.
-8. **Generic unknown diagnostics.** A deliberately blocked control uses one jump and no runs, with a wall too tall to clear and too wide to go around. The numerical path hits it, no passage survives screening, and the outer status is generic `unknown/contact_search_exhausted`. A more specific no-passage-in-family reason would improve reporting; no global infeasibility certificate is produced.
+- Reuse existing Real 11 numerical X/Z contact rows, scalar validation and Y recurrence. No duplicate contact integrator or sprint machine was introduced. Historical Real 11 arrays predate the other agent's sprint fix; generated collision-box schedules compile afresh through that corrected implementation.
+- `materialize_movement.py` materializes unchanged shared Java sources from pinned commit `f057c0ce9b454ae1ce2706843bb141cce799b5cb` into ignored build storage. The compiler builds them in its isolated classpath, overlaying the local extended `StaticScene`. This avoids replacing native core APIs with the other branch's newer dependencies. The pinned Git object must be available to rebuild.
+- Collision-box compilation uses actual keys, selected collision flags and shared `ReplayInputState`/`PlayerSprintMachine`. Wall hits cancel sprint on the following input and carry the delayed air-factor response. Ceiling-only hits do not cancel horizontal sprint.
+- `hit_events.py` generates finite signed X/Z reversal faces/times, retimed numerical/scene contacts, tangential guards, same-side before/after avoidance and next-input outward movement. Contact plane arrival without actual clipping is rejected as a selected hit.
+- `ceiling_contacts.py` uses the existing Y recurrence to generate one upward hit per ordinary-jump transition and simulate the resulting shorter landing. Before/after Y sweeps ensure no earlier/repeated hit; old-X/old-Z rows enforce finite underside overlap. Durations enter the graph before reverse time bounds are computed.
+- Scene acceptance reconstructs intended X/Z movement before clipping from scalar carry/control. Using resolved endpoint differences would hide wall hits. Shared collision resolution must match selected state, axis, direction, plane and limiting box; extra hits, early/late hits, missed finite faces, nearer solids and successful step substitutions are rejected.
+- `maxWallHits` defaults to two selected hits per route, `maxWallHitCandidates` to 24 retained candidates, and `ceilingHits` to true. They are separate from per-block H2/V2/combined3 blockage caps. `maxContactBranches` bounds the combined branch queue. Existing avoidance regressions disable intentional contacts explicitly to preserve their original scope.
+- Output adds `best.hitEvents`, `best.ceilingEvents`, `best.plan.contacts`, `best.plan.sceneContacts`, scalar raw movement/movement assumptions and `attempts[].wallHitSearch` diagnostics.
+- Cold wall reversals pass in X/Z and both signs. Saved geometry-only cases: a 12-input wall reversal (~6.96 s), three-input ceiling bonk (~.28 s), and three-input simultaneous Y/X hit (~2.14 s). All have zero added runs, independent scalar acceptance and shared scene acceptance. Found yaws in saved numerical requests are warm witnesses, not cold inputs.
 
-## Next steps in order
+## Concrete gaps and next steps
 
-1. Review/import the integration agent's shared movement compiler and necessary dependencies. The user authorized this. Read its latest handoff and avoid duplicating its input/sprint/float arithmetic.
-2. Wire the orchestration adapter to that compiler; add an X-hit and Z-hit profile, finite tangential overlap at the correct stage, actual clipping/reach guards and normal reset. Test hit/avoid alternatives, sprint cancellation and air-factor recovery, including simultaneous X/Z events.
-3. Add underside/top Y contacts, regenerate the remaining vertical trace and air time, and recheck every affected blockage window. Rebuild admissible time bounds over those shorter profiles so an ordinary-jump bound cannot prune a faster bonk route. Keep horizontal alternatives.
-4. Broaden route/contact/obstacle coupling benchmarks, then replace supplied Linkcraft profiles with generated profiles where actual geometry is available. Reuse the mod's geometry/constraint helpers. Do not infer absent solids from recorded trajectory points or supply recorded facings as cold inputs.
-5. Measure candidate counts and numerical recovery before redesigning search. Improve unknown reasons and targeted retries if measurements justify them. Keep replay/UI/export work with the other agent.
-
-The integration branch reviewed here is `f057c0c`. Important source commits are `133b48c` (shared scene/replay machinery) and `af12801` (wall-aware compiler/input-state fix). `FixedMovementCompiler` and `ReplayInputState` depend on that branch's newer effects/input APIs and exact movement callback; inspect the dependency diff rather than blindly replacing unrelated native solver files. Read from our worktree with `git show feature/ipopt-mod-integration:standalone/ipopt/RECENT_REPLAY_HANDOFF.md`, then inspect `MOVEMENT_PORT.md` and the shared Java implementations. Isolated reference copies are in ignored build storage, and [integration-reference.json](experiments/blockage-order/integration-reference.json) records the reviewed source hashes.
+1. **Bounded reversal corridor.** The first wall-hit family stays on the same normal side during this leg's Y-overlap intervals. It does not yet generate rounding that same solid later in the leg. Generalize to before/after blockage chains if those strategies are needed; other solids already retain independent passage chains and can interleave.
+2. **More coupled evidence.** Distinct episodes and later legs can carry selected hits, but current saved cold evidence is small. Add multi-leg/repeated-hit cases and measure candidate/branch drops before raising limits. Current bounds/caps and local IPOPT can miss valid strategies; unknown is not infeasibility.
+3. **Broader vertical skeletons.** One ceiling hit per ordinary transition and existing selected stair profiles work. General contact-selected step/cancel choices and their collision competition remain later work. Keep time/reach bounds admissible as those families expand.
+4. **Shared-source integration.** Replace the pinned isolated source dependency with common integrated sources when both branches are combined. Do not clone sprint/input arithmetic or edit the other worktree. The integration branch remains `feature/ipopt-mod-integration`, reviewed HEAD `f057c0c`; read its latest `RECENT_REPLAY_HANDOFF.md` and `MOVEMENT_PORT.md` before later imports.
+5. **Restricted state/mechanics.** Clear initial input state, normal static inert 1.8.9 boxes. Extra resume history, ladders/vines, special surfaces, fluids and callbacks remain outside this orchestration adapter. Existing numerical ladder handling remains available for future reuse.
+6. **Benchmarks and diagnostics.** Broaden dense finite-geometry courses and eventually Linkcraft using actual geometry. Do not reconstruct missing solids from trajectory points or use recorded yaw as cold inputs. Improve generic contact-search unknown reasons if useful.
+7. **Proof/ownership scope.** `minimumTicksProven` compares the witness to the generated graph's optimistic bound, now including ceiling profiles. It is not a certificate over omitted contact families or all game strategies. Objective optimality is never claimed. Replay, angle realization, TAS export and actual-world validation stay with the other layer.
 
 ## Tests and reproduction
 
@@ -118,9 +119,9 @@ PKC_IPOPT_PYTHON="$PWD/.venv-ipopt/bin/python" \
 python3 -m unittest discover -s standalone/autonomy/tests -v
 ```
 
-The latest full run passed **110 tests in 71.243 seconds**; focused obstacle/cap tests passed 18 afterward. Without the two environment variables, important integration cases are skipped. Do not describe that smaller run as full acceptance.
+The latest full orchestration run passed **120 tests in 101.636 seconds**, including actual IPOPT/Java integration. The standalone numerical suite passed **51 tests in 25.102 seconds** with `PKC_IPOPT_PYTHON` set. A focused final contact run passed 11 tests before the last full gate. Without the two environment variables, important integration cases are skipped. Do not describe that smaller run as full acceptance.
 
-The native `:core:test` run completed 798 tests with the same three pre-existing failures: `CrossJvmDeterminismTest`, `InertiaFoldingTest` and `CostateSmoothingScaleTest` (33 skipped). Shared scene tests pass. The standalone worker and native `core/.../anglesolver/` sources have not been modified by this work. The imported/extended shared `core/.../replay/StaticScene` is the deliberate core change.
+The latest native `:core:test` run was repeated and completed 798 tests with the same three pre-existing failures: `CrossJvmDeterminismTest`, `InertiaFoldingTest` and `CostateSmoothingScaleTest` (33 skipped). Shared scene tests pass. The standalone worker and native `core/.../anglesolver/` sources have not been modified. `standalone/ipopt/model.py` and its four movement-contract tests were imported unchanged from `af12801`; native solver classes are compiled from the pinned source only inside the isolated helper. The imported/extended shared `core/.../replay/StaticScene` is the deliberate core change.
 
 Run the interleaved cold example:
 
@@ -137,6 +138,7 @@ python3 -m standalone.autonomy.solve_blocks \
 ## Saved evidence
 
 | Artifact | Result and scope |
+| [One-input contacts](experiments/one-tick-contacts/README.md) | 12-input wall reversal; three-input ceiling and simultaneous Y/X cases; corrected movement compilation, exact hit timing and shared geometry checks |
 | --- | --- |
 | [Linkcraft j0-j16](experiments/linkcraft11-j0-j16/README.md) | 130 inputs, 11 added runs plus one mandatory grounded step, 80.63 s, zero scalar violation; supplied profiles/declared support regions, not full finite geometry or a minimum certificate |
 | [Height and stairs](experiments/height-and-stairs/README.md) | +1/+1 route uses 18 inputs; two short stair profiles plus one run use 5; historical first-feasible checkpoint |
@@ -153,6 +155,8 @@ The side-run-off case is a separate fixture with carried velocity and a nearby s
 | File | Responsibility |
 | --- | --- |
 | `block_search.py` | Scene normalization, height/reach graph, full-prefix route queue, time/objective ranking |
+| `hit_events.py` / `ceiling_contacts.py` | Signed reversal generation/retiming/guards and existing-Y-model ceiling profiles |
+| `materialize_movement.py` | Pinned shared-source dependency, isolated from native solver sources |
 | `block_profiles.py` | Existing-Y-model ordinary/stair/run-off profile generation and jump-height bound |
 | `blockages.py` | Directed face chains, caps/physical-block usage, gate intervals/timeline, pruning and candidate generation |
 | `obstacle_geometry.py` | Actual sub-box normalization/provenance, body expansion and shared scene-check adapter |

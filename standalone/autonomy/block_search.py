@@ -10,6 +10,7 @@ from .block_profiles import compile_open_air_route, normal_jump_height, ordinary
 from .obstacle_geometry import normalize_geometry
 from .route import prepare_route
 from .ranking import candidate_rank, objective_spec
+from .ceiling_contacts import ceiling_profile
 
 
 def prepare_scene(request):
@@ -146,6 +147,8 @@ def build_transition_graph(scene, compiler, *, seconds=5):
     rejected, profile_cache, flight_bounds, transitions = [], {}, {}, {}
     profiles = {block: {} for block in ids}
     edge_options = {block: {} for block in ids}
+    solid_owners = {b['solidIndex']: b['sourceBlock'] for b in scene['blocks']} \
+        if scene['sceneModel'] == 'collision_boxes' else {}
     for source in scene['blocks']:
         for target in scene['blocks']:
             remaining()
@@ -166,7 +169,17 @@ def build_transition_graph(scene, compiler, *, seconds=5):
                                               for axis in ('X', 'Z') for direction in (-1, 1))
             delta = {'X': (target['bounds'][0] + target['bounds'][1] - source['bounds'][0] - source['bounds'][1]) / 2,
                      'Z': (target['bounds'][2] + target['bounds'][3] - source['bounds'][2] - source['bounds'][3]) / 2}
-            options = sorted(profile_cache[key], key=lambda option:
+            available_profiles = list(profile_cache[key])
+            if scene['sceneModel'] == 'collision_boxes' and scene['ceilingHits']:
+                for solid_index, box in enumerate(scene['collisionScene']['solids']):
+                    ceiling_key = key + (solid_index,)
+                    if ceiling_key not in profile_cache:
+                        profile_cache[ceiling_key] = ceiling_profile(*key, box, solid_index,
+                            solid_owners[solid_index], max_inputs=scene['maxFlightInputs'])
+                    ceiling = profile_cache[ceiling_key]
+                    if ceiling is not None:
+                        available_profiles.append(('ceiling', ceiling, None))
+            options = sorted(available_profiles, key=lambda option:
                              (option[0], (1 if option[0] == 'stair' else -1) *
                               option[2]['direction'] * delta[option[2]['axis']] if option[2] else 0))
             if not options:
@@ -280,6 +293,10 @@ def compile_block_path(scene, block_ids, transitions=None):
                                'supportClearance': scene['supportClearance']})
         route['profileDerivation'] = {'kind': 'selected_height_profiles', 'suppliedAirtimes': False,
                                      'verticalModel': 'standalone.ipopt.ladder', 'solidSideFaces': False}
+        if scene['sceneModel'] == 'collision_boxes':
+            route['sharedMovement'] = True
+            route['ceilingEvents'] = [dict(p['ceilingEvent'], leg=leg) for leg, p in enumerate(selected)
+                                      if 'ceilingEvent' in p]
         return {'status': 'derived', 'route': route, 'profiles': selected}
     compiled = compile_open_air_route({'version': 1, 'sceneModel': 'open_air_supports',
                                       'initial': scene['initial'], 'blocks': blocks, 'inputs': scene['inputs'],
@@ -491,7 +508,7 @@ def find_blocks(request, compiler, *, seconds=60, route_seconds=8, candidate_sec
     if scene['sceneModel'] == 'collision_boxes':
         result['validationLevel'] = 'continuous_profile_with_shared_scene_collision_checks'
         result['assumptions'].update(solidSideFaces=True, runOffSourceObstacle='checked_during_y_overlap',
-                                     ceilings=True, ceilingContactProfiles=False,
+                                     ceilings=True, ceilingContactProfiles=scene['ceilingHits'],
                                      intentionalWallHits=True, maxBlockagesPerObstacle=scene['maxBlockagesPerObstacle'])
         result['assumptions'].update(maxHorizontalBlockagesPerObstacle=scene['maxHorizontalBlockagesPerObstacle'],
                                      maxVerticalBlockagesPerObstacle=scene['maxVerticalBlockagesPerObstacle'],

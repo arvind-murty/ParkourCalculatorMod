@@ -35,6 +35,21 @@ def validate_hits(route):
             integer(state, 'hit avoidance state', 0, route['airtimes'][leg])
     if hits and not route.get('sharedMovement'):
         raise ValueError('Selected wall hits require shared movement compilation')
+    ceilings = route.setdefault('ceilingEvents', [])
+    if not isinstance(ceilings, list) or any(not isinstance(contact, dict) for contact in ceilings):
+        raise ValueError('ceilingEvents must be a list of objects')
+    for contact in ceilings:
+        leg = integer(contact.get('leg'), 'ceiling leg', 0, len(route['airtimes']) - 1)
+        integer(contact.get('offset'), 'ceiling input offset', 0, route['airtimes'][leg] - 2)
+        box = contact.get('box')
+        if not isinstance(box, list) or len(box) != 6 or contact.get('plane') != box[1] - float_height():
+            raise ValueError('Ceiling plane must match the actual underside')
+        for value in box:
+            number(value, 'ceiling box')
+        if any(box[i] >= box[i + 3] for i in range(3)):
+            raise ValueError('Invalid ceiling box')
+        if not route.get('sharedMovement'):
+            raise ValueError('Selected ceilings require shared movement compilation')
 
 
 def compile_hits(route, events):

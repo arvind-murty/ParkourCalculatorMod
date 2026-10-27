@@ -23,6 +23,7 @@ FIXTURES = Path(__file__).parents[1] / 'fixtures'
 class IntegrationTests(unittest.TestCase):
     def test_obstacles_can_interleave_without_finishing_one_block_first(self):
         request = json.loads((FIXTURES / 'obstacle-interleaved.json').read_text())
+        request.update(ceilingHits=False, maxWallHits=0)
         with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
             result = find_blocks(request, compiler, seconds=55, route_seconds=45,
                                  candidate_seconds=1, retries=0, python_executable=RUNTIME)
@@ -44,6 +45,7 @@ class IntegrationTests(unittest.TestCase):
             for fixture, kind in [('obstacle-cross-neo.json', 'cross_neo'), ('obstacle-wide-neo.json', 'wide_neo')]:
                 with self.subTest(fixture=fixture):
                     request = json.loads((FIXTURES / fixture).read_text())
+                    request.update(ceilingHits=False, maxWallHits=0)
                     result = find_blocks(request, compiler, seconds=35, route_seconds=25,
                                          candidate_seconds=1, retries=0, python_executable=RUNTIME)
                     self.assertEqual(result['status'], 'feasible', result)
@@ -66,6 +68,7 @@ class IntegrationTests(unittest.TestCase):
 
     def test_source_runoff_can_leave_the_near_side_and_stays_clear_while_y_overlaps(self):
         request = json.loads((FIXTURES / 'obstacle-runoff-side.json').read_text())
+        request.update(ceilingHits=False, maxWallHits=0)
         with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
             result = find_blocks(request, compiler, seconds=20, route_seconds=5,
                                  candidate_seconds=1, retries=0, python_executable=RUNTIME)
@@ -84,6 +87,7 @@ class IntegrationTests(unittest.TestCase):
         with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
             for name, status in [('obstacle-under-ceiling.json', 'feasible'), ('obstacle-blocked.json', 'unknown')]:
                 request = json.loads((FIXTURES / name).read_text())
+                request.update(ceilingHits=False, maxWallHits=0)
                 result = find_blocks(request, compiler, seconds=15, route_seconds=5,
                                      candidate_seconds=1, retries=0, python_executable=RUNTIME)
                 self.assertEqual(result['status'], status, result)

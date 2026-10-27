@@ -125,8 +125,8 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
         score, _, rows, passages, hits = heapq.heappop(queue)
         if len(hits) < max_wall_hits:
             for index, hit in enumerate(hit_pool['options']):
-                if any(h['leg'] == hit['leg'] and (h['offset'] == hit['offset'] and h['axis'] == hit['axis']
-                       or h['solidIndex'] == hit['solidIndex']) for h in hits):
+                if any(h['leg'] == hit['leg'] and h['axis'] == hit['axis']
+                       and abs(h['offset'] - hit['offset']) <= 1 for h in hits):
                     continue
                 offer(score + 10 + index * .01, rows, passages, hits + [hit])
         branch = copy.deepcopy(route)
@@ -209,6 +209,7 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
             result['best'].update(route=result['best'].get('route', branch), profiles=profiles, contactChecks=checks)
             result['best']['passages'] = passages
             result['best']['hitEvents'] = hits
+            result['best']['ceilingEvents'] = branch.get('ceilingEvents', [])
             result['best']['blockageTimeline'] = gate_timeline(passages, result['best']['plan']['events'])
             result['best']['blockageUsage'] = [{'blockId': value if kind == 'block' else 'solid:' + str(value), **counts}
                                               for (kind, value), counts in blockage_usage(passages).items()]
