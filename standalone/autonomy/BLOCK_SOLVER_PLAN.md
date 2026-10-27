@@ -1,16 +1,16 @@
 # Block solver: continuous-model orchestration
 
-2026-10-26. Run ticks are [prototyped](RUN_TICKS_PLAN.md). This is the next orchestration task. Acceptance remains a validated solve within the declared continuous model; solver-to-replay export and game end-to-end testing are out of scope.
+2026-10-26. Run ticks are [prototyped](RUN_TICKS_PLAN.md), and route selection plus finite obstacle avoidance are implemented. [COMPACTION_HANDOFF.md](COMPACTION_HANDOFF.md) is the current resume checkpoint. Acceptance remains a validated solve within the declared continuous model; solver-to-replay export and game end-to-end testing are out of scope.
 
 ## Problem and boundary
 
-Given an initial state, an ordered sequence of blocks/supports and relevant surrounding collision geometry, derive candidate transition profiles and the positional constraints needed to visit them. Pass each resulting route to the existing run-ticks search and numerical solver. The output is an accepted continuous trajectory with its chosen transition profiles and run allocation.
+Given an initial state, fixed start/goal supports and a supplied set of candidate supports/collision geometry, choose intermediate supports and derive transition profiles plus the positional constraints needed to visit them. Pass each resulting route to the existing run-ticks search and numerical solver. The output is an accepted continuous trajectory with its chosen transition profiles and run allocation.
 
-The original run-ticks API consumes an ordered route. The [route-selection prototype](BLOCK_ROUTE_SEARCH.md) now chooses intermediate supports from an unordered set at different heights, with only the start and goal fixed, and selects ordinary jumps, short stairs or no-jump run-offs. Inputs stay sprint-jump plus sprint 45; their facings remain free. Choosing a route through an arbitrary world and deriving ceiling/obstacle profiles remain later work. Block solving removes the remaining manually supplied block order, air times and contact/obstacle conditions in stages, rather than replacing the angle optimizer or run-ticks allocator.
+The original run-ticks API consumes an ordered route. The [route-selection prototype](BLOCK_ROUTE_SEARCH.md) now chooses intermediate supports from an unordered set at different heights, with only the start and goal fixed, and selects ordinary jumps, short stairs or no-jump run-offs. Inputs stay sprint-jump plus sprint 45; their facings remain free. Discovering geometry beyond the supplied scene and generating intentional wall/ceiling-contact profiles remain later work. Block solving removes the remaining manually supplied block order, air times and contact/obstacle conditions in stages, rather than replacing the angle optimizer or run-ticks allocator.
 
 ```text
-block/support geometry + initial state + ordered route
-    -> candidate air times and contact/crossing conditions
+block/support geometry + initial state + fixed endpoints
+    -> candidate support routes, air times and contact/crossing conditions
     -> existing run-ticks allocation and schedule construction
     -> existing coefficient compiler + prepare / solve / validate
     -> best accepted continuous-model candidate
@@ -28,7 +28,7 @@ The search objective is now fixed by user ruling: minimize total elapsed inputs,
 | Single-support footprints and wall-face derivation | Existing Java `ConstraintDeriver` and `SupportOverlap`; reuse them |
 | Scalar Y recurrence and prescribed floor/ceiling/step contacts | Existing `standalone.ipopt.ladder`; reuse it |
 | Ordinary open-air air time from source/target heights | First profile-compiler slice implemented in `block_profiles.py` |
-| Intermediate support selection with fixed endpoints and sprint-jump/sprint-45 inputs | Implemented for the ordinary/stair/run-off support-plane family in `block_search.py`, including repeated visits |
+| Intermediate support selection with fixed endpoints and sprint-jump/sprint-45 inputs | Implemented for ordinary/stair/run-off profiles in support-plane and collision-box modes, including repeated visits |
 | Optimistic transition bounds, reverse goal reachability and a route-prefix pool | Implemented, with separate accounting for heuristic pool drops and unknown numerical attempts |
 | Different-height route edges and earlier-floor consistency | Implemented with the existing Y simulation and bounded outside-face positional branching |
 | Short half-block staircase profiles and their entry constraints | Implemented as takeoff plus one air input, with ordinary alternatives retained and run contacts retimed |
@@ -37,9 +37,9 @@ The search objective is now fixed by user ruling: minimize total elapsed inputs,
 | Finite solid side faces, blockage corridors and collision consistency | Avoidance implemented for normal inert collision boxes; cross neo/wide neo chains and all six edge timings; intentional wall-hit generation remains later work |
 | Ceiling avoidance and contact selection | Avoidance checked in collision-box mode; intentional ceiling contacts and their shortened Y profiles remain next |
 | Choosing among ordinary/stair/run-off profiles and their approach/exit faces, with per-path run-count search | Implemented for the current floor/contact family; broader profile families remain later work |
-| Arbitrary block-route discovery, ladders, fluids and effects | Later extensions |
+| Geometry discovery beyond the supplied scene, ladders, fluids and effects | Later extensions |
 
-## First slice: ordinary open-air profiles
+## Historical first slice: ordinary open-air profiles
 
 `compile_open_air_route` accepts a request with initial state, rectangular supports and normal movement policy, without `airtimes`. The caller must explicitly declare `sceneModel: open_air_supports`. This is a support-plane scene: it does not assert that finite solid side faces or omitted surroundings are harmless.
 
@@ -47,7 +47,7 @@ For each consecutive pair, `ordinary_jump_profile` uses the existing vertical st
 
 This first slice deliberately rejects supplied air times, contact overrides, ceilings, obstacles, composite shapes and other unimplemented profile families. It cannot silently ignore them. It preserves one explicit support per route entry and does not merge separated blocks into a bounding rectangle.
 
-The fixture [blocks-flat-two-jumps.json](fixtures/blocks-flat-two-jumps.json) has no recorded states, facings or air times. The continuous integration test compiles it to `[12,12]`, runs the existing search and validates a `[0,0]` allocation. Profile tests also check the established height tiers through the numerical model's vertical validator. The combined orchestration suite passes 37 tests with the actual Java compiler and IPOPT runtime.
+The fixture [blocks-flat-two-jumps.json](fixtures/blocks-flat-two-jumps.json) has no recorded states, facings or air times. The continuous integration test compiles it to `[12,12]`, runs the existing search and validates a `[0,0]` allocation. Profile tests also check the established height tiers through the numerical model's vertical validator. That first-slice checkpoint passed 37 tests with the actual Java compiler and IPOPT runtime; the current full gate passes 110.
 
 This standalone ordinary-profile helper alone is not a general block-scene acceptance test. Its metadata records that solid side faces and other supports are not checked by the Y recurrence. Scene orchestration now adds earlier-floor exclusions, and collision-box mode adds full finite-volume avoidance checks. Keep those responsibilities in orchestration rather than treating a valid Y profile as sufficient world clearance.
 
@@ -72,12 +72,12 @@ Candidate generation starts with the normal-jump height split, approximately 1.2
 
 The [Stratfinder investigation](STRATFINDER_INVESTIGATION.md) checks both our native search and Curryocity's external tool. Its first proposed experiment is implemented: an optimistic support/profile graph plus a shared pool of route prefixes, using conservative reach checks and the current ordered-route solver as the inner evaluator. Different arrivals and contact profiles remain distinct; neither a visited flag nor a no-turn failure removes a free-turn route. The initial coplanar checkpoint passed a comparison with exhaustive enumeration of a small explicit support set; height-dependent and short stair profiles now pass independent full-model acceptance. Finite obstacle/ceiling avoidance is now implemented; intentional wall/ceiling-contact profile generation is next.
 
-1. **Ordinary profiles and support correctness.** Height-dependent route profiles and earlier-floor exclusions are implemented. Every descending crossing of an earlier support is checked, and a conflicting candidate branches over outside-face positional conditions. Extend from this support-plane model to explicit finite support side geometry separately. The standalone ordinary-profile helper still only supplies the destination floor event; scene-level contact checks belong to the route orchestrator.
-2. **Ceiling profile candidates.** Stair boosts are implemented as 2-input short-jump profiles, one takeoff plus one air input, with generated entry constraints and normal-jump alternatives. The old fixture's 1-input grounded step remains a separate non-jump event. Next derive ceiling contacts from head clearance and footprint overlap, keeping the ceiling-cancelled alternatives distinct. The user explicitly deferred ceilings to the next pass.
-3. **Generate the extra positional conditions.** Each event specifies when its collision/support overlap must hold, which block/face it concerns, and any states that must stay outside to avoid an earlier landing or cancellation. Anchor these conditions to transition-relative events so inserting runs retimes them correctly. Reuse `ConstraintDeriver.deriveWall` and the existing support/entry machinery. Do not copy authored per-tick X/Z tables.
-4. **Finite obstacle corridors.** Branch over relevant passage sides and crossing intervals; use the 1.8.9 Y-X-Z ordering to construct constraints. A harmless boundary beside the path is not an infinite wall across unrelated inputs. Keep finite-face conditions and continuous clipping contacts consistent with the declared branch.
-5. **Joint discrete search.** If an early profile choice blocks a later transition, backtrack across both profile choices and run counts. Reoptimize the full prefix so position and inertia remain coupled. Retain local unknowns and return the best accepted route under a deadline.
-6. **Real-data progression.** Start with isolated short-hop, ceiling and stair-boost examples, then replace the corresponding supplied profiles in Linkcraft j0-j16. Geometry and initial state may be fixture inputs, but the generated profiles/constraints must not depend on recorded schedules or facings. Use recorded traces only as regression witnesses/diagnostics.
+1. **Shared movement compilation and intentional X/Z hits.** Import the integration agent's existing `FixedMovementCompiler`/`ReplayInputState` and reviewed dependencies before accepting any wall-hit profile. Generate finite face reach/overlap guards at the correct Y-X-Z stage, reset only the clipped component, and compile actual sprint cancellation and delayed air-factor recovery. Do not add another sprint machine.
+2. **Intentional Y contacts.** Add ceiling/underside and selected top-contact alternatives, regenerate the remaining Y trace/air time and retime/recheck every affected blockage. Existing ceiling avoidance and selected two-input stair profiles already work. General ceiling bonks/cancellations and contact-selected step behavior are not implemented.
+3. **Admissible bounds for the new profile families.** Include shorter Y-contact profiles in graph/time bounds before enabling them. A longer ordinary-jump duration cannot prune a faster ceiling-cancelled route. Continue ranking total elapsed inputs first and objective second.
+4. **Broader coupled benchmarks.** Finite avoidance, earlier-floor checks and interleaved per-block chains are implemented. Extend the existing full-prefix search benchmarks to denser multi-obstacle/multi-leg scenes, retaining free earlier facings and momentum. Keep per-physical-block caps at two horizontal, two vertical and three combined across the selected route.
+5. **Real-data progression.** Replace supplied Linkcraft j0-j16 profiles where actual collision geometry and supported contact families are available. The existing 130-input witness supplies profiles and declared regions; it is not a complete finite-world test. Use the mod's existing geometry/constraint helpers and recorded traces only as regression diagnostics.
+6. **Diagnostics and measured recovery.** Distinguish no reachable passage in the declared family from numerical/budget unknowns more clearly. Profile candidate counts and targeted retry behavior before changing the numerical solver or widening the search. Replay/UI/TAS export and general game validation remain separate ownership.
 
 ## Lessons retained from the shelved solver
 
