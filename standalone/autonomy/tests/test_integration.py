@@ -233,7 +233,7 @@ class IntegrationTests(unittest.TestCase):
                     self.assertGreater(max(best['candidate']['yaw']) - min(best['candidate']['yaw']), 30)
                 print(name, best['allocation'], round(result['elapsedSeconds'], 3), 's')
 
-    def test_linkcraft_section_keeps_walkoff_and_finds_without_recorded_facings(self):
+    def test_linkcraft_section_keeps_runoff_and_finds_without_recorded_facings(self):
         request = json.loads((FIXTURES / 'linkcraft11-j5-j9.json').read_text())
         self.assertFalse(request['source']['recordedFacingsUsed'])
         self.assertEqual(request['initial']['yaw'], 0)

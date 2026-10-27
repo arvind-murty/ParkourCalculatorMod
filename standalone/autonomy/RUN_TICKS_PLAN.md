@@ -17,7 +17,7 @@ The user's stair-boost abstraction is a supplied 2-input jump profile with extra
 - Every prefix is solved from the original initial state with momentum carried across landings. Earlier facings remain free rather than freezing one exit velocity. There are no F rows.
 - Existing `ConstraintDeriver.deriveFootprint` and `SupportOverlap` helpers derive/check support regions through the Java adapter. A landing region can differ from the region available for running.
 - Existing `JumpPhysicsInputs` and `JumpLinearModel` compile takeoff, ground and air acceleration/drag with the 1.8.9 float-friction path. The standalone solver applies automatic per-axis .005 inertia.
-- Supplied jump, walk-off and grounded-step schedules; pre/post-horizontal landing checks; relative X/Z constraints and block-entry conditions for reduced hops and stepped landings.
+- Supplied jump, run-off and grounded-step schedules; pre/post-horizontal landing checks; relative X/Z constraints and block-entry conditions for reduced hops and stepped landings. Run-offs leave the block without jumping and use the legacy serialized kind `walk_off`.
 - Conservative interval contradictions before IPOPT, independent scalar validation, and strict support/exit predicates after solving. Numerical row tolerance alone cannot admit an unsupported departure.
 - Global/per-probe budgets, cancellation, optional improvement below an incumbent, unknown-attempt bookkeeping, compact diagnostics and self-contained accepted requests.
 
@@ -28,7 +28,7 @@ departure Ji = Li + ri
 next arrival Li+1 = Ji + Ai
 ```
 
-Input t produces state t+1. Run inputs use the incoming ground regime. A normal landing-producing input is airborne and tests support at the preceding horizontal state. Supplied post-horizontal step contacts use their declared state instead. The next jump may use the previously established grounded flag; do not impose an extra takeoff-support condition that removes a legal run-off tick.
+Input t produces state t+1. Run inputs use the incoming ground regime. A normal landing-producing input is airborne and tests support at the preceding horizontal state. Supplied post-horizontal step contacts use their declared state instead. The next jump uses the previously established grounded flag even if the horizontal movement ended beyond the support; do not add a takeoff-support condition that contradicts this normal movement order.
 
 ## Evidence
 
@@ -41,7 +41,7 @@ Input t produces state t+1. Run inputs use the incoming ground regime. A normal 
 | Linkcraft 11 j5-j9 | Zero added runs; useful smoke case but insufficient as the main benchmark |
 | Linkcraft 11 j0-j16 | 12 ground run inputs, 130 inputs total, zero final scalar violation |
 
-The full Linkcraft cold search took **80.63 seconds**, **333 probes** and **24 backtracks**. It found 11 optional delays plus one mandatory grounded-step input. Per-jump run inputs are j10=4, j13=3, j14=2, j15=3, all others zero. The walk-off is preserved separately. The recording also has 12 ground run inputs, distributed differently.
+The full Linkcraft cold search took **80.63 seconds**, **333 probes** and **24 backtracks**. It found 11 optional delays plus one mandatory grounded-step input. Per-jump run inputs are j10=4, j13=3, j14=2, j15=3, all others zero. The run-off is preserved separately. The recording also has 12 ground run inputs, distributed differently.
 
 The search used neither recorded facings nor recorded run counts as a seed. The fixture supplies air times, landing/contact phases and center regions; no extra authored scalar rule table is copied. It records two full-grid support inferences and a wider coplanar run strip inferred from ground samples. These are declared fixture assumptions, not discovered world geometry.
 

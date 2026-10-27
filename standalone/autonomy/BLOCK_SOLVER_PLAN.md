@@ -18,7 +18,7 @@ block/support geometry + initial state + ordered route
 
 The three layers remain distinct: orchestration generates the discrete alternatives, the solver optimizes facings for one numerical request, and replay can consume a chosen result later. Orchestration owns the adapter between profiles and solver requests. It does not depend on recorded facings or a game replay service.
 
-The search objective is now fixed by user ruling: minimize total elapsed inputs, then optimize the configured numerical objective among equal-duration routes and allocations. [SEARCH_OBJECTIVE.md](SEARCH_OBJECTIVE.md) supersedes the earlier first-feasible/run-count-first block-route policy. Normal support-before-horizontal tick ordering is always modeled, including a jump starting beyond an edge; there is no optional run-off mechanic.
+The search objective is now fixed by user ruling: minimize total elapsed inputs, then optimize the configured numerical objective among equal-duration routes and allocations. [SEARCH_OBJECTIVE.md](SEARCH_OBJECTIVE.md) supersedes the earlier first-feasible/run-count-first block-route policy. Normal support-before-horizontal tick ordering is always modeled, including a jump starting beyond an edge. Run-off is a separate no-jump transition: supplied run-offs work in the ordered-route adapter, while automatic run-off profile generation remains unimplemented.
 
 ## What exists and what does not
 
@@ -32,6 +32,7 @@ The search objective is now fixed by user ruling: minimize total elapsed inputs,
 | Optimistic transition bounds, reverse goal reachability and a route-prefix pool | Implemented, with separate accounting for heuristic pool drops and unknown numerical attempts |
 | Different-height route edges and earlier-floor consistency | Implemented with the existing Y simulation and bounded outside-face positional branching |
 | Short half-block staircase profiles and their entry constraints | Implemented as takeoff plus one air input, with ordinary alternatives retained and run contacts retimed |
+| Run-off profiles, leaving a support without jumping | Supplied transitions supported as legacy `walk_off`; automatic fall-profile generation and route selection not implemented |
 | Finite solid side faces, general obstacle corridors and collision consistency | Not implemented in the new block path |
 | Ceiling placement/contact selection and ceiling-induced cancellation | Next pass |
 | Choosing among ordinary/stair profiles and their approach faces, with per-path run-count search | Implemented for the current floor/contact family; broader profile families remain later work |
@@ -79,7 +80,7 @@ The [historical post-mortem](../../docs/research/block-solver.md) reports an hon
 
 - Never replace a disjoint set of supports with its bounding box. Select a support per branch or keep an explicit disjunction, and check strict membership in an actual support.
 - Keep each obstacle's actual sub-boxes and finite geometry. Do not infer that a captured route being inside broad bounds prevents a solver from exploiting gaps.
-- Preserve landing/run-off indexing and axis order. A support row on the wrong state changes which jumps exist.
+- Preserve landing/support indexing and axis order. A support row on the wrong state changes which jumps exist.
 - Avoid exact recorded-point pins as a normal input or seed. Keep yaw free; use only block-derived positional conditions.
 - Numerical timeout is unknown, not a proof that a block route or contact profile is impossible.
 - A future margin objective may help, but the first objective is an accepted route under correctly generated constraints. Do not redesign numerical optimization before measuring the new path.

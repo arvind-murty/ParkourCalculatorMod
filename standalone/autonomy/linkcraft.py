@@ -124,7 +124,7 @@ def extract_section(capture, start, end, source_hash, expanded=False):
         if kind == 'walk_off':
             exit_face = outside_face(blocks[-1], states[departure]['pos'])
             if exit_face is None:
-                raise ValueError('Recorded walk-off is still inside the declared support region')
+                raise ValueError('Recorded run-off is still inside the declared support region')
         entry = None
         if expanded and (is_step or (kind == 'jump' and
                          abs(states[departure + 1]['pos'][1] - states[departure]['pos'][1] - f32(.42)) > 1e-5)):

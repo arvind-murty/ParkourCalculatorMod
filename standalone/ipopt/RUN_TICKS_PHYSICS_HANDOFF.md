@@ -2,6 +2,8 @@
 
 Prepared 2026-10-26 for the autonomous-solve agent. The task is to model an ordered sequence of blocks, insert run-up ticks and find a feasible route with as few added run ticks as possible. This document points to existing physics/search code and identifies assumptions that can otherwise produce false feasibility or false minimum claims. Read [AUTONOMOUS_AGENT_HANDOFF.md](AUTONOMOUS_AGENT_HANDOFF.md) for solver setup/API/worktree instructions. Work in your own worktree; this integration worktree remains owned by the Minecraft/mod adapter agent.
 
+Terminology corrected in this isolated copy: run-off means leaving a block without jumping and then falling. Normal movement followed by a jump is not a run-off transition.
+
 ## Read these first
 
 The repository contains the relevant Minecraft Parkour Wiki material locally. No external wiki access is needed. The wiki's decimal formulas are explanatory approximations; use its documented constants and float chains plus the version-correct code when constructing a precise model. Do not copy the wiki's illustrative angle convention into Minecraft yaw unchanged.
@@ -80,7 +82,7 @@ Equivalently the conceptual center interval is (a-halfWidth, b+halfWidth), with 
 
 The numerical solver allows ordinary row residuals up to 1e-7, which is larger than a one-ULP support adjustment. Therefore an accepted numerical bound alone does not guarantee strict physical overlap at a knife edge. Check the actual support predicate independently, or specify a deliberate geometric clearance and still replay the result. Do not silently widen the support because IPOPT's scalar row tolerance permits it.
 
-Legacy movement resolves Y, then X, then Z. In the simple no-step case, a downward floor collision during input t is evaluated at the pre-horizontal X/Z location p[t]. The final X/Z at p[t+1] is reached afterward. Merely constraining p[t+1] to overlap a target top can claim a landing when horizontal arrival was too late for that tick's Y check. Conversely, the final horizontal step may leave the support after a real Y landing, retaining a grounded flag until the next check. The one-tick walk-off jump behavior is real and should not be confused with proof of stationary support at the end of the movement.
+Legacy movement resolves Y, then X, then Z. In the simple no-step case, a downward floor collision during input t is evaluated at the pre-horizontal X/Z location p[t]. The final X/Z at p[t+1] is reached afterward. Merely constraining p[t+1] to overlap a target top can claim a landing when horizontal arrival was too late for that tick's Y check. Conversely, horizontal movement may end beyond the support after a real Y landing, retaining a grounded flag and allowing the next input to jump. This is normal movement and does not establish stationary support at the end of the input.
 
 For the simplified first model, either deliberately restrict each landing/run interval to stable support, or model this order correctly and validate it. Clearly state which family is searched. Stable-support restrictions are useful, but any minimum is conditional on them. Do not call a restriction a universal Minecraft impossibility rule.
 

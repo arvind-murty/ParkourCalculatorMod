@@ -14,6 +14,8 @@ For a valid half-block stair rise, the existing Y step model supplies a 2-input 
 
 `stairBoost` defaults to true. Setting it false removes short profiles from enumeration; ordinary candidates must still avoid an unplanned first-movement stair cancellation. Those contact checks also generate retimed outside-face rows if needed. Every accepted complete prefix now passes the existing scalar Y validator with its selected floor/step contacts and inserted ground inputs, and its ground flags must match the compiled horizontal regime.
 
+Run-off means leaving a support without jumping, then falling. It is a distinct no-jump profile, not a name for ordinary movement beyond an edge followed by a jump. The ordered-route adapter supports supplied run-offs under the legacy `walk_off` kind. This automatic block-route builder does not yet generate their fall profiles or enumerate their exit faces.
+
 Example input, [fixtures/blocks-route-choice.json](fixtures/blocks-route-choice.json):
 
 ```json

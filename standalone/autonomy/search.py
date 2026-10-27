@@ -191,7 +191,7 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                     failed = [{'state': tick, 'block': index, 'kind': kind}
                               for tick, index, kind in plan['supportChecks']
                               if not supports(route['blocks'][index], *candidate['positions'][tick], kind=kind)]
-                    failed.extend({'state': tick, 'block': index, 'kind': 'walk_off_still_supported'}
+                    failed.extend({'state': tick, 'block': index, 'kind': 'run_off_still_supported'}
                                   for tick, index in plan['exitChecks']
                                   if supports(route['blocks'][index], *candidate['positions'][tick], kind='run'))
                     if candidate['feasible'] and not failed:
