@@ -5,9 +5,11 @@ from standalone.ipopt import prepare, solve, validate
 from standalone.ipopt.model import fingerprint, number
 from .route import initial_guess, prepare_route, schedule, supports
 from .screen import contradiction
+from .ranking import objective_seed
 
 
-def search_allocations(route, evaluate, *, seconds=60, improve=False, cancel_event=None, on_attempt=None):
+def search_allocations(route, evaluate, *, seconds=60, improve=False, rank_equal_cost=False,
+                       cancel_event=None, on_attempt=None):
     route = prepare_route(route)
     if number(seconds, 'search seconds') <= 0:
         raise ValueError('Search seconds must be positive')
@@ -54,7 +56,8 @@ def search_allocations(route, evaluate, *, seconds=60, improve=False, cancel_eve
             cost = sum(allocation)
             if cost + sum(minima[index + 1:]) > route['maxTotalRunTicks']:
                 break
-            if best is not None and cost + sum(minima[index + 1:]) >= best['cost']:
+            if best is not None and (cost + sum(minima[index + 1:]) > best['cost'] or
+                                     (not rank_equal_cost and cost + sum(minima[index + 1:]) == best['cost'])):
                 break
             seed = parent
             if extra:
@@ -82,9 +85,13 @@ def search_allocations(route, evaluate, *, seconds=60, improve=False, cancel_eve
             if result['status'] != 'feasible':
                 continue
             if index + 1 == len(route['airtimes']):
-                best = {'allocation': allocation, 'cost': cost, 'candidate': result['candidate'],
-                        'problemHash': result.get('problemHash'), 'plan': result.get('plan')}
-                if not improve or cost == sum(minima):
+                better_objective = (rank_equal_cost and best is not None and cost == best['cost'] and
+                                    (1 if route['objective']['sense'] == 'MAX' else -1) *
+                                    (result['candidate']['objective'] - best['candidate']['objective']) > 0)
+                if best is None or cost < best['cost'] or better_objective:
+                    best = {'allocation': allocation, 'cost': cost, 'candidate': result['candidate'],
+                            'problemHash': result.get('problemHash'), 'plan': result.get('plan')}
+                if not rank_equal_cost and (not improve or cost == sum(minima)):
                     stopped = 'first_feasible' if not improve else 'lower_bound_reached'
                     return
             else:
@@ -98,11 +105,14 @@ def search_allocations(route, evaluate, *, seconds=60, improve=False, cancel_eve
         interrupted()
     cheaper = [item for item in unresolved if best is None or
                sum(item['allocation']) + sum(minima[len(item['allocation']):]) < best['cost']]
+    equal_unknowns = [item for item in unresolved if best is not None and
+                      sum(item['allocation']) + sum(minima[len(item['allocation']):]) == best['cost']]
     return {'status': 'feasible' if best else ('cancelled' if stopped == 'cancelled' else
                                              'error' if stopped == 'error' else 'unknown'),
             'best': best, 'lowerBound': sum(minima),
             'minimumProven': best is not None and best['cost'] == sum(minima),
             'unresolved': cheaper, 'unknownAttempts': len(unresolved), 'attempts': attempts, 'backtracks': backtracks,
+            'unresolvedEqualCost': equal_unknowns,
             'termination': stopped or 'search_exhausted', 'elapsedSeconds': time.monotonic() - started,
             'searchPolicy': 'first-failure-increment-backtrack',
             'source': copy.deepcopy(route.get('source')),
@@ -113,7 +123,7 @@ def search_allocations(route, evaluate, *, seconds=60, improve=False, cancel_eve
 
 
 def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1, improve=False,
-               python_executable=None, cancel_event=None, on_attempt=None):
+               rank_equal_cost=False, optimize_goal=False, python_executable=None, cancel_event=None, on_attempt=None):
     started = time.monotonic()
     route = prepare_route(request)
     if number(seconds, 'search seconds') <= 0:
@@ -150,13 +160,14 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                            position=[route['initial']['position'][0], route['initial']['position'][2]],
                            velocity=[route['initial']['velocity'][0], route['initial']['velocity'][2]],
                            yaw=initial_guess(route, plan, parent), threshold=.005, walls=plan['walls'],
-                           objective={'axis': 'X', 'sense': 'MAX', 'tick': plan['ticks']})
+                           objective=dict(route['objective'], tick=plan['ticks']))
             problem = prepare(problem)
             impossible = contradiction(problem)
             if impossible:
                 return {'status': 'blocked', 'plan': plan, 'certificate': impossible,
                         'problemHash': fingerprint(problem)}
-            fallback = initial_guess(route, plan)
+            polish = optimize_goal and stage == 'jump' and len(allocation) == len(route['airtimes'])
+            fallback = objective_seed(problem) if polish else initial_guess(route, plan)
             if fallback != problem['yaw']:
                 problem['fallbackYaw'] = fallback
             diagnostics = []
@@ -169,7 +180,7 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                 budget = min(candidate_seconds * (attempt + 1), remaining)
                 if attempt:
                     problem['yaw'] = fallback
-                result = solve(problem, seconds=budget, stop_on_feasible=True,
+                result = solve(problem, seconds=budget, stop_on_feasible=not polish,
                                python_executable=python_executable, cancel_event=cancel_event)
                 diagnostics.append({'status': result['status'], 'termination': result.get('termination'),
                                     'elapsedSeconds': result.get('elapsedSeconds'), 'error': result.get('error')})
@@ -197,7 +208,7 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
             return {'status': 'error', 'error': str(error)}
 
     remaining = max(1e-9, seconds - (time.monotonic() - started))
-    result = search_allocations(route, evaluate, seconds=remaining, improve=improve,
+    result = search_allocations(route, evaluate, seconds=remaining, improve=improve, rank_equal_cost=rank_equal_cost,
                                 cancel_event=cancel_event, on_attempt=on_attempt)
     result['elapsedSeconds'] = time.monotonic() - started
     result['mandatoryGroundTicks'] = sum(kind == 'step' for kind in route['kinds'])

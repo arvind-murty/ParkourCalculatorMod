@@ -18,6 +18,19 @@ def outcome(status):
 
 
 class SearchTests(unittest.TestCase):
+    def test_equal_run_allocations_remain_available_for_objective_optimization(self):
+        def evaluate(allocation, stage, parent, remaining):
+            if allocation == [0, 0] and stage == 'jump':
+                return outcome('unknown')
+            value = 10 if allocation == [1, 0] else 1
+            return {'status': 'feasible', 'candidate': {'yaw': [], 'positions': [], 'objective': value},
+                    'plan': {'ticks': 24 + sum(allocation)}}
+
+        result = search_allocations(route(), evaluate, improve=True, rank_equal_cost=True)
+        self.assertEqual(result['best']['cost'], 1)
+        self.assertEqual(result['best']['allocation'], [1, 0])
+        self.assertEqual(result['best']['candidate']['objective'], 10)
+
     def test_increments_the_first_failing_jump_and_backtracks_at_support_limit(self):
         calls = []
 

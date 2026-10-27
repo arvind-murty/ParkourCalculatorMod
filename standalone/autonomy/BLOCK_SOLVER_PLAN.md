@@ -18,6 +18,8 @@ block/support geometry + initial state + ordered route
 
 The three layers remain distinct: orchestration generates the discrete alternatives, the solver optimizes facings for one numerical request, and replay can consume a chosen result later. Orchestration owns the adapter between profiles and solver requests. It does not depend on recorded facings or a game replay service.
 
+The search objective is now fixed by user ruling: minimize total elapsed inputs, then optimize the configured numerical objective among equal-duration routes and allocations. [SEARCH_OBJECTIVE.md](SEARCH_OBJECTIVE.md) supersedes the earlier first-feasible/run-count-first block-route policy. Normal support-before-horizontal tick ordering is always modeled, including a jump starting beyond an edge; there is no optional run-off mechanic.
+
 ## What exists and what does not
 
 | Capability | Current state |

@@ -20,7 +20,8 @@ def main():
     parser.add_argument('--route-seconds', type=float, default=8)
     parser.add_argument('--candidate-seconds', type=float, default=2)
     parser.add_argument('--retries', type=int, default=1)
-    parser.add_argument('--improve', action='store_true')
+    parser.add_argument('--improve', action='store_true',
+                        help='Accepted for compatibility; total-tick/objective search is always enabled')
     args = parser.parse_args()
     cancel = threading.Event()
     for signum in (signal.SIGINT, signal.SIGTERM):

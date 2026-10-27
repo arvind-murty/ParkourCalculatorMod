@@ -8,6 +8,7 @@ from standalone.ipopt.model import integer, number
 from .block_contacts import floor_checks, solve_contact_branches
 from .block_profiles import compile_open_air_route, ordinary_jump_profile, stair_jump_profile
 from .route import prepare_route
+from .ranking import candidate_rank, objective_spec
 
 
 def prepare_scene(request):
@@ -16,12 +17,13 @@ def prepare_scene(request):
         raise ValueError('Expected a block scene')
     allowed = {'version', 'sceneModel', 'initial', 'blocks', 'startBlock', 'goalBlock', 'inputs',
                'maxJumps', 'maxPrefixes', 'maxQueuedPrefixes', 'maxRunTicksPerJump', 'maxTotalRunTicks',
-               'maxFlightInputs', 'maxContactBranches', 'stairBoost', 'supportClearance'}
+               'maxFlightInputs', 'maxContactBranches', 'stairBoost', 'supportClearance', 'objective'}
     extra = set(scene) - allowed
     if extra:
         raise ValueError('Unsupported block-scene fields: ' + ', '.join(sorted(extra)))
     if scene.get('sceneModel') not in ('coplanar_support_planes', 'support_planes'):
         raise ValueError('Declare a support_planes or coplanar_support_planes scene; solid side faces are not modeled')
+    scene['objective'] = objective_spec(scene.get('objective'))
     blocks = scene.get('blocks')
     if not isinstance(blocks, list) or not 2 <= len(blocks) <= 64:
         raise ValueError('Supply 2 through 64 candidate supports')
@@ -98,7 +100,7 @@ def build_transition_graph(scene, compiler, *, seconds=5):
     speed = max(math.hypot(scene['initial']['velocity'][0], scene['initial']['velocity'][2]),
                 max(f * m / (1 - f) for m, f in pairs))
     speed += 1e-9 * (1 + speed)
-    runoff = speed + max(m for m, _ in pairs)
+    movement_after_support_check = speed + max(m for m, _ in pairs)
     footprints = compiler.derive_footprints(scene, remaining())
     if len(footprints) != len(ids):
         raise ValueError('Invalid support footprints')
@@ -147,7 +149,7 @@ def build_transition_graph(scene, compiler, *, seconds=5):
                         move = carry + m
                         travel += move
                         carry = move * f
-                    radius = travel + runoff
+                    radius = travel + movement_after_support_check
                     padding = 1e-8 * (1 + radius) + 1e-12 * (1 + coordinate_scale) * (n + 1)
                     number(radius + padding, 'horizontal reach bound')
                     flight_bounds[n] = {'travel': travel, 'radius': radius + padding}
@@ -193,7 +195,7 @@ def build_transition_graph(scene, compiler, *, seconds=5):
             'flightInputsToGoal': flight_to_goal, 'flightBounds': flight_bounds,
             'rejectedEdges': rejected,
             'profileLimitReached': any(r['reason'] == 'ordinary_profile_not_generated' for r in rejected),
-            'bound': {'storedSpeedNorm': speed, 'runoffAllowance': runoff,
+            'bound': {'storedSpeedNorm': speed, 'movementAfterSupportCheck': movement_after_support_check,
                       'flightTravelToLandingCheck': max((b['travel'] for b in flight_bounds.values()), default=0),
                       'radius': max((b['radius'] for b in flight_bounds.values()), default=0)}}
 
@@ -223,7 +225,8 @@ def compile_block_path(scene, block_ids, transitions=None):
             entries.append(dict(transition['entryFace'], outsideFrom=0, outsideThrough=0, enter=1)
                            if transition['entryFace'] else None)
         route = prepare_route({'version': 1, 'initial': scene['initial'], 'blocks': blocks,
-                               'inputs': scene['inputs'], 'airtimes': [p['airtime'] for p in selected],
+                               'inputs': scene['inputs'], 'objective': scene['objective'],
+                               'airtimes': [p['airtime'] for p in selected],
                                'contactEntries': entries, 'maxTotalRunTicks': scene['maxTotalRunTicks'],
                                'runBounds': [[0, scene['maxRunTicksPerJump']] for _ in selected],
                                'supportClearance': scene['supportClearance']})
@@ -232,6 +235,7 @@ def compile_block_path(scene, block_ids, transitions=None):
         return {'status': 'derived', 'route': route, 'profiles': selected}
     compiled = compile_open_air_route({'version': 1, 'sceneModel': 'open_air_supports',
                                       'initial': scene['initial'], 'blocks': blocks, 'inputs': scene['inputs'],
+                                      'objective': scene['objective'],
                                       'maxTotalRunTicks': scene['maxTotalRunTicks'],
                                       'runBounds': [[0, scene['maxRunTicksPerJump']] for _ in block_ids[1:]],
                                       'supportClearance': scene['supportClearance']},
@@ -252,9 +256,10 @@ def search_block_paths(scene, graph, evaluate, *, seconds=60, improve=False, can
     best, termination = None, 'search_exhausted'
     serial = 0
     horizon_prunes, disconnected_prunes, pool_drops = 0, 0, 0
+    tick_prunes = 0
 
     def offer(path, parent_status, parent_cost, selected=()):
-        nonlocal serial, horizon_prunes, disconnected_prunes
+        nonlocal serial, horizon_prunes, disconnected_prunes, tick_prunes
         current = path[-1]
         if current not in distances:
             disconnected_prunes += 1
@@ -268,6 +273,9 @@ def search_block_paths(scene, graph, evaluate, *, seconds=60, improve=False, can
                          sum(graph.get('profiles', {}).get(a, {}).get(b, {'airtime': 12})['airtime']
                              for a, b in zip(path, path[1:])))
         lower_inputs = prefix_inputs + graph.get('flightInputsToGoal', {}).get(current, 12 * distances[current])
+        if best is not None and lower_inputs > best['plan']['ticks']:
+            tick_prunes += 1
+            return
         priority = (lower_inputs, lower_hops, parent_status != 'feasible', parent_cost,
                     minimum_distance(by_id[current]['bounds'], goal), serial)
         heapq.heappush(pending, (priority, tuple(path), tuple(selected)))
@@ -283,11 +291,21 @@ def search_block_paths(scene, graph, evaluate, *, seconds=60, improve=False, can
         if len(attempts) >= scene['maxPrefixes']:
             termination = 'candidate_limit'
             break
-        _, path, selected = heapq.heappop(pending)
+        priority, path, selected = heapq.heappop(pending)
+        if best is not None and priority[0] > best['plan']['ticks']:
+            tick_prunes += 1 + len(pending)
+            pending.clear()
+            termination = 'tick_bound_exhausted'
+            break
         status, cost = 'feasible', 0
         if len(path) > 1:
             available = max(.001, deadline - time.monotonic())
-            result = evaluate(list(path), available, transition_ids=selected) if selected else evaluate(list(path), available)
+            if selected:
+                remaining_flight = graph.get('flightInputsToGoal', {}).get(path[-1], 12 * distances[path[-1]])
+                cap = best['plan']['ticks'] - remaining_flight if best is not None else None
+                result = evaluate(list(path), available, transition_ids=selected, max_ticks=cap)
+            else:
+                result = evaluate(list(path), available)
             if not isinstance(result, dict) or result.get('status') not in ('feasible', 'unknown', 'error', 'cancelled'):
                 raise ValueError('Invalid path evaluator result')
             status = result['status']
@@ -297,9 +315,13 @@ def search_block_paths(scene, graph, evaluate, *, seconds=60, improve=False, can
                 cost = integer(result['best'].get('cost'), 'run cost', 0, scene['maxTotalRunTicks'])
             record = {'blockIds': list(path), 'status': status, 'cost': cost if status == 'feasible' else None,
                       'transitionIds': list(selected),
+                      'lowerBoundTicks': priority[0],
+                      'ticks': result['best']['plan']['ticks'] if status == 'feasible' else None,
+                      'objective': result['best']['candidate'].get('objective') if status == 'feasible' else None,
                       'termination': result.get('termination'), 'elapsedSeconds': time.monotonic() - started,
                       'innerProbes': len(result.get('attempts', [])),
                       'contactBranches': len(result.get('contactAttempts', [])), 'error': result.get('error')}
+            record['unresolvedAllocations'] = len(result.get('unresolved', [])) + len(result.get('unresolvedEqualCost', []))
             attempts.append(record)
             if on_attempt is not None:
                 on_attempt(copy.deepcopy(record))
@@ -309,13 +331,10 @@ def search_block_paths(scene, graph, evaluate, *, seconds=60, improve=False, can
                 termination = status
                 break
             if status == 'feasible' and path[-1] == scene['goalBlock']:
-                if best is None or (cost, result['best']['plan']['ticks']) < (best['cost'], best['plan']['ticks']):
+                if best is None or candidate_rank(result['best'], scene['objective']) < candidate_rank(best, scene['objective']):
                     best = copy.deepcopy(result['best'])
                     best['blockIds'] = list(path)
                     best['transitionIds'] = list(selected)
-                if not improve or best['cost'] == 0:
-                    termination = 'first_feasible'
-                    break
         if path[-1] == scene['goalBlock'] or len(path) - 1 >= scene['maxJumps']:
             continue
         for target in graph['adjacency'][path[-1]]:
@@ -329,15 +348,20 @@ def search_block_paths(scene, graph, evaluate, *, seconds=60, improve=False, can
             pool_drops += len(pending) - scene['maxQueuedPrefixes']
             pending = heapq.nsmallest(scene['maxQueuedPrefixes'], pending)
             heapq.heapify(pending)
+    initial_tick_bound = graph.get('flightInputsToGoal', {}).get(scene['startBlock'],
+                        12 * distances[scene['startBlock']] if scene['startBlock'] in distances else None)
     return {'status': 'feasible' if best is not None else
             ('cancelled' if termination == 'cancelled' else 'error' if termination == 'error' else 'unknown'),
             'best': best, 'termination': termination, 'attempts': attempts, 'unresolvedPrefixes': unresolved,
-            'elapsedSeconds': time.monotonic() - started, 'minimumRunTicksProven': best is not None and best['cost'] == 0,
+            'elapsedSeconds': time.monotonic() - started,
+            'ticksLowerBound': initial_tick_bound,
+            'minimumTicksProven': best is not None and best['plan']['ticks'] == initial_tick_bound,
+            'objectiveOptimalityProven': False, 'objective': scene['objective'],
             'pruning': {'horizontalEdges': sum(r.get('reason') == 'optimistic_horizontal_reach' for r in graph['rejectedEdges']),
                         'profileEdges': sum(r.get('reason') == 'ordinary_profile_not_generated' for r in graph['rejectedEdges']),
-                        'horizonPrefixes': horizon_prunes,
+                        'horizonPrefixes': horizon_prunes, 'tickBoundPrefixes': tick_prunes,
                         'disconnectedPrefixes': disconnected_prunes, 'heuristicPoolDrops': pool_drops},
-            'remainingPrefixes': len(pending), 'searchPolicy': 'bounded_best_first_route_prefix_pool'}
+            'remainingPrefixes': len(pending), 'searchPolicy': 'total_ticks_then_objective'}
 
 
 def find_blocks(request, compiler, *, seconds=60, route_seconds=8, candidate_seconds=2, retries=1,
@@ -361,15 +385,22 @@ def find_blocks(request, compiler, *, seconds=60, route_seconds=8, candidate_sec
         return {'status': 'error', 'termination': 'graph_compilation', 'error': str(error), 'best': None,
                 'attempts': [], 'elapsedSeconds': time.monotonic() - started}
 
-    def evaluate(block_ids, available, transition_ids=None):
+    def evaluate(block_ids, available, transition_ids=None, max_ticks=None):
         selected = [graph['transitions'][e] for e in transition_ids] if transition_ids else None
         compiled = compile_block_path(scene, block_ids, transitions=selected)
         if compiled['status'] != 'derived':
             return {'status': 'unknown', 'termination': 'profile_limit'}
+        if max_ticks is not None:
+            run_cap = max_ticks - sum(compiled['route']['airtimes'])
+            if run_cap < 0:
+                return {'status': 'unknown', 'termination': 'tick_bound'}
+            compiled['route']['maxTotalRunTicks'] = min(compiled['route']['maxTotalRunTicks'], run_cap)
         checks = floor_checks(scene, block_ids, compiled['profiles'])
+        goal = block_ids[-1] == scene['goalBlock']
         return solve_contact_branches(compiled['route'], compiled['profiles'], checks, compiler,
                                       seconds=min(route_seconds, available), candidate_seconds=candidate_seconds,
-                                      retries=retries, max_branches=scene['maxContactBranches'], improve=improve,
+                                      retries=retries, max_branches=scene['maxContactBranches'], improve=goal,
+                                      rank_equal_cost=goal, optimize_goal=goal,
                                       python_executable=python_executable, cancel_event=cancel_event)
 
     remaining = seconds - (time.monotonic() - started)
