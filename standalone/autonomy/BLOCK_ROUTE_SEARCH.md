@@ -1,12 +1,14 @@
 # Block-route selection prototype
 
-2026-10-26. Implemented as a separate orchestration feature after the run-ticks and ordinary-profile checkpoints. Only the start and goal support IDs are fixed. The intermediate supports and their order are search variables. Inputs are fixed to sprint-jump on takeoff and sprint 45 otherwise, with free facings on every input.
+2026-10-26. Implemented as separate orchestration features after the run-ticks and ordinary-profile checkpoints, now extended to different heights. Only the start and goal support IDs are fixed. The intermediate supports and their order are search variables. Inputs are fixed to sprint-jump on takeoff and sprint 45 otherwise, with free facings on every input.
 
 ## Supported scene
 
-`sceneModel: coplanar_support_planes` declares rectangular floor supports at a common top height, normal 1.8.9 movement and a fixed initial state. The model has no ceilings, step boosts, ladders, special surfaces or finite side-collision events. Unequal heights and unsupported geometry are rejected, rather than silently omitting possible earlier floor contacts. This is the first route-selection family, not a general world solver.
+`sceneModel: support_planes` declares rectangular floor supports at arbitrary heights, normal 1.8.9 movement and a fixed initial state. `coplanar_support_planes` remains accepted for the original equal-height fixtures. The model has no ceilings, step boosts, ladders, special surfaces or finite side-collision events. This is a floor-support route family, not a general world solver.
 
-All ordinary flights above these coplanar supports stay above their common plane until the declared landing. There is consequently no earlier different-height floor to discover. At a landing or run input, strict overlap with the selected actual support is still required. Supports are never merged into a bounding rectangle over gaps.
+The existing Y simulation derives an ordinary profile independently for every directed height pair: flat, +.5, +1 and -1 produce 12, 10, 9 and 14 inputs. A missing profile is a declared-family exclusion, not a proof against other contact mechanics. At a landing or run input, strict overlap with the selected actual support is still required. Supports are never merged into a bounding rectangle over gaps.
+
+Descending past another support's top creates an earlier-floor exclusion at that transition-relative input. Every accepted candidate is checked against those actual support footprints. If it overlaps, orchestration branches over four outside-face positional constraints and re-solves within a bounded contact-search budget. This includes avoiding the departure floor before landing on a lower target. The rows retime with added runs; a limit or numerical failure remains unknown. Independent strict checks prevent row tolerance from accepting the unwanted contact.
 
 Example input, [fixtures/blocks-route-choice.json](fixtures/blocks-route-choice.json):
 
@@ -37,7 +39,7 @@ Other limits are `maxPrefixes` (default 200), `maxQueuedPrefixes` (4000) and `ma
 
 ## Optimistic transition graph
 
-The existing vertical recurrence derives the ordinary flat profile, 12 inputs. The existing Java model compiler supplies movement magnitudes and friction; `ConstraintDeriver` supplies support footprints. A norm bound covers incoming horizontal momentum at every future input:
+The existing vertical recurrence derives each edge's ordinary profile. The existing Java model compiler supplies movement magnitudes and friction, cached by duration; `ConstraintDeriver` supplies support footprints. A norm bound covers incoming horizontal momentum at every future input:
 
 ```text
 V = max(initial stored speed norm, max_t friction[t] * magnitude[t] / (1 - friction[t]))
@@ -53,7 +55,7 @@ The bound is deliberately broad. It includes any free facing, carried velocity, 
 
 ## Route-prefix pool and numerical evaluation
 
-A shared priority queue holds full support-ID sequences. The priority favors fewer possible total jumps, feasible parents, lower observed parent run counts and proximity to the goal. These are evaluation-order heuristics. A parent's best observed run count is not a lower bound on a child: later constraints may cause the inner search to change earlier allocations and facings.
+A shared priority queue holds full support-ID sequences. The priority favors a lower possible flight-input count, fewer jumps, feasible parents, lower observed parent run counts and proximity to the goal. Reverse shortest flight-time and hop counts come from the optimistic graph. These choose evaluation order; no elapsed-time optimum is claimed. A parent's best observed run count is not a lower bound on a child: later constraints may cause the inner search to change earlier allocations and facings.
 
 Each prefix is compiled into an ordinary-profile route and evaluated by the existing first-failure run-ticks/IPOPT path, starting from the original initial state. All earlier facings and run counts can be searched again. One previously solved exit position/velocity is never frozen as the only arrival at a block.
 
@@ -82,7 +84,9 @@ python3 -m standalone.autonomy.solve_blocks \
 - `blocks-route-choice.json`: chooses `start -> middle -> goal` from an unordered set including an off-axis alternative and a disconnected remote support. No route order or air times are supplied. The accepted allocation is `[0,0]`.
 - `blocks-momentum-choice.json`: an isolated narrow intermediate support is reachable, while the observed two-jump continuation through it remains unknown at the stated budget; the pool finds `start -> around -> goal`. Local unknown is not labeled impossible. The pool's accepted result is compared with exhaustive evaluation of every route in this small one/two-jump family.
 - `blocks-required-run.json`: the chosen direct route requires one added ground input, producing a 13-input accepted schedule. This checks that route selection composes with run-ticks search rather than assuming all edges are immediate jumps.
+- `blocks-height-route.json`: chooses an intermediate +1 support to reach a goal +2 above the start, deriving `[9,9]` air times and an 18-input accepted trajectory. The reverse -1 graph edge derives 14 inputs.
+- An earlier-floor control case cannot exit a wide upper support before its Y crossing. A horizontal-only lower-target witness is rejected and all four outside-face repairs fail within the declared family; no route is accepted through the earlier floor.
 - Unit tests retain different paths to the same support, extend unknown prefixes, permit repeated-support jumps, compile distinct repeated visits, reject composite/gap unions and unsupported geometry, distinguish compiler errors from timeouts, retain an incumbent on cancellation and expose candidate/pool limits.
 - A seeded audit forwards 100 free-facing, automatic-inertia witnesses through the existing scalar model and checks that the optimistic graph retains their landing edge, including varied initial momentum.
 
-The feature's combined orchestration suite passes 54 tests with the actual Java compiler and IPOPT runtime. Native core code and the numerical worker are unchanged. [BLOCK_SOLVER_PLAN.md](BLOCK_SOLVER_PLAN.md) tracks the remaining profile and geometry families.
+The height extension's combined orchestration suite passes 59 tests with the actual Java compiler and IPOPT runtime. Native core code and the numerical worker are unchanged. [BLOCK_SOLVER_PLAN.md](BLOCK_SOLVER_PLAN.md) tracks the remaining profile and geometry families.

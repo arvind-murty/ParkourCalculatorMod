@@ -2,7 +2,7 @@
 
 Status, 2026-10-26: **run ticks are prototyped** within the continuous model. [RUN_TICKS_PLAN.md](RUN_TICKS_PLAN.md) records what works, the measured results and deferred work. Current orchestration work has moved to the [block solver](BLOCK_SOLVER_PLAN.md). Replay export and game integration are outside this milestone.
 
-The [block-route search prototype](BLOCK_ROUTE_SEARCH.md) now accepts fixed start/goal supports and an unordered set of coplanar intermediate supports, keeps sprint-jump/sprint-45 inputs fixed, derives ordinary profiles and selects a route through this run-ticks evaluator. Use `python3 -m standalone.autonomy.solve_blocks`; `standalone.autonomy.solve` remains the ordered-route entry.
+The [block-route search prototype](BLOCK_ROUTE_SEARCH.md) accepts fixed start/goal supports and an unordered set of intermediate supports, keeps sprint-jump/sprint-45 inputs fixed, derives height-dependent ordinary profiles, checks earlier floor contacts and selects a route through this run-ticks evaluator. Use `sceneModel: support_planes` for different heights and `python3 -m standalone.autonomy.solve_blocks`; `standalone.autonomy.solve` remains the ordered-route entry.
 
 This headless planner implements the first-failing-jump heuristic over the existing standalone IPOPT solver:
 
