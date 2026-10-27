@@ -26,6 +26,9 @@ class JavaCompiler:
         message = {'grounded': plan['grounded'], 'jump': plan['jump'], 'inputs': route['inputs']}
         if route.get('sharedMovement'):
             message.update(sharedMovement=True, contacts=plan.get('sceneContacts', []))
+            for key in ('sneak', 'ladderTicks', 'vertical'):
+                if key in plan:
+                    message[key] = plan[key]
         return self._exchange(message, seconds)
 
     def derive_footprints(self, route, seconds):
@@ -34,9 +37,11 @@ class JavaCompiler:
     def derive_standing_footprints(self, route, seconds):
         return self._exchange({'action': 'standingFootprints', 'blocks': route['blocks']}, seconds)['footprints']
 
-    def check_scene(self, scene, positions, movement, ground, seconds, contacts=None):
-        return self._exchange({'action': 'sceneCheck', 'scene': scene, 'positions': positions,
-                               'movement': movement, 'expectedGround': ground, 'contacts': contacts or []}, seconds)
+    def check_scene(self, scene, positions, movement, ground, seconds, contacts=None, **contract):
+        if set(contract) - {'sneak', 'ladderTicks', 'velocities', 'friction'}:
+            raise ValueError('Unsupported scene contract')
+        return self._exchange(dict({'action': 'sceneCheck', 'scene': scene, 'positions': positions,
+                               'movement': movement, 'expectedGround': ground, 'contacts': contacts or []}, **contract), seconds)
 
     def _exchange(self, message, seconds):
         import queue
