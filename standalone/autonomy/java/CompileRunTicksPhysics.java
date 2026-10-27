@@ -8,6 +8,8 @@ import de.legoshi.parkourcalc.core.anglesolver.solver.JumpPhysicsInputs;
 import de.legoshi.parkourcalc.core.sim.AABB;
 import de.legoshi.parkourcalc.core.sim.Vec3dCore;
 import de.legoshi.parkourcalc.core.replay.StaticScene;
+import de.legoshi.parkourcalc.core.save.SaveFile;
+import de.legoshi.parkourcalc.forge.core.replay.FixedMovementCompiler;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.LinkedHashMap;
@@ -36,6 +38,16 @@ public final class CompileRunTicksPhysics {
         double[][] positions;
         double[][] movement;
         boolean[] expectedGround;
+        boolean sharedMovement;
+        PlannedContact[] contacts;
+    }
+
+    public static final class PlannedContact {
+        int state;
+        int axis;
+        int direction;
+        double plane;
+        double[] box;
     }
 
     public static final class Block {
@@ -86,11 +98,29 @@ public final class CompileRunTicksPhysics {
             Vec3dCore expected = vector(request.positions[t + 1]);
             double error = StrictMath.max(StrictMath.abs(hit.position.x - expected.x),
                     StrictMath.max(StrictMath.abs(hit.position.y - expected.y), StrictMath.abs(hit.position.z - expected.z)));
-            if (hit.horizontalCollision || error > 1e-7 || hit.onGround != request.expectedGround[t + 1]) {
+            boolean contactMismatch = false;
+            for (int axis : new int[]{0, 2}) {
+                boolean actual = axis == 0 ? hit.blockedX : hit.blockedZ;
+                PlannedContact selected = null;
+                if (request.contacts != null) for (PlannedContact event : request.contacts)
+                    if (event.state == t + 1 && event.axis == axis) selected = event;
+                if (actual != (selected != null)) contactMismatch = true;
+            }
+            if (request.contacts != null) for (PlannedContact event : request.contacts) {
+                if (event.state != t + 1) continue;
+                StaticScene.Clip last = null;
+                for (StaticScene.Clip clip : hit.clips) if (clip.axis == event.axis) last = clip;
+                double coordinate = event.axis == 0 ? hit.position.x : event.axis == 1 ? hit.position.y : hit.position.z;
+                if (last == null || last.requested == last.resolved || last.requested * event.direction <= 0
+                        || StrictMath.abs(coordinate - event.plane) > 1e-7
+                        || event.box != null && !sameBox(last.obstacle, event.box)) contactMismatch = true;
+            }
+            if (contactMismatch || error > 1e-7 || hit.onGround != request.expectedGround[t + 1]) {
                 result.put("feasible", false);
                 result.put("tick", t);
                 result.put("reason", hit.stepped ? "unplanned_step" : "scene_collision");
                 result.put("positionError", error);
+                result.put("contactMismatch", contactMismatch);
                 result.put("actualPosition", new double[]{hit.position.x, hit.position.y, hit.position.z});
                 List<Map<String, Object>> clips = new ArrayList<>();
                 List<StaticScene.Clip> diagnostics = hit.stepped ? hit.stepTriggers : hit.clips;
@@ -117,6 +147,11 @@ public final class CompileRunTicksPhysics {
         result.put("feasible", true);
         result.put("ticks", n);
         return result;
+    }
+
+    private static boolean sameBox(AABB box, double[] values) {
+        return values.length == 6 && box.min.x == values[0] && box.min.y == values[1]
+                && box.min.z == values[2] && box.max.x == values[3] && box.max.y == values[4] && box.max.z == values[5];
     }
 
     private static Vec3dCore vector(double[] values) {
@@ -149,7 +184,60 @@ public final class CompileRunTicksPhysics {
         return result;
     }
 
+    private static Map<String, Object> compileShared(Request request) {
+        int n = request.jump.length;
+        SaveFile file = new SaveFile();
+        file.mcVersion = "1.8.9";
+        file.start = new SaveFile.Start();
+        file.start.pos = new double[]{0, 0, 0};
+        file.start.vel = new double[]{0, 0, 0};
+        if (request.inputs.incomingSprint) {
+            file.start.resume = new SaveFile.Resume();
+            file.start.resume.sprinting = true;
+            file.start.resume.onGround = request.grounded[0];
+            file.start.resume.heldLastTick = java.util.Arrays.asList("W", "SPRINT");
+        }
+        file.angleSolver = new SaveFile.AngleSolver();
+        file.angleSolver.defaultSlipperiness = "AIR";
+        for (int t = 0; t < n; t++) {
+            SaveFile.Row row = new SaveFile.Row();
+            row.keys.add("W");
+            if (request.inputs.sprint) row.keys.add("SPRINT");
+            if (request.jump[t]) row.keys.add("JUMP");
+            if (request.inputs.force45 && !(request.jump[t] && request.grounded[t])) row.keys.add("A");
+            file.rows.add(row);
+            if (request.grounded[t]) {
+                SaveFile.Tick tick = new SaveFile.Tick();
+                tick.tick = t;
+                tick.override = new SaveFile.Override();
+                tick.override.slipperiness = "DEFAULT";
+                file.angleSolver.ticks.add(tick);
+            }
+        }
+        JsonObject problem = new JsonObject(), source = new JsonObject();
+        source.addProperty("startTick", 0);
+        source.addProperty("inputMode", "KEEP");
+        source.addProperty("sprintMode", "DERIVE");
+        problem.add("source", source);
+        problem.addProperty("ticks", n);
+        List<Map<String, Object>> contacts = new ArrayList<>();
+        if (request.contacts != null) for (PlannedContact contact : request.contacts) {
+            if (contact.axis == 1) continue;
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("state", contact.state);
+            contacts.add(row);
+        }
+        problem.add("contacts", GSON.toJsonTree(contacts));
+        JsonObject compiled = FixedMovementCompiler.compile(file, problem);
+        Map<String, Object> result = new LinkedHashMap<>();
+        for (String key : new String[]{"magnitude", "friction", "base", "movement"})
+            result.put(key, compiled.get(key));
+        result.put("model", "FixedMovementCompiler:mod-input-state-v1:f057c0c");
+        return result;
+    }
+
     private static Map<String, Object> compile(Request request) {
+        if (request.sharedMovement) return compileShared(request);
         if (request == null || request.grounded == null || request.jump == null || request.inputs == null
                 || request.grounded.length == 0 || request.jump.length != request.grounded.length) {
             throw new IllegalArgumentException("Invalid movement schedule");
