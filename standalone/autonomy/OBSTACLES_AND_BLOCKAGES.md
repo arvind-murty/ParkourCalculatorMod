@@ -128,6 +128,8 @@ Left/right is relative to the current approach and onward route, while the colli
 
 ## 3. Hit versus avoid is another branch
 
+The next implementation slice is narrowed to [one-input side-wall reversals and ceiling hits](ONE_TICK_CONTACT_PLAN.md). Each selected hit needs finite reach/overlap guards and avoidance before and after it so actual clipping matches the compiled tick. Sustained ladder/vine contact is deferred. One input is per hit episode, not per route; contact budgets remain separate from blockage caps.
+
 For a relevant block, retain avoidance and legal contact alternatives. Do not declare every collision a failure or force every apparently useful contact.
 
 | Selected event | Required geometry and movement consequences |
