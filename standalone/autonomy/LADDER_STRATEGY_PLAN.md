@@ -1,6 +1,6 @@
 # Ladder and vine strategy search
 
-2026-10-27. Planning only. This is the next orchestration family after [one-input wall/ceiling contacts](ONE_TICK_CONTACT_PLAN.md). No new climbing search is implemented by this document. The Real 11 numerical prototype and shared movement/collision helpers already provide the movement primitives.
+2026-10-27. The standalone schedule generator and scalar Y traces are implemented and unit-tested in `ladder_schedules.py`. Numerical entry discovery, horizontal ranking, finite-geometry ladder solves and route integration remain planned. The Real 11 prototype and shared movement/collision helpers provide the reused movement primitives.
 
 ## Goal and accepted approach
 
@@ -42,7 +42,7 @@ Do not make fall, sneak and climb three mutually exclusive keys. Sneak is a key,
 
 ## 2. Generate a broad, structured schedule family
 
-The generation order is now: solve entry feasibility, enumerate timing/contact/Sneak schedules cheaply, derive Y, group comparable timing outcomes, rank straight-line horizontal potential, then solve the best representatives. A few simple phase templates are not enough. No climbing implementation is added by this plan.
+The generation order is now: solve entry feasibility, enumerate timing/contact/Sneak schedules cheaply, derive Y, group comparable timing outcomes, rank straight-line horizontal potential, then solve the best representatives. A few simple phase templates are not enough. The current generator implements the timing/contact/Sneak enumeration, Y derivation and timing groups. Entry windows are supplied by the future numerical entry-discovery adapter; ranking and horizontal acceptance remain separate.
 
 ### 2.1 Two entry families and solved timing
 
@@ -63,9 +63,11 @@ For every entry time, vary first wall-hit time independently. Include entry+hit 
 Enumerate a potential climbing interval and its duration, retaining nearby shorter/longer durations compatible with the target. Its hit mask normally requires a wall hit on every input. Remove zero, one or two selected **one-input** hits to generate stops:
 
 - One optional stop at the beginning to adjust height before sustained climbing.
-- One optional stop at the end to stop refreshing upward carry earlier and potentially land sooner.
+- One optional stop at the end omits the final planned climb hit, not the penultimate hit. It stops refreshing upward carry earlier and can land sooner.
 - Generate exactly four choices: neither stop, beginning only, end only, or both. If both are selected, retain at least one climbing input between them.
 - Do not enumerate internal stops. User ruling: represent an internal stop by the beginning stop, which provides the most horizontal momentum. This is the canonical schedule reduction for this family.
+
+Implementation indexing: the climb window [a,b) contains potential hit inputs a through b-1. The end stop removes b-1 and retains b-2 when present. If X is the first outside state, the last hit that can refresh climbing is input X-2, which ends at the last inside state X-1. Input X-1 produces the outside state and is always no-hit in this family. Omitting only a hit that already ends outside would not change Y; unit tests explicitly guard that ineffective interpretation.
 
 The stop is a no-wall-hit input, not a command to set Y velocity to zero. Recompute its actual movement and later carry. Keep no-hit falling/holding periods before and after the climbing interval with variable lengths; their inputs are not limited by the two interruptions. This allows a substantial non-climbing interval with arbitrary Sneak choices.
 
@@ -151,11 +153,42 @@ An accepted result is still an independently validated continuous solve. Game re
 
 ## Implementation slices and acceptance
 
-1. **Schedule/bridge foundation.** Add chosen Sneak rows, declared cells and consecutive climbing contacts without reversal guards; wire caps/occupancy into independent geometry checks. Use small prescribed schedules first, reusing Real 11 primitives and movement regressions.
-2. **Entry and vertical candidate generator.** Solve increasing front/side entry ticks, then generate the first found entry through five delayed inputs. Enumerate the four optional beginning/end one-input stop choices, arbitrary non-climb Sneak masks and alternative exits. Derive Y cheaply, canonicalize identical schedules and report generation/pruning. No recorded Y/facing schedules as production inputs.
-3. **Ranking and numerical loop.** Group by total/post-exit airtime, benchmark straight-line horizontal progress from zero momentum, and compile/solve the best representatives and diverse backups. Enforce finite contact/membership guards and existing cap regimes with explicit unknown handling. Compare small generated families with exhaustive masks/stops and verify unresolved earlier entry ticks remain recorded.
-4. **Route composition and evidence.** Add ladder interaction profiles to the route search, retain alternatives and update admissible bounds. Test real geometry when available, keeping recorded traces only as regression diagnostics.
+1. **Bridge work remains planned.** Add chosen Sneak rows, declared cells and consecutive climbing contacts without reversal guards; wire caps/occupancy into independent geometry checks. Use small prescribed schedules first, reusing Real 11 primitives and movement regressions.
+2. **Vertical generator implemented; entry probes remain planned.** Given validated entry windows, generate up to five delayed inputs, all four stop choices, arbitrary non-climb Sneak masks, first-clamped-input Sneak and top/side exit schedules. Derive Y, canonicalize identical hit masks, report rejection/cap counts and group total/post-exit timings. This does not itself solve earliest entry or prove delayed entry feasible.
+3. **Ranking and numerical loop remain planned.** Group by total/post-exit airtime, benchmark straight-line horizontal progress from zero momentum, and compile/solve the best representatives and diverse backups. Enforce finite contact/membership guards and existing cap regimes with explicit unknown handling. Compare small generated families with exhaustive masks/stops and verify unresolved earlier entry ticks remain recorded.
+4. **Route composition remains planned.** Add ladder interaction profiles to the route search, retain alternatives and update admissible bounds. Test real geometry when available, keeping recorded traces only as regression diagnostics.
 
 Required examples: front versus side entry; solved earliest entry plus delays through five inputs; earlier unresolved entry probes retained; all four beginning/end one-input stop choices, with internal stops canonicalized to the beginning; all 256 eight-input Sneak masks, including four interspersed Sneak inputs; cap-aware first-input Sneak versus later Sneak; timing buckets distinguishing equal total airtime but different post-exit airtime; straight-line progress versus final-speed ranking; a heuristic leader failing geometry while its backup succeeds; early entry versus one-input-delayed entry; uncapped entry versus capped in-cell approach; fall capped at -.15; sneak arresting descent; positive carry persisting after stopping climb; sneak with and without continued hits; consecutive-hit climb and interrupted climb; one fewer climb input giving a faster side landing; top landing on actual ladder geometry; vines without invented solids; both X/Z clamp signs and boundary regimes; run insertion and segment seams preserving every schedule; a locally shorter climb losing to a faster overall continuation. Verify no early/late/missing/extra hit or occupancy state is accepted.
 
 Record generated/screened/dropped schedules, numerical calls/timeouts, inferred clamp patterns, selected cell/contact/Sneak timelines, Y traces, total time and objective. Return best found with explicit limits; bounded schedule generation and local solves do not prove global optimality or infeasibility.
+
+## Implemented generator API and test evidence
+
+`generate_ladder_schedules(request)` is exported from `standalone.autonomy`. See [the sample request](fixtures/ladder-schedule-generator.json). It accepts an initial scalar Y state, a contiguous integer-height ladder region, caller-validated front/side entry windows, a target top plane, proposed side/top exit states and explicit generation limits. This is a necessary vertical/timing screen only; X/Z cells, actual wall reach and support geometry still need numerical constraints and shared scene acceptance. A ladder union with holes or custom behavior is outside this first request interface.
+
+```python
+import json
+from standalone.autonomy import generate_ladder_schedules
+
+with open("standalone/autonomy/fixtures/ladder-schedule-generator.json") as stream:
+    pool = generate_ladder_schedules(json.load(stream))
+```
+
+The result records `schedules`, `entryWindows`, `timingGroups`, counters/rejection reasons, `termination` and `generationComplete`. Limits are `maxSkeletons`, `maxMaskWork` and `maxSchedules`; capped work reports `heuristicDrops`. The output declares `validationLevel: vertical_schedule_only`, `horizontalSolve: not_run` and `horizontalRanking: not_run`. `generationComplete` means the declared bounded discrete family was exhausted, not geometry feasibility or optimality.
+
+Each schedule retains `entryState`, `exitState`, `exitInput`, `lastClimbEligibleInput`, the chosen climb window/stops, input hit/Sneak masks, state occupancy, total/post-exit time and the full Y/velocity/movement/ground trace. Contexts and masks are interleaved to avoid exhausting only the first front-entry channel before others receive work. Immutable input copies and independent output arrays preserve neighboring schedules. Sneak after leaving the region is enumerated too; its Y trace can be reused because outside-ladder Sneak does not affect the supported Y recurrence. Horizontal effects still require recompilation later.
+
+`trace_ladder_schedule(initial, ladder, sneak, hit, ...)` directly exposes the reused scalar recurrence, optional launch impulse and descending target-plane contact. It preserves carry through seams. A target-plane arrival with no downward clipping remains airborne until a later actual clipping input.
+
+The [saved height evidence](experiments/ladder-schedules/README.md) includes four no-Sneak schedules with the same entry/exit states:
+
+| Stops | Exit Y | Landing input count |
+| --- | --- | --- |
+| Neither | 2.627200012207031 | 17 |
+| Beginning | 2.359600009918213 | 16 |
+| End | 2.5464480128784177 | 16 |
+| Both | 2.2788480105895994 | 15 |
+
+The end stop leaves the last inside Y position unchanged but changes its stored velocity from about .1176 to .036848, lowering the next exit movement by about .080752. This is an observed consequence of recurrence, not a forced height subtraction. Removing a hit during a strong incoming upward jump can instead retain more upward velocity; at exactly .2 the hit and no-hit Y carries coincide. Both edge cases are tested. Sneak with continued hits preserves climbing; Sneak without hits does not immediately cancel positive carry; equal Sneak counts with interspersed versus contiguous masks can have different heights.
+
+Focused gate: **37 generator tests**, including 500 seeded traces checked against independent Minecraft-order equations, 100 comparisons with the existing scalar validator, exhaustive small hit/Sneak families, all 256 eight-input masks and their 70 four-Sneak arrangements, end/beginning/both-stop height effects, uncapped entry, fall/Sneak thresholds, top exits, landing times, seams, grouping, cancellation, mutation and explicit limits. The full orchestration gate passed 155 tests before two additional focused edge cases; all 37 focused cases pass afterward. The numerical suite passed 51 tests. Native core retains its same three documented baseline failures out of 798 tests, 33 skipped; no native solver or worker source changed.
