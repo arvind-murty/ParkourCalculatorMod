@@ -22,7 +22,7 @@ def prepare_scene(request):
                'maxFlightInputs', 'maxContactBranches', 'stairBoost', 'supportClearance', 'objective',
                'geometryBounds', 'collisionScene', 'maxBlockagesPerObstacle', 'maxPassageCandidates',
                'maxHorizontalBlockagesPerObstacle', 'maxVerticalBlockagesPerObstacle',
-               'maxWallHits', 'maxWallHitCandidates', 'ceilingHits'}
+               'maxWallHits', 'maxWallHitCandidates', 'ceilingHits', 'climbableCells', 'ladderSearch'}
     extra = set(scene) - allowed
     if extra:
         raise ValueError('Unsupported block-scene fields: ' + ', '.join(sorted(extra)))
@@ -95,6 +95,13 @@ def prepare_scene(request):
     if solid_scene and set(scene['initial']) - {'position', 'velocity', 'yaw'}:
         raise ValueError('Collision-box avoidance requires a clear initial input state; additional resume fields need shared movement compilation')
     scene['supportClearance'] = checked['supportClearance']
+    if scene.get('climbableCells'):
+        if not solid_scene:
+            raise ValueError('Climbable cells require collision_boxes')
+        from .climbable_search import ladder_settings
+        scene['ladderSearch'] = ladder_settings(scene)
+    elif 'ladderSearch' in scene:
+        raise ValueError('Ladder search needs supplied climbable cells')
     return scene
 
 
@@ -297,6 +304,9 @@ def compile_block_path(scene, block_ids, transitions=None):
             route['sharedMovement'] = True
             route['ceilingEvents'] = [dict(p['ceilingEvent'], leg=leg) for leg, p in enumerate(selected)
                                       if 'ceilingEvent' in p]
+            route['ladderEvents'] = [dict(edge['ladderEvent'], leg=leg) for leg, edge in enumerate(transitions)
+                                     if 'ladderEvent' in edge]
+            route['verticalProfiles'] = selected
         return {'status': 'derived', 'route': route, 'profiles': selected}
     compiled = compile_open_air_route({'version': 1, 'sceneModel': 'open_air_supports',
                                       'initial': scene['initial'], 'blocks': blocks, 'inputs': scene['inputs'],
@@ -441,7 +451,7 @@ def search_block_paths(scene, graph, evaluate, *, seconds=60, improve=False, can
             'remainingPrefixes': len(pending), 'searchPolicy': 'total_ticks_then_objective'}
 
 
-def find_blocks(request, compiler, *, seconds=60, route_seconds=8, candidate_seconds=2, retries=1,
+def _find_blocks_normal(request, compiler, *, seconds=60, route_seconds=8, candidate_seconds=2, retries=1,
                 improve=False, python_executable=None, cancel_event=None, on_attempt=None):
     scene = prepare_scene(request)
     for value, name in [(seconds, 'search seconds'), (route_seconds, 'route seconds'),
@@ -514,3 +524,15 @@ def find_blocks(request, compiler, *, seconds=60, route_seconds=8, candidate_sec
                                      maxVerticalBlockagesPerObstacle=scene['maxVerticalBlockagesPerObstacle'],
                                      blockageCapScope='physical_block_across_selected_route')
     return result
+
+
+def find_blocks(request, compiler, **options):
+    scene = prepare_scene(request)
+    for key, default in [('seconds', 60), ('route_seconds', 8), ('candidate_seconds', 2)]:
+        if number(options.get(key, default), key) <= 0:
+            raise ValueError(key + ' must be positive')
+    integer(options.get('retries', 1), 'retries', 0, 10)
+    if scene.get('climbableCells'):
+        from .climbable_search import find_climbable_blocks
+        return find_climbable_blocks(scene, compiler, _find_blocks_normal, **options)
+    return _find_blocks_normal(scene, compiler, **options)

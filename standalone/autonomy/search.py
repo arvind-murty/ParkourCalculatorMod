@@ -158,6 +158,12 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                                                                                  route['initial']['position'][2]]]},
                     'plan': plan}
         try:
+            if route['ladderEvents']:
+                from .block_contacts import validate_vertical_schedule
+                vertical = validate_vertical_schedule(route, route['verticalProfiles'], plan)
+                if not vertical['feasible']:
+                    return {'status': 'blocked', 'plan': plan, 'certificate': {'reason': 'ladder_y_schedule'}}
+                plan['vertical'] = dict(vertical['vertical'], referencePosition=vertical['y'], referenceVelocity=vertical['vy'])
             coefficients = compiler.compile(route, plan, max(0.001, min(available, candidate_seconds)))
             problem = dict(coefficients, version=1, ticks=plan['ticks'],
                            position=[route['initial']['position'][0], route['initial']['position'][2]],
@@ -165,6 +171,8 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                            yaw=initial_guess(route, plan, parent), threshold=.005, walls=plan['walls'],
                            contacts=plan.get('contacts', []),
                            objective=dict(route['objective'], tick=plan['ticks']))
+            if 'ladderTicks' in plan:
+                problem['ladderTicks'] = plan['ladderTicks']
             problem = prepare(problem)
             impossible = contradiction(problem)
             if impossible:
@@ -175,8 +183,52 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
             if route['hitEvents']:
                 from .hit_events import hit_seed
                 problem['yaw'] = hit_seed(problem, route, plan)
+            if route['ladderEvents']:
+                from .climbable_search import waypoint_seed
+                from .route import center_bounds
+                waypoints = []
+                for event in plan['events']:
+                    if event['landing'] is not None:
+                        target = center_bounds(route['blocks'][event['leg'] + 1])
+                        waypoints.append((event['landing'] - 1, [(target[a] + target[a + 1]) / 2 for a in (0, 2)]))
+                for selected in route['ladderEvents']:
+                    if selected['leg'] >= len(plan['events']) or plan['events'][selected['leg']]['landing'] is None:
+                        continue
+                    event, s, column, wall = plan['events'][selected['leg']], selected['schedule'], selected['column'], selected['wall']
+                    point = [column['x'] + .5, column['z'] + .5]
+                    point[0 if wall['axis'] == 'X' else 1] = wall['plane']
+                    waypoints.append((event['jump'] + s['entryState'], point[:]))
+                    for t, hit in enumerate(s['hit']):
+                        if hit:
+                            pressing = point[:]
+                            pressing[0 if wall['axis'] == 'X' else 1] += wall['direction'] * .01
+                            waypoints.append((event['jump'] + t + 1, pressing))
+                    face = selected['exitFace']
+                    if s['exitKind'] == 'top':
+                        point[0 if wall['axis'] == 'X' else 1] = wall['plane'] + wall['direction'] * .03
+                    else:
+                        point[0 if face['axis'] == 'X' else 1] = face['plane'] + face['direction'] * .03
+                    waypoints.append((event['jump'] + s['exitState'], point[:]))
+                problem['yaw'] = waypoint_seed(problem, waypoints)
             polish = optimize_goal and stage == 'jump' and len(allocation) == len(route['airtimes'])
             fallback = objective_seed(problem) if polish else initial_guess(route, plan)
+            if route['ladderEvents']:
+                fallback = initial_guess(route, plan)
+                normal = fallback[:]
+                for selected in route['ladderEvents']:
+                    if selected['leg'] >= len(plan['events']):
+                        continue
+                    event = plan['events'][selected['leg']]
+                    if event['landing'] is None:
+                        continue
+                    wall = selected['wall']
+                    angle = (0 if wall['direction'] > 0 else math.pi) if wall['axis'] == 'X' else (math.pi / 2 if wall['direction'] > 0 else -math.pi / 2)
+                    for tick in range(event['jump'], event['landing']):
+                        normal[tick] = math.degrees(angle - problem['base'][tick])
+                if validate(problem, normal)['feasible']:
+                    fallback = normal
+                if validate(problem, fallback)['feasible']:
+                    problem['yaw'], fallback = fallback, problem['yaw']
             if fallback != problem['yaw']:
                 problem['fallbackYaw'] = fallback
             diagnostics = []
@@ -211,6 +263,7 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                             for angle in [problem['base'][t] + math.radians(yaw)]]
                         if 'movement' in problem:
                             candidate['movement'] = problem['movement']
+                        candidate['friction'] = problem['friction']
                         return {'status': 'feasible', 'candidate': candidate, 'plan': plan,
                                 'problemHash': fingerprint(problem), 'diagnostics': diagnostics}
                     diagnostics[-1]['supportFailures'] = failed

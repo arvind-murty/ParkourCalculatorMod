@@ -1,10 +1,10 @@
-import math
-
 from .obstacle_geometry import BODY_HEIGHT
 from .route import HALF_WIDTH
 
 
 def ladder_columns(cells):
+    if not isinstance(cells, list):
+        raise ValueError('Climbable cells require a list of integer X/Y/Z cells')
     grouped = {}
     for cell in cells:
         if not isinstance(cell, list) or len(cell) != 3 or any(type(v) is not int for v in cell):

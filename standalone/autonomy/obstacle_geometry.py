@@ -1,6 +1,6 @@
 import copy
 
-from standalone.ipopt.ladder import f32, vertical_move
+from standalone.ipopt.ladder import clamp, f32, vertical_move
 from standalone.ipopt.model import number
 from .route import HALF_WIDTH
 
@@ -21,7 +21,7 @@ def box_bounds(values, name):
 def normalize_geometry(scene):
     if 'collisionScene' in scene:
         geometry = scene['collisionScene']
-        if not isinstance(geometry, dict) or set(geometry) - {'version', 'profile', 'bounds', 'solids', 'stepHeight'}:
+        if not isinstance(geometry, dict) or set(geometry) - {'version', 'profile', 'bounds', 'solids', 'stepHeight', 'ladders'}:
             raise ValueError('Unsupported collision scene')
         if type(geometry.get('version')) is not int or geometry['version'] != 1 or geometry.get('profile') != 'minecraft-1.8.9':
             raise ValueError('Expected a minecraft-1.8.9 collision scene')
@@ -71,6 +71,17 @@ def normalize_geometry(scene):
         box_bounds(b, 'collision solid')
         if any(b[i] < bounds[i] or b[i + 3] > bounds[i + 3] for i in range(3)):
             raise ValueError('Collision solid outside supplied geometry bounds')
+    cells = scene.get('climbableCells', geometry.get('ladders', []))
+    from .ladder_geometry import ladder_columns
+    ladder_columns(cells)
+    if 'ladders' in geometry:
+        ladder_columns(geometry['ladders'])
+    if scene.get('climbableCells') is not None and geometry.get('ladders') is not None \
+            and {tuple(c) for c in scene['climbableCells']} != {tuple(c) for c in geometry['ladders']}:
+        raise ValueError('Conflicting climbable cells and scene ladder declarations')
+    if cells:
+        geometry['ladders'] = copy.deepcopy(cells)
+        scene['climbableCells'] = copy.deepcopy(cells)
     return scene
 
 
@@ -82,12 +93,20 @@ def expanded_box(box):
 def check_geometry(geometry, plan, candidate, vertical, compiler, seconds):
     positions = [[xz[0], y, xz[1]] for xz, y in zip(candidate['positions'], vertical['y'])]
     movement = []
+    ladder = plan.get('ladderTicks', [False] * (plan['ticks'] + 1))
     for tick in range(plan['ticks']):
         raw = candidate.get('rawMovement')
-        movement.append([raw[tick][0] if raw is not None else positions[tick + 1][0] - positions[tick][0],
-                         vertical_move(vertical['vertical'], tick, vertical['vy'][tick], False),
-                         raw[tick][1] if raw is not None else positions[tick + 1][2] - positions[tick][2]])
-    if plan.get('sceneContacts'):
+        x = raw[tick][0] if raw is not None else positions[tick + 1][0] - positions[tick][0]
+        z = raw[tick][1] if raw is not None else positions[tick + 1][2] - positions[tick][2]
+        movement.append([clamp(x) if ladder[tick] else x,
+                         vertical_move(vertical['vertical'], tick, vertical['vy'][tick], ladder[tick]),
+                         clamp(z) if ladder[tick] else z])
+    if geometry.get('ladders') or any(ladder):
+        velocities = [[v[0], y, v[1]] for v, y in zip(candidate['velocity'], vertical['vy'])]
+        checked = compiler.check_scene(geometry, positions, movement, vertical['onGround'], seconds,
+            contacts=plan.get('sceneContacts', []), sneak=plan.get('sneak', [False] * plan['ticks']),
+            ladderTicks=ladder, velocities=velocities, friction=candidate['friction'])
+    elif plan.get('sceneContacts'):
         checked = compiler.check_scene(geometry, positions, movement, vertical['onGround'], seconds,
                                        contacts=plan['sceneContacts'])
     else:

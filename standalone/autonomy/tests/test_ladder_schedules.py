@@ -279,6 +279,30 @@ class LadderHeightTests(unittest.TestCase):
 
 
 class LadderGeneratorTests(unittest.TestCase):
+    def test_first_hit_reach_bound_preserves_every_remaining_small_family_witness(self):
+        config = request()
+        config.update(initial={'position': .3, 'velocity': REST_CARRY}, maxInputs=8,
+                      entries=[{'family': 'front', 'firstValidatedState': 0}],
+                      exitStates=[4], maxSkeletons=1000, maxSchedules=10000, maxMaskWork=200000)
+        original = generate_ladder_schedules(config)
+        config['entries'][0]['firstHitLowerBounds'] = {'0': 2}
+        bounded = generate_ladder_schedules(config)
+        def key(s):
+            return tuple(s['hit']), tuple(s['sneak']), tuple(s['trace']['position'])
+        expected = {key(s) for s in original['schedules'] if not any(s['hit'][:2])}
+        self.assertTrue(original['generationComplete'])
+        self.assertTrue(bounded['generationComplete'])
+        self.assertEqual({key(s) for s in bounded['schedules']}, expected)
+        self.assertTrue(any(any(s['hit']) for s in bounded['schedules']))
+        self.assertTrue(any(not any(s['hit']) for s in bounded['schedules']))
+
+    def test_malformed_first_hit_bounds_are_rejected(self):
+        for bounds in ([], None, {'x': 2}, {1: 2}, {'1': True}, {'1': 26}):
+            config = request()
+            config['entries'][0]['firstHitLowerBounds'] = bounds
+            with self.subTest(bounds=bounds), self.assertRaises(ValueError):
+                prepare_ladder_request(config)
+
     def test_generated_end_stop_lowers_exit_height_and_lands_one_input_earlier(self):
         result = generate_ladder_schedules(request())
         matches = [s for s in result['schedules'] if s['climbWindow'] == [0, 6]

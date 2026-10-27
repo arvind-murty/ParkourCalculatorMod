@@ -203,10 +203,14 @@ public final class CompileRunTicksPhysics {
         double y = hit.position.y;
         double z = (before.min.z + before.max.z) / 2;
         double[] expected = contact.box;
+        double expectedLo = expected[contact.axis];
+        double expectedHi = expected[contact.axis + 3];
+        double expectedPlane = contact.direction > 0 ? expectedLo - width
+                : expectedHi + (contact.axis == 1 ? 0 : width);
         boolean overlapX = x + StaticScene.HALF_WIDTH > expected[0] && x - StaticScene.HALF_WIDTH < expected[3];
         boolean overlapY = y + StaticScene.HEIGHT > expected[1] && y < expected[4];
         boolean overlapZ = z + StaticScene.HALF_WIDTH > expected[2] && z - StaticScene.HALF_WIDTH < expected[5];
-        return plane == contact.plane && (contact.axis == 0 ? overlapY && overlapZ
+        return plane == contact.plane && expectedPlane == contact.plane && (contact.axis == 0 ? overlapY && overlapZ
                 : contact.axis == 2 ? overlapX && overlapY : overlapX && overlapZ);
     }
 
