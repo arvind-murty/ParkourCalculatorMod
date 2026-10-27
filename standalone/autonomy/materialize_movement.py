@@ -4,7 +4,7 @@ import subprocess
 import tarfile
 
 
-REVISION = 'f057c0c'
+REVISION = 'f057c0ce9b454ae1ce2706843bb141cce799b5cb'
 
 
 def materialize(root):

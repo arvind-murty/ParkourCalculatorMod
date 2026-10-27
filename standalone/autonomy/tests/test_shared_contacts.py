@@ -55,3 +55,19 @@ class SharedContactTests(unittest.TestCase):
         checked = self.compiler.check_scene(scene, [[.5, 2, 0], [plane, 2, 0]], [[.4, 0, 0]],
                                              [False] * 2, 5, contacts=contact)
         self.assertFalse(checked['feasible'])
+
+    def test_paired_contacts_use_new_x_for_z_and_repeated_hit_is_rejected(self):
+        xwall, zwall = [1, 0, -1, 2, 5, 2], [.9, 0, 1, 2, 5, 2]
+        scene = {'version': 1, 'profile': 'minecraft-1.8.9', 'bounds': [-5, -5, -5, 5, 10, 5],
+                 'solids': [xwall, zwall]}
+        plane = 1 - HALF_WIDTH
+        contacts = [{'state': 1, 'axis': a, 'direction': 1, 'plane': plane, 'box': box}
+                    for a, box in [(0, xwall), (2, zwall)]]
+        positions = [[.5, 2, .5], [plane, 2, plane], [plane - .1, 2, plane - .1]]
+        checked = self.compiler.check_scene(scene, positions, [[.4, 0, .4], [-.1, 0, -.1]],
+                                             [False] * 3, 5, contacts=contacts)
+        self.assertTrue(checked['feasible'], checked)
+        positions[2] = positions[1][:]
+        checked = self.compiler.check_scene(scene, positions, [[.4, 0, .4], [.1, 0, .1]],
+                                             [False] * 3, 5, contacts=contacts)
+        self.assertFalse(checked['feasible'])

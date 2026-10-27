@@ -172,6 +172,9 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                         'problemHash': fingerprint(problem)}
             if route['passages']:
                 problem['yaw'] = passage_seed(problem, route, plan)
+            if route['hitEvents']:
+                from .hit_events import hit_seed
+                problem['yaw'] = hit_seed(problem, route, plan)
             polish = optimize_goal and stage == 'jump' and len(allocation) == len(route['airtimes'])
             fallback = objective_seed(problem) if polish else initial_guess(route, plan)
             if fallback != problem['yaw']:

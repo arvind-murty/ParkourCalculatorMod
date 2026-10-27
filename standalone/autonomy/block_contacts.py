@@ -9,6 +9,7 @@ from .ranking import candidate_rank
 from .search import find_route
 from .blockages import blockage_usage, gate_timeline, passage_options, passage_y_valid, within_caps
 from .obstacle_geometry import check_geometry
+from .hit_events import wall_hit_options
 
 
 def floor_checks(scene, block_ids, profiles):
@@ -85,13 +86,28 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                            max_branches, improve=False, rank_equal_cost=False, optimize_goal=False,
                            python_executable=None, cancel_event=None, geometry=None, motion_bound=None,
                            max_blockages=3, max_horizontal=2, max_vertical=2,
-                           max_passage_candidates=128, solid_blocks=None):
+                           max_passage_candidates=128, solid_blocks=None, max_wall_hits=0,
+                           max_wall_candidates=24):
     route = copy.deepcopy(route)
     if solid_blocks is not None:
         for passage in route.get('passages', []):
             passage['blockId'] = solid_blocks[passage['solidIndex']]
     deadline = time.monotonic() + seconds
-    queue, seen, serial = [(0.0, 0, [], route.get('passages', []))], {()}, 0
+    queue, seen, serial = [(0.0, 0, [], route.get('passages', []), route.get('hitEvents', []))], set(), 0
+    hit_pool = wall_hit_options(route, profiles, geometry, solid_blocks, motion_bound, max_wall_candidates) \
+        if geometry is not None and max_wall_hits else {'options': [], 'generated': 0, 'candidateDrops': 0}
+
+    def offer(score, rows, passages, hits):
+        nonlocal serial
+        key = (tuple(sorted((r['leg'], r['offset'], r['mode'], r['cmp'], r['rhs']) for r in rows)),
+               tuple(sorted((p['leg'], p['solidIndex'], tuple((f['axis'], f['direction'], f['plane']) for f in p['faces']),
+                             tuple(p['gates'])) for p in passages)),
+               tuple(sorted((h['leg'], h['offset'], h['axis'], h['direction'], h['solidIndex']) for h in hits)))
+        if key in seen:
+            return
+        seen.add(key)
+        serial += 1
+        heapq.heappush(queue, (score, serial, rows, passages, hits))
     attempts, inner_attempts = [], []
     best_result = None
     termination = 'contact_search_exhausted'
@@ -106,10 +122,17 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
         if remaining <= 0:
             termination = 'deadline'
             break
-        score, _, rows, passages = heapq.heappop(queue)
+        score, _, rows, passages, hits = heapq.heappop(queue)
+        if len(hits) < max_wall_hits:
+            for index, hit in enumerate(hit_pool['options']):
+                if any(h['leg'] == hit['leg'] and (h['offset'] == hit['offset'] and h['axis'] == hit['axis']
+                       or h['solidIndex'] == hit['solidIndex']) for h in hits):
+                    continue
+                offer(score + 10 + index * .01, rows, passages, hits + [hit])
         branch = copy.deepcopy(route)
         branch['constraints'].extend(rows)
         branch['passages'] = passages
+        branch['hitEvents'] = hits
         if best_result is not None:
             branch['maxTotalRunTicks'] = min(branch['maxTotalRunTicks'], best_result['best']['cost'])
         result = find_route(branch, compiler, seconds=remaining, candidate_seconds=candidate_seconds,
@@ -120,6 +143,7 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
         conflicts = contact_conflicts(checks, result['best']['plan'], result['best']['candidate']) if result['best'] else []
         attempts.append({'status': result['status'], 'constraintCount': len(rows),
                          'passageCount': len(passages),
+                         'wallHitCount': len(hits), 'wallHitGeneration': {k: v for k, v in hit_pool.items() if k != 'options'},
                          'passageKinds': [p['kind'] for p in passages],
                          'conflicts': [{'block': c['block']['id'], 'state': c['state'], 'reason': c['reason']}
                                        for c in conflicts], 'termination': result['termination']})
@@ -179,18 +203,12 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                         new_passages = [p for p in passages if (p['leg'], p['solidIndex']) != (leg, index)] + [option['passage']]
                         if not within_caps(new_passages, branch['passageCaps']):
                             continue
-                        key = (tuple(sorted((r['leg'], r['offset'], r['mode'], r['cmp'], r['rhs']) for r in rows)),
-                               tuple(sorted((p['leg'], p['solidIndex'], tuple((f['axis'], f['direction'], f['plane']) for f in p['faces']),
-                                             tuple(p['gates'])) for p in new_passages)))
-                        if key in seen:
-                            continue
-                        seen.add(key)
-                        serial += 1
-                        heapq.heappush(queue, (score + option['score'], serial, rows, new_passages))
+                        offer(score + option['score'], rows, new_passages, hits)
                     continue
                 result['best']['geometryCheck'] = checked
             result['best'].update(route=result['best'].get('route', branch), profiles=profiles, contactChecks=checks)
             result['best']['passages'] = passages
+            result['best']['hitEvents'] = hits
             result['best']['blockageTimeline'] = gate_timeline(passages, result['best']['plan']['events'])
             result['best']['blockageUsage'] = [{'blockId': value if kind == 'block' else 'solid:' + str(value), **counts}
                                               for (kind, value), counts in blockage_usage(passages).items()]
@@ -205,15 +223,8 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
         conflict = conflicts[0]
         for row in avoid_contact_rows(conflict, max(route['supportClearance'], 2e-7)):
             new_rows = rows + [row]
-            key = (tuple(sorted((r['leg'], r['offset'], r['mode'], r['cmp'], r['rhs']) for r in new_rows)),
-                   tuple(sorted((p['leg'], p['solidIndex'], tuple((f['axis'], f['direction'], f['plane']) for f in p['faces']),
-                                 tuple(p['gates'])) for p in passages)))
-            if key in seen:
-                continue
-            seen.add(key)
-            serial += 1
             delta = abs(conflict['position'][0 if row['mode'] == 'X' else 1] - row['rhs'])
-            heapq.heappush(queue, (score + delta, serial, new_rows, passages))
+            offer(score + delta, new_rows, passages, hits)
     if queue and len(attempts) >= max_branches:
         termination = 'contact_branch_limit'
     if best_result is not None:
