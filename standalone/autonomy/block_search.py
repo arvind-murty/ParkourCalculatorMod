@@ -19,7 +19,8 @@ def prepare_scene(request):
     allowed = {'version', 'sceneModel', 'initial', 'blocks', 'startBlock', 'goalBlock', 'inputs',
                'maxJumps', 'maxPrefixes', 'maxQueuedPrefixes', 'maxRunTicksPerJump', 'maxTotalRunTicks',
                'maxFlightInputs', 'maxContactBranches', 'stairBoost', 'supportClearance', 'objective',
-               'geometryBounds', 'collisionScene', 'maxBlockagesPerObstacle', 'maxPassageCandidates'}
+               'geometryBounds', 'collisionScene', 'maxBlockagesPerObstacle', 'maxPassageCandidates',
+               'maxHorizontalBlockagesPerObstacle', 'maxVerticalBlockagesPerObstacle'}
     extra = set(scene) - allowed
     if extra:
         raise ValueError('Unsupported block-scene fields: ' + ', '.join(sorted(extra)))
@@ -68,9 +69,12 @@ def prepare_scene(request):
                                  ('maxFlightInputs', 200, 2, 200), ('maxContactBranches', 16, 1, 256)]:
         integer(scene.setdefault(key, default), key, lo, hi)
     if solid_scene:
-        integer(scene.setdefault('maxBlockagesPerObstacle', 2), 'maxBlockagesPerObstacle', 0, 4)
+        integer(scene.setdefault('maxBlockagesPerObstacle', 3), 'maxBlockagesPerObstacle', 0, 3)
+        integer(scene.setdefault('maxHorizontalBlockagesPerObstacle', 2), 'maxHorizontalBlockagesPerObstacle', 0, 2)
+        integer(scene.setdefault('maxVerticalBlockagesPerObstacle', 2), 'maxVerticalBlockagesPerObstacle', 0, 2)
         integer(scene.setdefault('maxPassageCandidates', 128), 'maxPassageCandidates', 1, 4096)
-    elif 'maxBlockagesPerObstacle' in scene or 'maxPassageCandidates' in scene:
+    elif any(key in scene for key in ('maxBlockagesPerObstacle', 'maxPassageCandidates',
+                                     'maxHorizontalBlockagesPerObstacle', 'maxVerticalBlockagesPerObstacle')):
         raise ValueError('Blockage limits require collision_boxes geometry')
     ordered = [blocks[ids.index(scene['startBlock'])]] + [b for b in blocks if b['id'] != scene['startBlock']]
     checked = prepare_route({'version': scene.get('version'), 'initial': scene.get('initial'),
@@ -363,7 +367,7 @@ def search_block_paths(scene, graph, evaluate, *, seconds=60, improve=False, can
                 contacts = result.get('contactAttempts', [])
                 generations = [a['passageGeneration'] for a in contacts if 'passageGeneration' in a]
                 record['obstacleSearch'] = {key: sum(a.get(key, 0) for a in generations)
-                                           for key in ('generated', 'candidateDrops', 'timingPoolDrops', 'reachPruned', 'verticalFacesPruned')}
+                                           for key in ('generated', 'candidateDrops', 'timingPoolDrops', 'reachPruned', 'verticalFacesPruned', 'budgetPruned')}
                 record['obstacleSearch']['generationIncomplete'] = any(a.get('generationIncomplete') for a in generations)
                 record['obstacleSearch']['acceptedKinds'] = sorted({kind for a in contacts if a.get('geometryCheck', {}).get('feasible')
                                                                     for kind in a['passageKinds']})
@@ -436,6 +440,10 @@ def find_blocks(request, compiler, *, seconds=60, route_seconds=8, candidate_sec
         compiled = compile_block_path(scene, block_ids, transitions=selected)
         if compiled['status'] != 'derived':
             return {'status': 'unknown', 'termination': 'profile_limit'}
+        if scene['sceneModel'] == 'collision_boxes':
+            compiled['route']['passageCaps'] = {'horizontal': scene['maxHorizontalBlockagesPerObstacle'],
+                                                'vertical': scene['maxVerticalBlockagesPerObstacle'],
+                                                'total': scene['maxBlockagesPerObstacle']}
         if max_ticks is not None:
             run_cap = max_ticks - sum(compiled['route']['airtimes'])
             if run_cap < 0:
@@ -450,7 +458,11 @@ def find_blocks(request, compiler, *, seconds=60, route_seconds=8, candidate_sec
                                       python_executable=python_executable, cancel_event=cancel_event,
                                       geometry=scene.get('collisionScene'),
                                       motion_bound=dict(graph['bound'], flightBounds=graph['flightBounds']),
-                                      max_blockages=scene.get('maxBlockagesPerObstacle', 2),
+                                      max_blockages=scene.get('maxBlockagesPerObstacle', 3),
+                                      max_horizontal=scene.get('maxHorizontalBlockagesPerObstacle', 2),
+                                      max_vertical=scene.get('maxVerticalBlockagesPerObstacle', 2),
+                                      solid_blocks=[b['sourceBlock'] for b in sorted(scene['blocks'], key=lambda b: b['solidIndex'])]
+                                      if scene['sceneModel'] == 'collision_boxes' else None,
                                       max_passage_candidates=scene.get('maxPassageCandidates', 128))
 
     remaining = seconds - (time.monotonic() - started)
@@ -468,4 +480,7 @@ def find_blocks(request, compiler, *, seconds=60, route_seconds=8, candidate_sec
         result['assumptions'].update(solidSideFaces=True, runOffSourceObstacle='checked_during_y_overlap',
                                      ceilings=True, ceilingContactProfiles=False,
                                      intentionalWallHits=False, maxBlockagesPerObstacle=scene['maxBlockagesPerObstacle'])
+        result['assumptions'].update(maxHorizontalBlockagesPerObstacle=scene['maxHorizontalBlockagesPerObstacle'],
+                                     maxVerticalBlockagesPerObstacle=scene['maxVerticalBlockagesPerObstacle'],
+                                     blockageCapScope='physical_block_across_selected_route')
     return result

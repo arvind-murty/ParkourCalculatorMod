@@ -21,6 +21,24 @@ FIXTURES = Path(__file__).parents[1] / 'fixtures'
 
 @unittest.skipUnless(CONFIG and RUNTIME, 'Set PKC_RUN_TICKS_COMPILER and PKC_IPOPT_PYTHON')
 class IntegrationTests(unittest.TestCase):
+    def test_obstacles_can_interleave_without_finishing_one_block_first(self):
+        request = json.loads((FIXTURES / 'obstacle-interleaved.json').read_text())
+        with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
+            result = find_blocks(request, compiler, seconds=55, route_seconds=45,
+                                 candidate_seconds=1, retries=0, python_executable=RUNTIME)
+        self.assertEqual(result['status'], 'feasible', result)
+        best = result['best']
+        self.assertEqual(best['plan']['ticks'], 12)
+        self.assertTrue(best['geometryCheck']['feasible'])
+        timeline = best['blockageTimeline']
+        wall = [i for i, gate in enumerate(timeline) if gate['blockId'] == 'wall']
+        self.assertGreaterEqual(len(wall), 2)
+        self.assertTrue(any(g['blockId'] == 'ceiling' for g in timeline[wall[0] + 1:wall[-1]]))
+        for used in best['blockageUsage']:
+            self.assertLessEqual(used['horizontal'], 2)
+            self.assertLessEqual(used['vertical'], 2)
+            self.assertLessEqual(used['total'], 3)
+
     def test_full_obstacle_geometry_finds_cross_and_wide_neos_and_checks_both_models(self):
         with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
             for fixture, kind in [('obstacle-cross-neo.json', 'cross_neo'), ('obstacle-wide-neo.json', 'wide_neo')]:

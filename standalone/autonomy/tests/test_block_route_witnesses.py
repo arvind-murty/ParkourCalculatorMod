@@ -8,11 +8,36 @@ from standalone.autonomy.route import schedule, supports
 from standalone.autonomy.block_contacts import contact_conflicts
 from standalone.autonomy.compiler import JavaCompiler
 from standalone.autonomy.obstacle_geometry import check_geometry
+from standalone.autonomy.blockages import DEFAULT_CAPS, gate_timeline, within_caps
 from standalone.ipopt import prepare, validate
 from standalone.ipopt.model import fingerprint
 
 
 class BlockRouteWitnessTests(unittest.TestCase):
+    @unittest.skipUnless(os.environ.get('PKC_RUN_TICKS_COMPILER'), 'Set PKC_RUN_TICKS_COMPILER')
+    def test_saved_interleaving_replays_with_per_block_caps_and_shared_collision_checks(self):
+        root = Path(__file__).parents[1]
+        folder = root / 'experiments/interleaved-blockages'
+        summary = json.loads((folder / 'summary.json').read_text())
+        result = json.loads((folder / 'result.json').read_text())
+        request = prepare(json.loads((folder / 'request.json').read_text()))
+        self.assertEqual(hashlib.sha256((root / 'fixtures' / summary['fixture']).read_bytes()).hexdigest(), summary['fixtureSha256'])
+        self.assertEqual(fingerprint(request), summary['fullProblemHash'])
+        best = result['best']
+        plan = schedule(best['route'], best['allocation'])
+        timeline = gate_timeline(best['passages'], plan['events'])
+        self.assertEqual(timeline, summary['blockageTimeline'])
+        self.assertGreater(len(timeline), DEFAULT_CAPS['total'])
+        self.assertTrue(within_caps(best['passages'], DEFAULT_CAPS))
+        wall = [i for i, event in enumerate(timeline) if event['blockId'] == 'wall']
+        self.assertTrue(any(e['blockId'] == 'ceiling' for e in timeline[wall[0] + 1:wall[-1]]))
+        checked = validate(request, request['yaw'])
+        self.assertTrue(checked['feasible'], checked)
+        vertical = {key: checked[key] for key in ('y', 'vy', 'onGround')}
+        vertical['vertical'] = request['vertical']
+        with JavaCompiler(json.loads(Path(os.environ['PKC_RUN_TICKS_COMPILER']).read_text())) as compiler:
+            self.assertTrue(check_geometry(result['scene']['collisionScene'], plan, checked, vertical, compiler, 3)['feasible'])
+
     @unittest.skipUnless(os.environ.get('PKC_RUN_TICKS_COMPILER'), 'Set PKC_RUN_TICKS_COMPILER')
     def test_saved_obstacle_routes_pass_numerical_and_shared_swept_collision_checks(self):
         root = Path(__file__).parents[1]

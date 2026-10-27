@@ -5,7 +5,8 @@ import unittest
 
 from standalone.autonomy.block_search import build_transition_graph, compile_block_path, prepare_scene
 from standalone.autonomy.block_profiles import normal_jump_height
-from standalone.autonomy.blockages import compile_passages, faces, outside, passage_options, passage_y_valid
+from standalone.autonomy.blockages import (DEFAULT_CAPS, blockage_counts, blockage_usage, compile_passages,
+                                           faces, gate_timeline, outside, passage_options, passage_y_valid, within_caps)
 from standalone.autonomy.obstacle_geometry import BODY_HEIGHT, expanded_box
 from standalone.autonomy.route import HALF_WIDTH, prepare_route, schedule
 from standalone.autonomy.ranking import passage_seed
@@ -89,6 +90,86 @@ class ObstacleGeometryTests(unittest.TestCase):
 
 
 class BlockageTests(unittest.TestCase):
+    def test_default_caps_and_tightening_are_per_physical_block(self):
+        result = prepare_scene(scene())
+        self.assertEqual(result['maxBlockagesPerObstacle'], 3)
+        self.assertEqual(result['maxHorizontalBlockagesPerObstacle'], 2)
+        self.assertEqual(result['maxVerticalBlockagesPerObstacle'], 2)
+        for name, maximum in [('maxBlockagesPerObstacle', 3), ('maxHorizontalBlockagesPerObstacle', 2),
+                              ('maxVerticalBlockagesPerObstacle', 2)]:
+            request = scene()
+            request[name] = maximum + 1
+            with self.assertRaises(ValueError):
+                prepare_scene(request)
+
+    def test_horizontal_vertical_and_combined_limits_all_apply(self):
+        def chain(axes):
+            return [{'axis': a, 'direction': 1, 'plane': 1} for a in axes]
+
+        def passage(axes, block='A', solid=1):
+            return {'leg': 0, 'blockId': block, 'solidIndex': solid, 'faces': chain(axes),
+                    'gates': list(range(len(axes) - 1))}
+
+        self.assertEqual(blockage_counts(chain('XZYX')), {'horizontal': 1, 'vertical': 2, 'total': 3})
+        self.assertTrue(within_caps([passage('XZYX')], DEFAULT_CAPS))
+        self.assertTrue(within_caps([passage('XZX'), passage('ZXZ', 'B', 2)], DEFAULT_CAPS))
+        self.assertFalse(within_caps([passage('XZXZ')], DEFAULT_CAPS))
+        self.assertFalse(within_caps([passage('XYXY')], DEFAULT_CAPS))
+        self.assertFalse(within_caps([passage('XZX'), passage('XYX', solid=2)], DEFAULT_CAPS))
+
+    def test_multipart_blocks_share_the_cap_across_separate_passages_and_legs(self):
+        chain = [{'axis': axis, 'direction': 1, 'plane': 1} for axis in 'XZX']
+        first = {'leg': 0, 'blockId': 'wall', 'solidIndex': 1, 'faces': chain, 'gates': [2, 5]}
+        second = {'leg': 1, 'blockId': 'wall', 'solidIndex': 2, 'faces': chain[:2], 'gates': [3]}
+        self.assertEqual(blockage_usage([first, second])[('block', 'wall')], {'horizontal': 3, 'vertical': 0, 'total': 3})
+        self.assertFalse(within_caps([first, second], DEFAULT_CAPS))
+        second['blockId'] = 'another_wall'
+        self.assertTrue(within_caps([first, second], DEFAULT_CAPS))
+
+    def test_generator_keeps_mixed_three_blockages_and_respects_all_three_caps(self):
+        _, route, profile, plan, witness, bound = passage_case()
+        result = passage_options([1.7, 0, .25, 2, 1.7, .75], 1, 0, profile, route, plan, witness, bound,
+                                 max_candidates=1024)
+        options = [item['passage'] for item in result['options']]
+        self.assertTrue(any(p['blockageCounts']['total'] == 3 for p in options))
+        self.assertTrue(all(within_caps([p], DEFAULT_CAPS) for p in options))
+        self.assertGreater(result['budgetPruned'], 0)
+
+    def test_interleaved_blocks_keep_independent_intervals_on_one_retimed_timeline(self):
+        _, route, profile, _, _, _ = passage_case()
+        route['runBounds'][0] = [0, 2]
+        route['maxTotalRunTicks'] = 2
+        route['passages'] = [
+            {'leg': 0, 'blockId': 'A', 'solidIndex': 1,
+             'faces': [{'axis': 'X', 'direction': -1, 'plane': 1.4},
+                       {'axis': 'Z', 'direction': -1, 'plane': -.05},
+                       {'axis': 'X', 'direction': 1, 'plane': 2.3}], 'gates': [4, 9]},
+            {'leg': 0, 'blockId': 'B', 'solidIndex': 2,
+             'faces': [{'axis': 'X', 'direction': -1, 'plane': 1.84},
+                       {'axis': 'Y', 'direction': -1, 'plane': 2.05}], 'gates': [7]}]
+        route = prepare_route(route)
+        for runs in (0, 2):
+            plan = schedule(route, [runs])
+            timeline = gate_timeline(route['passages'], plan['events'])
+            self.assertEqual([g['blockId'] for g in timeline], ['A', 'B', 'A'])
+            self.assertEqual([g['firstState'] for g in timeline], [runs + 4, runs + 7, runs + 9])
+            self.assertEqual([g['secondState'] for g in timeline], [runs + 4, runs + 8, runs + 10])
+            self.assertEqual([g['kind'] for g in timeline], ['horizontal', 'vertical', 'horizontal'])
+            rows = [r for r in plan['walls'] if r['t1'] == runs + 7 and r['name'].startswith('blockage:')]
+            self.assertEqual({r['name'] for r in rows}, {'blockage:1', 'blockage:2'})
+            self.assertTrue(all(passage_y_valid(p, plan['events'][0], profile) for p in route['passages']))
+
+    def test_refining_one_part_reserves_the_other_parts_budget_without_resetting_the_block(self):
+        _, route, profile, plan, witness, bound = passage_case()
+        route['passages'] = [{'leg': 0, 'blockId': 'wall', 'solidIndex': 2,
+                              'faces': [{'axis': axis, 'direction': 1, 'plane': 1} for axis in 'XZX'],
+                              'gates': [2, 5]}]
+        result = passage_options([2.2, 3.85, -2, 2.8, 5, 2], 1, 0, profile, route, plan, witness, bound,
+                                 max_candidates=512, block_id='wall')
+        self.assertTrue(result['options'])
+        self.assertTrue(all(item['passage']['blockageCounts']['horizontal'] == 0 for item in result['options']))
+        self.assertTrue(all(within_caps(route['passages'] + [item['passage']], DEFAULT_CAPS) for item in result['options']))
+
     def test_later_passage_seed_keeps_the_earlier_prefix_guess_and_adds_no_facing_pins(self):
         _, route, _, _, _, _ = passage_case()
         route['blocks'].insert(0, {'id': 'earlier', 'bounds': [-3, -2, 0, 1], 'top': 1})

@@ -27,7 +27,9 @@ Use `sceneModel: collision_boxes`. Supply each block's actual world-space collis
   "maxRunTicksPerJump": 0,
   "maxTotalRunTicks": 0,
   "maxContactBranches": 24,
-  "maxBlockagesPerObstacle": 2,
+  "maxBlockagesPerObstacle": 3,
+  "maxHorizontalBlockagesPerObstacle": 2,
+  "maxVerticalBlockagesPerObstacle": 2,
   "maxPassageCandidates": 128
 }
 ```
@@ -47,9 +49,13 @@ For each obstruction found by the shared collider, the planner generates face ch
 - One horizontal blockage is a **cross neo**.
 - Two horizontal blockages are a **wide neo**.
 - Chains using Y faces describe passing over or under. A chain may contain both vertical and horizontal blockages; the neo name counts horizontal ones.
-- The default maximum is two total blockage transitions per obstacle passage. `maxBlockagesPerObstacle` can extend this to three/four. Zero-transition branches represent staying outside one face.
+- Per physical block, the caps are two horizontal transitions, two vertical transitions and three combined. A vertical transition involves a Y face; a horizontal transition joins X and Z faces. `maxHorizontalBlockagesPerObstacle`, `maxVerticalBlockagesPerObstacle` and `maxBlockagesPerObstacle` may tighten these limits. Larger values are rejected. Zero-transition branches represent staying outside one face.
 
 The six legacy timing templates are preserved: X->Z, Y->X and Y->Z require an outside-both state; Z->X, X->Y and Z->Y permit consecutive-state handoffs. Every face also has a signed boundary, and the approach/exit intervals remain outside their chosen faces. The face can change at a later corner, so leaving one side does not create a permanent half-plane wall.
+
+Different blocks keep independent chains on the same timeline. A wall can have gates at 4 and 10 while a ceiling has a gate at 7, yielding wall -> ceiling -> wall without finishing one obstacle first. The constraints for the wall remain active during the ceiling passage, and the numerical solver optimizes the common positions/facings together. Gates may coincide when their state constraints are compatible; the shared collision helper still checks the actual Y-X-Z movement stages.
+
+Cap accounting uses each passage's physical `blockId`, shared by all collision sub-boxes and retained across selected route legs. Refining one chain replaces its old usage while reserving other chains' usage for that block. Passing a different block does not reset the first block's budget. There is no global three-event limit across different blocks.
 
 Passage gates are relative to the transition's departure. Adding runs retimes the gates and all associated rows; extending the run-up also extends the first outside-face interval. Both earlier facings and run allocation remain adjustable. Geometry-derived waypoint guesses account for carried velocity using the existing scalar model and compiled friction; these guesses add no facing constraints.
 
@@ -67,7 +73,7 @@ Run-offs include their source in the same solid set. Departure clearance alone n
 
 Total elapsed inputs remain the primary rank; the numerical objective ranks equal-time witnesses. Goal branches continue after the first witness and preserve the best accepted time/objective result. Normal failure, budget exhaustion and an excluded passage family are unknown, not general infeasibility.
 
-`maxContactBranches` bounds the combined floor/blockage branch search. `maxPassageCandidates` bounds retained alternatives per discovered obstruction, with additional explicit bounds on timing-state expansion and its queue. `attempts[].obstacleSearch` reports generated candidates, reach pruning, vertical-face pruning, dropped candidates/timings, incomplete generation and accepted strategy kinds. `best.passages` stores the selected faces, blockage types and gates. `best.geometryCheck` records final shared-scene acceptance. A deadline retains an already validated incumbent.
+`maxContactBranches` bounds the combined floor/blockage branch search. `maxPassageCandidates` bounds retained alternatives per discovered obstruction, with additional explicit bounds on timing-state expansion and its queue. `attempts[].obstacleSearch` reports generated candidates, reach pruning, vertical-face pruning, dropped candidates/timings, incomplete generation and accepted strategy kinds. `best.passages` stores the selected faces, blockage types, physical block IDs and gates. `best.blockageTimeline` merges their absolute gate states for review, including separate first/second states for consecutive-state handoffs. `best.blockageUsage` reports horizontal, vertical and total counts per physical block. `best.geometryCheck` records final shared-scene acceptance. A deadline retains an already validated incumbent.
 
 `minimumTicksProven` only compares a witness with the static graph bound for the declared current profile family. It is not a certificate over omitted wall/ceiling-contact profiles or every Minecraft strategy. `objectiveOptimalityProven` remains false. Passage complexity, numerical budgets and queue/candidate caps are explicit scope limits.
 
@@ -83,7 +89,7 @@ python3 -m standalone.autonomy.solve_blocks \
   --seconds 35 --route-seconds 25 --candidate-seconds 1 --retries 0
 ```
 
-The actual IPOPT/Java integration tests find a 12-input cross neo, a 12-input wide neo, a five-input side run-off and a 12-input passage under a ceiling. A tall, broad wall retains no reachable passage in that fixed single-jump family and is never accepted. [Saved requests and results](experiments/obstacle-avoidance/README.md) include independent scalar and shared swept-collision checks. Gate compilation is also cross-checked against all 24 signed cases from the Minecraft-method probe.
+The actual IPOPT/Java integration tests find a 12-input cross neo, a 12-input wide neo, a five-input side run-off and a 12-input passage under a ceiling. A further [interleaved wall/ceiling case](experiments/interleaved-blockages/README.md) solves in 12 inputs with two horizontal gates for the wall and two vertical gates for the ceiling; the four events interleave on one timeline while both per-block caps hold. A tall, broad wall retains no reachable passage in that fixed single-jump family and is never accepted. [Saved requests and results](experiments/obstacle-avoidance/README.md) include independent scalar and shared swept-collision checks. Gate compilation is also cross-checked against all 24 signed cases from the Minecraft-method probe.
 
 ## Next contact families
 
