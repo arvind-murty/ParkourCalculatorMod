@@ -32,6 +32,10 @@ class JavaCompiler:
     def derive_standing_footprints(self, route, seconds):
         return self._exchange({'action': 'standingFootprints', 'blocks': route['blocks']}, seconds)['footprints']
 
+    def check_scene(self, scene, positions, movement, ground, seconds):
+        return self._exchange({'action': 'sceneCheck', 'scene': scene, 'positions': positions,
+                               'movement': movement, 'expectedGround': ground}, seconds)
+
     def _exchange(self, message, seconds):
         import queue
         received = queue.Queue(maxsize=1)

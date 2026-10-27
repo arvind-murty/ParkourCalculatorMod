@@ -7,6 +7,7 @@ import de.legoshi.parkourcalc.core.sim.AABB;
 import de.legoshi.parkourcalc.core.sim.Vec3dCore;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -16,6 +17,20 @@ import java.util.Set;
 public final class StaticScene {
     public static final double HALF_WIDTH = (double) (0.6F / 2.0F);
     public static final double HEIGHT = (double) 1.8F;
+
+    public static final class Clip {
+        public final AABB obstacle;
+        public final int axis;
+        public final double requested;
+        public final double resolved;
+
+        private Clip(AABB obstacle, int axis, double requested, double resolved) {
+            this.obstacle = obstacle;
+            this.axis = axis;
+            this.requested = requested;
+            this.resolved = resolved;
+        }
+    }
 
     public static final class Contact {
         public final AABB box;
@@ -27,8 +42,9 @@ public final class StaticScene {
         public final boolean stepped;
         public final boolean blockedX;
         public final boolean blockedZ;
+        public final List<Clip> clips;
 
-        private Contact(AABB box, Vec3dCore velocity, boolean ground, boolean blockedX, boolean blockedZ, boolean vertical, boolean stepped) {
+        private Contact(AABB box, Vec3dCore velocity, boolean ground, boolean blockedX, boolean blockedZ, boolean vertical, boolean stepped, List<Clip> clips) {
             this.box = box;
             this.position = center(box);
             this.velocity = velocity;
@@ -38,6 +54,7 @@ public final class StaticScene {
             this.blockedZ = blockedZ;
             this.verticalCollision = vertical;
             this.stepped = stepped;
+            this.clips = Collections.unmodifiableList(new ArrayList<>(clips));
         }
     }
 
@@ -101,13 +118,14 @@ public final class StaticScene {
             }
         }
         List<AABB> obstacles = collisions(sweep(original, x, y, z));
+        List<Clip> clips = new ArrayList<>();
         AABB moved = original;
-        y = clip(obstacles, moved, y, 1);
+        y = clip(obstacles, moved, y, 1, clips);
         moved = offset(moved, 0, y, 0);
         boolean canStep = grounded || expectedY != y && expectedY < 0;
-        x = clip(obstacles, moved, x, 0);
+        x = clip(obstacles, moved, x, 0, clips);
         moved = offset(moved, x, 0, 0);
-        z = clip(obstacles, moved, z, 2);
+        z = clip(obstacles, moved, z, 2, clips);
         moved = offset(moved, 0, 0, z);
         boolean stepped = false;
         if (stepHeight > 0 && canStep && (expectedX != x || expectedZ != z)) {
@@ -135,6 +153,7 @@ public final class StaticScene {
                 y = sy;
                 z = sz;
                 stepped = true;
+                clips.clear();
             }
         }
         boolean horizontal = expectedX != x || expectedZ != z;
@@ -142,7 +161,7 @@ public final class StaticScene {
         Vec3dCore carry = new Vec3dCore(expectedX != x ? 0 : velocity.x,
                 vertical ? 0 : velocity.y, expectedZ != z ? 0 : velocity.z);
         if (horizontal && ladder(center(moved))) carry = new Vec3dCore(carry.x, 0.2, carry.z);
-        return new Contact(moved, carry, vertical && expectedY < 0, expectedX != x, expectedZ != z, vertical, stepped);
+        return new Contact(moved, carry, vertical && expectedY < 0, expectedX != x, expectedZ != z, vertical, stepped, clips);
     }
 
     private List<AABB> collisions(AABB area) {
@@ -153,10 +172,15 @@ public final class StaticScene {
     }
 
     private static double clip(List<AABB> obstacles, AABB body, double value, int axis) {
+        return clip(obstacles, body, value, axis, null);
+    }
+
+    private static double clip(List<AABB> obstacles, AABB body, double value, int axis, List<Clip> clips) {
         int first = (axis + 1) % 3, second = (axis + 2) % 3;
         for (AABB obstacle : obstacles) {
             if (high(body, first) <= low(obstacle, first) || low(body, first) >= high(obstacle, first)
                     || high(body, second) <= low(obstacle, second) || low(body, second) >= high(obstacle, second)) continue;
+            double requested = value;
             if (value > 0 && high(body, axis) <= low(obstacle, axis)) {
                 double gap = low(obstacle, axis) - high(body, axis);
                 if (gap < value) value = gap;
@@ -164,6 +188,7 @@ public final class StaticScene {
                 double gap = high(obstacle, axis) - low(body, axis);
                 if (gap > value) value = gap;
             }
+            if (clips != null && value != requested) clips.add(new Clip(obstacle, axis, requested, value));
         }
         return value;
     }

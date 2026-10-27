@@ -1,15 +1,19 @@
 package de.legoshi.parkourcalc.autonomy;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import de.legoshi.parkourcalc.core.anglesolver.ConstraintDeriver;
 import de.legoshi.parkourcalc.core.anglesolver.solver.JumpLinearModel;
 import de.legoshi.parkourcalc.core.anglesolver.solver.JumpPhysicsInputs;
 import de.legoshi.parkourcalc.core.sim.AABB;
 import de.legoshi.parkourcalc.core.sim.Vec3dCore;
+import de.legoshi.parkourcalc.core.replay.StaticScene;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class CompileRunTicksPhysics {
     private static final Gson GSON = new Gson();
@@ -28,6 +32,10 @@ public final class CompileRunTicksPhysics {
         boolean[] grounded;
         boolean[] jump;
         Policy inputs;
+        JsonObject scene;
+        double[][] positions;
+        double[][] movement;
+        boolean[] expectedGround;
     }
 
     public static final class Block {
@@ -44,7 +52,8 @@ public final class CompileRunTicksPhysics {
             Map<String, Object> result;
             try {
                 Request request = GSON.fromJson(line, Request.class);
-                result = request != null && ("footprints".equals(request.action)
+                result = request != null && "sceneCheck".equals(request.action) ? sceneCheck(request)
+                        : request != null && ("footprints".equals(request.action)
                         || "standingFootprints".equals(request.action)) ? footprints(request) : compile(request);
             } catch (RuntimeException error) {
                 result = new LinkedHashMap<String, Object>();
@@ -53,6 +62,60 @@ public final class CompileRunTicksPhysics {
             System.out.println(GSON.toJson(result));
             System.out.flush();
         }
+    }
+
+    private static Map<String, Object> sceneCheck(Request request) {
+        StaticScene scene = new StaticScene(request.scene);
+        int n = request.movement.length;
+        if (request.positions.length != n + 1 || request.expectedGround.length != n + 1) {
+            throw new IllegalArgumentException("Scene check arrays have inconsistent lengths");
+        }
+        Map<String, Object> result = new LinkedHashMap<>();
+        AABB body = scene.startBox(vector(request.positions[0]));
+        for (int t = 0; t < n; t++) {
+            StaticScene.Contact hit;
+            try {
+                hit = scene.move(body, vector(request.movement[t]), request.expectedGround[t], false);
+            } catch (IllegalArgumentException error) {
+                result.put("feasible", false);
+                result.put("tick", t);
+                result.put("reason", "scene_query");
+                result.put("message", error.getMessage());
+                return result;
+            }
+            Vec3dCore expected = vector(request.positions[t + 1]);
+            double error = StrictMath.max(StrictMath.abs(hit.position.x - expected.x),
+                    StrictMath.max(StrictMath.abs(hit.position.y - expected.y), StrictMath.abs(hit.position.z - expected.z)));
+            if (hit.horizontalCollision || error > 1e-7 || hit.onGround != request.expectedGround[t + 1]) {
+                result.put("feasible", false);
+                result.put("tick", t);
+                result.put("reason", hit.stepped ? "unplanned_step" : "scene_collision");
+                result.put("positionError", error);
+                result.put("actualPosition", new double[]{hit.position.x, hit.position.y, hit.position.z});
+                List<Map<String, Object>> clips = new ArrayList<>();
+                for (StaticScene.Clip clip : hit.clips) {
+                    if (clip.axis == 1 && StrictMath.abs(hit.position.y - expected.y) <= 1e-7
+                            && hit.onGround == request.expectedGround[t + 1]) continue;
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    AABB b = clip.obstacle;
+                    item.put("box", new double[]{b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z});
+                    item.put("axis", clip.axis);
+                    clips.add(item);
+                }
+                result.put("clips", clips);
+                return result;
+            }
+            body = hit.box;
+        }
+        result.put("feasible", true);
+        result.put("ticks", n);
+        return result;
+    }
+
+    private static Vec3dCore vector(double[] values) {
+        if (values.length != 3) throw new IllegalArgumentException("Expected X/Y/Z");
+        for (double value : values) if (!Double.isFinite(value)) throw new IllegalArgumentException("Nonfinite scene check");
+        return new Vec3dCore(values[0], values[1], values[2]);
     }
 
     private static Map<String, Object> footprints(Request request) {
