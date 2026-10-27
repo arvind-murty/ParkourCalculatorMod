@@ -67,14 +67,14 @@ def prepare_route(request):
         integer(entry.get('enter'), 'entry state', entry['outsideThrough'] + 1, duration)
     exits = route.setdefault('walkOffExits', [None] * len(airtimes))
     if not isinstance(exits, list) or len(exits) != len(airtimes):
-        raise ValueError('Supply one optional walk-off exit per transition')
+        raise ValueError('Supply one optional run-off exit per transition')
     for i, exit_face in enumerate(exits):
         if exit_face is None:
             continue
         if kinds[i] != 'walk_off' or not isinstance(exit_face, dict) or exit_face.get('axis') not in ('X', 'Z'):
-            raise ValueError('Invalid walk-off exit')
+            raise ValueError('Invalid run-off exit')
         if type(exit_face.get('direction')) is not int or exit_face['direction'] not in (-1, 1):
-            raise ValueError('Walk-off direction must be -1 or 1')
+            raise ValueError('Run-off direction must be -1 or 1')
     initial = route.get('initial')
     if not isinstance(initial, dict):
         raise ValueError('Supply an initial state')

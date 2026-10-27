@@ -10,7 +10,7 @@ FULL_ROUTE = Path(__file__).parents[1] / 'fixtures' / 'linkcraft11-j0-j16.json'
 
 
 class ContactScheduleTests(unittest.TestCase):
-    def test_full_route_keeps_all_jumps_walkoff_step_and_run_cost(self):
+    def test_full_route_keeps_all_jumps_runoff_step_and_run_cost(self):
         r = prepare_route(json.loads(FULL_ROUTE.read_text()))
         self.assertEqual(r['kinds'].count('jump'), 17)
         self.assertEqual(r['kinds'].count('walk_off'), 1)

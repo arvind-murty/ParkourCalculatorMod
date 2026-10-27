@@ -45,9 +45,9 @@ Contact-face branches retain their best valid time/objective incumbent while eva
 
 ## Normal edge behavior, always enabled
 
-Minecraft checks support before the tick's horizontal movement. That movement can carry the player beyond the edge while leaving the next input grounded and eligible to jump. This is normal tick ordering, not an optional run-off mechanic.
+Minecraft checks support before the tick's horizontal movement. That movement can carry the player beyond the edge while leaving the next input grounded and eligible to jump. This is ordinary movement and has no separate transition name. Run-off specifically means leaving the block without jumping and then falling.
 
-The graph's `movementAfterSupportCheck` bound covers the possible difference between the supporting position and the later jump position. It only makes the pruning bound conservative. It does not append an input, invent displacement or change the forward model. The previous graph field was named `runoffAllowance`; historical artifacts keep that old metadata name.
+The graph's `movementAfterSupportCheck` bound covers the possible difference between the supporting position and the later jump position. It only makes the pruning bound conservative. It does not append an input, invent displacement or change the forward model. The previous graph field was incorrectly named `runoffAllowance`; historical artifacts retain that old metadata name, which does not refer to an actual run-off transition.
 
 An integration regression compiles exactly one run input plus a 12-input ordinary jump. The player leaves the support during the run, is grounded at the next input and jumps there. The accepted path contains exactly 13 inputs and a matching Y schedule.
 

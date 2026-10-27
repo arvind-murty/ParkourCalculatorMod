@@ -29,7 +29,7 @@ The pool enumerates constant-key segments from a nine-combo alphabet. It progres
 
 Without explicit marks, single-facing, last-jump-angle and every-jump-angle structures run as separate passes. The current implementation races the structures across the budget rather than relying on only the simplest family to finish first.
 
-Transfer: use a grammar of block transitions and contact profiles, not unconstrained per-tick event enumeration. Ordinary jump, walk-off, ceiling-cancelled hop, step-cancelled hop and obstacle-passage side are the discrete choices. Keep all facings free in the actual IPOPT request. A simple candidate family is a search preference, not a new F constraint or a completeness claim.
+Transfer: use a grammar of block transitions and contact profiles, not unconstrained per-tick event enumeration. Ordinary jump, run-off without a jump, ceiling-cancelled hop, step-cancelled hop and obstacle-passage side are the discrete choices. Keep all facings free in the actual IPOPT request. A simple candidate family is a search preference, not a new F constraint or a completeness claim.
 
 ### 2. Exploit the movement coefficients
 

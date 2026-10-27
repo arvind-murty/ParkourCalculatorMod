@@ -18,7 +18,9 @@ A successful independently validated IPOPT solution with correctly compiled move
 
 The default returns the first full feasible allocation. `--improve` continues backtracking below the incumbent total to look for a lower count. A positive result is the best found under the search and model, not automatically a certified minimum. Unknown attempts are recorded separately from interval reach contradictions. The result's `minimumProven` is currently true only when the witnessed count reaches the explicit nonnegative/RT lower bound.
 
-`kinds` can contain `walk_off` or `step` as well as `jump`. A walk-off's departure input starts grounded, uses ground acceleration/drag, and has no jump boost. Its following inputs are airborne. Its airtime includes the grounded departure input. The mandatory departure is part of the supplied transition; the cost still counts only additional run ticks before it. A source-exit constraint prevents a claimed walk-off from staying on its original support. `walkOffExits` can supply an axis/direction for this constraint; otherwise the first heuristic selects the exit toward the next region. Alternate exit-face enumeration is not implemented yet. A prescribed step is one grounded non-jump input with a post-horizontal target check; results separately report mandatory ground inputs and optional delays.
+Run-off means leaving a block without jumping and then falling. The existing serialized kind for this transition is `walk_off`, with exit faces stored in `walkOffExits`; these names remain compatible with saved fixtures. It is distinct from ordinary movement followed by a jump. A supplied run-off's departure input starts grounded, uses ground acceleration/drag, and has no jump boost. Following inputs are airborne. Its duration includes the grounded departure input. The mandatory departure belongs to the supplied transition; only additional run ticks before it count as added delays. A source-exit constraint requires leaving the actual support. The exit face can be supplied explicitly; otherwise the existing heuristic selects the face toward the target. Alternate exit-face enumeration is not implemented in this ordered-route adapter.
+
+Supplied run-offs are implemented and covered by the Linkcraft fixtures. Automatic block-route search currently generates ordinary and stair jumps only; generating run-off fall profiles is still missing. A prescribed `step` is a separate grounded non-jump input with a post-horizontal target check, not a run-off.
 
 ## Setup and run
 
@@ -70,7 +72,7 @@ The first family uses normal 1.8.9 movement, no effects, prescribed valid airtim
 
 For a captured course without picked geometry, `centerBounds` can supply an authored allowable player-center rectangle instead of block `bounds`. It is not expanded by the player half-width again and is not represented as measured block geometry. Such results report `continuous_horizontal_declared_regions_with_supplied_airtimes`. Extra X/Z rules can be anchored to a leg's departure or run input with `constraints`; those rules follow retiming and no F rules are accepted.
 
-Horizontal support is checked before the landing-producing input's horizontal movement, and on each run input that must retain grounded state. The next jump itself is allowed to use the previous input's grounded flag, preserving one-tick walk-off jumps. Every accepted candidate is independently replayed by the standalone scalar validator and checked with strict AABB support overlap, using the widened legacy float half-width. This establishes the declared continuous support model, not byte-exact game feasibility.
+Horizontal support is checked before the landing-producing input's horizontal movement, and on each run input that must retain grounded state. A jump uses the previous input's grounded flag even if horizontal movement has since carried the player beyond the edge. This is ordinary Minecraft movement, not a run-off transition. Every accepted candidate is independently replayed by the standalone scalar validator and checked with strict AABB support overlap, using the widened legacy float half-width. This establishes the declared continuous support model, not byte-exact game feasibility.
 
 ## Search behavior
 
@@ -98,7 +100,7 @@ The current worktree's untouched native core suite has three existing failures: 
 
 ## Linkcraft 11 experiment
 
-The copied `fixtures/linkcraft11-j5-j9.json` covers source states 55 through 80: jumps 5 through 9, plus the walk-off at input 64. Its input is the support footprints, captured entry position/velocity, Force 45, and supplied transition types/durations. The original 13 extra authored scalar X/Z rules are discarded. Constraints are generated from the supplied support regions and run allocation. Recorded facings are absent; initial yaw is only a zero-valued guess. The fixture's footprints come from the save's landing regions and are identified as declared center regions rather than measured block shapes.
+The copied `fixtures/linkcraft11-j5-j9.json` covers source states 55 through 80: jumps 5 through 9, plus the run-off at input 64. Its input is the support footprints, captured entry position/velocity, Force 45, and supplied transition types/durations. The original 13 extra authored scalar X/Z rules are discarded. Constraints are generated from the supplied support regions and run allocation. Recorded facings are absent; initial yaw is only a zero-valued guess. The fixture's footprints come from the save's landing regions and are identified as declared center regions rather than measured block shapes.
 
 ```sh
 .venv-ipopt/bin/python -m standalone.autonomy.solve \
@@ -107,9 +109,9 @@ The copied `fixtures/linkcraft11-j5-j9.json` covers source states 55 through 80:
   --seconds 60 --candidate-seconds 3
 ```
 
-The original allocation is `[0,0,0,0,0,1]`: five jump transitions and one mandatory walk-off, with one optional run input before the last jump. The footprint-only planner found `[0,0,0,0,0,0]` in about 0.47 seconds, shortening the supplied 25-input section to 24 inputs. Acceptance uses the unchanged 1e-7 scalar tolerance plus the independent support/exit predicates. This is a successful numerical solve under the declared timing/footprint model.
+The original allocation is `[0,0,0,0,0,1]`: five jump transitions and one mandatory run-off, with one optional run input before the last jump. The footprint-only planner found `[0,0,0,0,0,0]` in about 0.47 seconds, shortening the supplied 25-input section to 24 inputs. Acceptance uses the unchanged 1e-7 scalar tolerance plus the independent support/exit predicates. This is a successful numerical solve under the declared timing/footprint model.
 
-The walk-off starts at local input 9: grounded with no Jump, followed by three air inputs, landing at state 13. Its compiled acceleration magnitude is about .13 rather than the approximately .3274 sprint-jump input magnitude. The accepted departure lies outside the source region. As a separate earlier diagnostic, the original recorded facings on the original allocation pass even the original 13 additional scalar rules with zero violation; those facings were not fed to search.
+The run-off starts at local input 9: grounded with no Jump, followed by three air inputs, landing at state 13. Its compiled acceleration magnitude is about .13 rather than the approximately .3274 sprint-jump input magnitude. The accepted departure lies outside the source region. As a separate earlier diagnostic, the original recorded facings on the original allocation pass even the original 13 additional scalar rules with zero violation; those facings were not fed to search.
 
 `python3 -m standalone.autonomy.linkcraft --input /path/to/real/11.json --output /path/to/section.json --start 55 --end 80` regenerates the small fixture. Without expanded mode the extractor rejects missing complete landing regions and grounded height changes.
 
