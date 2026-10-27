@@ -6,7 +6,7 @@ Status, 2026-10-26: **run ticks are prototyped** within the continuous model. [R
 
 The [collision-box obstacle search](OBSTACLE_SEARCH.md) now implements height pruning, cross neo/wide neo blockage chains, finite source-obstacle clearance and shared swept-collision acceptance. It reuses the integration agent's `StaticScene`; the corrected shared movement compiler now supports generated one-input wall reversals and ceiling-hit profiles.
 
-[ONE_TICK_CONTACT_PLAN.md](ONE_TICK_CONTACT_PLAN.md) records the implemented side-wall reversals and ceiling cancellations, before/after avoidance, shared sprint compilation, saved results and remaining gaps. Ladder/vine climbing remains deferred.
+[ONE_TICK_CONTACT_PLAN.md](ONE_TICK_CONTACT_PLAN.md) records the implemented side-wall reversals and ceiling cancellations, before/after avoidance, shared sprint compilation, saved results and remaining gaps. Ladder/vine climbing is implemented separately in the plan below.
 
 [LADDER_STRATEGY_PLAN.md](LADDER_STRATEGY_PLAN.md) records the implemented schedule generator, numerical entry probes, cap-aware ranking and one-interaction ladder route integration. Pure generator results retain vertical-only validation; accepted full routes additionally pass the shared finite scene and movement contract.
 

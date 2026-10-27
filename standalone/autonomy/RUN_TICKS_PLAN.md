@@ -52,7 +52,7 @@ The user expects 12 to be the minimum for this path. The implementation reports 
 ## Remaining work, deferred
 
 1. Broader continuous-model benchmarks and performance measurement on longer routes. Profile work before changing the search or adding caching.
-2. Generalize candidate compilation only when required profiles exist: movement effects, special surfaces, wall/contact schedules and ladders need correct retiming and model compilation. They are currently unsupported by this route adapter, even where the numerical solver has support.
+2. Generalize candidate compilation only when required profiles exist: movement effects, special surfaces, wall/contact schedules and ladders need correct retiming and model compilation. These were outside the original ordered-route adapter. The collision-box block solver now compiles wall/ceiling contacts and one ladder/vine interaction with retiming; see [LADDER_STRATEGY_PLAN.md](LADDER_STRATEGY_PLAN.md). Effects and special surfaces remain unsupported.
 3. Better search quality if needed: improve incumbent margins, revisit cheaper unknowns with larger budgets, or retain alternatives for long-route coupling. No minimum proof is required for the prototype.
 4. Stable external route/transition identities and an agreed orchestration API when there is a caller beyond the current Python/CLI prototype. Existing relative rows and event mappings suffice for the current cases.
 5. Mod UI, replay-ready export and game validation are separate future work. They are not the next task and do not hold this milestone open.
