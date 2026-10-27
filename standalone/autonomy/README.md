@@ -1,5 +1,7 @@
 # Run ticks over a block route
 
+For a compacted session, start with [COMPACTION_HANDOFF.md](COMPACTION_HANDOFF.md): implementation checkpoint, user decisions, tested results, remaining gaps and next tasks.
+
 Status, 2026-10-26: **run ticks are prototyped** within the continuous model. [RUN_TICKS_PLAN.md](RUN_TICKS_PLAN.md) records what works, the measured results and deferred work. Current orchestration work has moved to the [block solver](BLOCK_SOLVER_PLAN.md). Replay export and game integration are outside this milestone.
 
 The [collision-box obstacle search](OBSTACLE_SEARCH.md) now implements height pruning, cross neo/wide neo blockage chains, finite source-obstacle clearance and shared swept-collision acceptance. It reuses the integration agent's `StaticScene`; intentional wall/ceiling-hit profile generation remains the next part of the [obstacle/blockage design](OBSTACLES_AND_BLOCKAGES.md).
@@ -100,7 +102,7 @@ python3 -m unittest discover -s standalone/autonomy/tests -v
 
 The real integration cases find `[0,0]` on two jumps, `[1]` when one initial run tick is required, `[2,0]` after backtracking from a second jump with RT=0, and `[0,0]` on a turning route requiring IPOPT adjustment. Unit cases cover backtracking, unknown support, lower-total improvement, limits, cancellation, event remapping, independent arrays, and free facings. A seeded randomized screen check retains 150 known per-axis-inertia/turning witnesses.
 
-The current worktree's untouched native core suite has three existing failures: CrossJvmDeterminismTest, InertiaFoldingTest, and CostateSmoothingScaleTest. The standalone/autonomy work does not change core sources. Record those separately from this module's tests rather than modifying another agent's numerical work.
+The current native angle-solver suite has three existing failures: CrossJvmDeterminismTest, InertiaFoldingTest, and CostateSmoothingScaleTest. The native angle-solver sources and standalone numerical worker are unchanged; the shared core scene helper was deliberately imported and extended for collision checks. Record the baseline failures separately from this module's tests rather than modifying another agent's numerical work.
 
 ## Linkcraft 11 experiment
 
