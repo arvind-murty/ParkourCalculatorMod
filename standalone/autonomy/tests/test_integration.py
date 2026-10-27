@@ -20,6 +20,54 @@ FIXTURES = Path(__file__).parents[1] / 'fixtures'
 
 @unittest.skipUnless(CONFIG and RUNTIME, 'Set PKC_RUN_TICKS_COMPILER and PKC_IPOPT_PYTHON')
 class IntegrationTests(unittest.TestCase):
+    def test_runoff_competes_as_a_shorter_profile_in_the_same_route_search(self):
+        request = json.loads((FIXTURES / 'blocks-runoff.json').read_text())
+        with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
+            result = find_blocks(request, compiler, seconds=20, route_seconds=4,
+                                 candidate_seconds=1, retries=0, python_executable=RUNTIME)
+            best = result['best']
+            self.assertEqual(result['status'], 'feasible', result)
+            coefficients = compiler.compile(best['route'], best['plan'], 3)
+        self.assertEqual([p['profileKind'] for p in best['profiles']], ['run_off'])
+        self.assertEqual(best['route']['airtimes'], [4])
+        self.assertEqual(best['allocation'], [4])
+        self.assertEqual(best['plan']['ticks'], 8)
+        self.assertFalse(any(best['plan']['jump']))
+        self.assertTrue(all(v is None for v in best['vertical']['jumpVelocity']))
+        self.assertLess(coefficients['magnitude'][4], .2)
+        self.assertEqual(best['candidate']['onGround'], best['plan']['grounded'] + [True])
+
+    def test_a_jump_can_be_followed_by_a_zero_delay_runoff(self):
+        request = json.loads((FIXTURES / 'blocks-jump-runoff.json').read_text())
+        with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
+            result = find_blocks(request, compiler, seconds=20, route_seconds=4,
+                                 candidate_seconds=1, retries=0, python_executable=RUNTIME)
+        self.assertEqual(result['status'], 'feasible', result)
+        best = result['best']
+        self.assertEqual(best['blockIds'], ['start', 'middle', 'goal'])
+        self.assertEqual([p['profileKind'] for p in best['profiles']], ['ordinary', 'run_off'])
+        self.assertEqual(best['route']['airtimes'], [12, 4])
+        self.assertEqual(best['allocation'], [0, 0])
+        self.assertEqual(best['plan']['ticks'], 16)
+        departure = best['plan']['events'][1]['jump']
+        self.assertFalse(best['plan']['jump'][departure])
+        self.assertFalse(supports(best['route']['blocks'][1], *best['candidate']['positions'][departure]))
+
+    def test_small_drop_can_land_on_the_first_runoff_input(self):
+        request = json.loads((FIXTURES / 'blocks-runoff.json').read_text())
+        request['initial']['position'][0] = .9
+        request['initial']['velocity'][0] = .4
+        request['blocks'][1].update(bounds=[1.5, 2.5, 0, 1], top=.9375)
+        request['maxRunTicksPerJump'] = request['maxTotalRunTicks'] = 1
+        with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
+            result = find_blocks(request, compiler, seconds=15, route_seconds=3,
+                                 candidate_seconds=1, retries=0, python_executable=RUNTIME)
+        self.assertEqual(result['status'], 'feasible', result)
+        self.assertEqual(result['best']['route']['airtimes'], [1])
+        self.assertEqual(result['best']['allocation'], [1])
+        self.assertEqual(result['best']['plan']['ticks'], 2)
+        self.assertEqual(result['best']['candidate']['y'], [1, 1, .9375])
+
     def test_grounded_jump_after_leaving_the_edge_uses_only_the_scheduled_inputs(self):
         request = json.loads((FIXTURES / 'blocks-required-run.json').read_text())
         request['initial']['position'][0] = .9
@@ -119,7 +167,7 @@ class IntegrationTests(unittest.TestCase):
                                  candidate_seconds=1, retries=0, python_executable=RUNTIME)
         self.assertEqual(result['status'], 'unknown', result)
         self.assertIsNone(result['best'])
-        self.assertEqual(result['attempts'][0]['contactBranches'], 5)
+        self.assertTrue(any(a['contactBranches'] == 5 for a in result['attempts']))
 
     def test_selected_block_path_can_require_an_added_ground_input(self):
         request = json.loads((FIXTURES / 'blocks-required-run.json').read_text())

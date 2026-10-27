@@ -6,10 +6,23 @@ from .route import prepare_route
 
 
 def ordinary_jump_profile(source_top, target_top, *, max_inputs=200):
+    return _flight_profile(source_top, target_top, True, max_inputs)
+
+
+def runoff_profile(source_top, target_top, *, max_inputs=200):
     source_top = number(source_top, 'source top')
     target_top = number(target_top, 'target top')
-    integer(max_inputs, 'maximum flight inputs', 2, 200)
-    config = {'threshold': .005, 'jumpVelocity': [f32(.42)] + [None] * (max_inputs - 1),
+    integer(max_inputs, 'maximum flight inputs', 1, 200)
+    if target_top >= source_top:
+        return None
+    return _flight_profile(source_top, target_top, False, max_inputs)
+
+
+def _flight_profile(source_top, target_top, jumping, max_inputs):
+    source_top = number(source_top, 'source top')
+    target_top = number(target_top, 'target top')
+    integer(max_inputs, 'maximum flight inputs', 2 if jumping else 1, 200)
+    config = {'threshold': .005, 'jumpVelocity': [f32(.42) if jumping else None] + [None] * (max_inputs - 1),
               'sneak': [False] * max_inputs, 'contacts': []}
     y, vy, ground = source_top, REST_CARRY, True
     positions, velocities, grounded = [y], [vy], [ground]
@@ -27,7 +40,8 @@ def ordinary_jump_profile(source_top, target_top, *, max_inputs=200):
         grounded.append(ground)
         if ground:
             return {'airtime': tick + 1, 'landingPhase': 'pre', 'position': positions,
-                    'velocity': velocities, 'grounded': grounded, 'contacts': config['contacts']}
+                    'velocity': velocities, 'grounded': grounded, 'contacts': config['contacts'],
+                    'jump': [jumping] + [False] * tick}
     return None
 
 
@@ -50,7 +64,7 @@ def stair_jump_profile(source_top, target_top):
         velocities.append(vy)
         grounded.append(ground)
     return {'airtime': 2, 'landingPhase': 'pre', 'position': positions, 'velocity': velocities,
-            'grounded': grounded, 'contacts': config['contacts']}
+            'grounded': grounded, 'contacts': config['contacts'], 'jump': [True, False]}
 
 
 def compile_open_air_route(request, *, max_inputs=200):
