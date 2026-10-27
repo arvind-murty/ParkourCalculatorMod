@@ -29,8 +29,9 @@ class Coefficients:
                  b['bounds'][2] - HALF_WIDTH, b['bounds'][3] + HALF_WIDTH] for b in route['blocks']]
 
 
-def accepted(cost=0):
-    return {'status': 'feasible', 'best': {'cost': cost, 'plan': {'ticks': 24}, 'candidate': {'yaw': [0] * 24}}}
+def accepted(cost=0, ticks=24, objective=0):
+    return {'status': 'feasible', 'best': {'cost': cost, 'plan': {'ticks': ticks},
+                                        'candidate': {'yaw': [0] * ticks, 'objective': objective}}}
 
 
 def graph(adjacency, distances):
@@ -104,7 +105,7 @@ class TransitionGraphTests(unittest.TestCase):
         self.assertIn('start', result['adjacency']['start'])
         self.assertIn('b', result['adjacency']['start'])
         self.assertNotIn('goal', result['adjacency']['start'])
-        self.assertGreater(result['bound']['runoffAllowance'], result['bound']['storedSpeedNorm'])
+        self.assertGreater(result['bound']['movementAfterSupportCheck'], result['bound']['storedSpeedNorm'])
 
     def test_high_initial_momentum_expands_the_graph_bound(self):
         request = scene()
@@ -156,9 +157,9 @@ class BlockPathSearchTests(unittest.TestCase):
                                      'ordinary': {'profile': {'airtime': 10}}})
         calls = []
 
-        def evaluate(path, remaining, transition_ids):
+        def evaluate(path, remaining, transition_ids, max_ticks=None):
             calls.append(tuple(transition_ids))
-            return accepted() if transition_ids == ('good',) else {'status': 'unknown'}
+            return accepted(ticks=2) if transition_ids == ('good',) else {'status': 'unknown'}
 
         result = search_block_paths(scene(), topology, evaluate)
         self.assertEqual(calls, [('bad',), ('good',)])
@@ -211,7 +212,7 @@ class BlockPathSearchTests(unittest.TestCase):
         self.assertEqual(result['status'], 'unknown')
         self.assertEqual(result['termination'], 'candidate_limit')
         self.assertGreater(result['pruning']['heuristicPoolDrops'], 0)
-        self.assertFalse(result['minimumRunTicksProven'])
+        self.assertFalse(result['minimumTicksProven'])
 
     def test_error_is_not_a_route_miss_and_cancellation_keeps_an_incumbent(self):
         topology = graph({'start': ['goal', 'b'], 'b': ['goal'], 'goal': []},
@@ -229,7 +230,60 @@ class BlockPathSearchTests(unittest.TestCase):
         self.assertEqual(result['status'], 'feasible')
         self.assertEqual(result['termination'], 'cancelled')
         self.assertEqual(result['best']['cost'], 1)
-        self.assertFalse(result['minimumRunTicksProven'])
+        self.assertFalse(result['minimumTicksProven'])
+
+    def test_fewer_total_ticks_beat_a_zero_run_route(self):
+        topology = graph({'start': ['goal', 'b'], 'b': ['goal'], 'goal': []},
+                         {'start': 1, 'b': 1, 'goal': 0})
+        topology.update(profiles={'start': {'goal': {'airtime': 12}, 'b': {'airtime': 2}},
+                                  'b': {'goal': {'airtime': 2}}},
+                        flightInputsToGoal={'start': 4, 'b': 2, 'goal': 0})
+        calls = []
+
+        def evaluate(path, remaining):
+            calls.append(path)
+            return accepted(cost=2, ticks=6, objective=-100) if path == ['start', 'b', 'goal'] else accepted(ticks=12, objective=100)
+
+        result = search_block_paths(scene(), topology, evaluate)
+        self.assertEqual(result['best']['blockIds'], ['start', 'b', 'goal'])
+        self.assertEqual(result['best']['plan']['ticks'], 6)
+        self.assertNotIn(['start', 'goal'], calls)
+        self.assertGreater(result['pruning']['tickBoundPrefixes'], 0)
+
+    def test_equal_total_ticks_compare_objective_even_when_run_counts_differ(self):
+        topology = graph({'start': ['b', 'c'], 'b': ['goal'], 'c': ['goal'], 'goal': []},
+                         {'start': 2, 'b': 1, 'c': 1, 'goal': 0})
+        topology.update(profiles={'start': {'b': {'airtime': 2}, 'c': {'airtime': 3}},
+                                  'b': {'goal': {'airtime': 2}}, 'c': {'goal': {'airtime': 3}}},
+                        flightInputsToGoal={'start': 4, 'b': 2, 'c': 3, 'goal': 0})
+        calls = []
+
+        def evaluate(path, remaining):
+            calls.append(path)
+            if path == ['start', 'b', 'goal']:
+                return accepted(cost=2, ticks=6, objective=10)
+            return accepted(cost=0, ticks=6, objective=1)
+
+        request = scene()
+        result = search_block_paths(request, topology, evaluate)
+        self.assertIn(['start', 'c', 'goal'], calls)
+        self.assertEqual(result['best']['blockIds'], ['start', 'b', 'goal'])
+        request['objective'] = {'axis': 'Z', 'sense': 'MIN'}
+        result = search_block_paths(request, topology, evaluate)
+        self.assertEqual(result['best']['blockIds'], ['start', 'c', 'goal'])
+
+    def test_unknown_shorter_route_prevents_a_minimum_tick_claim(self):
+        topology = graph({'start': ['goal', 'b'], 'b': ['goal'], 'goal': []},
+                         {'start': 1, 'b': 1, 'goal': 0})
+        topology.update(profiles={'start': {'goal': {'airtime': 4}, 'b': {'airtime': 3}},
+                                  'b': {'goal': {'airtime': 3}}},
+                        flightInputsToGoal={'start': 4, 'b': 3, 'goal': 0})
+        result = search_block_paths(scene(), topology,
+                                    lambda path, _: {'status': 'unknown'} if path == ['start', 'goal'] else accepted(ticks=6))
+        self.assertEqual(result['best']['plan']['ticks'], 6)
+        self.assertEqual(result['ticksLowerBound'], 4)
+        self.assertFalse(result['minimumTicksProven'])
+        self.assertFalse(result['objectiveOptimalityProven'])
 
 
 if __name__ == '__main__':

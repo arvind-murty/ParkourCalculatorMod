@@ -4,6 +4,8 @@ Status, 2026-10-26: **run ticks are prototyped** within the continuous model. [R
 
 The [block-route search prototype](BLOCK_ROUTE_SEARCH.md) accepts fixed start/goal supports and an unordered set of intermediate supports, keeps sprint-jump/sprint-45 inputs fixed, chooses height-dependent ordinary or short stair profiles, checks their floor/entry conditions and selects a route through this run-ticks evaluator. Use `sceneModel: support_planes` for different heights and `python3 -m standalone.autonomy.solve_blocks`; `standalone.autonomy.solve` remains the ordered-route entry. Short stairs use a takeoff plus one air input, and all accepted profile schedules pass the existing continuous Y validator. Ceilings remain deferred.
 
+Block-route search ranks [total elapsed ticks first, then objective](SEARCH_OBJECTIVE.md), and continues across tied routes/profiles/allocations. The first-feasible and run-count improvement behavior below describes the standalone ordered-route CLI, not the block-route stopping policy.
+
 This headless planner implements the first-failing-jump heuristic over the existing standalone IPOPT solver:
 
 1. Try zero added run ticks before each jump.

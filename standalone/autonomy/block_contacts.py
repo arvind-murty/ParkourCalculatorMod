@@ -6,6 +6,7 @@ from standalone.ipopt import prepare, validate
 from standalone.ipopt.ladder import f32, vertical_move
 from .block_profiles import stair_jump_profile
 from .route import center_bounds, supports
+from .ranking import candidate_rank
 from .search import find_route
 
 
@@ -77,13 +78,18 @@ def validate_vertical_schedule(route, profiles, plan):
 
 
 def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candidate_seconds, retries,
-                           max_branches, improve=False, python_executable=None, cancel_event=None):
+                           max_branches, improve=False, rank_equal_cost=False, optimize_goal=False,
+                           python_executable=None, cancel_event=None):
     deadline = time.monotonic() + seconds
     queue, seen, serial = [(0.0, 0, [])], {()}, 0
     attempts, inner_attempts = [], []
+    best_result = None
     termination = 'contact_search_exhausted'
     while queue and len(attempts) < max_branches:
         if cancel_event is not None and cancel_event.is_set():
+            if best_result is not None:
+                best_result.update(termination='cancelled', attempts=inner_attempts, contactAttempts=attempts)
+                return best_result
             return {'status': 'cancelled', 'termination': 'cancelled', 'best': None,
                     'attempts': inner_attempts, 'contactAttempts': attempts}
         remaining = deadline - time.monotonic()
@@ -93,8 +99,11 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
         score, _, rows = heapq.heappop(queue)
         branch = copy.deepcopy(route)
         branch['constraints'].extend(rows)
+        if best_result is not None:
+            branch['maxTotalRunTicks'] = min(branch['maxTotalRunTicks'], best_result['best']['cost'])
         result = find_route(branch, compiler, seconds=remaining, candidate_seconds=candidate_seconds,
-                            retries=retries, improve=improve, python_executable=python_executable,
+                            retries=retries, improve=improve, rank_equal_cost=rank_equal_cost,
+                            optimize_goal=optimize_goal, python_executable=python_executable,
                             cancel_event=cancel_event)
         inner_attempts.extend(result['attempts'])
         conflicts = contact_conflicts(checks, result['best']['plan'], result['best']['candidate']) if result['best'] else []
@@ -102,6 +111,9 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                          'conflicts': [{'block': c['block']['id'], 'state': c['state'], 'reason': c['reason']}
                                        for c in conflicts], 'termination': result['termination']})
         if result['status'] in ('error', 'cancelled'):
+            if best_result is not None:
+                best_result.update(termination=result['status'], attempts=inner_attempts, contactAttempts=attempts)
+                return best_result
             result.update(attempts=inner_attempts, contactAttempts=attempts)
             return result
         if result['best'] is None:
@@ -116,7 +128,11 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
             result['best']['vertical'] = vertical['vertical']
             result['best']['candidate'].update({key: vertical[key] for key in ('y', 'vy', 'onGround')})
             result.update(attempts=inner_attempts, contactAttempts=attempts)
-            return result
+            if not rank_equal_cost:
+                return result
+            if best_result is None or candidate_rank(result['best'], route['objective']) < candidate_rank(best_result['best'], route['objective']):
+                best_result = result
+            continue
         conflict = conflicts[0]
         for row in avoid_contact_rows(conflict, max(route['supportClearance'], 2e-7)):
             new_rows = rows + [row]
@@ -129,5 +145,8 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
             heapq.heappush(queue, (score + delta, serial, new_rows))
     if queue and len(attempts) >= max_branches:
         termination = 'contact_branch_limit'
+    if best_result is not None:
+        best_result.update(termination=termination, attempts=inner_attempts, contactAttempts=attempts)
+        return best_result
     return {'status': 'unknown', 'termination': termination, 'best': None,
             'attempts': inner_attempts, 'contactAttempts': attempts}

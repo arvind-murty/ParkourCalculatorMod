@@ -3,6 +3,7 @@ import math
 
 from standalone.ipopt.ladder import f32
 from standalone.ipopt.model import integer, number
+from .ranking import objective_spec
 
 
 HALF_WIDTH = f32(0.6) / 2
@@ -12,6 +13,7 @@ def prepare_route(request):
     route = copy.deepcopy(request)
     if not isinstance(route, dict) or type(route.get('version')) is not int or route['version'] != 1:
         raise ValueError('Expected a version 1 block route')
+    route['objective'] = objective_spec(route.get('objective'))
     blocks = route.get('blocks')
     if not isinstance(blocks, list) or len(blocks) < 2:
         raise ValueError('Supply a start block and at least one landing block')

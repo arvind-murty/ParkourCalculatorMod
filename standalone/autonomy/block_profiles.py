@@ -56,7 +56,7 @@ def stair_jump_profile(source_top, target_top):
 def compile_open_air_route(request, *, max_inputs=200):
     if not isinstance(request, dict):
         raise ValueError('Expected a block-route request')
-    allowed = {'version', 'sceneModel', 'initial', 'blocks', 'inputs', 'runBounds',
+    allowed = {'version', 'sceneModel', 'initial', 'blocks', 'inputs', 'runBounds', 'objective',
                'maxTotalRunTicks', 'supportClearance', 'constraints'}
     extra = set(request) - allowed
     if extra:

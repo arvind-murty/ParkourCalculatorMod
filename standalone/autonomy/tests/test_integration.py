@@ -8,7 +8,9 @@ from standalone.autonomy import find_route, prepare_route, schedule
 from standalone.autonomy.block_profiles import compile_open_air_route
 from standalone.autonomy.block_search import compile_block_path, find_blocks, prepare_scene
 from standalone.autonomy.compiler import JavaCompiler
-from standalone.autonomy.route import supports
+from standalone.autonomy.route import initial_guess, supports
+from standalone.autonomy.block_contacts import validate_vertical_schedule
+from standalone.ipopt import prepare, validate
 
 
 CONFIG = os.environ.get('PKC_RUN_TICKS_COMPILER')
@@ -18,20 +20,65 @@ FIXTURES = Path(__file__).parents[1] / 'fixtures'
 
 @unittest.skipUnless(CONFIG and RUNTIME, 'Set PKC_RUN_TICKS_COMPILER and PKC_IPOPT_PYTHON')
 class IntegrationTests(unittest.TestCase):
+    def test_grounded_jump_after_leaving_the_edge_uses_only_the_scheduled_inputs(self):
+        request = json.loads((FIXTURES / 'blocks-required-run.json').read_text())
+        request['initial']['position'][0] = .9
+        request['initial']['velocity'][0] = .4
+        request['blocks'][0]['bounds'] = [5, 6, 0, 1]
+        scene = prepare_scene(request)
+        compiled = compile_block_path(scene, ['start', 'goal'])
+        route = compiled['route']
+        plan = schedule(route, [1])
+        with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
+            coefficients = compiler.compile(route, plan, 3)
+        problem = prepare(dict(coefficients, version=1, ticks=plan['ticks'], position=[.9, .5],
+                               velocity=[.4, 0], yaw=initial_guess(route, plan), threshold=.005,
+                               walls=plan['walls'], objective={'axis': 'X', 'sense': 'MAX', 'tick': plan['ticks']}))
+        checked = validate(problem, problem['yaw'])
+        self.assertTrue(checked['feasible'], checked)
+        self.assertEqual(plan['ticks'], 13)
+        self.assertEqual(len(checked['yaw']), 13)
+        self.assertTrue(supports(route['blocks'][0], *checked['positions'][0]))
+        self.assertFalse(supports(route['blocks'][0], *checked['positions'][1]))
+        vertical = validate_vertical_schedule(route, compiled['profiles'], plan)
+        self.assertTrue(vertical['feasible'])
+        self.assertTrue(vertical['onGround'][1])
+        self.assertTrue(plan['jump'][1])
+
+    def test_configured_objective_is_optimized_after_fixing_the_tick_count(self):
+        request = json.loads((FIXTURES / 'blocks-required-run.json').read_text())
+        request['blocks'][0]['bounds'] = [2.5, 3.5, 0, 1]
+        values = {}
+        with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
+            for sense in ['MAX', 'MIN']:
+                request['objective'] = {'axis': 'Z', 'sense': sense}
+                result = find_blocks(request, compiler, seconds=15, route_seconds=4,
+                                     candidate_seconds=1, retries=0, python_executable=RUNTIME)
+                self.assertEqual(result['status'], 'feasible', result)
+                self.assertEqual(result['best']['plan']['ticks'], 12)
+                candidate = result['best']['candidate']
+                self.assertEqual(candidate['objective'], candidate['positions'][-1][1])
+                values[sense] = candidate['objective']
+                self.assertTrue(result['minimumTicksProven'])
+                self.assertFalse(result['objectiveOptimalityProven'])
+        self.assertGreater(values['MAX'], 1)
+        self.assertLess(values['MIN'], 0)
+
     def test_staircase_uses_two_short_profiles_and_searches_the_run_between_them(self):
         request = json.loads((FIXTURES / 'blocks-staircase.json').read_text())
         with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
             result = find_blocks(request, compiler, seconds=20, route_seconds=4,
-                                 candidate_seconds=1, retries=0, python_executable=RUNTIME)
+                                 candidate_seconds=1, retries=0, improve=True, python_executable=RUNTIME)
         self.assertEqual(result['status'], 'feasible', result)
         self.assertEqual(result['best']['blockIds'], ['start', 'step', 'goal'])
         self.assertEqual([p['profileKind'] for p in result['best']['profiles']], ['stair', 'stair'])
         self.assertEqual(result['best']['route']['airtimes'], [2, 2])
-        self.assertEqual(result['best']['allocation'], [0, 1])
+        self.assertEqual(sum(result['best']['allocation']), 1)
         self.assertEqual(result['best']['plan']['ticks'], 5)
-        self.assertEqual(result['best']['candidate']['y'], [1, 1.5, 1.5, 1.5, 2, 2])
-        self.assertEqual(result['best']['candidate']['onGround'], [True, False, True, True, False, True])
-        self.assertEqual([c['state'] for c in result['best']['vertical']['contacts'] if c.get('step')], [1, 4])
+        self.assertEqual(result['best']['candidate']['y'][-1], 2)
+        self.assertEqual(result['best']['candidate']['onGround'], result['best']['plan']['grounded'] + [True])
+        self.assertEqual([c['state'] for c in result['best']['vertical']['contacts'] if c.get('step')],
+                         [event['jump'] + 1 for event in result['best']['plan']['events']])
         for entry in result['best']['route']['contactEntries']:
             self.assertEqual(entry['enter'], 1)
 
@@ -82,7 +129,7 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(result['status'], 'feasible', result)
         self.assertEqual(result['best']['allocation'], [1])
         self.assertEqual(result['best']['plan']['ticks'], 13)
-        self.assertFalse(result['minimumRunTicksProven'])
+        self.assertFalse(result['minimumTicksProven'])
 
     def test_only_endpoints_are_fixed_and_remote_supports_are_pruned(self):
         request = json.loads((FIXTURES / 'blocks-route-choice.json').read_text())
