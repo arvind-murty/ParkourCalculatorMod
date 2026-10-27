@@ -4,11 +4,34 @@ from pathlib import Path
 import unittest
 
 from standalone.autonomy.route import supports
+from standalone.autonomy.block_contacts import contact_conflicts
 from standalone.ipopt import prepare, validate
 from standalone.ipopt.model import fingerprint
 
 
 class BlockRouteWitnessTests(unittest.TestCase):
+    def test_saved_height_and_stair_routes_include_valid_retimed_y_contacts(self):
+        root = Path(__file__).parents[1]
+        artifacts = root / 'experiments' / 'height-and-stairs'
+        summaries = json.loads((artifacts / 'summary.json').read_text())
+        for label, summary in summaries.items():
+            with self.subTest(label=label):
+                request = prepare(json.loads((artifacts / (label + '-request.json')).read_text()))
+                result = json.loads((artifacts / (label + '-result.json')).read_text())
+                fixture = root / 'fixtures' / summary['fixture']
+                self.assertEqual(hashlib.sha256(fixture.read_bytes()).hexdigest(), summary['fixtureSha256'])
+                self.assertEqual(fingerprint(request), summary['fullProblemHash'])
+                best = result['best']
+                checked = validate(request, best['candidate']['yaw'])
+                self.assertTrue(checked['feasible'], checked)
+                self.assertEqual(checked['onGround'], best['plan']['grounded'] + [True])
+                self.assertEqual(checked['y'], best['candidate']['y'])
+                self.assertEqual(contact_conflicts(best['contactChecks'], best['plan'], checked), [])
+                for state, block, kind in best['plan']['supportChecks']:
+                    self.assertTrue(supports(best['route']['blocks'][block], *checked['positions'][state], kind=kind))
+                self.assertEqual(best['route']['airtimes'], summary['airtimes'])
+                self.assertEqual([p['profileKind'] for p in best['profiles']], summary['profileKinds'])
+
     def test_saved_routes_validate_horizontally_vertically_and_on_actual_supports(self):
         root = Path(__file__).parents[1]
         artifacts = root / 'experiments' / 'block-route-search'

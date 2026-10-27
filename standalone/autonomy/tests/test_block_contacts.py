@@ -2,7 +2,7 @@ import copy
 import unittest
 
 from standalone.autonomy.block_contacts import avoid_contact_rows, contact_conflicts, floor_checks
-from standalone.autonomy.block_profiles import ordinary_jump_profile
+from standalone.autonomy.block_profiles import ordinary_jump_profile, stair_jump_profile
 from standalone.autonomy.block_search import compile_block_path, prepare_scene
 from standalone.autonomy.route import schedule
 
@@ -16,6 +16,19 @@ def descending_scene():
 
 
 class FloorContactTests(unittest.TestCase):
+    def test_ordinary_profile_must_avoid_an_unplanned_first_movement_stair_cancel(self):
+        scene = descending_scene()
+        scene['blocks'][1]['top'] = 2.5
+        scene = prepare_scene(scene)
+        ordinary = ordinary_jump_profile(2, 2.5)
+        checks = floor_checks(scene, ['start', 'goal'], [ordinary])
+        self.assertEqual([(c['reason'], c['offset']) for c in checks], [('unplanned_stair', 1)])
+        scene['stairBoost'] = False
+        self.assertEqual(floor_checks(scene, ['start', 'goal'], [ordinary]), checks)
+        stair = stair_jump_profile(2, 2.5)
+        stair['profileKind'] = 'stair'
+        self.assertEqual(floor_checks(scene, ['start', 'goal'], [stair]), [])
+
     def test_descending_profile_must_miss_the_departure_floor_before_the_lower_target(self):
         scene = prepare_scene(descending_scene())
         compiled = compile_block_path(scene, ['start', 'goal'])

@@ -31,6 +31,28 @@ def ordinary_jump_profile(source_top, target_top, *, max_inputs=200):
     return None
 
 
+def stair_jump_profile(source_top, target_top):
+    source_top = number(source_top, 'source top')
+    target_top = number(target_top, 'target top')
+    if not f32(.42) < target_top - source_top <= f32(.6):
+        return None
+    config = {'threshold': .005, 'jumpVelocity': [f32(.42), None], 'sneak': [False, False],
+              'contacts': [{'state': 1, 'plane': target_top, 'direction': -1, 'step': True},
+                           {'state': 2, 'plane': target_top, 'direction': -1}]}
+    y, vy, ground = source_top, REST_CARRY, True
+    positions, velocities, grounded = [y], [vy], [ground]
+    for tick in range(2):
+        y, movement, ground, failures = vertical_step(config, tick, y, vy, False, ground, 0)
+        if failures:
+            return None
+        vy = vertical_carry(movement, False, False)
+        positions.append(y)
+        velocities.append(vy)
+        grounded.append(ground)
+    return {'airtime': 2, 'landingPhase': 'pre', 'position': positions, 'velocity': velocities,
+            'grounded': grounded, 'contacts': config['contacts']}
+
+
 def compile_open_air_route(request, *, max_inputs=200):
     if not isinstance(request, dict):
         raise ValueError('Expected a block-route request')

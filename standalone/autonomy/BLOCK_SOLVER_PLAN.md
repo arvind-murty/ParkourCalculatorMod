@@ -6,7 +6,7 @@
 
 Given an initial state, an ordered sequence of blocks/supports and relevant surrounding collision geometry, derive candidate transition profiles and the positional constraints needed to visit them. Pass each resulting route to the existing run-ticks search and numerical solver. The output is an accepted continuous trajectory with its chosen transition profiles and run allocation.
 
-The original run-ticks API consumes an ordered route. A new [route-selection prototype](BLOCK_ROUTE_SEARCH.md) now chooses intermediate supports from an unordered coplanar set, with only the start and goal fixed. Inputs stay sprint-jump plus sprint 45; their facings remain free. Choosing a route through an arbitrary world and deriving richer contact/obstacle profiles remain later work. Block solving removes the remaining manually supplied block order, air times and contact/obstacle conditions in stages, rather than replacing the angle optimizer or run-ticks allocator.
+The original run-ticks API consumes an ordered route. The [route-selection prototype](BLOCK_ROUTE_SEARCH.md) now chooses intermediate supports from an unordered set at different heights, with only the start and goal fixed, and selects ordinary or short stair profiles. Inputs stay sprint-jump plus sprint 45; their facings remain free. Choosing a route through an arbitrary world and deriving ceiling/obstacle profiles remain later work. Block solving removes the remaining manually supplied block order, air times and contact/obstacle conditions in stages, rather than replacing the angle optimizer or run-ticks allocator.
 
 ```text
 block/support geometry + initial state + ordered route
@@ -26,12 +26,13 @@ The three layers remain distinct: orchestration generates the discrete alternati
 | Single-support footprints and wall-face derivation | Existing Java `ConstraintDeriver` and `SupportOverlap`; reuse them |
 | Scalar Y recurrence and prescribed floor/ceiling/step contacts | Existing `standalone.ipopt.ladder`; reuse it |
 | Ordinary open-air air time from source/target heights | First profile-compiler slice implemented in `block_profiles.py` |
-| Intermediate support selection with fixed endpoints and sprint-jump/sprint-45 inputs | Implemented for coplanar support planes in `block_search.py`, including repeated visits |
+| Intermediate support selection with fixed endpoints and sprint-jump/sprint-45 inputs | Implemented for the ordinary/stair support-plane family in `block_search.py`, including repeated visits |
 | Optimistic transition bounds, reverse goal reachability and a route-prefix pool | Implemented, with separate accounting for heuristic pool drops and unknown numerical attempts |
 | Different-height route edges and earlier-floor consistency | Implemented with the existing Y simulation and bounded outside-face positional branching |
+| Short half-block staircase profiles and their entry constraints | Implemented as takeoff plus one air input, with ordinary alternatives retained and run contacts retimed |
 | Finite solid side faces, general obstacle corridors and collision consistency | Not implemented in the new block path |
-| Ceiling placement/contact selection, jump cancellation and stair-boost constraints | Next profile families |
-| Choosing among profiles with joint run-count backtracking | Not implemented |
+| Ceiling placement/contact selection and ceiling-induced cancellation | Next pass |
+| Choosing among ordinary/stair profiles and their approach faces, with per-path run-count search | Implemented for the current floor/contact family; broader profile families remain later work |
 | Arbitrary block-route discovery, ladders, fluids and effects | Later extensions |
 
 ## First slice: ordinary open-air profiles
@@ -61,10 +62,10 @@ if compiled["status"] == "derived":
 
 ## Next milestones
 
-The [Stratfinder investigation](STRATFINDER_INVESTIGATION.md) checks both our native search and Curryocity's external tool. Its first proposed experiment is now implemented: an optimistic support/profile graph plus a shared pool of route prefixes, using conservative reach checks and the current ordered-route solver as the inner evaluator. Different arrivals at a block remain distinct; neither a visited flag nor a no-turn failure removes a free-turn route. The coplanar prototype passes a comparison with exhaustive enumeration of a small explicit support set. Next extend contact consistency and the profile families below; route proposal itself is no longer missing.
+The [Stratfinder investigation](STRATFINDER_INVESTIGATION.md) checks both our native search and Curryocity's external tool. Its first proposed experiment is implemented: an optimistic support/profile graph plus a shared pool of route prefixes, using conservative reach checks and the current ordered-route solver as the inner evaluator. Different arrivals and contact profiles remain distinct; neither a visited flag nor a no-turn failure removes a free-turn route. The initial coplanar checkpoint passed a comparison with exhaustive enumeration of a small explicit support set; height-dependent and short stair profiles now pass independent full-model acceptance. Ceilings are the next pass, as requested.
 
 1. **Ordinary profiles and support correctness.** Height-dependent route profiles and earlier-floor exclusions are implemented. Every descending crossing of an earlier support is checked, and a conflicting candidate branches over outside-face positional conditions. Extend from this support-plane model to explicit finite support side geometry separately. The standalone ordinary-profile helper still only supplies the destination floor event; scene-level contact checks belong to the route orchestrator.
-2. **Ceiling and stair-boost profile candidates.** Derive possible ceiling contacts from head clearance and footprint overlap. Model the user's stair-boost abstraction as a short jump profile, often 2 inputs, plus the positional entry constraints that make it applicable. Keep ordinary, ceiling-cancelled and step-cancelled alternatives distinct where geometry permits more than one. The old fixture's 1-input grounded step is a separate non-jump event, not a substitute for this family.
+2. **Ceiling profile candidates.** Stair boosts are implemented as 2-input short-jump profiles, one takeoff plus one air input, with generated entry constraints and normal-jump alternatives. The old fixture's 1-input grounded step remains a separate non-jump event. Next derive ceiling contacts from head clearance and footprint overlap, keeping the ceiling-cancelled alternatives distinct. The user explicitly deferred ceilings to the next pass.
 3. **Generate the extra positional conditions.** Each event specifies when its collision/support overlap must hold, which block/face it concerns, and any states that must stay outside to avoid an earlier landing or cancellation. Anchor these conditions to transition-relative events so inserting runs retimes them correctly. Reuse `ConstraintDeriver.deriveWall` and the existing support/entry machinery. Do not copy authored per-tick X/Z tables.
 4. **Finite obstacle corridors.** Branch over relevant passage sides and crossing intervals; use the 1.8.9 Y-X-Z ordering to construct constraints. A harmless boundary beside the path is not an infinite wall across unrelated inputs. Keep finite-face conditions and continuous clipping contacts consistent with the declared branch.
 5. **Joint discrete search.** If an early profile choice blocks a later transition, backtrack across both profile choices and run counts. Reoptimize the full prefix so position and inertia remain coupled. Retain local unknowns and return the best accepted route under a deadline.

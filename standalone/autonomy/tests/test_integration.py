@@ -18,6 +18,36 @@ FIXTURES = Path(__file__).parents[1] / 'fixtures'
 
 @unittest.skipUnless(CONFIG and RUNTIME, 'Set PKC_RUN_TICKS_COMPILER and PKC_IPOPT_PYTHON')
 class IntegrationTests(unittest.TestCase):
+    def test_staircase_uses_two_short_profiles_and_searches_the_run_between_them(self):
+        request = json.loads((FIXTURES / 'blocks-staircase.json').read_text())
+        with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
+            result = find_blocks(request, compiler, seconds=20, route_seconds=4,
+                                 candidate_seconds=1, retries=0, python_executable=RUNTIME)
+        self.assertEqual(result['status'], 'feasible', result)
+        self.assertEqual(result['best']['blockIds'], ['start', 'step', 'goal'])
+        self.assertEqual([p['profileKind'] for p in result['best']['profiles']], ['stair', 'stair'])
+        self.assertEqual(result['best']['route']['airtimes'], [2, 2])
+        self.assertEqual(result['best']['allocation'], [0, 1])
+        self.assertEqual(result['best']['plan']['ticks'], 5)
+        self.assertEqual(result['best']['candidate']['y'], [1, 1.5, 1.5, 1.5, 2, 2])
+        self.assertEqual(result['best']['candidate']['onGround'], [True, False, True, True, False, True])
+        self.assertEqual([c['state'] for c in result['best']['vertical']['contacts'] if c.get('step')], [1, 4])
+        for entry in result['best']['route']['contactEntries']:
+            self.assertEqual(entry['enter'], 1)
+
+    def test_ordinary_half_block_jump_survives_when_the_short_stair_profile_cannot_reach(self):
+        request = json.loads((FIXTURES / 'blocks-staircase.json').read_text())
+        request['maxJumps'] = 1
+        request['blocks'] = [b for b in request['blocks'] if b['id'] != 'step']
+        request['blocks'][0].update(bounds=[2.8, 3.8, 0, 1], top=1.5)
+        with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
+            result = find_blocks(request, compiler, seconds=20, route_seconds=4,
+                                 candidate_seconds=1, retries=0, python_executable=RUNTIME)
+        self.assertEqual(result['status'], 'feasible', result)
+        self.assertEqual(result['best']['profiles'][0]['profileKind'], 'ordinary')
+        self.assertEqual(result['best']['route']['airtimes'], [10])
+        self.assertGreater(len(result['attempts']), 1)
+
     def test_different_heights_generate_edge_specific_airtimes(self):
         request = json.loads((FIXTURES / 'blocks-height-route.json').read_text())
         with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
