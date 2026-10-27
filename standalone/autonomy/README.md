@@ -8,7 +8,7 @@ The [collision-box obstacle search](OBSTACLE_SEARCH.md) now implements height pr
 
 [ONE_TICK_CONTACT_PLAN.md](ONE_TICK_CONTACT_PLAN.md) records the implemented side-wall reversals and ceiling cancellations, before/after avoidance, shared sprint compilation, saved results and remaining gaps. Ladder/vine climbing remains deferred.
 
-[LADDER_STRATEGY_PLAN.md](LADDER_STRATEGY_PLAN.md) specifies the next family: generate and rank entry/fall/Sneak/consecutive-climb/exit schedules, derive Y with existing physics, then solve promising schedules with exact cell/contact/clamp guards. It is a plan, not an implemented climbing route search.
+[LADDER_STRATEGY_PLAN.md](LADDER_STRATEGY_PLAN.md) records the implemented standalone schedule generator and its 37 focused unit tests: entry/fall/Sneak/consecutive-climb/exit schedules, Y traces and timing groups. Numerical entry probes, horizontal ranking and ladder route integration remain planned; generated schedules declare vertical-only validation.
 
 Its expanded generator covers front/side entry, solver-found entry times plus up to five delayed inputs, optional one-input stops at the beginning/end of climbing and arbitrary interspersed non-climb Sneak masks. Equal total/post-exit airtimes are grouped for straight-line horizontal ranking, with explicit cap-aware first-input Sneak priority and diverse geometry backups.
 
