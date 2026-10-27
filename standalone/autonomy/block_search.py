@@ -6,7 +6,7 @@ from collections import deque
 
 from standalone.ipopt.model import integer, number
 from .block_contacts import floor_checks, solve_contact_branches
-from .block_profiles import compile_open_air_route, ordinary_jump_profile
+from .block_profiles import compile_open_air_route, ordinary_jump_profile, stair_jump_profile
 from .route import prepare_route
 
 
@@ -16,7 +16,7 @@ def prepare_scene(request):
         raise ValueError('Expected a block scene')
     allowed = {'version', 'sceneModel', 'initial', 'blocks', 'startBlock', 'goalBlock', 'inputs',
                'maxJumps', 'maxPrefixes', 'maxQueuedPrefixes', 'maxRunTicksPerJump', 'maxTotalRunTicks',
-               'maxFlightInputs', 'maxContactBranches', 'supportClearance'}
+               'maxFlightInputs', 'maxContactBranches', 'stairBoost', 'supportClearance'}
     extra = set(scene) - allowed
     if extra:
         raise ValueError('Unsupported block-scene fields: ' + ', '.join(sorted(extra)))
@@ -38,6 +38,8 @@ def prepare_scene(request):
         raise ValueError('Start and goal must name candidate support IDs')
     if scene['startBlock'] == scene['goalBlock']:
         raise ValueError('This route search requires different start and goal supports')
+    if type(scene.setdefault('stairBoost', True)) is not bool:
+        raise ValueError('stairBoost must be boolean')
     if not isinstance(scene.get('inputs', {}), dict):
         raise ValueError('Input policy must be an object')
     scene['inputs'] = dict(scene.get('inputs', {}))
@@ -110,47 +112,60 @@ def build_transition_graph(scene, compiler, *, seconds=5):
             raise ValueError('Empty support footprint')
         bounds[block] = footprint
     coordinate_scale = max(abs(value) for footprint in footprints for value in footprint)
-    rejected, profile_cache, flight_bounds = [], {}, {}
+    rejected, profile_cache, flight_bounds, transitions = [], {}, {}, {}
     profiles = {block: {} for block in ids}
+    edge_options = {block: {} for block in ids}
     for source in scene['blocks']:
         for target in scene['blocks']:
             remaining()
             key = (source['top'], target['top'])
             if key not in profile_cache:
-                profile_cache[key] = ordinary_jump_profile(*key, max_inputs=scene['maxFlightInputs'])
-            profile = profile_cache[key]
-            if profile is None:
+                ordinary = ordinary_jump_profile(*key, max_inputs=scene['maxFlightInputs'])
+                stair = stair_jump_profile(*key) if scene['stairBoost'] else None
+                profile_cache[key] = [('ordinary', ordinary, None)] if ordinary is not None else []
+                if stair is not None:
+                    profile_cache[key].extend(('stair', stair, {'axis': axis, 'direction': direction})
+                                              for axis in ('X', 'Z') for direction in (-1, 1))
+            options = profile_cache[key]
+            if not options:
                 rejected.append({'source': source['id'], 'target': target['id'],
                                  'reason': 'ordinary_profile_not_generated'})
                 continue
-            n = profile['airtime']
-            if n not in flight_bounds:
-                flight = compiler.compile(scene, {'grounded': [True] + [False] * (n - 1),
-                                                   'jump': [True] + [False] * (n - 1)}, remaining())
-                if len(flight['magnitude']) != n or len(flight['friction']) != n:
-                    raise ValueError('Invalid flight-bound coefficients')
-                if any(not math.isfinite(m) or not math.isfinite(f) or m < 0 or not 0 <= f < 1
-                       or f * m > (1 - f) * speed
-                       for m, f in zip(flight['magnitude'], flight['friction'])):
-                    raise ValueError('Flight coefficients exceed the movement bound')
-                travel, carry = 0.0, speed
-                for m, f in zip(flight['magnitude'][:-1], flight['friction'][:-1]):
-                    move = carry + m
-                    travel += move
-                    carry = move * f
-                radius = travel + runoff
-                padding = 1e-8 * (1 + radius) + 1e-12 * (1 + coordinate_scale) * (n + 1)
-                number(radius + padding, 'horizontal reach bound')
-                flight_bounds[n] = {'travel': travel, 'radius': radius + padding}
-            radius = flight_bounds[n]['radius']
-            gap = minimum_distance(bounds[source['id']], bounds[target['id']])
-            if gap > radius:
-                rejected.append({'source': source['id'], 'target': target['id'],
-                                 'reason': 'optimistic_horizontal_reach', 'gap': gap,
-                                 'radius': radius, 'airtime': n})
-                continue
-            adjacency[source['id']].append(target['id'])
-            profiles[source['id']][target['id']] = profile
+            for kind, profile, face in options:
+                n = profile['airtime']
+                if n not in flight_bounds:
+                    flight = compiler.compile(scene, {'grounded': [True] + [False] * (n - 1),
+                                                       'jump': [True] + [False] * (n - 1)}, remaining())
+                    if len(flight['magnitude']) != n or len(flight['friction']) != n:
+                        raise ValueError('Invalid flight-bound coefficients')
+                    if any(not math.isfinite(m) or not math.isfinite(f) or m < 0 or not 0 <= f < 1
+                           or f * m > (1 - f) * speed
+                           for m, f in zip(flight['magnitude'], flight['friction'])):
+                        raise ValueError('Flight coefficients exceed the movement bound')
+                    travel, carry = 0.0, speed
+                    for m, f in zip(flight['magnitude'][:-1], flight['friction'][:-1]):
+                        move = carry + m
+                        travel += move
+                        carry = move * f
+                    radius = travel + runoff
+                    padding = 1e-8 * (1 + radius) + 1e-12 * (1 + coordinate_scale) * (n + 1)
+                    number(radius + padding, 'horizontal reach bound')
+                    flight_bounds[n] = {'travel': travel, 'radius': radius + padding}
+                radius = flight_bounds[n]['radius']
+                gap = minimum_distance(bounds[source['id']], bounds[target['id']])
+                if gap > radius:
+                    rejected.append({'source': source['id'], 'target': target['id'],
+                                     'reason': 'optimistic_horizontal_reach', 'gap': gap,
+                                     'radius': radius, 'airtime': n, 'profileKind': kind})
+                    continue
+                if target['id'] not in edge_options[source['id']]:
+                    adjacency[source['id']].append(target['id'])
+                    edge_options[source['id']][target['id']] = []
+                    profiles[source['id']][target['id']] = profile
+                edge_id = 'e' + str(len(transitions))
+                transitions[edge_id] = {'source': source['id'], 'target': target['id'], 'profileKind': kind,
+                                        'profile': profile, 'entryFace': face}
+                edge_options[source['id']][target['id']].append(edge_id)
     reverse = {block: [] for block in ids}
     for source, targets in adjacency.items():
         for target in targets:
@@ -169,11 +184,12 @@ def build_transition_graph(scene, compiler, *, seconds=5):
         if cost != flight_to_goal[target]:
             continue
         for source in reverse[target]:
-            next_cost = cost + profiles[source][target]['airtime']
+            next_cost = cost + min(transitions[e]['profile']['airtime'] for e in edge_options[source][target])
             if next_cost < flight_to_goal.get(source, math.inf):
                 flight_to_goal[source] = next_cost
                 heapq.heappush(pending, (next_cost, source))
     return {'adjacency': adjacency, 'distanceToGoal': distances, 'profiles': profiles,
+            'transitions': transitions, 'edgeOptions': edge_options,
             'flightInputsToGoal': flight_to_goal, 'flightBounds': flight_bounds,
             'rejectedEdges': rejected,
             'profileLimitReached': any(r['reason'] == 'ordinary_profile_not_generated' for r in rejected),
@@ -182,7 +198,7 @@ def build_transition_graph(scene, compiler, *, seconds=5):
                       'radius': max((b['radius'] for b in flight_bounds.values()), default=0)}}
 
 
-def compile_block_path(scene, block_ids):
+def compile_block_path(scene, block_ids, transitions=None):
     by_id = {b['id']: b for b in scene['blocks']}
     if not isinstance(block_ids, (list, tuple)) or len(block_ids) < 2 or block_ids[0] != scene['startBlock']:
         raise ValueError('A candidate path starts at the start support and contains at least one jump')
@@ -193,6 +209,27 @@ def compile_block_path(scene, block_ids):
         block = copy.deepcopy(by_id[block_id])
         block['id'] = block_id + '@' + str(index)
         blocks.append(block)
+    if transitions is not None:
+        if len(transitions) != len(block_ids) - 1:
+            raise ValueError('One transition is required per selected edge')
+        selected, entries = [], []
+        for leg, transition in enumerate(transitions):
+            if transition['source'] != block_ids[leg] or transition['target'] != block_ids[leg + 1]:
+                raise ValueError('Selected transition does not match the support path')
+            profile = copy.deepcopy(transition['profile'])
+            profile.update(sourceBlock=blocks[leg]['id'], targetBlock=blocks[leg + 1]['id'],
+                           profileKind=transition['profileKind'])
+            selected.append(profile)
+            entries.append(dict(transition['entryFace'], outsideFrom=0, outsideThrough=0, enter=1)
+                           if transition['entryFace'] else None)
+        route = prepare_route({'version': 1, 'initial': scene['initial'], 'blocks': blocks,
+                               'inputs': scene['inputs'], 'airtimes': [p['airtime'] for p in selected],
+                               'contactEntries': entries, 'maxTotalRunTicks': scene['maxTotalRunTicks'],
+                               'runBounds': [[0, scene['maxRunTicksPerJump']] for _ in selected],
+                               'supportClearance': scene['supportClearance']})
+        route['profileDerivation'] = {'kind': 'selected_height_profiles', 'suppliedAirtimes': False,
+                                     'verticalModel': 'standalone.ipopt.ladder', 'solidSideFaces': False}
+        return {'status': 'derived', 'route': route, 'profiles': selected}
     compiled = compile_open_air_route({'version': 1, 'sceneModel': 'open_air_supports',
                                       'initial': scene['initial'], 'blocks': blocks, 'inputs': scene['inputs'],
                                       'maxTotalRunTicks': scene['maxTotalRunTicks'],
@@ -216,7 +253,7 @@ def search_block_paths(scene, graph, evaluate, *, seconds=60, improve=False, can
     serial = 0
     horizon_prunes, disconnected_prunes, pool_drops = 0, 0, 0
 
-    def offer(path, parent_status, parent_cost):
+    def offer(path, parent_status, parent_cost, selected=()):
         nonlocal serial, horizon_prunes, disconnected_prunes
         current = path[-1]
         if current not in distances:
@@ -227,12 +264,13 @@ def search_block_paths(scene, graph, evaluate, *, seconds=60, improve=False, can
             horizon_prunes += 1
             return
         serial += 1
-        prefix_inputs = sum(graph.get('profiles', {}).get(a, {}).get(b, {'airtime': 12})['airtime']
-                            for a, b in zip(path, path[1:]))
+        prefix_inputs = (sum(graph['transitions'][e]['profile']['airtime'] for e in selected) if selected else
+                         sum(graph.get('profiles', {}).get(a, {}).get(b, {'airtime': 12})['airtime']
+                             for a, b in zip(path, path[1:])))
         lower_inputs = prefix_inputs + graph.get('flightInputsToGoal', {}).get(current, 12 * distances[current])
         priority = (lower_inputs, lower_hops, parent_status != 'feasible', parent_cost,
                     minimum_distance(by_id[current]['bounds'], goal), serial)
-        heapq.heappush(pending, (priority, tuple(path)))
+        heapq.heappush(pending, (priority, tuple(path), tuple(selected)))
 
     offer([scene['startBlock']], 'feasible', 0)
     while pending:
@@ -245,10 +283,11 @@ def search_block_paths(scene, graph, evaluate, *, seconds=60, improve=False, can
         if len(attempts) >= scene['maxPrefixes']:
             termination = 'candidate_limit'
             break
-        _, path = heapq.heappop(pending)
+        _, path, selected = heapq.heappop(pending)
         status, cost = 'feasible', 0
         if len(path) > 1:
-            result = evaluate(list(path), max(.001, deadline - time.monotonic()))
+            available = max(.001, deadline - time.monotonic())
+            result = evaluate(list(path), available, transition_ids=selected) if selected else evaluate(list(path), available)
             if not isinstance(result, dict) or result.get('status') not in ('feasible', 'unknown', 'error', 'cancelled'):
                 raise ValueError('Invalid path evaluator result')
             status = result['status']
@@ -257,6 +296,7 @@ def search_block_paths(scene, graph, evaluate, *, seconds=60, improve=False, can
                     raise ValueError('A feasible path needs an accepted candidate')
                 cost = integer(result['best'].get('cost'), 'run cost', 0, scene['maxTotalRunTicks'])
             record = {'blockIds': list(path), 'status': status, 'cost': cost if status == 'feasible' else None,
+                      'transitionIds': list(selected),
                       'termination': result.get('termination'), 'elapsedSeconds': time.monotonic() - started,
                       'innerProbes': len(result.get('attempts', [])),
                       'contactBranches': len(result.get('contactAttempts', [])), 'error': result.get('error')}
@@ -272,13 +312,19 @@ def search_block_paths(scene, graph, evaluate, *, seconds=60, improve=False, can
                 if best is None or (cost, result['best']['plan']['ticks']) < (best['cost'], best['plan']['ticks']):
                     best = copy.deepcopy(result['best'])
                     best['blockIds'] = list(path)
+                    best['transitionIds'] = list(selected)
                 if not improve or best['cost'] == 0:
                     termination = 'first_feasible'
                     break
         if path[-1] == scene['goalBlock'] or len(path) - 1 >= scene['maxJumps']:
             continue
         for target in graph['adjacency'][path[-1]]:
-            offer(path + (target,), status, cost)
+            options = graph.get('edgeOptions', {}).get(path[-1], {}).get(target)
+            if options:
+                for edge in options:
+                    offer(path + (target,), status, cost, selected + (edge,))
+            else:
+                offer(path + (target,), status, cost)
         if len(pending) > scene['maxQueuedPrefixes']:
             pool_drops += len(pending) - scene['maxQueuedPrefixes']
             pending = heapq.nsmallest(scene['maxQueuedPrefixes'], pending)
@@ -315,8 +361,9 @@ def find_blocks(request, compiler, *, seconds=60, route_seconds=8, candidate_sec
         return {'status': 'error', 'termination': 'graph_compilation', 'error': str(error), 'best': None,
                 'attempts': [], 'elapsedSeconds': time.monotonic() - started}
 
-    def evaluate(block_ids, available):
-        compiled = compile_block_path(scene, block_ids)
+    def evaluate(block_ids, available, transition_ids=None):
+        selected = [graph['transitions'][e] for e in transition_ids] if transition_ids else None
+        compiled = compile_block_path(scene, block_ids, transitions=selected)
         if compiled['status'] != 'derived':
             return {'status': 'unknown', 'termination': 'profile_limit'}
         checks = floor_checks(scene, block_ids, compiled['profiles'])
@@ -330,7 +377,7 @@ def find_blocks(request, compiler, *, seconds=60, route_seconds=8, candidate_sec
                                 cancel_event=cancel_event, on_attempt=on_attempt)
     result.update(elapsedSeconds=time.monotonic() - started, graph=graph, scene=scene,
                   validationLevel='continuous_support_planes_with_floor_checks',
-                  assumptions={'solidSideFaces': False, 'ceilings': False, 'stairBoost': False,
+                  assumptions={'solidSideFaces': False, 'ceilings': False, 'stairBoost': scene['stairBoost'],
                                'inputPolicy': 'sprint_jump_sprint_45', 'facings': 'free',
                                'routeOrderSupplied': False, 'airtimesSupplied': False,
                                'otherFloorContacts': 'checked_at_generated_crossings'})

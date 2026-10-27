@@ -4,7 +4,7 @@ import threading
 import unittest
 
 from standalone.autonomy.block_search import build_transition_graph, compile_block_path, find_blocks, prepare_scene, search_block_paths
-from standalone.autonomy.route import HALF_WIDTH
+from standalone.autonomy.route import HALF_WIDTH, schedule
 from standalone.ipopt import prepare, validate
 
 
@@ -78,6 +78,24 @@ class BlockSceneTests(unittest.TestCase):
 
 
 class TransitionGraphTests(unittest.TestCase):
+    def test_stair_and_ordinary_profiles_remain_separate_options_for_the_same_blocks(self):
+        request = scene()
+        request['sceneModel'] = 'support_planes'
+        request['blocks'] = [request['blocks'][0], {'id': 'goal', 'bounds': [1, 2, 0, 1], 'top': 1.5}]
+        request = prepare_scene(request)
+        topology = build_transition_graph(request, Coefficients())
+        edges = [topology['transitions'][e] for e in topology['edgeOptions']['start']['goal']]
+        self.assertEqual(sorted(e['profile']['airtime'] for e in edges), [2, 2, 2, 2, 10])
+        stair = next(e for e in edges if e['profileKind'] == 'stair')
+        compiled = compile_block_path(request, ['start', 'goal'], transitions=[stair])
+        plan = schedule(compiled['route'], [2])
+        self.assertEqual(plan['grounded'], [True, True, True, False])
+        self.assertEqual(plan['jump'], [False, False, True, False])
+        entries = [row for row in plan['walls'] if row['name'] == 'contact_enter:0']
+        self.assertEqual({row['t1'] for row in entries}, {3})
+        self.assertEqual({row['mode'] for row in entries}, {'X', 'Z'})
+        self.assertIn((3, 1, 'landing'), plan['supportChecks'])
+
     def test_reach_bound_removes_remote_support_without_merging_blocks(self):
         request = scene()
         request['blocks'].append({'id': 'remote', 'bounds': [100, 101, 0, 1], 'top': 1})
@@ -130,6 +148,22 @@ class TransitionGraphTests(unittest.TestCase):
 
 
 class BlockPathSearchTests(unittest.TestCase):
+    def test_same_block_route_keeps_different_contact_profiles(self):
+        topology = graph({'start': ['goal'], 'goal': []}, {'start': 1, 'goal': 0})
+        topology.update(edgeOptions={'start': {'goal': ['bad', 'good', 'ordinary']}},
+                        flightInputsToGoal={'start': 2, 'goal': 0},
+                        transitions={'bad': {'profile': {'airtime': 2}}, 'good': {'profile': {'airtime': 2}},
+                                     'ordinary': {'profile': {'airtime': 10}}})
+        calls = []
+
+        def evaluate(path, remaining, transition_ids):
+            calls.append(tuple(transition_ids))
+            return accepted() if transition_ids == ('good',) else {'status': 'unknown'}
+
+        result = search_block_paths(scene(), topology, evaluate)
+        self.assertEqual(calls, [('bad',), ('good',)])
+        self.assertEqual(result['best']['transitionIds'], ['good'])
+
     def test_different_arrivals_at_the_same_block_are_not_deduplicated(self):
         topology = graph({'start': ['b', 'c'], 'b': ['goal'], 'c': ['b'], 'goal': []},
                          {'goal': 0, 'b': 1, 'c': 2, 'start': 2})

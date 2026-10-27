@@ -2,15 +2,18 @@ import copy
 import heapq
 import time
 
+from standalone.ipopt import prepare, validate
 from standalone.ipopt.ladder import f32, vertical_move
+from .block_profiles import stair_jump_profile
 from .route import center_bounds, supports
 from .search import find_route
 
 
 def floor_checks(scene, block_ids, profiles):
     checks = []
+    by_id = {b['id']: b for b in scene['blocks']}
     for leg, profile in enumerate(profiles):
-        target_top = scene['blocks'][next(i for i, b in enumerate(scene['blocks']) if b['id'] == block_ids[leg + 1])]['top']
+        target_top = by_id[block_ids[leg + 1]]['top']
         config = {'threshold': .005, 'jumpVelocity': [f32(.42)] + [None] * (profile['airtime'] - 1),
                   'sneak': [False] * profile['airtime']}
         for offset in range(profile['airtime']):
@@ -23,6 +26,10 @@ def floor_checks(scene, block_ids, profiles):
                 top = block['top']
                 if next_y <= top <= y and not (offset + 1 == profile['airtime'] and top == target_top):
                     checks.append({'leg': leg, 'offset': offset, 'block': copy.deepcopy(block), 'reason': 'earlier_floor'})
+        for block in scene['blocks']:
+            selected_step = profile.get('profileKind') == 'stair' and block['id'] == block_ids[leg + 1]
+            if not selected_step and stair_jump_profile(profile['position'][0], block['top']) is not None:
+                checks.append({'leg': leg, 'offset': 1, 'block': copy.deepcopy(block), 'reason': 'unplanned_stair'})
     return checks
 
 
@@ -46,6 +53,27 @@ def avoid_contact_rows(conflict, clearance):
                                                  'mode': axis, 'cmp': cmp, 'rhs': edge,
                                                  'name': conflict['reason'] + ':' + conflict['block']['id']}))
     return [row for _, row in sorted(rows, key=lambda value: value[0])]
+
+
+def validate_vertical_schedule(route, profiles, plan):
+    n = plan['ticks']
+    contacts = []
+    for event, profile in zip(plan['events'], profiles):
+        for contact in profile['contacts']:
+            contacts.append(dict(contact, state=event['jump'] + contact['state']))
+        for tick in range(event['landed'], event['jump']):
+            contacts.append({'state': tick + 1, 'plane': profile['position'][0], 'direction': -1})
+    vertical = {'profile': 'minecraft-1.8.9', 'position': route['initial']['position'][1],
+                'velocity': route['initial']['velocity'][1], 'onGround': True,
+                'previousHorizontalCollision': False, 'threshold': .005,
+                'jumpVelocity': [f32(.42) if jump else None for jump in plan['jump']],
+                'sneak': [False] * n, 'contacts': sorted(contacts, key=lambda contact: contact['state'])}
+    problem = prepare({'version': 1, 'ticks': n, 'position': [0, 0], 'velocity': [0, 0],
+                       'magnitude': [0] * n, 'friction': [.91] * n, 'base': [0] * n, 'yaw': [0] * n,
+                       'objective': {'axis': 'X', 'sense': 'MAX', 'tick': n}, 'vertical': vertical})
+    checked = validate(problem, problem['yaw'])
+    return {'feasible': checked['feasible'] and checked['onGround'] == plan['grounded'] + [True],
+            'vertical': vertical, 'y': checked['y'], 'vy': checked['vy'], 'onGround': checked['onGround']}
 
 
 def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candidate_seconds, retries,
@@ -79,7 +107,14 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
         if result['best'] is None:
             continue
         if not conflicts:
+            vertical = validate_vertical_schedule(branch, profiles, result['best']['plan'])
+            if not vertical['feasible']:
+                attempts[-1]['status'] = 'unknown'
+                attempts[-1]['termination'] = 'vertical_schedule_mismatch'
+                continue
             result['best'].update(route=branch, profiles=profiles, contactChecks=checks)
+            result['best']['vertical'] = vertical['vertical']
+            result['best']['candidate'].update({key: vertical[key] for key in ('y', 'vy', 'onGround')})
             result.update(attempts=inner_attempts, contactAttempts=attempts)
             return result
         conflict = conflicts[0]

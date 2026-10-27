@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import unittest
 
-from standalone.autonomy.block_profiles import compile_open_air_route, ordinary_jump_profile
+from standalone.autonomy.block_profiles import compile_open_air_route, ordinary_jump_profile, stair_jump_profile
 from standalone.ipopt.ladder import REST_CARRY
 from standalone.ipopt.model import prepare, validate
 
@@ -12,6 +12,29 @@ FIXTURE = Path(__file__).parents[1] / 'fixtures' / 'blocks-flat-two-jumps.json'
 
 
 class BlockProfileTests(unittest.TestCase):
+    def test_half_block_stair_has_a_takeoff_and_one_airborne_input(self):
+        profile = stair_jump_profile(1, 1.5)
+        self.assertEqual(profile['airtime'], 2)
+        self.assertEqual(profile['position'], [1, 1.5, 1.5])
+        self.assertEqual(profile['grounded'], [True, False, True])
+        self.assertTrue(profile['contacts'][0]['step'])
+        request = prepare({'version': 1, 'ticks': 2, 'position': [0, 0], 'velocity': [0, 0],
+                           'magnitude': [0, 0], 'friction': [.546, .91], 'base': [0, 0], 'yaw': [0, 0],
+                           'objective': {'axis': 'X', 'sense': 'MAX', 'tick': 2},
+                           'vertical': {'profile': 'minecraft-1.8.9', 'position': 1, 'velocity': REST_CARRY,
+                                        'onGround': True, 'previousHorizontalCollision': False,
+                                        'sneak': [False, False], 'jumpVelocity': [0.41999998688697815, None],
+                                        'contacts': profile['contacts'], 'referencePosition': profile['position'],
+                                        'referenceVelocity': profile['velocity']}})
+        result = validate(request, [0, 0])
+        self.assertTrue(result['feasible'], result)
+        self.assertEqual(result['onGround'], profile['grounded'])
+
+    def test_stair_profile_is_only_generated_when_the_existing_step_model_accepts_it(self):
+        for height in [0, .25, .41999998688697815, .7, 1]:
+            self.assertIsNone(stair_jump_profile(0, height))
+        self.assertIsNotNone(stair_jump_profile(0, .6000000238418579))
+
     def test_ordinary_height_tiers_and_existing_vertical_acceptance(self):
         for delta, expected in [(0, 12), (.5, 10), (1, 9), (-1, 14)]:
             with self.subTest(delta=delta):
