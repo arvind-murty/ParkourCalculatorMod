@@ -9,6 +9,7 @@ from .route import center_bounds
 
 AXES = ('X', 'Y', 'Z')
 ORDER = {'Y': 0, 'X': 1, 'Z': 2}
+DEFAULT_CAPS = {'horizontal': 2, 'vertical': 2, 'total': 3}
 
 
 def consecutive(first, second):
@@ -26,8 +27,48 @@ def outside(face, point, clearance=0):
 
 
 def passage_kind(chain):
-    count = sum(a['axis'] != 'Y' and b['axis'] != 'Y' for a, b in zip(chain, chain[1:]))
+    count = blockage_counts(chain)['horizontal']
     return 'cross_neo' if count == 1 else 'wide_neo' if count == 2 else 'vertical_passage' if count == 0 else 'long_neo'
+
+
+def blockage_counts(chain):
+    horizontal = sum(a['axis'] != 'Y' and b['axis'] != 'Y' for a, b in zip(chain, chain[1:]))
+    return {'horizontal': horizontal, 'vertical': len(chain) - 1 - horizontal, 'total': len(chain) - 1}
+
+
+def block_key(passage):
+    return ('block', passage['blockId']) if 'blockId' in passage else ('solid', passage.get('solidIndex'))
+
+
+def blockage_usage(passages):
+    usage = {}
+    for passage in passages:
+        counts = usage.setdefault(block_key(passage), dict.fromkeys(DEFAULT_CAPS, 0))
+        for key, value in blockage_counts(passage['faces']).items():
+            counts[key] += value
+    return usage
+
+
+def within_caps(passages, caps):
+    return all(all(counts[key] <= caps[key] for key in DEFAULT_CAPS) for counts in blockage_usage(passages).values())
+
+
+def gate_timeline(passages, events):
+    timeline = []
+    for passage in passages:
+        if passage['leg'] >= len(events):
+            continue
+        event = events[passage['leg']]
+        if event['landing'] is None:
+            continue
+        for first, second, offset in zip(passage['faces'], passage['faces'][1:], passage['gates']):
+            state = event['jump'] + offset
+            timeline.append({'blockId': passage.get('blockId', 'solid:' + str(passage.get('solidIndex'))),
+                             'solidIndex': passage.get('solidIndex'), 'leg': passage['leg'],
+                             'firstState': state, 'secondState': state + int(consecutive(first, second)),
+                             'type': first['axis'] + '->' + second['axis'],
+                             'kind': 'vertical' if 'Y' in (first['axis'], second['axis']) else 'horizontal'})
+    return sorted(timeline, key=lambda gate: (gate['firstState'], gate['secondState'], gate['blockId'], gate['leg']))
 
 
 def intervals(chain, gates, begin, end):
@@ -52,6 +93,11 @@ def face_chains(length):
 
 
 def validate_passages(route):
+    caps = route.setdefault('passageCaps', DEFAULT_CAPS.copy())
+    if not isinstance(caps, dict) or set(caps) != set(DEFAULT_CAPS):
+        raise ValueError('Supply horizontal, vertical and total passage caps')
+    if any(type(caps[key]) is not int or not 0 <= caps[key] <= maximum for key, maximum in DEFAULT_CAPS.items()):
+        raise ValueError('Passage caps cannot exceed two horizontal, two vertical and three total per block')
     passages = route.setdefault('passages', [])
     if not isinstance(passages, list):
         raise ValueError('Passages must be a list')
@@ -71,6 +117,10 @@ def validate_passages(route):
             raise ValueError('A blockage joins faces on different axes')
         if any(type(k) is not int or not -1000 <= k <= route['airtimes'][leg] for k in gates):
             raise ValueError('Invalid blockage gate offset')
+        if 'blockId' in passage and (not isinstance(passage['blockId'], str) or not passage['blockId']):
+            raise ValueError('Invalid passage block ID')
+    if not within_caps(passages, caps):
+        raise ValueError('Selected passages exceed the per-block blockage caps')
 
 
 def compile_passages(route, events):
@@ -108,7 +158,14 @@ def passage_y_valid(passage, event, profile):
 
 
 def passage_options(box, solid_index, leg, profile, route, plan, candidate, motion_bound,
-                    *, max_blockages=2, max_candidates=128, deadline=None):
+                    *, max_blockages=3, max_horizontal=2, max_vertical=2,
+                    max_candidates=128, deadline=None, block_id=None):
+    retained = [p for p in route['passages'] if (p['leg'], p['solidIndex']) != (leg, solid_index)]
+    key = ('block', block_id) if block_id is not None else ('solid', solid_index)
+    used = blockage_usage(retained).get(key, dict.fromkeys(DEFAULT_CAPS, 0))
+    caps = route.get('passageCaps', DEFAULT_CAPS)
+    remaining = {key: min(caps[key], maximum) - used[key] for key, maximum in
+                 [('horizontal', max_horizontal), ('vertical', max_vertical), ('total', max_blockages)]}
     event = plan['events'][leg]
     begin, end = -event['runTicks'], profile['airtime']
     offsets = list(range(begin, end + 1))
@@ -194,18 +251,22 @@ def passage_options(box, solid_index, leg, profile, route, plan, candidate, moti
                     return False
         return True
 
-    options, serial, generated, discarded, reach_pruned = [], 0, 0, 0, 0
+    options, serial, generated, discarded, reach_pruned, budget_pruned = [], 0, 0, 0, 0, 0
     expansion_cap, expanded_total, incomplete = max_candidates * 128, 0, False
-    for length in range(max_blockages + 1):
+    for length in range(max(0, remaining['total'] + 1)):
         for indices in face_chains(length):
             if expanded_total >= expansion_cap or deadline is not None and time.monotonic() >= deadline:
                 incomplete = True
                 break
             if any(chain_faces[a]['axis'] == chain_faces[b]['axis'] for a, b in zip(indices, indices[1:])):
                 continue
+            chain = [chain_faces[i] for i in indices]
+            counts = blockage_counts(chain)
+            if any(counts[key] > remaining[key] for key in DEFAULT_CAPS):
+                budget_pruned += 1
+                continue
             if segment(indices[0], begin, begin) is None or segment(indices[-1], end, end) is None:
                 continue
-            chain = [chain_faces[i] for i in indices]
             states = [(0.0, 0, begin, ())]
             while states and expanded_total < expansion_cap:
                 if deadline is not None and time.monotonic() >= deadline:
@@ -221,9 +282,12 @@ def passage_options(box, solid_index, leg, profile, route, plan, candidate, moti
                         reach_pruned += 1
                         continue
                     rank = score + tail + length * 1e-8
-                    passage = {'leg': leg, 'solidIndex': solid_index, 'faces': chain, 'gates': list(gates),
+                    passage = {'leg': leg, 'solidIndex': solid_index,
+                               'faces': chain, 'gates': list(gates), 'blockageCounts': counts,
                                'kind': passage_kind(chain), 'blockageCount': length,
                                'blockageTypes': [a['axis'] + '->' + b['axis'] for a, b in zip(chain, chain[1:])]}
+                    if block_id is not None:
+                        passage['blockId'] = block_id
                     serial += 1
                     generated += 1
                     item = (-rank, serial, passage)
@@ -251,4 +315,5 @@ def passage_options(box, solid_index, leg, profile, route, plan, candidate, moti
             'timingPoolDrops': discarded,
             'generationIncomplete': incomplete,
             'reachPruned': reach_pruned,
+            'budgetPruned': budget_pruned,
             'verticalFacesPruned': sum(valid[i][-1] == len(offsets) for i, f in enumerate(chain_faces) if f['axis'] == 'Y')}

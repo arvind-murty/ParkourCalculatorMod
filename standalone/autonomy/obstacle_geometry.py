@@ -33,6 +33,9 @@ def normalize_geometry(scene):
             if not isinstance(block, dict) or set(block) - {'id', 'bounds', 'top', 'solidIndex', 'sourceBlock'}:
                 raise ValueError('Invalid derived collision support')
             index = block.get('solidIndex')
+            block.setdefault('sourceBlock', block.get('id'))
+            if not isinstance(block['sourceBlock'], str) or not block['sourceBlock']:
+                raise ValueError('Collision supports require physical block provenance')
             if type(index) is not int or not 0 <= index < len(solids):
                 raise ValueError('Invalid support solid index')
             b = solids[index]

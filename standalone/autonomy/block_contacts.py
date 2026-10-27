@@ -7,7 +7,7 @@ from standalone.ipopt.ladder import f32, vertical_move, vertical_step
 from .route import center_bounds, supports
 from .ranking import candidate_rank
 from .search import find_route
-from .blockages import passage_options, passage_y_valid
+from .blockages import blockage_usage, gate_timeline, passage_options, passage_y_valid, within_caps
 from .obstacle_geometry import check_geometry
 
 
@@ -84,7 +84,12 @@ def validate_vertical_schedule(route, profiles, plan):
 def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candidate_seconds, retries,
                            max_branches, improve=False, rank_equal_cost=False, optimize_goal=False,
                            python_executable=None, cancel_event=None, geometry=None, motion_bound=None,
-                           max_blockages=2, max_passage_candidates=128):
+                           max_blockages=3, max_horizontal=2, max_vertical=2,
+                           max_passage_candidates=128, solid_blocks=None):
+    route = copy.deepcopy(route)
+    if solid_blocks is not None:
+        for passage in route.get('passages', []):
+            passage['blockId'] = solid_blocks[passage['solidIndex']]
     deadline = time.monotonic() + seconds
     queue, seen, serial = [(0.0, 0, [], route.get('passages', []))], {()}, 0
     attempts, inner_attempts = [], []
@@ -165,11 +170,15 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                     index = checked['solidIndex']
                     alternatives = passage_options(geometry['solids'][index], index, leg, profiles[leg], branch,
                                                    plan, result['best']['candidate'], motion_bound,
-                                                   max_blockages=max_blockages, max_candidates=max_passage_candidates,
+                                                   max_blockages=max_blockages, max_horizontal=max_horizontal,
+                                                   max_vertical=max_vertical, max_candidates=max_passage_candidates,
+                                                   block_id=solid_blocks[index] if solid_blocks is not None else None,
                                                    deadline=deadline)
                     attempts[-1]['passageGeneration'] = {k: v for k, v in alternatives.items() if k != 'options'}
                     for option in alternatives['options']:
                         new_passages = [p for p in passages if (p['leg'], p['solidIndex']) != (leg, index)] + [option['passage']]
+                        if not within_caps(new_passages, branch['passageCaps']):
+                            continue
                         key = (tuple(sorted((r['leg'], r['offset'], r['mode'], r['cmp'], r['rhs']) for r in rows)),
                                tuple(sorted((p['leg'], p['solidIndex'], tuple((f['axis'], f['direction'], f['plane']) for f in p['faces']),
                                              tuple(p['gates'])) for p in new_passages)))
@@ -182,6 +191,9 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                 result['best']['geometryCheck'] = checked
             result['best'].update(route=result['best'].get('route', branch), profiles=profiles, contactChecks=checks)
             result['best']['passages'] = passages
+            result['best']['blockageTimeline'] = gate_timeline(passages, result['best']['plan']['events'])
+            result['best']['blockageUsage'] = [{'blockId': value if kind == 'block' else 'solid:' + str(value), **counts}
+                                              for (kind, value), counts in blockage_usage(passages).items()]
             result['best']['vertical'] = vertical['vertical']
             result['best']['candidate'].update({key: vertical[key] for key in ('y', 'vy', 'onGround')})
             result.update(attempts=inner_attempts, contactAttempts=attempts)
