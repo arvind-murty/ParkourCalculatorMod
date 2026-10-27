@@ -18,6 +18,32 @@ FIXTURES = Path(__file__).parents[1] / 'fixtures'
 
 @unittest.skipUnless(CONFIG and RUNTIME, 'Set PKC_RUN_TICKS_COMPILER and PKC_IPOPT_PYTHON')
 class IntegrationTests(unittest.TestCase):
+    def test_different_heights_generate_edge_specific_airtimes(self):
+        request = json.loads((FIXTURES / 'blocks-height-route.json').read_text())
+        with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
+            result = find_blocks(request, compiler, seconds=20, route_seconds=4,
+                                 candidate_seconds=1, retries=0, python_executable=RUNTIME)
+        self.assertEqual(result['status'], 'feasible', result)
+        self.assertEqual(result['best']['blockIds'], ['start', 'raised', 'goal'])
+        self.assertEqual(result['best']['route']['airtimes'], [9, 9])
+        self.assertEqual(result['best']['plan']['ticks'], 18)
+        self.assertNotIn('goal', result['graph']['adjacency']['start'])
+        self.assertEqual(result['graph']['profiles']['raised']['start']['airtime'], 14)
+
+    def test_lower_target_cannot_be_accepted_through_an_earlier_floor(self):
+        request = {'version': 1, 'sceneModel': 'support_planes',
+                   'initial': {'position': [.5, 2, .5], 'velocity': [0, -.0784000015258789, 0]},
+                   'startBlock': 'start', 'goalBlock': 'goal', 'maxJumps': 1,
+                   'maxRunTicksPerJump': 0, 'maxTotalRunTicks': 0,
+                   'blocks': [{'id': 'start', 'bounds': [-5, 5, -5, 5], 'top': 2},
+                              {'id': 'goal', 'bounds': [2, 3, 0, 1], 'top': 1}]}
+        with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
+            result = find_blocks(request, compiler, seconds=15, route_seconds=5,
+                                 candidate_seconds=1, retries=0, python_executable=RUNTIME)
+        self.assertEqual(result['status'], 'unknown', result)
+        self.assertIsNone(result['best'])
+        self.assertEqual(result['attempts'][0]['contactBranches'], 5)
+
     def test_selected_block_path_can_require_an_added_ground_input(self):
         request = json.loads((FIXTURES / 'blocks-required-run.json').read_text())
         with JavaCompiler(json.loads(Path(CONFIG).read_text())) as compiler:
