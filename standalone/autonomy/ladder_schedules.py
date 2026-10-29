@@ -226,12 +226,15 @@ def _context_skeletons(context, stats):
     seen = set()
     variants = [{'hit': [False] * n, 'stopInputs': [], 'beginningStop': False, 'endStop': False,
                  'climbWindow': None}]
+    if context['exitKind'] == 'top' and not any(e['axis'] != 'Y' for e in context.get('contactEvents', [])):
+        variants = []
     for variant in variants:
         seen.add(tuple(variant['hit']))
         stats['skeletonOrigins'] += 1
         yield dict(context, **variant)
     for first in range(max(0, entry - 1, context.get('firstHitLowerBound', 0)), exit_state - 1):
-        for end in range(exit_state - 1, first, -1):
+        ends = [exit_state - 1] if context['exitKind'] == 'top' else range(exit_state - 1, first, -1)
+        for end in ends:
             for variant in climb_variants(first, end, n):
                 stats['skeletonOrigins'] += 1
                 key = tuple(variant['hit'])
@@ -271,6 +274,10 @@ def _mask_work(skeleton, config):
                 reason = None
                 if trace['status'] == 'invalid':
                     reason = 'vertical_model'
+                elif trace['ticks'] < exit_state:
+                    reason = 'early_landing'
+                elif config['finishAtExit'] and trace['status'] != 'simulated':
+                    reason = 'airborne_terminal_required'
                 elif any(ladder[t] and not region['minY'] <= y < region['maxY']
                          for t, y in enumerate(trace['position'])):
                     reason = 'inside_y'
@@ -280,7 +287,7 @@ def _mask_work(skeleton, config):
                     reason = 'landing_horizon'
                 if reason is None:
                     try:
-                        ladder_units(skeleton)
+                        ladder_units(dict(skeleton, trace=trace))
                     except ValueError:
                         reason = 'movement_phase'
                 if reason is None:

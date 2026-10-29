@@ -299,6 +299,18 @@ def schedule(route, allocation, stage='jump'):
     scene_contacts = merge_contacts(scene_contacts + additional_scene, scene=True)
     if vertical:
         extra['verticalContacts'] = merge_contacts([dict(c, axis=1) for c in vertical])
+    from .movement_units import shifted_unit, movement_program
+    relative_units = route.get('movementUnits')
+    if relative_units is None:
+        relative_units = [movement_program(duration, [e for e in route.get('ladderEvents', []) if e['leg'] == leg])
+                          for leg, duration in enumerate(route['airtimes'])]
+    units = []
+    for event in events:
+        if event['runTicks']:
+            units.append({'type': 'normal', 'start': event['landed'], 'end': event['jump'], 'grounded': True})
+        if event['landing'] is not None:
+            units.extend(shifted_unit(unit, event['jump']) for unit in relative_units[event['leg']])
+    extra['movementUnits'] = units
     return {'ticks': state, 'grounded': grounded, 'jump': jump, 'events': events,
             'supportChecks': supports_at, 'exitChecks': exit_checks, 'walls': walls,
             'allocation': list(allocation), 'stage': stage, 'passageFailures': passage_failures,

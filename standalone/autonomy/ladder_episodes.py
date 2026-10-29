@@ -84,7 +84,7 @@ def compose_ladder_episodes(source_top, target_top, episodes, *, max_inputs=200,
         units = movement_program(n, events)
     except ValueError:
         return None
-    profile['movementUnits'] = units
+    profile['movementUnits'] = copy.deepcopy(units)
     return {'profile': profile, 'ladderEvents': events, 'trace': trace,
             'movementUnits': units, 'terminal': 'airborne' if target_top is None else 'landed',
             'episodes': copy.deepcopy(episodes)}

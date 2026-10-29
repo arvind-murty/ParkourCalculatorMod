@@ -18,7 +18,8 @@ def movement_unit(kind, start, end, **parameters):
 def ladder_units(schedule, region_id=None):
     e, x = schedule['entryState'], schedule['exitState']
     start = max(0, e - 1)
-    hits = [t for t in range(start, x - 1) if schedule['hit'][t]]
+    actual = schedule.get('trace', {}).get('climbRefreshed', schedule['hit'])
+    hits = [t for t in range(start, x - 1) if actual[t]]
     if any(schedule['hit'][t] for t in range(len(schedule['hit'])) if t < start or t >= x - 1):
         raise ValueError('Climb hits must end inside the ladder')
     window = schedule.get('climbWindow')
@@ -26,9 +27,10 @@ def ladder_units(schedule, region_id=None):
         if hits != list(range(hits[0], hits[-1] + 1)):
             raise ValueError('A ladder interaction cannot resume climbing after falling')
         first, end = window if window is not None else (hits[0], hits[-1] + 1)
+        first, end = min(first, hits[0]), max(end, hits[-1] + 1)
         if not start <= first <= hits[0] <= hits[-1] < end <= x - 1:
             raise ValueError('Invalid climbing window')
-        stops = [t for t in range(first, end) if not schedule['hit'][t]]
+        stops = [t for t in range(first, end) if not actual[t]]
         if any(t not in (first, end - 1) for t in stops) or len(stops) > 2:
             raise ValueError('Climbing only allows one-input endpoint stops')
         climb_end = x if end == x - 1 else end
@@ -51,9 +53,22 @@ def movement_program(ticks, events):
     integer(ticks, 'movement program ticks', 1, 200)
     units, cursor = [], 0
     for event in sorted(events, key=lambda e: e['schedule']['entryState']):
-        segment = ladder_units(event['schedule'], event['column']['id'])
+        column = event['column']
+        region_id = column['id'] if 'id' in column else str(tuple(column[k] for k in ('x', 'minY', 'z', 'maxY')))
+        segment = ladder_units(event['schedule'], region_id)
         if segment[0]['start'] < cursor:
-            raise ValueError('Movement units overlap')
+            seam = segment[0]['start']
+            if seam != cursor - 1:
+                raise ValueError('Movement units overlap')
+            previous = units[-1]
+            previous['end'] = seam
+            previous['sneakInputs'] = [t for t in previous.get('sneakInputs', []) if t < seam]
+            if any(t >= seam for t in previous.get('hitInputs', [])):
+                raise ValueError('Competing climb contacts on a transfer seam')
+            if previous['start'] == seam:
+                segment[0]['additionalOccupiedStates'] = list(range(*previous['occupiedStates']))
+                units.pop()
+            cursor = seam
         if cursor < segment[0]['start']:
             units.append(movement_unit('normal', cursor, segment[0]['start']))
         units.extend(segment)
@@ -62,6 +77,10 @@ def movement_program(ticks, events):
         raise ValueError('Movement unit exceeds program horizon')
     if cursor < ticks:
         units.append(movement_unit('normal', cursor, ticks))
+    if events:
+        sneak = events[0]['schedule']['sneak']
+        for unit in units:
+            unit['sneakInputs'] = [t for t in range(unit['start'], unit['end']) if sneak[t]]
     return units
 
 
@@ -74,6 +93,8 @@ def compile_units(ticks, units):
             e, x = unit['occupiedStates']
             for state in range(e, x):
                 ladder[state] = True
+        for state in unit.get('additionalOccupiedStates', []):
+            ladder[state] = True
         for tick in unit.get('hitInputs', []):
             if unit['type'] != 'ladder_climb' or not unit['start'] <= tick < unit['end']:
                 raise ValueError('Invalid unit climb input')
@@ -86,6 +107,16 @@ def compile_units(ticks, units):
     if cursor != ticks:
         raise ValueError('Movement program is incomplete')
     return {'ladderTicks': ladder, 'hit': hit, 'sneak': sneak}
+
+
+def shifted_unit(unit, offset):
+    result = copy.deepcopy(unit)
+    for key in ('start', 'end'):
+        result[key] += offset
+    for key in ('hitWindow', 'occupiedStates', 'stopInputs', 'hitInputs', 'sneakInputs', 'additionalOccupiedStates'):
+        if key in result:
+            result[key] = [t + offset for t in result[key]]
+    return result
 
 
 def exit_matches(kind, y, region):
