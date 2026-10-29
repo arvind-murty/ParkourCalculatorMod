@@ -5,6 +5,7 @@ from collections import deque
 
 from standalone.ipopt import prepare, validate
 from standalone.ipopt.model import integer
+from .movement_contacts import contact_signature, interleave_families
 
 
 def schedule_plan(schedule):
@@ -44,7 +45,9 @@ def rank_ladder_schedules(schedules, compiler, *, seconds=10, max_ranked=2048, r
     buckets = {}
     for item in sorted(enumerate(schedules), key=lambda item: (item[1]['ticks'], item[1]['postExitTicks'])):
         buckets.setdefault((item[1]['ticks'], item[1]['postExitTicks']), deque()).append(item)
-    active, ordered = deque(buckets.values()), []
+    active = deque(deque(interleave_families(bucket, lambda row: contact_signature(row[1].get('contactEvents', []))))
+                   for bucket in buckets.values())
+    ordered = []
     while active:
         bucket = active.popleft()
         ordered.append(bucket.popleft())
@@ -85,7 +88,7 @@ def rank_ladder_schedules(schedules, compiler, *, seconds=10, max_ranked=2048, r
     for row in ranked:
         s = row['schedule']
         bucket = s['ticks'], s['postExitTicks']
-        channel = bucket + (s['entryFamily'], s['entryChannel'], s['exitKind'])
+        channel = bucket + (s['entryFamily'], s['entryChannel'], s['exitKind'], contact_signature(s.get('contactEvents', [])))
         if counts.get(bucket, 0) < representatives or channel not in diversity:
             preferred.append(row)
             counts[bucket] = counts.get(bucket, 0) + 1

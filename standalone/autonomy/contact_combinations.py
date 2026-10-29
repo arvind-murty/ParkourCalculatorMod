@@ -105,7 +105,8 @@ def compile_contact_events(route, events, ticks):
     return rows, horizontal, scene, vertical
 
 
-def contact_combinations(opportunities, *, max_events=3, limit=1000, ladder_windows=(), cancel_event=None):
+def contact_combinations(opportunities, *, max_events=3, limit=1000, ladder_windows=(), cancel_event=None,
+                         independent_events=False):
     integer(max_events, 'maximum combined contacts', 1, 200)
     integer(limit, 'combination work limit', 1, 2000000)
     unique = {}
@@ -129,7 +130,7 @@ def contact_combinations(opportunities, *, max_events=3, limit=1000, ladder_wind
             if len(legs) != 1:
                 continue
             leg = chosen[0]['leg']
-            if max(offsets) - min(offsets) > 1 and not any(
+            if not independent_events and max(offsets) - min(offsets) > 1 and not any(
                     window['leg'] == leg and window['start'] <= min(offsets) <= max(offsets) <= window['end']
                     for window in ladder_windows):
                 continue

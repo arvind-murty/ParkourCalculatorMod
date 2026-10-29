@@ -6,6 +6,7 @@ from standalone.ipopt.model import integer
 from .ladder_episodes import compose_ladder_episodes
 from .ladder_geometry import entry_channels, exit_faces
 from .ladder_schedules import generate_ladder_schedules
+from .movement_contacts import contact_signature, contact_variants, interleave_families, mixed_schedule_pool, program_seed
 
 
 def episode_from_event(event, offset=0):
@@ -39,10 +40,12 @@ def recompose(prefix, episodes, target_top, max_inputs, sneak=None, contacts=Non
 
 
 def append_ladder_programs(prefix, column, wall, *, toward, max_inputs=200, max_entry=14,
-                           max_programs=16, deadline=None, cancel_event=None):
+                           max_programs=16, solids=(), max_contact_variants=16, max_events=3,
+                           min_climb_inputs=0, deadline=None, cancel_event=None):
     integer(max_inputs, 'maximum chain inputs', 1, 200)
     integer(max_entry, 'maximum entry inputs', 0, 199)
     integer(max_programs, 'maximum extension programs', 1, 200000)
+    integer(min_climb_inputs, 'minimum climb inputs', 0, 200)
     cut = prefix['profile']['airtime']
     used = {e['column']['id'] for e in prefix['episodes']}
     if cut + 2 >= max_inputs or column['id'] in used:
@@ -59,20 +62,27 @@ def append_ladder_programs(prefix, column, wall, *, toward, max_inputs=200, max_
             channel = face['channel'] + '@' + str(state)
             channels[channel] = face
             entries.append({'family': face['family'], 'channel': channel, 'firstCandidateState': state})
-    pool = generate_ladder_schedules({'version': 1,
+    request = {'version': 1,
         'initial': {'position': prefix['trace']['position'][-1], 'velocity': prefix['trace']['velocity'][-1],
                     'onGround': False, 'previousHorizontalCollision': prefix['trace']['hit'][-1]},
         'region': {k: column[k] for k in ('minY', 'maxY')}, 'entries': entries,
         'finishAtExit': True, 'jumpAtStart': False, 'maxInputs': max_inputs - cut,
         'entryDelay': 0, 'maxSkeletons': 16000, 'maxSchedules': min(200000, max_programs * 32),
-        'maxMaskWork': 200000}, cancel_event=cancel_event, deadline=deadline)
+        'maxMaskWork': 200000}
+    pool = generate_ladder_schedules(request, cancel_event=cancel_event, deadline=deadline)
+    mixed = mixed_schedule_pool(request, solids, schedules=pool['schedules'], max_variants=max_contact_variants,
+                                max_events=max_events, deadline=deadline, cancel_event=cancel_event)
+    pool['schedules'].extend(mixed['schedules'])
     groups = {}
-    for s in sorted(pool['schedules'], key=lambda s: (s['entryChannel'].split('@')[0] != faces[0]['channel'],
+    for s in sorted((s for s in pool['schedules'] if sum(s['hit']) >= min_climb_inputs), key=lambda s: (s['entryChannel'].split('@')[0] != faces[0]['channel'],
                                                        sum(s['sneak']), s['ticks'] if s['exitKind'] == 'top' else -sum(s['hit']))):
-        groups.setdefault((s['entryState'], s['exitKind'], bool(any(s['hit']))), []).append(s)
+        groups.setdefault((s['entryState'], s['exitKind'], bool(any(s['hit'])),
+                           contact_signature(s.get('contactEvents', []))), []).append(s)
     ordered = [group[0] for _, group in sorted(groups.items(), key=lambda pair:
                (pair[0][0], pair[0][1] != 'top', not pair[0][2]))]
     ordered.extend(s for _, group in sorted(groups.items()) for s in group[1:])
+    ordered = interleave_families(ordered, lambda s: contact_signature(s.get('contactEvents', [])),
+                                  within=lambda s: s['entryState'])
     programs = []
     for s in ordered:
         if len(programs) >= max_programs or deadline is not None and time.monotonic() >= deadline \
@@ -90,12 +100,39 @@ def append_ladder_programs(prefix, column, wall, *, toward, max_inputs=200, max_
             programs.append(program)
     return {'programs': programs, 'generated': len(pool['schedules']),
             'generation': {k: v for k, v in pool.items() if k not in ('schedules', 'timingGroups')},
+            'mixedContacts': {k: v for k, v in mixed.items() if k != 'schedules'},
             'unprobedEntries': True, 'entryHorizon': horizon,
             'entryHorizonClipped': max_entry > horizon, 'maxPrograms': max_programs}
 
 
+def finish_programs(prefix, target_top, solids=(), *, max_inputs=200, max_contact_variants=16, max_events=3,
+                    deadline=None, cancel_event=None, report=None):
+    finish = recompose(prefix, prefix['episodes'], target_top, max_inputs)
+    if finish is not None:
+        yield finish
+    cut = prefix['profile']['airtime']
+    if cut >= max_inputs or not max_contact_variants:
+        return
+    seed = {'ticks': finish['profile']['airtime'], 'trace': finish['trace'],
+            'ladderTicks': finish['profile']['ladderTicks']} if finish is not None else program_seed(prefix, max_inputs)
+    if cut >= seed['ticks']:
+        return
+    variants = contact_variants(solids, seed['ticks'], schedules=[seed], start=cut,
+        existing=prefix['profile']['contactEvents'], max_variants=min(256, max_contact_variants),
+        max_events=max_events, deadline=deadline, cancel_event=cancel_event)
+    if report is not None:
+        report.update(phase='final_air', **{k: v for k, v in variants.items() if k != 'variants'})
+    for contacts in variants['variants']:
+        if deadline is not None and time.monotonic() >= deadline or cancel_event is not None and cancel_event.is_set():
+            return
+        changed = recompose(prefix, prefix['episodes'], target_top, max_inputs, contacts=contacts)
+        if changed is not None:
+            yield changed
+
+
 def iter_chain_programs(first, regions, solids, target, *, max_inputs=200, max_entry=14, max_interactions=12,
-                        max_programs=16, max_prefixes=64, max_pending=256, deadline=None, cancel_event=None, report=None):
+                        max_programs=16, max_prefixes=64, max_pending=256, max_contact_variants=16, max_events=3,
+                        min_climb_inputs=0, deadline=None, cancel_event=None, report=None):
     from .ladder_geometry import climb_walls
     integer(max_interactions, 'maximum ladder interactions', 1, 200)
     integer(max_prefixes, 'maximum chain prefixes', 1, 200000)
@@ -124,9 +161,11 @@ def iter_chain_programs(first, regions, solids, target, *, max_inputs=200, max_e
                       termination='in_progress', queueDrops=drops, generation=records,
                       unprobedEntries=True, maxInteractions=max_interactions, minimumTicksProven=False)
         if len(prefix['episodes']) > 1:
-            finish = recompose(prefix, prefix['episodes'], target['top'], max_inputs)
-            if finish is not None:
-                yield finish
+            final_report = {}
+            records.append(final_report)
+            yield from finish_programs(prefix, target['top'], solids, max_inputs=max_inputs,
+                max_contact_variants=max_contact_variants, max_events=max_events,
+                deadline=deadline, cancel_event=cancel_event, report=final_report)
         if len(prefix['episodes']) >= max_interactions:
             continue
         used = {e['column']['id'] for e in prefix['episodes']}
@@ -135,7 +174,10 @@ def iter_chain_programs(first, regions, solids, target, *, max_inputs=200, max_e
                 continue
             for wall in climb_walls(region, solids):
                 extension = append_ladder_programs(prefix, region, wall, toward=point, max_inputs=max_inputs,
-                    max_entry=max_entry, max_programs=max_programs, deadline=deadline, cancel_event=cancel_event)
+                    max_entry=max_entry, max_programs=max_programs, solids=solids,
+                    max_contact_variants=max_contact_variants, max_events=max_events,
+                    min_climb_inputs=min_climb_inputs,
+                    deadline=deadline, cancel_event=cancel_event)
                 generated += extension['generated']
                 records.append({k: v for k, v in extension.items() if k != 'programs'})
                 for program in extension['programs']:
@@ -158,13 +200,15 @@ def chain_programs(*args, **kwargs):
 
 
 def transfer_programs(first, second_column, second_wall, target, *, max_inputs=64, max_entry=14,
-                      max_programs=16, deadline=None, cancel_event=None):
+                      max_programs=16, solids=(), max_contact_variants=16, max_events=3,
+                      deadline=None, cancel_event=None):
     prefix = open_program(first)
     if prefix is None:
         return {'programs': [], 'generated': 0}
     point = [(target['bounds'][a] + target['bounds'][a + 1]) / 2 for a in (0, 2)]
     result = append_ladder_programs(prefix, second_column, second_wall, toward=point,
         max_inputs=max_inputs, max_entry=max_entry, max_programs=max_programs,
+        solids=solids, max_contact_variants=max_contact_variants, max_events=max_events,
         deadline=deadline, cancel_event=cancel_event)
     complete = [recompose(p, p['episodes'], target['top'], max_inputs) for p in result['programs']]
     result['programs'] = sorted([p for p in complete if p is not None], key=lambda p: p['profile']['airtime'])

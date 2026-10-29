@@ -12,6 +12,11 @@ The snapshots contain the exact compiled continuous problem, selected route/even
 | `automatic-airborne-transfer.json` | 28 | Cold geometry search independently discovers the two-region airborne transfer |
 | `five-airborne-ladders.json` | 58 | Prescribed five-region falling-only contract, one launch, no intermediate landing; fresh IPOPT and shared scene acceptance |
 | `ladder-bottom-exit.json` | 21 | Prescribed falling-only bottom exit at state 15, then landing; fresh IPOPT and shared scene acceptance |
+| `appended-air-ceiling.json` | 29 | Generated ceiling contact and second episode from a prescribed first-region prefix |
+| `appended-ladder-ceiling.json` | 29 | Generated ceiling contact during the second climb; its top exit is regenerated one input later |
+| `final-air-ceiling.json` | 27 | Generated ceiling contact after a prescribed two-region prefix; landing is one input earlier |
+
+The three new mixed-contact witnesses are generated continuations, not cold whole-route discoveries. They pass fresh numerical and full-scene checks through `test_movement_contacts.py`. Their complete compiled problems and source geometry are retained. See [MIXED_MOVEMENT_CONTACTS.md](../../MIXED_MOVEMENT_CONTACTS.md).
 
 The five-region and bottom-exit fixtures contain geometry and the initial state. Their accepted episode timings are prescribed by the contract tests, not discovered cold from those fixtures. Their saved problems/candidates revalidate independently; no optimality is claimed. See [MOVEMENT_UNITS.md](../../MOVEMENT_UNITS.md) for the common unit interface, new tests and chain search limits.
 

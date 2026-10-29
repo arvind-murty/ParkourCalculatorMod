@@ -402,7 +402,13 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
                                     'maxSchedules': cfg['maxSchedules'], 'maxMaskWork': cfg['maxMaskWork']}
                                 airborne = generate_ladder_schedules(request, cancel_event=cancel_event, deadline=deadline)
                                 record['airborneGeneration'] = {k: v for k, v in airborne.items() if k not in ('schedules', 'timingGroups')}
+                                from .movement_contacts import mixed_schedule_pool
+                                mixed_airborne = mixed_schedule_pool(request, scene['collisionScene']['solids'],
+                                    schedules=airborne['schedules'], max_variants=cfg['maxContactVariants'],
+                                    max_events=cfg['maxMixedContacts'], deadline=deadline, cancel_event=cancel_event)
+                                record['airborneMixedContacts'] = {k: v for k, v in mixed_airborne.items() if k != 'schedules'}
                                 pool['schedules'].extend(airborne['schedules'])
+                                pool['schedules'].extend(mixed_airborne['schedules'])
                             candidates = [s for s in pool['schedules'] if sum(s['hit']) >= cfg['minClimbInputs']]
                             def screen_candidate(s, coefficients):
                                 from .screen import contradiction
@@ -459,10 +465,12 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
                                     def variations():
                                         if s.get('terminal') != 'airborne':
                                             yield selected
-                                        transfer_key = s['exitState']
+                                        from .movement_contacts import contact_signature
+                                        transfer_key = [s['exitState'], contact_signature(s.get('contactEvents', []))]
+                                        exits = {key[0] for key in record.get('transferWindows', [])}
                                         if not cfg['maxTransferPrograms'] or len(used_columns) + 2 > cfg['maxInteractions'] \
                                                 or suffix_edges or transfer_key in record.get('transferWindows', []) \
-                                                or len(record.get('transferWindows', [])) >= cfg['maxTransferWindows']:
+                                                or s['exitState'] not in exits and len(exits) >= cfg['maxTransferWindows']:
                                             return
                                         record.setdefault('transferWindows', []).append(transfer_key)
                                         from .ladder_transfers import iter_chain_programs
@@ -473,6 +481,8 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
                                                 blocks[scene['goalBlock']], max_inputs=cfg['maxInputs'], max_entry=cfg['maxEntryInputs'],
                                                 max_programs=cfg['maxTransferPrograms'], max_prefixes=cfg['maxTransferPrefixes'],
                                                 max_pending=cfg['maxTransferQueuedPrefixes'],
+                                                max_contact_variants=cfg['maxContactVariants'], max_events=cfg['maxMixedContacts'],
+                                                min_climb_inputs=cfg['minClimbInputs'],
                                                 max_interactions=cfg['maxInteractions'] - len(used_columns),
                                                 deadline=context_deadline, cancel_event=cancel_event, report=report):
                                             yield {'source': path[-1], 'target': scene['goalBlock'],
