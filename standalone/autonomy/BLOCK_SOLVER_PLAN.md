@@ -6,7 +6,7 @@
 
 Given an initial state, fixed start/goal supports and a supplied set of candidate supports/collision geometry, choose intermediate supports and derive transition profiles plus the positional constraints needed to visit them. Pass each resulting route to the existing run-ticks search and numerical solver. The output is an accepted continuous trajectory with its chosen transition profiles and run allocation.
 
-The original run-ticks API consumes an ordered route. The [route-selection prototype](BLOCK_ROUTE_SEARCH.md) now chooses intermediate supports from an unordered set at different heights, with only the start and goal fixed, and selects ordinary jumps, short stairs or no-jump run-offs. Inputs stay sprint-jump plus sprint 45; their facings remain free. One ladder/vine interaction with ordinary prefix/suffix is now implemented in [LADDER_STRATEGY_PLAN.md](LADDER_STRATEGY_PLAN.md). Discovering geometry beyond the supplied scene, multiple climbing interactions and broader contact-selected steps remain later work. Block solving removes the remaining manually supplied block order, air times and contact/obstacle conditions in stages, rather than replacing the angle optimizer or run-ticks allocator.
+The original run-ticks API consumes an ordered route. The [route-selection prototype](BLOCK_ROUTE_SEARCH.md) now chooses intermediate supports from an unordered set at different heights, with only the start and goal fixed, and selects ordinary jumps, short stairs or no-jump run-offs. Inputs stay sprint-jump plus sprint 45; their facings remain free. Multiple ladder/vine interactions with ordinary prefix/suffix and airborne transfers are now implemented in [LADDER_STRATEGY_PLAN.md](LADDER_STRATEGY_PLAN.md). Discovering geometry beyond the supplied scene, multiple climbing interactions and broader contact-selected steps remain later work. Block solving removes the remaining manually supplied block order, air times and contact/obstacle conditions in stages, rather than replacing the angle optimizer or run-ticks allocator.
 
 ```text
 block/support geometry + initial state + fixed endpoints
@@ -37,8 +37,8 @@ The search objective is now fixed by user ruling: minimize total elapsed inputs,
 | Finite solid side faces, blockage corridors and collision consistency | Avoidance implemented for normal inert collision boxes; cross neo/wide neo chains and all six edge timings; one-input intentional wall reversals now generated through the shared movement compiler |
 | Ceiling avoidance and contact selection | Avoidance and one-input underside contacts implemented in collision-box mode; shortened durations enter graph bounds |
 | Choosing among ordinary/stair/run-off profiles and their approach/exit faces, with per-path run-count search | Implemented for the current floor/contact family; broader profile families remain later work |
-| One ladder/vine interaction with ordinary prefix/suffix | Implemented; see [ladder plan](LADDER_STRATEGY_PLAN.md) |
-| Geometry discovery beyond the supplied scene, multiple ladder interactions, fluids and effects | Later extensions |
+| Multiple ladder/vine interactions, airborne transfers and composed contacts | Implemented; see [composition interfaces](CONTACT_COMBINATIONS.md) |
+| Geometry discovery beyond the supplied scene, within-region climb-plane switching, re-entry, fluids and effects | Later extensions |
 
 ## Historical first slice: ordinary open-air profiles
 

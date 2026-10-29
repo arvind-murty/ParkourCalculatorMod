@@ -25,3 +25,6 @@ python3 -m unittest standalone.autonomy.tests.test_ladder_composition.Compositio
 ```
 
 The numerical integration gate requires both `PKC_RUN_TICKS_COMPILER` and `PKC_IPOPT_PYTHON`. Tests without the worker skip the cold searches. See [CONTACT_COMBINATIONS.md](../../CONTACT_COMBINATIONS.md) and [LADDER_COMPOSITION_PLAN.md](../../LADDER_COMPOSITION_PLAN.md) for interfaces, limits and remaining work.
+
+
+Final gate: 200 orchestration tests passed in 554.373 seconds with the Java compiler and actual IPOPT worker, followed by 23 passing focused checks. The numerical suite passed 51 cases. Native core's 799-case run retained the same three baseline failures, with 33 skips; shared-scene step diagnostics and coupled-contact coverage pass. No Minecraft acceptance or global optimum is claimed.

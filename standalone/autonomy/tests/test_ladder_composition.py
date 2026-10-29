@@ -1,4 +1,5 @@
 import copy
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -172,9 +173,12 @@ class CompositionEvidenceTests(unittest.TestCase):
         from standalone.autonomy.blockages import gate_timeline
         from standalone.ipopt import prepare, validate
         with JavaCompiler(json.loads(Path(os.environ['PKC_RUN_TICKS_COMPILER']).read_text())) as compiler:
-            for name in ('two-ladders','ladder-ceiling','airborne-transfer','contact-blockage'):
+            for name in ('two-ladders','ladder-ceiling','airborne-transfer','automatic-airborne-transfer','contact-blockage'):
                 with self.subTest(name=name):
                     e = json.loads((ROOT / ('experiments/contact-combinations/' + name + '.json')).read_text())
+                    if 'fixtureSha256' in e:
+                        fixture = ROOT / 'experiments/contact-combinations' / e['fixture']
+                        self.assertEqual(hashlib.sha256(fixture.read_bytes()).hexdigest(), e['fixtureSha256'])
                     p = prepare(e['problem'])
                     c = validate(p, p['yaw'])
                     self.assertTrue(c['feasible'], c)
@@ -185,7 +189,7 @@ class CompositionEvidenceTests(unittest.TestCase):
                     vertical = dict(vertical=p['vertical'], y=c['y'], vy=c['vy'], onGround=c['onGround'])
                     checked = check_geometry(e['geometry'],e['plan'],e['candidate'],vertical,compiler,5)
                     self.assertTrue(checked['feasible'],checked)
-                    if name == 'airborne-transfer':
+                    if name in ('airborne-transfer','automatic-airborne-transfer'):
                         self.assertEqual(len(e['route']['ladderEvents']),2)
                         self.assertFalse(any(c['onGround'][1:-1]))
                     if name == 'contact-blockage':
