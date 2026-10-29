@@ -133,22 +133,24 @@ public final class StaticScene {
         boolean stepped = false;
         if (stepHeight > 0 && canStep && (expectedX != x || expectedZ != z)) {
             List<AABB> steps = collisions(sweep(original, expectedX, stepHeight, expectedZ));
+            List<Clip> clipsA = new ArrayList<>();
+            List<Clip> clipsB = new ArrayList<>();
             double riseA = clip(steps, sweep(original, expectedX, 0, expectedZ), stepHeight, 1);
             AABB a = offset(original, 0, riseA, 0);
-            double ax = clip(steps, a, expectedX, 0);
+            double ax = clip(steps, a, expectedX, 0, clipsA);
             a = offset(a, ax, 0, 0);
-            double az = clip(steps, a, expectedZ, 2);
+            double az = clip(steps, a, expectedZ, 2, clipsA);
             a = offset(a, 0, 0, az);
             double riseB = clip(steps, original, stepHeight, 1);
             AABB b = offset(original, 0, riseB, 0);
-            double bx = clip(steps, b, expectedX, 0);
+            double bx = clip(steps, b, expectedX, 0, clipsB);
             b = offset(b, bx, 0, 0);
-            double bz = clip(steps, b, expectedZ, 2);
+            double bz = clip(steps, b, expectedZ, 2, clipsB);
             b = offset(b, 0, 0, bz);
             boolean useA = ax * ax + az * az > bx * bx + bz * bz;
             AABB stepBox = useA ? a : b;
             double sx = useA ? ax : bx, sz = useA ? az : bz;
-            double sy = clip(steps, stepBox, -(useA ? riseA : riseB), 1);
+            double sy = clip(steps, stepBox, -(useA ? riseA : riseB), 1, useA ? clipsA : clipsB);
             stepBox = offset(stepBox, 0, sy, 0);
             if (x * x + z * z < sx * sx + sz * sz) {
                 moved = stepBox;
@@ -158,6 +160,7 @@ public final class StaticScene {
                 stepped = true;
                 stepTriggers.addAll(clips);
                 clips.clear();
+                clips.addAll(useA ? clipsA : clipsB);
             }
         }
         boolean horizontal = expectedX != x || expectedZ != z;

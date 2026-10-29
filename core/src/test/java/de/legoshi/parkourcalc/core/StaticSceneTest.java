@@ -47,7 +47,8 @@ public class StaticSceneTest {
         StaticScene scene = scene("["+floor+"]", "");
         StaticScene.Contact step = scene.move(scene.startBox(new Vec3dCore(0.5,1,0.5)), new Vec3dCore(0.8,-0.0784,0), true, false);
         assertTrue(step.stepped);
-        assertTrue(step.clips.isEmpty());
+        assertTrue(step.clips.stream().anyMatch(clip -> clip.axis == 1 && clip.obstacle.max.y == 1.5));
+        assertFalse(step.clips.stream().anyMatch(clip -> clip.axis == 0 || clip.axis == 2));
         assertTrue(step.stepTriggers.stream().anyMatch(clip -> clip.axis == 0));
         assertEquals(1.5, step.position.y, 0);
         assertFalse(step.horizontalCollision);
@@ -55,6 +56,22 @@ public class StaticSceneTest {
         StaticScene.Contact blocked = low.move(low.startBox(new Vec3dCore(0.5,1,0.5)), new Vec3dCore(0.8,-0.0784,0), true, false);
         assertFalse(blocked.stepped);
         assertTrue(blocked.horizontalCollision);
+    }
+
+    @Test public void selectedStepRetainsItsFinalHorizontalContacts() {
+        StaticScene scene = scene("[[-2,0,-2,1,1,3],[1,0,-2,3,1.5,3],[1.5,0,-3,2,6,3],[-3,0,1.5,3,6,2]]", "");
+        StaticScene.Contact step = scene.move(scene.startBox(new Vec3dCore(0.5,1,0.5)), new Vec3dCore(0.8,-0.0784,0.8), true, false);
+        assertTrue(step.stepped);
+        assertEquals(1.5, step.position.y, 0);
+        assertEquals(1.5-StaticScene.HALF_WIDTH, step.position.x, 0);
+        assertEquals(1.5-StaticScene.HALF_WIDTH, step.position.z, 0);
+        assertTrue(step.blockedX);
+        assertTrue(step.blockedZ);
+        assertEquals(0, step.velocity.x, 0);
+        assertEquals(0, step.velocity.z, 0);
+        assertTrue(step.clips.stream().anyMatch(clip -> clip.axis == 0));
+        assertTrue(step.clips.stream().anyMatch(clip -> clip.axis == 2));
+        assertTrue(step.clips.stream().anyMatch(clip -> clip.axis == 1));
     }
 
     @Test public void sneakingAtAnEdgeKeepsTheUnclippedCarry() {

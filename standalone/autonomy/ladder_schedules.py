@@ -1,4 +1,5 @@
 import copy
+import time
 from collections import defaultdict, deque
 from itertools import combinations
 
@@ -136,7 +137,7 @@ def prepare_ladder_request(request):
         raise ValueError('Expected a ladder schedule request')
     config = copy.deepcopy(request)
     allowed = {'version', 'initial', 'region', 'entries', 'targetTop', 'exitKinds', 'exitStates',
-               'maxInputs', 'entryDelay', 'jumpAtStart', 'maxSkeletons', 'maxMaskWork', 'maxSchedules'}
+               'maxInputs', 'entryDelay', 'jumpAtStart', 'maxSkeletons', 'maxMaskWork', 'maxSchedules', 'contactVariants'}
     if set(config) - allowed or type(config.get('version')) is not int or config['version'] != 1:
         raise ValueError('Expected a version 1 ladder schedule request with supported fields')
     for key, default, lo, hi in [('maxInputs', 40, 1, 200), ('entryDelay', 5, 0, 5),
@@ -163,7 +164,7 @@ def prepare_ladder_request(request):
         raise ValueError('Supply 1 through 64 validated entry windows')
     seen = set()
     for entry in entries:
-        if not isinstance(entry, dict) or set(entry) - {'family', 'channel', 'firstValidatedState', 'unresolvedStates', 'firstHitLowerBounds'}:
+        if not isinstance(entry, dict) or set(entry) - {'family', 'channel', 'firstValidatedState', 'firstCandidateState', 'unresolvedStates', 'firstHitLowerBounds', 'contactEvents'}:
             raise ValueError('Invalid entry window')
         if entry.get('family') not in ('front', 'side'):
             raise ValueError('Entry family must be front or side')
@@ -171,7 +172,9 @@ def prepare_ladder_request(request):
         if not isinstance(channel, str) or not channel or (entry['family'], channel) in seen:
             raise ValueError('Entry channels must be unique and nonempty')
         seen.add((entry['family'], channel))
-        state = integer(entry.get('firstValidatedState'), 'first validated entry state', 0, n - 1)
+        if ('firstValidatedState' in entry) == ('firstCandidateState' in entry):
+            raise ValueError('Supply one validated or unprobed candidate entry state')
+        state = integer(entry.get('firstValidatedState', entry.get('firstCandidateState')), 'first entry state', 0, n - 1)
         unresolved = entry.setdefault('unresolvedStates', [])
         if not isinstance(unresolved, list) or len(set(unresolved)) != len(unresolved):
             raise ValueError('Invalid unresolved entry states')
@@ -185,6 +188,12 @@ def prepare_ladder_request(request):
                 raise ValueError('First hit lower bound keys require decimal entry states')
             integer(int(key), 'bounded entry state', state, n - 1)
             integer(value, 'first hit lower bound', 0, n)
+    from .contact_combinations import validate_contact_events
+    variants = config.setdefault('contactVariants', [[]])
+    if not isinstance(variants, list) or not 1 <= len(variants) <= 256:
+        raise ValueError('Supply 1 through 256 contact variants')
+    for selected in variants + [e.get('contactEvents', []) for e in entries]:
+        validate_contact_events({'contactEvents': selected, 'airtimes': [n], 'sharedMovement': True})
     kinds = config.setdefault('exitKinds', ['side', 'top'])
     if not isinstance(kinds, list) or not kinds or any(k not in ('side', 'top') for k in kinds) or len(set(kinds)) != len(kinds):
         raise ValueError('Exit kinds must be unique side/top choices')
@@ -233,6 +242,12 @@ def _mask_work(skeleton, config):
     n, entry, exit_state = skeleton['ticks'], skeleton['entryState'], skeleton['exitState']
     ladder = [entry <= t < exit_state for t in range(n + 1)]
     first_clamped = entry
+    from .contact_combinations import merge_contacts
+    extra = skeleton.get('contactEvents', [])
+    actual_hits = [hit or any(e['axis'] != 'Y' and e['offset'] == t for e in extra)
+                   for t, hit in enumerate(skeleton['hit'])]
+    vertical = [{'state': e['offset'] + 1, 'plane': e['plane'], 'direction': e['direction'],
+                 **({'step': True} if e['role'] == 'step' else {})} for e in extra if e['axis'] == 'Y']
     eligible = [t for t in range(exit_state) if not skeleton['hit'][t] or t == first_clamped]
     prefixes = iter(sneak_patterns(n, eligible, first_clamped))
     tails = deque()
@@ -244,9 +259,10 @@ def _mask_work(skeleton, config):
             except StopIteration:
                 exhausted = True
             else:
-                trace = trace_ladder_schedule(config['initial'], ladder, sneak, skeleton['hit'],
+                trace = trace_ladder_schedule(config['initial'], ladder, sneak, actual_hits,
                     jump=[f32(.42) if config['jumpAtStart'] else None] + [None] * (n - 1),
-                    target_top=config['targetTop'], min_landing_state=exit_state)
+                    target_top=config['targetTop'], min_landing_state=max(exit_state, max((e['offset'] + 1 for e in extra), default=0)),
+                    contacts=vertical)
                 region = config['region']
                 reason = None
                 if trace['status'] == 'invalid':
@@ -285,14 +301,15 @@ def _mask_work(skeleton, config):
             yield 'schedule', candidate
 
 
-def generate_ladder_schedules(request, *, cancel_event=None):
+def generate_ladder_schedules(request, *, cancel_event=None, deadline=None):
     config = prepare_ladder_request(request)
     stats = {'skeletonOrigins': 0, 'duplicateSkeletons': 0, 'skeletons': 0, 'maskWork': 0,
              'verticalTraces': 0, 'generated': 0, 'rejected': defaultdict(int), 'entryDelayClipped': 0}
     contexts, windows = [], []
     for entry in config['entries']:
-        states = [entry['firstValidatedState'] + delay for delay in range(config['entryDelay'] + 1)
-                  if entry['firstValidatedState'] + delay < config['maxInputs']]
+        first = entry.get('firstValidatedState', entry.get('firstCandidateState'))
+        states = [first + delay for delay in range(config['entryDelay'] + 1)
+                  if first + delay < config['maxInputs']]
         stats['entryDelayClipped'] += config['entryDelay'] + 1 - len(states)
         windows.append(dict(copy.deepcopy(entry), entryStates=states))
         for state in states:
@@ -300,10 +317,18 @@ def generate_ladder_schedules(request, *, cancel_event=None):
                 if exit_state <= state:
                     continue
                 for kind in config['exitKinds']:
-                    contexts.append({'entryFamily': entry['family'], 'entryChannel': entry['channel'],
-                                     'entryState': state, 'entryDelay': state - entry['firstValidatedState'],
+                    for variant in config['contactVariants']:
+                        combined = entry.get('contactEvents', []) + variant
+                        try:
+                            from .contact_combinations import merge_contacts
+                            combined = merge_contacts([dict(e, state=e['offset'] + 1) for e in combined])
+                        except ValueError:
+                            continue
+                        contexts.append({'entryFamily': entry['family'], 'entryChannel': entry['channel'],
+                                     'entryState': state, 'entryDelay': state - first,
                                      'firstHitLowerBound': entry.get('firstHitLowerBounds', {}).get(str(state), 0),
-                                     'exitState': exit_state, 'exitKind': kind, 'ticks': config['maxInputs']})
+                                     'exitState': exit_state, 'exitKind': kind, 'ticks': config['maxInputs'],
+                                     'contactEvents': combined})
     stream = _round_robin(_context_skeletons(c, stats) for c in contexts)
     skeletons, skeleton_limited = [], False
     for skeleton in stream:
@@ -315,6 +340,9 @@ def generate_ladder_schedules(request, *, cancel_event=None):
     schedules, termination, work_limited = [], 'exhausted', False
     groups = defaultdict(list)
     for kind, value in _round_robin(_mask_work(s, config) for s in skeletons):
+        if deadline is not None and time.monotonic() >= deadline:
+            termination, work_limited = 'deadline', True
+            break
         if cancel_event is not None and cancel_event.is_set():
             termination = 'cancelled'
             break

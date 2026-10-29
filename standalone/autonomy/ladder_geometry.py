@@ -25,6 +25,71 @@ def ladder_columns(cells):
     return columns
 
 
+def _rectangular_regions(cells):
+    regions = [dict(c, maxX=c['x'] + 1, maxZ=c['z'] + 1) for c in ladder_columns(cells)]
+    changed = True
+    while changed:
+        changed = False
+        for i, a in enumerate(regions):
+            for j in range(i + 1, len(regions)):
+                b = regions[j]
+                if (a['minY'], a['maxY']) != (b['minY'], b['maxY']):
+                    continue
+                along_x = (a['z'], a['maxZ']) == (b['z'], b['maxZ']) and (a['maxX'] == b['x'] or b['maxX'] == a['x'])
+                along_z = (a['x'], a['maxX']) == (b['x'], b['maxX']) and (a['maxZ'] == b['z'] or b['maxZ'] == a['z'])
+                if along_x or along_z:
+                    a.update(x=min(a['x'], b['x']), maxX=max(a['maxX'], b['maxX']),
+                             z=min(a['z'], b['z']), maxZ=max(a['maxZ'], b['maxZ']))
+                    a['id'] = str((a['x'], a['minY'], a['z'], a['maxX'], a['maxY'], a['maxZ']))
+                    regions.pop(j)
+                    changed = True
+                    break
+            if changed:
+                break
+    return regions
+
+
+def ladder_regions(cells):
+    ladder_columns(cells)
+    remaining = {tuple(c) for c in cells}
+    regions = []
+    while remaining:
+        first = min(remaining)
+        remaining.remove(first)
+        component, pending = {first}, [first]
+        while pending:
+            x, y, z = pending.pop()
+            for neighbour in ((x-1,y,z), (x+1,y,z), (x,y-1,z), (x,y+1,z), (x,y,z-1), (x,y,z+1)):
+                if neighbour in remaining:
+                    remaining.remove(neighbour)
+                    component.add(neighbour)
+                    pending.append(neighbour)
+        volumes = _rectangular_regions([list(c) for c in sorted(component)])
+        if len(volumes) == 1:
+            regions.append(volumes[0])
+        else:
+            regions.append({'id': 'region:' + repr(sorted(component)), 'x': min(c[0] for c in component),
+                'maxX': max(c[0] for c in component) + 1, 'z': min(c[2] for c in component),
+                'maxZ': max(c[2] for c in component) + 1, 'minY': min(c[1] for c in component),
+                'maxY': max(c[1] for c in component) + 1, 'volumes': volumes})
+    return regions
+
+
+def region_rectangles(column, y):
+    return [[c['x'], c.get('maxX', c['x'] + 1), c['z'], c.get('maxZ', c['z'] + 1)]
+            for c in column.get('volumes', [column]) if c['minY'] <= y < c['maxY']]
+
+
+def region_contains(column, position):
+    return any(b[0] <= position[0] < b[1] and b[2] <= position[2] < b[3]
+               for b in region_rectangles(column, position[1]))
+
+
+def region_axis(column, axis):
+    key = 'x' if axis == 'X' else 'z'
+    return column[key], column.get('maxX' if axis == 'X' else 'maxZ', column[key] + 1)
+
+
 def climb_walls(column, solids):
     groups = {}
     for index, box in enumerate(solids):
@@ -32,16 +97,17 @@ def climb_walls(column, solids):
             continue
         for axis, a, tangent, c in [('X', 0, 2, column['x']), ('Z', 2, 0, column['z'])]:
             cell_tangent = column['z'] if axis == 'X' else column['x']
-            if box[tangent] >= cell_tangent + 1 + HALF_WIDTH or box[tangent + 3] <= cell_tangent - HALF_WIDTH:
+            tangent_hi = region_axis(column, 'Z' if axis == 'X' else 'X')[1]
+            if box[tangent] >= tangent_hi + HALF_WIDTH or box[tangent + 3] <= cell_tangent - HALF_WIDTH:
                 continue
             for direction in (-1, 1):
                 plane = box[a] - HALF_WIDTH if direction > 0 else box[a + 3] + HALF_WIDTH
-                if c <= plane < c + 1:
-                    key = axis, direction, plane, box[tangent], box[tangent + 3]
+                if c <= plane < region_axis(column, axis)[1]:
+                    key = axis, direction, plane
                     groups.setdefault(key, []).append((index, box))
     return [{'axis': axis, 'direction': direction, 'plane': plane,
              'parts': [{'solidIndex': i, 'box': b} for i, b in parts]}
-            for (axis, direction, plane, _, _), parts in groups.items()]
+            for (axis, direction, plane), parts in groups.items()]
 
 
 def entry_channels(column, wall):
@@ -49,9 +115,9 @@ def entry_channels(column, wall):
     side = 'Z' if axis == 'X' else 'X'
     result = []
     for family, face_axis, direction in [('front', axis, -wall['direction']), ('side', side, -1), ('side', side, 1)]:
-        base = column['x'] if face_axis == 'X' else column['z']
+        lo, hi = region_axis(column, face_axis)
         result.append({'family': family, 'channel': family + ':' + face_axis + ':' + str(direction),
-                       'axis': face_axis, 'direction': direction, 'plane': base + (direction > 0)})
+                       'axis': face_axis, 'direction': direction, 'plane': hi if direction > 0 else lo})
     return result
 
 
@@ -67,9 +133,16 @@ def schedule_constraints(schedule, column, wall, entry_face, exit_face, *, start
     for state, (y, inside) in enumerate(zip(ys, ladder)):
         at = start + state
         if inside:
-            for axis, value in [('X', column['x']), ('Z', column['z'])]:
-                rows.extend([{'mode': axis, 't1': at, 'cmp': 'GE', 'rhs': value + margin, 'name': 'ladder:inside'},
-                             {'mode': axis, 't1': at, 'cmp': 'LE', 'rhs': value + 1 - margin, 'name': 'ladder:inside'}])
+            rectangles = region_rectangles(column, y)
+            if not rectangles:
+                raise ValueError('Ladder occupancy has no cells at this height')
+            choice = schedule.get('corridorChoices', {}).get(str(state), 0)
+            if type(choice) is not int or not 0 <= choice < len(rectangles):
+                raise ValueError('Invalid exact ladder corridor choice')
+            bounds = rectangles[choice]
+            for axis, lo, hi in [('X', bounds[0], bounds[1]), ('Z', bounds[2], bounds[3])]:
+                rows.extend([{'mode': axis, 't1': at, 'cmp': 'GE', 'rhs': lo + margin, 'name': 'ladder:inside'},
+                             {'mode': axis, 't1': at, 'cmp': 'LE', 'rhs': hi - margin, 'name': 'ladder:inside'}])
         elif state < schedule['entryState']:
             rows.append(outside_row(entry_face, at, margin, 'ladder:before_entry'))
         elif column['minY'] <= y < column['maxY'] and exit_face is not None:
@@ -81,23 +154,35 @@ def schedule_constraints(schedule, column, wall, entry_face, exit_face, *, start
         if not hit:
             continue
         y = ys[tick + 1]
-        part = next((p for p in wall['parts'] if y < p['box'][4] and y + BODY_HEIGHT > p['box'][1]), None)
-        if part is None:
+        parts = [p for p in wall['parts'] if y < p['box'][4] and y + BODY_HEIGHT > p['box'][1]]
+        if not parts:
             raise ValueError('Selected climb has no finite wall at its Y stage')
-        box = part['box']
         axis = 0 if wall['axis'] == 'X' else 1
         contacts.append({'state': start + tick + 1, 'axis': axis, 'plane': wall['plane'], 'direction': wall['direction']})
-        scene_contacts.append(dict(contacts[-1], axis=0 if axis == 0 else 2, box=box))
         tangent, a, stage = ('Z', 2, tick) if axis == 0 else ('X', 0, tick + 1)
-        rows.extend([{'mode': tangent, 't1': start + stage, 'cmp': 'GE', 'rhs': box[a] - HALF_WIDTH + margin,
+        corridors = []
+        for part in sorted(parts, key=lambda p: p['box'][a]):
+            lo, hi = part['box'][a] - HALF_WIDTH, part['box'][a + 3] + HALF_WIDTH
+            if corridors and lo < corridors[-1][1]:
+                corridors[-1][1] = max(corridors[-1][1], hi)
+                corridors[-1][2].append(part['box'])
+            else:
+                corridors.append([lo, hi, [part['box']]])
+        choice = schedule.get('faceCorridorChoices', {}).get(str(tick), 0)
+        if type(choice) is not int or not 0 <= choice < len(corridors):
+            raise ValueError('Invalid finite wall corridor')
+        lo, hi, boxes = corridors[choice]
+        scene_contacts.append(dict(contacts[-1], axis=0 if axis == 0 else 2,
+                                   **({'box': boxes[0]} if len(boxes) == 1 else {'boxes': boxes})))
+        rows.extend([{'mode': tangent, 't1': start + stage, 'cmp': 'GE', 'rhs': lo + margin,
                       'name': 'ladder:finite_face'},
-                     {'mode': tangent, 't1': start + stage, 'cmp': 'LE', 'rhs': box[a + 3] + HALF_WIDTH - margin,
+                     {'mode': tangent, 't1': start + stage, 'cmp': 'LE', 'rhs': hi - margin,
                       'name': 'ladder:finite_face'}])
     return rows, contacts, scene_contacts
 
 
 def exit_faces(column, target):
-    faces = [{'axis': axis, 'direction': sign, 'plane': column[key] + (sign > 0)}
+    faces = [{'axis': axis, 'direction': sign, 'plane': region_axis(column, axis)[1 if sign > 0 else 0]}
              for axis, key in [('X', 'x'), ('Z', 'z')] for sign in (-1, 1)]
     return sorted(faces, key=lambda f: abs((target[0] if f['axis'] == 'X' else target[1]) - f['plane'])
                   - f['direction'] * ((target[0] if f['axis'] == 'X' else target[1]) - f['plane']))

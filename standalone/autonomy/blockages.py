@@ -123,6 +123,19 @@ def validate_passages(route):
         raise ValueError('Selected passages exceed the per-block blockage caps')
 
 
+def face_clearance(route, leg, offset, face, clearance):
+    for hit in route.get('hitEvents', []) + route.get('contactEvents', []):
+        if hit['leg'] == leg and hit['offset'] + 1 == offset and hit['axis'] == face['axis'] \
+                and hit['plane'] == face['plane'] and hit['direction'] == -face['direction']:
+            return 0.
+    for episode in route.get('ladderEvents', []):
+        wall, hits = episode['wall'], episode['schedule']['hit']
+        if episode['leg'] == leg and 0 < offset <= len(hits) and hits[offset - 1] \
+                and wall['axis'] == face['axis'] and wall['plane'] == face['plane'] and wall['direction'] == -face['direction']:
+            return 0.
+    return clearance
+
+
 def compile_passages(route, events):
     rows, failures = [], []
     for passage in route['passages']:
@@ -141,7 +154,7 @@ def compile_passages(route, events):
             for offset in range(begin, end + 1):
                 rows.append({'mode': face['axis'], 't1': event['jump'] + offset,
                              'cmp': 'GE' if face['direction'] > 0 else 'LE',
-                             'rhs': face['plane'] + face['direction'] * route['supportClearance'],
+                             'rhs': face['plane'] + face['direction'] * face_clearance(route, passage['leg'], offset, face, route['supportClearance']),
                              'name': 'blockage:' + str(passage.get('solidIndex'))})
     return rows, failures
 
@@ -212,9 +225,9 @@ def passage_options(box, solid_index, leg, profile, route, plan, candidate, moti
     for face in chain_faces:
         axis = AXES.index(face['axis'])
         mask, penalty = [], []
-        for point, envelope in zip(points, envelopes):
+        for offset, point, envelope in zip(offsets, points, envelopes):
             lo, hi = envelope[axis]
-            edge = face['plane'] + (0 if axis == 1 else face['direction'] * clearance)
+            edge = face['plane'] + (0 if axis == 1 else face['direction'] * face_clearance(route, leg, offset, face, clearance))
             mask.append(lo <= hi and (hi >= edge if face['direction'] > 0 else lo <= edge))
             penalty.append(max(0, face['direction'] * (face['plane'] - point[axis])) ** 2)
         valid.append([0] + list(itertools.accumulate(not v for v in mask)))
@@ -233,8 +246,8 @@ def passage_options(box, solid_index, leg, profile, route, plan, candidate, moti
             axis = AXES.index(face['axis'])
             if axis == 1:
                 continue
-            edge = face['plane'] + face['direction'] * clearance
             for offset in range(start, stop + 1):
+                edge = face['plane'] + face['direction'] * face_clearance(route, leg, offset, face, clearance)
                 pair = limits[offset - begin][axis]
                 if face['direction'] > 0:
                     pair[0] = max(pair[0], edge)

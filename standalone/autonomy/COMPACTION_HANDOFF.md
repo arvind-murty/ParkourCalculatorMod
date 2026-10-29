@@ -2,9 +2,15 @@
 
 Updated checkpoint, 2026-10-27, on `codex/run-ticks-planning`. Run ticks, support routing, blockages, one-input wall/ceiling contacts and one ladder/vine interaction per composed route are implemented. `46f0f52` added the shared ladder compiler/ranking foundation and `d6ee0a4` added the complete route feature, cold fixtures and saved evidence.
 
-## New authorized work, 2026-10-29
+## Latest composition work, 2026-10-29
 
-Read [LADDER_COMPOSITION_PLAN.md](LADDER_COMPOSITION_PLAN.md) before implementation. The user now requests multiple ladder interactions and joint deliberate wall/ceiling contacts. Horizontally/vertically adjacent cells should represent one exact ladder region; diagonal-only adjacency, switching climb walls and same-region re-entry remain deferred. Preserve full-prefix solving and shared movement compilation. The integration branch is idle; published tip `e09f2a7` was reviewed with Git/GitHub CLI and its latest update is documentation only. The current source pin already contains the movement fixes. The composition extension is planned, not implemented yet.
+The user prioritized supporting contact types before route-specific pruning. Read [CONTACT_COMBINATIONS.md](CONTACT_COMBINATIONS.md), [LADDER_COMPOSITION_PLAN.md](LADDER_COMPOSITION_PLAN.md) and [the saved evidence](experiments/contact-combinations/README.md). `39d4ede` introduced the common finite contact contract. The subsequent work adds multiple ladder transitions, full-flight multi-episode contracts and automatic two-region transfers, mixed ladder contacts, exact face-connected region metadata, finite coplanar alternatives and step contact diagnostics. Numerical/scene acceptance remains strict and facings stay free.
+
+Current witnesses: cold two-ladder route 42 inputs; cold ladder/ceiling route 12; explicit and independently discovered airborne transfer 28, with one jump and no intermediate landing; wide-neo passage plus Z contact 12; same/consecutive ceiling/X/Z contacts 3. Step plus X/Z and occupied ceiling/X/Z followed by ceiling-only cancellation and landing also pass actual IPOPT/shared scene tests. The worker/Y arithmetic is reused, not duplicated.
+
+Normal coupled generation spans one input or two consecutive inputs; normal events with a free gap compose independently in the full solve. Ladder windows retain full sequences. No new route-specific rarity or reversal-direction pruning was added. Work caps remain explicit. Same-region re-entry, changing climb planes, diagonal-only continuous adjacency and exhaustive irregular-corridor enumeration remain later work. Automatic airborne expansion currently proposes two-region transfers; the common contract supports longer explicit episode sequences.
+
+The integration branch is idle. Published tip `e09f2a7` was reviewed using Git/GitHub CLI; its update beyond our pinned `f057c0c` is documentation only, so the pinned movement sources already contain the fixes. Full-prefix solves preserve carried state until a portable replay checkpoint API exists. Shared StaticScene arithmetic is unchanged; only chosen-step collision records were added, with native and Python coverage.
 
 ## Resume here
 

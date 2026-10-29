@@ -13,7 +13,9 @@ def schedule_plan(schedule):
             'jump': [v is not None for v in trace['vertical']['jumpVelocity']],
             'sneak': schedule['sneak'], 'ladderTicks': schedule['ladderTicks'],
             'vertical': trace['vertical'],
-            'sceneContacts': [{'state': t + 1, 'axis': 0} for t, hit in enumerate(schedule['hit']) if hit]}
+            'sceneContacts': [{'state': t + 1, 'axis': 0} for t, hit in enumerate(schedule['hit']) if hit]
+                + [{'state': e['offset'] + 1, 'axis': 'XYZ'.index(e['axis'])}
+                   for e in schedule.get('contactEvents', [])]}
 
 
 def straight_line_score(coefficients, ladder, exit_state):
@@ -61,7 +63,9 @@ def rank_ladder_schedules(schedules, compiler, *, seconds=10, max_ranked=2048, r
             break
         plan = schedule_plan(schedule)
         key = (tuple(plan['grounded']), tuple(plan['jump']), tuple(plan['sneak']),
-               tuple(plan['ladderTicks']), tuple(schedule['hit']))
+               tuple(plan['ladderTicks']), tuple(schedule['trace']['hit']),
+               tuple((c['state'], c['plane'], c['direction'], c.get('step', False))
+                     for c in plan['vertical']['contacts']))
         if key not in cache:
             try:
                 cache[key] = compiler.compile(route, plan, remaining)

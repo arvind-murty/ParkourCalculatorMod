@@ -35,7 +35,7 @@ class ClimbableContractTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 prepare_scene(changed)
         with self.assertRaises(ValueError):
-            ladder_settings({'ladderSearch': {'maxInteractions': 2}})
+            ladder_settings({'ladderSearch': {'maxInteractions': 13}})
         scene = prepare_scene(r)
         scene['collisionScene']['ladders'] = [[9, 9, 9]]
         with self.assertRaises(ValueError):

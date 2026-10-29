@@ -26,6 +26,19 @@ def event(axis, tick=0, direction=1, box=None, role='contact'):
 
 
 class CombinationTests(unittest.TestCase):
+    def test_selected_hit_can_touch_its_avoidance_face_without_erasing_other_clearance(self):
+        from standalone.autonomy.blockages import compile_passages, face_clearance
+        h = event('X',1)
+        r = prepare_route({'version':1,'initial':{'position':[0,1,0],'velocity':[0,REST_CARRY,0]},
+            'blocks':[{'bounds':[-1,1,-1,1],'top':1},{'bounds':[-1,1,-1,1],'top':1}],
+            'airtimes':[4],'sharedMovement':True,'contactEvents':[h],
+            'passages':[{'leg':0,'solidIndex':0,'faces':[{'axis':'X','direction':-1,'plane':h['plane']}],'gates':[]}]})
+        p = schedule(r,[0])
+        walls = [w for w in p['walls'] if w['name']=='blockage:0']
+        self.assertEqual(next(w['rhs'] for w in walls if w['t1']==2),h['plane'])
+        self.assertTrue(all(w['rhs'] < h['plane'] for w in walls if w['t1']!=2))
+        self.assertEqual(face_clearance(r,0,2,dict(axis='X',direction=-1,plane=h['plane']+.1),1e-6),1e-6)
+
     def test_every_same_tick_axis_subset_and_two_tick_pair_is_generated(self):
         pool = [event(a, t) for t in (0, 1) for a in 'XYZ']
         found = list(contact_combinations(pool, max_events=6, limit=10000))
@@ -128,6 +141,23 @@ class CombinationSceneTests(unittest.TestCase):
         self.compiler = JavaCompiler(json.loads(Path(os.environ['PKC_RUN_TICKS_COMPILER']).read_text()))
         self.addCleanup(self.compiler.close)
 
+    def test_adjacent_ladder_parts_use_exact_finite_face_alternatives(self):
+        from standalone.autonomy.ladder_geometry import ladder_regions, climb_walls, schedule_constraints, entry_channels
+        boxes = [[1,0,0,2,4,1], [1,0,1,2,4,2]]
+        cells = [[0,y,z] for y in range(3) for z in range(2)]
+        col = ladder_regions(cells)[0]
+        wall = next(w for w in climb_walls(col, boxes) if w['axis'] == 'X' and w['direction'] == 1)
+        s = {'entryState': 0, 'exitState': 2, 'hit': [True], 'ladderTicks': [True,True],
+             'trace': {'position': [1,1]}}
+        rows, _, contacts = schedule_constraints(s, col, wall, entry_channels(col, wall)[0], None)
+        self.assertEqual(len(contacts[0]['boxes']), 2)
+        scene = {'version':1,'profile':'minecraft-1.8.9','bounds':[-8,-5,-8,8,12,8], 'solids': boxes, 'ladders': cells}
+        positions = [[.6,1,1.5], [1-HALF_WIDTH,1,1.5]]
+        checked = self.compiler.check_scene(scene, positions, [[.15,0,0]], [False,False], 5, contacts=contacts)
+        self.assertTrue(checked['feasible'], checked)
+        contacts[0]['boxes'] = boxes[:1]
+        self.assertFalse(self.compiler.check_scene(scene, positions, [[.15,0,0]], [False,False], 5, contacts=contacts)['feasible'])
+
     def test_all_same_tick_axis_combinations_and_signs_against_shared_scene(self):
         for vertical, xhit, zhit, xs, zs in itertools.product(('none', 'ceiling', 'floor'), (False, True),
                                                            (False, True), (-1, 1), (-1, 1)):
@@ -170,3 +200,77 @@ class CombinationSceneTests(unittest.TestCase):
         selected['plane'] = 1.4
         self.assertFalse(self.compiler.check_scene(scene, [[.5, 1, 0], [1., 1.5, 0]], [[.5, REST_CARRY, 0]],
                                                   [True, True], 5, contacts=[selected])['feasible'])
+
+
+    def test_step_can_retain_x_z_contacts_from_the_selected_step_path(self):
+        floor, stair = [-2, 0, -2, 1, 1, 3], [1, 0, -2, 3, 1.5, 3]
+        xwall, zwall = [1.5, 0, -3, 2, 6, 3], [-3, 0, 1.5, 3, 6, 2]
+        scene = {'version': 1, 'profile': 'minecraft-1.8.9', 'bounds': [-8, -5, -8, 8, 12, 8],
+                 'solids': [floor, stair, xwall, zwall]}
+        selected = [{'state': 1, 'axis': 1, 'direction': -1, 'plane': 1.5, 'box': stair, 'step': True},
+                    {'state': 1, 'axis': 0, 'direction': 1, 'plane': 1.5 - HALF_WIDTH, 'box': xwall},
+                    {'state': 1, 'axis': 2, 'direction': 1, 'plane': 1.5 - HALF_WIDTH, 'box': zwall}]
+        checked = self.compiler.check_scene(scene, [[.5, 1, .5], [1.5 - HALF_WIDTH, 1.5, 1.5 - HALF_WIDTH]],
+                                           [[.8, REST_CARRY, .8]], [True, True], 5, contacts=selected)
+        self.assertTrue(checked['feasible'], checked)
+        for axis in (0, 2):
+            missing = [e for e in selected if e['axis'] != axis]
+            self.assertFalse(self.compiler.check_scene(scene, [[.5, 1, .5], [1.5 - HALF_WIDTH, 1.5, 1.5 - HALF_WIDTH]],
+                [[.8, REST_CARRY, .8]], [True, True], 5, contacts=missing)['feasible'])
+
+
+@unittest.skipUnless(os.environ.get('PKC_RUN_TICKS_COMPILER') and os.environ.get('PKC_IPOPT_PYTHON'),
+                     'Set PKC_RUN_TICKS_COMPILER and PKC_IPOPT_PYTHON')
+class StepCombinationIntegrationTests(unittest.TestCase):
+    def test_ipopt_step_and_two_wall_contacts_share_one_movement(self):
+        from standalone.autonomy.block_search import prepare_scene, compile_block_path
+        from standalone.autonomy.block_contacts import floor_checks, solve_contact_branches
+        floor, stair = [-2,0,-2,1,1,3], [1,0,-2,3,1.5,3]
+        xwall, zwall = [1.5,0,-3,2,6,3], [-3,0,1.5,3,6,2]
+        r = {'version':1,'sceneModel':'collision_boxes','geometryBounds':[-8,-5,-8,8,12,8],
+             'initial':{'position':[.5,1,.5],'velocity':[.8,REST_CARRY,.8]},
+             'startBlock':'floor','goalBlock':'stair','blocks':[{'id':name,'boxes':[box]}
+                for name,box in [('floor',floor),('stair',stair),('x',xwall),('z',zwall)]],
+             'maxJumps':1,'maxRunTicksPerJump':0,'maxTotalRunTicks':0,'maxContactCombinations':0}
+        selected = [event('Y',direction=-1,box=stair,role='step'),event('X',box=xwall),event('Z',box=zwall)]
+        p = contact_profile(1,1.5,selected,max_inputs=4,jump_at_start=False)
+        self.assertEqual(p['airtime'],1)
+        scene = prepare_scene(r)
+        compiled = compile_block_path(scene,['floor','stair'],[{'source':'floor','target':'stair',
+            'profileKind':'step','profile':p,'entryFace':None,'exitFace':None}])
+        with JavaCompiler(json.loads(Path(os.environ['PKC_RUN_TICKS_COMPILER']).read_text())) as compiler:
+            result = solve_contact_branches(compiled['route'],compiled['profiles'],floor_checks(scene,['floor','stair'],compiled['profiles']),
+                compiler,seconds=10,candidate_seconds=2,retries=0,max_branches=2,geometry=scene['collisionScene'],
+                motion_bound={'storedSpeedNorm':2,'movementAfterSupportCheck':2},python_executable=os.environ['PKC_IPOPT_PYTHON'])
+        self.assertEqual(result['status'],'feasible',result)
+        self.assertEqual(result['best']['plan']['ticks'],1)
+        self.assertTrue(result['best']['geometryCheck']['feasible'])
+        self.assertEqual(result['best']['candidate']['velocity'][1],[0.,0.])
+        self.assertEqual(result['best']['candidate']['y'][1],1.5)
+
+    def test_ipopt_ceiling_x_z_ladder_refresh_then_ceiling_stop_and_land(self):
+        from standalone.autonomy.block_search import prepare_scene, compile_block_path
+        from standalone.autonomy.block_contacts import floor_checks, solve_contact_branches
+        floor, goal = [-2,0,-2,.5,1,.85], [.5,0,-2,.85,1,.85]
+        xwall, zwall, ceiling = [.85,0,-2,2,5,2], [-2,0,.85,2,5,2], [-2,2.85,-2,2,4,2]
+        request = {'version':1,'sceneModel':'collision_boxes','geometryBounds':[-8,-5,-8,8,12,8],
+            'initial':{'position':[.5,1,.5],'velocity':[.2,REST_CARRY,.2]}, 'startBlock':'floor','goalBlock':'goal',
+            'blocks':[{'id':name,'boxes':[box]} for name,box in [('floor',floor),('goal',goal),('x',xwall),('z',zwall),('c',ceiling)]],
+            'climbableCells':[[0,1,0]],'maxJumps':1,'maxRunTicksPerJump':0,'maxTotalRunTicks':0,'maxContactCombinations':0}
+        selected = [event('X',box=xwall),event('Z',box=zwall),event('Y',box=ceiling),event('Y',1,box=ceiling)]
+        profile = contact_profile(1,1,selected,max_inputs=8,ladder=[True]*9)
+        self.assertEqual(profile['airtime'],3)
+        scene = prepare_scene(request)
+        compiled = compile_block_path(scene,['floor','goal'],[{'source':'floor','target':'goal','profileKind':'contacts',
+            'profile':profile,'entryFace':None,'exitFace':None}])
+        with JavaCompiler(json.loads(Path(os.environ['PKC_RUN_TICKS_COMPILER']).read_text())) as compiler:
+            result = solve_contact_branches(compiled['route'],compiled['profiles'],floor_checks(scene,['floor','goal'],compiled['profiles']),
+                compiler,seconds=12,candidate_seconds=2,retries=1,max_branches=8,geometry=scene['collisionScene'],
+                motion_bound={'storedSpeedNorm':2,'movementAfterSupportCheck':2},python_executable=os.environ['PKC_IPOPT_PYTHON'])
+        self.assertEqual(result['status'],'feasible',result)
+        b = result['best']
+        self.assertTrue(b['geometryCheck']['feasible'])
+        self.assertEqual(b['candidate']['vy'][1],CLIMB_CARRY)
+        self.assertEqual(b['candidate']['vy'][2],REST_CARRY)
+        self.assertTrue(b['candidate']['onGround'][3])
+        self.assertTrue(all(b['plan']['ladderTicks']))

@@ -31,7 +31,7 @@ def floor_checks(scene, block_ids, profiles):
                 if next_y <= top <= y and not (offset + 1 == profile['airtime'] and top == target_top):
                     checks.append({'leg': leg, 'offset': offset, 'block': copy.deepcopy(block), 'reason': 'earlier_floor'})
         for block in scene['blocks']:
-            selected_step = profile.get('profileKind') == 'stair' and block['id'] == block_ids[leg + 1]
+            selected_step = profile.get('profileKind') in ('stair', 'step') and block['id'] == block_ids[leg + 1]
             step_config = dict(config, contacts=[{'state': 1, 'plane': block['top'], 'direction': -1, 'step': True}])
             _, _, _, failures = vertical_step(step_config, 0, profile['position'][0], profile['velocity'][0], False, True, 0)
             if not selected_step and not failures:
