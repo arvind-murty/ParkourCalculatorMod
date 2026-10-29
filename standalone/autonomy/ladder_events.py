@@ -1,4 +1,5 @@
 from .ladder_geometry import schedule_constraints, region_rectangles
+from .movement_units import movement_program, compile_units
 
 
 def validate_ladder_events(route):
@@ -21,6 +22,15 @@ def validate_ladder_events(route):
             if previous['sneak'] != s['sneak'] or previous['trace']['position'] != s['trace']['position']:
                 raise ValueError('Episodes in one flight must share the complete input and Y timeline')
         seen[leg].append(s)
+    route['movementUnits'] = []
+    for leg, ticks in enumerate(route['airtimes']):
+        events = [e for e in entries if e['leg'] == leg]
+        units = movement_program(ticks, events)
+        compiled = compile_units(ticks, units)
+        expected = [any(e['schedule']['ladderTicks'][t] for e in events) for t in range(ticks + 1)]
+        if compiled['ladderTicks'] != expected:
+            raise ValueError('Movement units disagree with ladder occupancy')
+        route['movementUnits'].append(units)
 
 
 def compile_ladder_events(route, events, ticks):
@@ -34,7 +44,9 @@ def compile_ladder_events(route, events, ticks):
         if event['landing'] is None:
             continue
         offset = event['jump']
-        ladder[offset:offset + s['ticks'] + 1] = [a or b for a, b in zip(ladder[offset:offset + s['ticks'] + 1], s['ladderTicks'])]
+        units = movement_program(s['ticks'], [selected])
+        occupied = compile_units(s['ticks'], units)['ladderTicks']
+        ladder[offset:offset + s['ticks'] + 1] = [a or b for a, b in zip(ladder[offset:offset + s['ticks'] + 1], occupied)]
         sneak[offset:offset + s['ticks']] = s['sneak']
         walls, hits, scene_hits = schedule_constraints(s, selected['column'], selected['wall'],
             selected['entryFace'], selected['exitFace'], start=offset, margin=max(route['supportClearance'], 2e-7))

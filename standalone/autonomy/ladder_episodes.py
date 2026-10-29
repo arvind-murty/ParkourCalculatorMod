@@ -5,6 +5,7 @@ from standalone.ipopt.model import integer
 from .contact_profiles import contact_profile
 from .ladder_schedules import trace_ladder_schedule
 from .mixed_ladder import climb_contacts
+from .movement_units import exit_matches, movement_program
 
 
 def compose_ladder_episodes(source_top, target_top, episodes, *, max_inputs=200, sneak=None,
@@ -12,6 +13,8 @@ def compose_ladder_episodes(source_top, target_top, episodes, *, max_inputs=200,
     integer(max_inputs, 'maximum inputs', 1, 200)
     if not isinstance(episodes, list) or not episodes:
         raise ValueError('Supply ladder episodes')
+    if target_top is None:
+        max_inputs = max(e['exitState'] for e in episodes)
     ladder, climbing, selected, templates, region_ids = [False] * (max_inputs + 1), [False] * max_inputs, list(contacts), [], set()
     for episode in episodes:
         e, x, column, wall = episode['entryState'], episode['exitState'], episode['column'], episode['wall']
@@ -31,13 +34,13 @@ def compose_ladder_episodes(source_top, target_top, episodes, *, max_inputs=200,
     flags = [climbing[t] or any(e['axis'] != 'Y' and e['offset'] == t for e in contacts) for t in range(max_inputs)]
     vertical = [{'state': e['offset'] + 1, 'plane': e['plane'], 'direction': e['direction'],
                  **({'step': True} if e.get('role') == 'step' else {})} for e in contacts if e['axis'] == 'Y']
-    sneak = list(sneak) if sneak is not None else []
+    sneak = list(sneak[:max_inputs]) if sneak is not None else []
     sneak.extend([False] * (max_inputs - len(sneak)))
     preview = trace_ladder_schedule({'position': source_top, 'velocity': initial_velocity, 'onGround': initial_ground},
         ladder, sneak, flags,
         jump=[f32(.42) if jump_at_start else None] + [None] * (max_inputs - 1),
         target_top=target_top, min_landing_state=max(e['exitState'] for e in episodes), contacts=vertical)
-    if preview['status'] != 'landed':
+    if preview['status'] != ('simulated' if target_top is None else 'landed'):
         return None
     for episode, local in templates:
         try:
@@ -61,15 +64,15 @@ def compose_ladder_episodes(source_top, target_top, episodes, *, max_inputs=200,
         if any(yes and not column['minY'] <= y < column['maxY'] for y, yes in zip(trace['position'], inside)):
             return None
         kind = episode.get('exitKind', 'side')
-        if kind == 'top' and trace['position'][x] < column['maxY']:
-            return None
-        if kind == 'side' and not column['minY'] <= trace['position'][x] < column['maxY']:
+        if not exit_matches(kind, trace['position'][x], column):
             return None
         s = {'ticks': n, 'entryState': e, 'exitState': x, 'exitKind': kind,
              'entryFamily': episode['entryFace']['family'], 'entryChannel': episode['entryFace']['channel'],
              'entryDelay': 0, 'hit': local[:n], 'sneak': profile['sneak'][:], 'ladderTicks': inside,
              'trace': copy.deepcopy(trace), 'postExitTicks': n - x, 'firstClampedInput': e,
              'exitInput': x - 1, 'lastClimbEligibleInput': x - 2, 'contactEvents': []}
+        if episode.get('climbWindow') is not None:
+            s['climbWindow'] = list(episode['climbWindow'])
         try:
             climb_contacts(s, episode['wall'])
         except ValueError:
@@ -77,4 +80,11 @@ def compose_ladder_episodes(source_top, target_top, episodes, *, max_inputs=200,
         events.append({'schedule': s, 'column': copy.deepcopy(column), 'wall': copy.deepcopy(episode['wall']),
                        'entryFace': copy.deepcopy(episode['entryFace']), 'exitFace': copy.deepcopy(episode['exitFace'])})
     profile['contactEvents'] = list(contacts)
-    return {'profile': profile, 'ladderEvents': events, 'trace': trace}
+    try:
+        units = movement_program(n, events)
+    except ValueError:
+        return None
+    profile['movementUnits'] = units
+    return {'profile': profile, 'ladderEvents': events, 'trace': trace,
+            'movementUnits': units, 'terminal': 'airborne' if target_top is None else 'landed',
+            'episodes': copy.deepcopy(episodes)}

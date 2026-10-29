@@ -34,7 +34,7 @@ def contact_profile(source_top, target_top, events, *, max_inputs=200, ladder=No
             target_top=target_top, min_landing_state=min_landing_state, contacts=vertical)
     except ValueError:
         return None
-    if trace['status'] != 'landed' or any(e['offset'] >= trace['ticks'] for e in events):
+    if trace['status'] != ('simulated' if target_top is None else 'landed') or any(e['offset'] >= trace['ticks'] for e in events):
         return None
     for event in events:
         if event['axis'] != 'Y':

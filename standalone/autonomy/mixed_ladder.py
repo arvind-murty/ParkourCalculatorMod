@@ -4,6 +4,7 @@ from .contact_combinations import merge_contacts, contact_combinations
 from .contact_profiles import contact_profile, contact_opportunities
 from .ladder_schedules import trace_ladder_schedule
 from .obstacle_geometry import BODY_HEIGHT
+from .movement_units import exit_matches, ladder_units
 
 
 def climb_contacts(schedule, wall):
@@ -39,8 +40,7 @@ def with_contacts(schedule, extra, column, wall, target_top, *, max_inputs=200):
     n, ys = profile['airtime'], profile['position']
     if any(inside and not column['minY'] <= y < column['maxY'] for y, inside in zip(ys, profile['ladderTicks'])):
         return None
-    if s['exitState'] > n or (s['exitKind'] == 'top' and ys[s['exitState']] < column['maxY']) \
-            or (s['exitKind'] == 'side' and not column['minY'] <= ys[s['exitState']] < column['maxY']):
+    if s['exitState'] > n or not exit_matches(s['exitKind'], ys[s['exitState']], column):
         return None
     actual = [any(e['axis'] != 'Y' and e['offset'] == t for e in selected) for t in range(n)]
     trace = trace_ladder_schedule({'position': ys[0], 'velocity': profile['velocity'][0], 'onGround': profile['grounded'][0]},
@@ -51,6 +51,10 @@ def with_contacts(schedule, extra, column, wall, target_top, *, max_inputs=200):
     s.update(ticks=n, hit=(s['hit'] + [False] * n)[:n], sneak=profile['sneak'], ladderTicks=profile['ladderTicks'],
              trace=trace, postExitTicks=n - s['exitState'],
              contactEvents=[{k: v for k, v in e.items() if k != 'state'} for e in selected if e['role'] != 'climb'])
+    try:
+        s['movementUnits'] = ladder_units(s, column['id'])
+    except ValueError:
+        return None
     return s
 
 
