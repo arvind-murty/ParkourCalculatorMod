@@ -1,6 +1,6 @@
 # Schedule-generation performance follow-ups
 
-2026-10-29. User accepts the first two behavior-preserving improvements below. Multiplier-based schedule pruning is recorded for the later pruning pass, after movement-type coverage. Resumable generation remains a design discussion, not an implemented change.
+2026-10-29. User accepts the first two behavior-preserving improvements below. Multiplier-based schedule pruning is recorded for the later pruning pass, after movement-type coverage. The user remains unconvinced about resumable generation: retain it only as a potential improvement, with no agreement to implement it. It is not required to finish the common movement-type interface.
 
 ## Profile
 
@@ -23,7 +23,7 @@ An entry face is a separate geometric alternative. Front and side channels with 
 
 The earlier exact-Y caching suggestion is deferred with this discussion. No cache or new multiplier/face pruning has been added.
 
-## Why resumable generation may help
+## Optional idea: resumable generation
 
 Currently an expansion finishes a batch of local schedule generation and selection before returning its continuations to the global queue. A resumable producer would emit a small batch, retain its enumeration state, and let the scheduler alternate that producer with other pending work. Unseen alternatives remain available instead of being discarded.
 
@@ -32,3 +32,5 @@ Its purpose is shorter latency to usable continuations and finer budget allocati
 Preserve total elapsed ticks before objective. Resuming a generator is a search-work task; it is not an additional Minecraft movement tick. If generators compete with concrete prefixes in the queue, retain an admissible time bound for their unseen work. Do not turn batching into an undocumented depth-first/first-feasible policy or claim a minimum while shorter unresolved alternatives remain. Existing bounded-search proof limitations still apply.
 
 This is a larger scheduling refactor than the first two changes. Keep it separate from input-family pruning and from any movement-model changes.
+
+Do not promote this proposal into the implementation sequence without further agreement or evidence that its scheduling benefit is useful. The first two implementation efficiencies and the common movement-type refactor can proceed independently.
