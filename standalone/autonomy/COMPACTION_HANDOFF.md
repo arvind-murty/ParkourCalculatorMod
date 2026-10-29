@@ -2,6 +2,10 @@
 
 Updated checkpoint, 2026-10-27, on `codex/run-ticks-planning`. Run ticks, support routing, blockages, one-input wall/ceiling contacts and one ladder/vine interaction per composed route are implemented. `46f0f52` added the shared ladder compiler/ranking foundation and `d6ee0a4` added the complete route feature, cold fixtures and saved evidence.
 
+## New authorized work, 2026-10-29
+
+Read [LADDER_COMPOSITION_PLAN.md](LADDER_COMPOSITION_PLAN.md) before implementation. The user now requests multiple ladder interactions and joint deliberate wall/ceiling contacts. Horizontally/vertically adjacent cells should represent one exact ladder region; diagonal-only adjacency, switching climb walls and same-region re-entry remain deferred. Preserve full-prefix solving and shared movement compilation. The integration branch is idle; published tip `e09f2a7` was reviewed with Git/GitHub CLI and its latest update is documentation only. The current source pin already contains the movement fixes. The composition extension is planned, not implemented yet.
+
 ## Resume here
 
 1. Read repository `AGENTS.md` and `CONTEXT.md`, then this file.

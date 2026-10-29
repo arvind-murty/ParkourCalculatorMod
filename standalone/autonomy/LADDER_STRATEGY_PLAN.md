@@ -2,6 +2,8 @@
 
 2026-10-27. Schedule generation, numerical entry discovery, horizontal ranking, finite-geometry ladder solves and one-interaction route integration are implemented. The Real 11 prototype and shared movement/collision helpers provide the reused movement primitives. The execution plan, API, acceptance evidence and remaining limits are recorded below.
 
+The next authorized extension is specified in [LADDER_COMPOSITION_PLAN.md](LADDER_COMPOSITION_PLAN.md): multiple ladders, adjacent regions and joint wall/ceiling schedules. Its planned scope does not change the implemented single-interaction status recorded here.
+
 ## Goal and accepted approach
 
 Choose a complete ladder interaction: approach and entry time, wall distance when entering, fall/sneak/climb inputs, consecutive climb contacts, last climb input and top/side exit. Generate many bounded discrete schedules cheaply, screen/rank them, then solve the promising ones with free facings and exact positional/contact/clamp conditions. Optimize total elapsed inputs to the actual landing or continuation goal, then the numerical objective among equal-time routes. Ladder-local climb time or exit height alone is not the objective.
