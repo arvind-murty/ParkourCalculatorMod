@@ -12,7 +12,7 @@ The climbing unit owns its sustained-hit duration and the zero, one or two one-i
 
 Climbing's central scheduling responsibility is to choose the duration/hit/stop variant that meets the required exit Y and carried VY for the continuation. Falling exposes its fall/Sneak schedule separately. Whole-route time remains the primary objective, and X/Z reach, wall contacts and occupancy still need the joint continuous solve. Unit transitions carry all movement/input state without reset. Arbitrary successive ladder chains arise from common unit composition, not a fixed two-ladder transfer template.
 
-This is the agreed design for the next refactor. The existing generators, two-region automatic transfer template and accepted numerical evidence below have not yet been replaced with this unit interface.
+The first implementation slice now provides `movement_units.py`, materialized occupied-state/contact masks, the exact five phase sequences, bottom/side/top exit validation, and `finishAtExit` schedule generation without a fictitious landing. `compose_ladder_episodes(..., target_top=None)` carries an airborne prefix through its actual exit. Existing scalar physics remains shared. Endpoint-stop Sneak and the existing first-clamped-input Sneak alternative remain available; they do not introduce another external falling phase. Automatic chain discovery is the next slice.
 
 ## Existing foundation and shared-source context
 

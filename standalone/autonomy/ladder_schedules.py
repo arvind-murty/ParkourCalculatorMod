@@ -5,6 +5,7 @@ from itertools import combinations
 
 from standalone.ipopt.ladder import f32, vertical_carry, vertical_move, vertical_step
 from standalone.ipopt.model import integer, number
+from .movement_units import exit_matches, ladder_units
 
 
 def _flags(values, name, length=None):
@@ -137,7 +138,7 @@ def prepare_ladder_request(request):
         raise ValueError('Expected a ladder schedule request')
     config = copy.deepcopy(request)
     allowed = {'version', 'initial', 'region', 'entries', 'targetTop', 'exitKinds', 'exitStates',
-               'maxInputs', 'entryDelay', 'jumpAtStart', 'maxSkeletons', 'maxMaskWork', 'maxSchedules', 'contactVariants'}
+               'maxInputs', 'entryDelay', 'jumpAtStart', 'maxSkeletons', 'maxMaskWork', 'maxSchedules', 'contactVariants', 'finishAtExit'}
     if set(config) - allowed or type(config.get('version')) is not int or config['version'] != 1:
         raise ValueError('Expected a version 1 ladder schedule request with supported fields')
     for key, default, lo, hi in [('maxInputs', 40, 1, 200), ('entryDelay', 5, 0, 5),
@@ -145,7 +146,10 @@ def prepare_ladder_request(request):
                                  ('maxSchedules', 10000, 1, 200000)]:
         integer(config.setdefault(key, default), key, lo, hi)
     n = config['maxInputs']
-    number(config.get('targetTop'), 'target top')
+    if type(config.setdefault('finishAtExit', False)) is not bool:
+        raise ValueError('finishAtExit must be boolean')
+    if not config['finishAtExit']:
+        number(config.get('targetTop'), 'target top')
     region = config.get('region')
     if not isinstance(region, dict) or set(region) != {'minY', 'maxY'}:
         raise ValueError('Supply one contiguous vertical ladder region')
@@ -194,9 +198,9 @@ def prepare_ladder_request(request):
         raise ValueError('Supply 1 through 256 contact variants')
     for selected in variants + [e.get('contactEvents', []) for e in entries]:
         validate_contact_events({'contactEvents': selected, 'airtimes': [n], 'sharedMovement': True})
-    kinds = config.setdefault('exitKinds', ['side', 'top'])
-    if not isinstance(kinds, list) or not kinds or any(k not in ('side', 'top') for k in kinds) or len(set(kinds)) != len(kinds):
-        raise ValueError('Exit kinds must be unique side/top choices')
+    kinds = config.setdefault('exitKinds', ['side', 'top', 'bottom'])
+    if not isinstance(kinds, list) or not kinds or any(k not in ('side', 'top', 'bottom') for k in kinds) or len(set(kinds)) != len(kinds):
+        raise ValueError('Exit kinds must be unique side/top/bottom choices')
     states = config.setdefault('exitStates', list(range(1, n + 1)))
     if not isinstance(states, list) or not states or len(set(states)) != len(states):
         raise ValueError('Supply unique exit states')
@@ -261,7 +265,7 @@ def _mask_work(skeleton, config):
             else:
                 trace = trace_ladder_schedule(config['initial'], ladder, sneak, actual_hits,
                     jump=[f32(.42) if config['jumpAtStart'] else None] + [None] * (n - 1),
-                    target_top=config['targetTop'], min_landing_state=max(exit_state, max((e['offset'] + 1 for e in extra), default=0)),
+                    target_top=None if config['finishAtExit'] else config['targetTop'], min_landing_state=max(exit_state, max((e['offset'] + 1 for e in extra), default=0)),
                     contacts=vertical)
                 region = config['region']
                 reason = None
@@ -270,12 +274,15 @@ def _mask_work(skeleton, config):
                 elif any(ladder[t] and not region['minY'] <= y < region['maxY']
                          for t, y in enumerate(trace['position'])):
                     reason = 'inside_y'
-                elif skeleton['exitKind'] == 'side' and not region['minY'] <= trace['position'][exit_state] < region['maxY']:
-                    reason = 'side_exit_y'
-                elif skeleton['exitKind'] == 'top' and trace['position'][exit_state] < region['maxY']:
-                    reason = 'top_exit_y'
-                elif trace['status'] != 'landed':
+                elif not exit_matches(skeleton['exitKind'], trace['position'][exit_state], region):
+                    reason = skeleton['exitKind'] + '_exit_y'
+                elif not config['finishAtExit'] and trace['status'] != 'landed':
                     reason = 'landing_horizon'
+                if reason is None:
+                    try:
+                        ladder_units(skeleton)
+                    except ValueError:
+                        reason = 'movement_phase'
                 if reason is None:
                     tails.append((trace, iter(sneak_patterns(trace['ticks'], range(exit_state, trace['ticks'])))))
                 yield 'trace', reason
@@ -298,6 +305,8 @@ def _mask_work(skeleton, config):
             candidate['firstClampedInput'] = first_clamped
             candidate['exitInput'] = exit_state - 1
             candidate['lastClimbEligibleInput'] = exit_state - 2 if exit_state >= 2 else None
+            candidate['movementUnits'] = ladder_units(candidate)
+            candidate['terminal'] = 'airborne' if config['finishAtExit'] else 'landed'
             yield 'schedule', candidate
 
 
@@ -319,6 +328,8 @@ def generate_ladder_schedules(request, *, cancel_event=None, deadline=None):
                 for kind in config['exitKinds']:
                     for variant in config['contactVariants']:
                         combined = entry.get('contactEvents', []) + variant
+                        if config['finishAtExit'] and any(e['offset'] >= exit_state for e in combined):
+                            continue
                         try:
                             from .contact_combinations import merge_contacts
                             combined = merge_contacts([dict(e, state=e['offset'] + 1) for e in combined])
@@ -327,7 +338,7 @@ def generate_ladder_schedules(request, *, cancel_event=None, deadline=None):
                         contexts.append({'entryFamily': entry['family'], 'entryChannel': entry['channel'],
                                      'entryState': state, 'entryDelay': state - first,
                                      'firstHitLowerBound': entry.get('firstHitLowerBounds', {}).get(str(state), 0),
-                                     'exitState': exit_state, 'exitKind': kind, 'ticks': config['maxInputs'],
+                                     'exitState': exit_state, 'exitKind': kind, 'ticks': exit_state if config['finishAtExit'] else config['maxInputs'],
                                      'contactEvents': combined})
     stream = _round_robin(_context_skeletons(c, stats) for c in contexts)
     skeletons, skeleton_limited = [], False
