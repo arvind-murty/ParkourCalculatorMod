@@ -22,7 +22,8 @@ def prepare_scene(request):
                'maxFlightInputs', 'maxContactBranches', 'stairBoost', 'supportClearance', 'objective',
                'geometryBounds', 'collisionScene', 'maxBlockagesPerObstacle', 'maxPassageCandidates',
                'maxHorizontalBlockagesPerObstacle', 'maxVerticalBlockagesPerObstacle',
-               'maxWallHits', 'maxWallHitCandidates', 'ceilingHits', 'climbableCells', 'ladderSearch'}
+               'maxWallHits', 'maxWallHitCandidates', 'ceilingHits', 'climbableCells', 'ladderSearch',
+               'maxContactCombinations', 'maxCombinedEvents'}
     extra = set(scene) - allowed
     if extra:
         raise ValueError('Unsupported block-scene fields: ' + ', '.join(sorted(extra)))
@@ -36,6 +37,8 @@ def prepare_scene(request):
     if solid_scene:
         integer(scene.setdefault('maxWallHits', 2), 'maxWallHits', 0, 8)
         integer(scene.setdefault('maxWallHitCandidates', 24), 'maxWallHitCandidates', 1, 512)
+        integer(scene.setdefault('maxContactCombinations', 64), 'maxContactCombinations', 0, 100000)
+        integer(scene.setdefault('maxCombinedEvents', 3), 'maxCombinedEvents', 1, 32)
         if type(scene.setdefault('ceilingHits', True)) is not bool:
             raise ValueError('ceilingHits must be boolean')
         scene = normalize_geometry(scene)
@@ -186,6 +189,18 @@ def build_transition_graph(scene, compiler, *, seconds=5):
                     ceiling = profile_cache[ceiling_key]
                     if ceiling is not None:
                         available_profiles.append(('ceiling', ceiling, None))
+            if scene['sceneModel'] == 'collision_boxes' and scene['maxContactCombinations']:
+                combination_key = key + ('combinations',)
+                if combination_key not in profile_cache:
+                    from .contact_profiles import contact_opportunities, generate_contact_profiles
+                    horizon = max((p['airtime'] for _, p, _ in profile_cache[key]), default=0)
+                    opportunities = [e for e in contact_opportunities(scene['collisionScene']['solids'], horizon,
+                        block_ids=[solid_owners[i] for i in range(len(solid_owners))], ceilings=scene['ceilingHits'])
+                        if e['axis'] == 'Y' or e['box'][4] > min(key)]
+                    profile_cache[combination_key] = generate_contact_profiles(*key, opportunities,
+                        max_inputs=scene['maxFlightInputs'], max_events=scene['maxCombinedEvents'],
+                        limit=scene['maxContactCombinations'])['profiles']
+                available_profiles.extend(('contacts', p, None) for p in profile_cache[combination_key])
             options = sorted(available_profiles, key=lambda option:
                              (option[0], (1 if option[0] == 'stair' else -1) *
                               option[2]['direction'] * delta[option[2]['axis']] if option[2] else 0))
@@ -307,6 +322,8 @@ def compile_block_path(scene, block_ids, transitions=None):
             route['ladderEvents'] = [dict(edge['ladderEvent'], leg=leg) for leg, edge in enumerate(transitions)
                                      if 'ladderEvent' in edge]
             route['verticalProfiles'] = selected
+            route['contactEvents'] = [dict(event, leg=leg) for leg, profile in enumerate(selected)
+                                      for event in profile.get('contactEvents', [])]
         return {'status': 'derived', 'route': route, 'profiles': selected}
     compiled = compile_open_air_route({'version': 1, 'sceneModel': 'open_air_supports',
                                       'initial': scene['initial'], 'blocks': blocks, 'inputs': scene['inputs'],

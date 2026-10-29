@@ -53,6 +53,7 @@ public final class CompileRunTicksPhysics {
         int direction;
         double plane;
         double[] box;
+        boolean step;
     }
 
     public static final class Block {
@@ -145,6 +146,15 @@ public final class CompileRunTicksPhysics {
             }
             if (request.contacts != null) for (PlannedContact event : request.contacts) {
                 if (event.state != t + 1) continue;
+                if (event.step) {
+                    boolean known = sceneHasBox(request.scene, event.box);
+                    if (!hit.stepped || event.axis != 1 || event.direction != -1 || !known
+                            || StrictMath.abs(hit.position.y - event.plane) > 1e-7
+                            || event.box == null || event.box[4] != event.plane
+                            || hit.box.max.x <= event.box[0] || hit.box.min.x >= event.box[3]
+                            || hit.box.max.z <= event.box[2] || hit.box.min.z >= event.box[5]) contactMismatch = true;
+                    continue;
+                }
                 StaticScene.Clip last = null;
                 for (StaticScene.Clip clip : hit.clips) if (clip.axis == event.axis) last = clip;
                 double coordinate = event.axis == 0 ? hit.position.x : event.axis == 1 ? hit.position.y : hit.position.z;
@@ -187,6 +197,17 @@ public final class CompileRunTicksPhysics {
         result.put("feasible", true);
         result.put("ticks", n);
         return result;
+    }
+
+    private static boolean sceneHasBox(JsonObject scene, double[] values) {
+        if (values == null || values.length != 6) return false;
+        for (com.google.gson.JsonElement solid : scene.getAsJsonArray("solids")) {
+            boolean same = true;
+            for (int a = 0; a < 6; a++)
+                if (solid.getAsJsonArray().get(a).getAsDouble() != values[a]) same = false;
+            if (same) return true;
+        }
+        return false;
     }
 
     private static boolean sameBox(AABB box, double[] values) {

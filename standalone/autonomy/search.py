@@ -158,7 +158,7 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                                                                                  route['initial']['position'][2]]]},
                     'plan': plan}
         try:
-            if route['ladderEvents']:
+            if route['ladderEvents'] or route.get('contactEvents') and route.get('verticalProfiles'):
                 from .block_contacts import validate_vertical_schedule
                 vertical = validate_vertical_schedule(route, route['verticalProfiles'], plan)
                 if not vertical['feasible']:

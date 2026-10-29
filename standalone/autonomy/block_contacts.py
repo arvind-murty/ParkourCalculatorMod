@@ -69,11 +69,14 @@ def validate_vertical_schedule(route, profiles, plan):
             contacts.append(dict(contact, state=event['jump'] + contact['state']))
         for tick in range(event['landed'], event['jump']):
             contacts.append({'state': tick + 1, 'plane': profile['position'][0], 'direction': -1})
+    from .contact_combinations import merge_contacts
+    contacts = merge_contacts([dict(c, axis=1) for c in contacts] + plan.get('verticalContacts', []))
     vertical = {'profile': 'minecraft-1.8.9', 'position': route['initial']['position'][1],
                 'velocity': route['initial']['velocity'][1], 'onGround': True,
                 'previousHorizontalCollision': False, 'threshold': .005,
                 'jumpVelocity': [f32(.42) if jump else None for jump in plan['jump']],
-                'sneak': plan.get('sneak', [False] * n), 'contacts': sorted(contacts, key=lambda contact: contact['state'])}
+                'sneak': plan.get('sneak', [False] * n),
+                'contacts': [{k: v for k, v in c.items() if k != 'axis'} for c in contacts]}
     x, synthetic_hits = 0., []
     hit_states = {c['state'] for c in plan.get('contacts', [])}
     for t in range(n):
@@ -132,8 +135,11 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
         score, _, rows, passages, hits = heapq.heappop(queue)
         if len(hits) < max_wall_hits:
             for index, hit in enumerate(hit_pool['options']):
+                if any(e['leg'] == hit['leg'] and e['axis'] == hit['axis'] and e['offset'] == hit['offset']
+                       for e in route.get('contactEvents', [])):
+                    continue
                 if any(h['leg'] == hit['leg'] and h['axis'] == hit['axis']
-                       and abs(h['offset'] - hit['offset']) <= 1 for h in hits):
+                       and h['offset'] == hit['offset'] for h in hits):
                     continue
                 offer(score + 10 + index * .01, rows, passages, hits + [hit])
         branch = copy.deepcopy(route)
