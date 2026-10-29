@@ -14,10 +14,13 @@ def merge_contacts(contacts, *, scene=False):
             previous = merged[key]
             if any(previous.get(k) != contact.get(k) for k in ('plane', 'direction', 'step')):
                 raise ValueError('Conflicting contacts on one input axis')
-            if scene and previous.get('box') != contact.get('box'):
-                previous.setdefault('equivalentBoxes', [previous['box']])
-                if contact['box'] not in previous['equivalentBoxes']:
-                    previous['equivalentBoxes'].append(copy.deepcopy(contact['box']))
+            if scene and (previous.get('box') != contact.get('box') or previous.get('boxes') != contact.get('boxes')):
+                choices = copy.deepcopy(previous.get('boxes', [previous['box']] if 'box' in previous else []))
+                for box in contact.get('boxes', [contact['box']] if 'box' in contact else []):
+                    if box not in choices:
+                        choices.append(copy.deepcopy(box))
+                previous.pop('box', None)
+                previous['boxes'] = choices
         else:
             merged[key] = copy.deepcopy(contact)
     return [merged[key] for key in sorted(merged)]
@@ -79,7 +82,8 @@ def compile_contact_events(route, events, ticks):
         if axis == 1:
             vertical.append(dict(state=tick + 1, plane=event['plane'], direction=event['direction'],
                                  **({'step': True} if event['role'] == 'step' else {})))
-            tangents = [('X', 0, tick), ('Z', 2, tick)]
+            at = tick + 1 if event['role'] == 'step' else tick
+            tangents = [('X', 0, at), ('Z', 2, at)]
         else:
             horizontal.append(dict(contact, axis=axis // 2))
             tangents = [('Z', 2, tick)] if axis == 0 else [('X', 0, tick + 1)]

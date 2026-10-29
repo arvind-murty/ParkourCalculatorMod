@@ -53,6 +53,7 @@ public final class CompileRunTicksPhysics {
         int direction;
         double plane;
         double[] box;
+        double[][] boxes;
         boolean step;
     }
 
@@ -160,8 +161,7 @@ public final class CompileRunTicksPhysics {
                 double coordinate = event.axis == 0 ? hit.position.x : event.axis == 1 ? hit.position.y : hit.position.z;
                 if (last == null || last.requested == last.resolved || last.requested * event.direction <= 0
                         || StrictMath.abs(coordinate - event.plane) > 1e-7
-                        || event.box != null && !sameBox(last.obstacle, event.box)
-                        && !sameFace(last.obstacle, event, body, hit)) contactMismatch = true;
+                        || !matchesFace(request.scene, last.obstacle, event, body, hit)) contactMismatch = true;
             }
             if (contactMismatch || occupancyMismatch || velocityError > 1e-7 || error > 1e-7 || hit.onGround != request.expectedGround[t + 1]) {
                 result.put("feasible", false);
@@ -206,6 +206,20 @@ public final class CompileRunTicksPhysics {
             for (int a = 0; a < 6; a++)
                 if (solid.getAsJsonArray().get(a).getAsDouble() != values[a]) same = false;
             if (same) return true;
+        }
+        return false;
+    }
+
+    private static boolean matchesFace(JsonObject scene, AABB box, PlannedContact contact, AABB before, StaticScene.Contact hit) {
+        if (contact.box == null && contact.boxes == null) return true;
+        double[][] choices = contact.boxes == null ? new double[][]{contact.box} : contact.boxes;
+        for (double[] values : choices) {
+            PlannedContact candidate = new PlannedContact();
+            candidate.axis = contact.axis;
+            candidate.direction = contact.direction;
+            candidate.plane = contact.plane;
+            candidate.box = values;
+            if (sceneHasBox(scene, values) && (sameBox(box, values) || sameFace(box, candidate, before, hit))) return true;
         }
         return false;
     }

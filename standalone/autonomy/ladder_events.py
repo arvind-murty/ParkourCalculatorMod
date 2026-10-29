@@ -1,18 +1,26 @@
-from .ladder_geometry import schedule_constraints
+from .ladder_geometry import schedule_constraints, region_rectangles
 
 
 def validate_ladder_events(route):
     entries = route.setdefault('ladderEvents', [])
     if not isinstance(entries, list):
         raise ValueError('ladderEvents must be a list')
-    seen = set()
+    seen = {}
     for event in entries:
         leg = event.get('leg')
-        if type(leg) is not int or not 0 <= leg < len(route['airtimes']) or leg in seen:
-            raise ValueError('One ladder interaction is allowed per transition')
-        seen.add(leg)
+        if type(leg) is not int or not 0 <= leg < len(route['airtimes']):
+            raise ValueError('Ladder interaction has an invalid transition')
         if event['schedule']['ticks'] != route['airtimes'][leg] or not route.get('sharedMovement'):
             raise ValueError('Ladder interaction requires matching duration and shared movement')
+        s = event['schedule']
+        if len(s['ladderTicks']) != s['ticks'] + 1 or len(s['sneak']) != s['ticks']:
+            raise ValueError('Ladder schedule arrays have inconsistent lengths')
+        for previous in seen.setdefault(leg, []):
+            if any(a and b for a, b in zip(previous['ladderTicks'], s['ladderTicks'])):
+                raise ValueError('Ladder episodes may not overlap occupied states')
+            if previous['sneak'] != s['sneak'] or previous['trace']['position'] != s['trace']['position']:
+                raise ValueError('Episodes in one flight must share the complete input and Y timeline')
+        seen[leg].append(s)
 
 
 def compile_ladder_events(route, events, ticks):
@@ -26,7 +34,7 @@ def compile_ladder_events(route, events, ticks):
         if event['landing'] is None:
             continue
         offset = event['jump']
-        ladder[offset:offset + s['ticks'] + 1] = s['ladderTicks']
+        ladder[offset:offset + s['ticks'] + 1] = [a or b for a, b in zip(ladder[offset:offset + s['ticks'] + 1], s['ladderTicks'])]
         sneak[offset:offset + s['ticks']] = s['sneak']
         walls, hits, scene_hits = schedule_constraints(s, selected['column'], selected['wall'],
             selected['entryFace'], selected['exitFace'], start=offset, margin=max(route['supportClearance'], 2e-7))
@@ -36,8 +44,8 @@ def compile_ladder_events(route, events, ticks):
         if s['entryState'] == 0:
             for state in range(event['landed'], event['jump']):
                 ladder[state] = True
-                for axis, key in [('X', 'x'), ('Z', 'z')]:
-                    value = selected['column'][key]
-                    rows.extend([{'mode': axis, 't1': state, 'cmp': 'GE', 'rhs': value + 1e-6, 'name': 'ladder:run_inside'},
-                                 {'mode': axis, 't1': state, 'cmp': 'LE', 'rhs': value + 1 - 1e-6, 'name': 'ladder:run_inside'}])
+                bounds = region_rectangles(selected['column'], s['trace']['position'][0])[0]
+                for axis, lo, hi in [('X', bounds[0], bounds[1]), ('Z', bounds[2], bounds[3])]:
+                    rows.extend([{'mode': axis, 't1': state, 'cmp': 'GE', 'rhs': lo + 1e-6, 'name': 'ladder:run_inside'},
+                                 {'mode': axis, 't1': state, 'cmp': 'LE', 'rhs': hi - 1e-6, 'name': 'ladder:run_inside'}])
     return rows, contacts, scene_contacts, ladder, sneak

@@ -2,7 +2,7 @@
 
 2026-10-27. Schedule generation, numerical entry discovery, horizontal ranking, finite-geometry ladder solves and one-interaction route integration are implemented. The Real 11 prototype and shared movement/collision helpers provide the reused movement primitives. The execution plan, API, acceptance evidence and remaining limits are recorded below.
 
-The next authorized extension is specified in [LADDER_COMPOSITION_PLAN.md](LADDER_COMPOSITION_PLAN.md): multiple ladders, adjacent regions and joint wall/ceiling schedules. Its planned scope does not change the implemented single-interaction status recorded here.
+The next authorized extension is specified in [LADDER_COMPOSITION_PLAN.md](LADDER_COMPOSITION_PLAN.md): multiple ladders, adjacent regions and joint wall/ceiling schedules. The single-interaction status below records the original checkpoint. The extension is now implemented to the scope recorded in [CONTACT_COMBINATIONS.md](CONTACT_COMBINATIONS.md).
 
 ## Goal and accepted approach
 

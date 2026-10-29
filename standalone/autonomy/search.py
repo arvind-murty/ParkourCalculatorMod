@@ -197,15 +197,34 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                     event, s, column, wall = plan['events'][selected['leg']], selected['schedule'], selected['column'], selected['wall']
                     point = [column['x'] + .5, column['z'] + .5]
                     point[0 if wall['axis'] == 'X' else 1] = wall['plane']
+                    if any(e['leg'] == selected['leg'] and e['schedule']['exitState'] <= s['entryState']
+                           for e in route['ladderEvents']):
+                        entry_face = selected['entryFace']
+                        if entry_face['axis'] != wall['axis']:
+                            point[0 if entry_face['axis'] == 'X' else 1] = entry_face['plane'] - entry_face['direction'] * .03
                     waypoints.append((event['jump'] + s['entryState'], point[:]))
+                    following = [e for e in route['ladderEvents'] if e['leg'] == selected['leg']
+                                 and e['schedule']['entryState'] >= s['exitState']]
+                    transfer_target = None
+                    if following:
+                        next_episode = min(following, key=lambda e: e['schedule']['entryState'])
+                        transfer_target = point[:]
+                        face = selected['exitFace']
+                        transfer_target[0 if face['axis'] == 'X' else 1] = face['plane'] + face['direction'] * .03
                     for t, hit in enumerate(s['hit']):
                         if hit:
                             pressing = point[:]
+                            if transfer_target is not None:
+                                progress = max(0., min(1., (t + 1 - s['entryState']) / max(1, s['exitState'] - s['entryState'])))
+                                tangent = 1 if wall['axis'] == 'X' else 0
+                                pressing[tangent] += progress * (transfer_target[tangent] - pressing[tangent])
                             pressing[0 if wall['axis'] == 'X' else 1] += wall['direction'] * .01
                             waypoints.append((event['jump'] + t + 1, pressing))
                     face = selected['exitFace']
                     if s['exitKind'] == 'top':
                         point[0 if wall['axis'] == 'X' else 1] = wall['plane'] + wall['direction'] * .03
+                        if transfer_target is not None:
+                            point = transfer_target
                     else:
                         point[0 if face['axis'] == 'X' else 1] = face['plane'] + face['direction'] * .03
                     waypoints.append((event['jump'] + s['exitState'], point[:]))

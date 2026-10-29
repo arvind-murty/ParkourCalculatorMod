@@ -277,6 +277,21 @@ def schedule(route, allocation, stage='jump'):
         contacts.extend(ladder_contacts)
         scene_contacts.extend(ladder_scene)
         extra = {'ladderTicks': ladder, 'sneak': sneak}
+    for event, profile in zip(events, route.get('verticalProfiles', [])):
+        if event['landing'] is None:
+            continue
+        offset, duration = event['jump'], route['airtimes'][event['leg']]
+        occupied = profile.get('ladderTicks', [False] * (duration + 1))
+        selected_sneak = profile.get('sneak', [False] * duration)
+        if len(occupied) != duration + 1 or len(selected_sneak) != duration:
+            raise ValueError('Profile medium/input arrays have inconsistent lengths')
+        if any(occupied) or any(selected_sneak):
+            extra.setdefault('ladderTicks', [False] * (state + 1))
+            extra.setdefault('sneak', [False] * state)
+            for tick, inside in enumerate(occupied):
+                extra['ladderTicks'][offset + tick] |= inside
+            for tick, selected in enumerate(selected_sneak):
+                extra['sneak'][offset + tick] |= selected
     from .contact_combinations import compile_contact_events, merge_contacts
     contact_rows, additional, additional_scene, vertical = compile_contact_events(route, events, state)
     walls.extend(contact_rows)

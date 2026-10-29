@@ -1,6 +1,6 @@
 # Multiple ladders and mixed contact schedules
 
-2026-10-29. Implementation plan following the single-interaction prototype in [LADDER_STRATEGY_PLAN.md](LADDER_STRATEGY_PLAN.md). This document describes planned work, not delivered capabilities. User scope now includes multiple ladder interactions and deliberate wall/ceiling contacts composed with climbing. Diagonal-only ladder adjacency, switching climb-wall orientation within a ladder episode, and re-entering the same ladder after leaving remain deferred.
+2026-10-29. Implementation plan following the single-interaction prototype in [LADDER_STRATEGY_PLAN.md](LADDER_STRATEGY_PLAN.md). The delivered interfaces and measured evidence are recorded in [CONTACT_COMBINATIONS.md](CONTACT_COMBINATIONS.md) and its experiment folder. The design below remains the reference for coverage and later search improvements. User scope now includes multiple ladder interactions and deliberate wall/ceiling contacts composed with climbing. Diagonal-only ladder adjacency, switching climb-wall orientation within a ladder episode, and re-entering the same ladder after leaving remain deferred.
 
 ## Existing foundation and shared-source context
 
@@ -99,3 +99,12 @@ Requests contain geometry and initial state only, without recorded facings, chos
 ## Deferred cases
 
 Diagonal-only adjacency inside one ladder episode, changing climb-wall plane/orientation inside an episode, and leaving/re-entering the same ladder region remain explicit search-family gaps. Distinct region episodes along a route are supported by the planned composition; diagonal proximity does not imply continuous occupancy. General contact-selected stair/step discovery, effects/special surfaces, fluids/callbacks and extra initial resume state remain outside this extension. Reuse existing supported ordinary stair profiles and scene rejection rather than silently approximating these mechanics.
+
+
+## Implementation checkpoint
+
+The common contact contract landed in `39d4ede`. Subsequent composition work implements multiple grounded ladder transitions, multi-episode airborne programs and automatic two-region transfer candidates, adjacent region unions, chosen finite wall/corridor alternatives, ceiling/horizontal contact variants, selected-hit-compatible avoidance and actual step/contact reporting. Existing worker, movement compiler and Y recurrence are reused. All per-tick facings remain free. Saved independently validated examples include 42-input two-ladder routing, 28-input airborne transfer, 12-input ladder/ceiling movement and 12-input contact plus explicit wide-neo constraints.
+
+The original broad run exposed two integration regressions: contact alternatives filled an ordinary-prefix pool ahead of baseline ordinary edges, and the legacy reversal test could select the newly added general-contact representation. Equal-duration ordinary-prefix work now retains baseline profiles ahead of contact variants, and the dedicated reversal regression explicitly disables the new profile family. Normal hit-count controls apply to generated contacts too. This changes work ordering/coverage controls, not scalar acceptance tolerances.
+
+Full regression validation and final test counts are recorded in COMPACTION_HANDOFF.md after the final gate. Future route-based pruning should follow the user's two-sided corridor/window discussion, but is explicitly deferred while type support is established. Preserve all contact families in the common representation.

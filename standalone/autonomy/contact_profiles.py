@@ -48,10 +48,12 @@ def contact_profile(source_top, target_top, events, *, max_inputs=200, ladder=No
             'contactEvents': copy.deepcopy(events)}
 
 
-def contact_opportunities(solids, horizon, *, block_ids=None, ceilings=True):
+def contact_opportunities(solids, horizon, *, block_ids=None, ceilings=True, horizontal=True):
     for tick in range(horizon):
         for index, box in enumerate(solids):
             for axis, direction in [(a, d) for d in (1, -1) for a in ('X', 'Z', 'Y') if a != 'Y' or ceilings and d > 0]:
+                if axis != 'Y' and not horizontal:
+                    continue
                 a = 'XYZ'.index(axis)
                 plane = box[a] - (BODY_HEIGHT if axis == 'Y' else HALF_WIDTH) if direction > 0 else box[a + 3] + HALF_WIDTH
                 yield {'leg': 0, 'offset': tick, 'axis': axis, 'direction': direction, 'plane': plane,
@@ -61,11 +63,14 @@ def contact_opportunities(solids, horizon, *, block_ids=None, ceilings=True):
 
 
 def generate_contact_profiles(source_top, target_top, opportunities, *, max_inputs=200,
-                              max_events=3, limit=1000, ladder=None, sneak=None, ladder_windows=(), cancel_event=None):
+                              max_events=3, limit=1000, ladder=None, sneak=None, ladder_windows=(), cancel_event=None,
+                              max_horizontal=None):
     profiles, seen, attempts = [], set(), 0
     for chosen in contact_combinations(opportunities, max_events=max_events, limit=limit,
                                         ladder_windows=ladder_windows, cancel_event=cancel_event):
         attempts += 1
+        if max_horizontal is not None and sum(e['axis'] != 'Y' for e in chosen) > max_horizontal:
+            continue
         profile = contact_profile(source_top, target_top, chosen, max_inputs=max_inputs, ladder=ladder, sneak=sneak)
         if profile is None:
             continue

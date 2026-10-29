@@ -1,5 +1,6 @@
 import copy
 import heapq
+import json
 import math
 import time
 
@@ -7,11 +8,15 @@ from standalone.ipopt import prepare, solve, validate
 from standalone.ipopt.ladder import f32
 from standalone.ipopt.model import integer
 from .block_contacts import solve_contact_branches, floor_checks, validate_vertical_schedule
-from .ladder_geometry import climb_walls, entry_channels, exit_faces, ladder_columns, schedule_constraints
+from .ladder_geometry import climb_walls, entry_channels, exit_faces, ladder_regions, region_axis, region_contains, schedule_constraints
 from .ladder_ranking import rank_ladder_schedules
 from .ladder_schedules import generate_ladder_schedules
 from .obstacle_geometry import check_geometry
 from .route import center_bounds, schedule
+
+
+def selected_edges(graph, edges):
+    return [edge if isinstance(edge, dict) else graph['transitions'][edge] for edge in edges]
 
 
 def ladder_settings(scene):
@@ -20,7 +25,8 @@ def ladder_settings(scene):
                 'maxSchedules': 2000, 'maxMaskWork': 30000, 'maxRanked': 256, 'representatives': 3,
                 'maxNumericalSchedules': 32, 'maxOrdinaryPaths': 8, 'maxSuffixPaths': 3,
                 'maxRouteContexts': 24, 'maxRunAllocations': 4, 'minClimbInputs': 0,
-                'maxInteractions': 1, 'requireLadder': False}
+                'maxInteractions': 12, 'requireLadder': False,
+                'maxContactVariants': 16, 'maxMixedContacts': 3, 'maxTransferPrograms': 16, 'maxTransferWindows': 4}
     if not isinstance(settings, dict) or set(settings) - set(defaults):
         raise ValueError('Unsupported ladder search settings')
     for key, default in defaults.items():
@@ -29,17 +35,17 @@ def ladder_settings(scene):
             if type(value) is not bool:
                 raise ValueError('requireLadder must be boolean')
         else:
-            integer(value, key, 0 if key in ('entryDelay', 'minClimbInputs') else 1,
-                    1 if key == 'maxInteractions' else 5 if key == 'entryDelay' else 200000)
+            integer(value, key, 0 if key in ('entryDelay', 'minClimbInputs', 'maxContactVariants', 'maxTransferPrograms', 'maxTransferWindows') else 1,
+                    12 if key == 'maxInteractions' else 5 if key == 'entryDelay' else 200000)
     if settings['maxInputs'] > 200 or settings['maxEntryInputs'] > 199:
         raise ValueError('Ladder input horizons exceed 200')
     return settings
 
 
 def ordinary_paths(graph, start, hops, limit, goal=None):
-    pending, result, serial = [(0, 0, (start,), ())], [], 0
+    pending, result, serial = [(0, 0, 0, (start,), ())], [], 0
     while pending and len(result) < limit:
-        cost, _, path, edges = heapq.heappop(pending)
+        cost, contact_count, _, path, edges = heapq.heappop(pending)
         if goal is None or path[-1] == goal:
             result.append((path, edges))
         if len(edges) >= hops or goal is not None and path[-1] == goal:
@@ -47,7 +53,8 @@ def ordinary_paths(graph, start, hops, limit, goal=None):
         for target in graph['adjacency'].get(path[-1], []):
             for edge in graph['edgeOptions'][path[-1]][target]:
                 serial += 1
-                heapq.heappush(pending, (cost + graph['transitions'][edge]['profile']['airtime'], serial,
+                heapq.heappush(pending, (cost + graph['transitions'][edge]['profile']['airtime'],
+                                        contact_count + len(graph['transitions'][edge]['profile'].get('contactEvents', [])), serial,
                                         path + (target,), edges + (edge,)))
     return result
 
@@ -115,7 +122,7 @@ def _prefix(scene, graph, path, edges, target, allocation, compiler, seconds):
     source = next(b for b in scene['blocks'] if b['id'] == path[-1])
     dummy = {'airtime': 2, 'contacts': [], 'position': [source['top']] * 3,
              'velocity': [-(.08) * f32(.98)] * 3, 'grounded': [True, False, True], 'jump': [True, False]}
-    selected = [graph['transitions'][edge] for edge in edges] + [
+    selected = selected_edges(graph, edges) + [
         {'source': path[-1], 'target': target, 'profileKind': 'ordinary', 'profile': dummy, 'entryFace': None, 'exitFace': None}]
     compiled = compile_block_path(scene, list(path) + [target], transitions=selected)
     route = compiled['route']
@@ -138,6 +145,17 @@ def probe_entries(scene, graph, path, edges, target, allocation, column, wall, c
                   deadline, candidate_seconds, max_entry, python_executable=None, cancel_event=None):
     route, base, vertical = _prefix(scene, graph, path, edges, target, allocation, compiler,
                                     max(.01, deadline - time.monotonic()))
+    from .ceiling_contacts import ceiling_profile
+    from .contact_combinations import compile_contact_events, merge_contacts
+    source = next(b for b in scene['blocks'] if b['id'] == path[-1])
+    ceiling_options = []
+    if scene['ceilingHits']:
+        for index, box in enumerate(scene['collisionScene']['solids']):
+            profile = ceiling_profile(source['top'], source['top'], box, index, 'entry_ceiling')
+            if profile:
+                c = profile['ceilingEvent']
+                ceiling_options.append(dict(leg=0, offset=c['offset'], axis='Y', direction=1,
+                                            plane=c['plane'], box=box, role='ceiling'))
     records, entries = [], []
     for channel in entry_channels(column, wall):
         unresolved = []
@@ -147,21 +165,26 @@ def probe_entries(scene, graph, path, edges, target, allocation, column, wall, c
             offset, n = base['ticks'], base['ticks'] + entry
             if entry == 0 and offset == 0:
                 position = scene['initial']['position']
-                inside = column['x'] <= position[0] < column['x'] + 1 and column['z'] <= position[2] < column['z'] + 1 \
-                    and column['minY'] <= position[1] < column['maxY']
+                inside = region_contains(column, position)
                 records.append({'channel': channel['channel'], 'entryState': 0, 'status': 'feasible' if inside else 'blocked',
                                 'reason': 'initial_membership'})
                 if inside:
                     entries.append(dict(channel, firstValidatedState=0, unresolvedStates=[]))
                     break
                 continue
-            ladder = [False] * n + [True]
+            ladder = base.get('ladderTicks', [False] * (offset + 1))[:-1] + [False] * entry + [True]
             config = copy.deepcopy(vertical)
             config['jumpVelocity'].extend([f32(.42)] + [None] * (entry - 1) if entry else [])
             config['sneak'].extend([False] * entry)
             found = False
-            for hit_on_entry in ([False, True] if entry else [False]):
-                checked = _vertical(config, ladder, {n} if hit_on_entry else set())
+            variants = [([], hit) for hit in ([False, True] if entry else [False])]
+            variants += [([c], hit) for c in ceiling_options if c['offset'] < entry for hit in (False, True)]
+            for extra_contacts, hit_on_entry in variants:
+                selected_vertical = copy.deepcopy(config)
+                for c in extra_contacts:
+                    selected_vertical['contacts'].append({'state': offset + c['offset'] + 1, 'plane': c['plane'], 'direction': 1})
+                hit_states = {c['state'] for c in base.get('contacts', [])}
+                checked = _vertical(selected_vertical, ladder, hit_states | ({n} if hit_on_entry else set()))
                 if not checked['feasible'] or not column['minY'] <= checked['y'][-1] < column['maxY']:
                     continue
                 local = {'entryState': entry, 'exitState': entry + 1,
@@ -171,11 +194,17 @@ def probe_entries(scene, graph, path, edges, target, allocation, column, wall, c
                     local['hit'][-1] = True
                 try:
                     rows, contacts, scene_contacts = schedule_constraints(local, column, wall, channel, None, start=offset)
+                    event_route = {'contactEvents': extra_contacts, 'supportClearance': route['supportClearance']}
+                    additional_rows, _, additional_scene, _ = compile_contact_events(event_route,
+                        [{'jump': offset, 'landing': n}], n)
+                    rows.extend(additional_rows)
+                    contacts = merge_contacts(base.get('contacts', []) + contacts)
+                    scene_contacts = merge_contacts(base.get('sceneContacts', []) + scene_contacts + additional_scene, scene=True)
                 except ValueError:
                     continue
                 plan = dict(base, ticks=n, grounded=base['grounded'] + [True] + [False] * (entry - 1) if entry else base['grounded'],
                     jump=base['jump'] + [True] + [False] * (entry - 1) if entry else base['jump'],
-                    ladderTicks=ladder, sneak=config['sneak'], vertical=dict(config, referencePosition=checked['y'], referenceVelocity=checked['vy']),
+                    ladderTicks=ladder, sneak=config['sneak'], vertical=dict(selected_vertical, referencePosition=checked['y'], referenceVelocity=checked['vy']),
                     sceneContacts=scene_contacts)
                 try:
                     coefficient = compiler.compile(route, plan, max(.01, deadline - time.monotonic()))
@@ -199,9 +228,11 @@ def probe_entries(scene, graph, path, edges, target, allocation, column, wall, c
                 except (TimeoutError, ValueError, RuntimeError) as error:
                     geometry = {'feasible': False, 'reason': str(error)}
                 records.append({'channel': channel['channel'], 'entryState': entry, 'hitOnEntry': hit_on_entry,
-                                'status': 'feasible' if found else 'unknown', 'geometryCheck': geometry})
+                                'status': 'feasible' if found else 'unknown', 'geometryCheck': geometry,
+                                'contactEvents': extra_contacts})
                 if found:
-                    entries.append(dict(channel, firstValidatedState=entry, unresolvedStates=unresolved[:]))
+                    entries.append(dict(channel, firstValidatedState=entry, unresolvedStates=unresolved[:],
+                                        contactEvents=copy.deepcopy(extra_contacts)))
                     break
             if found:
                 break
@@ -217,7 +248,8 @@ def post_exit_reachable(schedule, coefficients, column, target):
         carry = coefficients['friction'][t] * move
     bounds = center_bounds(target)
     for a, origin in [(0, column['x']), (2, column['z'])]:
-        if max(0., bounds[a] - (origin + 1 + f32(.15)), origin - f32(.15) - bounds[a + 1]) > reach + 1e-6:
+        hi = region_axis(column, 'X' if a == 0 else 'Z')[1]
+        if max(0., bounds[a] - (hi + f32(.15)), origin - f32(.15) - bounds[a + 1]) > reach + 1e-6:
             return False
     return True
 
@@ -239,7 +271,7 @@ def first_hit_bounds(scene, graph, source, prefix_edges, allocation, entries, co
             rows = [outside_row(entry, t, 1e-6, 'entry_bound') for t in range(state)]
             for axis, value in [('X', column['x']), ('Z', column['z'])]:
                 rows.extend([{'mode': axis, 't1': state, 'cmp': 'GE', 'rhs': value},
-                             {'mode': axis, 't1': state, 'cmp': 'LE', 'rhs': value + 1}])
+                             {'mode': axis, 't1': state, 'cmp': 'LE', 'rhs': region_axis(column, axis)[1]}])
             lower = n
             for tick in range(max(0, state - 1), n):
                 problem = dict(coefficient, ticks=tick + 1, position=scene['initial']['position'][::2],
@@ -271,13 +303,29 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
     best, attempts, cache, contexts = base.get('best') if base else None, [], {}, 0
     blocks = {b['id']: b for b in scene['blocks']}
     prefixes = ordinary_paths(graph, scene['startBlock'], scene['maxJumps'] - 1, cfg['maxOrdinaryPaths'])
+    pending, prefix_serial, seen_prefixes, prefix_drops = [], 0, set(), 0
+    for path, edges in prefixes:
+        cost = sum(e['profile']['airtime'] for e in selected_edges(graph, edges))
+        heapq.heappush(pending, (cost, prefix_serial, path, edges, None))
+        prefix_serial += 1
     termination = 'search_exhausted'
-    for path, prefix_edges in prefixes:
-        for column in ladder_columns(scene['climbableCells']):
+    while pending and len(seen_prefixes) < scene['maxPrefixes']:
+        _, _, path, prefix_edges, fixed_runs = heapq.heappop(pending)
+        signature = json.dumps([path, selected_edges(graph, prefix_edges), fixed_runs], sort_keys=True)
+        if signature in seen_prefixes:
+            continue
+        seen_prefixes.add(signature)
+        used_columns = {event['column']['id'] for edge in selected_edges(graph, prefix_edges)
+                        for event in ([edge['ladderEvent']] if 'ladderEvent' in edge else edge.get('ladderEvents', []))}
+        node_contexts = 0
+        for column in ladder_regions(scene['climbableCells']):
+            if column['id'] in used_columns or len(used_columns) >= cfg['maxInteractions']:
+                continue
             for wall in sorted(climb_walls(column, scene['collisionScene']['solids']),
                                key=lambda w: (-max(p['box'][4] for p in w['parts']), w['direction'] * w['plane'])):
-                targets = sorted(blocks, key=lambda name: math.hypot((blocks[name]['bounds'][0] + blocks[name]['bounds'][1]) / 2 - column['x'],
-                                                                    (blocks[name]['bounds'][2] + blocks[name]['bounds'][3]) / 2 - column['z']))
+                owners = {b['id'] for b in scene['blocks'] if any(b['solidIndex'] == p['solidIndex'] for p in wall['parts'])}
+                targets = sorted(blocks, key=lambda name: (name not in owners, math.hypot((blocks[name]['bounds'][0] + blocks[name]['bounds'][1]) / 2 - column['x'],
+                                                                    (blocks[name]['bounds'][2] + blocks[name]['bounds'][3]) / 2 - column['z'])))
                 for target in targets:
                     from .block_profiles import normal_jump_height
                     source_top = blocks[path[-1]]['top']
@@ -286,15 +334,23 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
                         continue
                     suffixes = ordinary_paths(graph, target, scene['maxJumps'] - len(prefix_edges) - 1,
                                                cfg['maxSuffixPaths'], scene['goalBlock'])
+                    if target != scene['goalBlock'] and len(used_columns) + 1 < cfg['maxInteractions'] \
+                            and (len(prefix_edges) + 1 < scene['maxJumps'] or cfg['maxTransferPrograms'] and len(used_columns) + 2 <= cfg['maxInteractions']) and any(
+                                c['id'] != column['id'] and c['id'] not in used_columns for c in ladder_regions(scene['climbableCells'])):
+                        suffixes = [((target,), ())] + suffixes
                     for suffix_path, suffix_edges in suffixes:
-                        for allocation in run_allocations(len(prefix_edges) + 1 + len(suffix_edges), scene['maxRunTicksPerJump'],
-                                                          scene['maxTotalRunTicks'], cfg['maxRunAllocations']):
-                            if time.monotonic() >= deadline or contexts >= cfg['maxRouteContexts'] \
+                        allocations = run_allocations(len(prefix_edges) + 1 + len(suffix_edges), scene['maxRunTicksPerJump'],
+                                                      scene['maxTotalRunTicks'], cfg['maxRunAllocations']) if fixed_runs is None else (
+                            fixed_runs + tail for tail in run_allocations(1 + len(suffix_edges), scene['maxRunTicksPerJump'],
+                                scene['maxTotalRunTicks'] - sum(fixed_runs), cfg['maxRunAllocations']))
+                        for allocation in allocations:
+                            if time.monotonic() >= deadline or node_contexts >= cfg['maxRouteContexts'] \
                                     or cancel_event is not None and cancel_event.is_set():
                                 termination = 'deadline' if time.monotonic() >= deadline else 'cancelled' if cancel_event is not None and cancel_event.is_set() else 'context_limit'
                                 break
                             contexts += 1
-                            probe_key = (prefix_edges, tuple(allocation[:len(prefix_edges) + 1]), column['id'],
+                            node_contexts += 1
+                            probe_key = (json.dumps(selected_edges(graph, prefix_edges), sort_keys=True), tuple(allocation[:len(prefix_edges) + 1]), column['id'],
                                          wall['axis'], wall['direction'], wall['plane'],
                                          tuple(tuple(p['box']) for p in wall['parts']))
                             if probe_key not in cache:
@@ -323,12 +379,18 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
                             pool = generate_ladder_schedules({'version': 1,
                                 'initial': {'position': source['top'], 'velocity': -.08 * f32(.98), 'onGround': True},
                                 'region': {k: column[k] for k in ('minY', 'maxY')},
-                                'entries': [{k: e[k] for k in ('family', 'channel', 'firstValidatedState', 'unresolvedStates', 'firstHitLowerBounds')} for e in entries],
+                                'entries': [{k: e[k] for k in ('family', 'channel', 'firstValidatedState', 'unresolvedStates', 'firstHitLowerBounds', 'contactEvents') if k in e} for e in entries],
                                 'targetTop': blocks[target]['top'], 'jumpAtStart': True,
                                 'maxInputs': min(cfg['maxInputs'], 200), 'entryDelay': cfg['entryDelay'],
                                 'maxSkeletons': cfg['maxSkeletons'], 'maxSchedules': cfg['maxSchedules'], 'maxMaskWork': cfg['maxMaskWork']},
-                                cancel_event=cancel_event)
+                                cancel_event=cancel_event, deadline=deadline)
                             record['generation'] = {k: v for k, v in pool.items() if k not in ('schedules', 'timingGroups')}
+                            from .mixed_ladder import mixed_ladder_schedules
+                            extensions = mixed_ladder_schedules([s for s in pool['schedules'] if sum(s['hit']) >= cfg['minClimbInputs']], scene['collisionScene']['solids'],
+                                column, wall, blocks[target]['top'], max_variants=cfg['maxContactVariants'],
+                                max_events=cfg['maxMixedContacts'], max_inputs=cfg['maxInputs'], cancel_event=cancel_event)
+                            record['mixedContacts'] = {k: v for k, v in extensions.items() if k != 'schedules'}
+                            pool['schedules'].extend(extensions['schedules'])
                             candidates = [s for s in pool['schedules'] if sum(s['hit']) >= cfg['minClimbInputs']]
                             def screen_candidate(s, coefficients):
                                 from .screen import contradiction
@@ -355,8 +417,9 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
                             context_deadline = min(deadline, time.monotonic() + route_seconds)
                             for ranked in (ranking['ranked'] + ranking['backups'])[:cfg['maxNumericalSchedules']]:
                                 s = ranked['schedule']
-                                prefix_cost = sum(graph['transitions'][e]['profile']['airtime'] for e in prefix_edges + suffix_edges) + sum(allocation)
-                                if best is not None and s['ticks'] + prefix_cost > best['plan']['ticks']:
+                                prefix_cost = sum(e['profile']['airtime'] for e in selected_edges(graph, prefix_edges + suffix_edges)) + sum(allocation)
+                                minimum_duration = s['exitState'] + 1 if cfg['maxTransferPrograms'] and len(used_columns) + 2 <= cfg['maxInteractions'] else s['ticks']
+                                if best is not None and minimum_duration + prefix_cost > best['plan']['ticks']:
                                     continue
                                 if time.monotonic() >= context_deadline:
                                     break
@@ -376,37 +439,73 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
                                     profile = {'airtime': s['ticks'], 'landingPhase': 'pre', 'position': s['trace']['position'],
                                         'velocity': s['trace']['velocity'], 'grounded': s['trace']['onGround'],
                                         'contacts': s['trace']['vertical']['contacts'], 'jump': [v is not None for v in s['trace']['vertical']['jumpVelocity']],
-                                        'sneak': s['sneak'], 'ladderTicks': s['ladderTicks']}
+                                        'sneak': s['sneak'], 'ladderTicks': s['ladderTicks'],
+                                        'contactEvents': s.get('contactEvents', [])}
                                     selected = {'source': path[-1], 'target': target, 'profileKind': 'ladder', 'profile': profile,
                                         'entryFace': None, 'exitFace': None,
                                         'ladderEvent': {'schedule': s, 'column': column, 'wall': wall, 'entryFace': channel, 'exitFace': face}}
-                                    edges = [graph['transitions'][e] for e in prefix_edges] + [selected] + [graph['transitions'][e] for e in suffix_edges]
-                                    full_path = list(path) + [target] + list(suffix_path[1:])
-                                    compiled = compile_block_path(scene, full_path, transitions=edges)
-                                    route = compiled['route']
-                                    route['runBounds'] = [[v, v] for v in allocation]
-                                    route['maxTotalRunTicks'] = sum(allocation)
-                                    try:
-                                        solved = solve_contact_branches(route, compiled['profiles'], floor_checks(scene, full_path, compiled['profiles']),
-                                            compiler, seconds=max(.001, context_deadline - time.monotonic()), candidate_seconds=candidate_seconds,
-                                            retries=retries, max_branches=scene['maxContactBranches'], rank_equal_cost=True, optimize_goal=True,
-                                            python_executable=python_executable, cancel_event=cancel_event, geometry=scene['collisionScene'],
-                                            motion_bound=graph['bound'], solid_blocks=[b['sourceBlock'] for b in sorted(scene['blocks'], key=lambda b: b['solidIndex'])])
-                                    except (ValueError, TimeoutError) as error:
-                                        record['numericalAttempts'].append({'status': 'unknown', 'reason': str(error)})
-                                        continue
-                                    record['numericalAttempts'].append({'status': solved['status'], 'ticks': s['ticks'] + prefix_cost,
-                                        'entryState': s['entryState'], 'entryChannel': s['entryChannel'], 'exitKind': s['exitKind'],
-                                        'exitFace': face, 'score': ranked['score'], 'contactAttempts': solved.get('contactAttempts', []),
-                                        'solverAttempts': solved.get('attempts', [])})
-                                    if solved.get('best') is not None:
-                                        candidate = solved['best']
-                                        candidate.update(blockIds=full_path, ladderSchedule=s, ladderColumn=column)
-                                        sense = -1 if scene['objective']['sense'] == 'MAX' else 1
-                                        if best is None or (candidate['plan']['ticks'], sense * candidate['candidate']['objective']) \
-                                                < (best['plan']['ticks'], sense * best['candidate']['objective']):
-                                            best = candidate
-                                        record['status'] = 'feasible'
+                                    variations = [selected]
+                                    transfer_key = [s['exitState'], round(s['trace']['velocity'][s['exitState']], 9)]
+                                    if cfg['maxTransferPrograms'] and len(used_columns) + 2 <= cfg['maxInteractions'] \
+                                            and not suffix_edges and target != scene['goalBlock'] \
+                                            and transfer_key not in record.get('transferWindows', []) \
+                                            and len(record.get('transferWindows', [])) < cfg['maxTransferWindows']:
+                                        record.setdefault('transferWindows', []).append(transfer_key)
+                                        from .ladder_transfers import transfer_programs
+                                        for next_column in ladder_regions(scene['climbableCells']):
+                                            if next_column['id'] == column['id'] or next_column['id'] in used_columns:
+                                                continue
+                                            for next_wall in climb_walls(next_column, scene['collisionScene']['solids']):
+                                                transfers = transfer_programs(selected['ladderEvent'], next_column, next_wall,
+                                                    blocks[scene['goalBlock']], max_inputs=cfg['maxInputs'],
+                                                    max_entry=cfg['maxEntryInputs'], max_programs=cfg['maxTransferPrograms'],
+                                                    deadline=context_deadline, cancel_event=cancel_event)
+                                                record.setdefault('transferGeneration', []).append({k: v for k, v in transfers.items() if k != 'programs'})
+                                                variations.extend({'source': path[-1], 'target': scene['goalBlock'],
+                                                    'profileKind': 'ladder', 'profile': p['profile'], 'ladderEvents': p['ladderEvents'],
+                                                    'entryFace': None, 'exitFace': None} for p in transfers['programs'])
+                                    for variation in variations:
+                                        if time.monotonic() >= context_deadline:
+                                            break
+                                        edges = selected_edges(graph, prefix_edges) + [variation] + selected_edges(graph, suffix_edges)
+                                        full_path = list(path) + [variation['target']] + list(suffix_path[1:])
+                                        compiled = compile_block_path(scene, full_path, transitions=edges)
+                                        route = compiled['route']
+                                        route['runBounds'] = [[v, v] for v in allocation]
+                                        route['maxTotalRunTicks'] = sum(allocation)
+                                        try:
+                                            solved = solve_contact_branches(route, compiled['profiles'], floor_checks(scene, full_path, compiled['profiles']),
+                                                compiler, seconds=max(.001, context_deadline - time.monotonic()), candidate_seconds=candidate_seconds,
+                                                retries=retries, max_branches=scene['maxContactBranches'], rank_equal_cost=True, optimize_goal=True,
+                                                python_executable=python_executable, cancel_event=cancel_event, geometry=scene['collisionScene'],
+                                                motion_bound=graph['bound'], solid_blocks=[b['sourceBlock'] for b in sorted(scene['blocks'], key=lambda b: b['solidIndex'])])
+                                        except (ValueError, TimeoutError) as error:
+                                            record['numericalAttempts'].append({'status': 'unknown', 'reason': str(error)})
+                                            continue
+                                        record['numericalAttempts'].append({'status': solved['status'], 'ticks': sum(route['airtimes']) + sum(allocation),
+                                            'ladderInteractions': len(route['ladderEvents']),
+                                            'entryState': s['entryState'], 'entryChannel': s['entryChannel'], 'exitKind': s['exitKind'],
+                                            'exitFace': face, 'score': ranked['score'], 'contactAttempts': solved.get('contactAttempts', []),
+                                            'solverAttempts': solved.get('attempts', [])})
+                                        if solved.get('best') is not None:
+                                            candidate = solved['best']
+                                            candidate.update(blockIds=full_path, ladderSchedule=variation['ladderEvent']['schedule'] if 'ladderEvent' in variation else variation['ladderEvents'][-1]['schedule'], ladderColumn=column)
+                                            sense = -1 if scene['objective']['sense'] == 'MAX' else 1
+                                            candidate['ladderSchedules'] = [copy.deepcopy(e['schedule']) for e in candidate['route']['ladderEvents']]
+                                            if full_path[-1] == scene['goalBlock']:
+                                                if best is None or (candidate['plan']['ticks'], sense * candidate['candidate']['objective']) < (best['plan']['ticks'], sense * best['candidate']['objective']):
+                                                    best = candidate
+                                            elif len(prefix_edges) + 1 < scene['maxJumps']:
+                                                for ordinary_path, ordinary_edges in ordinary_paths(graph, target,
+                                                        scene['maxJumps'] - len(edges) - 1, cfg['maxOrdinaryPaths']):
+                                                    next_path = tuple(full_path) + ordinary_path[1:]
+                                                    next_edges = tuple(edges) + ordinary_edges
+                                                    runs = list(allocation) + [0] * len(ordinary_edges)
+                                                    cost = sum(e['profile']['airtime'] for e in selected_edges(graph, next_edges)) + sum(runs)
+                                                    heapq.heappush(pending, (cost, prefix_serial, next_path, next_edges, runs))
+                                                    prefix_serial += 1
+                                                record['prefixOffers'] = record.get('prefixOffers', 0) + 1
+                                            record['status'] = 'feasible'
                             if on_attempt is not None:
                                 on_attempt(copy.deepcopy(record))
                         if termination != 'search_exhausted':
@@ -417,14 +516,22 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
                     break
             if termination != 'search_exhausted':
                 break
-        if termination != 'search_exhausted':
+        if termination == 'context_limit':
+            prefix_drops += 1
+            termination = 'search_exhausted'
+        elif termination != 'search_exhausted':
             break
     if cancel_event is not None and cancel_event.is_set():
         termination = 'cancelled'
+    elif pending and len(seen_prefixes) >= scene['maxPrefixes']:
+        termination = 'prefix_limit'
+    elif prefix_drops and termination == 'search_exhausted':
+        termination = 'context_limit'
     return {'status': 'feasible' if best is not None else 'cancelled' if termination == 'cancelled' else 'unknown',
             'best': best, 'termination': termination, 'attempts': attempts, 'normalResult': base,
             'scene': scene, 'graph': graph, 'elapsedSeconds': time.monotonic() - started,
             'ticksLowerBound': 1, 'minimumTicksProven': False, 'objectiveOptimalityProven': False,
             'searchPolicy': 'total_ticks_then_objective', 'validationLevel': 'continuous_ladder_with_shared_scene',
-            'assumptions': {'maxLadderInteractions': 1, 'climbableCellsSupplied': True,
+            'compositionSearch': {'prefixes': len(seen_prefixes), 'remaining': len(pending), 'contextLimitedPrefixes': prefix_drops},
+            'assumptions': {'maxLadderInteractions': cfg['maxInteractions'], 'climbableCellsSupplied': True,
                             'initialStateReoptimized': False, 'wholePrefixFacingsReoptimized': True}}

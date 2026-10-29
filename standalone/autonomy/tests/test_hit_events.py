@@ -51,6 +51,7 @@ class HitEventTests(unittest.TestCase):
 class WallReversalIntegrationTests(unittest.TestCase):
     def test_geometry_discovers_reversal_for_x_z_and_both_signs(self):
         original = json.loads(FIXTURE.read_text())
+        original['maxContactCombinations'] = 0
         with JavaCompiler(json.loads(Path(os.environ['PKC_RUN_TICKS_COMPILER']).read_text())) as compiler:
             for axis, sign in [('X', 1), ('X', -1), ('Z', 1), ('Z', -1)]:
                 request = copy.deepcopy(original)

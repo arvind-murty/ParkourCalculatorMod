@@ -145,3 +145,6 @@ python3 -m standalone.autonomy.solve_blocks \
   --output standalone/autonomy/build/ladder-side-entry-result.json \
   --seconds 60 --route-seconds 30 --candidate-seconds 1 --retries 0
 ```
+
+
+The [contact-combination extension](CONTACT_COMBINATIONS.md) now composes multiple ladder transitions and airborne episodes, ceiling/horizontal hits, actual step contacts and blockage avoidance. See [current saved witnesses](experiments/contact-combinations/README.md). The earlier single-interaction descriptions above are the original prototype checkpoint; current limits and APIs are in the extension document. Route-specific pruning remains deferred.
