@@ -26,7 +26,8 @@ def ladder_settings(scene):
                 'maxNumericalSchedules': 32, 'maxOrdinaryPaths': 8, 'maxSuffixPaths': 3,
                 'maxRouteContexts': 24, 'maxRunAllocations': 4, 'minClimbInputs': 0,
                 'maxInteractions': 12, 'requireLadder': False,
-                'maxContactVariants': 16, 'maxMixedContacts': 3, 'maxTransferPrograms': 16, 'maxTransferWindows': 4}
+                'maxContactVariants': 16, 'maxMixedContacts': 3, 'maxTransferPrograms': 16, 'maxTransferWindows': 4,
+                'maxTransferPrefixes': 64, 'maxTransferQueuedPrefixes': 256}
     if not isinstance(settings, dict) or set(settings) - set(defaults):
         raise ValueError('Unsupported ladder search settings')
     for key, default in defaults.items():
@@ -36,7 +37,7 @@ def ladder_settings(scene):
                 raise ValueError('requireLadder must be boolean')
         else:
             integer(value, key, 0 if key in ('entryDelay', 'minClimbInputs', 'maxContactVariants', 'maxTransferPrograms', 'maxTransferWindows') else 1,
-                    12 if key == 'maxInteractions' else 5 if key == 'entryDelay' else 200000)
+                    200 if key == 'maxInteractions' else 5 if key == 'entryDelay' else 200000)
     if settings['maxInputs'] > 200 or settings['maxEntryInputs'] > 199:
         raise ValueError('Ladder input horizons exceed 200')
     return settings
@@ -391,6 +392,17 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
                                 max_events=cfg['maxMixedContacts'], max_inputs=cfg['maxInputs'], cancel_event=cancel_event)
                             record['mixedContacts'] = {k: v for k, v in extensions.items() if k != 'schedules'}
                             pool['schedules'].extend(extensions['schedules'])
+                            if cfg['maxTransferPrograms'] and len(used_columns) + 2 <= cfg['maxInteractions'] and not suffix_edges:
+                                request = {'version': 1,
+                                    'initial': {'position': source['top'], 'velocity': -.08 * f32(.98), 'onGround': True},
+                                    'region': {k: column[k] for k in ('minY', 'maxY')},
+                                    'entries': [{k: e[k] for k in ('family', 'channel', 'firstValidatedState', 'unresolvedStates', 'firstHitLowerBounds', 'contactEvents') if k in e} for e in entries],
+                                    'finishAtExit': True, 'jumpAtStart': True, 'maxInputs': min(cfg['maxInputs'], 200),
+                                    'entryDelay': cfg['entryDelay'], 'maxSkeletons': cfg['maxSkeletons'],
+                                    'maxSchedules': cfg['maxSchedules'], 'maxMaskWork': cfg['maxMaskWork']}
+                                airborne = generate_ladder_schedules(request, cancel_event=cancel_event, deadline=deadline)
+                                record['airborneGeneration'] = {k: v for k, v in airborne.items() if k not in ('schedules', 'timingGroups')}
+                                pool['schedules'].extend(airborne['schedules'])
                             candidates = [s for s in pool['schedules'] if sum(s['hit']) >= cfg['minClimbInputs']]
                             def screen_candidate(s, coefficients):
                                 from .screen import contradiction
@@ -399,7 +411,7 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
                                     rows, contacts, _ = schedule_constraints(s, column, wall, channel, None)
                                 except ValueError:
                                     return {'reason': 'finite_climb_wall'}
-                                if not post_exit_reachable(s, coefficients, column, blocks[target]):
+                                if s.get('terminal') != 'airborne' and not post_exit_reachable(s, coefficients, column, blocks[target]):
                                     return {'reason': 'post_exit_reach'}
                                 problem = dict(coefficients, ticks=s['ticks'], position=scene['initial']['position'][::2],
                                     velocity=scene['initial']['velocity'][::2], walls=rows, contacts=contacts,
@@ -425,7 +437,7 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
                                     break
                                 channel = next(e for e in entries if e['channel'] == s['entryChannel'])
                                 coefficient = ranked['coefficients']
-                                if not post_exit_reachable(s, coefficient, column, blocks[target]):
+                                if s.get('terminal') != 'airborne' and not post_exit_reachable(s, coefficient, column, blocks[target]):
                                     record.setdefault('postExitPruned', 0)
                                     record['postExitPruned'] += 1
                                     continue
@@ -444,27 +456,29 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
                                     selected = {'source': path[-1], 'target': target, 'profileKind': 'ladder', 'profile': profile,
                                         'entryFace': None, 'exitFace': None,
                                         'ladderEvent': {'schedule': s, 'column': column, 'wall': wall, 'entryFace': channel, 'exitFace': face}}
-                                    variations = [selected]
-                                    transfer_key = [s['exitState'], round(s['trace']['velocity'][s['exitState']], 9)]
-                                    if cfg['maxTransferPrograms'] and len(used_columns) + 2 <= cfg['maxInteractions'] \
-                                            and not suffix_edges and target != scene['goalBlock'] \
-                                            and transfer_key not in record.get('transferWindows', []) \
-                                            and len(record.get('transferWindows', [])) < cfg['maxTransferWindows']:
+                                    def variations():
+                                        if s.get('terminal') != 'airborne':
+                                            yield selected
+                                        transfer_key = s['exitState']
+                                        if not cfg['maxTransferPrograms'] or len(used_columns) + 2 > cfg['maxInteractions'] \
+                                                or suffix_edges or transfer_key in record.get('transferWindows', []) \
+                                                or len(record.get('transferWindows', [])) >= cfg['maxTransferWindows']:
+                                            return
                                         record.setdefault('transferWindows', []).append(transfer_key)
-                                        from .ladder_transfers import transfer_programs
-                                        for next_column in ladder_regions(scene['climbableCells']):
-                                            if next_column['id'] == column['id'] or next_column['id'] in used_columns:
-                                                continue
-                                            for next_wall in climb_walls(next_column, scene['collisionScene']['solids']):
-                                                transfers = transfer_programs(selected['ladderEvent'], next_column, next_wall,
-                                                    blocks[scene['goalBlock']], max_inputs=cfg['maxInputs'],
-                                                    max_entry=cfg['maxEntryInputs'], max_programs=cfg['maxTransferPrograms'],
-                                                    deadline=context_deadline, cancel_event=cancel_event)
-                                                record.setdefault('transferGeneration', []).append({k: v for k, v in transfers.items() if k != 'programs'})
-                                                variations.extend({'source': path[-1], 'target': scene['goalBlock'],
-                                                    'profileKind': 'ladder', 'profile': p['profile'], 'ladderEvents': p['ladderEvents'],
-                                                    'entryFace': None, 'exitFace': None} for p in transfers['programs'])
-                                    for variation in variations:
+                                        from .ladder_transfers import iter_chain_programs
+                                        report = {}
+                                        record.setdefault('transferGeneration', []).append(report)
+                                        regions = [c for c in ladder_regions(scene['climbableCells']) if c['id'] not in used_columns]
+                                        for p in iter_chain_programs(selected['ladderEvent'], regions, scene['collisionScene']['solids'],
+                                                blocks[scene['goalBlock']], max_inputs=cfg['maxInputs'], max_entry=cfg['maxEntryInputs'],
+                                                max_programs=cfg['maxTransferPrograms'], max_prefixes=cfg['maxTransferPrefixes'],
+                                                max_pending=cfg['maxTransferQueuedPrefixes'],
+                                                max_interactions=cfg['maxInteractions'] - len(used_columns),
+                                                deadline=context_deadline, cancel_event=cancel_event, report=report):
+                                            yield {'source': path[-1], 'target': scene['goalBlock'],
+                                                   'profileKind': 'ladder', 'profile': p['profile'], 'ladderEvents': p['ladderEvents'],
+                                                   'entryFace': None, 'exitFace': None}
+                                    for variation in variations():
                                         if time.monotonic() >= context_deadline:
                                             break
                                         edges = selected_edges(graph, prefix_edges) + [variation] + selected_edges(graph, suffix_edges)

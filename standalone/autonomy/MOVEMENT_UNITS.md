@@ -1,0 +1,58 @@
+# Movement units and airborne composition
+
+2026-10-29. This implements the latest ladder decisions in [LADDER_COMPOSITION_PLAN.md](LADDER_COMPOSITION_PLAN.md). Continuous numerical acceptance remains this layer's responsibility; replay/export belongs to the other integration worktree.
+
+## Implemented interface
+
+`movement_units.py` registers `normal`, `ladder_climb` and `ladder_fall`. A unit has an input interval `[start,end)`, a type and its relevant relative anchors: region, occupied-state interval, hit inputs, Sneak inputs, planned climb-hit window and omitted endpoint hits. `compile_units` materializes occupied states and input masks. `validate_ladder_events` builds and checks the per-leg program, and ladder constraint compilation consumes its occupied-state mask. These units are part of the orchestrator/compiler contract, rather than display labels.
+
+`route.movementUnits` holds relative programs per support-to-support leg. `schedule(...).movementUnits` exposes the absolute timeline, including inserted grounded normal/run units. Every duration, contact, occupied-state interval, stop and Sneak anchor shifts with run insertion. The global key/ground/contact history still goes through the existing shared movement compiler. Types do not replace its physics.
+
+Within one region, the exact allowed phase grammar is:
+
+| Sequence | Permitted exits |
+| --- | --- |
+| `ladder_fall` | side, bottom |
+| `ladder_climb` | top, side, bottom |
+| `ladder_fall -> ladder_climb` | top, side, bottom |
+| `ladder_climb -> ladder_fall` | side, bottom |
+| `ladder_fall -> ladder_climb -> ladder_fall` | side, bottom |
+
+There is at most one climbing unit. Its zero, one or two omitted endpoint hits remain internal to that unit. An end stop omits the final hit whose produced state would still be inside the region. It does not omit merely the exit-producing input. The exit-producing input belongs to the final climb unit when its planned hit window reaches that last eligible hit, including an end-stop variant. Actual Y replay, not this ownership label, determines its movement and carry.
+
+An entering input can belong to climbing immediately. Its caps still depend on actual pre-input occupancy; an input starting outside is not capped early. Its wall hit establishes climbing carry only if its resulting state is inside. No falling unit or extra tick is inserted to establish that carry. Other selected horizontal contacts count too: an extra wall hit cannot secretly create a second climbing interval after falling.
+
+Falling retains arbitrary interspersed Sneak/no-Sneak masks. Existing endpoint-stop Sneak and first-clamped-input Sneak alternatives remain available. The former remains climbing-owned, while the latter preserves the previously requested clamp/Sneak alternative. Neither adds an external falling phase. No new Y/clamp or sprint equations were introduced.
+
+`exit_matches` checks feet Y against the region's half-open interval `[minY,maxY)`: side is inside the interval, top is at/above maxY, bottom is strictly below minY. A bottom exit does not invent an X/Z departure requirement while Y is outside; ordinary finite-wall/body collision checks remain active. If Y later intersects the region again, the normal exit-corridor constraints apply.
+
+## Open prefixes and repeated extension
+
+`generate_ladder_schedules` accepts `finishAtExit: true`. Its terminal state is the actual airborne exit, its scalar target floor is absent, and its Y/VY/contact history remains available. Explicit early/final landings are rejected for this terminal mode. The existing landed mode still requires a genuine descending floor clip.
+
+`compose_ladder_episodes(source_y, None, episodes, ...)` composes an airborne prefix. A numeric target height instead requests a completed landing. The composer replays all episodes and normal gaps from the original Y/VY/ground/jump state. It retains the complete Sneak/contact history, validates phase grammar and exit height, and generates one coherent timeline. A direct transfer can share the previous exit-producing input with the next entry, without adding a fictitious free tick or dropping its pre-input occupancy.
+
+`append_ladder_programs` appends another region to any accumulated prefix. It proposes front/side entry channels and timing/phase/Sneak alternatives, retimes them after the previous exit, and recomposes the entire prefix. The previous episode's departure corridor can face the new region. It never requires the prefix to land on the previous wall or the final goal before considering another ladder.
+
+`iter_chain_programs` maintains a queue ordered by committed elapsed inputs. Each prefix can finish on the real target support or append any unused region. Repeated extension replaces the old A/B transfer template. There is no two-region structural limit. `maxInteractions` is configurable through the total 200-input model horizon; its default remains 12. The compatibility `transfer_programs` function now delegates to the same append/composer implementation.
+
+The route orchestrator interleaves completed chain proposals with continuous solves. Each accepted route recompiles and solves all prior facings, incoming momentum, contacts and connecting movement from the original route initial state. No intermediate numerical X/Z endpoint is frozen or treated as an executable checkpoint. Elapsed ticks rank before objective among accepted complete routes.
+
+Airborne partial nodes currently have scalar Y/phase validation, with explicitly unprobed X/Z entries. Complete proposals receive the full numerical/scene check. An open node is not an accepted physical trajectory. This leaves a useful later pruning opportunity without weakening final acceptance.
+
+## Work limits and unresolved coverage
+
+The bounded search is not an optimality/infeasibility proof. Entry/skeleton/mask/ranking/solver caps, numerical unknowns and dropped queue entries remain reported. Defaults for airborne expansion are 16 extension programs, 64 expanded prefixes and 256 queued prefixes. Configure them using `maxTransferPrograms`, `maxTransferPrefixes` and `maxTransferQueuedPrefixes`. Generation retains entry/exit/climbing diversity before filling remaining slots.
+
+Initial transfer windows sample distinct exit states, rather than allowing multiple carried-VY variants at one state to consume all four default windows. Other VY/Sneak/stop alternatives can still be dropped by those work caps. Automatic appended entries retain the prior explicit 20-input local entry horizon, report clipping, and do not claim to have proved their earliest feasible entry. The whole flight remains bounded to 200 inputs.
+
+Same-region re-entry and changing the chosen climb-wall orientation inside a region remain deferred. Rectangle regions are sufficient for the requested scope. Route-specific rarity/pruning rules, exhaustive contact variants on every newly appended region, globally exhaustive schedule dominance and a global time-optimality proof remain later work. Existing mixed-contact compilation/acceptance still supports explicitly composed finite wall/ceiling schedules. `stepping` and `water` have not been added; the existing stair/step profile path remains in place until that follow-up.
+
+## Measured evidence
+
+- New five-region falling-only episode contract: 58 inputs, one launch, no intermediate ground contact; fresh IPOPT solve and shared full-scene acceptance. This covers optional climbing and arbitrary-length composition. It is not a cold geometry-only discovery of all five regions.
+- New bottom-exit contract: exits below Y=20 at state 15 with Y=19.970787077218812, lands at Y=18 at state 21; fresh IPOPT and shared-scene acceptance. Caps apply while inside, then ordinary descent continues below the region.
+- Existing cold two-region discovery still finds the 28-input airborne transfer. A focused rerun after transfer-window fairness correction completed in about 50 seconds under the existing fixture budgets.
+- Separate repeated calls to the actual append generator produced five climbing prefixes with entry/exit anchors `(1,6)`, `(11,25)`, `(30,43)`, `(48,62)`, `(67,81)`. Those narrow-region climbing skeletons are scalar/generation evidence only. Attempted full numerical solves returned unknown; do not describe them as accepted movement or infer infeasibility.
+
+Saved new contracts and accepted candidates live beside the earlier witnesses in [experiments/contact-combinations](experiments/contact-combinations/README.md). `test_movement_units.py` and `test_movement_composition.py` cover the five phase sequences, all short hit masks, endpoint stops and their Y/carry changes, real bottom descent, open prefixes, direct transfer seams, run retiming, full-history append, queue composition/cancellation, fresh numerical solves and saved scalar/scene revalidation. The five-prefix queue test isolates queue traversal with predetermined scalar prefixes; the append test and numerical acceptance tests exercise the real implementations separately.

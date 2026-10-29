@@ -10,6 +10,10 @@ The snapshots contain the exact compiled continuous problem, selected route/even
 | `two-ladders.json` | 42 | Cold geometry search: start, ladder A top support, ladder B top support; joint prefix solve |
 | `airborne-transfer.json` | 28 | Prescribed episode-contract solve: two regions, one launch, no intermediate landing |
 | `automatic-airborne-transfer.json` | 28 | Cold geometry search independently discovers the two-region airborne transfer |
+| `five-airborne-ladders.json` | 58 | Prescribed five-region falling-only contract, one launch, no intermediate landing; fresh IPOPT and shared scene acceptance |
+| `ladder-bottom-exit.json` | 21 | Prescribed falling-only bottom exit at state 15, then landing; fresh IPOPT and shared scene acceptance |
+
+The five-region and bottom-exit fixtures contain geometry and the initial state. Their accepted episode timings are prescribed by the contract tests, not discovered cold from those fixtures. Their saved problems/candidates revalidate independently; no optimality is claimed. See [MOVEMENT_UNITS.md](../../MOVEMENT_UNITS.md) for the common unit interface, new tests and chain search limits.
 
 The automatic transfer snapshot records the geometry-only fixture SHA-256. No entry time, hit schedule or facing is supplied by that fixture. Its accepted episodes occupy states 1 through 5 and 11 through 24, exit at states 6 and 25, and land at state 28. There is only one jump impulse and no intermediate grounded state. Local measured cold time was about 88 seconds under the documented work budgets.
 

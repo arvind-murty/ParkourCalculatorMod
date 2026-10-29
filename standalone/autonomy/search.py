@@ -210,14 +210,20 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                         next_episode = min(following, key=lambda e: e['schedule']['entryState'])
                         transfer_target = point[:]
                         face = selected['exitFace']
-                        transfer_target[0 if face['axis'] == 'X' else 1] = face['plane'] + face['direction'] * .03
+                        transfer_target[0 if face['axis'] == 'X' else 1] = face['plane'] + face['direction'] * .13
                     for t, hit in enumerate(s['hit']):
                         if hit:
                             pressing = point[:]
                             if transfer_target is not None:
-                                progress = max(0., min(1., (t + 1 - s['entryState']) / max(1, s['exitState'] - s['entryState'])))
+                                duration = max(1, s['exitState'] - s['entryState'] - 1)
+                                progress = max(0., min(1., (t + 1 - s['entryState']) / duration))
                                 tangent = 1 if wall['axis'] == 'X' else 0
-                                pressing[tangent] += progress * (transfer_target[tangent] - pressing[tangent])
+                                inside_target = transfer_target[tangent]
+                                if selected['exitFace']['axis'] != wall['axis']:
+                                    inside_target -= selected['exitFace']['direction'] * .14
+                                if duration >= 8 and abs(inside_target - pressing[tangent]) / duration < .09:
+                                    progress *= progress
+                                pressing[tangent] += progress * (inside_target - pressing[tangent])
                             pressing[0 if wall['axis'] == 'X' else 1] += wall['direction'] * .01
                             waypoints.append((event['jump'] + t + 1, pressing))
                     face = selected['exitFace']
@@ -225,7 +231,9 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                         point[0 if wall['axis'] == 'X' else 1] = wall['plane'] + wall['direction'] * .03
                         if transfer_target is not None:
                             point = transfer_target
-                    else:
+                    elif transfer_target is not None:
+                        point = transfer_target
+                    elif s['exitKind'] == 'side':
                         point[0 if face['axis'] == 'X' else 1] = face['plane'] + face['direction'] * .03
                     waypoints.append((event['jump'] + s['exitState'], point[:]))
                 problem['yaw'] = waypoint_seed(problem, waypoints)

@@ -84,6 +84,16 @@ class MovementUnitTests(unittest.TestCase):
         self.assertEqual(sum(prefix['profile']['jump']), 1)
         self.assertIsNone(compose_ladder_episodes(1, 100, episodes[:1], max_inputs=60))
 
+    def test_open_terminal_rejects_a_real_floor_contact_instead_of_labeling_it_airborne(self):
+        request={'version':1,'initial':{'position':.1,'velocity':-.8},'region':{'minY':0,'maxY':2},
+                 'entries':[{'family':'front','firstCandidateState':0}], 'exitKinds':['side'],
+                 'exitStates':[1],'entryDelay':0,'finishAtExit':True,'maxInputs':1,
+                 'contactVariants':[[{'leg':0,'offset':0,'axis':'Y','direction':-1,'plane':0,
+                                      'box':[0,-1,0,1,0,1],'role':'landing'}]]}
+        result=generate_ladder_schedules(request)
+        self.assertEqual(result['schedules'],[])
+        self.assertGreater(result['stats']['rejected'].get('airborne_terminal_required',0),0)
+
     def test_unit_materialization_matches_five_phase_occupancy_and_contacts(self):
         for first, end in [(None,None), (0,7), (2,7), (0,5), (2,5)]:
             s = schedule(first, end)
