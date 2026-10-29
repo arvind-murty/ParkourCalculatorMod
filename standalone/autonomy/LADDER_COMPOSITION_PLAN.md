@@ -1,5 +1,7 @@
 # Multiple ladders and mixed contact schedules
 
+Latest scope audit: [MOVEMENT_REFACTOR_STATUS.md](MOVEMENT_REFACTOR_STATUS.md) distinguishes completed ladder contracts and typed compilation from the still-partial common search/generator interface. The optional resumable-generation idea is not required for that refactor.
+
 2026-10-29. Implementation plan following the single-interaction prototype in [LADDER_STRATEGY_PLAN.md](LADDER_STRATEGY_PLAN.md). The delivered interfaces and measured evidence are recorded in [CONTACT_COMBINATIONS.md](CONTACT_COMBINATIONS.md) and its experiment folder. The design below remains the reference for coverage and later search improvements. User scope now includes multiple ladder interactions and deliberate wall/ceiling contacts composed with climbing. Diagonal-only ladder adjacency, switching climb-wall orientation within a ladder episode, and re-entering the same ladder after leaving remain deferred.
 
 ## Latest unit-model decisions
