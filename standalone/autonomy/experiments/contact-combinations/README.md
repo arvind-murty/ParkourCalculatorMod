@@ -15,8 +15,12 @@ The snapshots contain the exact compiled continuous problem, selected route/even
 | `appended-air-ceiling.json` | 29 | Generated ceiling contact and second episode from a prescribed first-region prefix |
 | `appended-ladder-ceiling.json` | 29 | Generated ceiling contact during the second climb; its top exit is regenerated one input later |
 | `final-air-ceiling.json` | 27 | Generated ceiling contact after a prescribed two-region prefix; landing is one input earlier |
+| `three-climbing-ladders.json` | 50 | Cold geometry-only discovery of three climbing regions, one launch and no intermediate landing |
+| `five-climbing-ladders.json` | 99 | Supplied five-region order/transfer policy, Y-derived climbing durations, fresh IPOPT and full scene acceptance |
 
 The three new mixed-contact witnesses are generated continuations, not cold whole-route discoveries. They pass fresh numerical and full-scene checks through `test_movement_contacts.py`. Their complete compiled problems and source geometry are retained. See [MIXED_MOVEMENT_CONTACTS.md](../../MIXED_MOVEMENT_CONTACTS.md).
+
+The three-region climbing search independently discovers entry/exit timing and facings. The five-region climbing snapshot is a prescribed-contract witness. A separate bounded cold run returned unknown; its limits and counters are saved in `five-climbing-search-limit.json`. See [LONG_LADDER_VALIDATION.md](../../LONG_LADDER_VALIDATION.md) for exact scope and reproduction. Current regression gate: 228 orchestration tests pass, plus two new long-chain tests.
 
 The five-region and bottom-exit fixtures contain geometry and the initial state. Their accepted episode timings are prescribed by the contract tests, not discovered cold from those fixtures. Their saved problems/candidates revalidate independently; no optimality is claimed. See [MOVEMENT_UNITS.md](../../MOVEMENT_UNITS.md) for the common unit interface, new tests and chain search limits.
 
