@@ -95,7 +95,7 @@ class MovementCompositionTests(unittest.TestCase):
         self.assertEqual(schedule(route,[0])['movementUnits'],expected)
 
     def test_chain_cancellation_and_prefix_cap_are_explicit(self):
-        _,_,p = airborne_case()
+        _,episodes,p = airborne_case()
         first=p['ladderEvents'][0]
         cancel=threading.Event()
         cancel.set()
@@ -106,6 +106,16 @@ class MovementCompositionTests(unittest.TestCase):
         self.assertEqual(r['termination'],'deadline')
         with self.assertRaises(ValueError):
             chain_programs(first,[],[],{'top':3,'bounds':[0,1,2,3]},max_pending=0)
+        extension=compose_ladder_episodes(1,None,episodes,max_inputs=60)
+        with patch('standalone.autonomy.ladder_transfers.append_ladder_programs',
+                   return_value={'programs':[extension,copy.deepcopy(extension)],'generated':2}), \
+                patch('standalone.autonomy.ladder_geometry.climb_walls',return_value=[episodes[1]['wall']]):
+            r=chain_programs(first,[episodes[1]['column']],[],{'top':3,'bounds':[0,1,2,3]},
+                             max_prefixes=1,max_pending=1)
+        self.assertEqual(r['termination'],'prefix_limit')
+        self.assertEqual(r['queueDrops'],1)
+        self.assertEqual(r['remainingPrefixes'],1)
+        self.assertFalse(r['minimumTicksProven'])
 
     def test_chain_queue_can_extend_through_five_airborne_prefixes(self):
         evidence=json.loads((ROOT/'experiments/contact-combinations/five-airborne-ladders.json').read_text())
