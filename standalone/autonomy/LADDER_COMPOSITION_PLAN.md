@@ -2,6 +2,18 @@
 
 2026-10-29. Implementation plan following the single-interaction prototype in [LADDER_STRATEGY_PLAN.md](LADDER_STRATEGY_PLAN.md). The delivered interfaces and measured evidence are recorded in [CONTACT_COMBINATIONS.md](CONTACT_COMBINATIONS.md) and its experiment folder. The design below remains the reference for coverage and later search improvements. User scope now includes multiple ladder interactions and deliberate wall/ceiling contacts composed with climbing. Diagonal-only ladder adjacency, switching climb-wall orientation within a ladder episode, and re-entering the same ladder after leaving remain deferred.
 
+## Latest unit-model decisions
+
+The next refactor uses first-class movement types `normal`, `ladder_climb` and `ladder_fall` behind a common unit interface. Climbing/falling share ladder occupancy, cap, collision and Y primitives. Later `stepping` will own the existing step-up/slab-boost variants, and `water` will extend the same interface. Rectangle ladder regions are sufficient for the requested course scope; additional irregular-geometry search work is not a priority.
+
+Within one ladder hitbox, allow a falling-only interaction or an optional initial falling unit, one climbing unit, and an optional final falling unit. Never generate `ladder_climb -> ladder_fall -> ladder_climb` within that hitbox. Both types are optional: wall contact on entry can start climbing immediately, including continued wall contact from previous inputs, and an interaction can contain no climbing at all. The entry transition uses the real pre-entry movement state and post-entry contact response; climbing is never applied before entry and no artificial falling tick is inserted.
+
+The climbing unit owns its sustained-hit duration and the zero, one or two one-input stop-climbing adjustments. The four variants are neither stop, beginning only, end only, or both. Stops remain internal to the climbing unit even though they use the physical no-hit update. A selected beginning stop does not force an external falling phase. No internal stop/restart intervals are generated. Each stop replaces a planned climbing hit, not an automatically inserted extra input. The end stop omits the final climb-refresh-eligible hit, not the penultimate hit or merely a hit ending outside the region. Preserve the actual Y/carry effect by replaying the shared recurrence.
+
+Climbing's central scheduling responsibility is to choose the duration/hit/stop variant that meets the required exit Y and carried VY for the continuation. Falling exposes its fall/Sneak schedule separately. Whole-route time remains the primary objective, and X/Z reach, wall contacts and occupancy still need the joint continuous solve. Unit transitions carry all movement/input state without reset. Arbitrary successive ladder chains arise from common unit composition, not a fixed two-ladder transfer template.
+
+This is the agreed design for the next refactor. The existing generators, two-region automatic transfer template and accepted numerical evidence below have not yet been replaced with this unit interface.
+
 ## Existing foundation and shared-source context
 
 The current prototype discovers one ladder interaction between ordinary route prefixes/suffixes. It generates fall/Sneak/climb/stop/exit schedules, uses the shared movement compiler, and validates accepted continuous trajectories against actual finite scene geometry. Existing ordinary-route wall reversals, ceiling profiles and blockage branches provide reusable event constraints. The numerical worker already supports prescribed horizontal/vertical contacts, component-cap regimes and multiple occupied ladder states.

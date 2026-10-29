@@ -2,6 +2,12 @@
 
 Updated checkpoint, 2026-10-29, on `codex/run-ticks-planning`. Run ticks, support routing, blockages, one-input wall/ceiling contacts, multiple ladder transitions and multi-episode airborne transfers are implemented. `39d4ede` added the common contact contract and `a8b659c` added full ladder/contact composition and step diagnostics. The latest reviewable state is committed in our isolated worktree.
 
+## Next refactor: generic movement units
+
+Latest user decisions are recorded at the top of LADDER_COMPOSITION_PLAN.md. Treat `normal`, `ladder_climb` and `ladder_fall` as first-class orchestrator-visible movement types sharing one unit interface. Shared ladder mechanics remain in one implementation. Later add `stepping` for existing step-up/slab boosts and `water`. Ladder rectangles are sufficient; stop expanding irregular geometry.
+
+Within one ladder hitbox there is at most one climbing unit, optionally preceded/followed by falling; falling-only and direct-climbing-on-entry cases are valid. Never generate `ladder_climb -> ladder_fall -> ladder_climb` in that hitbox. The climbing unit internally owns its four endpoint-stop variants: neither, one beginning stop, one end stop, or both one-input stops. These are Y/height and duration choices, not separate falling phases. Preserve the final-hit omission semantics and actual carried VY. The generic unit refactor and arbitrary-length automatic airborne chain search are authorized but not yet implemented; do not mistake the existing two-region automatic template for arbitrary chain discovery.
+
 ## Latest composition work, 2026-10-29
 
 The user prioritized supporting contact types before route-specific pruning. Read [CONTACT_COMBINATIONS.md](CONTACT_COMBINATIONS.md), [LADDER_COMPOSITION_PLAN.md](LADDER_COMPOSITION_PLAN.md) and [the saved evidence](experiments/contact-combinations/README.md). `39d4ede` introduced the common finite contact contract. The subsequent work adds multiple ladder transitions, full-flight multi-episode contracts and automatic two-region transfers, mixed ladder contacts, exact face-connected region metadata, finite coplanar alternatives and step contact diagnostics. Numerical/scene acceptance remains strict and facings stay free.
