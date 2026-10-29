@@ -197,6 +197,9 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                     event, s, column, wall = plan['events'][selected['leg']], selected['schedule'], selected['column'], selected['wall']
                     point = [column['x'] + .5, column['z'] + .5]
                     point[0 if wall['axis'] == 'X' else 1] = wall['plane']
+                    if s['entryState'] == 0 and event['jump'] == 0:
+                        tangent = 1 if wall['axis'] == 'X' else 0
+                        point[tangent] = problem['position'][tangent]
                     if any(e['leg'] == selected['leg'] and e['schedule']['exitState'] <= s['entryState']
                            for e in route['ladderEvents']):
                         entry_face = selected['entryFace']
