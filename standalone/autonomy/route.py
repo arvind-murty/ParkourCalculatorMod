@@ -137,6 +137,8 @@ def prepare_route(request):
     validate_hits(route)
     from .ladder_events import validate_ladder_events
     validate_ladder_events(route)
+    from .contact_combinations import validate_contact_events
+    validate_contact_events(route)
     return route
 
 
@@ -275,6 +277,13 @@ def schedule(route, allocation, stage='jump'):
         contacts.extend(ladder_contacts)
         scene_contacts.extend(ladder_scene)
         extra = {'ladderTicks': ladder, 'sneak': sneak}
+    from .contact_combinations import compile_contact_events, merge_contacts
+    contact_rows, additional, additional_scene, vertical = compile_contact_events(route, events, state)
+    walls.extend(contact_rows)
+    contacts = merge_contacts(contacts + additional)
+    scene_contacts = merge_contacts(scene_contacts + additional_scene, scene=True)
+    if vertical:
+        extra['verticalContacts'] = merge_contacts([dict(c, axis=1) for c in vertical])
     return {'ticks': state, 'grounded': grounded, 'jump': jump, 'events': events,
             'supportChecks': supports_at, 'exitChecks': exit_checks, 'walls': walls,
             'allocation': list(allocation), 'stage': stage, 'passageFailures': passage_failures,

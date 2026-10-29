@@ -65,7 +65,7 @@ def sneak_patterns(ticks, eligible, first_clamped=None):
             yield [t in selected for t in range(ticks)]
 
 
-def trace_ladder_schedule(initial, ladder, sneak, hit, *, jump=None, target_top=None, min_landing_state=0):
+def trace_ladder_schedule(initial, ladder, sneak, hit, *, jump=None, target_top=None, min_landing_state=0, contacts=None):
     hit = _flags(hit, 'hit')
     n = integer(len(hit), 'ticks', 1, 200)
     ladder = _flags(ladder, 'ladder', n + 1)
@@ -86,16 +86,28 @@ def trace_ladder_schedule(initial, ladder, sneak, hit, *, jump=None, target_top=
     if target_top is not None:
         number(target_top, 'target top')
     integer(min_landing_state, 'minimum landing state', 0, n)
+    from .contact_combinations import merge_contacts
+    selected = copy.deepcopy(contacts or [])
+    if not isinstance(selected, list):
+        raise ValueError('Vertical contacts must be a list')
+    for contact in selected:
+        integer(contact.get('state'), 'vertical contact state', 1, n)
+        number(contact.get('plane'), 'vertical contact plane')
+        if type(contact.get('direction')) is not int or contact['direction'] not in (-1, 1):
+            raise ValueError('Vertical contact direction must be -1 or 1')
+    selected = [{k: v for k, v in c.items() if k != 'axis'}
+                for c in merge_contacts([dict(c, axis=1) for c in selected])]
     config = {'profile': 'minecraft-1.8.9', 'position': y, 'velocity': vy, 'onGround': ground,
               'previousHorizontalCollision': previous, 'threshold': .005,
-              'jumpVelocity': impulses, 'sneak': sneak, 'contacts': []}
+              'jumpVelocity': impulses, 'sneak': sneak, 'contacts': selected}
     positions, velocities, grounds, moves, refreshes, failures = [y], [vy], [ground], [], [], []
     landed = False
     for t in range(n):
         movement = vertical_move(config, t, vy, ladder[t])
         if target_top is not None and t + 1 >= min_landing_state and movement < 0 \
                 and y >= target_top and y + movement < target_top:
-            config['contacts'].append({'state': t + 1, 'plane': target_top, 'direction': -1})
+            if not any(c['state'] == t + 1 for c in config['contacts']):
+                config['contacts'].append({'state': t + 1, 'plane': target_top, 'direction': -1})
         y, movement, ground, errors = vertical_step(config, t, y, vy, ladder[t], ground, 0)
         failures.extend(errors)
         vy = vertical_carry(movement, ladder[t + 1], hit[t])
@@ -104,12 +116,13 @@ def trace_ladder_schedule(initial, ladder, sneak, hit, *, jump=None, target_top=
         grounds.append(ground)
         moves.append(movement)
         refreshes.append(ladder[t + 1] and hit[t])
-        if ground and config['contacts'] and config['contacts'][-1]['state'] == t + 1:
+        if ground and any(c['state'] == t + 1 and c['direction'] < 0 for c in config['contacts']):
             landed = True
             break
     count = len(moves)
     config['jumpVelocity'] = impulses[:count]
     config['sneak'] = sneak[:count]
+    config['contacts'] = [c for c in config['contacts'] if c['state'] <= count]
     return {'status': 'invalid' if failures else 'landed' if landed else 'simulated', 'ticks': count,
             'position': positions, 'velocity': velocities, 'onGround': grounds, 'movement': moves,
             'climbRefreshed': refreshes, 'failures': failures, 'vertical': config,
