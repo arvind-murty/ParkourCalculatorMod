@@ -46,7 +46,7 @@ The bounded search is not an optimality/infeasibility proof. Entry/skeleton/mask
 
 Initial transfer windows sample distinct exit states, rather than allowing multiple carried-VY variants at one state to consume all four default windows. Other VY/Sneak/stop alternatives can still be dropped by those work caps. Automatic appended entries retain the prior explicit 20-input local entry horizon, report clipping, and do not claim to have proved their earliest feasible entry. The whole flight remains bounded to 200 inputs.
 
-Same-region re-entry and changing the chosen climb-wall orientation inside a region remain deferred. Rectangle regions are sufficient for the requested scope. Route-specific rarity/pruning rules, exhaustive contact variants on every newly appended region, globally exhaustive schedule dominance and a global time-optimality proof remain later work. Existing mixed-contact compilation/acceptance still supports explicitly composed finite wall/ceiling schedules. `stepping` and `water` have not been added; the existing stair/step profile path remains in place until that follow-up.
+Same-region re-entry and changing the chosen climb-wall orientation inside a region remain deferred. Rectangle regions are sufficient for the requested scope. Route-specific rarity/pruning rules, globally exhaustive schedule dominance and a global time-optimality proof remain later work. Automatic mixed contacts now expand initial open episodes, every appended approach/ladder and final air interval; see [MIXED_MOVEMENT_CONTACTS.md](MIXED_MOVEMENT_CONTACTS.md). These alternatives remain bounded, rather than exhaustive. `stepping` and `water` have not been added; the existing stair/step profile path remains in place until that follow-up.
 
 ## Measured evidence
 

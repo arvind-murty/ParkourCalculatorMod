@@ -1,7 +1,7 @@
 import copy
 from standalone.ipopt.ladder import f32, vertical_move, vertical_step, vertical_carry
-from .contact_combinations import merge_contacts, contact_combinations
-from .contact_profiles import contact_profile, contact_opportunities
+from .contact_combinations import merge_contacts
+from .contact_profiles import contact_profile
 from .ladder_schedules import trace_ladder_schedule
 from .obstacle_geometry import BODY_HEIGHT
 from .movement_units import exit_matches, ladder_units
@@ -23,6 +23,8 @@ def climb_contacts(schedule, wall):
 
 def with_contacts(schedule, extra, column, wall, target_top, *, max_inputs=200):
     s = copy.deepcopy(schedule)
+    if target_top is None:
+        max_inputs = s['exitState']
     try:
         base = climb_contacts(s, wall) + s.get('contactEvents', [])
         original = {(e['offset'], e['axis'], e['plane'], e['direction']) for e in base}
@@ -46,10 +48,11 @@ def with_contacts(schedule, extra, column, wall, target_top, *, max_inputs=200):
     trace = trace_ladder_schedule({'position': ys[0], 'velocity': profile['velocity'][0], 'onGround': profile['grounded'][0]},
         profile['ladderTicks'], profile['sneak'], actual,
         jump=[f32(.42) if j else None for j in profile['jump']], contacts=profile['contacts'])
-    if trace['status'] != 'landed':
+    if trace['status'] != ('simulated' if target_top is None else 'landed'):
         return None
     s.update(ticks=n, hit=(s['hit'] + [False] * n)[:n], sneak=profile['sneak'], ladderTicks=profile['ladderTicks'],
              trace=trace, postExitTicks=n - s['exitState'],
+             terminal='airborne' if target_top is None else 'landed',
              contactEvents=[{k: v for k, v in e.items() if k != 'state'} for e in selected if e['role'] != 'climb'])
     try:
         s['movementUnits'] = ladder_units(s, column['id'])
@@ -88,14 +91,9 @@ def mixed_ladder_schedules(schedules, solids, column, wall, target_top, *, max_v
     if not schedules:
         return {'schedules': [], 'attempted': 0, 'limit': max_variants}
     def variants(s):
-        for box in solids:
-            sequence = ceiling_sequence(s, box)
-            if sequence:
-                yield sequence
-        opportunities = list(contact_opportunities(solids, s['ticks']))
-        windows = [{'leg': 0, 'start': 0, 'end': s['ticks'] - 1}]
-        yield from contact_combinations(opportunities, max_events=max_events, limit=work,
-                                       ladder_windows=windows, cancel_event=cancel_event)
+        from .movement_contacts import contact_variants
+        yield from contact_variants(solids, s['ticks'], schedules=[s], max_events=max_events,
+            max_variants=min(256, max_variants * 8), cancel_event=cancel_event)['variants']
     streams = [(s, iter(variants(s))) for s in schedules[:max_variants]]
     signatures = set()
     while streams and len(added) < max_variants and attempted < work:
