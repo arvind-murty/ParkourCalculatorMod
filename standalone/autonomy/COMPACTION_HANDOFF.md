@@ -1,6 +1,6 @@
 # Orchestration compaction handoff
 
-Updated checkpoint, 2026-10-27, on `codex/run-ticks-planning`. Run ticks, support routing, blockages, one-input wall/ceiling contacts and one ladder/vine interaction per composed route are implemented. `46f0f52` added the shared ladder compiler/ranking foundation and `d6ee0a4` added the complete route feature, cold fixtures and saved evidence.
+Updated checkpoint, 2026-10-29, on `codex/run-ticks-planning`. Run ticks, support routing, blockages, one-input wall/ceiling contacts, multiple ladder transitions and multi-episode airborne transfers are implemented. `39d4ede` added the common contact contract and `a8b659c` added full ladder/contact composition and step diagnostics. The latest reviewable state is committed in our isolated worktree.
 
 ## Latest composition work, 2026-10-29
 
@@ -17,8 +17,8 @@ The integration branch is idle. Published tip `e09f2a7` was reviewed using Git/G
 1. Read repository `AGENTS.md` and `CONTEXT.md`, then this file.
 2. Read [OBSTACLE_SEARCH.md](OBSTACLE_SEARCH.md) for the implemented interface and [OBSTACLES_AND_BLOCKAGES.md](OBSTACLES_AND_BLOCKAGES.md) for the contact-family design.
 3. Read [ONE_TICK_CONTACT_PLAN.md](ONE_TICK_CONTACT_PLAN.md): wall reversals and ceiling profiles retain their own contact families. Ladder consecutive hits bypass reversal guards/count caps.
-4. Read [LADDER_STRATEGY_PLAN.md](LADDER_STRATEGY_PLAN.md), including its numerical execution plan and delivered scope. `find_blocks` now discovers signed entry channels/timings, generates and ranks schedules, and solves an ordinary prefix, one ladder interaction and ordinary suffix jointly. Earlier entry unknowns remain unresolved; total elapsed time then objective still ranks complete candidates.
-5. Inspect [five saved ladder experiments](experiments/ladder-search/README.md), especially side entry with two chosen Sneak inputs and the full `start -> pad -> wall -> goal` route. Every result has a geometry-only source request and independently checked movement/Y/scene contract.
+4. Read [CONTACT_COMBINATIONS.md](CONTACT_COMBINATIONS.md) and [LADDER_COMPOSITION_PLAN.md](LADDER_COMPOSITION_PLAN.md) for current APIs and limits. The single-interaction record in LADDER_STRATEGY_PLAN.md is historical. Complete candidates retain free facings and full-prefix movement compilation; time ranks before objective. Earlier unknowns and work limits remain unresolved rather than infeasibility claims.
+5. Inspect [current composition evidence](experiments/contact-combinations/README.md) and the earlier [single-ladder experiments](experiments/ladder-search/README.md). They retain continuous problems, trajectories and shared-scene checks. Geometry-only automatic examples and prescribed-contract coverage are distinguished explicitly.
 
 Our isolated worktree is `/Users/arvindmurty/CS/ParkourCalculatorMod-run-ticks`. The other agent owns `/Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-mod-integration`, branch `feature/ipopt-mod-integration`. The main `/Users/arvindmurty/CS/ParkourCalculatorMod` checkout also has concurrent work. Make our edits and commits only in our worktree. The user explicitly authorized importing the other agent's shared changes when needed; no additional permission is required. Do not modify that checkout or duplicate its physics/input implementations.
 
@@ -101,7 +101,7 @@ User rule: commit every added feature. Do not add code comments/docstrings or em
 - Output adds `best.hitEvents`, `best.ceilingEvents`, `best.plan.contacts`, `best.plan.sceneContacts`, scalar raw movement/movement assumptions and `attempts[].wallHitSearch` diagnostics.
 - Cold wall reversals pass in X/Z and both signs. Saved geometry-only cases: a 12-input wall reversal (~6.96 s), three-input ceiling bonk (~.28 s), and three-input simultaneous Y/X hit (~2.14 s). All have zero added runs, independent scalar acceptance and shared scene acceptance. Found yaws in saved numerical requests are warm witnesses, not cold inputs.
 
-## Ladder integration checkpoint
+## Original single-ladder integration checkpoint
 
 The first bullets describe the generator API; the subsequent integration bullets describe the now-implemented full route evaluator.
 
@@ -124,7 +124,7 @@ The first bullets describe the generator API; the subsequent integration bullets
 2. **More coupled evidence.** Distinct episodes and later legs can carry selected hits, but current saved cold evidence is small. Add multi-leg/repeated-hit cases and measure candidate/branch drops before raising limits. Current bounds/caps and local IPOPT can miss valid strategies; unknown is not infeasibility.
 3. **Broader vertical skeletons.** One ceiling hit per ordinary transition and existing selected stair profiles work. General contact-selected step/cancel choices and their collision competition remain later work. Keep time/reach bounds admissible as those families expand.
 4. **Shared-source integration.** Replace the pinned isolated source dependency with common integrated sources when both branches are combined. Do not clone sprint/input arithmetic or edit the other worktree. The integration branch remains `feature/ipopt-mod-integration`, reviewed HEAD `f057c0c`; read its latest `RECENT_REPLAY_HANDOFF.md` and `MOVEMENT_PORT.md` before later imports.
-5. **Restricted state/mechanics.** Clear initial input state, normal static inert 1.8.9 boxes. Extra resume history, multiple ladder interactions, special surfaces, fluids and callbacks remain outside this orchestration adapter. Single-interaction ladder handling reuses the existing numerical clamp/Y/contact model.
+5. **Restricted state/mechanics.** Clear initial input state, normal static inert 1.8.9 boxes. Extra resume history, within-region wall-plane switching, same-region re-entry, diagonal-only continuous adjacency, special surfaces, fluids and callbacks remain outside this orchestration adapter. Multiple-interaction ladder handling reuses the existing numerical clamp/Y/contact model.
 6. **Benchmarks and diagnostics.** Broaden dense finite-geometry courses and eventually Linkcraft using actual geometry. Do not reconstruct missing solids from trajectory points or use recorded yaw as cold inputs. Improve generic contact-search unknown reasons if useful.
 7. **Proof/ownership scope.** `minimumTicksProven` compares normal-family witnesses to the generated graph's optimistic bound, including ceiling profiles. Ladder-family results always set it false. It is not a certificate over omitted contact families or all game strategies. Objective optimality is never claimed. Replay, angle realization, TAS export and actual-world validation stay with the other layer.
 
@@ -148,7 +148,7 @@ PKC_IPOPT_PYTHON="$PWD/.venv-ipopt/bin/python" \
 python3 -m unittest discover -s standalone/autonomy/tests -v
 ```
 
-The complete ladder integration gate passed **174 tests in 240.831 seconds**, including all five cold IPOPT/Java ladder scenes, old saved routes and existing obstacle/run/ceiling regressions. A final **13-case bridge/evidence gate passed in 6.495 seconds**, including the subsequently added coplanar-face regression; the current discovery count is 175 and every case has passed. The standalone numerical suite passed **51 tests in 26.077 seconds**. Generator coverage now includes 39 focused cases; a 43-case generator/contract run passed after reach-bound validation changes. Without both environment variables, important integration cases are skipped. Do not describe that smaller run as full acceptance.
+The previous single-ladder integration gate passed **174 tests in 240.831 seconds**, including all five cold IPOPT/Java ladder scenes, old saved routes and existing obstacle/run/ceiling regressions. A final **13-case bridge/evidence gate passed in 6.495 seconds**, including the subsequently added coplanar-face regression; the current discovery count is 175 and every case has passed. The standalone numerical suite passed **51 tests in 26.077 seconds**. Generator coverage now includes 39 focused cases; a 43-case generator/contract run passed after reach-bound validation changes. Without both environment variables, important integration cases are skipped. Do not describe that smaller run as full acceptance.
 
 The initial broad run exposed missing optional `ladderEvents` in older saved routes and a stale test treating ladder metadata as unsupported. Both were corrected before the passing full rerun. Coplanar multipart clipping is accepted only when the selected finite part overlaps at the correct Y-X-Z stage and both face planes match; unrelated finite faces and wrong planes are rejected.
 
@@ -197,3 +197,12 @@ The side-run-off case is a separate fixture with carried velocity and a nearby s
 | `compiler.py` / `java/CompileRunTicksPhysics.java` | Persistent Java footprint/coefficient/scene-check bridge |
 
 Recent durable implementation commits: `b554ddf` (tick/objective ranking), `ede6b01` (automatic run-offs), `41439f5` (run-off conditions), `8cd2aaa` (shared scene import), `f010496` (shared collision bridge), `1fa1472` (finite obstacle avoidance) and `7bf8263` (physical-block caps/interleaving). Older run-ticks and route/height/stair commits remain on this isolated branch. Continue from it, rather than recreating the implementation on another checkout.
+
+
+## Final type-support verification, 2026-10-29
+
+Feature commits are `39d4ede` (common signed contacts) and `a8b659c` (multiple ladder episodes, mixed schedules, finite unions and step diagnostics). The full Java/IPOPT orchestration gate passed **200 tests in 554.373 seconds** with both runtime variables set and no skips. A final focused run passed **23 tests in 4.284 seconds**, including the automatic airborne-transfer snapshot/hash and the step/ceiling/X/Z numerical cases. The unchanged standalone numerical suite passed **51 tests in 28.846 seconds**. Native core completed **799 tests, 33 skipped**, with only the three previously recorded failures in CrossJvmDeterminismTest, InertiaFoldingTest and CostateSmoothingScaleTest. StaticScene's updated step diagnostics test and new simultaneous step-contact test pass.
+
+The first broad run found an ordinary-prefix pool ordering regression and a legacy test selecting the newly introduced general-contact family instead of its dedicated reversal family. Both were corrected; the final full gate includes the fixes. Native step clip-list expectations were updated to the newly retained actual step-path contacts, with no change to movement arithmetic. No acceptance tolerance was relaxed.
+
+The type-support milestone is complete to the explicit search-family limits described above. Route-specific pruning/rarity heuristics remain deferred. Future work should improve bounded enumeration/continuation ranking and irregular-corridor choice coverage without deleting contact families or treating unknowns as infeasible. Final actual-world replay and executable angle/TAS acceptance remain with the other layer.
