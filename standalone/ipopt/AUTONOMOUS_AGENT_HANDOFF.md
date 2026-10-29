@@ -2,6 +2,8 @@
 
 Read [RECENT_REPLAY_HANDOFF.md](RECENT_REPLAY_HANDOFF.md) first for the short current handoff. Later baseline/planning paragraphs in this longer document predate the implemented local backend and are superseded by that handoff and MOVEMENT_PORT.md.
 
+Updated 2026-10-28: the current handoff now covers all replay/compiler changes since the original baseline, runnable compile/solve/replay commands, corrected 400-input success, publication/import guidance and unfinished window state carry. Final actual-world validation belongs to the mod after manual TAS import; no running client or mandatory complete-scene export is required by the standalone workflow. The implementation now exists; older statements below saying otherwise are historical.
+
 Prepared 2026-10-26. This document describes implemented behavior at clean solver baseline `498ecc1`, plus the ownership split requested by the user. Read [README.md](README.md) for the full request schema and [FINDINGS.md](FINDINGS.md) for measurements and known limitations.
 
 Local replay addition: [REPLAY.md](REPLAY.md) specifies the optional Java replay API/CLI, static scene schema, supported 1.8.9 mechanics and event-mismatch feedback. Supply complete collision boxes/ladder cells from the planner to enable discovery; no running Minecraft client is required. Existing fixtures remain usable in declared-contact mode. Replay/angle realization and TAS export belong to the integration agent; input/route/event search remains with the autonomous agent. A changed event schedule is feedback for recompilation, not an infeasibility certificate.

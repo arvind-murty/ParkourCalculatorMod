@@ -1,5 +1,13 @@
 # Standalone IPOPT findings
 
+## Publication and cumulative autonomous-agent update, 2026-10-28
+
+The user explicitly requested pushing the accumulated integration work and updating the other agent about everything since the prior handoff. Rewrote RECENT_REPLAY_HANDOFF.md as a cumulative update covering local replay/discovery and TAS round-trip export, shared input-state compilation, the wall/sprint/air-factor fix, corrected 200/400 results, commands, movement guards, profile limitations and unfinished portable window state. The latest boundary assigns actual-world validation to the mod after manual TAS import; complete scene capture remains optional. Linked the current decision prominently from the longer original handoff.
+
+Read-only inspection found the autonomous checkout at 58815ea still carrying the older baseline handoff and using an older upstream base. The update therefore includes the entire replay/compiler delivery, not only the last documentation changes, and warns against blindly merging unrelated upstream history or overwriting its model/orchestration changes. No files in another agent's checkout were edited. Publication targets the user's fork, origin/feature/ipopt-mod-integration, with a normal push. This request authorizes this publication; subsequent pushes still require a new request.
+
+Documentation-only update; checked the diff and retained the previously recorded test results without rerunning numerical suites. No new physics or APIs are claimed in this turn.
+
 ## Validation boundary clarified by the user, 2026-10-26
 
 The user assigned final validation against the actual Minecraft world to the mod. The standalone pipeline should solve, realize exact executable inputs, validate against its declared block/movement contract and export the existing mod-loadable TAS JSON. The user can load that file in Minecraft later for inspection and actual-world validation. A complete scene export and in-world parity run are therefore not prerequisites for this standalone milestone; the preceding scene-capture-first priority is superseded.
