@@ -77,7 +77,7 @@ def trace_ladder_schedule(initial, ladder, sneak, hit, *, jump=None, target_top=
         if occupied_y_bounds is not None and ladder[t + 1] and not lower <= y < upper:
             failures.append({'state': t + 1, 'reason': 'occupied_y_outside_region'})
             break
-        if ground and any(c['state'] == t + 1 and c['direction'] < 0 for c in config['contacts']):
+        if ground and any(c['state'] == t + 1 and c['direction'] < 0 and not c.get('case') for c in config['contacts']):
             landed = True
             break
     count = len(moves)

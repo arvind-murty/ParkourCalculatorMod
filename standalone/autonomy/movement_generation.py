@@ -167,6 +167,12 @@ def sneak_domain(units, context, primary):
     return sorted(selected)
 
 
+from .ceiling_generation import CeilingGenerator
+from .stepping_generation import SteppingGenerator
+
+
+register_movement_type('ceiling', CeilingGenerator())
+register_movement_type('stepping', SteppingGenerator())
 register_movement_type('normal', NormalGenerator())
 register_movement_type('ladder_climb', LadderClimbGenerator(), ladder=True)
 register_movement_type('ladder_fall', LadderFallGenerator(), ladder=True)

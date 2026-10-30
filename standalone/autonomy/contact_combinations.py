@@ -12,7 +12,7 @@ def merge_contacts(contacts, *, scene=False):
         key = contact['state'], contact['axis']
         if key in merged:
             previous = merged[key]
-            if any(previous.get(k) != contact.get(k) for k in ('plane', 'direction', 'step')):
+            if any(previous.get(k) != contact.get(k) for k in ('plane', 'direction', 'step', 'case', 'lowerHeight', 'higherHeight', 'clearance', 'movementCase')):
                 raise ValueError('Conflicting contacts on one input axis')
             if scene and (previous.get('box') != contact.get('box') or previous.get('boxes') != contact.get('boxes')):
                 choices = copy.deepcopy(previous.get('boxes', [previous['box']] if 'box' in previous else []))

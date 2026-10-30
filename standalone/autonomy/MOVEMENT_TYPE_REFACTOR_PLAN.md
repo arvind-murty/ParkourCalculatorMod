@@ -1,5 +1,9 @@
 # Normal ceiling, ladder ceiling and stepping refactor
 
+Latest scope, 2026-10-30: **defer the ladder-ceiling ownership refactor**. Preserve existing ladder-ceiling behavior and reuse its extracted primitives. The implementation below adds the normal `ceiling` and `stepping` types. A blip's higher block is a standard finite wall on L, with avoidance and actual-hit alternatives; actual hits use the existing inertia and sprint compiler.
+
+Implemented checkpoint: neutral helpers, typed profile composition/retiming, registered full-geometry stepping and ceiling generation, the six stepping cases and grind, and original-state numerical/scalar/shared-scene acceptance. See [STEPPING_IMPLEMENTATION.md](STEPPING_IMPLEMENTATION.md) for the actual scope, tests and remaining limits. The numbered sections below record the approved design; commit 2 is explicitly deferred by the latest instruction.
+
 Approved direction, 2026-10-30. `ceiling` is a movement type in the normal movement domain, including a normal jump launch such as grind. Ceilings inside a ladder are handled separately through `ladder_ceiling` logic owned by `ladder_climb`, reusing shared primitives. `stepping` is a separate type for the six accepted step/corner cases. This is an implementation plan, not a statement that the new types are implemented.
 
 ## Target ownership
@@ -50,7 +54,7 @@ Move the common parts of `mixed_ladder.ceiling_sequence` into this neutral layer
 
 Gate: existing emitted physical schedules and Y/VY/ground/contact histories remain equivalent. Run focused ordinary-ceiling, ladder-ceiling and contact-combination tests. No new profiles or search pruning in this commit.
 
-## Commit 2: make ladder ceiling ownership local
+## Deferred: make ladder ceiling ownership local
 
 Add `ladder_ceiling.py`. Move ladder-specific ceiling prediction, repeated-contact scheduling and integration with the existing climb/stop choices here. Invoke it through the ladder scheduler/climb generator. It emits internal `ladder_ceiling` events, not top-level `ceiling` units.
 

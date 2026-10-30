@@ -23,7 +23,7 @@ def prepare_scene(request):
                'geometryBounds', 'collisionScene', 'maxBlockagesPerObstacle', 'maxPassageCandidates',
                'maxHorizontalBlockagesPerObstacle', 'maxVerticalBlockagesPerObstacle',
                'maxWallHits', 'maxWallHitCandidates', 'ceilingHits', 'climbableCells', 'ladderSearch',
-               'maxContactCombinations', 'maxCombinedEvents'}
+               'maxContactCombinations', 'maxCombinedEvents', 'maxSteppingProfiles'}
     extra = set(scene) - allowed
     if extra:
         raise ValueError('Unsupported block-scene fields: ' + ', '.join(sorted(extra)))
@@ -38,6 +38,7 @@ def prepare_scene(request):
         integer(scene.setdefault('maxWallHits', 2), 'maxWallHits', 0, 8)
         integer(scene.setdefault('maxWallHitCandidates', 24), 'maxWallHitCandidates', 1, 512)
         integer(scene.setdefault('maxContactCombinations', 64), 'maxContactCombinations', 0, 100000)
+        integer(scene.setdefault('maxSteppingProfiles', 128), 'maxSteppingProfiles', 1, 100000)
         integer(scene.setdefault('maxCombinedEvents', 3), 'maxCombinedEvents', 1, 32)
         if type(scene.setdefault('ceilingHits', True)) is not bool:
             raise ValueError('ceilingHits must be boolean')
@@ -156,6 +157,7 @@ def build_transition_graph(scene, compiler, *, seconds=5):
         bounds[block] = footprint
     coordinate_scale = max(abs(value) for footprint in footprints for value in footprint)
     rejected, profile_cache, flight_bounds, transitions = [], {}, {}, {}
+    stepping_generation = []
     profiles = {block: {} for block in ids}
     edge_options = {block: {} for block in ids}
     solid_owners = {b['solidIndex']: b['sourceBlock'] for b in scene['blocks']} \
@@ -164,7 +166,7 @@ def build_transition_graph(scene, compiler, *, seconds=5):
         for target in scene['blocks']:
             remaining()
             key = (source['top'], target['top'])
-            if key[1] - key[0] > normal_jump_height() + 1e-9 * (1 + abs(key[0]) + abs(key[1])):
+            if scene['sceneModel'] != 'collision_boxes' and key[1] - key[0] > normal_jump_height() + 1e-9 * (1 + abs(key[0]) + abs(key[1])):
                 rejected.append({'source': source['id'], 'target': target['id'], 'reason': 'jump_height'})
                 continue
             if key not in profile_cache:
@@ -172,7 +174,7 @@ def build_transition_graph(scene, compiler, *, seconds=5):
                 normal = list(generate_choices('normal', {'mode': 'support', 'sourceTop': key[0],
                     'targetTop': key[1], 'maxInputs': scene['maxFlightInputs']}))
                 ordinary = next((c['profile'] for c in normal if c['profileKind'] == 'ordinary'), None)
-                stair = stair_jump_profile(*key) if scene['stairBoost'] else None
+                stair = stair_jump_profile(*key) if scene['stairBoost'] and scene['sceneModel'] != 'collision_boxes' else None
                 runoff = next((c['profile'] for c in normal if c['profileKind'] == 'run_off'), None)
                 profile_cache[key] = [('ordinary', ordinary, None)] if ordinary is not None else []
                 if stair is not None:
@@ -184,15 +186,16 @@ def build_transition_graph(scene, compiler, *, seconds=5):
             delta = {'X': (target['bounds'][0] + target['bounds'][1] - source['bounds'][0] - source['bounds'][1]) / 2,
                      'Z': (target['bounds'][2] + target['bounds'][3] - source['bounds'][2] - source['bounds'][3]) / 2}
             available_profiles = list(profile_cache[key])
-            if scene['sceneModel'] == 'collision_boxes' and scene['ceilingHits']:
-                for solid_index, box in enumerate(scene['collisionScene']['solids']):
-                    ceiling_key = key + (solid_index,)
-                    if ceiling_key not in profile_cache:
-                        profile_cache[ceiling_key] = ceiling_profile(*key, box, solid_index,
-                            solid_owners[solid_index], max_inputs=scene['maxFlightInputs'])
-                    ceiling = profile_cache[ceiling_key]
-                    if ceiling is not None:
-                        available_profiles.append(('ceiling', ceiling, None))
+            if scene['sceneModel'] == 'collision_boxes':
+                from .movement_generation import generate_choices
+                context = dict(scene=scene, source=source, target=target, maxInputs=scene['maxFlightInputs'],
+                               checkBudget=remaining, limit=scene['maxSteppingProfiles'])
+                available_profiles.extend((c['profileKind'], c['profile'], c['entryFace'])
+                                          for c in generate_choices('stepping', context))
+                stepping_generation.append(dict(context['generation'], source=source['id'], target=target['id']))
+                if scene['ceilingHits']:
+                    available_profiles.extend((c['profileKind'], c['profile'], None)
+                                              for c in generate_choices('ceiling', context))
             if scene['sceneModel'] == 'collision_boxes' and scene['maxContactCombinations']:
                 combination_key = key + ('combinations',)
                 if combination_key not in profile_cache:
@@ -214,16 +217,20 @@ def build_transition_graph(scene, compiler, *, seconds=5):
                                  'reason': 'profile_not_generated'})
                 continue
             for kind, profile, face in options:
-                if kind != 'stair':
-                    from .movement_generation import generate_choices
-                    generated = next(generate_choices('normal', {'mode': 'profile', 'profile': profile,
-                        'profileKind': kind, 'sourceTop': source['top'], 'targetTop': target['top']}))
+                if 'generatedUnits' not in profile:
+                    from .movement_units import profile_program
                     profile = copy.deepcopy(profile)
-                    profile['generatedUnits'] = [generated['unit']]
+                    profile['generatedUnits'] = profile_program(profile)
+                from .case_profiles import entry_possible
+                if not entry_possible(profile, bounds[source['id']]):
+                    continue
                 n = profile['airtime']
-                motion_key = ('jump:' if profile['jump'][0] else 'run_off:') + str(n)
+                classic = profile['grounded'][0] and not any(profile['grounded'][1:-1]) and not any(profile['jump'][1:])
+                motion_key = (('jump:' if profile['jump'][0] else 'run_off:') + str(n) if classic else
+                              ''.join('J' if j else 'G' if g else 'A'
+                                      for g, j in zip(profile['grounded'][:-1], profile['jump'])))
                 if motion_key not in flight_bounds:
-                    flight = compiler.compile(movement_scene, {'grounded': [True] + [False] * (n - 1),
+                    flight = compiler.compile(movement_scene, {'grounded': profile['grounded'][:-1],
                                                        'jump': profile['jump']}, remaining())
                     if len(flight['magnitude']) != n or len(flight['friction']) != n:
                         raise ValueError('Invalid flight-bound coefficients')
@@ -283,7 +290,9 @@ def build_transition_graph(scene, compiler, *, seconds=5):
             'transitions': transitions, 'edgeOptions': edge_options,
             'flightInputsToGoal': flight_to_goal, 'flightBounds': flight_bounds,
             'rejectedEdges': rejected,
-            'profileLimitReached': any(r['reason'] == 'profile_not_generated' for r in rejected),
+            'steppingGeneration': stepping_generation,
+            'profileLimitReached': any(not g['complete'] for g in stepping_generation) or
+                                   any(r['reason'] == 'profile_not_generated' for r in rejected),
             'bound': {'storedSpeedNorm': speed, 'movementAfterSupportCheck': movement_after_support_check,
                       'groundMagnitude': magnitude[0], 'groundFriction': friction[0],
                       'flightTravelToLandingCheck': max((b['travel'] for b in flight_bounds.values()), default=0),
@@ -310,6 +319,12 @@ def compile_block_path(scene, block_ids, transitions=None):
             if transition['source'] != block_ids[leg] or transition['target'] != block_ids[leg + 1]:
                 raise ValueError('Selected transition does not match the support path')
             profile = copy.deepcopy(transition['profile'])
+            if scene['sceneModel'] == 'collision_boxes' and transition['profileKind'] in ('stair', 'step') and not profile.get('caseEvents'):
+                from .movement_units import profile_program
+                profile['caseEvents'] = [dict(type='stepping', case='slab_boost' if transition['profileKind'] == 'stair' else 'normal_step',
+                    input=0, plane=blocks[leg + 1]['top'], box=scene['collisionScene']['solids'][by_id[block_ids[leg + 1]]['solidIndex']],
+                    anchors={'hit': 1})]
+                profile['generatedUnits'] = profile_program(profile)
             profile.update(sourceBlock=blocks[leg]['id'], targetBlock=blocks[leg + 1]['id'],
                            profileKind=transition['profileKind'])
             selected.append(profile)
@@ -320,7 +335,8 @@ def compile_block_path(scene, block_ids, transitions=None):
         route = prepare_route({'version': 1, 'initial': scene['initial'], 'blocks': blocks,
                                'inputs': scene['inputs'], 'objective': scene['objective'],
                                'airtimes': [p['airtime'] for p in selected],
-                               'kinds': kinds, 'contactEntries': entries, 'walkOffExits': exits,
+                               'kinds': kinds, 'landingPhases': [p['landingPhase'] for p in selected],
+                               'contactEntries': entries, 'walkOffExits': exits,
                                'maxTotalRunTicks': scene['maxTotalRunTicks'],
                                'runBounds': [[0, scene['maxRunTicksPerJump']] for _ in selected],
                                'supportClearance': scene['supportClearance']})
@@ -471,7 +487,8 @@ def search_block_paths(scene, graph, evaluate, *, seconds=60, improve=False, can
             'best': best, 'termination': termination, 'attempts': attempts, 'unresolvedPrefixes': unresolved,
             'elapsedSeconds': time.monotonic() - started,
             'ticksLowerBound': initial_tick_bound,
-            'minimumTicksProven': best is not None and best['plan']['ticks'] == initial_tick_bound,
+            'minimumTicksProven': best is not None and best['plan']['ticks'] == initial_tick_bound and
+                                  all(g['complete'] for g in graph.get('steppingGeneration', [])),
             'objectiveOptimalityProven': False, 'objective': scene['objective'],
             'pruning': {'horizontalEdges': sum(r.get('reason') == 'optimistic_horizontal_reach' for r in graph['rejectedEdges']),
                         'heightEdges': sum(r.get('reason') == 'jump_height' for r in graph['rejectedEdges']),

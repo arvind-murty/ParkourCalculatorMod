@@ -1,5 +1,7 @@
 # Case-based stepping plan
 
+Implementation checkpoint, 2026-10-30: the named stepping catalogue and normal-air ceiling type are implemented in the isolated orchestration worktree. Ladder-ceiling extraction/ownership changes are deferred at the user's request. Existing ladder ceiling behavior is preserved. The higher blip block is an ordinary wall on L, with both avoidance and real-hit alternatives. Read [STEPPING_IMPLEMENTATION.md](STEPPING_IMPLEMENTATION.md) for the implemented contracts, validation and remaining search-family limits. The following sections retain the original design rationale and milestone checklist.
+
 Latest user direction, 2026-10-30: represent named movement cases with their Y schedules, movement regimes and positional constraints. The orchestrator does not need to reproduce or enumerate Minecraft's internal step-assist algorithm. The canonical definitions and tick mapping are in [STEPPING_CASES.md](STEPPING_CASES.md).
 
 Implementation sequencing and module ownership are now specified in [MOVEMENT_TYPE_REFACTOR_PLAN.md](MOVEMENT_TYPE_REFACTOR_PLAN.md). The normal-air ceiling type is separate from local `ladder_ceiling` handling inside ladder climbing, and stepping is extracted separately.

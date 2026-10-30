@@ -28,12 +28,19 @@ def validate_ladder_events(route):
         profiles = route.get('verticalProfiles', [])
         profile = profiles[leg] if leg < len(profiles) else {}
         templates = profile.get('generatedUnits', profile.get('movementUnits'))
-        if templates is None and profile.get('caseEvents') or templates is None and profile.get('contactEvents'):
+        if templates is None and (profile.get('caseEvents') or profile.get('contactEvents')):
             templates = profile_program(profile)
         units = movement_program(ticks, events)
         if templates is not None:
+            compile_units(ticks, templates)
             units = overlay_program(units, [u for u in templates if not u['type'].startswith('ladder_')])
         compiled = compile_units(ticks, units)
+        for unit in units:
+            for field, mask in [('jumpInputs', 'jump'), ('groundedInputs', 'grounded'), ('sneakInputs', 'sneak')]:
+                if field in unit and mask in profile:
+                    expected_inputs = [t for t in range(unit['start'], unit['end']) if profile[mask][t]]
+                    if unit[field] != expected_inputs:
+                        raise ValueError('Movement unit controls disagree with scalar profile')
         expected = [any(e['schedule']['ladderTicks'][t] for e in events) for t in range(ticks + 1)]
         if compiled['ladderTicks'] != expected:
             raise ValueError('Movement units disagree with ladder occupancy')
