@@ -109,6 +109,9 @@ class SteppingCaseTests(unittest.TestCase):
             self.assertEqual([shifted_unit(u, 2) for u in a['movementUnits']], b['movementUnits'][1:])
             self.assertEqual([dict(c, state=c['state'] + 2) for c in a['sceneContacts']], b['sceneContacts'])
             self.assertTrue(validate_vertical_schedule(route, compiled['profiles'], b)['feasible'], path.name)
+            partial = schedule(route, [2], stage='run')
+            self.assertEqual(partial['ticks'], 2)
+            self.assertTrue(validate_vertical_schedule(route, compiled['profiles'], partial)['feasible'], path.name)
             typed = [u for u in a['movementUnits'] if u['type'] in ('stepping', 'ceiling')]
             self.assertEqual([u['case'] for u in typed], [data['case']])
             expected_rows = edge['profile'].get('positionConstraints', [])

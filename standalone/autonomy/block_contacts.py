@@ -65,8 +65,9 @@ def validate_vertical_schedule(route, profiles, plan):
     n = plan['ticks']
     contacts = []
     for event, profile in zip(plan['events'], profiles):
-        for contact in profile['contacts']:
-            contacts.append(dict(contact, state=event['jump'] + contact['state']))
+        if event['landing'] is not None:
+            for contact in profile['contacts']:
+                contacts.append(dict(contact, state=event['jump'] + contact['state']))
         for tick in range(event['landed'], event['jump']):
             contacts.append({'state': tick + 1, 'plane': profile['position'][0], 'direction': -1})
     from .contact_combinations import merge_contacts

@@ -52,3 +52,15 @@ The current automatic case family contains one named stepping event per full sup
 Fresh numerical/shared-scene cases cover normal step, slab boost, blip avoidance, blip wall hit, blip-up with jump and no-jump continuations, both corner cases, flat grind and grind followed by a lower floor. Removing selected case contracts is rejected by scene acceptance. Fixtures contain geometry, initial state and a discrete case index, with no supplied airtimes, solved facings or frozen intermediate states. Existing ceiling/wall combinations and ladder regressions remain separate gates.
 
 Focused new suite: 15 methods passed, including nine saved geometry/case fixtures and additional fresh numerical controls. Full orchestration and numerical regression totals are recorded in COMPACTION_HANDOFF.md after the final run.
+
+## Existing Java core gate failures
+
+The required fast Java core run completed 799 tests with 33 skipped and three failures. A temporary isolated checkout at the pre-implementation commit `06673fd` reproduced all three with identical assertion messages. The `core` tree hash is identical before and after this work (`a37b94340b9383d75e94c06eaf10fb72358f358a`). No Java solver sources or expectations were changed.
+
+- `CrossJvmDeterminismTest.searchPathIsBitIdenticalAcrossJvms`: closed-form hash differs from the existing golden value.
+- `InertiaFoldingTest.loopmmInertiaTermDropsOutOfFoldedModel`: clamp-free inertia term is about 2.63378e-5 rather than exceeding the existing threshold.
+- `CostateSmoothingScaleTest.bothRecoveryPathsUseObjectiveDirectionOnlyForVanishingCostates`: expected 0 degrees, observed 180 degrees.
+
+The baseline check ran only these three classes, five methods total, with the same JDK 21 toolchain. Its disposable worktree was removed afterward. These are existing gate failures, separate from the new standalone movement implementation.
+
+All 51 numerical tests passed with `PKC_IPOPT_PYTHON` set to the isolated `.venv-ipopt/bin/python` (24.914 seconds), including the existing Real 11 runs. The new focused suite passed all 15 methods, including fresh original-state IPOPT and shared-scene controls.
