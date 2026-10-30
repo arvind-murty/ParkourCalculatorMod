@@ -4,22 +4,23 @@ import unittest
 from unittest.mock import patch
 
 from standalone.autonomy import ladder_schedules as schedules
+from standalone.autonomy import vertical_profiles as vertical
 from standalone.autonomy.tests.test_ladder_schedules import request
 from standalone.ipopt.ladder import CLIMB_CARRY, REST_CARRY
 
 
 class LadderGenerationSpeedTests(unittest.TestCase):
     def test_open_trace_skips_the_extra_floor_prediction(self):
-        original=schedules.vertical_move
-        with patch.object(schedules,'vertical_move',wraps=original) as prediction:
+        original=vertical.vertical_move
+        with patch.object(vertical,'vertical_move',wraps=original) as prediction:
             result=schedules.trace_ladder_schedule({'position':2,'velocity':REST_CARRY},
                 [False]*11,[False]*10,[False]*10)
         self.assertEqual(result['ticks'],10)
         self.assertEqual(prediction.call_count,0)
 
     def test_landing_keeps_exact_downward_clip_prediction(self):
-        original=schedules.vertical_move
-        with patch.object(schedules,'vertical_move',wraps=original) as prediction:
+        original=vertical.vertical_move
+        with patch.object(vertical,'vertical_move',wraps=original) as prediction:
             result=schedules.trace_ladder_schedule({'position':.15,'velocity':-.15},
                 [False]*4,[False]*3,[False]*3,target_top=0)
         self.assertEqual(result['ticks'],2)
