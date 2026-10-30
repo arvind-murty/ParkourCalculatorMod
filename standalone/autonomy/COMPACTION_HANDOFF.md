@@ -2,7 +2,7 @@
 
 ## Next requested plan: ladder ceilings, 2026-10-30
 
-The user now wants to finish ladder-ceiling ownership while context is fresh and requested the implementation plan first. Read LADDER_CEILING_PLAN.md. Existing clipping/repeated-contact physics is already present; the plan extracts ladder-local generation/ownership, deduplicates the mixed-contact path, regenerates coherent Y/exit schedules and preserves generic composition. No implementation changes for this plan have begun. Continue using standalone IPOPT/scalar/shared-scene acceptance; do not run mod Java gates.
+The user now wants to finish ladder-ceiling ownership while context is fresh and requested the implementation plan first. Read LADDER_CEILING_PLAN.md. Latest correction: no climbing refresh means ordinary vertical evolution, not a reset; without clipping/Sneak, +0.1176 -> +0.036848 -> -0.042289. Actual ceiling clipping is separate. `ladder_ceiling` requires the immediate successor `ladder_climb`, and cannot transition directly to `ladder_fall` or another movement type. Existing clipping/repeated-contact physics is already present; the plan extracts ladder-local generation/ownership, deduplicates the mixed-contact path, regenerates coherent Y/exit schedules and preserves generic composition. No implementation changes for this plan have begun. Continue using standalone IPOPT/scalar/shared-scene acceptance; do not run mod Java gates.
 
 ## Latest checkpoint: generic composition, 2026-10-30
 
