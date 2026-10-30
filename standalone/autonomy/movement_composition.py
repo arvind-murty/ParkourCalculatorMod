@@ -1,0 +1,150 @@
+import copy
+
+from standalone.ipopt.ladder import vertical_carry
+from standalone.ipopt.model import integer
+from .contact_combinations import merge_contacts
+from .movement_units import compile_units, profile_program, shifted_unit
+from .vertical_profiles import trace_ladder_schedule
+
+
+def scalar_initial(initial):
+    if isinstance(initial.get('position'), (list, tuple)):
+        return dict(position=initial['position'][1], velocity=initial['velocity'][1],
+                    onGround=initial.get('onGround', True),
+                    previousHorizontalCollision=initial.get('previousHorizontalCollision', False))
+    return dict(position=initial['position'], velocity=initial['velocity'],
+                onGround=initial.get('onGround', False),
+                previousHorizontalCollision=initial.get('previousHorizontalCollision', False))
+
+
+def empty_program(initial):
+    initial = scalar_initial(initial)
+    profile = dict(airtime=0, position=[initial['position']], velocity=[initial['velocity']],
+        grounded=[initial['onGround']], jump=[], sneak=[], ladderTicks=[False], contacts=[],
+        contactEvents=[], caseEvents=[], positionConstraints=[], generatedUnits=[],
+        composition='movement_program', landingPhase='post')
+    return dict(initial=initial, profile=profile, ladderEvents=[], movementUnits=[],
+                terminal='open', terminalSupport=None, interactions=0, trace=None)
+
+
+def boundary_state(program, on_ladder=False):
+    profile = program['profile']
+    vy = profile['velocity'][-1]
+    if profile['airtime'] and on_ladder != profile['ladderTicks'][-1]:
+        vy = vertical_carry(program['trace']['movement'][-1], on_ladder, program['trace']['hit'][-1])
+    return dict(position=profile['position'][-1], velocity=vy, onGround=profile['grounded'][-1],
+                previousHorizontalCollision=(program['trace']['hit'][-1] if profile['airtime'] else
+                                             program['initial']['previousHorizontalCollision']))
+
+
+def profile_from_trace(trace, *, contacts=(), cases=(), constraints=(), units=None, landing_phase='post'):
+    n = trace['ticks']
+    profile = dict(airtime=n, position=trace['position'], velocity=trace['velocity'], grounded=trace['onGround'],
+        jump=[v is not None for v in trace['vertical']['jumpVelocity']], sneak=trace['sneak'],
+        ladderTicks=trace['ladderTicks'], contacts=trace['vertical']['contacts'],
+        contactEvents=copy.deepcopy(list(contacts)), caseEvents=copy.deepcopy(list(cases)),
+        positionConstraints=copy.deepcopy(list(constraints)), landingPhase=landing_phase,
+        composition='movement_program')
+    profile['generatedUnits'] = copy.deepcopy(units) if units is not None else profile_program(profile)
+    return profile
+
+
+def movement_choice(kind, initial, trace, *, contacts=(), cases=(), constraints=(), units=None,
+                    ladder_events=(), support=None, landing_phase='post'):
+    if trace['status'] == 'invalid':
+        return None
+    profile = profile_from_trace(trace, contacts=contacts, cases=cases, constraints=constraints,
+                                 units=units, landing_phase=landing_phase)
+    unit = next((u for u in profile['generatedUnits'] if u['type'] == kind), None)
+    if unit is None:
+        raise ValueError('A movement choice must contain its owning type')
+    return dict(unit=unit, units=profile['generatedUnits'], initial=scalar_initial(initial), profile=profile,
+                ladderEvents=copy.deepcopy(list(ladder_events)), terminalSupport=support,
+                interaction=kind != 'normal')
+
+
+def _contacts(events):
+    merged = merge_contacts([dict(e, state=e['offset'] + 1) for e in events])
+    return [{k: v for k, v in event.items() if k != 'state'} for event in merged]
+
+
+def _shift_event(event, offset):
+    event = copy.deepcopy(event)
+    event['schedule']['entryState'] += offset
+    event['schedule']['exitState'] += offset
+    event['schedule']['hit'] = [False] * offset + event['schedule']['hit']
+    for key in ('climbWindow', 'stopInputs'):
+        if event['schedule'].get(key) is not None:
+            event['schedule'][key] = [t + offset for t in event['schedule'][key]]
+    event['schedule'].pop('generatedUnits', None)
+    event['schedule'].pop('movementUnits', None)
+    return event
+
+
+def _events(events, trace):
+    n = trace['ticks']
+    result = copy.deepcopy(events)
+    for event in result:
+        s = event['schedule']
+        entry, exit = s['entryState'], s['exitState']
+        s.update(ticks=n, ladderTicks=[entry <= t < exit for t in range(n + 1)],
+                 hit=(s['hit'] + [False] * n)[:n], sneak=trace['sneak'][:], trace=copy.deepcopy(trace),
+                 postExitTicks=n - exit)
+        from .ladder_geometry import region_contains
+        from .movement_units import exit_matches, ladder_units
+        if any(inside and not region_contains(event['column'], [event['column']['x'], y, event['column']['z']])
+               for inside, y in zip(s['ladderTicks'], trace['position'])):
+            return None
+        if not exit_matches(s['exitKind'], trace['position'][exit], event['column']):
+            return None
+        try:
+            ladder_units(s, event['column']['id'])
+        except ValueError:
+            return None
+    return result
+
+
+def append_choice(program, choice, *, max_inputs=200):
+    old, tail = program['profile'], choice['profile']
+    cut, size = old['airtime'], tail['airtime']
+    integer(size, 'movement choice duration', 1, 200)
+    if cut + size > max_inputs:
+        return None
+    expected = boundary_state(program, tail['ladderTicks'][0])
+    if choice.get('initial') != expected:
+        raise ValueError('Movement choice consumes a different scalar boundary state')
+    jump = old['jump'] + tail['jump']
+    sneak = old['sneak'] + tail['sneak']
+    ladder = old['ladderTicks'][:-1] + [old['ladderTicks'][-1] or tail['ladderTicks'][0]] + tail['ladderTicks'][1:]
+    vertical = [{k: v for k, v in c.items() if k != 'axis'} for c in merge_contacts(
+        [dict(c, axis=1) for c in old['contacts']] + [dict(c, state=cut + c['state'], axis=1) for c in tail['contacts']])]
+    contacts = _contacts(old['contactEvents'] + [dict(c, offset=cut + c['offset']) for c in tail['contactEvents']])
+    hit = [any(c['axis'] != 'Y' and c['offset'] == t for c in contacts) for t in range(cut + size)]
+    from standalone.ipopt.ladder import f32
+    trace = trace_ladder_schedule(program['initial'], ladder, sneak, hit,
+        jump=[f32(.42) if value else None for value in jump], contacts=vertical, stop_on_landing=False)
+    if trace['status'] == 'invalid' or trace['ticks'] != cut + size:
+        return None
+    if trace['position'][:cut + 1] != old['position'] or trace['onGround'][:cut + 1] != old['grounded']:
+        raise ValueError('Appending a choice rewrote a prior position or ground state')
+    if trace['position'][cut:] != tail['position'] or trace['velocity'][cut:] != tail['velocity']:
+        return None
+    cases = copy.deepcopy(old['caseEvents'])
+    for event in tail['caseEvents']:
+        event = copy.deepcopy(event)
+        event['input'] += cut
+        event['anchors'] = {k: v + cut for k, v in event.get('anchors', {}).items()}
+        cases.append(event)
+    constraints = old['positionConstraints'] + [dict(row, t1=cut + row['t1']) for row in tail['positionConstraints']]
+    units = copy.deepcopy(old['generatedUnits']) + [shifted_unit(unit, cut) for unit in tail['generatedUnits']]
+    events = _events(program['ladderEvents'] + [_shift_event(e, cut) for e in choice.get('ladderEvents', [])], trace)
+    if events is None:
+        return None
+    profile = profile_from_trace(trace, contacts=contacts, cases=cases, constraints=constraints,
+                                 units=units, landing_phase=tail['landingPhase'])
+    masks = compile_units(profile['airtime'], units)
+    if events and masks['ladderTicks'] != ladder:
+        raise ValueError('Movement units disagree with composed ladder membership')
+    return dict(initial=copy.deepcopy(program['initial']), profile=profile, ladderEvents=events,
+                movementUnits=units, terminal='open', terminalSupport=choice.get('terminalSupport'),
+                interactions=program['interactions'] + int(choice.get('interaction', False)), trace=trace)

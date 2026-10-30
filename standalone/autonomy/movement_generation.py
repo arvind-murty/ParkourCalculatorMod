@@ -36,6 +36,10 @@ class NormalGenerator:
         return range(unit['start'], unit['end'])
 
     def generate(self, context, *, start=0, ends=None):
+        if context.get('mode') == 'open':
+            from .open_movement import normal_choices
+            yield from normal_choices(context)
+            return
         if context.get('mode') in ('support', 'profile'):
             from .block_profiles import ordinary_jump_profile, runoff_profile
             profiles = [(context.get('profileKind', 'ordinary'), context['profile'])] if context.get('mode') == 'profile' else [
