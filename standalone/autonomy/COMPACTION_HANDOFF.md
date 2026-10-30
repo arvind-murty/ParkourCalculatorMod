@@ -2,6 +2,12 @@
 
 Updated checkpoint, 2026-10-29, on `codex/run-ticks-planning`. Run ticks, support routing, blockages, one-input wall/ceiling contacts, multiple ladder transitions and multi-episode airborne transfers are implemented. `39d4ede` added the common contact contract and `a8b659c` added full ladder/contact composition and step diagnostics. The latest reviewable state is committed in our isolated worktree.
 
+## Ladder closeout and next movement type
+
+The user asked to close ladders and move toward stepping. Read LADDER_COMPLETION.md and STEPPING_PLAN.md. The audit found one new functional gap: falling-only discovery depended on choosing a climb wall. The implementation now supplies a wall-independent `fall_only` context, all four horizontal entry sides, no fabricated primary hits/obstacle plane and unchanged ladder caps/Sneak. Both initial and appended discovery use it. New cold hanging-vine acceptance: 17 inputs, entry 1, exit 6, no wall hits. Saved scalar/scene evidence and fixture are in the contact-combinations experiments and fixtures folders.
+
+Final closeout regression is in progress. Stepping implementation has not started; its plan reuses the current one-input grounded step, two-input stair/jump-cancel profiles and shared selected-step collision resolver. Water/pruning/cache/resumable generation and rare ladder strategies remain deferred. The completion document also makes the current first grounded-jump approach and horizontal-entry search-family limits explicit; it does not claim universal route coverage.
+
 ## Latest refactor: generic movement units
 
 The user requested the two speed fixes, actual common movement-type generation and consistent initial/appended entry handling. All three are implemented. Stepping and water remain deferred.

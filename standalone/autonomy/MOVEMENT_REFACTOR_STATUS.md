@@ -1,6 +1,6 @@
 # Ladder and movement-refactor status
 
-2026-10-29. The requested speed fixes, common movement-type generators and common initial/appended entry handling are implemented. Stepping and water remain deferred. See [MOVEMENT_UNITS.md](MOVEMENT_UNITS.md), [MIXED_MOVEMENT_CONTACTS.md](MIXED_MOVEMENT_CONTACTS.md) and [LONG_LADDER_VALIDATION.md](LONG_LADDER_VALIDATION.md) for accepted contracts and evidence.
+2026-10-29. The requested speed fixes, common movement-type generators and common initial/appended entry handling are implemented. The ladder/vine closeout audit is recorded in [LADDER_COMPLETION.md](LADDER_COMPLETION.md), with the next movement-type plan in [STEPPING_PLAN.md](STEPPING_PLAN.md). Stepping and water remain deferred. See [MOVEMENT_UNITS.md](MOVEMENT_UNITS.md), [MIXED_MOVEMENT_CONTACTS.md](MIXED_MOVEMENT_CONTACTS.md) and [LONG_LADDER_VALIDATION.md](LONG_LADDER_VALIDATION.md) for accepted contracts and evidence.
 
 ## Implemented ladder family
 
@@ -8,7 +8,7 @@ Rectangular regions, optional climb/fall phases, the five agreed phase sequences
 
 No new movement arithmetic is needed to claim those witnesses. They use the shared movement compiler and scalar/scene acceptance. The numerical worker remains unchanged. Replay/export and game end-to-end testing remain outside this layer's scope.
 
-## Remaining ladder orchestration
+## Completed ladder orchestration and deferred search coverage
 
 1. The two implementation efficiencies from [GENERATION_PERFORMANCE_PLAN.md](GENERATION_PERFORMANCE_PLAN.md) are complete: an already-invalid occupied-height trace stops early, and open prefixes avoid the duplicate floor-prediction movement call. The measured append is about 35 percent faster with identical emitted continuations.
 2. Initial and appended entries now use `movement_entry.py`. Both probe channel/timing alternatives with the shared compiler, IPOPT and full-scene acceptance from the route's original state. Previous support/run and airborne histories stay in the problem; no intermediate X/Z/VXZ endpoint is pinned. An entry wall hit can establish climbing carry immediately. Approach ceilings are proposed from the existing vertical/contact implementation. Delayed entry times remain candidates until their complete route is accepted.
@@ -45,3 +45,7 @@ The low-level pure `append_ladder_programs` API can still run without a numerica
 Feature commits: `3a8d8cd` (speed), `2cee238` (registered generators), `a3a01f7` (entry unification), `bb01f61` (independent scalar acceptance for probe witnesses). Work remains isolated on `codex/run-ticks-planning` in `ParkourCalculatorMod-run-ticks`; no push or replay-layer changes were made.
 
 The 257-case orchestration coverage includes cold top/side/thin/prefix-suffix, ladder ceilings, two grounded ladder transitions, the airborne two-region discovery, fresh/saved long-chain witnesses, generated approach/second-ladder/final-air contacts, bottom exits, all endpoint-stop variants, arbitrary falling Sneak, original-state entry probes, run allocation/retiming, Linkcraft, obstacle interleaving and shared sprint/contact acceptance. The remainder batch passed 81 tests in 64.006 seconds. The numerical-model suite passed 51 tests in 25.045 seconds. Final entry checks passed 11 tests in 11.970 seconds. No Java or numerical-worker arithmetic changed.
+
+## Ladder closeout audit
+
+The audit found and fixed automatic falling-only discovery depending on a climb wall. `movement_contexts` now supplies an explicit wall-independent falling alternative with four horizontal entry faces, no primary wall hits and the existing Sneak/cap physics. It is used for both first interaction and appended airborne regions. The cold hanging-vine fixture is accepted in 17 inputs, with entry state 1, exit state 6, no wall hits and independent scalar/shared-scene acceptance. Finite real walls remain physical alternatives; the falling context contributes no artificial obstacle plane. See LADDER_COMPLETION.md for the requirement-to-test matrix, completion boundary and final regression results.

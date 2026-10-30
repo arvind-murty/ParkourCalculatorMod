@@ -109,7 +109,7 @@ class MovementCompositionTests(unittest.TestCase):
         extension=compose_ladder_episodes(1,None,episodes,max_inputs=60)
         with patch('standalone.autonomy.ladder_transfers.append_ladder_programs',
                    return_value={'programs':[extension,copy.deepcopy(extension)],'generated':2}), \
-                patch('standalone.autonomy.ladder_geometry.climb_walls',return_value=[episodes[1]['wall']]):
+                patch('standalone.autonomy.ladder_geometry.movement_contexts',return_value=[episodes[1]['wall']]):
             r=chain_programs(first,[episodes[1]['column']],[],{'top':3,'bounds':[0,1,2,3]},
                              max_prefixes=1,max_pending=1)
         self.assertEqual(r['termination'],'prefix_limit')
@@ -127,7 +127,7 @@ class MovementCompositionTests(unittest.TestCase):
             n=len(prefix['episodes'])
             return {'programs':[prefixes[n]] if column['id']==columns[n]['id'] else [],'generated':1}
         with patch('standalone.autonomy.ladder_transfers.append_ladder_programs',side_effect=extend), \
-                patch('standalone.autonomy.ladder_geometry.climb_walls',return_value=[episodes[0]['wall']]):
+                patch('standalone.autonomy.ladder_geometry.movement_contexts',return_value=[episodes[0]['wall']]):
             r=chain_programs(first,columns,[],{'top':8,'bounds':[-1,1,9,15]},max_inputs=100,max_interactions=5)
         self.assertTrue(any(len(p['episodes'])==5 for p in r['programs']))
         final=next(p for p in r['programs'] if len(p['episodes'])==5)

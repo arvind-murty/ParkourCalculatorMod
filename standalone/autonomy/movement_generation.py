@@ -96,6 +96,8 @@ class LadderClimbGenerator:
                 'beginningStop': beginning, 'endStop': ending}
 
     def generate(self, context, *, start=None, ends=None, contact_only=False):
+        if not contact_only and not context.get('allowPrimaryClimb', True):
+            return
         if contact_only:
             choice = self._choice(context, [], None)
             if choice is not None:

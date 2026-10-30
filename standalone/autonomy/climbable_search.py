@@ -7,7 +7,7 @@ import time
 from standalone.ipopt.ladder import f32
 from standalone.ipopt.model import integer
 from .block_contacts import solve_contact_branches, floor_checks, validate_vertical_schedule
-from .ladder_geometry import climb_walls, exit_faces, ladder_regions, region_axis, schedule_constraints
+from .ladder_geometry import movement_contexts, exit_faces, ladder_regions, region_axis, schedule_constraints
 from .ladder_ranking import rank_ladder_schedules
 from .ladder_schedules import generate_ladder_schedules
 from .route import center_bounds, schedule
@@ -132,6 +132,8 @@ def post_exit_reachable(schedule, coefficients, column, target):
 def first_hit_bounds(scene, graph, source, prefix_edges, allocation, entries, column, wall, compiler, cfg, deadline):
     from .screen import contradiction
     from .ladder_geometry import outside_row
+    if wall.get('mode') == 'fall_only':
+        return
     for entry in entries:
         if 'firstValidatedState' not in entry or 'firstHitLowerBounds' in entry:
             continue
@@ -196,15 +198,15 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
         for column in ladder_regions(scene['climbableCells']):
             if column['id'] in used_columns or len(used_columns) >= cfg['maxInteractions']:
                 continue
-            for wall in sorted(climb_walls(column, scene['collisionScene']['solids']),
-                               key=lambda w: (-max(p['box'][4] for p in w['parts']), w['direction'] * w['plane'])):
+            for wall in sorted(movement_contexts(column, scene['collisionScene']['solids'], include_fall=cfg['minClimbInputs'] == 0),
+                               key=lambda w: (-max((p['box'][4] for p in w['parts']), default=-float('inf')), w['direction'] * w['plane'])):
                 owners = {b['id'] for b in scene['blocks'] if any(b['solidIndex'] == p['solidIndex'] for p in wall['parts'])}
-                targets = sorted(blocks, key=lambda name: (name not in owners, math.hypot((blocks[name]['bounds'][0] + blocks[name]['bounds'][1]) / 2 - column['x'],
+                targets = sorted(blocks, key=lambda name: (name != scene['goalBlock'] if wall.get('mode') == 'fall_only' else name not in owners, math.hypot((blocks[name]['bounds'][0] + blocks[name]['bounds'][1]) / 2 - column['x'],
                                                                     (blocks[name]['bounds'][2] + blocks[name]['bounds'][3]) / 2 - column['z'])))
                 for target in targets:
                     from .block_profiles import normal_jump_height
                     source_top = blocks[path[-1]]['top']
-                    if max(p['box'][4] for p in wall['parts']) <= source_top \
+                    if wall['parts'] and max(p['box'][4] for p in wall['parts']) <= source_top \
                             and blocks[target]['top'] > source_top + normal_jump_height():
                         continue
                     suffixes = ordinary_paths(graph, target, scene['maxJumps'] - len(prefix_edges) - 1,
@@ -257,7 +259,7 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
                                 break
                             pool = generate_ladder_schedules({'version': 1,
                                 'initial': {'position': source['top'], 'velocity': -.08 * f32(.98), 'onGround': True},
-                                'region': {k: column[k] for k in ('minY', 'maxY')},
+                                'region': {k: column[k] for k in ('minY', 'maxY')}, 'allowPrimaryClimb': wall.get('mode') != 'fall_only',
                                 'entries': [{k: e[k] for k in ('family', 'channel', 'firstValidatedState', 'firstCandidateState', 'unresolvedStates', 'firstHitLowerBounds', 'contactEvents') if k in e} for e in entries],
                                 'targetTop': blocks[target]['top'], 'jumpAtStart': True,
                                 'maxInputs': min(cfg['maxInputs'], 200), 'entryDelay': cfg['entryDelay'],
@@ -273,7 +275,7 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
                             if cfg['maxTransferPrograms'] and len(used_columns) + 2 <= cfg['maxInteractions'] and not suffix_edges:
                                 request = {'version': 1,
                                     'initial': {'position': source['top'], 'velocity': -.08 * f32(.98), 'onGround': True},
-                                    'region': {k: column[k] for k in ('minY', 'maxY')},
+                                    'region': {k: column[k] for k in ('minY', 'maxY')}, 'allowPrimaryClimb': wall.get('mode') != 'fall_only',
                                     'entries': [{k: e[k] for k in ('family', 'channel', 'firstValidatedState', 'firstCandidateState', 'unresolvedStates', 'firstHitLowerBounds', 'contactEvents') if k in e} for e in entries],
                                     'finishAtExit': True, 'jumpAtStart': True, 'maxInputs': min(cfg['maxInputs'], 200),
                                     'entryDelay': cfg['entryDelay'], 'maxSkeletons': cfg['maxSkeletons'],

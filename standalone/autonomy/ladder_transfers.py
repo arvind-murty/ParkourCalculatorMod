@@ -89,6 +89,7 @@ def append_ladder_programs(prefix, column, wall, *, toward, max_inputs=200, max_
         'initial': {'position': prefix['trace']['position'][-1], 'velocity': prefix['trace']['velocity'][-1],
                     'onGround': False, 'previousHorizontalCollision': prefix['trace']['hit'][-1]},
         'region': {k: column[k] for k in ('minY', 'maxY')}, 'entries': entries,
+        'allowPrimaryClimb': wall.get('mode') != 'fall_only',
         'finishAtExit': True, 'jumpAtStart': False, 'maxInputs': max_inputs - cut,
         'entryDelay': entry_delay if entry_probe is not None else 0, 'maxSkeletons': 16000, 'maxSchedules': min(200000, max_programs * 32),
         'maxMaskWork': 200000}
@@ -158,7 +159,7 @@ def finish_programs(prefix, target_top, solids=(), *, max_inputs=200, max_contac
 def iter_chain_programs(first, regions, solids, target, *, max_inputs=200, max_entry=14, max_interactions=12,
                         max_programs=16, max_prefixes=64, max_pending=256, max_contact_variants=16, max_events=3,
                         min_climb_inputs=0, deadline=None, cancel_event=None, report=None, entry_probe=None, entry_delay=5):
-    from .ladder_geometry import climb_walls
+    from .ladder_geometry import movement_contexts
     integer(max_interactions, 'maximum ladder interactions', 1, 200)
     integer(max_prefixes, 'maximum chain prefixes', 1, 200000)
     integer(max_pending, 'maximum pending chain prefixes', 1, 200000)
@@ -197,7 +198,7 @@ def iter_chain_programs(first, regions, solids, target, *, max_inputs=200, max_e
         for region in regions:
             if region['id'] in used:
                 continue
-            for wall in climb_walls(region, solids):
+            for wall in movement_contexts(region, solids, include_fall=min_climb_inputs == 0):
                 extension = append_ladder_programs(prefix, region, wall, toward=point, max_inputs=max_inputs,
                     max_entry=max_entry, max_programs=max_programs, solids=solids,
                     max_contact_variants=max_contact_variants, max_events=max_events,
