@@ -64,3 +64,9 @@ The required fast Java core run completed 799 tests with 33 skipped and three fa
 The baseline check ran only these three classes, five methods total, with the same JDK 21 toolchain. Its disposable worktree was removed afterward. These are existing gate failures, separate from the new standalone movement implementation.
 
 All 51 numerical tests passed with `PKC_IPOPT_PYTHON` set to the isolated `.venv-ipopt/bin/python` (24.914 seconds), including the existing Real 11 runs. The new focused suite passed all 15 methods, including fresh original-state IPOPT and shared-scene controls.
+
+## Final regression coverage
+
+The full orchestration sweep executed all 280 methods in 675.320 seconds. It found two compatibility defects and an outdated assertion: supplied legacy step contacts were duplicated, run-only prefixes included future landing contacts, and one old test expected the ordinary-only jump-height rejection label. Legacy one-input steps also retain post-state landing timing even when a generic supplied profile carries a pre-landing default. These issues were corrected and the affected integration, contact-combination, obstacle, new stepping and ceiling modules were run together: all 75 methods passed in 86.681 seconds.
+
+Combining the full sweep with that final rerun covers all 280 unique methods with passing results. The entire expensive sweep was not repeated after the corrections. Existing long ladder/ceiling routes, five-region append, saved scene witnesses and new original-state movement solves are included in that coverage. The numerical 51-method gate passes separately. The Java core's three baseline failures remain as documented above.
