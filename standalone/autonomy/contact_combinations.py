@@ -73,7 +73,7 @@ def compile_contact_events(route, events, ticks):
     margin = max(route['supportClearance'], 2e-7)
     for event in route.get('contactEvents', []):
         leg = event['leg']
-        if leg >= len(events) or events[leg]['landing'] is None:
+        if leg >= len(events) or events[leg].get('landing') is None and events[leg].get('end') is None:
             continue
         tick = events[leg]['jump'] + event['offset']
         axis = 'XYZ'.index(event['axis'])

@@ -1,6 +1,6 @@
 # Ladder and movement-refactor status
 
-2026-10-29. This audit distinguishes the implemented shared representation/compiler from the remaining shared search/generation interface. The two are not the same milestone. See [MOVEMENT_UNITS.md](MOVEMENT_UNITS.md), [MIXED_MOVEMENT_CONTACTS.md](MIXED_MOVEMENT_CONTACTS.md) and [LONG_LADDER_VALIDATION.md](LONG_LADDER_VALIDATION.md) for accepted contracts and evidence.
+2026-10-29. The requested speed fixes, common movement-type generators and common initial/appended entry handling are implemented. Stepping and water remain deferred. See [MOVEMENT_UNITS.md](MOVEMENT_UNITS.md), [MIXED_MOVEMENT_CONTACTS.md](MIXED_MOVEMENT_CONTACTS.md) and [LONG_LADDER_VALIDATION.md](LONG_LADDER_VALIDATION.md) for accepted contracts and evidence.
 
 ## Implemented ladder family
 
@@ -10,17 +10,17 @@ No new movement arithmetic is needed to claim those witnesses. They use the shar
 
 ## Remaining ladder orchestration
 
-1. The two agreed implementation efficiencies from [GENERATION_PERFORMANCE_PLAN.md](GENERATION_PERFORMANCE_PLAN.md) are complete: an already-invalid occupied-height trace stops early, and open prefixes avoid the duplicate floor-prediction movement call. The measured append is about 35 percent faster with identical emitted continuations. Generic generation and consistent entries below remain in progress.
-2. Unify entry handling across the first and appended regions. The first interaction uses numerical entry probes; appended interactions currently enumerate explicitly unprobed entry times within a bounded local horizon. Their X/Z feasibility is checked only with a completed route. A shared entry/transition contract should preserve the original-state solve and avoid freezing an earlier endpoint. This is a functional interface gap, independent of rare-route pruning.
-3. Improve long-chain discovery reliability and retain honest coverage reporting. Cold three-region discovery succeeds; the cold five-region benchmark exhausts generation time before a full numerical attempt. Its supplied 99-input structure is accepted. Those facts do not prove cold five-region coverage or infeasibility.
+1. The two implementation efficiencies from [GENERATION_PERFORMANCE_PLAN.md](GENERATION_PERFORMANCE_PLAN.md) are complete: an already-invalid occupied-height trace stops early, and open prefixes avoid the duplicate floor-prediction movement call. The measured append is about 35 percent faster with identical emitted continuations.
+2. Initial and appended entries now use `movement_entry.py`. Both probe channel/timing alternatives with the shared compiler, IPOPT and full-scene acceptance from the route's original state. Previous support/run and airborne histories stay in the problem; no intermediate X/Z/VXZ endpoint is pinned. An entry wall hit can establish climbing carry immediately. Approach ceilings are proposed from the existing vertical/contact implementation. Delayed entry times remain candidates until their complete route is accepted.
+3. Cold long-chain reliability remains a bounded-search gap. Cold three-region discovery previously succeeded; the recorded cold five-region benchmark exhausted generation time before a full numerical attempt. Its supplied 99-input structure is accepted. The speed/refactor work does not establish cold five-region coverage or infeasibility.
 
 Same-region re-entry, changing climb-wall orientation inside a region and rare diagonal transfers remain explicitly deferred. Additional irregular-region work is not a priority; rectangles suffice for the requested scope.
 
-## Remaining general refactor
+## Common movement generation
 
 `movement_generation.py` now registers actual generators for `normal`, `ladder_climb` and `ladder_fall`. The normal generator reuses the existing jump/run-off profiles in the support graph. Ladder generation composes interval, duration, contact and endpoint-stop choices from the same dispatch interface before Y replay; falling owns its arbitrary Sneak domain. Generated units survive retiming and episode composition and are checked against the selected physical hit/occupancy history before compilation. The old unit parser remains as validation and saved-contract compatibility, not as the generator for new ladder schedules.
 
-The five per-region phase sequences and top/side/bottom exit rules remain enforced. Endpoint stops stay inside climbing, an entering wall hit can start climbing immediately, and extra horizontal contacts cannot introduce climb/fall/climb. Nine new generator tests plus 72 focused regressions pass. Full numerical/regression verification follows the entry unification below.
+The five per-region phase sequences and top/side/bottom exit rules remain enforced. Endpoint stops stay inside climbing, an entering wall hit can start climbing immediately, and extra horizontal contacts cannot introduce climb/fall/climb. Nine new generator tests plus 72 focused regressions pass. Entry tests additionally cover an initial hit, an airborne second entry, launch run retiming, an approach ceiling and entry after four prior climbs, using fresh numerical solves and shared-scene acceptance. The numerical model suite passes all 51 tests; the complete orchestration regression is being verified before the final checkpoint.
 
 Common generation does not merge the support-route graph with the airborne-prefix queue into one graph. They share type dispatch and timeline/compiler contracts; each family retains its appropriate composition grammar. Unit boundaries do not freeze numerical positions or velocities.
 
@@ -31,3 +31,11 @@ The common generator interface can use the current eager generation policy. It d
 ## Deferred optimization work
 
 Multiplier-based input-schedule pruning, exact-Y caching, route-specific pruning and optional resumable generation remain separate follow-ups. The user is unconvinced about resumable generation; record it as a possible improvement rather than an agreed next step. Finish movement-type coverage before the pruning pass.
+
+## Entry budgets and coverage
+
+The probe reports the first numerically accepted entry per channel, along with earlier unresolved times. A solver rejection/timeout is `unknown`, never an infeasibility certificate. Validated windows receive generation work first, preserving the previous initial-entry ordering; wholly unvalidated channels are retained in `deferredEntryWindows`. If no channel validates, explicitly unprobed timing windows remain available. Entry-window clipping is reported. This is bounded work ordering, not a route dominance proof.
+
+Appended probes use at most three seconds and 35 percent of the remaining expansion time, leaving time for schedule generation and full-route solving. Up to the configured zero-through-five delayed entries follow each window anchor. Their positions/hits are reoptimized and checked in the full solve; an anchor witness does not certify every later schedule. The old fixed 20-input append horizon is removed in favor of the configured entry horizon and remaining 200-input flight limit.
+
+The low-level pure `append_ladder_programs` API can still run without a numerical probe callback and then labels its entries unprobed. Production `find_climbable_blocks` passes the shared evaluator at every extension. Open nodes remain proposals; only complete numerical/scalar/scene acceptance establishes a route. Probe contact alternatives are bounded (inherited contacts, entry hit/no hit and approach ceilings); the existing mixed-contact generation and final obstacle branches retain their separate work limits.

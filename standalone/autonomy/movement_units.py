@@ -50,6 +50,7 @@ def ladder_units(schedule, region_id=None):
 
 
 def movement_program(ticks, events):
+    from .movement_generation import generate_choices
     integer(ticks, 'movement program ticks', 1, 200)
     units, cursor = [], 0
     for event in sorted(events, key=lambda e: e['schedule']['entryState']):
@@ -85,13 +86,13 @@ def movement_program(ticks, events):
                 units.pop()
             cursor = seam
         if cursor < segment[0]['start']:
-            units.append(movement_unit('normal', cursor, segment[0]['start']))
+            units.extend(c['unit'] for c in generate_choices('normal', {}, start=cursor, ends=[segment[0]['start']]))
         units.extend(segment)
         cursor = segment[-1]['end']
     if cursor > ticks:
         raise ValueError('Movement unit exceeds program horizon')
     if cursor < ticks:
-        units.append(movement_unit('normal', cursor, ticks))
+        units.extend(c['unit'] for c in generate_choices('normal', {}, start=cursor, ends=[ticks]))
     if events:
         sneak = events[0]['schedule']['sneak']
         for unit in units:

@@ -46,7 +46,7 @@ def recompose(prefix, episodes, target_top, max_inputs, sneak=None, contacts=Non
 
 def append_ladder_programs(prefix, column, wall, *, toward, max_inputs=200, max_entry=14,
                            max_programs=16, solids=(), max_contact_variants=16, max_events=3,
-                           min_climb_inputs=0, deadline=None, cancel_event=None):
+                           min_climb_inputs=0, deadline=None, cancel_event=None, entry_probe=None, entry_delay=5):
     integer(max_inputs, 'maximum chain inputs', 1, 200)
     integer(max_entry, 'maximum entry inputs', 0, 199)
     integer(max_programs, 'maximum extension programs', 1, 200000)
@@ -60,19 +60,37 @@ def append_ladder_programs(prefix, column, wall, *, toward, max_inputs=200, max_
                                                (column['z'] + column.get('maxZ', column['z'] + 1)) / 2])[0]
     faces = sorted(entry_channels(column, wall), key=lambda f:
                    (f['axis'] != preferred['axis'], f['direction'] == preferred['direction']))
-    horizon = min(max_entry, 20, max_inputs - cut - 2)
-    entries, channels = [], {}
-    for face in faces:
-        for state in range(horizon + 1):
-            channel = face['channel'] + '@' + str(state)
-            channels[channel] = face
-            entries.append({'family': face['family'], 'channel': channel, 'firstCandidateState': state})
+    horizon = min(max_entry, max_inputs - cut - 2)
+    entries, channels, probes = [], {}, []
+    if entry_probe is None:
+        for face in faces:
+            for state in range(horizon + 1):
+                channel = face['channel'] + '@' + str(state)
+                channels[channel] = face
+                entries.append({'family': face['family'], 'channel': channel, 'firstCandidateState': state})
+    else:
+        probe_prefix = copy.deepcopy(prefix)
+        probe_prefix['episodes'][-1]['exitFace'] = preferred
+        probe_prefix['ladderEvents'][-1]['exitFace'] = preferred
+        now = time.monotonic()
+        probe_deadline = min(deadline, now + max(.05, min(3., (deadline - now) * .35))) if deadline is not None else now + 3.
+        probed, probes = entry_probe(probe_prefix, column, wall, max_entry=horizon, channels=faces, deadline=probe_deadline)
+        active = [e for e in probed if 'firstValidatedState' in e] or probed
+        deferred = [e for e in probed if e not in active]
+        for entry in active:
+            channels[entry['channel']] = entry
+            entries.append({k: entry[k] for k in ('family','channel','firstValidatedState','firstCandidateState',
+                                                'unresolvedStates','contactEvents') if k in entry})
+    dropped_entries = max(0, len(entries) - 64)
+    entries = entries[:64]
+    if not entries:
+        return {'programs': [], 'generated': 0, 'entryProbes': probes, 'unprobedEntries': entry_probe is None}
     request = {'version': 1,
         'initial': {'position': prefix['trace']['position'][-1], 'velocity': prefix['trace']['velocity'][-1],
                     'onGround': False, 'previousHorizontalCollision': prefix['trace']['hit'][-1]},
         'region': {k: column[k] for k in ('minY', 'maxY')}, 'entries': entries,
         'finishAtExit': True, 'jumpAtStart': False, 'maxInputs': max_inputs - cut,
-        'entryDelay': 0, 'maxSkeletons': 16000, 'maxSchedules': min(200000, max_programs * 32),
+        'entryDelay': entry_delay if entry_probe is not None else 0, 'maxSkeletons': 16000, 'maxSchedules': min(200000, max_programs * 32),
         'maxMaskWork': 200000}
     pool = generate_ladder_schedules(request, cancel_event=cancel_event, deadline=deadline)
     mixed = mixed_schedule_pool(request, solids, schedules=pool['schedules'], max_variants=max_contact_variants,
@@ -106,7 +124,9 @@ def append_ladder_programs(prefix, column, wall, *, toward, max_inputs=200, max_
     return {'programs': programs, 'generated': len(pool['schedules']),
             'generation': {k: v for k, v in pool.items() if k not in ('schedules', 'timingGroups')},
             'mixedContacts': {k: v for k, v in mixed.items() if k != 'schedules'},
-            'unprobedEntries': True, 'entryHorizon': horizon,
+            'unprobedEntries': any('firstCandidateState' in e for e in entries) or entry_probe is not None and entry_delay > 0,
+            'entryProbeMode': 'numerical' if entry_probe is not None else 'unprobed',
+            'entryProbes': probes, 'entryWindows': entries, 'deferredEntryWindows': deferred if entry_probe is not None else [], 'entryWindowDrops': dropped_entries, 'entryHorizon': horizon,
             'entryHorizonClipped': max_entry > horizon, 'maxPrograms': max_programs}
 
 
@@ -137,7 +157,7 @@ def finish_programs(prefix, target_top, solids=(), *, max_inputs=200, max_contac
 
 def iter_chain_programs(first, regions, solids, target, *, max_inputs=200, max_entry=14, max_interactions=12,
                         max_programs=16, max_prefixes=64, max_pending=256, max_contact_variants=16, max_events=3,
-                        min_climb_inputs=0, deadline=None, cancel_event=None, report=None):
+                        min_climb_inputs=0, deadline=None, cancel_event=None, report=None, entry_probe=None, entry_delay=5):
     from .ladder_geometry import climb_walls
     integer(max_interactions, 'maximum ladder interactions', 1, 200)
     integer(max_prefixes, 'maximum chain prefixes', 1, 200000)
@@ -164,7 +184,7 @@ def iter_chain_programs(first, regions, solids, target, *, max_inputs=200, max_e
         expanded += 1
         report.update(generated=generated, expandedPrefixes=expanded, remainingPrefixes=len(pending),
                       termination='in_progress', queueDrops=drops, generation=records,
-                      unprobedEntries=True, maxInteractions=max_interactions, minimumTicksProven=False)
+                      unprobedEntries=entry_probe is None, maxInteractions=max_interactions, minimumTicksProven=False)
         if len(prefix['episodes']) > 1:
             final_report = {}
             records.append(final_report)
@@ -181,7 +201,7 @@ def iter_chain_programs(first, regions, solids, target, *, max_inputs=200, max_e
                 extension = append_ladder_programs(prefix, region, wall, toward=point, max_inputs=max_inputs,
                     max_entry=max_entry, max_programs=max_programs, solids=solids,
                     max_contact_variants=max_contact_variants, max_events=max_events,
-                    min_climb_inputs=min_climb_inputs,
+                    min_climb_inputs=min_climb_inputs, entry_probe=entry_probe, entry_delay=entry_delay,
                     deadline=deadline, cancel_event=cancel_event)
                 generated += extension['generated']
                 records.append({k: v for k, v in extension.items() if k != 'programs'})
@@ -193,7 +213,8 @@ def iter_chain_programs(first, regions, solids, target, *, max_inputs=200, max_e
                     pending = heapq.nsmallest(max_pending, pending)
                     heapq.heapify(pending)
     report.update(generated=generated, expandedPrefixes=expanded, remainingPrefixes=len(pending),
-        termination=termination, generation=records, unprobedEntries=True,
+        termination=termination, generation=records,
+        unprobedEntries=entry_probe is None or any(r.get('unprobedEntries', False) for r in records),
         maxInteractions=max_interactions, minimumTicksProven=False, queueDrops=drops, maxPending=max_pending)
 
 

@@ -4,14 +4,12 @@ import json
 import math
 import time
 
-from standalone.ipopt import prepare, solve, validate
 from standalone.ipopt.ladder import f32
 from standalone.ipopt.model import integer
 from .block_contacts import solve_contact_branches, floor_checks, validate_vertical_schedule
-from .ladder_geometry import climb_walls, entry_channels, exit_faces, ladder_regions, region_axis, region_contains, schedule_constraints
+from .ladder_geometry import climb_walls, exit_faces, ladder_regions, region_axis, schedule_constraints
 from .ladder_ranking import rank_ladder_schedules
 from .ladder_schedules import generate_ladder_schedules
-from .obstacle_geometry import check_geometry
 from .route import center_bounds, schedule
 
 
@@ -78,46 +76,6 @@ def run_allocations(legs, per_leg, total, limit):
                 return
 
 
-def waypoint_seed(problem, waypoints):
-    yaw = problem['yaw'][:]
-    for tick in range(min(problem['ticks'], 160)):
-        targets = [(at, point) for at, point in waypoints if at > tick]
-        if not targets:
-            break
-        at, point = min(targets, key=lambda item: item[0])
-        state = validate(problem, yaw)
-        coupling, drag = 0., 1.
-        for t in range(tick, at):
-            coupling += drag
-            drag *= problem['friction'][t]
-        delta = [point[a] - state['positions'][tick][a] - coupling * state['velocity'][tick][a] for a in (0, 1)]
-        yaw[tick] = math.degrees(math.atan2(delta[1], delta[0]) - problem['base'][tick])
-    return yaw
-
-
-def _raw_candidate(problem, candidate):
-    candidate['rawMovement'] = []
-    for t, yaw in enumerate(candidate['yaw']):
-        angle = problem['base'][t] + math.radians(yaw)
-        candidate['rawMovement'].append([(v if abs(v) >= problem['threshold'] else 0) + problem['magnitude'][t] * q
-            for v, q in zip(candidate['velocity'][t], (math.cos(angle), math.sin(angle)))])
-    candidate['friction'] = problem['friction']
-    candidate['movement'] = problem['movement']
-    return candidate
-
-
-def _vertical(config, ladder, hits):
-    n, x, contacts = len(ladder) - 1, 0., []
-    for t in range(n):
-        x += .05 if t + 1 in hits else .1
-        if t + 1 in hits:
-            contacts.append({'state': t + 1, 'axis': 0, 'plane': x, 'direction': 1})
-    return validate(prepare({'version': 1, 'ticks': n, 'position': [0, 0], 'velocity': [0, 0],
-        'magnitude': [.1] * n, 'friction': [0] * n, 'base': [0] * n, 'yaw': [0] * n,
-        'contacts': contacts, 'vertical': config, 'ladderTicks': ladder,
-        'objective': {'axis': 'X', 'sense': 'MAX', 'tick': n}}), [0] * n)
-
-
 def _prefix(scene, graph, path, edges, target, allocation, compiler, seconds):
     from .block_search import compile_block_path
     source = next(b for b in scene['blocks'] if b['id'] == path[-1])
@@ -142,103 +100,19 @@ def _prefix(scene, graph, path, edges, target, allocation, compiler, seconds):
     return route, plan, vertical
 
 
+def entry_context(scene, graph, path, edges, target, allocation, compiler, seconds):
+    route, base, vertical = _prefix(scene, graph, path, edges, target, allocation, compiler, seconds)
+    return {'scene': scene, 'route': route, 'base': base, 'vertical': vertical}
+
+
 def probe_entries(scene, graph, path, edges, target, allocation, column, wall, compiler, *,
-                  deadline, candidate_seconds, max_entry, python_executable=None, cancel_event=None):
-    route, base, vertical = _prefix(scene, graph, path, edges, target, allocation, compiler,
-                                    max(.01, deadline - time.monotonic()))
-    from .ceiling_contacts import ceiling_profile
-    from .contact_combinations import compile_contact_events, merge_contacts
-    source = next(b for b in scene['blocks'] if b['id'] == path[-1])
-    ceiling_options = []
-    if scene['ceilingHits']:
-        for index, box in enumerate(scene['collisionScene']['solids']):
-            profile = ceiling_profile(source['top'], source['top'], box, index, 'entry_ceiling')
-            if profile:
-                c = profile['ceilingEvent']
-                ceiling_options.append(dict(leg=0, offset=c['offset'], axis='Y', direction=1,
-                                            plane=c['plane'], box=box, role='ceiling'))
-    records, entries = [], []
-    for channel in entry_channels(column, wall):
-        unresolved = []
-        for entry in range(max_entry + 1):
-            if time.monotonic() >= deadline or cancel_event is not None and cancel_event.is_set():
-                return entries, records
-            offset, n = base['ticks'], base['ticks'] + entry
-            if entry == 0 and offset == 0:
-                position = scene['initial']['position']
-                inside = region_contains(column, position)
-                records.append({'channel': channel['channel'], 'entryState': 0, 'status': 'feasible' if inside else 'blocked',
-                                'reason': 'initial_membership'})
-                if inside:
-                    entries.append(dict(channel, firstValidatedState=0, unresolvedStates=[]))
-                    break
-                continue
-            ladder = base.get('ladderTicks', [False] * (offset + 1))[:-1] + [False] * entry + [True]
-            config = copy.deepcopy(vertical)
-            config['jumpVelocity'].extend([f32(.42)] + [None] * (entry - 1) if entry else [])
-            config['sneak'].extend([False] * entry)
-            found = False
-            variants = [([], hit) for hit in ([False, True] if entry else [False])]
-            variants += [([c], hit) for c in ceiling_options if c['offset'] < entry for hit in (False, True)]
-            for extra_contacts, hit_on_entry in variants:
-                selected_vertical = copy.deepcopy(config)
-                for c in extra_contacts:
-                    selected_vertical['contacts'].append({'state': offset + c['offset'] + 1, 'plane': c['plane'], 'direction': 1})
-                hit_states = {c['state'] for c in base.get('contacts', [])}
-                checked = _vertical(selected_vertical, ladder, hit_states | ({n} if hit_on_entry else set()))
-                if not checked['feasible'] or not column['minY'] <= checked['y'][-1] < column['maxY']:
-                    continue
-                local = {'entryState': entry, 'exitState': entry + 1,
-                         'ladderTicks': ladder[offset:], 'hit': [False] * entry,
-                         'trace': {'position': checked['y'][offset:]}}
-                if hit_on_entry:
-                    local['hit'][-1] = True
-                try:
-                    rows, contacts, scene_contacts = schedule_constraints(local, column, wall, channel, None, start=offset)
-                    event_route = {'contactEvents': extra_contacts, 'supportClearance': route['supportClearance']}
-                    additional_rows, _, additional_scene, _ = compile_contact_events(event_route,
-                        [{'jump': offset, 'landing': n}], n)
-                    rows.extend(additional_rows)
-                    contacts = merge_contacts(base.get('contacts', []) + contacts)
-                    scene_contacts = merge_contacts(base.get('sceneContacts', []) + scene_contacts + additional_scene, scene=True)
-                except ValueError:
-                    continue
-                plan = dict(base, ticks=n, grounded=base['grounded'] + [True] + [False] * (entry - 1) if entry else base['grounded'],
-                    jump=base['jump'] + [True] + [False] * (entry - 1) if entry else base['jump'],
-                    ladderTicks=ladder, sneak=config['sneak'], vertical=dict(selected_vertical, referencePosition=checked['y'], referenceVelocity=checked['vy']),
-                    sceneContacts=scene_contacts)
-                try:
-                    coefficient = compiler.compile(route, plan, max(.01, deadline - time.monotonic()))
-                    problem = prepare(dict(coefficient, version=1, ticks=n, position=scene['initial']['position'][::2],
-                        velocity=scene['initial']['velocity'][::2], threshold=.005, yaw=[0.] * n,
-                        walls=base['walls'] + rows, contacts=contacts, ladderTicks=ladder,
-                        objective={'axis': wall['axis'], 'sense': 'MAX' if wall['direction'] > 0 else 'MIN', 'tick': n}))
-                    point = [column['x'] + .5, column['z'] + .5]
-                    point[0 if wall['axis'] == 'X' else 1] = wall['plane'] if hit_on_entry else point[0 if wall['axis'] == 'X' else 1]
-                    problem['yaw'] = waypoint_seed(problem, [(n, point)])
-                    solved = solve(problem, seconds=min(candidate_seconds, max(.001, deadline - time.monotonic())),
-                        stop_on_feasible=True, python_executable=python_executable, cancel_event=cancel_event)
-                    geometry = None
-                    if solved['feasible']:
-                        candidate = _raw_candidate(problem, validate(problem, solved['candidate']['yaw']))
-                        v = {'vertical': problem['vertical'], 'y': candidate['y'], 'vy': candidate['vy'], 'onGround': candidate['onGround']}
-                        geometry = check_geometry(scene['collisionScene'], plan, candidate, v, compiler,
-                                                  max(.01, deadline - time.monotonic()))
-                        if geometry['feasible']:
-                            found = True
-                except (TimeoutError, ValueError, RuntimeError) as error:
-                    geometry = {'feasible': False, 'reason': str(error)}
-                records.append({'channel': channel['channel'], 'entryState': entry, 'hitOnEntry': hit_on_entry,
-                                'status': 'feasible' if found else 'unknown', 'geometryCheck': geometry,
-                                'contactEvents': extra_contacts})
-                if found:
-                    entries.append(dict(channel, firstValidatedState=entry, unresolvedStates=unresolved[:],
-                                        contactEvents=copy.deepcopy(extra_contacts)))
-                    break
-            if found:
-                break
-            unresolved.append(entry)
-    return entries, records
+                  deadline, candidate_seconds, max_entry, python_executable=None, cancel_event=None, context=None):
+    from .movement_entry import probe_region_entries
+    context = context if context is not None else entry_context(scene, graph, path, edges, target, allocation, compiler,
+                            max(.01, deadline - time.monotonic()))
+    return probe_region_entries(context, column, wall, compiler, deadline=deadline,
+        candidate_seconds=candidate_seconds, max_entry=max_entry,
+        python_executable=python_executable, cancel_event=cancel_event)
 
 
 def post_exit_reachable(schedule, coefficients, column, target):
@@ -259,7 +133,7 @@ def first_hit_bounds(scene, graph, source, prefix_edges, allocation, entries, co
     from .screen import contradiction
     from .ladder_geometry import outside_row
     for entry in entries:
-        if 'firstHitLowerBounds' in entry:
+        if 'firstValidatedState' not in entry or 'firstHitLowerBounds' in entry:
             continue
         entry['firstHitLowerBounds'] = {}
         for state in range(entry['firstValidatedState'], min(cfg['maxInputs'], entry['firstValidatedState'] + cfg['entryDelay'] + 1)):
@@ -356,16 +230,20 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
                                          tuple(tuple(p['box']) for p in wall['parts']))
                             if probe_key not in cache:
                                 try:
-                                    cache[probe_key] = probe_entries(scene, graph, path, prefix_edges, target,
+                                    root_context = entry_context(scene, graph, path, prefix_edges, target,
+                                        allocation[:len(prefix_edges) + 1], compiler, max(.01, deadline - time.monotonic()))
+                                    cache[probe_key] = (root_context, probe_entries(scene, graph, path, prefix_edges, target,
                                         allocation[:len(prefix_edges) + 1], column, wall, compiler, deadline=deadline,
                                         candidate_seconds=min(candidate_seconds, .5), max_entry=min(cfg['maxEntryInputs'], cfg['maxInputs'] - 1),
-                                        python_executable=python_executable, cancel_event=cancel_event)
+                                        python_executable=python_executable, cancel_event=cancel_event, context=root_context))
                                 except TimeoutError:
                                     termination = 'deadline'
                                     break
-                            entries, probes = cache[probe_key]
+                            root_context, (all_entries, probes) = cache[probe_key]
+                            active_entries = [e for e in all_entries if 'firstValidatedState' in e] or all_entries
+                            entries = active_entries[:64]
                             record = {'prefix': list(path), 'target': target, 'suffix': list(suffix_path), 'allocation': allocation,
-                                      'column': column['id'], 'entryProbes': probes, 'status': 'unknown', 'numericalAttempts': []}
+                                      'column': column['id'], 'entryProbes': probes, 'deferredEntryWindows': [e for e in all_entries if e not in entries], 'entryWindowDrops': max(0, len(active_entries) - 64), 'status': 'unknown', 'numericalAttempts': []}
                             attempts.append(record)
                             if time.monotonic() + .05 >= deadline:
                                 termination = 'deadline'
@@ -380,7 +258,7 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
                             pool = generate_ladder_schedules({'version': 1,
                                 'initial': {'position': source['top'], 'velocity': -.08 * f32(.98), 'onGround': True},
                                 'region': {k: column[k] for k in ('minY', 'maxY')},
-                                'entries': [{k: e[k] for k in ('family', 'channel', 'firstValidatedState', 'unresolvedStates', 'firstHitLowerBounds', 'contactEvents') if k in e} for e in entries],
+                                'entries': [{k: e[k] for k in ('family', 'channel', 'firstValidatedState', 'firstCandidateState', 'unresolvedStates', 'firstHitLowerBounds', 'contactEvents') if k in e} for e in entries],
                                 'targetTop': blocks[target]['top'], 'jumpAtStart': True,
                                 'maxInputs': min(cfg['maxInputs'], 200), 'entryDelay': cfg['entryDelay'],
                                 'maxSkeletons': cfg['maxSkeletons'], 'maxSchedules': cfg['maxSchedules'], 'maxMaskWork': cfg['maxMaskWork']},
@@ -396,7 +274,7 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
                                 request = {'version': 1,
                                     'initial': {'position': source['top'], 'velocity': -.08 * f32(.98), 'onGround': True},
                                     'region': {k: column[k] for k in ('minY', 'maxY')},
-                                    'entries': [{k: e[k] for k in ('family', 'channel', 'firstValidatedState', 'unresolvedStates', 'firstHitLowerBounds', 'contactEvents') if k in e} for e in entries],
+                                    'entries': [{k: e[k] for k in ('family', 'channel', 'firstValidatedState', 'firstCandidateState', 'unresolvedStates', 'firstHitLowerBounds', 'contactEvents') if k in e} for e in entries],
                                     'finishAtExit': True, 'jumpAtStart': True, 'maxInputs': min(cfg['maxInputs'], 200),
                                     'entryDelay': cfg['entryDelay'], 'maxSkeletons': cfg['maxSkeletons'],
                                     'maxSchedules': cfg['maxSchedules'], 'maxMaskWork': cfg['maxMaskWork']}
@@ -477,6 +355,11 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
                                         report = {}
                                         record.setdefault('transferGeneration', []).append(report)
                                         regions = [c for c in ladder_regions(scene['climbableCells']) if c['id'] not in used_columns]
+                                        def entry_probe(prefix, column, wall, **options):
+                                            from .movement_entry import probe_region_entries
+                                            return probe_region_entries(root_context, column, wall, compiler, prefix=prefix,
+                                                candidate_seconds=min(candidate_seconds, .5),
+                                                python_executable=python_executable, cancel_event=cancel_event, **options)
                                         for p in iter_chain_programs(selected['ladderEvent'], regions, scene['collisionScene']['solids'],
                                                 blocks[scene['goalBlock']], max_inputs=cfg['maxInputs'], max_entry=cfg['maxEntryInputs'],
                                                 max_programs=cfg['maxTransferPrograms'], max_prefixes=cfg['maxTransferPrefixes'],
@@ -484,6 +367,7 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
                                                 max_contact_variants=cfg['maxContactVariants'], max_events=cfg['maxMixedContacts'],
                                                 min_climb_inputs=cfg['minClimbInputs'],
                                                 max_interactions=cfg['maxInteractions'] - len(used_columns),
+                                                entry_probe=entry_probe, entry_delay=cfg['entryDelay'],
                                                 deadline=context_deadline, cancel_event=cancel_event, report=report):
                                             yield {'source': path[-1], 'target': scene['goalBlock'],
                                                    'profileKind': 'ladder', 'profile': p['profile'], 'ladderEvents': p['ladderEvents'],
