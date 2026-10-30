@@ -6,11 +6,10 @@ from collections import deque
 
 from standalone.ipopt.model import integer, number
 from .block_contacts import floor_checks, solve_contact_branches
-from .block_profiles import compile_open_air_route, normal_jump_height, ordinary_jump_profile, runoff_profile, stair_jump_profile
+from .block_profiles import compile_open_air_route, normal_jump_height, stair_jump_profile
 from .obstacle_geometry import normalize_geometry
 from .route import prepare_route
 from .ranking import candidate_rank, objective_spec
-from .ceiling_contacts import ceiling_profile
 
 
 def prepare_scene(request):
@@ -335,7 +334,8 @@ def compile_block_path(scene, block_ids, transitions=None):
         route = prepare_route({'version': 1, 'initial': scene['initial'], 'blocks': blocks,
                                'inputs': scene['inputs'], 'objective': scene['objective'],
                                'airtimes': [p['airtime'] for p in selected],
-                               'kinds': kinds, 'landingPhases': [p['landingPhase'] for p in selected],
+                               'kinds': kinds, 'landingPhases': [p.get('landingPhase', 'post' if k == 'step' else 'pre')
+                                                               for p, k in zip(selected, kinds)],
                                'contactEntries': entries, 'walkOffExits': exits,
                                'maxTotalRunTicks': scene['maxTotalRunTicks'],
                                'runBounds': [[0, scene['maxRunTicksPerJump']] for _ in selected],
@@ -486,7 +486,8 @@ def search_block_paths(scene, graph, evaluate, *, seconds=60, improve=False, can
             ('cancelled' if termination == 'cancelled' else 'error' if termination == 'error' else 'unknown'),
             'best': best, 'termination': termination, 'attempts': attempts, 'unresolvedPrefixes': unresolved,
             'elapsedSeconds': time.monotonic() - started,
-            'ticksLowerBound': initial_tick_bound,
+            'ticksLowerBound': initial_tick_bound if all(g['complete'] for g in graph.get('steppingGeneration', [])) else None,
+            'generatedTicksLowerBound': initial_tick_bound,
             'minimumTicksProven': best is not None and best['plan']['ticks'] == initial_tick_bound and
                                   all(g['complete'] for g in graph.get('steppingGeneration', [])),
             'objectiveOptimalityProven': False, 'objective': scene['objective'],

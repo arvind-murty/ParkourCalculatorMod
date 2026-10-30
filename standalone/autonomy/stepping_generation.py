@@ -4,7 +4,6 @@ from standalone.ipopt.ladder import f32, vertical_move
 from .block_profiles import ordinary_jump_profile, stair_jump_profile
 from .case_profiles import case_profile, region_rows, outside_row, corner_rows, landing_wall_options
 from .movement_units import profile_program
-from .route import HALF_WIDTH
 
 
 def box_for(block, context):
@@ -90,7 +89,15 @@ class SteppingGenerator:
     def generate(self, context, *, start=0, ends=None):
         from .movement_units import shifted_unit
         if context.get('mode')=='profile':
-            options=[(context['profileKind'],copy.deepcopy(context['profile']),context.get('entryFace'))]
+            profile = copy.deepcopy(context['profile'])
+            kind = context['profileKind']
+            if not profile.get('caseEvents') and kind in ('stair', 'step'):
+                profile['caseEvents'] = [dict(type='stepping', case='slab_boost' if kind == 'stair' else 'normal_step',
+                                              input=0, anchors={'jump' if kind == 'stair' else 'hit': 1})]
+            if not profile.get('caseEvents'):
+                raise ValueError('A stepping profile requires its named case')
+            profile['generatedUnits'] = profile_program(profile)
+            options=[(kind,profile,context.get('entryFace'))]
         else:
             options=stepping_profiles(context)
         limit=context.get('limit',128)
