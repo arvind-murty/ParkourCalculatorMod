@@ -7,6 +7,7 @@ from .ladder_episodes import compose_ladder_episodes
 from .ladder_geometry import entry_channels, exit_faces
 from .ladder_schedules import generate_ladder_schedules
 from .movement_contacts import contact_signature, contact_variants, interleave_families, mixed_schedule_pool, program_seed
+from .movement_units import shifted_unit
 
 
 def episode_from_event(event, offset=0):
@@ -18,6 +19,10 @@ def episode_from_event(event, offset=0):
         'exitKind': s['exitKind']}
     if s.get('climbWindow') is not None:
         episode['climbWindow'] = [offset + t for t in s['climbWindow']]
+    if s.get('generatedUnits') is not None or s.get('movementUnits') is not None:
+        units = s.get('generatedUnits', s.get('movementUnits'))
+        episode['generatedUnits'] = [dict(shifted_unit(u, offset), region=event['column']['id'])
+                                     for u in units if u['type'].startswith('ladder_')]
     return episode
 
 

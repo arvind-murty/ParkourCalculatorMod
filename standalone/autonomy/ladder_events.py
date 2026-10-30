@@ -25,7 +25,9 @@ def validate_ladder_events(route):
     route['movementUnits'] = []
     for leg, ticks in enumerate(route['airtimes']):
         events = [e for e in entries if e['leg'] == leg]
-        units = movement_program(ticks, events)
+        profiles = route.get('verticalProfiles', [])
+        profile = profiles[leg] if leg < len(profiles) else {}
+        units = profile['generatedUnits'] if not events and 'generatedUnits' in profile else movement_program(ticks, events)
         compiled = compile_units(ticks, units)
         expected = [any(e['schedule']['ladderTicks'][t] for e in events) for t in range(ticks + 1)]
         if compiled['ladderTicks'] != expected:

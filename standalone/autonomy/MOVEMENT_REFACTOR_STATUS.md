@@ -18,13 +18,11 @@ Same-region re-entry, changing climb-wall orientation inside a region and rare d
 
 ## Remaining general refactor
 
-`movement_units.py` currently provides typed interval descriptors, phase grammar, occupancy/hit/Sneak materialization and retiming. These are real compiler/validation inputs. However, search still uses separate ordinary-support routing and ladder-episode expansion paths.
+`movement_generation.py` now registers actual generators for `normal`, `ladder_climb` and `ladder_fall`. The normal generator reuses the existing jump/run-off profiles in the support graph. Ladder generation composes interval, duration, contact and endpoint-stop choices from the same dispatch interface before Y replay; falling owns its arbitrary Sneak domain. Generated units survive retiming and episode composition and are checked against the selected physical hit/occupancy history before compilation. The old unit parser remains as validation and saved-contract compatibility, not as the generator for new ladder schedules.
 
-In particular, `generate_ladder_schedules` constructs an entire ladder schedule and `ladder_units` then identifies its climb/fall units. `iter_chain_programs` appends complete ladder episodes. The orchestrator does not yet independently expand `normal`, `ladder_climb` and `ladder_fall` through one common movement-type generator interface. Earlier descriptions of first-class units refer to representation/compiler visibility, not a completed generic search architecture.
+The five per-region phase sequences and top/side/bottom exit rules remain enforced. Endpoint stops stay inside climbing, an entering wall hit can start climbing immediately, and extra horizontal contacts cannot introduce climb/fall/climb. Nine new generator tests plus 72 focused regressions pass. Full numerical/regression verification follows the entry unification below.
 
-Finish that interface so each movement type supplies candidate durations/inputs, entry/exit conditions and the relative contact/positional requirements used by the common compiler. The route orchestrator should compose those choices while preserving the agreed per-region phase grammar. Endpoint stops remain internal climbing alternatives; separating the types must not permit climb/fall/climb inside one hitbox or introduce a fake falling tick on entry.
-
-Normal intervals and contacts already share a full timeline with ladder episodes, so reuse that contract. Remove ladder-specific assumptions from the common expansion path as needed. Keep one complete input/collision history and reoptimize the full trajectory from the original state; a unit boundary is not a portable frozen replay checkpoint.
+Common generation does not merge the support-route graph with the airborne-prefix queue into one graph. They share type dispatch and timeline/compiler contracts; each family retains its appropriate composition grammar. Unit boundaries do not freeze numerical positions or velocities.
 
 Move the existing step-up/stair/slab-boost profiles behind a first-class `stepping` type once the common generator interface is in place. Their current working profile implementation has not yet been migrated. Add `water` later through the same interface; it is not currently implemented.
 

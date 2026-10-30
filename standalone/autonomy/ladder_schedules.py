@@ -5,7 +5,8 @@ from itertools import combinations
 
 from standalone.ipopt.ladder import f32, vertical_carry, vertical_move, vertical_step
 from standalone.ipopt.model import integer, number
-from .movement_units import exit_matches, ladder_units
+from .movement_units import exit_matches
+from .movement_generation import generate_unit_programs, materialize_generated_units, sneak_domain
 
 
 def _flags(values, name, length=None):
@@ -235,27 +236,15 @@ def _round_robin(streams):
 
 
 def _context_skeletons(context, stats):
-    n, entry, exit_state, _ = context['ticks'], context['entryState'], context['exitState'], context['exitKind']
     seen = set()
-    variants = [{'hit': [False] * n, 'stopInputs': [], 'beginningStop': False, 'endStop': False,
-                 'climbWindow': None}]
-    if context['exitKind'] == 'top' and not any(e['axis'] != 'Y' for e in context.get('contactEvents', [])):
-        variants = []
-    for variant in variants:
-        seen.add(tuple(variant['hit']))
+    for variant in generate_unit_programs(context):
         stats['skeletonOrigins'] += 1
+        key = tuple(variant['hit'])
+        if key in seen:
+            stats['duplicateSkeletons'] += 1
+            continue
+        seen.add(key)
         yield dict(context, **variant)
-    for first in range(max(0, entry - 1, context.get('firstHitLowerBound', 0)), exit_state - 1):
-        ends = [exit_state - 1] if context['exitKind'] == 'top' else range(exit_state - 1, first, -1)
-        for end in ends:
-            for variant in climb_variants(first, end, n):
-                stats['skeletonOrigins'] += 1
-                key = tuple(variant['hit'])
-                if key in seen:
-                    stats['duplicateSkeletons'] += 1
-                    continue
-                seen.add(key)
-                yield dict(context, **variant)
 
 
 def _mask_work(skeleton, config):
@@ -268,7 +257,8 @@ def _mask_work(skeleton, config):
                    for t, hit in enumerate(skeleton['hit'])]
     vertical = [{'state': e['offset'] + 1, 'plane': e['plane'], 'direction': e['direction'],
                  **({'step': True} if e['role'] == 'step' else {})} for e in extra if e['axis'] == 'Y']
-    eligible = [t for t in range(exit_state) if not skeleton['hit'][t] or t == first_clamped]
+    primary = {t for t, hit in enumerate(skeleton['hit']) if hit}
+    eligible = [t for t in sneak_domain(skeleton['units'], skeleton, primary) if t < exit_state]
     prefixes = iter(sneak_patterns(n, eligible, first_clamped))
     tails = deque()
     exhausted = False
@@ -301,11 +291,6 @@ def _mask_work(skeleton, config):
                 elif not config['finishAtExit'] and trace['status'] != 'landed':
                     reason = 'landing_horizon'
                 if reason is None:
-                    try:
-                        ladder_units(dict(skeleton, trace=trace))
-                    except ValueError:
-                        reason = 'movement_phase'
-                if reason is None:
                     tails.append((trace, iter(sneak_patterns(trace['ticks'], range(exit_state, trace['ticks'])))))
                 yield 'trace', reason
         if tails:
@@ -315,7 +300,7 @@ def _mask_work(skeleton, config):
             except StopIteration:
                 continue
             tails.append((trace, masks))
-            candidate = copy.deepcopy(skeleton)
+            candidate = copy.deepcopy({k: v for k, v in skeleton.items() if k != 'units'})
             candidate['ticks'] = trace['ticks']
             candidate['hit'] = skeleton['hit'][:trace['ticks']]
             candidate['sneak'] = [a or b for a, b in zip(trace['sneak'], suffix)]
@@ -327,7 +312,7 @@ def _mask_work(skeleton, config):
             candidate['firstClampedInput'] = first_clamped
             candidate['exitInput'] = exit_state - 1
             candidate['lastClimbEligibleInput'] = exit_state - 2 if exit_state >= 2 else None
-            candidate['movementUnits'] = ladder_units(candidate)
+            candidate['movementUnits'] = materialize_generated_units(skeleton['units'], trace['ticks'], candidate['sneak'])
             candidate['terminal'] = 'airborne' if config['finishAtExit'] else 'landed'
             yield 'schedule', candidate
 
