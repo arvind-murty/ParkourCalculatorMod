@@ -285,6 +285,10 @@ def schedule(route, allocation, stage='jump'):
         offset, duration = event['jump'], route['airtimes'][event['leg']]
         walls.extend(dict(row, t1=offset + row['t1']) for row in profile.get('positionConstraints', []))
         for case in profile.get('caseEvents', []):
+            if case['case'] in ('normal_step', 'slab_boost') and any(
+                    c['leg'] == event['leg'] and c.get('role') == 'step' and c['offset'] == case['input']
+                    and c['plane'] == case['plane'] and c['box'] == case['box'] for c in route.get('contactEvents', [])):
+                continue
             scene_contacts.append(dict(state=offset + case['input'] + 1, axis=1, direction=-1,
                                        plane=case['plane'], box=case['box'], movementCase=case['case']))
         occupied = profile.get('ladderTicks', [False] * (duration + 1))

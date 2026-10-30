@@ -334,7 +334,7 @@ def compile_block_path(scene, block_ids, transitions=None):
         route = prepare_route({'version': 1, 'initial': scene['initial'], 'blocks': blocks,
                                'inputs': scene['inputs'], 'objective': scene['objective'],
                                'airtimes': [p['airtime'] for p in selected],
-                               'kinds': kinds, 'landingPhases': [p.get('landingPhase', 'post' if k == 'step' else 'pre')
+                               'kinds': kinds, 'landingPhases': ['post' if k == 'step' else p.get('landingPhase', 'pre')
                                                                for p, k in zip(selected, kinds)],
                                'contactEntries': entries, 'walkOffExits': exits,
                                'maxTotalRunTicks': scene['maxTotalRunTicks'],
