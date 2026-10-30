@@ -1,6 +1,6 @@
 # Ladder and vine completion checkpoint
 
-The agreed ladder movement milestone is complete within the current continuous-model orchestration scope, subject to the final closeout regression recorded below. Stepping is the next movement type. Replay/export and in-game acceptance belong to the other layer.
+The agreed ladder movement milestone is complete within the current continuous-model orchestration scope. The closeout regression passed. Stepping is the next movement type. Replay/export and in-game acceptance belong to the other layer.
 
 ## Completed behavior and evidence
 
@@ -32,4 +32,4 @@ No ladder arithmetic should be duplicated for stepping. Preserve the existing la
 
 ## Verification
 
-Before this closeout: 257 orchestration tests and 51 numerical-model tests passed. The closeout adds hanging-vine discovery, four-face entry, no-phantom-hit, Sneak, real-contact refresh, repeated append and saved scalar/scene checks. Final closeout sweep: pending.
+Before this closeout: 257 orchestration tests and 51 numerical-model tests passed. The closeout adds hanging-vine discovery, four-face entry, no-phantom-hit, Sneak, real-contact refresh, repeated append and saved scalar/scene checks. Final closeout coverage: all 265 orchestration tests passed across two batches, 50 completed cases and the 215-case continuation in 661.037 seconds. An optional Python diagnostic traceback timer crashed in its native stack dumper during the first process; continuation without that timer completed successfully. All eight new hanging-vine tests passed, including fresh cold discovery and saved scalar/shared-scene revalidation. No numerical-worker or shared Java arithmetic changed. The feature and initial plans are saved in `78c8f13`; stepping can proceed from STEPPING_PLAN.md.

@@ -1,6 +1,6 @@
 # Ladder and movement-refactor status
 
-2026-10-29. The requested speed fixes, common movement-type generators and common initial/appended entry handling are implemented. The ladder/vine closeout audit is recorded in [LADDER_COMPLETION.md](LADDER_COMPLETION.md), with the next movement-type plan in [STEPPING_PLAN.md](STEPPING_PLAN.md). Stepping and water remain deferred. See [MOVEMENT_UNITS.md](MOVEMENT_UNITS.md), [MIXED_MOVEMENT_CONTACTS.md](MIXED_MOVEMENT_CONTACTS.md) and [LONG_LADDER_VALIDATION.md](LONG_LADDER_VALIDATION.md) for accepted contracts and evidence.
+2026-10-29. The requested speed fixes, common movement-type generators and common initial/appended entry handling are implemented. The ladder/vine closeout audit is recorded in [LADDER_COMPLETION.md](LADDER_COMPLETION.md), with the next movement-type plan in [STEPPING_PLAN.md](STEPPING_PLAN.md). Stepping is the next movement type; water remains deferred. See [MOVEMENT_UNITS.md](MOVEMENT_UNITS.md), [MIXED_MOVEMENT_CONTACTS.md](MIXED_MOVEMENT_CONTACTS.md) and [LONG_LADDER_VALIDATION.md](LONG_LADDER_VALIDATION.md) for accepted contracts and evidence.
 
 ## Implemented ladder family
 
@@ -24,7 +24,7 @@ The five per-region phase sequences and top/side/bottom exit rules remain enforc
 
 Common generation does not merge the support-route graph with the airborne-prefix queue into one graph. They share type dispatch and timeline/compiler contracts; each family retains its appropriate composition grammar. Unit boundaries do not freeze numerical positions or velocities.
 
-The next movement-type work, explicitly deferred by the user, is to move the existing step-up/stair/slab-boost profiles behind a first-class `stepping` type. Their current working profile implementation has not yet been migrated. Add `water` later through the same interface; it is not currently implemented.
+The next movement-type work is to move the existing step-up/stair/slab-boost profiles behind a first-class `stepping` type. Their current working profile implementation has not yet been migrated. Add `water` later through the same interface; it is not currently implemented.
 
 The common generator interface can use the current eager generation policy. It does not require the optional resumable-generation proposal. Tick-first and then objective ranking remain unchanged.
 
@@ -49,3 +49,5 @@ The 257-case orchestration coverage includes cold top/side/thin/prefix-suffix, l
 ## Ladder closeout audit
 
 The audit found and fixed automatic falling-only discovery depending on a climb wall. `movement_contexts` now supplies an explicit wall-independent falling alternative with four horizontal entry faces, no primary wall hits and the existing Sneak/cap physics. It is used for both first interaction and appended airborne regions. The cold hanging-vine fixture is accepted in 17 inputs, with entry state 1, exit state 6, no wall hits and independent scalar/shared-scene acceptance. Finite real walls remain physical alternatives; the falling context contributes no artificial obstacle plane. See LADDER_COMPLETION.md for the requirement-to-test matrix, completion boundary and final regression results.
+
+Closeout verification: all 265 orchestration tests pass, including the eight new hanging-vine tests. The final 215-case continuation passed in 661.037 seconds after the first 50 cases had passed. A native crash in the optional Python diagnostic stack dumper required that continuation; the test/solver implementation reported no failing cases. The pre-closeout numerical-model gate remains 51 passing tests, with its source unchanged. The agreed ladder/vine mechanics milestone is closed for the documented scope, and STEPPING_PLAN.md is the next implementation plan.
