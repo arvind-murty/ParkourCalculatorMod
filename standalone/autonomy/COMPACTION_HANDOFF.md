@@ -2,6 +2,16 @@
 
 Updated checkpoint, 2026-10-29, on `codex/run-ticks-planning`. Run ticks, support routing, blockages, one-input wall/ceiling contacts, multiple ladder transitions and multi-episode airborne transfers are implemented. `39d4ede` added the common contact contract and `a8b659c` added full ladder/contact composition and step diagnostics. The latest reviewable state is committed in our isolated worktree.
 
+## Stepping planning investigation
+
+The user asked what stepping exists and what Minecraft/mod behavior the next type must handle. STEPPING_PLAN.md has been expanded from the earlier two-mode migration sketch. Verified the cached mapped 1.8.9 Entity movement branch against shared StaticScene and ran six collision probes, saved in experiments/stepping-mechanics.
+
+Current automatic coverage is the two-input grounded jump/stair boost; one-input grounded steps and combined contacts work through supplied contracts. General landing-step/blip discovery is absent. Important additional gaps: scalar step events force positive net rise/zero Y carry, and the scene-contact contract requires a final top surface. They do not cover unsupported/zero-net-rise steps or all actual collision-derived ground/carry outcomes.
+
+The step resolver resets to the original tick-start box and compares two raised alternatives against ordinary Y-X-Z movement. A/B ties choose B; ordinary/step ties choose ordinary. Eligibility includes a real downward floor clip during the input even when initially airborne. Returned Y for collision flags is the final downward leg, not net feet displacement. Probes confirm supported-but-not-grounded and grounded-but-unsupported outcomes, plus an equality case retaining incoming negative Y carry. These are shared-resolver probes, not full-route numerical or game witnesses.
+
+Proposed type: one physical stepping input with grounded/jump-start/landing mode and actual branch metadata; keep the usual two-input slab boost as step plus normal recovery. Generalize open composition to retain onGround separately from physical support. Add shared diagnostics/exact scalar event handling before claiming full stepping coverage. No production stepping implementation was changed in this planning pass; water and route pruning remain later work.
+
 ## Ladder closeout and next movement type
 
 The user asked to close ladders and move toward stepping. Read LADDER_COMPLETION.md and STEPPING_PLAN.md. The audit found one new functional gap: falling-only discovery depended on choosing a climb wall. The implementation now supplies a wall-independent `fall_only` context, all four horizontal entry sides, no fabricated primary hits/obstacle plane and unchanged ladder caps/Sneak. Both initial and appended discovery use it. New cold hanging-vine acceptance: 17 inputs, entry 1, exit 6, no wall hits. Saved scalar/scene evidence and fixture are in the contact-combinations experiments and fixtures folders.
