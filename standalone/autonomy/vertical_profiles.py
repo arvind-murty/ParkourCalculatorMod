@@ -14,7 +14,7 @@ def _flags(values, name, length=None):
 
 
 def trace_ladder_schedule(initial, ladder, sneak, hit, *, jump=None, target_top=None, min_landing_state=0, contacts=None,
-                          occupied_y_bounds=None):
+                          occupied_y_bounds=None, stop_on_landing=True):
     hit = _flags(hit, 'hit')
     n = integer(len(hit), 'ticks', 1, 200)
     ladder = _flags(ladder, 'ladder', n + 1)
@@ -79,7 +79,8 @@ def trace_ladder_schedule(initial, ladder, sneak, hit, *, jump=None, target_top=
             break
         if ground and any(c['state'] == t + 1 and c['direction'] < 0 and not c.get('case') for c in config['contacts']):
             landed = True
-            break
+            if stop_on_landing:
+                break
     count = len(moves)
     config['jumpVelocity'] = impulses[:count]
     config['sneak'] = sneak[:count]
