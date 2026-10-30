@@ -1,5 +1,5 @@
 from .ladder_geometry import schedule_constraints, region_rectangles
-from .movement_units import movement_program, compile_units
+from .movement_units import movement_program, compile_units, profile_program, overlay_program
 
 
 def validate_ladder_events(route):
@@ -27,7 +27,12 @@ def validate_ladder_events(route):
         events = [e for e in entries if e['leg'] == leg]
         profiles = route.get('verticalProfiles', [])
         profile = profiles[leg] if leg < len(profiles) else {}
-        units = profile['generatedUnits'] if not events and 'generatedUnits' in profile else movement_program(ticks, events)
+        templates = profile.get('generatedUnits', profile.get('movementUnits'))
+        if templates is None and profile.get('caseEvents') or templates is None and profile.get('contactEvents'):
+            templates = profile_program(profile)
+        units = movement_program(ticks, events)
+        if templates is not None:
+            units = overlay_program(units, [u for u in templates if not u['type'].startswith('ladder_')])
         compiled = compile_units(ticks, units)
         expected = [any(e['schedule']['ladderTicks'][t] for e in events) for t in range(ticks + 1)]
         if compiled['ladderTicks'] != expected:

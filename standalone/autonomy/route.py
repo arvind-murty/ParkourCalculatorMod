@@ -188,8 +188,10 @@ def schedule(route, allocation, stage='jump'):
                            'kind': route['kinds'][i]})
             break
         airtime = route['airtimes'][i]
-        grounded.extend([True] + [False] * (airtime - 1))
-        jump.extend([route['kinds'][i] == 'jump'] + [False] * (airtime - 1))
+        profiles = route.get('verticalProfiles', [])
+        profile = profiles[i] if i < len(profiles) else {}
+        grounded.extend(profile.get('grounded', [True] + [False]*airtime)[:-1])
+        jump.extend(profile.get('jump', [route['kinds'][i] == 'jump'] + [False]*(airtime-1)))
         if route['kinds'][i] == 'walk_off':
             if fire > 0:
                 supports_at.append((fire - 1, i, 'run'))

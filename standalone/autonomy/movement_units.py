@@ -4,7 +4,7 @@ from standalone.ipopt.model import integer
 
 
 MOVEMENT_TYPES = {'normal': {'ladder': False}, 'ladder_climb': {'ladder': True},
-                  'ladder_fall': {'ladder': True}}
+                  'ladder_fall': {'ladder': True}, 'ceiling': {'ladder': False}, 'stepping': {'ladder': False}}
 
 
 def movement_unit(kind, start, end, **parameters):
@@ -129,9 +129,60 @@ def shifted_unit(unit, offset):
     result = copy.deepcopy(unit)
     for key in ('start', 'end'):
         result[key] += offset
-    for key in ('hitWindow', 'occupiedStates', 'stopInputs', 'hitInputs', 'sneakInputs', 'additionalOccupiedStates'):
+    for key in ('hitWindow', 'occupiedStates', 'stopInputs', 'hitInputs', 'sneakInputs', 'additionalOccupiedStates', 'jumpInputs', 'groundedInputs'):
         if key in result:
             result[key] = [t + offset for t in result[key]]
+    if 'anchors' in result:
+        result['anchors'] = {k: v + offset for k, v in result['anchors'].items()}
+    return result
+
+
+def profile_program(profile):
+    n = profile['airtime']
+    cases = sorted(profile.get('caseEvents', []), key=lambda c: c['input'])
+    ceiling = [dict(type='ceiling', case='ceiling_hit', input=e['offset'], anchors={'hit': e['offset'] + 1})
+               for e in profile.get('contactEvents', []) if e.get('role') == 'ceiling']
+    if profile.get('ceilingEvent') and not ceiling:
+        e = profile['ceilingEvent']
+        ceiling = [dict(type='ceiling', case='ceiling_hit', input=e['offset'], anchors={'hit': e['offset'] + 1})]
+    cases += [c for c in ceiling if not any(c['input'] == x['input'] for x in cases)]
+    spans = {c['input']: c for c in cases}
+    units = []
+    for t in range(n):
+        c = spans.get(t)
+        kind = c['type'] if c else 'normal'
+        if c is None and units and units[-1]['type'] == 'normal':
+            units[-1]['end'] = t + 1
+        else:
+            units.append(movement_unit(kind, t, t + 1, **({'case': c['case'], 'anchors': c.get('anchors', {})} if c else {})))
+    for u in units:
+        u['jumpInputs'] = [t for t in range(u['start'], u['end']) if profile['jump'][t]]
+        u['groundedInputs'] = [t for t in range(u['start'], u['end']) if profile['grounded'][t]]
+        u['sneakInputs'] = [t for t in range(u['start'], u['end']) if profile.get('sneak', [False]*n)[t]]
+    return units
+
+
+def overlay_program(units, templates):
+    result = []
+    for u in units:
+        if MOVEMENT_TYPES[u['type']]['ladder']:
+            result.append(copy.deepcopy(u))
+            continue
+        cursor = u['start']
+        for template in templates:
+            first, end = max(cursor, template['start']), min(u['end'], template['end'])
+            if end <= first:
+                continue
+            if first > cursor:
+                result.append(dict(copy.deepcopy(u), start=cursor, end=first))
+            chosen = dict(copy.deepcopy(template), start=first, end=end)
+            for k in ('jumpInputs','groundedInputs','sneakInputs'):
+                if k in chosen:
+                    chosen[k] = [t for t in chosen[k] if first <= t < end]
+            result.append(chosen)
+            cursor = end
+        if cursor < u['end']:
+            result.append(dict(copy.deepcopy(u), start=cursor))
     return result
 
 
