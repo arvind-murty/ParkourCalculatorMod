@@ -152,7 +152,7 @@ def prepare_ladder_request(request):
         raise ValueError('Expected a ladder schedule request')
     config = copy.deepcopy(request)
     allowed = {'version', 'initial', 'region', 'entries', 'targetTop', 'exitKinds', 'exitStates',
-               'maxInputs', 'entryDelay', 'jumpAtStart', 'maxSkeletons', 'maxMaskWork', 'maxSchedules', 'contactVariants', 'finishAtExit'}
+               'maxInputs', 'entryDelay', 'jumpAtStart', 'allowPrimaryClimb', 'maxSkeletons', 'maxMaskWork', 'maxSchedules', 'contactVariants', 'finishAtExit'}
     if set(config) - allowed or type(config.get('version')) is not int or config['version'] != 1:
         raise ValueError('Expected a version 1 ladder schedule request with supported fields')
     for key, default, lo, hi in [('maxInputs', 40, 1, 200), ('entryDelay', 5, 0, 5),
@@ -173,6 +173,8 @@ def prepare_ladder_request(request):
     if not isinstance(initial, dict):
         raise ValueError('Supply an initial scalar Y state')
     trace_ladder_schedule(initial, [False, False], [False], [False])
+    if type(config.setdefault('allowPrimaryClimb', True)) is not bool:
+        raise ValueError('allowPrimaryClimb must be boolean')
     if type(config.setdefault('jumpAtStart', False)) is not bool:
         raise ValueError('jumpAtStart must be boolean')
     if config['jumpAtStart'] and not initial.get('onGround', False):
@@ -343,7 +345,7 @@ def generate_ladder_schedules(request, *, cancel_event=None, deadline=None):
                         except ValueError:
                             continue
                         contexts.append({'entryFamily': entry['family'], 'entryChannel': entry['channel'],
-                                     'entryState': state, 'entryDelay': state - first,
+                                     'entryState': state, 'entryDelay': state - first, 'allowPrimaryClimb': config['allowPrimaryClimb'],
                                      'firstHitLowerBound': entry.get('firstHitLowerBounds', {}).get(str(state), 0),
                                      'exitState': exit_state, 'exitKind': kind, 'ticks': exit_state if config['finishAtExit'] else config['maxInputs'],
                                      'contactEvents': combined})

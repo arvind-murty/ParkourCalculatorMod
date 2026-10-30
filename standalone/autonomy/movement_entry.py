@@ -127,8 +127,9 @@ def probe_region_entries(context, column, wall, compiler, *, deadline, candidate
                     found = True
                     break
                 continue
-            variants = [([], hit) for hit in ([False, True] if entry else [False])]
-            variants += [(cs, hit) for cs in ceiling_options if all(c['offset'] < entry for c in cs) for hit in (False, True)]
+            hit_choices = [False, True] if entry and wall.get('mode') != 'fall_only' else [False]
+            variants = [([], hit) for hit in hit_choices]
+            variants += [(cs, hit) for cs in ceiling_options if all(c['offset'] < entry for c in cs) for hit in hit_choices]
             for extra, hit in variants:
                 if time.monotonic() >= deadline:
                     break

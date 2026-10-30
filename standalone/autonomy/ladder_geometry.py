@@ -110,7 +110,19 @@ def climb_walls(column, solids):
             for (axis, direction, plane), parts in groups.items()]
 
 
+def movement_contexts(column, solids, *, include_fall=True):
+    contexts = climb_walls(column, solids)
+    if include_fall:
+        contexts.append({'mode': 'fall_only', 'axis': 'X', 'direction': 1,
+                         'plane': sum(region_axis(column, 'X')) / 2, 'parts': []})
+    return contexts
+
+
 def entry_channels(column, wall):
+    if wall.get('mode') == 'fall_only':
+        return [{'family': 'side', 'channel': 'side:' + axis + ':' + str(direction),
+                 'axis': axis, 'direction': direction, 'plane': region_axis(column, axis)[1 if direction > 0 else 0]}
+                for axis in ('X', 'Z') for direction in (-1, 1)]
     axis = wall['axis']
     side = 'Z' if axis == 'X' else 'X'
     result = []
