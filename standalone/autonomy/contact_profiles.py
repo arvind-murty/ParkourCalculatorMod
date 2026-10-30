@@ -54,6 +54,10 @@ def contact_opportunities(solids, horizon, *, block_ids=None, ceilings=True, hor
             for axis, direction in [(a, d) for d in (1, -1) for a in ('X', 'Z', 'Y') if a != 'Y' or ceilings and d > 0]:
                 if axis != 'Y' and not horizontal:
                     continue
+                if axis == 'Y':
+                    from .ceiling_primitives import ceiling_contact
+                    yield ceiling_contact(box, tick, solid_index=index, block_id=block_ids[index] if block_ids else None)
+                    continue
                 a = 'XYZ'.index(axis)
                 plane = box[a] - (BODY_HEIGHT if axis == 'Y' else HALF_WIDTH) if direction > 0 else box[a + 3] + HALF_WIDTH
                 yield {'leg': 0, 'offset': tick, 'axis': axis, 'direction': direction, 'plane': plane,

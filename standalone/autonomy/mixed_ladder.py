@@ -57,6 +57,8 @@ def with_contacts(schedule, extra, column, wall, target_top, *, max_inputs=200):
              contactEvents=[{k: v for k, v in e.items() if k != 'state'} for e in selected if e['role'] != 'climb'])
     try:
         s['movementUnits'] = ladder_units(s, column['id'])
+        from .ladder_ceiling import own_schedule_ceilings
+        s = own_schedule_ceilings(s, column['id'])
     except ValueError:
         return None
     return s

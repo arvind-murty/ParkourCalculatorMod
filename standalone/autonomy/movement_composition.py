@@ -77,6 +77,9 @@ def _shift_event(event, offset):
     for key in ('climbWindow', 'stopInputs'):
         if event['schedule'].get(key) is not None:
             event['schedule'][key] = [t + offset for t in event['schedule'][key]]
+    for key in ('contactEvents', 'ladderCeilingEvents'):
+        if key in event['schedule']:
+            event['schedule'][key] = [dict(c, offset=c['offset'] + offset) for c in event['schedule'][key]]
     event['schedule'].pop('generatedUnits', None)
     event['schedule'].pop('movementUnits', None)
     return event
@@ -160,6 +163,15 @@ def append_choice(program, choice, *, max_inputs=200):
             unit['jumpInputs'] = [t for t in range(unit['start'], unit['end']) if jump[t]]
             unit['groundedInputs'] = [t for t in range(unit['start'], unit['end']) if trace['onGround'][t]]
             unit['sneakInputs'] = [t for t in range(unit['start'], unit['end']) if sneak[t]]
+    from .ladder_ceiling import own_ceiling_contacts
+    try:
+        contacts, units = own_ceiling_contacts(contacts, units)
+    except ValueError:
+        return None
+    for event in events:
+        s = event['schedule']
+        s['ladderCeilingEvents'] = [copy.deepcopy(c) for c in contacts if c.get('effect') == 'ladder_ceiling'
+            and c.get('ownerRegion') == event['column']['id'] and max(0, s['entryState'] - 1) <= c['offset'] < s['exitState']]
     profile = profile_from_trace(trace, contacts=contacts, cases=cases, constraints=constraints,
                                  units=units, landing_phase=tail['landingPhase'])
     masks = compile_units(profile['airtime'], units)

@@ -46,16 +46,15 @@ def contact_variants(solids, horizon, *, schedules=(), start=0, end=None, existi
         return {'variants': [], 'attempted': 0,
                 'termination': 'cancelled' if cancel_event is not None and cancel_event.is_set() else 'deadline',
                 'complete': False}
-    from .ceiling_primitives import ceiling_sequence
+    from .ceiling_primitives import ceiling_opportunities
+    from .ladder_ceiling import predict_ceiling_sequences
     schedules = list(schedules)
     predictions = []
     for s in schedules:
         for box in solids:
-            sequence = ceiling_sequence(s, box, start=start)
-            sequence = [e for e in sequence if e['offset'] < end]
-            if sequence:
-                predictions.append(sequence)
-    opportunities = [e for e in contact_opportunities(solids, horizon) if start <= e['offset'] < end]
+            predictions.extend(predict_ceiling_sequences(s, box, start=start, end=end))
+    opportunities = [e for e in contact_opportunities(solids, horizon, ceilings=False) if start <= e['offset'] < end]
+    opportunities.extend(e for e in ceiling_opportunities(solids, horizon) if start <= e['offset'] < end)
     def distance(event):
         tick, box = event['offset'], event['box']
         scores = []
@@ -73,7 +72,8 @@ def contact_variants(solids, horizon, *, schedules=(), start=0, end=None, existi
     opportunities.sort(key=distance)
     opportunities = list(interleave_families(opportunities, lambda e: e['axis']))
     work = max_variants * 100
-    singles = [[sequence[0]] for sequence in predictions]
+    predictions = list({contact_signature(sequence): sequence for sequence in predictions}.values())
+    singles = list({contact_signature([sequence[0]]): [sequence[0]] for sequence in predictions}.values())
     streams = deque([iter(singles), iter(predictions), iter(contact_combinations(opportunities, max_events=max_events,
         limit=work, independent_events=True, cancel_event=cancel_event))])
     variants, seen, attempted, termination = [], set(), 0, 'exhausted'

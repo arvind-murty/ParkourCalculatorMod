@@ -1,6 +1,6 @@
 # Ladder-ceiling ownership and generation
 
-2026-10-30. The user requested an implementation plan for the remaining ladder-ceiling work. This document is planning only. The generic open movement composer is already implemented; preserve that interface and the standalone-only acceptance scope.
+2026-10-30. The user requested an implementation plan for the remaining ladder-ceiling work. Implementation is now authorized. Latest scope: only climbing and its optional one-input stop-climbing periods. Leave existing Sneak and falling behavior unchanged; do not expand those families. The generic open movement composer is already implemented; preserve that interface and the standalone-only acceptance scope.
 
 ## Scope and existing behavior
 
@@ -30,7 +30,7 @@ Gate: existing scalar Y/VY/contact arithmetic is unchanged, every physical ceili
 
 ## Step 2: give ladder generation one ceiling provider
 
-Have the ladder schedule path call the local provider with its existing climb/fall, stop and Sneak candidates. Reuse the current mixed scheduler for X/Z contacts and combinations. Route upward Y opportunities through the owning ceiling provider, deduplicating them against already selected contacts.
+Have the ladder schedule path call the local provider with its existing climbing and one-input stop candidates. Reuse the current mixed scheduler for X/Z contacts and combinations. Route upward Y opportunities through the owning ceiling provider, deduplicating them against already selected contacts.
 
 Keep simultaneous ceiling plus X, ceiling plus Z and ceiling plus X/Z combinations, consecutive contacts and repeated ceiling sequences. Generic contact compilation remains shared; it must not independently rediscover another copy of an owned Y event. Preserve current work limits and report truncation/cancellation as incomplete coverage.
 
@@ -60,7 +60,7 @@ Scalar/generation tests:
 
 - One ceiling hit, continued pressing and several consecutive hits.
 - Beginning stop, final omitted hit and both stops, with their expected Y/VY and exit changes.
-- Sneak/no-Sneak on fall and stop inputs, including positive incoming carry and the normal +0.1176 -> +0.036848 -> -0.042289 evolution without clipping/refresh.
+- Normal +0.1176 -> +0.036848 -> -0.042289 evolution on unclipped stop inputs. Existing Sneak/falling code is outside the implementation scope.
 - Acceptance of `ladder_ceiling -> ladder_climb`, rejection of direct `ladder_ceiling -> ladder_fall` and other immediate successors, and no inference of a velocity refresh from the event label.
 - Entry-input ceiling plus horizontal hit, inside-ladder hit, exit-input hit and direct-transfer ownership.
 - Ceiling plus X, plus Z and plus X/Z on the same input, and consecutive-input combinations.

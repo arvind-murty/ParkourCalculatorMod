@@ -116,5 +116,12 @@ def ladder_event_choice(event, *, start=0):
     from .movement_units import profile_program, overlay_program
     profile = profile_from_trace(trace, contacts=finite)
     units = overlay_program(movement_program(n, [local]), profile_program(profile))
+    from .ladder_ceiling import own_ceiling_contacts
+    try:
+        finite, units = own_ceiling_contacts(finite, units)
+    except ValueError:
+        return None
+    s['contactEvents'] = [copy.deepcopy(e) for e in finite if e.get('role') != 'climb']
+    s['ladderCeilingEvents'] = [copy.deepcopy(e) for e in finite if e.get('effect') == 'ladder_ceiling']
     kind = 'ladder_climb' if any(trace['climbRefreshed']) else 'ladder_fall'
     return movement_choice(kind, initial, trace, contacts=finite, units=units, ladder_events=[local])
