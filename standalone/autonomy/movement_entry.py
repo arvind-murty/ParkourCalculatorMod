@@ -139,11 +139,15 @@ def probe_region_entries(context, column, wall, compiler, *, deadline, candidate
                     solved = solve(problem, seconds=min(candidate_seconds, max(.001, deadline - time.monotonic())),
                         stop_on_feasible=True, python_executable=python_executable, cancel_event=cancel_event)
                     if solved['feasible']:
-                        candidate = _raw_candidate(problem, validate(problem, solved['candidate']['yaw']))
-                        vertical = {'vertical': problem['vertical'], 'y': candidate['y'], 'vy': candidate['vy'], 'onGround': candidate['onGround']}
-                        geometry = check_geometry(context['scene']['collisionScene'], plan, candidate, vertical, compiler,
-                                                  max(.01, deadline - time.monotonic()))
-                        found = geometry['feasible']
+                        candidate = validate(problem, solved['candidate']['yaw'])
+                        if candidate['feasible']:
+                            _raw_candidate(problem, candidate)
+                            vertical = {'vertical': problem['vertical'], 'y': candidate['y'], 'vy': candidate['vy'], 'onGround': candidate['onGround']}
+                            geometry = check_geometry(context['scene']['collisionScene'], plan, candidate, vertical, compiler,
+                                                      max(.01, deadline - time.monotonic()))
+                            found = geometry['feasible']
+                        else:
+                            reason = 'Entry failed independent scalar validation'
                 except (TimeoutError, ValueError, RuntimeError) as error:
                     reason = str(error)
                 records.append({'channel': channel['channel'], 'entryState': entry, 'hitOnEntry': hit,
