@@ -2,6 +2,16 @@
 
 Updated checkpoint, 2026-10-29, on `codex/run-ticks-planning`. Run ticks, support routing, blockages, one-input wall/ceiling contacts, multiple ladder transitions and multi-episode airborne transfers are implemented. `39d4ede` added the common contact contract and `a8b659c` added full ladder/contact composition and step diagnostics. The latest reviewable state is committed in our isolated worktree.
 
+## Latest user stepping definitions
+
+The user replaced the exact-resolver-centered proposal with explicit case-based profiles. Read STEPPING_CASES.md and the rewritten STEPPING_PLAN.md. Implement the named case outcomes and constraints; there is no requirement to reproduce/enumerate the internal Minecraft A/B step algorithm in orchestration.
+
+Position ticks: L is the last air/landing tick, H=L+1 is the hit tick, J is the position after the jump impulse. Existing code `jumpTick` is often an input index; input t produces position J=t+1. Keep adapters explicit. Internal wall-hit masks are different from H.
+
+Accepted cases: grounded normal stepping; slab/stair boost (J rises about .42-.6, then one air input); blip (L within .6 below higher level, lower X/Z landing constraint at L and higher condition at H); blip-up (L above higher level, hypothetical free H below lower level, H retains L Y and is grounded); grind (before-J outside low ceiling, J underneath, zero Y rise and one following air input). Blip-up ends at H, then an elevated jump or ordinary run-off follows. Normal air coefficients apply into blip/blip-up H. Preserve current input-regime indexing.
+
+Naming conflicts recorded and glossary updated: old Blip was too broad; old grinding meant repeated jump cancels; old jump tick often meant the applying input. Proposed extra cases are still under user review: jump step-over without ceiling (zero rise), partial-rise jump cancellation below .42, and landing step-over with retained Y below the cleared obstacle's top. All have shared-resolver examples in the nine-probe artifact. They are descriptive labels, not approved movement types. Ordinary ceiling impacts can remain shared events or later become a type; the user has not selected that architecture.
+
 ## Stepping planning investigation
 
 The user asked what stepping exists and what Minecraft/mod behavior the next type must handle. STEPPING_PLAN.md has been expanded from the earlier two-mode migration sketch. Verified the cached mapped 1.8.9 Entity movement branch against shared StaticScene and ran six collision probes, saved in experiments/stepping-mechanics.
