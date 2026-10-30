@@ -45,8 +45,8 @@ def prepare_route(request):
     if not isinstance(airtimes, list) or len(airtimes) != len(blocks) - 1:
         raise ValueError('Supply one valid airtime per transition')
     kinds = route.setdefault('kinds', ['jump'] * len(airtimes))
-    if not isinstance(kinds, list) or len(kinds) != len(airtimes) or any(k not in ('jump', 'walk_off', 'step') for k in kinds):
-        raise ValueError('Transition kinds must be jump, walk_off or step')
+    if not isinstance(kinds, list) or len(kinds) != len(airtimes) or any(k not in ('jump', 'walk_off', 'step', 'movement') for k in kinds):
+        raise ValueError('Transition kinds must be jump, walk_off, step or movement')
     for value, kind in zip(airtimes, kinds):
         integer(value, 'airtime', 2 if kind == 'jump' else 1, 200)
         if kind == 'step' and value != 1:
@@ -321,6 +321,8 @@ def schedule(route, allocation, stage='jump'):
         if event['landing'] is not None:
             units.extend(shifted_unit(unit, event['jump']) for unit in relative_units[event['leg']])
     extra['movementUnits'] = units
+    if any(p.get('composition') == 'movement_program' for p in route.get('verticalProfiles', [])):
+        extra['movementComposition'] = True
     return {'ticks': state, 'grounded': grounded, 'jump': jump, 'events': events,
             'supportChecks': supports_at, 'exitChecks': exit_checks, 'walls': walls,
             'allocation': list(allocation), 'stage': stage, 'passageFailures': passage_failures,

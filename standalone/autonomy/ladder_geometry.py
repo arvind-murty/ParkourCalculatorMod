@@ -143,6 +143,8 @@ def schedule_constraints(schedule, column, wall, entry_face, exit_face, *, start
     ys = schedule['trace']['position']
     ladder = schedule['ladderTicks']
     for state, (y, inside) in enumerate(zip(ys, ladder)):
+        if state < schedule.get('constraintStart', 0) or state >= schedule.get('constraintEnd', len(ys)):
+            continue
         at = start + state
         if inside:
             rectangles = region_rectangles(column, y)

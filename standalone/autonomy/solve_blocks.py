@@ -20,6 +20,7 @@ def main():
     parser.add_argument('--route-seconds', type=float, default=8)
     parser.add_argument('--candidate-seconds', type=float, default=2)
     parser.add_argument('--retries', type=int, default=1)
+    parser.add_argument('--support-search', action='store_true', help='Use the legacy support-profile search')
     parser.add_argument('--improve', action='store_true',
                         help='Accepted for compatibility; total-tick/objective search is always enabled')
     args = parser.parse_args()
@@ -28,6 +29,10 @@ def main():
         signal.signal(signum, lambda *_: cancel.set())
     try:
         request = json.loads(Path(args.input).read_text())
+        if args.support_search:
+            request.pop('movementSearch', None)
+        elif request.get('sceneModel') == 'collision_boxes':
+            request.setdefault('movementSearch', {})
         config = json.loads(Path(args.compiler).read_text())
         with JavaCompiler(config) as compiler:
             result = find_blocks(request, compiler, seconds=args.seconds, route_seconds=args.route_seconds,

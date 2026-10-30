@@ -87,6 +87,9 @@ def stepping_profiles(context):
 
 class SteppingGenerator:
     def generate(self, context, *, start=0, ends=None):
+        if context.get('mode') == 'open':
+            yield from open_stepping_choices(context)
+            return
         from .movement_units import shifted_unit
         if context.get('mode')=='profile':
             profile = copy.deepcopy(context['profile'])
@@ -113,3 +116,77 @@ class SteppingGenerator:
             yield dict(unit=shifted_unit(unit,start),units=[shifted_unit(u,start) for u in units],profile=profile,
                        profileKind=kind,entryFace=face)
         stats.update(complete=True, termination='exhausted')
+
+
+def open_stepping_choices(context):
+    from .movement_composition import scalar_initial
+    from .open_movement import approaches, first_descent, named_choice
+    initial = scalar_initial(context['state'])
+    scene = context['scene']
+    y0 = initial['position']
+    allowed = context.get('cases')
+    def enabled(case):
+        return allowed is None or case in allowed
+    if initial['onGround']:
+        for block in scene['blocks']:
+            box = box_for(block, context)
+            rise = block['top'] - y0
+            for case, jumping in [('normal_step', False), ('slab_boost', True)]:
+                if not enabled(case) or not 0 < rise <= f32(.6) or jumping and rise <= f32(.42):
+                    continue
+                for axis in ('X', 'Z'):
+                    for direction in (-1, 1):
+                        rows = [outside_row(box, axis, -direction, 0)] + region_rows(block, 1)
+                        event = dict(case=case, input=0, plane=block['top'], box=box,
+                                     anchors={'beforeJump' if jumping else 'beforeStep': 0, 'jump' if jumping else 'hit': 1})
+                        choice = named_choice(context, 'stepping', initial, event, jumping=jumping,
+                                              constraints=rows, support=block['id'] if not jumping else None)
+                        if choice:
+                            yield choice
+            if enabled('corner_jump_cancel') and f32(.42) < rise <= f32(.6):
+                for xdir in (-1, 1):
+                    for zdir in (-1, 1):
+                        event = dict(case='corner_jump_cancel', input=0, plane=y0, higherHeight=block['top'],
+                                     box=box, anchors={'beforeJump': 0, 'jump': 1})
+                        choice = named_choice(context, 'stepping', initial, event, jumping=True,
+                                              constraints=corner_rows(box, 0, 1, xdir, zdir))
+                        if choice:
+                            yield choice
+    for initial, jumping, trace in approaches(context):
+        for lower in scene['blocks']:
+            if context.get('checkBudget'):
+                context['checkBudget']()
+            landing = first_descent(trace, lower['top'])
+            if landing is None:
+                continue
+            y = trace['position'][landing]
+            lower_rows = region_rows(lower, landing, 'case:lower_landing')
+            for higher in scene['blocks']:
+                if higher['top'] <= lower['top']:
+                    continue
+                box = box_for(higher, context)
+                if enabled('blip') and 0 <= higher['top'] - y <= f32(.6):
+                    options = landing_wall_options(box, landing) if landing else (
+                        ([outside_row(box, axis, sign, 0, 'blip:wall_avoid')], [])
+                        for axis in ('X', 'Z') for sign in (-1, 1))
+                    for rows, finite in options:
+                        event = dict(case='blip', input=landing, plane=higher['top'], lowerHeight=lower['top'],
+                            higherHeight=higher['top'], box=box, lowerBox=box_for(lower, context),
+                            anchors={'landing': landing, 'hit': landing + 1})
+                        choice = named_choice(context, 'stepping', initial, event, jumping=jumping,
+                            constraints=lower_rows + rows + region_rows(higher, landing + 1), finite=finite, support=higher['id'])
+                        if choice:
+                            yield choice
+                for case in ('blip_up', 'corner_blip_up'):
+                    if not enabled(case) or not (y > higher['top'] if case == 'blip_up' else 0 <= higher['top'] - y <= f32(.6)):
+                        continue
+                    rows = ([outside_row(box, axis, sign, landing, 'blip_up:outside')] + region_rows(higher, landing + 1)
+                            for axis in ('X', 'Z') for sign in (-1, 1)) if case == 'blip_up' else (
+                            corner_rows(box, landing, landing + 1, xdir, zdir) for xdir in (-1, 1) for zdir in (-1, 1))
+                    for constraint in rows:
+                        event = dict(case=case, input=landing, plane=y, lowerHeight=lower['top'], higherHeight=higher['top'],
+                                     box=box, lowerBox=box_for(lower, context), anchors={'landing': landing, 'hit': landing + 1})
+                        choice = named_choice(context, 'stepping', initial, event, jumping=jumping,
+                                              constraints=lower_rows + constraint)
+                        if choice:
+                            yield choice

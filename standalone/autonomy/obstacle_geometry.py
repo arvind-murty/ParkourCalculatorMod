@@ -101,7 +101,7 @@ def check_geometry(geometry, plan, candidate, vertical, compiler, seconds):
         movement.append([clamp(x) if ladder[tick] else x,
                          vertical_move(vertical['vertical'], tick, vertical['vy'][tick], ladder[tick]),
                          clamp(z) if ladder[tick] else z])
-    if geometry.get('ladders') or any(ladder) or any(c.get('movementCase') for c in plan.get('sceneContacts', [])):
+    if plan.get('movementComposition') or geometry.get('ladders') or any(ladder) or any(c.get('movementCase') for c in plan.get('sceneContacts', [])):
         velocities = [[v[0], y, v[1]] for v, y in zip(candidate['velocity'], vertical['vy'])]
         checked = compiler.check_scene(geometry, positions, movement, vertical['onGround'], seconds,
             contacts=plan.get('sceneContacts', []), sneak=plan.get('sneak', [False] * plan['ticks']),

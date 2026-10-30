@@ -15,6 +15,8 @@ def register_movement_type(name, generator, *, ladder=False):
 
 
 def generate_choices(kind, context, **options):
+    if context.get('mode') == 'open' and (options.get('start', 0) not in (0, None) or options.get('ends') is not None):
+        raise ValueError('Open choices use relative inputs; the composer owns retiming')
     if kind not in GENERATORS:
         raise ValueError('Unsupported movement generator: ' + str(kind))
     for choice in GENERATORS[kind].generate(context, **options):
@@ -63,7 +65,11 @@ class LadderFallGenerator:
     def sneak_inputs(self, unit, context, primary):
         return range(unit['start'], unit['end'])
 
-    def generate(self, context, *, start, ends=None):
+    def generate(self, context, *, start=0, ends=None):
+        if context.get('mode') == 'open':
+            from .open_ladder import ladder_choices
+            yield from ladder_choices(context, 'ladder_fall')
+            return
         entry, leave = context['entryState'], context['exitState']
         forced = {e['offset'] for e in context.get('contactEvents', [])
                   if e['axis'] != 'Y' and entry <= e['offset'] + 1 < leave}
@@ -100,6 +106,10 @@ class LadderClimbGenerator:
                 'beginningStop': beginning, 'endStop': ending}
 
     def generate(self, context, *, start=None, ends=None, contact_only=False):
+        if context.get('mode') == 'open':
+            from .open_ladder import ladder_choices
+            yield from ladder_choices(context, 'ladder_climb')
+            return
         if not contact_only and not context.get('allowPrimaryClimb', True):
             return
         if contact_only:

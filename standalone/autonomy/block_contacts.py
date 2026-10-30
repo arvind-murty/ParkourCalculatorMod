@@ -28,10 +28,16 @@ def floor_checks(scene, block_ids, profiles):
                 continue
             for block in scene['blocks']:
                 top = block['top']
-                if next_y <= top <= y and not (offset + 1 == profile['airtime'] and top == target_top):
+                planned_floor = any(e['offset'] == offset and e.get('role') in ('landing', 'step')
+                                    and e['plane'] == top and e['box'] == scene['collisionScene']['solids'][block['solidIndex']]
+                                    for e in profile.get('contactEvents', []))
+                if next_y <= top <= y and not planned_floor and not (offset + 1 == profile['airtime'] and top == target_top):
                     checks.append({'leg': leg, 'offset': offset, 'block': copy.deepcopy(block), 'reason': 'earlier_floor'})
         for block in scene['blocks']:
             selected_step = profile.get('profileKind') in ('stair', 'step') and block['id'] == block_ids[leg + 1]
+            selected_step |= any(e['input'] == 0 and e['case'] in ('normal_step', 'slab_boost')
+                                 and e['box'] == scene['collisionScene']['solids'][block['solidIndex']]
+                                 for e in profile.get('caseEvents', []))
             step_config = dict(config, contacts=[{'state': 1, 'plane': block['top'], 'direction': -1, 'step': True}])
             _, _, _, failures = vertical_step(step_config, 0, profile['position'][0], profile['velocity'][0], False, True, 0)
             if not selected_step and not failures:
@@ -89,7 +95,14 @@ def validate_vertical_schedule(route, profiles, plan):
                        'contacts': synthetic_hits, 'ladderTicks': plan.get('ladderTicks', [False] * (n + 1)),
                        'objective': {'axis': 'X', 'sense': 'MAX', 'tick': n}, 'vertical': vertical})
     checked = validate(problem, problem['yaw'])
-    return {'feasible': checked['feasible'] and checked['onGround'] == plan['grounded'] + [True],
+    last_profile = profiles[len(plan['events']) - 1] if profiles else {}
+    terminal_ground = last_profile['grounded'][-1] if plan['stage'] == 'jump' and last_profile.get('composition') == 'movement_program' else True
+    matched = True
+    for event, profile in zip(plan['events'], profiles):
+        if profile.get('composition') == 'movement_program' and event['landing'] is not None:
+            first, end = event['jump'], event['landing'] + 1
+            matched &= checked['y'][first:end] == profile['position'] and checked['vy'][first:end] == profile['velocity']
+    return {'feasible': matched and checked['feasible'] and checked['onGround'] == plan['grounded'] + [terminal_ground],
             'vertical': vertical, 'y': checked['y'], 'vy': checked['vy'], 'onGround': checked['onGround']}
 
 
