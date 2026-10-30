@@ -1,5 +1,17 @@
 # Orchestration compaction handoff
 
+## Latest checkpoint: generic composition, 2026-10-30
+
+Latest user correction: stepping and ceiling must compose through the same open interface as normal and ladder phases. The prior one-off support-to-support wrapper was insufficient. Also, stop running mod Java core tests during standalone development; valid IPOPT with the correct movement/constraints is this workstream's success criterion. `standalone/AGENTS.md` records that scope.
+
+Implemented and committed: `efacd5d` generic append/replay and `27144db` open generators, one registry-driven mixed-program queue, boundary/phase normalization, complete-program compiler and standalone CLI dispatch. Read GENERIC_COMPOSITION.md for the actual interface, validation, entry points and limits. Full collision-box CLI inputs now use generic movement programs; `--support-search` retains the legacy comparison path. Python callers can use find_movement_blocks or pass movementSearch={} to find_blocks. No per-support-leg stepping limit or fixed type order exists in this path.
+
+Acceptance: 53 focused standalone methods pass, including 13 new generic methods. All 51 numerical tests pass. Fresh full-state IPOPT and shared-scene witnesses: cold grind -> air -> blip (5 inputs); repeated ceiling with blip and ground units between (12); two airborne ladders -> blip (28); five airborne ladders -> final floor (58). The ladder orders/timings in the latter witnesses are adapted existing contracts, not newly discovered cold. All X/Z and momentum are solved from the original start. No Java core or game replay tests were run.
+
+Remaining work is bounded-search efficiency and further physics families, not a one-case composition restriction. A separate cold one-ladder smoke with reduced schedule budgets returned unknown at 18 seconds before a complete proposal; no infeasibility or global optimality claim follows. Ladder-ceiling ownership refactoring, water, pruning, caching and resumable generation remain deferred. Keep the canonical loop standalone and use focused tests during iterations.
+
+The following checkpoint records the preceding stepping milestone and its legacy support-profile limits.
+
 ## Current implementation checkpoint, 2026-10-30
 
 Latest user instruction: defer ladder-ceiling refactoring, implement normal ceilings and stepping, and treat the higher blip block as a standard wall on L, either avoided or actually hit. This supersedes the implementation order and planning-only statements in older sections below.

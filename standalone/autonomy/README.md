@@ -1,5 +1,7 @@
 # Run ticks over a block route
 
+Latest standalone orchestration: [generic movement programs](GENERIC_COMPOSITION.md) chain normal, stepping, ceiling and ladder phases through one open-state queue. Collision-box `solve_blocks` inputs use this path by default; `--support-search` retains the legacy support-profile strategy. Use focused standalone IPOPT/scalar/scene tests, as specified in `standalone/AGENTS.md`.
+
 For a compacted session, start with [COMPACTION_HANDOFF.md](COMPACTION_HANDOFF.md): implementation checkpoint, user decisions, tested results, remaining gaps and next tasks.
 
 Status, 2026-10-26: **run ticks are prototyped** within the continuous model. [RUN_TICKS_PLAN.md](RUN_TICKS_PLAN.md) records what works, the measured results and deferred work. Current orchestration work has moved to the [block solver](BLOCK_SOLVER_PLAN.md). Replay export and game integration are outside this milestone.

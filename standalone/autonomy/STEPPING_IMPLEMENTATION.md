@@ -1,5 +1,7 @@
 # Stepping and normal-air ceiling implementation
 
+Latest extension, 2026-10-30: [generic movement composition](GENERIC_COMPOSITION.md) now permits repeated and mixed stepping, ceiling, normal and ladder units through one open-program queue. The one-event support-leg restriction described below belongs to the legacy support-profile adapter. Standalone IPOPT/scalar/scene gates are the development criteria; mod Java gates are outside this workstream.
+
 2026-10-30, isolated worktree `ParkourCalculatorMod-run-ticks`, branch `codex/run-ticks-planning`. Ladder-ceiling ownership changes are deferred. Existing ladder ceiling routes still use their existing scheduling behavior, with neutral helpers extracted for reuse. Water and route/input pruning remain later work.
 
 ## Generation and representation
@@ -43,7 +45,7 @@ The ordinary jump-height gate no longer rejects composite full-geometry profiles
 
 `maxSteppingProfiles` defaults to 128 per source/target pair. The graph reports emitted counts and incomplete generation; an incomplete stepping pool cannot establish `minimumTicksProven`. This is a bounded family of candidates, not exhaustive movement or a global optimality proof. Existing contact/solver/route budgets continue to apply.
 
-The current automatic case family contains one named stepping event per full support leg, with an ordinary continuation and optional elevated jump for blip-up. Arbitrary chains of new stepping events within the same airborne leg, or automatic selection of a step into an airborne ladder entry, are follow-up composition work. Existing multi-ladder chains and support-to-support mixes retain their current behavior. No rarity pruning, dominance rule, new cache or resumable enumeration has been added.
+The legacy support-profile case family contains one named stepping event per full support leg, with an ordinary continuation and optional elevated jump for blip-up. Arbitrary chains of new stepping events within the same airborne leg, or automatic selection of a step into an airborne ladder entry, are follow-up composition work. Existing multi-ladder chains and support-to-support mixes retain their current behavior. No rarity pruning, dominance rule, new cache or resumable enumeration has been added.
 
 ## Validation
 
