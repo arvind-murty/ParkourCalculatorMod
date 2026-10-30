@@ -67,7 +67,8 @@ def sneak_patterns(ticks, eligible, first_clamped=None):
             yield [t in selected for t in range(ticks)]
 
 
-def trace_ladder_schedule(initial, ladder, sneak, hit, *, jump=None, target_top=None, min_landing_state=0, contacts=None):
+def trace_ladder_schedule(initial, ladder, sneak, hit, *, jump=None, target_top=None, min_landing_state=0, contacts=None,
+                          occupied_y_bounds=None):
     hit = _flags(hit, 'hit')
     n = integer(len(hit), 'ticks', 1, 200)
     ladder = _flags(ladder, 'ladder', n + 1)
@@ -88,6 +89,12 @@ def trace_ladder_schedule(initial, ladder, sneak, hit, *, jump=None, target_top=
     if target_top is not None:
         number(target_top, 'target top')
     integer(min_landing_state, 'minimum landing state', 0, n)
+    if occupied_y_bounds is not None:
+        if not isinstance(occupied_y_bounds, (list, tuple)) or len(occupied_y_bounds) != 2:
+            raise ValueError('Occupied Y bounds require a lower and upper limit')
+        lower, upper = [number(v, 'occupied Y bound') for v in occupied_y_bounds]
+        if lower >= upper:
+            raise ValueError('Occupied Y bounds must be nonempty')
     from .contact_combinations import merge_contacts
     selected = copy.deepcopy(contacts or [])
     if not isinstance(selected, list):
@@ -105,11 +112,14 @@ def trace_ladder_schedule(initial, ladder, sneak, hit, *, jump=None, target_top=
     positions, velocities, grounds, moves, refreshes, failures = [y], [vy], [ground], [], [], []
     landed = False
     for t in range(n):
-        movement = vertical_move(config, t, vy, ladder[t])
-        if target_top is not None and t + 1 >= min_landing_state and movement < 0 \
-                and y >= target_top and y + movement < target_top:
-            if not any(c['state'] == t + 1 for c in config['contacts']):
-                config['contacts'].append({'state': t + 1, 'plane': target_top, 'direction': -1})
+        if occupied_y_bounds is not None and ladder[t] and not lower <= y < upper:
+            failures.append({'state': t, 'reason': 'occupied_y_outside_region'})
+            break
+        if target_top is not None:
+            movement = vertical_move(config, t, vy, ladder[t])
+            if t + 1 >= min_landing_state and movement < 0 and y >= target_top and y + movement < target_top:
+                if not any(c['state'] == t + 1 for c in config['contacts']):
+                    config['contacts'].append({'state': t + 1, 'plane': target_top, 'direction': -1})
         y, movement, ground, errors = vertical_step(config, t, y, vy, ladder[t], ground, 0)
         failures.extend(errors)
         vy = vertical_carry(movement, ladder[t + 1], hit[t])
@@ -118,6 +128,9 @@ def trace_ladder_schedule(initial, ladder, sneak, hit, *, jump=None, target_top=
         grounds.append(ground)
         moves.append(movement)
         refreshes.append(ladder[t + 1] and hit[t])
+        if occupied_y_bounds is not None and ladder[t + 1] and not lower <= y < upper:
+            failures.append({'state': t + 1, 'reason': 'occupied_y_outside_region'})
+            break
         if ground and any(c['state'] == t + 1 and c['direction'] < 0 for c in config['contacts']):
             landed = True
             break
@@ -130,7 +143,7 @@ def trace_ladder_schedule(initial, ladder, sneak, hit, *, jump=None, target_top=
             'climbRefreshed': refreshes, 'failures': failures, 'vertical': config,
             'ladderTicks': ladder[:count + 1], 'sneak': sneak[:count], 'hit': hit[:count],
             'resume': {'position': positions[-1], 'velocity': velocities[-1], 'onGround': grounds[-1],
-                       'previousHorizontalCollision': hit[count - 1], 'onLadder': ladder[count]}}
+                       'previousHorizontalCollision': hit[count - 1] if count else previous, 'onLadder': ladder[count]}}
 
 
 def prepare_ladder_request(request):
@@ -269,10 +282,12 @@ def _mask_work(skeleton, config):
                 trace = trace_ladder_schedule(config['initial'], ladder, sneak, actual_hits,
                     jump=[f32(.42) if config['jumpAtStart'] else None] + [None] * (n - 1),
                     target_top=None if config['finishAtExit'] else config['targetTop'], min_landing_state=max(exit_state, max((e['offset'] + 1 for e in extra), default=0)),
-                    contacts=vertical)
+                    contacts=vertical, occupied_y_bounds=(config['region']['minY'], config['region']['maxY']))
                 region = config['region']
                 reason = None
-                if trace['status'] == 'invalid':
+                if any(f['reason'] == 'occupied_y_outside_region' for f in trace['failures']):
+                    reason = 'inside_y'
+                elif trace['status'] == 'invalid':
                     reason = 'vertical_model'
                 elif trace['ticks'] < exit_state:
                     reason = 'early_landing'
