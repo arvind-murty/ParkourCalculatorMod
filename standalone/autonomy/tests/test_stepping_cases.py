@@ -36,6 +36,25 @@ def generated(data):
 
 
 class SteppingCaseTests(unittest.TestCase):
+    def test_legacy_prefix_without_landing_phase_keeps_pre_landing_timing(self):
+        scene, edge = generated(fixture('blip'))
+        profile = edge['profile']
+        profile.pop('landingPhase')
+        profile.pop('caseEvents')
+        profile.pop('generatedUnits')
+        compiled = compile_block_path(scene, ['start', 'goal'], [edge])
+        self.assertEqual(compiled['route']['landingPhases'], ['pre'])
+        self.assertIn((profile['airtime'] - 1, 1, 'landing'), schedule(compiled['route'], [0])['supportChecks'])
+
+    def test_legacy_boost_profile_is_adapted_to_its_registered_owner(self):
+        from standalone.autonomy.block_profiles import stair_jump_profile
+        profile = stair_jump_profile(1, 1.5)
+        choice = next(generate_choices('stepping', dict(mode='profile', profileKind='stair', profile=profile)))
+        self.assertEqual(choice['unit']['type'], 'stepping')
+        self.assertEqual(choice['unit']['case'], 'slab_boost')
+        self.assertEqual(choice['profile']['position'], profile['position'])
+        self.assertEqual(choice['profile']['contacts'], profile['contacts'])
+
     def test_scalar_named_outcomes_and_rejected_controls(self):
         cases = [
             ('normal_step', 1, REST_CARRY, True, None, 1.5, {}, 1.5, True),

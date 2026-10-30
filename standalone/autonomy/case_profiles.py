@@ -46,7 +46,7 @@ def case_profile(source_y, target_y, event, *, max_inputs=200, jump_at_start=Tru
     if jump_at_start:
         impulses[0] = f32(.42)
     if jump_after is not None:
-        if jump_after >= n:
+        if not 0 <= jump_after < n:
             return None
         impulses[jump_after] = f32(.42)
     contact = {k:v for k,v in event.items() if k in ('case','plane','lowerHeight','higherHeight','clearance')}

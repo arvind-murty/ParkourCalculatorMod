@@ -51,4 +51,4 @@ The current automatic case family contains one named stepping event per full sup
 
 Fresh numerical/shared-scene cases cover normal step, slab boost, blip avoidance, blip wall hit, blip-up with jump and no-jump continuations, both corner cases, flat grind and grind followed by a lower floor. Removing selected case contracts is rejected by scene acceptance. Fixtures contain geometry, initial state and a discrete case index, with no supplied airtimes, solved facings or frozen intermediate states. Existing ceiling/wall combinations and ladder regressions remain separate gates.
 
-Focused new suite: 13 methods passed, including nine saved geometry/case fixtures and additional fresh numerical controls. Full orchestration and numerical regression totals are recorded in COMPACTION_HANDOFF.md after the final run.
+Focused new suite: 15 methods passed, including nine saved geometry/case fixtures and additional fresh numerical controls. Full orchestration and numerical regression totals are recorded in COMPACTION_HANDOFF.md after the final run.

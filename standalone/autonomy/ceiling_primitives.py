@@ -9,7 +9,7 @@ from .obstacle_geometry import BODY_HEIGHT
 def ceiling_sequence(schedule, box, *, start=0):
     n = schedule['ticks']
     config = copy.deepcopy(schedule['trace']['vertical'])
-    config['contacts'] = [c for c in config['contacts'] if c['direction'] > 0 or c.get('step')]
+    config['contacts'] = [c for c in config['contacts'] if c['direction'] > 0 or c.get('step') or c.get('case')]
     selected = []
     y, vy, ground = schedule['trace']['position'][0], schedule['trace']['velocity'][0], schedule['trace']['onGround'][0]
     plane = box[1] - BODY_HEIGHT

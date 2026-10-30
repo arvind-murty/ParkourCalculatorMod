@@ -162,7 +162,7 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                 from .block_contacts import validate_vertical_schedule
                 vertical = validate_vertical_schedule(route, route['verticalProfiles'], plan)
                 if not vertical['feasible']:
-                    return {'status': 'blocked', 'plan': plan, 'certificate': {'reason': 'ladder_y_schedule'}}
+                    return {'status': 'blocked', 'plan': plan, 'certificate': {'reason': 'vertical_schedule'}}
                 plan['vertical'] = dict(vertical['vertical'], referencePosition=vertical['y'], referenceVelocity=vertical['vy'])
             coefficients = compiler.compile(route, plan, max(0.001, min(available, candidate_seconds)))
             problem = dict(coefficients, version=1, ticks=plan['ticks'],
