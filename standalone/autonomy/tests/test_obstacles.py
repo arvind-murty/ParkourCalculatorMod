@@ -76,7 +76,7 @@ class ObstacleGeometryTests(unittest.TestCase):
         topology = build_transition_graph(request, Coefficients())
         self.assertNotIn('wall', topology['adjacency']['start'])
         self.assertIn('goal', topology['adjacency']['start'])
-        self.assertIn({'source': 'start', 'target': 'wall', 'reason': 'jump_height'}, topology['rejectedEdges'])
+        self.assertIn({'source': 'start', 'target': 'wall', 'reason': 'profile_not_generated'}, topology['rejectedEdges'])
         self.assertEqual(len(request['collisionScene']['solids']), 3)
         self.assertAlmostEqual(normal_jump_height(), 1.2491870787446813)
 
