@@ -93,6 +93,8 @@ Each selected structure needs ordinary-trigger, eligibility, raised-path clearan
 
 A/B selection and competition against the ordinary result are discrete scene decisions. Preserve exact tie behavior in acceptance. Where the NLP represents competing-path progress, use smooth squared-progress comparisons within a fixed clipping structure. Reuse shared branch diagnostics to derive/refine those structures; do not put a second min/max collision resolver inside the numerical objective. A candidate that loses the scene branch comparison remains unknown and can lead to another step structure or ordinary/avoidance continuation.
 
+The support graph currently applies an ordinary maximum-jump-height gate before generating stair options, and its flight bounds assume the current profile family. Revisit those gates for landing steps and composite continuations: use bounds valid for the actual generated Y/contact history, durations and step outcomes. An ordinary jump-height or radius bound must not reject a route whose additional height or airtime comes from a valid step. Updating existing bounds for soundness is required type integration, separate from later aggressive pruning.
+
 Reoptimize all facings and incoming X/Z momentum from the original route initial state. Enumerating a discrete collision structure must not pin a previous optimizer endpoint. Keep time before objective and retain explicit work/unknown reporting. Route-specific pruning remains deferred.
 
 ## Implementation sequence
