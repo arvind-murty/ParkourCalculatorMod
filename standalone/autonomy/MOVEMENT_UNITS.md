@@ -1,12 +1,14 @@
 # Movement units and airborne composition
 
+Latest extension, 2026-10-30: [GENERIC_COMPOSITION.md](GENERIC_COMPOSITION.md) documents the open choice contract and shared queue for normal, stepping, ceiling and ladder phases. Units can hand off at their actual event state, including airborne and unsupported grounded states. The new path removes the one-case support-leg limit; the older support-profile adapter remains for compatibility.
+
 2026-10-30 extension: registered `stepping` and normal-air `ceiling` units now survive profile compilation, air-gap overlays and run retiming. Named case anchors, jump inputs and grounded-input masks are retained and checked against the scalar profile. Ladder-owned intervals keep their existing units and ceiling behavior; the ladder-ceiling refactor is deferred. See [STEPPING_IMPLEMENTATION.md](STEPPING_IMPLEMENTATION.md). Earlier checkpoint statements below saying stepping is absent describe the preceding ladder milestone.
 
 2026-10-29. This implements the latest ladder decisions in [LADDER_COMPOSITION_PLAN.md](LADDER_COMPOSITION_PLAN.md). Continuous numerical acceptance remains this layer's responsibility; replay/export belongs to the other integration worktree.
 
 ## Implemented interface
 
-`movement_units.py` registers `normal`, `ladder_climb` and `ladder_fall`. A unit has an input interval `[start,end)`, a type and its relevant relative anchors: region, occupied-state interval, hit inputs, Sneak inputs, planned climb-hit window and omitted endpoint hits. `compile_units` materializes occupied states and input masks. `validate_ladder_events` builds and checks the per-leg program, and ladder constraint compilation consumes its occupied-state mask. These units are part of the orchestrator/compiler contract, rather than display labels.
+`movement_units.py` registers `normal`, `stepping`, `ceiling`, `ladder_climb` and `ladder_fall`. A unit has an input interval `[start,end)`, a type and its relevant relative anchors: region, occupied-state interval, hit inputs, Sneak inputs, planned climb-hit window and omitted endpoint hits. `compile_units` materializes occupied states and input masks. `validate_ladder_events` builds and checks the per-leg program, and ladder constraint compilation consumes its occupied-state mask. These units are part of the orchestrator/compiler contract, rather than display labels.
 
 `route.movementUnits` holds relative programs per support-to-support leg. `schedule(...).movementUnits` exposes the absolute timeline, including inserted grounded normal/run units. Every duration, contact, occupied-state interval, stop and Sneak anchor shifts with run insertion. The global key/ground/contact history still goes through the existing shared movement compiler. Types do not replace its physics.
 

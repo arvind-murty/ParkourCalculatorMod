@@ -2,6 +2,8 @@
 
 2026-10-30. The user requires normal, stepping, ceiling and the existing ladder climb/fall phases to compose through one interface. A registered label on a complete support-to-support profile is insufficient. The prior one-step-event-per-leg limit is an implementation limitation to remove.
 
+Implemented checkpoint: common append/replay, open generators, registry-driven queue and full continuous acceptance are in place. See GENERIC_COMPOSITION.md for current entry points, tests and bounded-search limits.
+
 ## Contract
 
 A movement choice consumes the current scalar state and emits an open sequence of input units, controls, medium membership, finite contacts, vertical outcome events and relative position constraints. Normal air leading to an event may be part of a choice. The event's actual resulting state is the boundary; it does not require a later floor landing. Its X/Z position and velocity remain symbolic.
