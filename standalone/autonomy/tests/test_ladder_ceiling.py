@@ -214,6 +214,25 @@ class LadderCeilingNumericalTests(unittest.TestCase):
         self.compiler = JavaCompiler(json.loads(Path(os.environ['PKC_RUN_TICKS_COMPILER']).read_text()))
         self.addCleanup(self.compiler.close)
 
+    def test_saved_examples_match_fixture_and_pass_scalar_and_shared_scene_acceptance(self):
+        import hashlib
+        from standalone.autonomy.obstacle_geometry import check_geometry
+        from standalone.ipopt import prepare, validate
+        for name in ('continuous', 'beginning-stop', 'end-stop', 'both-stops'):
+            path = ROOT / 'experiments/ladder-climbing-ceiling' / (name + '.json')
+            with self.subTest(example=path.name):
+                evidence = json.loads(path.read_text())
+                self.assertEqual(hashlib.sha256((ROOT / evidence['fixture']).read_bytes()).hexdigest(), evidence['fixtureSha256'])
+                problem = prepare(evidence['problem'])
+                candidate = evidence['candidate']
+                checked = validate(problem, candidate['yaw'])
+                self.assertTrue(checked['feasible'])
+                for key in ('positions', 'velocity', 'y', 'vy', 'onGround'):
+                    self.assertEqual(checked[key], candidate[key])
+                vertical = dict(vertical=problem['vertical'], **{k: checked[k] for k in ('y', 'vy', 'onGround')})
+                self.assertTrue(check_geometry(evidence['geometry'], evidence['plan'], candidate, vertical, self.compiler, 5)['feasible'])
+                self.assertEqual(evidence['plan']['ticks'], 10 if evidence['endStop'] else 12)
+
     def test_fresh_joint_solves_for_climbing_and_each_endpoint_stop_combination(self):
         from standalone.autonomy.block_contacts import floor_checks, solve_contact_branches
         from standalone.autonomy.obstacle_geometry import check_geometry

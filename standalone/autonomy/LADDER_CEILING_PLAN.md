@@ -2,6 +2,18 @@
 
 2026-10-30. The user requested an implementation plan for the remaining ladder-ceiling work. Implementation is now authorized. Latest scope: only climbing and its optional one-input stop-climbing periods. Leave existing Sneak and falling behavior unchanged; do not expand those families. The generic open movement composer is already implemented; preserve that interface and the standalone-only acceptance scope.
 
+## Implementation checkpoint
+
+Implemented in `b49a205`: one neutral finite ceiling factory; ladder-local ownership and repeated-sequence prediction; prefix alternatives and duplicate suppression; regenerated schedules with the required climbing successor; local effects and contact offsets preserved through the generic composer. Entry-producing normal ceiling/wall contacts transfer to climbing when the next unit establishes ladder membership. Normal approach/final-air ceilings retain their ordinary ownership. Physical arithmetic is unchanged.
+
+The implementation checks successor phase ownership, not the presence of a horizontal hit. Thus the allowed endpoint stop remains climbing and uses the actual unclipped or clipped scalar movement to determine carry. Ceiling effects remain low-level `role=ceiling` finite contacts, with `effect=ladder_ceiling`, owning type/region and the required successor added as metadata. A unit has one effect for each physical ceiling contact; normal ceiling effects are removed when ownership transfers.
+
+Fresh complete witnesses for continuous climb, beginning stop, end stop and both stops pass IPOPT, scalar and shared scene acceptance. They use the same finite scene and no Sneak. The end-stop variants reach the goal in 10 inputs versus 12 for their corresponding continuous-end variants. This verifies the height change for the supplied schedules, not global optimality. The [saved evidence](experiments/ladder-climbing-ceiling/README.md) contains full numerical problems and all-state Y/VY tables.
+
+Acceptance: 64 focused standalone regression methods pass in 54.220 seconds, including fresh solves, the legacy approach/second-ladder/final-air ceiling witnesses, generic five-ladder and stepping continuations, schedule generation/units and combined Y/X/Z contacts. The additional saved-evidence test revalidates all four new files in 0.574 seconds. No mod Java tests or game replay tests were run; no numerical worker arithmetic changed.
+
+Search remains bounded. Sequence prediction proposes finite contacts; it does not establish horizontal overlap without a numerical solve. Existing mixed-contact branching and shared scene acceptance enforce selected clips and reject extra collisions. Ceiling effects outside the climbing phase keep the legacy physical handling; no new falling/Sneak behavior or route pruning was added. Cold exhaustive ladder discovery, ranking efficiency and water remain separate work.
+
 ## Scope and existing behavior
 
 Ceiling clipping, ladder carry, repeated ceiling contacts and combined horizontal contacts already have scalar and numerical coverage. `ceiling_sequence` supplies shared scalar prediction; `mixed_schedule_pool` and `mixed_ladder.with_contacts` generate/replay variants. `open_ladder.ladder_choices` currently reaches them through the generic mixed-contact pool.
