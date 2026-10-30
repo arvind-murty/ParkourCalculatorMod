@@ -206,7 +206,7 @@ A jump through a small gap.
 ## Mechanics, glitches, and geometry
 
 **Stepping** (family) / **step-assist** (Minecraft mechanism):
-Project movement cases involving stepping include normal stepping, slab/stair boost, blip, blip-up and grind. The Minecraft step-assist mechanism is the underlying collision behavior; named cases describe useful movement outcomes. These project definitions were refined by the user on 2026-10-29; mirrored community references can use broader labels.
+Project movement cases include normal stepping, slab/stair boost, blip, blip-up, corner jump cancel, corner blip-up and the ceiling jump-cancel variant called grind. The Minecraft step-assist mechanism is the underlying collision behavior; named cases describe useful movement outcomes. These project definitions were refined by the user on 2026-10-29 and 2026-10-30; mirrored community references can use broader labels.
 
 **Normal stepping**:
 Fully grounded movement up by at most 0.6 blocks. All movement ticks are run ticks.
@@ -224,7 +224,13 @@ The landing-tick feet height is above the higher level, and the next obstacle-fr
 An umbrella description for a jump whose upward movement is reduced or cancelled by a step or ceiling. Slab boosts and grinds are particular patterns; the term alone does not specify their geometry or timing.
 
 **Grind / grinding**:
-The tick before the jump tick is outside a low ceiling and the jump tick is under it, with less than the nominal 0.42 jump rise available above the player. This stepping/ceiling pattern produces no Y rise and one following air input. On flat ground it normally gives a two-input cycle. Earlier documents used grinding more broadly for repeated jump cancels, including stair grinding; use repeated boosts/cancels for that umbrella process here.
+The tick before the jump tick is outside a low ceiling and the jump tick is under it, with less than the nominal 0.42 jump rise available above the player. This stepping/ceiling pattern produces no Y rise and one following air input. On flat ground it normally gives a two-input cycle. A single occurrence is a grind; repetition is not part of its definition.
+
+**Corner jump cancel**:
+An X-facing corner case: before the jump tick the player is in front of an obstacle about 0.42-0.6 above the lower level; on the jump tick the player clears its Z edge. Upward velocity is cancelled, similarly to a grind, using Z-blockage-style successive-tick avoidance constraints. This is diagonal corner clearance, not a straight traversal through the block. A Z-facing approach jumps normally.
+
+**Corner blip-up**:
+An X-facing landing corner case with the same Z-blockage-style avoidance timing as corner jump cancel. Movement and continuation follow blip-up: air movement produces a retained-height grounded hit state, then a jump or normal run-off. A Z-facing counterpart lands normally on the lower level.
 
 **Bounding box**:
 An axis-aligned cuboid given by min/max on each axis. The player's is 0.6 x 1.8 x 0.6.
