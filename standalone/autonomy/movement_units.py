@@ -138,6 +138,8 @@ def shifted_unit(unit, offset):
             result[key] = [t + offset for t in result[key]]
     if 'anchors' in result:
         result['anchors'] = {k: v + offset for k, v in result['anchors'].items()}
+    if 'effects' in result:
+        result['effects'] = [shifted_unit(effect, offset) for effect in result['effects']]
     return result
 
 

@@ -30,10 +30,16 @@ def validate_ladder_events(route):
         templates = profile.get('generatedUnits', profile.get('movementUnits'))
         if templates is None and (profile.get('caseEvents') or profile.get('contactEvents')):
             templates = profile_program(profile)
-        units = movement_program(ticks, events)
-        if templates is not None:
-            compile_units(ticks, templates)
-            units = overlay_program(units, [u for u in templates if not u['type'].startswith('ladder_')])
+        if profile.get('composition') == 'movement_program':
+            from .movement_units import ladder_units
+            for event in events:
+                ladder_units(event['schedule'], event['column']['id'])
+            units = templates
+        else:
+            units = movement_program(ticks, events)
+            if templates is not None:
+                compile_units(ticks, templates)
+                units = overlay_program(units, [u for u in templates if not u['type'].startswith('ladder_')])
         compiled = compile_units(ticks, units)
         for unit in units:
             for field, mask in [('jumpInputs', 'jump'), ('groundedInputs', 'grounded'), ('sneakInputs', 'sneak')]:
@@ -58,8 +64,12 @@ def compile_ladder_events(route, events, ticks):
         if event['landing'] is None:
             continue
         offset = event['jump']
-        units = movement_program(s['ticks'], [selected])
-        occupied = compile_units(s['ticks'], units)['ladderTicks']
+        profiles = route.get('verticalProfiles', [])
+        if selected['leg'] < len(profiles) and profiles[selected['leg']].get('composition') == 'movement_program':
+            occupied = s['ladderTicks']
+        else:
+            units = movement_program(s['ticks'], [selected])
+            occupied = compile_units(s['ticks'], units)['ladderTicks']
         ladder[offset:offset + s['ticks'] + 1] = [a or b for a, b in zip(ladder[offset:offset + s['ticks'] + 1], occupied)]
         sneak[offset:offset + s['ticks']] = s['sneak']
         walls, hits, scene_hits = schedule_constraints(s, selected['column'], selected['wall'],

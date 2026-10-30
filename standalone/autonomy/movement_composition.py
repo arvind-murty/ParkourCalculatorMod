@@ -70,6 +70,7 @@ def _contacts(events):
 
 def _shift_event(event, offset):
     event = copy.deepcopy(event)
+    event['schedule']['constraintStart'] = offset
     event['schedule']['entryState'] += offset
     event['schedule']['exitState'] += offset
     event['schedule']['hit'] = [False] * offset + event['schedule']['hit']
@@ -84,8 +85,11 @@ def _shift_event(event, offset):
 def _events(events, trace):
     n = trace['ticks']
     result = copy.deepcopy(events)
-    for event in result:
+    for index, event in enumerate(result):
         s = event['schedule']
+        next_context = next((other['schedule']['constraintStart'] for other in result[index + 1:]
+                             if other['column']['id'] == event['column']['id']), n + 1)
+        s['constraintEnd'] = next_context
         entry, exit = s['entryState'], s['exitState']
         s.update(ticks=n, ladderTicks=[entry <= t < exit for t in range(n + 1)],
                  hit=(s['hit'] + [False] * n)[:n], sneak=trace['sneak'][:], trace=copy.deepcopy(trace),
@@ -108,7 +112,7 @@ def append_choice(program, choice, *, max_inputs=200):
     old, tail = program['profile'], choice['profile']
     cut, size = old['airtime'], tail['airtime']
     integer(size, 'movement choice duration', 1, 200)
-    if cut + size > max_inputs:
+    if cut + size > min(max_inputs, 200):
         return None
     expected = boundary_state(program, tail['ladderTicks'][0])
     if choice.get('initial') != expected:
@@ -127,7 +131,9 @@ def append_choice(program, choice, *, max_inputs=200):
         return None
     if trace['position'][:cut + 1] != old['position'] or trace['onGround'][:cut + 1] != old['grounded']:
         raise ValueError('Appending a choice rewrote a prior position or ground state')
-    if trace['position'][cut:] != tail['position'] or trace['velocity'][cut:] != tail['velocity']:
+    if trace['velocity'][:cut] != old['velocity'][:cut]:
+        raise ValueError('Appending a choice rewrote a prior velocity')
+    if trace['position'][cut:] != tail['position'] or trace['velocity'][cut:] != tail['velocity'] or trace['onGround'][cut:] != tail['grounded']:
         return None
     cases = copy.deepcopy(old['caseEvents'])
     for event in tail['caseEvents']:
@@ -140,6 +146,20 @@ def append_choice(program, choice, *, max_inputs=200):
     events = _events(program['ladderEvents'] + [_shift_event(e, cut) for e in choice.get('ladderEvents', [])], trace)
     if events is None:
         return None
+    if events:
+        from .movement_units import movement_program, overlay_program
+        templates = units
+        units = overlay_program(movement_program(trace['ticks'], events),
+                                [u for u in templates if not u['type'].startswith('ladder_')])
+        for unit in units:
+            if unit['type'].startswith('ladder_'):
+                effects = [copy.deepcopy(u) for u in templates if u['type'] not in ('normal', 'ladder_climb', 'ladder_fall')
+                           and u['start'] < unit['end'] and u['end'] > unit['start']]
+                if effects:
+                    unit['effects'] = effects
+            unit['jumpInputs'] = [t for t in range(unit['start'], unit['end']) if jump[t]]
+            unit['groundedInputs'] = [t for t in range(unit['start'], unit['end']) if trace['onGround'][t]]
+            unit['sneakInputs'] = [t for t in range(unit['start'], unit['end']) if sneak[t]]
     profile = profile_from_trace(trace, contacts=contacts, cases=cases, constraints=constraints,
                                  units=units, landing_phase=tail['landingPhase'])
     masks = compile_units(profile['airtime'], units)
@@ -148,3 +168,17 @@ def append_choice(program, choice, *, max_inputs=200):
     return dict(initial=copy.deepcopy(program['initial']), profile=profile, ladderEvents=events,
                 movementUnits=units, terminal='open', terminalSupport=choice.get('terminalSupport'),
                 interactions=program['interactions'] + int(choice.get('interaction', False)), trace=trace)
+
+
+def compile_program(scene, program, *, require_complete=True):
+    from .block_search import compile_block_path
+    if not program['profile']['airtime']:
+        raise ValueError('An empty prefix is not a complete movement route')
+    if require_complete and (not program['profile']['grounded'][-1] or program['terminalSupport'] != scene['goalBlock']):
+        raise ValueError('An open prefix is not a completed goal route')
+    edge = dict(source=scene['startBlock'], target=scene['goalBlock'], profileKind='movement',
+                profile=program['profile'], ladderEvents=program['ladderEvents'], entryFace=None, exitFace=None)
+    compiled = compile_block_path(scene, [scene['startBlock'], scene['goalBlock']], [edge])
+    compiled['route']['maxTotalRunTicks'] = 0
+    compiled['route']['runBounds'] = [[0, 0]]
+    return compiled

@@ -22,7 +22,7 @@ def prepare_scene(request):
                'geometryBounds', 'collisionScene', 'maxBlockagesPerObstacle', 'maxPassageCandidates',
                'maxHorizontalBlockagesPerObstacle', 'maxVerticalBlockagesPerObstacle',
                'maxWallHits', 'maxWallHitCandidates', 'ceilingHits', 'climbableCells', 'ladderSearch',
-               'maxContactCombinations', 'maxCombinedEvents', 'maxSteppingProfiles'}
+               'maxContactCombinations', 'maxCombinedEvents', 'maxSteppingProfiles', 'movementSearch'}
     extra = set(scene) - allowed
     if extra:
         raise ValueError('Unsupported block-scene fields: ' + ', '.join(sorted(extra)))
@@ -330,7 +330,7 @@ def compile_block_path(scene, block_ids, transitions=None):
             entries.append(dict(transition['entryFace'], outsideFrom=0, outsideThrough=0, enter=1)
                            if transition['entryFace'] else None)
             exits.append(transition.get('exitFace'))
-            kinds.append('walk_off' if transition['profileKind'] == 'run_off' else 'step' if transition['profileKind'] == 'step' else 'jump')
+            kinds.append('movement' if transition['profileKind'] == 'movement' else 'walk_off' if transition['profileKind'] == 'run_off' else 'step' if transition['profileKind'] == 'step' else 'jump')
         route = prepare_route({'version': 1, 'initial': scene['initial'], 'blocks': blocks,
                                'inputs': scene['inputs'], 'objective': scene['objective'],
                                'airtimes': [p['airtime'] for p in selected],
@@ -581,6 +581,9 @@ def _find_blocks_normal(request, compiler, *, seconds=60, route_seconds=8, candi
 
 def find_blocks(request, compiler, **options):
     scene = prepare_scene(request)
+    if 'movementSearch' in scene:
+        from .movement_search import find_movement_blocks
+        return find_movement_blocks(scene, compiler, **options)
     for key, default in [('seconds', 60), ('route_seconds', 8), ('candidate_seconds', 2)]:
         if number(options.get(key, default), key) <= 0:
             raise ValueError(key + ' must be positive')

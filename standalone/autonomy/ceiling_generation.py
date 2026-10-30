@@ -36,6 +36,9 @@ def ceiling_profiles(context):
 
 class CeilingGenerator:
     def generate(self, context, *, start=0, ends=None):
+        if context.get('mode') == 'open':
+            yield from open_ceiling_choices(context)
+            return
         if context.get('mode') == 'timeline':
             schedule = context['schedule']
             for box in context['solids']:
@@ -58,3 +61,39 @@ class CeilingGenerator:
             unit = next(u for u in units if u['type'] == 'ceiling')
             yield dict(unit=shifted_unit(unit, start), units=[shifted_unit(u, start) for u in units],
                        profile=profile, profileKind=kind, entryFace=None)
+
+
+def open_ceiling_choices(context):
+    from .movement_composition import scalar_initial
+    from .open_movement import approaches, event_choice, named_choice
+    initial = scalar_initial(context['state'])
+    scene = context['scene']
+    if not scene.get('ceilingHits', True):
+        return
+    for block in scene['blocks']:
+        if context.get('checkBudget'):
+            context['checkBudget']()
+        box = scene['collisionScene']['solids'][block['solidIndex']]
+        plane = box[1] - BODY_HEIGHT
+        for state, jumping, trace in approaches(context):
+            hit = next((t for t, move in enumerate(trace['movement'])
+                        if move > 0 and trace['position'][t] <= plane < trace['position'][t + 1]), None)
+            if hit is None:
+                continue
+            finite = [dict(leg=0, offset=hit, axis='Y', direction=1, plane=plane, box=box,
+                           role='ceiling', blockId=block['id'], solidIndex=block['solidIndex'])]
+            choice = event_choice(context, 'ceiling', state, hit + 1, jumping=jumping, finite=finite,
+                                  vertical=[dict(state=hit + 1, plane=plane, direction=1)])
+            if choice:
+                yield choice
+        clearance = plane - initial['position']
+        if initial['onGround'] and 0 <= clearance < f32(.42):
+            for axis in ('X', 'Z'):
+                for sign in (-1, 1):
+                    event = dict(case='grind', input=0, plane=initial['position'], clearance=clearance,
+                                 box=box, anchors={'beforeJump': 0, 'jump': 1})
+                    rows = [outside_row(box, axis, sign, 0, 'grind:outside')]
+                    rows += tangent_rows(box, 'X', 1) + tangent_rows(box, 'Z', 1)
+                    choice = named_choice(context, 'ceiling', initial, event, jumping=True, constraints=rows)
+                    if choice:
+                        yield choice
