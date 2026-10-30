@@ -2,13 +2,23 @@
 
 Updated checkpoint, 2026-10-29, on `codex/run-ticks-planning`. Run ticks, support routing, blockages, one-input wall/ceiling contacts, multiple ladder transitions and multi-episode airborne transfers are implemented. `39d4ede` added the common contact contract and `a8b659c` added full ladder/contact composition and step diagnostics. The latest reviewable state is committed in our isolated worktree.
 
+## Approved ownership and concrete implementation plan, 2026-10-30
+
+The user directed that the normal `ceiling` type is only for normal movement/air, with ordinary hit and grind. Ceilings inside ladders stay in separate local `ladder_ceiling` handling within `ladder_climb`, using shared primitives. Stepping is extracted separately with the six accepted cases. Read MOVEMENT_TYPE_REFACTOR_PLAN.md for the seven concrete implementation commits and gates; STEPPING_PLAN.md/STEPPING_CASES.md now reflect the approved split.
+
+Current tangles verified: contact_variants and normal airborne entry prediction import ceiling_sequence from mixed_ladder; contact_profiles imports generic Y replay through ladder_schedules; graph directly constructs stair/ceiling profiles and wraps ceilings as normal; movement_program fills non-ladder gaps with normal, losing future type identities; jumpInputs is absent from generic retiming. Fix ownership and authoritative program composition before adding new case discovery.
+
+Plan order: neutral Y/ceiling primitive extraction; local ladder ceiling ownership; common typed composition/retiming/open state; normal ceiling type migration; normal-step/boost type migration; blip/blip-up/corner cases; grind under ceiling. Preserve all existing ladder contact behavior, including repeated ceiling contacts and entry/stop carry order, without a normal ceiling type inside ladder-owned inputs. Preserve the possibility of a ceiling unit in normal air gaps around ladders. Do not introduce a new single-hit ladder cap or rarity pruning because ceiling contacts are uncommon.
+
+Only planning/documentation changed in this pass. Each implementation stage needs its own feature commit, appropriate physical/control regression gates, and final original-state IPOPT/scalar/scene acceptance. No duplicate Minecraft stepping resolver, replay/export, fluids, aggressive pruning or facing constraints are included.
+
 ## Latest corrections and ceiling classification question, 2026-10-30
 
 Grind means only the ceiling jump-cancel variant. One occurrence is sufficient; the previous repeated-cancellation wording came from the old glossary, not a code requirement. Canonical glossary/plan wording has been corrected.
 
 The user accepted and named corner jump cancel and corner blip-up. Both are X-facing geometry with Z-blockage-style successive-state avoidance; they are not planned X wall hits or camera-facing pins. Corner jump cancel approaches a .42-.6 obstacle and clears its Z edge on J, cancelling upward velocity; Z-facing jumps normally. Corner blip-up uses normal air movement into the retained-height grounded H state, then the blip-up jump/run-off continuation; Z-facing lands on the lower level. The user rejected the 1 -> 1.25 partial-rise case for this movement family. Remove it from active generation/probe proposals; arbitrary box/displacement probes did not establish game-legal reachable routes. Minimum two-pixel straight-through clearance needs about .725 displacement, outside this movement family, so the corner cases require diagonal escape.
 
-The user asks whether ceiling should be a type and where grind belongs. Recommendation to explain, not yet an approved architectural change: separate ceiling case generation (ordinary ceiling hit, grind), composable with normal/ladder/stepping movement context. Put grind in the ceiling family; put the corner cases in stepping. Share cancellation/Y/control helpers, but retain their different geometric requirements. Keep same-tick ladder/ceiling combinations through the common compiler; do not make ceiling an exclusive locomotion regime.
+The ceiling ownership question is resolved by the approved split above: the `ceiling` type is for normal movement/air only; ladder climbing owns internal `ladder_ceiling` handling. Grind belongs to the normal ceiling type and corner cases to stepping. Share primitive helpers and preserve common-compilation contact combinations; do not route ladder-owned inputs through the normal ceiling type.
 
 ## Latest user stepping definitions
 
