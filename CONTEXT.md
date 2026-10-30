@@ -46,6 +46,15 @@ A simple sequence of inputs used to gain momentum. Basic timings include jam (0t
 **Tap**:
 Moving in small intervals (1 or 2 ticks, usually while sneaking) to set the player in an optimal position.
 
+**Landing tick** (position tick):
+The last air tick before landing/contact on a block would resolve. The following position tick is the hit tick. Stepping may change the hit tick's Y result.
+
+**Hit tick** (position tick):
+The position tick immediately after the landing tick. This landing-related term is distinct from a wall hit or ceiling hit.
+
+**Jump tick** (position tick):
+The tick after applying the jump impulse, normally about 0.42 blocks above the jumping block. Stepping or a ceiling can change that Y result. The jump input is the preceding impulse-applying input: with pre-input position indexing, input t produces the jump position at t+1. Older code fields called `jumpTick` can still name that input index.
+
 ## Orientation and measurement
 
 Note: community canon and Minecraft's code use different words for the same things. The glossary uses the community word as canonical and notes the code field name.
@@ -184,17 +193,26 @@ A jump through a small gap.
 
 ## Mechanics, glitches, and geometry
 
-**Stepping** (step-assist):
-Minecraft's auto-step assist: the player rises over obstacles up to 0.6 blocks tall without jumping.
+**Stepping** (family) / **step-assist** (Minecraft mechanism):
+Project movement cases involving stepping include normal stepping, slab/stair boost, blip, blip-up and grind. The Minecraft step-assist mechanism is the underlying collision behavior; named cases describe useful movement outcomes. These project definitions were refined by the user on 2026-10-29; mirrored community references can use broader labels.
+
+**Normal stepping**:
+Fully grounded movement up by at most 0.6 blocks. All movement ticks are run ticks.
+
+**Slab boost / stair boost**:
+The position before the jump tick is on the lower level; the jump tick is on the higher level, with a rise about 0.42 to 0.6. One air input follows the jump, giving the usual two-input airtime/cycle.
 
 **Blip**:
-A glitch from landing between two blocks of different height (caused by stepping). The player "lands mid-air" and can jump with initial height.
+An air landing on a lower level steps to a higher level on the hit tick. The landing-tick feet height is at most 0.6 below the higher level. The landing tick satisfies the lower landing constraint; the hit tick additionally satisfies the higher block's condition. Movement into the hit tick is normal air movement.
+
+**Blip-up**:
+The landing-tick feet height is above the higher level, and the next obstacle-free Y position would be below the lower level. The hit tick retains the landing-tick feet height while becoming grounded, allowing a jump from that elevated height. Without a jump, normal run-off follows: one ground-regime input, then air as needed until another landing or step.
 
 **Jump cancel**:
-A glitch from jumping into a ceiling or step (caused by stepping). Cancels the player's upward momentum, letting them jump again sooner.
+An umbrella description for a jump whose upward movement is reduced or cancelled by a step or ceiling. Slab boosts and grinds are particular patterns; the term alone does not specify their geometry or timing.
 
-**Grinding**:
-Chaining multiple jump cancels to gain momentum. Stair grinding (called slab boost) is the easier form; ceiling grinding is much harder.
+**Grind / grinding**:
+The tick before the jump tick is outside a low ceiling and the jump tick is under it, with less than the nominal 0.42 jump rise available above the player. This stepping/ceiling pattern produces no Y rise and one following air input. On flat ground it normally gives a two-input cycle. Earlier documents used grinding more broadly for repeated jump cancels, including stair grinding; use repeated boosts/cancels for that umbrella process here.
 
 **Bounding box**:
 An axis-aligned cuboid given by min/max on each axis. The player's is 0.6 x 1.8 x 0.6.
