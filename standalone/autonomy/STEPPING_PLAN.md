@@ -2,6 +2,8 @@
 
 Latest user direction, 2026-10-30: represent named movement cases with their Y schedules, movement regimes and positional constraints. The orchestrator does not need to reproduce or enumerate Minecraft's internal step-assist algorithm. The canonical definitions and tick mapping are in [STEPPING_CASES.md](STEPPING_CASES.md).
 
+Implementation sequencing and module ownership are now specified in [MOVEMENT_TYPE_REFACTOR_PLAN.md](MOVEMENT_TYPE_REFACTOR_PLAN.md). The normal-air ceiling type is separate from local `ladder_ceiling` handling inside ladder climbing, and stepping is extracted separately.
+
 This supersedes the earlier plan centered on exact A/B step-branch generation and returned-leg bookkeeping. The shared collision resolver remains available for validation and investigation; its internals are not the movement-type catalogue. Production stepping behavior has not been changed in this planning pass.
 
 ## Current code to reuse
@@ -43,12 +45,14 @@ The blip-up output needs a legal grounded-but-unsupported state. The next normal
 5. Before/after constraints must make each event occur on its intended input and preserve real obstacles and contacts. Reuse the existing continuous solver and acceptance helpers; do not substitute arbitrary endpoint positions or smooth over discrete cases.
 6. Update existing time/height/reach bounds to be sound for the generated profiles. The ordinary jump-height gate must not discard valid composite step/blip schedules. Aggressive route/input pruning remains deferred.
 
-## Implementation order
+## Case milestones after shared extraction
+
+Follow MOVEMENT_TYPE_REFACTOR_PLAN.md for the ordered commit sequence, including primitive extraction, ladder ceiling ownership and authoritative typed composition before these case milestones.
 
 1. Register `stepping` and migrate the existing normal-step/slab-boost contracts, including correct controls, timing, retiming and legacy compatibility.
 2. Add case-level Y outcomes and distinct L/H/J constraints for blip and blip-up. Generalize open composition to retain actual ground state independently of support ownership.
 3. Add corner jump cancel and corner blip-up with the named constraints and mirrored-orientation negative cases. Share their movement/Y helpers with the corresponding cancel/blip-up behavior.
-4. Add the grind template. Recommended organisation is a separate ceiling case family with ordinary ceiling hit and grind, composable with the underlying movement context; this classification recommendation awaits the user decision. Reuse the ceiling geometry/contact helpers and common cancellation profile logic.
+4. Add grind to the normal-air `ceiling` type alongside ordinary ceiling hit. Keep local `ladder_ceiling` handling within ladder climbing. Share only low-level geometry/Y/control primitives, rather than passing ladder cases through the normal ceiling type. The concrete extraction/migration order is in MOVEMENT_TYPE_REFACTOR_PLAN.md.
 5. Compose cases with ordinary movement, runs, following jumps and ladder units. Ensure the blip-up type ends cleanly and grind/boost recovery uses actual following geometry.
 6. Check fresh complete numerical solves plus independent scalar/scene acceptance, then run the relevant regressions. Commit features independently in the isolated branch.
 

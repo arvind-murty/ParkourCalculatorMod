@@ -70,10 +70,12 @@ The earlier partial-rise jump-cancel proposal (1 -> 1.25) is excluded from the s
 
 The active probe labels are updated to `corner_jump_cancel` and `corner_blip_up`. Probe boxes/displacements are low-level collision inputs, not evidence for an arbitrary block shape, a straight-through route or a new supported type. The example with lower floor 1, obstacle top 1.5 and yL=1.2 is the corner blip-up, not ordinary blip-up.
 
-## Ceiling classification recommendation
+## Ceiling classification
 
-Proposed organisation, pending the user's decision: a separate ceiling case family generates ordinary ceiling hits and grind. The stepping family generates normal step, slab/stair boost, blip, blip-up and the two corner cases. Grind and corner jump cancel can share cancelled-jump Y/control helpers while retaining their different geometry: ceiling outside-to-under versus X-face/Z-edge corner clearance.
+Approved organisation, 2026-10-30: the normal-air `ceiling` type generates ordinary ceiling hits and grind. The stepping type generates normal step, slab/stair boost, blip, blip-up and the two corner cases. Grind and corner jump cancel share cancelled-jump Y/control primitives while retaining different geometry.
 
-Ceiling generation must be composable with normal, ladder and stepping context. A ceiling hit during ladder climbing retains ladder occupancy/clamp/contact behavior. The family label is for route-case generation, not an exclusive replacement for the underlying movement regime. Ordinary ceiling hits and grind have distinct Y profiles; hitting the ceiling plane is not a substitute for the grind's zero-rise outcome.
+Inside a ladder, `ladder_ceiling` is local handling within ladder climbing, with the shared primitive helpers. Do not turn a ladder-owned input into a normal ceiling unit. Normal air before, between and after ladders can use the ceiling type. Keep the actual pre/post occupancy masks at entry/exit boundaries and preserve inherited ladder-local contact combinations.
+
+See MOVEMENT_TYPE_REFACTOR_PLAN.md for the concrete module extraction, common-program contract, migration commits and validation gates.
 
 Repeated steps, axis directions, multiple boxes and compatible contact combinations are variations/compositions. Exact resolver branches and equality bookkeeping are not extra named movement types. Reuse the common continuous model, event constraints and existing acceptance helpers rather than reproduce the Minecraft step algorithm in orchestration.
