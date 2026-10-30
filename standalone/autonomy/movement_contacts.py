@@ -7,7 +7,8 @@ from standalone.ipopt.ladder import f32
 from standalone.ipopt.model import integer
 from .contact_combinations import contact_combinations, merge_contacts
 from .contact_profiles import contact_opportunities
-from .ladder_schedules import generate_ladder_schedules, trace_ladder_schedule
+from .ladder_schedules import generate_ladder_schedules
+from .vertical_profiles import trace_ladder_schedule
 from .obstacle_geometry import BODY_HEIGHT
 
 
@@ -45,7 +46,7 @@ def contact_variants(solids, horizon, *, schedules=(), start=0, end=None, existi
         return {'variants': [], 'attempted': 0,
                 'termination': 'cancelled' if cancel_event is not None and cancel_event.is_set() else 'deadline',
                 'complete': False}
-    from .mixed_ladder import ceiling_sequence
+    from .ceiling_primitives import ceiling_sequence
     schedules = list(schedules)
     predictions = []
     for s in schedules:

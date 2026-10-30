@@ -2,7 +2,7 @@ import copy
 
 from standalone.ipopt.ladder import REST_CARRY, f32
 from .contact_combinations import contact_combinations
-from .ladder_schedules import trace_ladder_schedule
+from .vertical_profiles import trace_ladder_schedule
 from .obstacle_geometry import BODY_HEIGHT
 from .route import HALF_WIDTH
 

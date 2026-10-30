@@ -91,7 +91,7 @@ def entry_contact_options(context, prefix=None, max_entry=14):
         return []
     if prefix is not None:
         from .movement_contacts import program_seed
-        from .mixed_ladder import ceiling_sequence
+        from .ceiling_primitives import ceiling_sequence
         cut = prefix['profile']['airtime']
         seed = program_seed(prefix, cut + max_entry)
         return [[dict(c, offset=c['offset'] - cut) for c in contacts] for box in scene['collisionScene']['solids']
