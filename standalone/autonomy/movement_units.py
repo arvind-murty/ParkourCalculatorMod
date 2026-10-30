@@ -55,7 +55,22 @@ def movement_program(ticks, events):
     for event in sorted(events, key=lambda e: e['schedule']['entryState']):
         column = event['column']
         region_id = column['id'] if 'id' in column else str(tuple(column[k] for k in ('x', 'minY', 'z', 'maxY')))
-        segment = ladder_units(event['schedule'], region_id)
+        s = event['schedule']
+        templates = s.get('generatedUnits', s.get('movementUnits'))
+        segment = [copy.deepcopy(u) for u in templates if MOVEMENT_TYPES[u['type']]['ladder']] if templates is not None else ladder_units(s, region_id)
+        if templates is not None:
+            kinds = [u['type'] for u in segment]
+            if not kinds or any(k not in ('ladder_climb', 'ladder_fall') for k in kinds) \
+                    or kinds.count('ladder_climb') > 1 or any(a == b for a, b in zip(kinds, kinds[1:])):
+                raise ValueError('Generated ladder units violate the phase grammar')
+            if s['exitKind'] == 'top' and kinds[-1] != 'ladder_climb':
+                raise ValueError('A top exit must end with ladder_climb')
+            expected = ladder_units(s, region_id)
+            keys = ('type', 'start', 'end', 'occupiedStates', 'hitInputs', 'hitWindow', 'stopInputs')
+            if [[u.get(k) for k in keys] for u in segment] != [[u.get(k) for k in keys] for u in expected]:
+                raise ValueError('Generated units disagree with the selected ladder inputs')
+            for unit in segment:
+                unit['region'] = region_id
         if segment[0]['start'] < cursor:
             seam = segment[0]['start']
             if seam != cursor - 1:

@@ -168,9 +168,12 @@ def build_transition_graph(scene, compiler, *, seconds=5):
                 rejected.append({'source': source['id'], 'target': target['id'], 'reason': 'jump_height'})
                 continue
             if key not in profile_cache:
-                ordinary = ordinary_jump_profile(*key, max_inputs=scene['maxFlightInputs'])
+                from .movement_generation import generate_choices
+                normal = list(generate_choices('normal', {'mode': 'support', 'sourceTop': key[0],
+                    'targetTop': key[1], 'maxInputs': scene['maxFlightInputs']}))
+                ordinary = next((c['profile'] for c in normal if c['profileKind'] == 'ordinary'), None)
                 stair = stair_jump_profile(*key) if scene['stairBoost'] else None
-                runoff = runoff_profile(*key, max_inputs=scene['maxFlightInputs'])
+                runoff = next((c['profile'] for c in normal if c['profileKind'] == 'run_off'), None)
                 profile_cache[key] = [('ordinary', ordinary, None)] if ordinary is not None else []
                 if stair is not None:
                     profile_cache[key].extend(('stair', stair, {'axis': axis, 'direction': direction})
@@ -211,6 +214,12 @@ def build_transition_graph(scene, compiler, *, seconds=5):
                                  'reason': 'profile_not_generated'})
                 continue
             for kind, profile, face in options:
+                if kind != 'stair':
+                    from .movement_generation import generate_choices
+                    generated = next(generate_choices('normal', {'mode': 'profile', 'profile': profile,
+                        'profileKind': kind, 'sourceTop': source['top'], 'targetTop': target['top']}))
+                    profile = copy.deepcopy(profile)
+                    profile['generatedUnits'] = [generated['unit']]
                 n = profile['airtime']
                 motion_key = ('jump:' if profile['jump'][0] else 'run_off:') + str(n)
                 if motion_key not in flight_bounds:

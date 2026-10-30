@@ -73,6 +73,8 @@ def compose_ladder_episodes(source_top, target_top, episodes, *, max_inputs=200,
              'exitInput': x - 1, 'lastClimbEligibleInput': x - 2, 'contactEvents': []}
         if episode.get('climbWindow') is not None:
             s['climbWindow'] = list(episode['climbWindow'])
+        if 'generatedUnits' in episode:
+            s['generatedUnits'] = copy.deepcopy(episode['generatedUnits'])
         try:
             climb_contacts(s, episode['wall'])
         except ValueError:

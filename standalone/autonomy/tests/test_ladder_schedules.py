@@ -404,7 +404,7 @@ class LadderGeneratorTests(unittest.TestCase):
         self.assertTrue(result['schedules'])
         self.assertTrue(all(s['trace']['position'][2] >= 1 for s in result['schedules']))
         self.assertTrue(all(s['hit'][0] for s in result['schedules']))
-        self.assertGreater(sum(result['stats']['rejected'].values()), 0)
+        self.assertTrue(all(s['movementUnits'][0]['type'] == 'ladder_climb' for s in result['schedules']))
 
     def test_timing_buckets_keep_post_exit_time_and_cover_every_schedule_once(self):
         config = request()
