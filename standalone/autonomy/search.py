@@ -184,61 +184,17 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                 from .hit_events import hit_seed
                 problem['yaw'] = hit_seed(problem, route, plan)
             if route['ladderEvents']:
-                from .climbable_search import waypoint_seed
+                from .movement_problem import waypoint_seed
                 from .route import center_bounds
                 waypoints = []
                 for event in plan['events']:
                     if event['landing'] is not None:
                         target = center_bounds(route['blocks'][event['leg'] + 1])
                         waypoints.append((event['landing'] - 1, [(target[a] + target[a + 1]) / 2 for a in (0, 2)]))
-                for selected in route['ladderEvents']:
-                    if selected['leg'] >= len(plan['events']) or plan['events'][selected['leg']]['landing'] is None:
-                        continue
-                    event, s, column, wall = plan['events'][selected['leg']], selected['schedule'], selected['column'], selected['wall']
-                    point = [column['x'] + .5, column['z'] + .5]
-                    point[0 if wall['axis'] == 'X' else 1] = wall['plane']
-                    if s['entryState'] == 0 and event['jump'] == 0:
-                        tangent = 1 if wall['axis'] == 'X' else 0
-                        point[tangent] = problem['position'][tangent]
-                    if any(e['leg'] == selected['leg'] and e['schedule']['exitState'] <= s['entryState']
-                           for e in route['ladderEvents']):
-                        entry_face = selected['entryFace']
-                        if entry_face['axis'] != wall['axis']:
-                            point[0 if entry_face['axis'] == 'X' else 1] = entry_face['plane'] - entry_face['direction'] * .03
-                    waypoints.append((event['jump'] + s['entryState'], point[:]))
-                    following = [e for e in route['ladderEvents'] if e['leg'] == selected['leg']
-                                 and e['schedule']['entryState'] >= s['exitState']]
-                    transfer_target = None
-                    if following:
-                        next_episode = min(following, key=lambda e: e['schedule']['entryState'])
-                        transfer_target = point[:]
-                        face = selected['exitFace']
-                        transfer_target[0 if face['axis'] == 'X' else 1] = face['plane'] + face['direction'] * .13
-                    for t, hit in enumerate(s['hit']):
-                        if hit:
-                            pressing = point[:]
-                            if transfer_target is not None:
-                                duration = max(1, s['exitState'] - s['entryState'] - 1)
-                                progress = max(0., min(1., (t + 1 - s['entryState']) / duration))
-                                tangent = 1 if wall['axis'] == 'X' else 0
-                                inside_target = transfer_target[tangent]
-                                if selected['exitFace']['axis'] != wall['axis']:
-                                    inside_target -= selected['exitFace']['direction'] * .14
-                                if duration >= 8 and abs(inside_target - pressing[tangent]) / duration < .09:
-                                    progress *= progress
-                                pressing[tangent] += progress * (inside_target - pressing[tangent])
-                            pressing[0 if wall['axis'] == 'X' else 1] += wall['direction'] * .01
-                            waypoints.append((event['jump'] + t + 1, pressing))
-                    face = selected['exitFace']
-                    if s['exitKind'] == 'top':
-                        point[0 if wall['axis'] == 'X' else 1] = wall['plane'] + wall['direction'] * .03
-                        if transfer_target is not None:
-                            point = transfer_target
-                    elif transfer_target is not None:
-                        point = transfer_target
-                    elif s['exitKind'] == 'side':
-                        point[0 if face['axis'] == 'X' else 1] = face['plane'] + face['direction'] * .03
-                    waypoints.append((event['jump'] + s['exitState'], point[:]))
+                from .movement_problem import ladder_waypoints
+                selections = [(plan['events'][e['leg']]['jump'], e) for e in route['ladderEvents']
+                              if e['leg'] < len(plan['events']) and plan['events'][e['leg']]['landing'] is not None]
+                waypoints.extend(ladder_waypoints(problem, selections))
                 problem['yaw'] = waypoint_seed(problem, waypoints)
             polish = optimize_goal and stage == 'jump' and len(allocation) == len(route['airtimes'])
             fallback = objective_seed(problem) if polish else initial_guess(route, plan)
