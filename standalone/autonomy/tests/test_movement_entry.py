@@ -52,6 +52,18 @@ class MovementEntryTests(unittest.TestCase):
         self.assertEqual([e['firstCandidateState'] for e in entries],[0,1,2])
         self.assertTrue(all(r['status']=='unknown' for r in records))
 
+    def test_worker_success_must_also_pass_independent_scalar_validation(self):
+        face={'family':'front','channel':'front:X:-1'}
+        with patch('standalone.autonomy.movement_entry.build_entry_problem',return_value=({},{})), \
+                patch('standalone.autonomy.movement_entry.solve',return_value={'feasible':True,'candidate':{'yaw':[]}}), \
+                patch('standalone.autonomy.movement_entry.validate',return_value={'feasible':False}), \
+                patch('standalone.autonomy.movement_entry.check_geometry') as geometry:
+            entries,records=probe_region_entries({'scene':{}}, {}, {}, None, prefix={},channels=[face],
+                deadline=time.monotonic()+1,candidate_seconds=.1,max_entry=0)
+        geometry.assert_not_called()
+        self.assertNotIn('firstValidatedState',entries[0])
+        self.assertTrue(all(r['status']=='unknown' and r['reason']=='Entry failed independent scalar validation' for r in records))
+
     def test_appended_entry_discovers_ceilings_from_the_carried_airborne_trace(self):
         folder=Path(__file__).parents[1]
         evidence=json.loads((folder/'experiments/contact-combinations/appended-air-ceiling.json').read_text())
