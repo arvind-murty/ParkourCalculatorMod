@@ -10,7 +10,7 @@ No new movement arithmetic is needed to claim those witnesses. They use the shar
 
 ## Remaining ladder orchestration
 
-1. Apply the two agreed implementation efficiencies from [GENERATION_PERFORMANCE_PLAN.md](GENERATION_PERFORMANCE_PLAN.md). Both remain pending: terminate a Y trace once its existing occupied-height check fails, and avoid the duplicate movement calculation when no floor is being tested. Verify identical valid candidates and unchanged movement arithmetic.
+1. The two agreed implementation efficiencies from [GENERATION_PERFORMANCE_PLAN.md](GENERATION_PERFORMANCE_PLAN.md) are complete: an already-invalid occupied-height trace stops early, and open prefixes avoid the duplicate floor-prediction movement call. The measured append is about 35 percent faster with identical emitted continuations. Generic generation and consistent entries below remain in progress.
 2. Unify entry handling across the first and appended regions. The first interaction uses numerical entry probes; appended interactions currently enumerate explicitly unprobed entry times within a bounded local horizon. Their X/Z feasibility is checked only with a completed route. A shared entry/transition contract should preserve the original-state solve and avoid freezing an earlier endpoint. This is a functional interface gap, independent of rare-route pruning.
 3. Improve long-chain discovery reliability and retain honest coverage reporting. Cold three-region discovery succeeds; the cold five-region benchmark exhausts generation time before a full numerical attempt. Its supplied 99-input structure is accepted. Those facts do not prove cold five-region coverage or infeasibility.
 

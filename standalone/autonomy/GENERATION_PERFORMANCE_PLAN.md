@@ -11,7 +11,7 @@ A representative first-region append from the five-climbing-region fixture, with
 1. Move the existing occupied-Y validity check into simulation so a schedule already known to fail does not continue through its remaining ticks. Preserve the same valid schedules, scalar arithmetic, input/contact semantics and enumeration/work limits. Compare emitted candidate contents with the current implementation; different diagnostic rejection precedence is not permission to change acceptance.
 2. Skip the extra `vertical_move` call used to predict floor crossings when there is no target floor. `vertical_step` already computes the movement. Open airborne prefix generation therefore does not need that first evaluation. Landing detection must retain its current exact-clipping behavior.
 
-These changes have not yet been implemented at this checkpoint. They remove repeated work within the existing validation policy; they add no route-specific pruning.
+Both changes are implemented. The representative append's median unprofiled time fell from 2.849 to 1.849 seconds across three measurements per version, about 35 percent less time. Both versions generated 256 schedules, consumed 24,767 mask-work steps and returned eight continuations with identical serialized contents (SHA-256 `ef7eaf7aac4a6ae44329b1a42382fc1e85d11f6bf01c651c026dba41587b29d2`). Fifty-five focused tests pass, including 250 random trace cross-checks, full-versus-short-circuit generator equivalence, exact floor clipping and legitimate top/bottom exits. They remove repeated work within the existing validation policy; they add no route-specific pruning.
 
 ## Deferred pruning proposal
 
