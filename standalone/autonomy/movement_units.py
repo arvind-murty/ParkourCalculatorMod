@@ -147,7 +147,7 @@ def profile_program(profile):
     n = profile['airtime']
     cases = sorted(profile.get('caseEvents', []), key=lambda c: c['input'])
     ceiling = [dict(type='ceiling', case='ceiling_hit', input=e['offset'], anchors={'hit': e['offset'] + 1})
-               for e in profile.get('contactEvents', []) if e.get('role') == 'ceiling']
+               for e in profile.get('contactEvents', []) if e.get('role') == 'ceiling' and e.get('effect') != 'ladder_ceiling']
     if profile.get('ceilingEvent') and not ceiling:
         e = profile['ceilingEvent']
         ceiling = [dict(type='ceiling', case='ceiling_hit', input=e['offset'], anchors={'hit': e['offset'] + 1})]

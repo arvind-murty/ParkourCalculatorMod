@@ -292,6 +292,12 @@ def generate_ladder_schedules(request, *, cancel_event=None, deadline=None):
         if len(schedules) >= config['maxSchedules']:
             termination, work_limited = 'schedule_limit', True
             break
+        from .ladder_ceiling import own_schedule_ceilings
+        try:
+            value = own_schedule_ceilings(value)
+        except ValueError:
+            stats['rejected']['ladder_ceiling_successor'] += 1
+            continue
         groups[(value['ticks'], value['postExitTicks'])].append(len(schedules))
         schedules.append(value)
     if termination == 'exhausted' and skeleton_limited:
