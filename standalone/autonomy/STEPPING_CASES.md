@@ -1,6 +1,6 @@
 # Stepping terminology and cases
 
-User definitions, 2026-10-29. These are the orchestration vocabulary and case descriptions. They supersede the earlier broad blip/grinding labels and the proposal to enumerate Minecraft's internal step branches as the primary movement types.
+User definitions, updated 2026-10-30. These are the orchestration vocabulary and case descriptions. They supersede the earlier broad blip/grinding labels and the proposal to enumerate Minecraft's internal step branches as the primary movement types.
 
 ## Tick terminology
 
@@ -17,7 +17,7 @@ Terminology conflicts to resolve in adapters/docs:
 - Internal route event `landing` commonly denotes the resolved contact/end state H; the standard pre-landing support check is on L. Use explicit L/H names in the new case layer.
 - Existing `hit`/`hitInputs` masks generally mean horizontal wall collisions, especially on ladders. Do not confuse them with the user's landing-related hit tick.
 - The previous glossary's broad `Blip` included airborne/unsupported outcomes. The user distinguishes blip from blip-up by the landing/higher-height relation and hit result.
-- The previous glossary used grinding for repeated jump cancels, including stair grinding. Here **grind** means the specified outside-to-under low-ceiling pattern. Use repeated boosts/cancels for the broader process.
+- **Grind** means the specified ceiling jump-cancel variant. One occurrence is sufficient. The old glossary wording was broader; the code does not require repetition.
 - Jump cancel remains an umbrella description, not a synonym for only slab boost or only grind. The mirrored external reference retains its historical broad wording; the project definitions here are authoritative for this work.
 
 ## Accepted cases
@@ -48,14 +48,32 @@ The tick before the jump tick is outside a low ceiling; the jump tick is under i
 
 This differs from an ordinary ceiling hit: a ceiling hit can leave a positive rise up to the ceiling, and can occur while already under it or later in the jump. The grind's specified entry geometry and zero-rise result must be retained.
 
-## Additional cases proposed for discussion
+### Corner jump cancel
 
-The following are observed shared-resolver outcomes, not newly accepted names or types. Descriptive probe labels are not claims about community terminology.
+This is an X-facing corner avoidance case. The obstacle is about 0.42-0.6 above the lower level. The position before J is in front of the obstacle's X face; J clears its Z edge. Upward velocity is cancelled as in a grind, with the usual subsequent gravity/carry. Use the successive-state timing of a Z-facing blockage: outside the first face before J and outside the Z edge on J, rather than requiring both clearances at the same state.
 
-1. **Jump step-over without a ceiling.** Jump toward a raised obstruction and clear its corner or pass completely over it during the same input. The rise can be fully cancelled even though there is no ceiling, so this is outside the specified grind and outside a slab boost ending on the higher level. Probe `jump_step_over`: feet Y 1 -> 1 on a jump input, clears the corner and ends at the original level with an airborne ground flag even though a floor is present.
-2. **Partial-rise jump cancellation.** A higher intermediate obstruction triggers stepping, but the input finishes on a lower destination surface. Probe `partial_rise_cancel`: feet Y 1 -> 1.25 despite the 0.42 jump impulse, ending airborne above a supported surface. This is below the specified slab-boost rise and above the zero-rise grind outcome. A broader jump-cancel profile could include it and the preceding zero-rise case.
-3. **Landing step-over ending below the cleared obstacle's top.** Probe `landing_step_over`: lower floor 1, higher obstruction 1.5, yL=1.2 and yFreeH=0.8. The input clears the obstruction completely and ends at yH=1.2, grounded but unsupported. It is not blip (H is not on top of the higher block), and not blip-up (yL is below that block's top). Its subsequent jump/run-off options resemble the blip-up continuation, but its entry geometry differs.
+It is an avoidance case, not a planned retained X wall hit. Preserve ordinary jump horizontal movement unless another actual contact says otherwise. X-facing describes the geometry, not a camera-facing pin. The Z-facing counterpart is an ordinary jump.
 
-Ordinary ceiling hits remain part of the movement/contact catalogue. They can stay shared ceiling events or become a separate reusable type; this decision does not require another stepping name. Repeated steps, axis directions, multiple collision boxes, and wall/ladder/ceiling combinations are variants/compositions unless they change the case outcome requirements above. Exact equality/collision bookkeeping is a boundary issue, not another movement type.
+The supported movement family cannot pass straight through the minimum two-pixel obstruction in one input: that would require about 0.725 displacement including the player's width. Generate diagonal corner clearance instead of the earlier unconstrained straight-through proposal.
 
-The nine shared-resolver probes and their geometry are saved in experiments/stepping-mechanics. They establish collision examples; they are not fresh full-route IPOPT or game-replay witnesses.
+### Corner blip-up
+
+This is the landing analogue of corner jump cancel. It is X-facing and uses the same Z-blockage-style successive-state conditions, anchored on L and H rather than before-J and J. Keep the ordinary lower landing condition on L. H clears the obstacle's Z edge while retaining yH=yL and becoming grounded.
+
+Use blip-up air movement and the same elevated-jump or normal run-off continuation. Do not blindly impose the ordinary blip-up condition yL>b: the corner case can retain a height below the cleared obstacle's top because H is outside its footprint. The Z-facing counterpart lands normally on the lower level.
+
+## Supported family and rejected proposal
+
+The catalogue now contains normal stepping, slab/stair boost, blip, blip-up, corner jump cancel, corner blip-up and grind, plus ordinary ceiling-hit cases handled by ceiling logic.
+
+The earlier partial-rise jump-cancel proposal (1 -> 1.25) is excluded from the supported family. Its synthetic collision probe did not establish a realizable route with the game's block geometry and this movement policy. For the ordinary lower obstacle case, the nominal jump clears an obstacle below its jump rise. Do not add a partial-rise type based on that probe.
+
+The active probe labels are updated to `corner_jump_cancel` and `corner_blip_up`. Probe boxes/displacements are low-level collision inputs, not evidence for an arbitrary block shape, a straight-through route or a new supported type. The example with lower floor 1, obstacle top 1.5 and yL=1.2 is the corner blip-up, not ordinary blip-up.
+
+## Ceiling classification recommendation
+
+Proposed organisation, pending the user's decision: a separate ceiling case family generates ordinary ceiling hits and grind. The stepping family generates normal step, slab/stair boost, blip, blip-up and the two corner cases. Grind and corner jump cancel can share cancelled-jump Y/control helpers while retaining their different geometry: ceiling outside-to-under versus X-face/Z-edge corner clearance.
+
+Ceiling generation must be composable with normal, ladder and stepping context. A ceiling hit during ladder climbing retains ladder occupancy/clamp/contact behavior. The family label is for route-case generation, not an exclusive replacement for the underlying movement regime. Ordinary ceiling hits and grind have distinct Y profiles; hitting the ceiling plane is not a substitute for the grind's zero-rise outcome.
+
+Repeated steps, axis directions, multiple boxes and compatible contact combinations are variations/compositions. Exact resolver branches and equality bookkeeping are not extra named movement types. Reuse the common continuous model, event constraints and existing acceptance helpers rather than reproduce the Minecraft step algorithm in orchestration.

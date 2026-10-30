@@ -17,11 +17,13 @@ public class StepMechanicsProbe {
         run("normal_step",wide,1,.8,-.0784000015258789,true);
         run("slab_boost",wide,1,.8,(double).42F,true);
         run("blip",wide,1.2,.8,-.4,false);
-        run("landing_step_over",corner,1.2,.45,-.4,.36,false);
-        run("jump_step_over",corner,1,.45,(double).42F,.36,true);
+        run("corner_blip_up",corner,1.2,.45,-.4,.36,false);
+        run("corner_jump_cancel",corner,1,.45,(double).42F,.36,true);
         run("blip_up",wide,1.6,.8,-.8,false);
         run("grind","[-5,0,-5,5,1,5],[1,2.9,-1,3,4,2]",1,.8,(double).42F,true);
-        run("partial_rise_cancel",corner+",[0.85,0,0.55,2,1.25,2]",1,.45,(double).42F,.36,true);
+        String zCorner = "[-1,0,-1,1,1,1],[0,1,0.85,0.55,1.5,1.15]";
+        run("z_facing_normal_jump",zCorner,1,.36,(double).42F,.45,true);
+        run("z_facing_lower_landing",zCorner,1.2,.36,-.4,.45,false);
         run("return_leg_equality",wide,1.25,.8,-.3500000238418579,false);
     }
 }

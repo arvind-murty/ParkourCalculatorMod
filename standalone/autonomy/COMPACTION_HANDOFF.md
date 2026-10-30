@@ -2,6 +2,14 @@
 
 Updated checkpoint, 2026-10-29, on `codex/run-ticks-planning`. Run ticks, support routing, blockages, one-input wall/ceiling contacts, multiple ladder transitions and multi-episode airborne transfers are implemented. `39d4ede` added the common contact contract and `a8b659c` added full ladder/contact composition and step diagnostics. The latest reviewable state is committed in our isolated worktree.
 
+## Latest corrections and ceiling classification question, 2026-10-30
+
+Grind means only the ceiling jump-cancel variant. One occurrence is sufficient; the previous repeated-cancellation wording came from the old glossary, not a code requirement. Canonical glossary/plan wording has been corrected.
+
+The user accepted and named corner jump cancel and corner blip-up. Both are X-facing geometry with Z-blockage-style successive-state avoidance; they are not planned X wall hits or camera-facing pins. Corner jump cancel approaches a .42-.6 obstacle and clears its Z edge on J, cancelling upward velocity; Z-facing jumps normally. Corner blip-up uses normal air movement into the retained-height grounded H state, then the blip-up jump/run-off continuation; Z-facing lands on the lower level. The user rejected the 1 -> 1.25 partial-rise case for this movement family. Remove it from active generation/probe proposals; arbitrary box/displacement probes did not establish game-legal reachable routes. Minimum two-pixel straight-through clearance needs about .725 displacement, outside this movement family, so the corner cases require diagonal escape.
+
+The user asks whether ceiling should be a type and where grind belongs. Recommendation to explain, not yet an approved architectural change: separate ceiling case generation (ordinary ceiling hit, grind), composable with normal/ladder/stepping movement context. Put grind in the ceiling family; put the corner cases in stepping. Share cancellation/Y/control helpers, but retain their different geometric requirements. Keep same-tick ladder/ceiling combinations through the common compiler; do not make ceiling an exclusive locomotion regime.
+
 ## Latest user stepping definitions
 
 The user replaced the exact-resolver-centered proposal with explicit case-based profiles. Read STEPPING_CASES.md and the rewritten STEPPING_PLAN.md. Implement the named case outcomes and constraints; there is no requirement to reproduce/enumerate the internal Minecraft A/B step algorithm in orchestration.
@@ -10,7 +18,7 @@ Position ticks: L is the last air/landing tick, H=L+1 is the hit tick, J is the 
 
 Accepted cases: grounded normal stepping; slab/stair boost (J rises about .42-.6, then one air input); blip (L within .6 below higher level, lower X/Z landing constraint at L and higher condition at H); blip-up (L above higher level, hypothetical free H below lower level, H retains L Y and is grounded); grind (before-J outside low ceiling, J underneath, zero Y rise and one following air input). Blip-up ends at H, then an elevated jump or ordinary run-off follows. Normal air coefficients apply into blip/blip-up H. Preserve current input-regime indexing.
 
-Naming conflicts recorded and glossary updated: old Blip was too broad; old grinding meant repeated jump cancels; old jump tick often meant the applying input. Proposed extra cases are still under user review: jump step-over without ceiling (zero rise), partial-rise jump cancellation below .42, and landing step-over with retained Y below the cleared obstacle's top. All have shared-resolver examples in the nine-probe artifact. They are descriptive labels, not approved movement types. Ordinary ceiling impacts can remain shared events or later become a type; the user has not selected that architecture.
+Naming conflicts are recorded and the glossary updated: old Blip was too broad and old jump tick often meant the applying input. The 2026-10-30 correction reserves grind for the ceiling jump cancel, accepts corner jump cancel and corner blip-up with X-facing/Z-blockage timing, and rejects the partial-rise proposal. Ceiling-family grouping is a recommendation awaiting the user's decision, not a production type change.
 
 ## Stepping planning investigation
 
