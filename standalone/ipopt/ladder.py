@@ -51,7 +51,34 @@ def vertical_step(config, tick, position, velocity, on_ladder, grounded, toleran
         if contact['state'] != tick + 1:
             continue
         plane, direction = contact['plane'], contact['direction']
-        if contact.get('step', False):
+        if contact.get('case'):
+            kind = contact['case']
+            delta = plane-position
+            lower = contact.get('lowerHeight',position)
+            upper = contact.get('higherHeight',plane)
+            jumping = config['jumpVelocity'][tick] is not None
+            valid = False
+            if kind == 'normal_step':
+                valid = grounded and not jumping and 0 < delta <= f32(.6)+tolerance
+            elif kind == 'slab_boost':
+                valid = grounded and jumping and movement < delta <= f32(.6)+tolerance
+            elif kind in ('blip','blip_up','corner_blip_up'):
+                valid = not grounded and movement < 0 and position >= lower and proposed < lower
+                if kind == 'blip':
+                    valid = valid and 0 <= delta <= f32(.6)+tolerance
+                else:
+                    valid = valid and plane == position
+                    valid = valid and (position > upper if kind=='blip_up' else 0 <= upper-position <= f32(.6)+tolerance)
+            elif kind == 'corner_jump_cancel':
+                valid = grounded and jumping and f32(.42) < upper-position <= f32(.6)+tolerance and plane==position
+            elif kind == 'grind':
+                valid = grounded and jumping and 0 <= contact.get('clearance',-1) < movement and plane==position
+            if valid:
+                proposed, carry = plane, 0.0
+                ground = kind in ('normal_step','blip','blip_up','corner_blip_up')
+            else:
+                failures.append({'state':tick+1,'reason':'invalid_movement_case','case':kind})
+        elif contact.get('step', False):
             valid = ((grounded or movement < 0) and movement < plane - position
                      and 0 < plane - position <= f32(0.6) + tolerance)
             if valid:

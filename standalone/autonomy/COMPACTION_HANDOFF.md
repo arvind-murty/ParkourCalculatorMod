@@ -1,5 +1,17 @@
 # Orchestration compaction handoff
 
+## Current implementation checkpoint, 2026-10-30
+
+Latest user instruction: defer ladder-ceiling refactoring, implement normal ceilings and stepping, and treat the higher blip block as a standard wall on L, either avoided or actually hit. This supersedes the implementation order and planning-only statements in older sections below.
+
+Implemented: shared Y/ceiling primitive extraction; authoritative typed profile controls, unit overlays and run retiming; registered full-geometry `stepping`/normal `ceiling` generation; normal step, slab boost, blip, blip-up, both X-facing corner cases and grind; blip avoidance/standard-hit alternatives; immediate elevated jump and no-jump ground/air continuation; complete-schedule reach keys; named-case scalar contracts and shared-scene step/trigger/position/ground/velocity validation. Original-state X/Z/VXZ remain free in every complete solve.
+
+Read STEPPING_IMPLEMENTATION.md for actual behavior and limits. The new focused 13-method suite passes, including fresh IPOPT and shared-scene acceptance across the nine saved case fixtures and additional lower-floor, axis and rejection controls. Existing focused infrastructure gate: 44 methods passed. Full regressions are being run at this checkpoint; update results before final handoff.
+
+Explicit remaining limits: ladder-ceiling ownership refactor deferred; water and pruning deferred; one named step event plus ordinary continuation per automatic full-support leg. Arbitrary new-case airborne chaining and step-to-airborne-ladder automatic composition remain follow-up work. `maxSteppingProfiles=128` per pair is bounded and reported; no global time/objective optimum is claimed after candidate truncation. The ordinary jump-height gate no longer discards composite height gains.
+
+Commits so far this pass: `dbfdfbb` shared helpers and `c15938b` typed profile controls/composition. New catalogue/validation/fixtures commit follows focused gates. Work remains isolated in `/Users/arvindmurty/CS/ParkourCalculatorMod-run-ticks`, branch `codex/run-ticks-planning`; do not edit the integration agent's tree. Do not use Python faulthandler.dump_traceback_later while native workers run on this macOS Python runtime; its optional diagnostic timer previously crashed the interpreter.
+
 Updated checkpoint, 2026-10-29, on `codex/run-ticks-planning`. Run ticks, support routing, blockages, one-input wall/ceiling contacts, multiple ladder transitions and multi-episode airborne transfers are implemented. `39d4ede` added the common contact contract and `a8b659c` added full ladder/contact composition and step diagnostics. The latest reviewable state is committed in our isolated worktree.
 
 ## Approved ownership and concrete implementation plan, 2026-10-30

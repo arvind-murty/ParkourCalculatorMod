@@ -85,17 +85,18 @@ def build_entry_problem(context, column, wall, channel, entry, compiler, seconds
 
 
 def entry_contact_options(context, prefix=None, max_entry=14):
-    from .ceiling_contacts import ceiling_profile
+    from .ceiling_primitives import ceiling_profile
     scene = context['scene']
     if not scene.get('ceilingHits', False):
         return []
     if prefix is not None:
         from .movement_contacts import program_seed
-        from .ceiling_primitives import ceiling_sequence
+        from .movement_generation import generate_choices
         cut = prefix['profile']['airtime']
         seed = program_seed(prefix, cut + max_entry)
-        return [[dict(c, offset=c['offset'] - cut) for c in contacts] for box in scene['collisionScene']['solids']
-                if (contacts := ceiling_sequence(seed, box, start=cut))]
+        return [[dict(c, offset=c['offset'] - cut) for c in choice['contactEvents']]
+                for choice in generate_choices('ceiling', dict(mode='timeline', schedule=seed,
+                    solids=scene['collisionScene']['solids']), start=cut)]
     route = context['route']
     top = route['blocks'][-2]['top']
     options = []

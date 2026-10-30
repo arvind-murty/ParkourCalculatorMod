@@ -283,6 +283,10 @@ def schedule(route, allocation, stage='jump'):
         if event['landing'] is None:
             continue
         offset, duration = event['jump'], route['airtimes'][event['leg']]
+        walls.extend(dict(row, t1=offset + row['t1']) for row in profile.get('positionConstraints', []))
+        for case in profile.get('caseEvents', []):
+            scene_contacts.append(dict(state=offset + case['input'] + 1, axis=1, direction=-1,
+                                       plane=case['plane'], box=case['box'], movementCase=case['case']))
         occupied = profile.get('ladderTicks', [False] * (duration + 1))
         selected_sneak = profile.get('sneak', [False] * duration)
         if len(occupied) != duration + 1 or len(selected_sneak) != duration:

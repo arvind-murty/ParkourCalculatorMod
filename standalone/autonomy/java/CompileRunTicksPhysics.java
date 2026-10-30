@@ -55,6 +55,7 @@ public final class CompileRunTicksPhysics {
         double[] box;
         double[][] boxes;
         boolean step;
+        String movementCase;
     }
 
     public static final class Block {
@@ -132,6 +133,12 @@ public final class CompileRunTicksPhysics {
                         StrictMath.max(StrictMath.abs((hit.velocity.y - 0.08) * (double) 0.98F - expectedVelocity.y),
                                 StrictMath.abs(hit.velocity.z * request.friction[t] - expectedVelocity.z)));
             }
+            if (hit.stepped) {
+                boolean selected = false;
+                if (request.contacts != null) for (PlannedContact event : request.contacts)
+                    if (event.state == t + 1 && (event.step || event.movementCase != null)) selected = true;
+                if (!selected) contactMismatch = true;
+            }
             if (!hit.stepped && hit.verticalCollision && request.movement[t][1] > 0) {
                 boolean selected = false;
                 if (request.contacts != null) for (PlannedContact event : request.contacts)
@@ -147,6 +154,15 @@ public final class CompileRunTicksPhysics {
             }
             if (request.contacts != null) for (PlannedContact event : request.contacts) {
                 if (event.state != t + 1) continue;
+                if (event.movementCase != null) {
+                    boolean trigger = false;
+                    for (StaticScene.Clip clip : hit.stepTriggers)
+                        if (clip.axis != 1 && event.box != null && sameBox(clip.obstacle, event.box)) trigger = true;
+                    if (!hit.stepped || !sceneHasBox(request.scene, event.box) || !trigger
+                            || event.axis != 1 || StrictMath.abs(hit.position.y - event.plane) > 1e-7)
+                        contactMismatch = true;
+                    continue;
+                }
                 if (event.step) {
                     boolean known = sceneHasBox(request.scene, event.box);
                     if (!hit.stepped || event.axis != 1 || event.direction != -1 || !known

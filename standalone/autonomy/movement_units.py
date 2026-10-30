@@ -111,6 +111,10 @@ def compile_units(ticks, units):
                 ladder[state] = True
         for state in unit.get('additionalOccupiedStates', []):
             ladder[state] = True
+        for field in ('jumpInputs', 'groundedInputs'):
+            values = unit.get(field, [])
+            if len(values) != len(set(values)) or any(type(t) is not int or not unit['start'] <= t < unit['end'] for t in values):
+                raise ValueError('Invalid unit input control')
         for tick in unit.get('hitInputs', []):
             if unit['type'] != 'ladder_climb' or not unit['start'] <= tick < unit['end']:
                 raise ValueError('Invalid unit climb input')
@@ -163,26 +167,33 @@ def profile_program(profile):
 
 
 def overlay_program(units, templates):
+    def sliced(unit, first, end):
+        chosen = dict(copy.deepcopy(unit), start=first, end=end)
+        for key in ('jumpInputs', 'groundedInputs', 'sneakInputs'):
+            if key in chosen:
+                chosen[key] = [t for t in chosen[key] if first <= t < end]
+        return chosen
     result = []
-    for u in units:
-        if MOVEMENT_TYPES[u['type']]['ladder']:
-            result.append(copy.deepcopy(u))
+    previous_end = 0
+    for template in templates:
+        if template['start'] < previous_end or template['end'] <= template['start']:
+            raise ValueError('Movement templates must be ordered and disjoint')
+        previous_end = template['end']
+    for unit in units:
+        if MOVEMENT_TYPES[unit['type']]['ladder']:
+            result.append(copy.deepcopy(unit))
             continue
-        cursor = u['start']
+        cursor = unit['start']
         for template in templates:
-            first, end = max(cursor, template['start']), min(u['end'], template['end'])
+            first, end = max(cursor, template['start']), min(unit['end'], template['end'])
             if end <= first:
                 continue
             if first > cursor:
-                result.append(dict(copy.deepcopy(u), start=cursor, end=first))
-            chosen = dict(copy.deepcopy(template), start=first, end=end)
-            for k in ('jumpInputs','groundedInputs','sneakInputs'):
-                if k in chosen:
-                    chosen[k] = [t for t in chosen[k] if first <= t < end]
-            result.append(chosen)
+                result.append(sliced(unit, cursor, first))
+            result.append(sliced(template, first, end))
             cursor = end
-        if cursor < u['end']:
-            result.append(dict(copy.deepcopy(u), start=cursor))
+        if cursor < unit['end']:
+            result.append(sliced(unit, cursor, unit['end']))
     return result
 
 

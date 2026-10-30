@@ -158,6 +158,14 @@ def prepare(request):
                 raise ValueError('Invalid or duplicate vertical contact')
             if type(contact.get('step', False)) is not bool or contact.get('step', False) and contact['direction'] != -1:
                 raise ValueError('A prescribed step must be a lower contact')
+            if contact.get('case'):
+                if contact['direction'] != -1 or contact.get('step'):
+                    raise ValueError('A movement case requires its own lower contact')
+                if contact['case'] not in ('normal_step','slab_boost','blip','blip_up','corner_jump_cancel','corner_blip_up','grind'):
+                    raise ValueError('Unsupported vertical movement case')
+                for key in ('lowerHeight','higherHeight','clearance'):
+                    if key in contact:
+                        number(contact[key], 'vertical case ' + key)
             seen_y.add(state)
         for key in ('referencePosition', 'referenceVelocity'):
             if key in config:

@@ -1,5 +1,7 @@
 # Movement units and airborne composition
 
+2026-10-30 extension: registered `stepping` and normal-air `ceiling` units now survive profile compilation, air-gap overlays and run retiming. Named case anchors, jump inputs and grounded-input masks are retained and checked against the scalar profile. Ladder-owned intervals keep their existing units and ceiling behavior; the ladder-ceiling refactor is deferred. See [STEPPING_IMPLEMENTATION.md](STEPPING_IMPLEMENTATION.md). Earlier checkpoint statements below saying stepping is absent describe the preceding ladder milestone.
+
 2026-10-29. This implements the latest ladder decisions in [LADDER_COMPOSITION_PLAN.md](LADDER_COMPOSITION_PLAN.md). Continuous numerical acceptance remains this layer's responsibility; replay/export belongs to the other integration worktree.
 
 ## Implemented interface

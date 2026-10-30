@@ -34,6 +34,8 @@ The position before the jump tick is on the lower level. The jump tick is on the
 
 ### Blip
 
+The higher block is a standard wall on L. Generate avoidance alternatives and actual retained wall-hit alternatives. A real hit uses the normal finite-wall contact constraints, horizontal velocity cancellation and sprint transition; it does not imply reversal.
+
 The ordinary air schedule lands on the lower level, and the resulting hit tick steps to the higher level. Require 0 <= b-yL <= 0.6. The landing tick satisfies the lower landing constraint; the hit tick additionally satisfies the higher block's X/Z condition and yH=b. The movement producing H is still air movement. Normal grounded movement/jumping follows from the higher level.
 
 ### Blip-up
