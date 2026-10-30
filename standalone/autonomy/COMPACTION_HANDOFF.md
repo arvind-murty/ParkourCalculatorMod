@@ -1,5 +1,9 @@
 # Orchestration compaction handoff
 
+## Next requested plan: ladder ceilings, 2026-10-30
+
+The user now wants to finish ladder-ceiling ownership while context is fresh and requested the implementation plan first. Read LADDER_CEILING_PLAN.md. Existing clipping/repeated-contact physics is already present; the plan extracts ladder-local generation/ownership, deduplicates the mixed-contact path, regenerates coherent Y/exit schedules and preserves generic composition. No implementation changes for this plan have begun. Continue using standalone IPOPT/scalar/shared-scene acceptance; do not run mod Java gates.
+
 ## Latest checkpoint: generic composition, 2026-10-30
 
 Latest user correction: stepping and ceiling must compose through the same open interface as normal and ladder phases. The prior one-off support-to-support wrapper was insufficient. Also, stop running mod Java core tests during standalone development; valid IPOPT with the correct movement/constraints is this workstream's success criterion. `standalone/AGENTS.md` records that scope.
