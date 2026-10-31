@@ -1,0 +1,13 @@
+{
+  "pyscipopt": "6.3.0",
+  "scip": "10.0.2",
+  "internalIpopt": "3.14.19",
+  "verification": "SCIP printExternalCodeVersions and default model parameters; parameter inspection only, no changes",
+  "parameters": {
+    "nlp/solver": "",
+    "nlp/disable": false,
+    "heuristics/subnlp/freq": 1,
+    "heuristics/multistart/freq": 0,
+    "nlpi/ipopt/priority": 1000
+  }
+}

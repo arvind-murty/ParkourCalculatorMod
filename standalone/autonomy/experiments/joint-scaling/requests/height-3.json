@@ -1,0 +1,96 @@
+{
+  "scene": {
+    "version": 1,
+    "sceneModel": "collision_boxes",
+    "geometryBounds": [
+      -10,
+      -10,
+      -10,
+      40,
+      15,
+      20
+    ],
+    "initial": {
+      "position": [
+        0.5,
+        1,
+        0.5
+      ],
+      "velocity": [
+        0,
+        -0.0784000015258789,
+        0
+      ],
+      "yaw": 0
+    },
+    "blocks": [
+      {
+        "id": "start",
+        "boxes": [
+          [
+            0,
+            0,
+            0,
+            1,
+            1,
+            1
+          ]
+        ]
+      },
+      {
+        "id": "raised",
+        "boxes": [
+          [
+            2,
+            1,
+            0,
+            3,
+            2,
+            1
+          ]
+        ]
+      },
+      {
+        "id": "goal",
+        "boxes": [
+          [
+            5,
+            2,
+            0,
+            6,
+            3,
+            1
+          ]
+        ]
+      },
+      {
+        "id": "lower-finish",
+        "boxes": [
+          [
+            8,
+            1.5,
+            0,
+            9,
+            2.5,
+            1
+          ]
+        ]
+      }
+    ],
+    "startBlock": "start",
+    "goalBlock": "lower-finish",
+    "maxRunTicksPerJump": 3,
+    "maxTotalRunTicks": 4,
+    "maxContactBranches": 64,
+    "maxPassageCandidates": 128,
+    "maxBlockagesPerObstacle": 3,
+    "maxHorizontalBlockagesPerObstacle": 2,
+    "maxVerticalBlockagesPerObstacle": 2
+  },
+  "route": [
+    "start",
+    "raised",
+    "goal",
+    "lower-finish"
+  ]
+}

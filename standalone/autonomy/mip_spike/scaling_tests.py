@@ -1,4 +1,5 @@
 import importlib.util
+import hashlib
 import itertools
 import json
 import os
@@ -10,6 +11,8 @@ from standalone.autonomy.compiler import JavaCompiler
 from .joint_contract import compile_allocation, prepare_joint
 from .joint_model import solve_horizon
 from .joint_run import accept_joint
+from .run import acceptance
+from standalone.ipopt import prepare, validate
 from .joint_tests import open_request
 from .scaling import SceneObserver
 from .scaling_cases import CASE_NAMES, allocation_count, scaling_request
@@ -67,6 +70,39 @@ class ScalingInstrumentationTests(unittest.TestCase):
             observer.check_scene({}, [[0, 1, 0]] * 4, [[0, 0, 0]] * 3, [True] * 4, 1)
         observer.check_scene({}, [[0, 1, 0]] * 4, [[0, 0, 0]] * 3, [True] * 4, 1, velocities=[[0, 0, 0]] * 4)
         self.assertEqual(len(observer.curve), 1)
+
+    def test_all_saved_campaign_witnesses_and_first_scenes_revalidate(self):
+        directory = Path(__file__).parents[1] / 'experiments/joint-scaling'
+        manifest = json.loads((directory / 'manifest.json').read_text())
+        measurements = json.loads((directory / 'measurements.json').read_text())['results']
+        self.assertEqual(len(measurements), 24)
+        self.assertEqual(len({(r['case'], r['repeat'], r['method']) for r in measurements}), 24)
+        self.assertEqual(len(manifest['witnesses']), 18)
+        self.assertEqual(len(manifest['supplementalWitnesses']), 3)
+        self.assertEqual(len(json.loads((directory / 'supplemental/measurements.json').read_text())['results']), 4)
+        for record in manifest['witnesses'] + manifest['supplementalWitnesses']:
+            with self.subTest(witness=record['file']):
+                self.assertEqual(hashlib.sha256((directory / record['file']).read_bytes()).hexdigest(), record['sha256'])
+                self.assertEqual(hashlib.sha256((directory / record['case']).read_bytes()).hexdigest(), record['caseSha256'])
+                evidence = json.loads((directory / record['file']).read_text())
+                case = json.loads((directory / record['case']).read_text())
+                problem = prepare(evidence['problem'])
+                candidate = validate(problem, evidence['candidate']['yaw'])
+                self.assertTrue(candidate['feasible'])
+                for key in ('positions', 'velocity', 'y', 'vy', 'onGround'):
+                    self.assertEqual(candidate[key], evidence['candidate'][key])
+                self.assertEqual(candidate['positions'][0], case['route']['initial']['position'][::2])
+                self.assertEqual(candidate['velocity'][0], case['route']['initial']['velocity'][::2])
+                vertical = dict(y=candidate['y'], vy=candidate['vy'], onGround=candidate['onGround'], vertical=problem['vertical'])
+                self.assertTrue(acceptance(dict(scene=case['scene'], plan=evidence['plan'], problem=problem, vertical=vertical),
+                                           candidate, self.compiler, 3)['feasible'])
+        for record in measurements:
+            if record.get('firstSceneFile'):
+                source = directory / record['firstSceneFile']
+                self.assertEqual(hashlib.sha256(source.read_bytes()).hexdigest(), record['firstSceneSha256'])
+                first = json.loads(source.read_text())
+                self.assertTrue(self.compiler.check_scene(first['scene'], first['positions'], first['movement'],
+                    first['ground'], 3, **first['contract'])['feasible'])
 
 
 if __name__ == '__main__':

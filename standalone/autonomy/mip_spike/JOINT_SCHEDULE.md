@@ -74,6 +74,8 @@ PYTHONPATH="$PWD/standalone/autonomy/build/mip-site" \
 
 ## Remaining work
 
+The subsequent [scaling campaign](../experiments/joint-scaling/README.md) compares 3–5-jump fixture extensions under equal nominal budgets. With a six-second horizon cap, joint search succeeds in 8/12 runs versus 10/12 for existing search and is slower on shared successes. A supplemental longer-cap run solves the two-wall case that baseline leaves unknown, within the same 20-second total budget. Five-jump wide neo remains unknown. Prioritize horizon budget policy, domain-specific continuous primal heuristics and inertia/control formulation work before adding movement types. SCIP already includes an enabled Ipopt backend. This result does not support replacing production scheduling yet.
+
 The [saved joint experiment](../experiments/joint-mixed-integer/README.md) includes a raw-accepted 26-input, two-jump wide neo with discovered allocation `[2, 0]`, gate position ticks 16/18, optimized incumbent and all six separately enumerated allocation controls. One equal-duration allocation remains unknown; no uniqueness or global-objective claim is made.
 
 This is an isolated prototype, not a production backend integration. Measure longer routes and more obstacle arrangements before judging scaling. Add conditional contact/input-state transitions for wall hits before claiming joint contact scheduling. Later add vertical alternatives, stepping and ladder phase rules. Those extensions must share state transitions and keep all intermediate X/Z state free. The fixed-route restriction, movement scope, guarded boundaries and per-block passage caps must remain explicit. No communication or edits to the other research agent's branch are needed.

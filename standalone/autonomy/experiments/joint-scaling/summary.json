@@ -1,0 +1,211 @@
+{
+  "aggregates": [
+    {
+      "case": "flat-3",
+      "method": "existing",
+      "jumps": 3,
+      "allocationDomainSize": 72,
+      "accepted": 2,
+      "runs": 2,
+      "ticks": [
+        36,
+        36
+      ],
+      "objectives": [
+        11.718729645381467,
+        11.718729645381467
+      ],
+      "medianTotalSeconds": 0.30395468696951866,
+      "medianFirstAvailableSeconds": 0.29578014463186264
+    },
+    {
+      "case": "flat-3",
+      "method": "joint",
+      "jumps": 3,
+      "allocationDomainSize": 72,
+      "accepted": 2,
+      "runs": 2,
+      "ticks": [
+        36,
+        36
+      ],
+      "objectives": [
+        11.718729645057545,
+        11.718729645057545
+      ],
+      "medianTotalSeconds": 0.4085479788482189,
+      "medianFirstAvailableSeconds": 0.3937092311680317
+    },
+    {
+      "case": "flat-5",
+      "method": "existing",
+      "jumps": 5,
+      "allocationDomainSize": 432,
+      "accepted": 2,
+      "runs": 2,
+      "ticks": [
+        60,
+        60
+      ],
+      "objectives": [
+        20.351631420231353,
+        20.351631420231353
+      ],
+      "medianTotalSeconds": 0.26273866556584835,
+      "medianFirstAvailableSeconds": 0.2571521867066622
+    },
+    {
+      "case": "flat-5",
+      "method": "joint",
+      "jumps": 5,
+      "allocationDomainSize": 432,
+      "accepted": 2,
+      "runs": 2,
+      "ticks": [
+        60,
+        60
+      ],
+      "objectives": [
+        20.101635084254372,
+        20.101635084254372
+      ],
+      "medianTotalSeconds": 6.148900793865323,
+      "medianFirstAvailableSeconds": 0.5278730988502502
+    },
+    {
+      "case": "required-run-3",
+      "method": "existing",
+      "jumps": 3,
+      "allocationDomainSize": 72,
+      "accepted": 2,
+      "runs": 2,
+      "ticks": [
+        37,
+        37
+      ],
+      "objectives": [
+        12.47831724098836,
+        12.47831724098836
+      ],
+      "medianTotalSeconds": 0.17884566634893417,
+      "medianFirstAvailableSeconds": 0.17454910464584827
+    },
+    {
+      "case": "required-run-3",
+      "method": "joint",
+      "jumps": 3,
+      "allocationDomainSize": 72,
+      "accepted": 2,
+      "runs": 2,
+      "ticks": [
+        37,
+        37
+      ],
+      "objectives": [
+        12.47831724065066,
+        12.47831724065066
+      ],
+      "medianTotalSeconds": 0.38835656456649303,
+      "medianFirstAvailableSeconds": 0.3804585188627243
+    },
+    {
+      "case": "height-3",
+      "method": "existing",
+      "jumps": 3,
+      "allocationDomainSize": 32,
+      "accepted": 2,
+      "runs": 2,
+      "ticks": [
+        31,
+        31
+      ],
+      "objectives": [
+        9.611672238268353,
+        9.611672238268353
+      ],
+      "medianTotalSeconds": 0.31208458356559277,
+      "medianFirstAvailableSeconds": 0.30887816846370697
+    },
+    {
+      "case": "height-3",
+      "method": "joint",
+      "jumps": 3,
+      "allocationDomainSize": 32,
+      "accepted": 2,
+      "runs": 2,
+      "ticks": [
+        31,
+        31
+      ],
+      "objectives": [
+        9.605147071191363,
+        9.605147071191363
+      ],
+      "medianTotalSeconds": 6.128957498818636,
+      "medianFirstAvailableSeconds": 3.6608298737555742
+    },
+    {
+      "case": "cross-wide-3",
+      "method": "existing",
+      "jumps": 3,
+      "allocationDomainSize": 32,
+      "accepted": 0,
+      "runs": 2,
+      "ticks": [],
+      "objectives": [],
+      "medianTotalSeconds": 19.056389916688204,
+      "medianFirstAvailableSeconds": null
+    },
+    {
+      "case": "cross-wide-3",
+      "method": "joint",
+      "jumps": 3,
+      "allocationDomainSize": 32,
+      "accepted": 0,
+      "runs": 2,
+      "ticks": [],
+      "objectives": [],
+      "medianTotalSeconds": 19.618184957653284,
+      "medianFirstAvailableSeconds": null
+    },
+    {
+      "case": "wide-5",
+      "method": "existing",
+      "jumps": 5,
+      "allocationDomainSize": 432,
+      "accepted": 2,
+      "runs": 2,
+      "ticks": [
+        62,
+        62
+      ],
+      "objectives": [
+        20.794248113962595,
+        20.794248113962595
+      ],
+      "medianTotalSeconds": 19.103269582614303,
+      "medianFirstAvailableSeconds": 7.871047083288431
+    },
+    {
+      "case": "wide-5",
+      "method": "joint",
+      "jumps": 5,
+      "allocationDomainSize": 432,
+      "accepted": 0,
+      "runs": 2,
+      "ticks": [],
+      "objectives": [],
+      "medianTotalSeconds": 19.61694662645459,
+      "medianFirstAvailableSeconds": null
+    }
+  ],
+  "accepted": {
+    "existing": 10,
+    "joint": 8
+  },
+  "totalRuns": 24,
+  "sourceCommit": "edcdc12",
+  "noProductionBackendChange": true,
+  "additionalLongHorizonRuns": 4,
+  "additionalLongHorizonAccepted": 3
+}

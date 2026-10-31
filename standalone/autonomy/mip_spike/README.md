@@ -4,6 +4,8 @@ Experimental package on `spike/ipopt-mixed-integer`, forked from the consolidate
 
 The subsequent [joint schedule prototype](JOINT_SCHEDULE.md) puts run-tick allocation, departure timing, blockage selection/gate timing and angles in one model. Its complete supported simulation subset is ordinary sprint jumps plus run ticks and avoidance on a supplied support route. The fixed-schedule experiment below remains a separate historical baseline.
 
+The [scaling comparison](../experiments/joint-scaling/README.md) records 24 primary runs and four supplemental horizon-budget checks on 3–5-jump fixture extensions, with 21 accepted witnesses. It identifies horizon restart policy and continuous/root-solve performance as current limitations. The joint method solves a two-wall case the baseline misses, while the baseline remains faster on shared successes and solves a five-jump wide neo the joint method misses.
+
 ## Scope
 
 The route, tick horizon, vertical schedule, contact history and therefore input/sprint coefficient history are supplied. A fresh shared Java compilation supplies the coefficients for each case. No saved witness yaw is used as the initial guess.

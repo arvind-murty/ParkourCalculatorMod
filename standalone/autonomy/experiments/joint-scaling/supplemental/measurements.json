@@ -1,0 +1,355 @@
+{
+  "results": [
+    {
+      "case": "flat-5",
+      "accepted": true,
+      "ticks": 60,
+      "allocation": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "objective": 20.101635084254372,
+      "firstValidCandidateAvailableSeconds": 0.6376652084290981,
+      "elapsedSeconds": 19.72265875339508,
+      "attempts": [
+        {
+          "horizon": 60,
+          "status": "timelimit",
+          "accepted": true,
+          "statistics": {
+            "buildSeconds": 0.05922720953822136,
+            "solveSeconds": 19.440825,
+            "nodes": 26,
+            "variables": 5862,
+            "departureChoices": 5,
+            "solutions": 2,
+            "root": {
+              "firstRootLpSeconds": 1.702659085392952,
+              "dualBound": 20.351631420231353
+            },
+            "lpIterations": 341278,
+            "lpSolves": 493,
+            "dualBound": 20.351631420231346,
+            "primalBound": 20.101635084254376,
+            "gap": 0.012436616968178495,
+            "uncapturedIncumbents": 0
+          },
+          "capturedIncumbents": 1,
+          "validations": [
+            {
+              "availableSeconds": 0.4573388323187828,
+              "accepted": true,
+              "rawAccepted": true,
+              "reason": null
+            }
+          ],
+          "acceptance": {
+            "accepted": true,
+            "rawAccepted": true,
+            "errors": {
+              "position": 3.552713678800501e-15,
+              "velocity": 1.6653345369377348e-16,
+              "verticalVelocity": 0.0
+            },
+            "rawGeometry": {
+              "feasible": true,
+              "ticks": 60
+            },
+            "refinementStatus": "feasible",
+            "refinementTermination": "first_feasible",
+            "geometry": {
+              "feasible": true,
+              "ticks": 60
+            }
+          }
+        }
+      ],
+      "curve": [
+        {
+          "availableSeconds": 0.6376652084290981,
+          "validatedSeconds": 19.7226445004344,
+          "ticks": 60,
+          "objective": 20.101635084254372
+        }
+      ],
+      "caseFile": "cases/flat-5.json",
+      "searchBudgetSeconds": 20,
+      "horizonSeconds": 20,
+      "firstValidatedSeconds": 19.7226445004344,
+      "availabilityTiming": "SCIP incumbent timestamp plus estimated process overhead and measured validation; validated after horizon optimization",
+      "supplemental": true,
+      "witnessFile": "supplemental/witnesses/flat-5-joint.json",
+      "witnessSha256": "c7cfaae36d52adaf82b1afb0be80fcc3ec1954709890b32013e270f132a7c208"
+    },
+    {
+      "case": "height-3",
+      "accepted": true,
+      "ticks": 31,
+      "allocation": [
+        0,
+        0,
+        0
+      ],
+      "objective": 9.610116324079941,
+      "firstValidCandidateAvailableSeconds": 3.4597985818982124,
+      "elapsedSeconds": 19.67847266793251,
+      "attempts": [
+        {
+          "horizon": 31,
+          "status": "timelimit",
+          "accepted": true,
+          "statistics": {
+            "buildSeconds": 0.035448331385850906,
+            "solveSeconds": 19.464619,
+            "nodes": 950,
+            "variables": 3904,
+            "departureChoices": 3,
+            "solutions": 5,
+            "root": {
+              "firstRootLpSeconds": 1.1984056234359741,
+              "dualBound": 9.613380657841484
+            },
+            "lpIterations": 223480,
+            "lpSolves": 2169,
+            "dualBound": 9.613380657841484,
+            "primalBound": 9.610116324100053,
+            "gap": 0.000339676818816898,
+            "uncapturedIncumbents": 0
+          },
+          "capturedIncumbents": 3,
+          "validations": [
+            {
+              "availableSeconds": 3.2957738302648067,
+              "accepted": true,
+              "rawAccepted": true,
+              "reason": null
+            }
+          ],
+          "acceptance": {
+            "accepted": true,
+            "rawAccepted": true,
+            "errors": {
+              "position": 2.0111912135689636e-11,
+              "velocity": 2.7970126215137725e-12,
+              "verticalVelocity": 0.0
+            },
+            "rawGeometry": {
+              "feasible": true,
+              "ticks": 31
+            },
+            "refinementStatus": "feasible",
+            "refinementTermination": "first_feasible",
+            "geometry": {
+              "feasible": true,
+              "ticks": 31
+            }
+          }
+        }
+      ],
+      "curve": [
+        {
+          "availableSeconds": 3.4597985818982124,
+          "validatedSeconds": 19.678460959345102,
+          "ticks": 31,
+          "objective": 9.605147071191363
+        }
+      ],
+      "caseFile": "cases/height-3.json",
+      "searchBudgetSeconds": 20,
+      "horizonSeconds": 20,
+      "firstValidatedSeconds": 19.678460959345102,
+      "availabilityTiming": "SCIP incumbent timestamp plus estimated process overhead and measured validation; validated after horizon optimization",
+      "supplemental": true,
+      "witnessFile": "supplemental/witnesses/height-3-joint.json",
+      "witnessSha256": "d1014176cdf8752b22c4f44bab311846028a4597619f5ce2289f37bd993e64b2"
+    },
+    {
+      "case": "cross-wide-3",
+      "accepted": true,
+      "ticks": 36,
+      "allocation": [
+        0,
+        0,
+        0
+      ],
+      "objective": 10.581372034447645,
+      "firstValidCandidateAvailableSeconds": 13.048026882112026,
+      "elapsedSeconds": 19.66738274693489,
+      "attempts": [
+        {
+          "horizon": 36,
+          "status": "timelimit",
+          "accepted": true,
+          "statistics": {
+            "buildSeconds": 0.025867708027362823,
+            "solveSeconds": 19.474474999999998,
+            "nodes": 1,
+            "variables": 3740,
+            "departureChoices": 3,
+            "solutions": 1,
+            "root": {
+              "firstRootLpSeconds": 1.7695769555866718,
+              "dualBound": 11.273346360698214
+            },
+            "lpIterations": 88215,
+            "lpSolves": 393,
+            "dualBound": 11.142979508304265,
+            "primalBound": 10.581372035303371,
+            "gap": 0.05307510889203817,
+            "uncapturedIncumbents": 0
+          },
+          "capturedIncumbents": 1,
+          "validations": [
+            {
+              "availableSeconds": 12.894451208412647,
+              "accepted": true,
+              "rawAccepted": true,
+              "reason": null
+            }
+          ],
+          "acceptance": {
+            "accepted": true,
+            "rawAccepted": true,
+            "errors": {
+              "position": 8.557261566011221e-10,
+              "velocity": 3.407138460254089e-11,
+              "verticalVelocity": 0.0
+            },
+            "rawGeometry": {
+              "feasible": true,
+              "ticks": 36
+            },
+            "refinementStatus": "feasible",
+            "refinementTermination": "first_feasible",
+            "geometry": {
+              "feasible": true,
+              "ticks": 36
+            }
+          }
+        }
+      ],
+      "curve": [
+        {
+          "availableSeconds": 13.048026882112026,
+          "validatedSeconds": 19.6673626229167,
+          "ticks": 36,
+          "objective": 10.581372034447645
+        }
+      ],
+      "caseFile": "cases/cross-wide-3.json",
+      "searchBudgetSeconds": 20,
+      "horizonSeconds": 20,
+      "firstValidatedSeconds": 19.6673626229167,
+      "availabilityTiming": "SCIP incumbent timestamp plus estimated process overhead and measured validation; validated after horizon optimization",
+      "supplemental": true,
+      "witnessFile": "supplemental/witnesses/cross-wide-3-joint.json",
+      "witnessSha256": "634ac36e014b43dc215ae3cefdfefdfafa2cbc31976f69c84d1ab768e96cabdc"
+    },
+    {
+      "case": "wide-5",
+      "accepted": false,
+      "ticks": null,
+      "allocation": null,
+      "objective": null,
+      "firstValidCandidateAvailableSeconds": null,
+      "elapsedSeconds": 19.623509876430035,
+      "attempts": [
+        {
+          "horizon": 60,
+          "status": "infeasible",
+          "accepted": false,
+          "statistics": {
+            "buildSeconds": 0.03716583549976349,
+            "solveSeconds": 0.017436999999999998,
+            "nodes": 0,
+            "variables": 6326,
+            "departureChoices": 5,
+            "solutions": 0,
+            "root": {},
+            "lpIterations": 0,
+            "lpSolves": 0,
+            "dualBound": null,
+            "primalBound": null,
+            "gap": 0.0,
+            "uncapturedIncumbents": 0
+          },
+          "capturedIncumbents": 0,
+          "validations": [],
+          "acceptance": {
+            "accepted": false,
+            "reason": "no_integer_trajectory"
+          }
+        },
+        {
+          "horizon": 61,
+          "status": "infeasible",
+          "accepted": false,
+          "statistics": {
+            "buildSeconds": 0.040583208203315735,
+            "solveSeconds": 0.017868,
+            "nodes": 0,
+            "variables": 6858,
+            "departureChoices": 9,
+            "solutions": 0,
+            "root": {},
+            "lpIterations": 0,
+            "lpSolves": 0,
+            "dualBound": null,
+            "primalBound": null,
+            "gap": 0.0,
+            "uncapturedIncumbents": 0
+          },
+          "capturedIncumbents": 0,
+          "validations": [],
+          "acceptance": {
+            "accepted": false,
+            "reason": "no_integer_trajectory"
+          }
+        },
+        {
+          "horizon": 62,
+          "status": "timelimit",
+          "accepted": false,
+          "statistics": {
+            "buildSeconds": 0.04374292120337486,
+            "solveSeconds": 19.122893,
+            "nodes": 197,
+            "variables": 7390,
+            "departureChoices": 13,
+            "solutions": 0,
+            "root": {
+              "firstRootLpSeconds": 1.4052455462515354,
+              "dualBound": 20.83421890058919
+            },
+            "lpIterations": 168242,
+            "lpSolves": 1360,
+            "dualBound": 20.832973388451165,
+            "primalBound": null,
+            "gap": null,
+            "uncapturedIncumbents": 0
+          },
+          "capturedIncumbents": 0,
+          "validations": [],
+          "acceptance": {
+            "accepted": false,
+            "reason": "no_integer_trajectory"
+          }
+        }
+      ],
+      "curve": [],
+      "caseFile": "cases/wide-5.json",
+      "searchBudgetSeconds": 20,
+      "horizonSeconds": 20,
+      "firstValidatedSeconds": null,
+      "availabilityTiming": "SCIP incumbent timestamp plus estimated process overhead and measured validation; validated after horizon optimization",
+      "supplemental": true
+    }
+  ],
+  "sourceCommit": "edcdc12",
+  "sameTotalBudget": true,
+  "changedOnlyHorizonCap": true,
+  "notIncludedInPrimary24Runs": true
+}
