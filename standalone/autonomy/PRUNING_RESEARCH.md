@@ -390,3 +390,7 @@ Further correction from the spike owner: three repeats of eight fixed-schedule c
 ### 2026-10-31: implementation authorized in isolated worktree
 
 User authorized implementing the staged experiment and requested no further communication with the other agent. Created branch `research/ipopt-cell-routes` and worktree `/Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-cell-routes` from canonical `99ecfe9`, copied this research snapshot, and began geometry/routes/local-search/benchmark implementation. Bounds remain deferred; preserve the production search default and original-state trajectory optimization.
+
+### 2026-10-31: isolated geometry milestone
+
+Implemented expanded-AABB subtraction/merging, explicit boundary strata, partial portals, physical contacts/provenance, ladder memberships and swept-segment coverage in `cell_routes/geometry.py`. Six focused tests pass, including exact floor/ceiling contact and equivalent split-box coverage. Built the worktree-local Java helper. Bounds deferred; routes/local adapter/benchmarks follow. Details live in `experiments/cell-routes/README.md`.
