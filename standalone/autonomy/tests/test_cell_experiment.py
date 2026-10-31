@@ -72,6 +72,16 @@ class CellNumericalTests(unittest.TestCase):
         self.compiler = JavaCompiler(json.loads(Path(os.environ['PKC_RUN_TICKS_COMPILER']).read_text()))
         self.addCleanup(self.compiler.close)
 
+    def test_automatic_blockage_routes_are_repaired_and_physically_checked(self):
+        request = json.loads((ROOT/'wide-neo.json').read_text())
+        result = run_arm(request,'automatic',mode='solve',seconds=8,route_cap=10,max_expansions=300,
+            max_solver_calls=12,route_seconds=2,compiler=self.compiler,python_executable=os.environ['PKC_IPOPT_PYTHON'])
+        self.assertEqual(result['status'],'feasible',compact(result))
+        self.assertLessEqual(result['best']['plan']['ticks'],13)
+        self.assertTrue(result['best']['geometryCheck']['feasible'])
+        self.assertTrue(result['best']['corridorCheck']['accepted'])
+        self.assertLessEqual(result['numericalCalls'],12)
+
     def test_goal_region_preserves_faster_grind_landing_before_an_interior_gate(self):
         fixture = Path(__file__).parents[1]/'fixtures/generic-grind-blip.json'
         request = json.loads(fixture.read_text())

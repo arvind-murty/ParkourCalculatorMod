@@ -227,5 +227,5 @@ class CorridorAdapter:
 
     def summary(self):
         return dict(self.counts, forwardEnabled=self.forward and self.decomposition is not None and bool(self.corridor.stage_paths),
-                    stagePathVariants=len(self.corridor.stage_paths), filtering='before_block_and_ladder_products;lazy_corridor_repairs_after_shared_scene_acceptance',
+                    stagePathVariants=len(self.corridor.stage_paths), filtering='before_block_and_ladder_products;lazy_corridor_repairs_before_shared_scene_acceptance',
                     originalInitialState=self.initial)

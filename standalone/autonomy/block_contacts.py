@@ -194,6 +194,15 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
             if any(not passage_y_valid(p, result['best']['plan']['events'][p['leg']], profiles[p['leg']]) for p in passages):
                 attempts[-1].update(status='unknown', termination='passage_y_mismatch')
                 continue
+            if candidate_filter is not None:
+                verdict = candidate_filter(result['best']['plan'], result['best']['candidate'], vertical)
+                attempts[-1]['candidateFilter'] = {k: v for k, v in verdict.items() if k != 'alternatives'}
+                if not verdict['accepted']:
+                    attempts[-1].update(status='unknown', termination=verdict.get('reason', 'candidate_filter'))
+                    for extra in verdict.get('alternatives', []):
+                        offer(score + 1, rows + extra, passages, hits)
+                    continue
+                result['best']['corridorCheck'] = verdict
             if geometry is not None:
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
@@ -236,15 +245,6 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                         offer(score + option['score'], rows, new_passages, hits)
                     continue
                 result['best']['geometryCheck'] = checked
-            if candidate_filter is not None:
-                verdict = candidate_filter(result['best']['plan'], result['best']['candidate'], vertical)
-                attempts[-1]['candidateFilter'] = {k: v for k, v in verdict.items() if k != 'alternatives'}
-                if not verdict['accepted']:
-                    attempts[-1].update(status='unknown', termination=verdict.get('reason', 'candidate_filter'))
-                    for extra in verdict.get('alternatives', []):
-                        offer(score + 1, rows + extra, passages, hits)
-                    continue
-                result['best']['corridorCheck'] = verdict
             if work is not None:
                 work.accepted(result['best'])
             result['best'].update(route=result['best'].get('route', branch), profiles=profiles, contactChecks=checks)
