@@ -1,5 +1,11 @@
 # Orchestration compaction handoff
 
+## Current direction: pruning research handoff, 2026-10-30
+
+The user deferred water and wants the existing solver/search made faster. They requested documentation and publication for another agent to research pruning, with no new implementation or experiments in this task. Start with [PRUNING_RESEARCH_HANDOFF.md](PRUNING_RESEARCH_HANDOFF.md): current coverage, generic versus legacy execution paths, schedule enumeration, actual work limits, historical performance evidence, research pointers and correctness constraints. It supersedes older suggestions to implement water next.
+
+Automatic discovery already exists. Its weaknesses include candidate volume, eager local pools, ordering and repeated work. Multiple jumps on the same block and block revisits are supported and must survive unjustified visited-block pruning. The generic queue and legacy validated-entry/transfer path do not have identical generation or screening behavior; the research handoff identifies the distinction. No new pruning or numerical behavior changed in this documentation pass.
+
 ## Latest checkpoint: ladder ceilings implemented, 2026-10-30
 
 The user authorized implementation with scope restricted to climbing and the optional one-input beginning/end stops within climbing. No new Sneak/falling behavior was added. Read LADDER_CEILING_PLAN.md for the detailed contract, completed design and remaining limits. Implementation commit: `b49a205`.
