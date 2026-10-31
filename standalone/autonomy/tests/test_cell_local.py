@@ -2,7 +2,7 @@ import copy
 import unittest
 from unittest.mock import patch
 
-from standalone.autonomy.cell_routes.geometry import decompose
+from standalone.autonomy.cell_routes.geometry import Cell, Decomposition, decompose
 from standalone.autonomy.cell_routes.local import CorridorAdapter, SearchWork
 from standalone.autonomy.cell_routes.routes import Corridor, corridor_for_points, landmarks
 from standalone.autonomy.movement_composition import boundary_state, empty_program
@@ -60,6 +60,23 @@ class CellLocalTests(unittest.TestCase):
         self.assertTrue(result['alternatives'])
         self.assertTrue(any(r['mode'] == 'Z' for alternative in result['alternatives'] for r in alternative))
         self.assertEqual(scene['initial'], before)
+
+    def test_forward_domains_reject_reverse_cell_order_but_allow_declared_returns(self):
+        scene = side_scene()
+        cells = [Cell(i, (lo,-5,-2,hi,8,2), 3) for i,(lo,hi) in enumerate([(-1,2),(2,4),(4,6)])]
+        d = Decomposition((-1,-5,-2,6,8,2), cells, [], [], {}, {})
+        corridor = Corridor(0, [0,1,2], [], [], (), [(-1,0,-2,6,0,2)], 0, stage_paths=[[0,1,2]])
+        program = dict(profile=dict(airtime=2, contactEvents=[], positionConstraints=[
+            dict(mode='X',t1=1,cmp='GE',rhs=5), dict(mode='X',t1=2,cmp='LE',rhs=1)]))
+        adapter = CorridorAdapter(scene, corridor, [], decomposition=d)
+        self.assertFalse(adapter.prefix(program))
+        self.assertFalse(adapter.prefix(program))
+        self.assertEqual(adapter.counts['forwardCacheHits'], 1)
+        corridor.stage_paths = [[0,1,2,1,0]]
+        self.assertTrue(CorridorAdapter(scene,corridor,[],decomposition=d).prefix(program))
+        corridor.stage_paths = [[0]]
+        d.cells[0] = Cell(0, (-1,-5,-2,6,8,2), 3)
+        self.assertTrue(CorridorAdapter(scene,corridor,[],decomposition=d).prefix(program))
 
     def test_numerical_budget_counts_every_call_and_preserves_accepted_state(self):
         work = SearchWork(2)

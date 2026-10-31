@@ -87,6 +87,8 @@ Generate opportunities from corridor geometry early. Restrict boxes/faces/timing
 
 Keep the full original-state X/Z history adjustable. Never solve cells independently and freeze their arrival state. Materializing a discrete local program derives its actual Y/ground/contact history; changed contacts regenerate affected schedules and timings. Portal crossing is spatial bookkeeping, not an extra input, a fixed center waypoint or a per-crossing integer cost.
 
+Latest user clarification: exploit the relatively fixed spatial route to evaluate constraints and local decisions in order from the beginning, propagating timing/progress alternatives forward with little backtracking. Keep whole-history facing optimization and explicit route revisits. Benchmark forward domain propagation against corridor filtering alone before inferring that another abstraction is necessary.
+
 For each selected route, return its best accepted time/objective, explored decision counts, remaining/truncated alternatives and numerical-unknown status. A failing local solve does not eliminate the whole route as infeasible. Give every selected route an initial allocation before spending most of the budget refining one family.
 
 Deliverable: accepted route-conditioned whole-trajectory solves on focused controls, including local method replacement and timing changes, with the existing model/scene validation level preserved. No new physics implementation or backend is part of this stage.

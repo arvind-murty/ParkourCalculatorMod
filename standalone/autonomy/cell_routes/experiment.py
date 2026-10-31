@@ -102,7 +102,7 @@ def generation_totals(report):
 
 def run_arm(request, arm, *, mode='generation', seconds=10, route_cap=10, max_expansions=1000,
             compiler=None, python_executable=None, spatial_points=None, witness_candidate=None,
-            max_solver_calls=None, candidate_seconds=1, route_seconds=3, retries=0, cancel_event=None):
+            max_solver_calls=None, candidate_seconds=1, route_seconds=3, retries=0, cancel_event=None, forward=True):
     if arm not in ('generic', 'prescribed', 'automatic') or mode not in ('generation', 'solve'):
         raise ValueError('Unsupported experiment arm/mode')
     if max_solver_calls is not None and (type(max_solver_calls) is not int or max_solver_calls < 1):
@@ -152,7 +152,7 @@ def run_arm(request, arm, *, mode='generation', seconds=10, route_cap=10, max_ex
             break
         allocation = remaining / (len(routes) - index)
         call_allocation = max(1, remaining_calls // (len(routes) - index)) if remaining_calls is not None else None
-        adapter = CorridorAdapter(scene, corridor, gates) if corridor is not None else None
+        adapter = CorridorAdapter(scene, corridor, gates, decomposition=d, forward=forward) if corridor is not None else None
         route_started = time.monotonic()
         work = SearchWork(call_allocation, deadline=route_started+allocation)
         counted = CountingCompiler(compiler) if compiler is not None else None
@@ -203,6 +203,9 @@ def compact(run):
         firstAcceptedSeconds=min((r['work']['firstAcceptedSeconds'] for r in results if r['work']['firstAcceptedSeconds'] is not None), default=None),
         bestTicks=run['best']['plan']['ticks'] if run['best'] else None,
         bestObjective=run['best']['candidate'].get('objective') if run['best'] else None,
+        forwardChecks=sum((r.get('adapter') or {}).get('forwardPrefixChecks',0) for r in results),
+        forwardRejections=sum((r.get('adapter') or {}).get('forwardPrefixRejections',0) for r in results),
+        forwardPhaseUpdates=sum((r.get('adapter') or {}).get('forwardPhaseUpdates',0) for r in results),
         skeletons=sum(r['generationTotals'].get('skeletons',0) for r in results),
         maskWork=sum(r['generationTotals'].get('maskWork',0) for r in results))
 
@@ -227,6 +230,7 @@ def main():
     parser.add_argument('--max-prefixes', type=int)
     parser.add_argument('--repeat', type=int, default=1)
     parser.add_argument('--profile', action='store_true')
+    parser.add_argument('--no-forward', action='store_true')
     args = parser.parse_args()
     if args.repeat < 1:
         parser.error('--repeat must be positive')
@@ -267,7 +271,7 @@ def main():
                             max_expansions=args.max_expansions, compiler=compiler, python_executable=args.python,
                             spatial_points=points, witness_candidate=candidate, max_solver_calls=args.max_solver_calls,
                             candidate_seconds=args.candidate_seconds, route_seconds=args.route_seconds,
-                            retries=args.retries, cancel_event=cancel)
+                            retries=args.retries, cancel_event=cancel, forward=not args.no_forward)
                     except (ValueError, RuntimeError, OSError, TimeoutError) as error:
                         run = dict(arm=arm, mode=args.mode, status='unknown' if isinstance(error, TimeoutError) else 'error',
                             error=str(error), best=None, routes=[], geometry=None, results=[], unattemptedRoutes=0,

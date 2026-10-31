@@ -90,7 +90,9 @@ class CountingCompiler:
 
 
 class CorridorAdapter:
-    def __init__(self, scene, corridor, gates):
+    def __init__(self, scene, corridor, gates, *, decomposition=None, forward=True):
+        self.decomposition, self.forward = decomposition, forward
+        self.progress_cache = {}
         self.scene, self.corridor, self.gates = scene, corridor, gates
         self.counts = collections.Counter()
         self.blocks = [b for b in scene['blocks'] if self.box_allowed(scene['collisionScene']['solids'][b['solidIndex']])]
@@ -116,6 +118,71 @@ class CorridorAdapter:
         context['scene'] = dict(context['scene'], blocks=self.blocks)
         context['regionAllowed'] = self.region_allowed
         context['boxAllowed'] = self.box_allowed
+        if self.forward and self.decomposition is not None and self.corridor.stage_paths:
+            context['prefixFilter'] = self.prefix
+
+    def prefix(self, program):
+        profile = program['profile']
+        n = profile['airtime']
+        rows = profile.get('positionConstraints', [])
+        contacts = profile.get('contactEvents', [])
+        key = json.dumps([n, rows, contacts], sort_keys=True)
+        self.counts['forwardPrefixChecks'] += 1
+        if key in self.progress_cache:
+            self.counts['forwardCacheHits'] += 1
+            accepted = self.progress_cache[key]
+        else:
+            domains = [[[-float('inf'), float('inf')], [-float('inf'), float('inf')]] for _ in range(n+1)]
+            for axis, a in enumerate((0, 2)):
+                value = self.initial['position'][a]
+                domains[0][axis] = [value, value]
+            def tighten(state, axis, lo, hi):
+                domains[state][axis][0] = max(domains[state][axis][0], lo)
+                domains[state][axis][1] = min(domains[state][axis][1], hi)
+            for row in rows:
+                if row['mode'] not in ('X', 'Z') or row.get('t2') is not None:
+                    continue
+                lo = row['rhs'] if row['cmp'] in ('GE','EQ') else -float('inf')
+                hi = row['rhs'] if row['cmp'] in ('LE','EQ') else float('inf')
+                tighten(row['t1'], 0 if row['mode']=='X' else 1, lo, hi)
+            for contact in contacts:
+                at, axis = contact['offset'], contact['axis']
+                box = expanded_box(contact['box'])
+                if axis == 'Y':
+                    tighten(at, 0, box[0], box[3])
+                    tighten(at, 1, box[2], box[5])
+                elif axis == 'X':
+                    tighten(at+1, 0, contact['plane'], contact['plane'])
+                    tighten(at, 1, box[2], box[5])
+                elif axis == 'Z':
+                    tighten(at+1, 0, box[0], box[3])
+                    tighten(at+1, 1, contact['plane'], contact['plane'])
+            phases = [(domains[0][0], domains[0][1])]
+            for t in range(n):
+                phases.extend([(domains[t][0], domains[t][1]), (domains[t+1][0], domains[t][1]),
+                               (domains[t+1][0], domains[t+1][1])])
+            accepted = False
+            for path in self.corridor.stage_paths:
+                earliest = 0
+                viable = True
+                for x, z in phases:
+                    self.counts['forwardPhaseUpdates'] += 1
+                    found = None
+                    for index in range(earliest, len(path)):
+                        box = self.decomposition.cells[path[index]].bounds
+                        if max(x[0],box[0]) <= min(x[1],box[3])+1e-7 and max(z[0],box[2]) <= min(z[1],box[5])+1e-7:
+                            found = index
+                            break
+                    if found is None:
+                        viable = False
+                        break
+                    earliest = found
+                if viable:
+                    accepted = True
+                    break
+            self.progress_cache[key] = accepted
+        self.counts['forwardPrefixRejections'] += int(not accepted)
+        return accepted
 
     def row(self, mode, state, cmp, value):
         return dict(leg=0, offset=state, mode=mode, cmp=cmp, rhs=value, name='cell_corridor:' + str(self.corridor.id))
@@ -159,5 +226,6 @@ class CorridorAdapter:
                     repairComplete=False, actual=checked.get('actual'))
 
     def summary(self):
-        return dict(self.counts, filtering='before_block_and_ladder_products;lazy_corridor_repairs_after_shared_scene_acceptance',
+        return dict(self.counts, forwardEnabled=self.forward and self.decomposition is not None and bool(self.corridor.stage_paths),
+                    stagePathVariants=len(self.corridor.stage_paths), filtering='before_block_and_ladder_products;lazy_corridor_repairs_after_shared_scene_acceptance',
                     originalInitialState=self.initial)

@@ -81,6 +81,8 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
                     child = append_choice(program, choice, max_inputs=cfg['maxInputs'])
                     if child is None or not entry_possible(child['profile'], initial_bounds):
                         continue
+                    if context.get('prefixFilter') is not None and not context['prefixFilter'](child):
+                        continue
                     key = json.dumps([child['profile'], [(e['column']['id'], e['wall'], e['entryFace'], e['exitFace'],
                         e['schedule']['entryState'], e['schedule']['exitState']) for e in child['ladderEvents']]], sort_keys=True)
                     if key in seen:

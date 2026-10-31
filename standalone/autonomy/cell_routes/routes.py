@@ -2,7 +2,7 @@ import heapq
 import itertools
 import math
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 
 from .geometry import contains, intersection, merge_boxes, segment_intervals
 from ..obstacle_geometry import expanded_box
@@ -102,6 +102,7 @@ class Corridor:
     geometric_length: float
     variants: int = 1
     source: str = 'automatic'
+    stage_paths: list = field(default_factory=list)
 
     def to_dict(self):
         return asdict(self)
@@ -110,7 +111,7 @@ class Corridor:
 def corridor_for_points(decomposition, points, gates, *, route_id=0, source='prescribed'):
     if len(points) < 2 or any(len(p) != 3 or any(not math.isfinite(v) for v in p) for p in points):
         raise ValueError('A prescribed spatial route requires finite 3D points')
-    cell_ids = set()
+    cell_ids, ordered_cells = set(), []
     for a, b in zip(points, points[1:]):
         intervals = segment_intervals(decomposition, a, b)
         reach = 0.
@@ -124,9 +125,18 @@ def corridor_for_points(decomposition, points, gates, *, route_id=0, source='pre
                 cell_ids.add(cell)
         if reach < 1:
             raise ValueError('Prescribed spatial route crosses an obstacle or leaves coverage')
+        covered = 0.
+        while covered < 1:
+            available = [(hi, decomposition.cells[cell].dimension, -cell, cell) for lo, hi, cell in intervals if lo <= covered and hi > covered]
+            if not available:
+                raise ValueError('Prescribed itinerary has a coverage gap')
+            hi, _, _, cell = max(available)
+            if not ordered_cells or ordered_cells[-1] != cell:
+                ordered_cells.append(cell)
+            covered = hi
     cells = sorted(cell_ids)
     return Corridor(route_id, cells, [], [list(p) for p in points], signature(points, gates),
-        prescribed_projection(decomposition, cells, points), sum(math.dist(a, b) for a, b in zip(points, points[1:])), source=source)
+        prescribed_projection(decomposition, cells, points), sum(math.dist(a, b) for a, b in zip(points, points[1:])), source=source, stage_paths=[ordered_cells])
 
 
 def enumerate_routes(scene, decomposition, *, max_routes=50, max_expansions=5000, max_steps=64,
@@ -169,11 +179,13 @@ def enumerate_routes(scene, decomposition, *, max_routes=50, max_expansions=5000
                 corridor = grouped[full_sig]
                 corridor.cells = sorted(set(corridor.cells) | set(cells))
                 corridor.projection = merge_boxes(corridor.projection + walk_projection(decomposition, list(cells), list(portals), start, goal))
+                if list(cells) not in corridor.stage_paths:
+                    corridor.stage_paths.append(list(cells))
                 corridor.variants += 1
                 duplicates += 1
             else:
                 grouped[full_sig] = Corridor(len(grouped), list(cells), list(portals), [list(p) for p in finished],
-                    full_sig, walk_projection(decomposition, list(cells), list(portals), start, goal), length + math.dist(points[-1], goal))
+                    full_sig, walk_projection(decomposition, list(cells), list(portals), start, goal), length + math.dist(points[-1], goal), stage_paths=[list(cells)])
                 if len(grouped) >= max_routes:
                     termination = 'route_limit'
                     break

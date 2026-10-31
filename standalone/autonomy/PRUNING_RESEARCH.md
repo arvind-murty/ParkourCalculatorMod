@@ -394,3 +394,7 @@ User authorized implementing the staged experiment and requested no further comm
 ### 2026-10-31: isolated geometry milestone
 
 Implemented expanded-AABB subtraction/merging, explicit boundary strata, partial portals, physical contacts/provenance, ladder memberships and swept-segment coverage in `cell_routes/geometry.py`. Six focused tests pass, including exact floor/ceiling contact and equivalent split-box coverage. Built the worktree-local Java helper. Bounds deferred; routes/local adapter/benchmarks follow. Details live in `experiments/cell-routes/README.md`.
+
+### 2026-10-31: fixed-route decisions should propagate forward
+
+User clarified a key reason for spatial separation: within one broad route the geometry changes little while arrival ticks change, so evaluate decisions and constraints from the start with little backtracking. Added ordered cell-stage paths and a forward prefix-domain pass. It intersects known per-state position/contact constraints, propagates possible nondecreasing route progress through Y/X/Z phases, permits skipping cells within one tick and repeated interactions within a cell, and preserves explicit route returns. Earlier numerical facings remain adjustable. The pass is a necessary geometric/order relaxation, not a greedy commitment or new time bound. Benchmark with and without it, measuring prefix rejections, cache hits, phase updates and numerical work. Lazy numerical corridor repair remains heuristic.
