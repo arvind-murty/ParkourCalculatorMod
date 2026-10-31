@@ -6,6 +6,8 @@ Branch: `research/ipopt-cell-routes`. Worktree: `/Users/arvindmurty/CS/ParkourCa
 
 Current user scope: stepping, blockages, ceilings, run ticks and landing. Ladders and explicit wall-hit experiments are excluded from these measurements and the final focused gate. Historical implementation notes are retained separately in [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md).
 
+Latest design discussion: [route-specific optimistic continuation guidance](../../ROUTE_BASELINE_GUIDANCE.md). The user proposes using a relaxed full-route baseline to evaluate discrete decisions while every facing stays variable. This is a new design proposal, not implemented or included in the measurements below.
+
 ## Current status in plain terms
 
 The experimental pipeline exists and works on small scenes. The main efficiency goal is still unfinished. The production default has not been switched.
