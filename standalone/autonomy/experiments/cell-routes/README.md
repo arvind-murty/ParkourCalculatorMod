@@ -6,6 +6,17 @@ Branch: `research/ipopt-cell-routes`. Worktree: `/Users/arvindmurty/CS/ParkourCa
 
 Current user scope: stepping, blockages, ceilings, run ticks and landing. Ladders and explicit wall-hit experiments are excluded from these measurements and the final focused gate. Historical implementation notes are retained separately in [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md).
 
+## Current status in plain terms
+
+The experimental pipeline exists and works on small scenes. The main efficiency goal is still unfinished. The production default has not been switched.
+
+1. Cell decomposition is implemented and tested on the selected AABB controls.
+2. Spatial route generation is implemented as a basic heuristic. The small numerical scenes retained one to three families; a known valid family was missed under the geometric expansion cap in the multi-support case.
+3. Local solving currently reuses the existing movement-program generator, with corridor filtering and forward progress checks added around it. Many choices are still constructed before the forward check rejects them. This is not yet a local generator driven efficiently by the next interaction along the fixed route.
+4. The numerical benchmark solves seven of eight scenes within its declared limits. In the remaining feasible multi-support scene, even the supplied corridor reaches its prefix limit before a complete numerical proposal. A separately validated two-jump witness establishes that this scene is solvable.
+
+The next implementation priority is to let the fixed route drive forward interaction generation and ordering, while retaining alternative timings and whole-history facing optimization. Then repeat the prescribed-route comparison. These results do not yet establish that the architecture needs bounds or a mandatory additional abstraction layer. Bounds, ladder tests and explicit wall-hit tests remain deferred.
+
 ## What is implemented
 
 - Expanded-AABB free-space decomposition into cuboids, exact boundary strata, finite portals and physical contact patches with provenance. The supplied scene bounds are eroded by the player body dimensions. These controls produced 11 through 35 cells.
