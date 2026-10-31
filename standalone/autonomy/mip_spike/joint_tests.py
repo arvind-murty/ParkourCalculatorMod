@@ -1,4 +1,5 @@
 import copy
+import hashlib
 import importlib.util
 import itertools
 import json
@@ -235,6 +236,23 @@ class JointScheduleTests(unittest.TestCase):
         self.assertEqual(wall['blockageCounts']['horizontal'], 2)
         self.assertEqual(len(wall['gates']), 2)
         self.assertTrue(checked['candidate']['onGround'][master['departures'][1]])
+
+    def test_saved_joint_solution_revalidates_and_changing_its_timing_is_rejected(self):
+        directory = Path(__file__).parents[1] / 'experiments/joint-mixed-integer'
+        summary = json.loads((directory / 'summary.json').read_text())
+        for name, key in [('case.json', 'caseSha256'), ('request.json', 'requestSha256')]:
+            self.assertEqual(hashlib.sha256((directory / name).read_bytes()).hexdigest(), summary[key])
+        case = self.prepare(json.loads((directory / 'request.json').read_text()))
+        saved_case = json.loads((directory / 'case.json').read_text())
+        self.assertEqual(case['modes'], saved_case['modes'])
+        self.assertEqual(case['profiles'], saved_case['profiles'])
+        evidence = json.loads((directory / 'joint-result.json').read_text())['best']
+        checked = self.assert_accepted(case, evidence['master'])
+        for key in ('positions', 'velocity', 'y', 'vy', 'onGround'):
+            self.assertEqual(checked['candidate'][key], evidence['candidate'][key])
+        changed = copy.deepcopy(evidence['master'])
+        changed['allocation'] = [1, 1]
+        self.assertFalse(accept_joint(case, changed, self.compiler, seconds=2)['accepted'])
 
     def test_unselected_ceiling_hit_is_prevented_inside_the_model(self):
         request = open_request()

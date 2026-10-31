@@ -74,4 +74,6 @@ PYTHONPATH="$PWD/standalone/autonomy/build/mip-site" \
 
 ## Remaining work
 
+The [saved joint experiment](../experiments/joint-mixed-integer/README.md) includes a raw-accepted 26-input, two-jump wide neo with discovered allocation `[2, 0]`, gate position ticks 16/18, optimized incumbent and all six separately enumerated allocation controls. One equal-duration allocation remains unknown; no uniqueness or global-objective claim is made.
+
 This is an isolated prototype, not a production backend integration. Measure longer routes and more obstacle arrangements before judging scaling. Add conditional contact/input-state transitions for wall hits before claiming joint contact scheduling. Later add vertical alternatives, stepping and ladder phase rules. Those extensions must share state transitions and keep all intermediate X/Z state free. The fixed-route restriction, movement scope, guarded boundaries and per-block passage caps must remain explicit. No communication or edits to the other research agent's branch are needed.

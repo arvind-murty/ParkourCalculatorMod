@@ -1,0 +1,144 @@
+{
+  "sourceCommit": "2fdcf75",
+  "branch": "spike/ipopt-mixed-integer",
+  "python": "3.12.2",
+  "platform": "macOS-15.7.1-arm64-arm-64bit",
+  "caseSha256": "12cc2de0090be68135771cb49769b0cfc2adfaf70e343e529309eaf69f9e6edb",
+  "requestSha256": "8087331458770293cd449399c67d9f1a4c4be79b6b27834e8717b1de97747308",
+  "scope": "fixed support route; joint run timing, avoidance passages, gate timing and continuous angles; no optional contacts",
+  "suppliedRunAllocation": false,
+  "savedYawSeed": false,
+  "completeAllocationsGeneratedByJointModel": 0,
+  "joint": {
+    "horizon": 26,
+    "allocation": [
+      2,
+      0
+    ],
+    "departures": [
+      2,
+      14
+    ],
+    "objective": 7.855622990575714,
+    "rawAccepted": true,
+    "modelScalarErrors": {
+      "position": 8.704148513061227e-14,
+      "velocity": 8.115730310009894e-14,
+      "verticalVelocity": 0.0
+    },
+    "passages": [
+      {
+        "solidIndex": 2,
+        "blockId": "wall",
+        "faces": [
+          {
+            "axis": "X",
+            "direction": -1,
+            "plane": 4.699999988079071
+          },
+          {
+            "axis": "Z",
+            "direction": -1,
+            "plane": -0.40000001192092893
+          },
+          {
+            "axis": "X",
+            "direction": 1,
+            "plane": 5.450000011920929
+          }
+        ],
+        "gates": [
+          16,
+          18
+        ],
+        "blockageCounts": {
+          "horizontal": 2,
+          "vertical": 0,
+          "total": 2
+        }
+      }
+    ],
+    "elapsedSeconds": 8.444880165159702,
+    "status": "timelimit",
+    "optimizeGoal": true
+  },
+  "horizons": [
+    {
+      "horizon": 24,
+      "status": "infeasible",
+      "accepted": false,
+      "masterSeconds": 0.05465466529130936
+    },
+    {
+      "horizon": 25,
+      "status": "infeasible",
+      "accepted": false,
+      "masterSeconds": 0.021472416818141937
+    },
+    {
+      "horizon": 26,
+      "status": "timelimit",
+      "accepted": true,
+      "masterSeconds": 8.00658504664898
+    }
+  ],
+  "enumeration": [
+    {
+      "allocation": [
+        0,
+        0
+      ],
+      "status": "infeasible",
+      "accepted": false,
+      "seconds": 0.02124420553445816
+    },
+    {
+      "allocation": [
+        0,
+        1
+      ],
+      "status": "infeasible",
+      "accepted": false,
+      "seconds": 0.022080499678850174
+    },
+    {
+      "allocation": [
+        1,
+        0
+      ],
+      "status": "infeasible",
+      "accepted": false,
+      "seconds": 0.022428080439567566
+    },
+    {
+      "allocation": [
+        0,
+        2
+      ],
+      "status": "infeasible",
+      "accepted": false,
+      "seconds": 0.021515540778636932
+    },
+    {
+      "allocation": [
+        1,
+        1
+      ],
+      "status": "timelimit",
+      "accepted": false,
+      "seconds": 6.000117085874081
+    },
+    {
+      "allocation": [
+        2,
+        0
+      ],
+      "status": "sollimit",
+      "accepted": true,
+      "seconds": 2.3763242065906525
+    }
+  ],
+  "minimumTicksProven": false,
+  "globalObjectiveOptimalityClaimed": false,
+  "timingComparisonControlled": false
+}
