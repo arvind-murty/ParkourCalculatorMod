@@ -39,5 +39,3 @@
     22445    0.017    0.000    0.028    0.000 /Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-cell-routes/standalone/ipopt/ladder.py:42(vertical_step)
       153    0.000    0.000    0.028    0.000 /Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-cell-routes/standalone/autonomy/movement_generation.py:40(generate)
       147    0.001    0.000    0.028    0.000 /Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-cell-routes/standalone/autonomy/open_movement.py:54(normal_choices)
-
-

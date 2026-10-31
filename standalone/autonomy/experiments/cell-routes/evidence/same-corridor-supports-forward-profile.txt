@@ -39,5 +39,3 @@
       268    0.000    0.000    0.005    0.000 /Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-cell-routes/standalone/autonomy/movement_units.py:132(shifted_unit)
      1746    0.001    0.000    0.005    0.000 /Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-cell-routes/standalone/autonomy/vertical_profiles.py:8(_flags)
       273    0.003    0.000    0.005    0.000 /Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-cell-routes/standalone/autonomy/movement_units.py:103(compile_units)
-
-

@@ -39,5 +39,3 @@
     22937    0.016    0.000    0.028    0.000 /Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-cell-routes/standalone/ipopt/ladder.py:42(vertical_step)
 39342/39339    0.014    0.000    0.028    0.000 {built-in method builtins.any}
       156    0.000    0.000    0.027    0.000 /Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-cell-routes/standalone/autonomy/movement_generation.py:40(generate)
-
-
