@@ -2,6 +2,8 @@
 
 Experimental package on `spike/ipopt-mixed-integer`, forked from the consolidated standalone solver at `99ecfe9`. Production route search is unchanged. The research agent owns the broad spatial-route/cell design; this spike evaluates a possible local backend.
 
+The subsequent [joint schedule prototype](JOINT_SCHEDULE.md) puts run-tick allocation, departure timing, blockage selection/gate timing and angles in one model. Its complete supported simulation subset is ordinary sprint jumps plus run ticks and avoidance on a supplied support route. The fixed-schedule experiment below remains a separate historical baseline.
+
 ## Scope
 
 The route, tick horizon, vertical schedule, contact history and therefore input/sprint coefficient history are supplied. A fresh shared Java compilation supplies the coefficients for each case. No saved witness yaw is used as the initial guess.

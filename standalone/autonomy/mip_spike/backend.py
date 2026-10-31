@@ -7,6 +7,7 @@ import time
 from standalone.ipopt import prepare
 from standalone.ipopt.ladder import CAP
 from .geometry import selected_rows
+from .algebra import inertia
 
 
 def solve(request, *, seconds=10, control='circle', forbidden=()):
@@ -65,21 +66,9 @@ def solve(request, *, seconds=10, control='circle', forbidden=()):
         squared = unit[0] * unit[0] + unit[1] * unit[1]
         model.addCons(squared == 1 if control == 'circle' else squared <= 1)
         for axis in (0, 1):
-            if tick == 0 or threshold == 0:
-                carry = (0. if abs(problem['velocity'][axis]) < threshold else v[tick][axis]) if tick == 0 else v[tick][axis]
-            elif bounds_v[tick][axis] < threshold:
-                carry = 0.
-            else:
-                carry = model.addVar(f'carry_{tick}_{axis}', lb=-bounds_v[tick][axis], ub=bounds_v[tick][axis])
-                modes = choice(f'inertia_{tick}_{axis}', 3)
-                regime.extend(modes)
-                conditional(v[tick][axis] <= threshold - 1e-8, modes[0])
-                conditional(-v[tick][axis] <= threshold - 1e-8, modes[0])
-                equal(carry, 0, modes[0])
-                conditional(-v[tick][axis] <= -threshold - 1e-8, modes[1])
-                equal(carry, v[tick][axis], modes[1])
-                conditional(v[tick][axis] <= -threshold - 1e-8, modes[2])
-                equal(carry, v[tick][axis], modes[2])
+            carry, modes = inertia(model, v[tick][axis], bounds_v[tick][axis], threshold,
+                                   f'{tick}_{axis}', initial=problem['velocity'][axis] if tick == 0 else None)
+            regime.extend(modes)
             raw = carry + problem['magnitude'][tick] * unit[axis]
             movement = raw
             if ladder[tick]:
