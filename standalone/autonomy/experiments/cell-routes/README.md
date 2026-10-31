@@ -6,7 +6,9 @@ Branch: `research/ipopt-cell-routes`. Worktree: `/Users/arvindmurty/CS/ParkourCa
 
 Current user scope: stepping, blockages, ceilings, run ticks and landing. Ladders and explicit wall-hit experiments are excluded from these measurements and the final focused gate. Historical implementation notes are retained separately in [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md).
 
-Latest design discussion: [route-specific optimistic continuation guidance](../../ROUTE_BASELINE_GUIDANCE.md) and [mixed-integer outer relaxation](../../ROUTE_MIP_RELAXATION.md). The user proposes using a relaxed full-route baseline to evaluate discrete decisions while every facing stays variable. This is a new design proposal, not implemented or included in the measurements below.
+Latest coordinated model recommendation: [circle-preserving continuous decision relaxation](../../CONTINUOUS_DECISION_RELAXATION.md), retaining full effective acceleration and relaxing decision selectors first. This design has not been implemented or measured.
+
+Earlier design discussion: [route-specific optimistic continuation guidance](../../ROUTE_BASELINE_GUIDANCE.md) and [mixed-integer outer relaxation](../../ROUTE_MIP_RELAXATION.md). The user proposes using a relaxed full-route baseline to evaluate discrete decisions while every facing stays variable. This is a new design proposal, not implemented or included in the measurements below.
 
 ## Current status in plain terms
 

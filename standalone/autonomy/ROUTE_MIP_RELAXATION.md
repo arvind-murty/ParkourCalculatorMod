@@ -4,6 +4,8 @@
 
 Current test scope remains stepping, blockages, ceilings, run inputs and landing. Ladders and intentional wall-hit candidate families remain deferred.
 
+Latest coordinated recommendation: [CONTINUOUS_DECISION_RELAXATION.md](CONTINUOUS_DECISION_RELAXATION.md) keeps a shared exact control circle and relaxes decision integrality first. Circle-to-disk convexification below is an optional comparison, not the default reference model. The user prioritized reference fidelity and direct IPOPT solve cost, and explicitly authorized this cross-thread design exchange.
+
 ## The guarantee is trajectory inclusion
 
 Fix a spatial route r, final input count T, selected discrete decisions D and the signed final-coordinate objective J to maximize. Keep the original initial state and free facings throughout.
@@ -86,7 +88,7 @@ A_k x <= b_k + M_k * (1-z_k)
 
 M must be large enough that an inactive alternative cannot exclude a real path. Compute it from valid state/control bounds for the declared horizon/route, not from the observed range of one reference trajectory. A too-small M invalidates coverage. Very large M can be valid but makes fractional selectors deactivate almost all useful geometry.
 
-For guidance, prefer disaggregated hull/perspective formulations for the main mode/contact disjunctions where practical. They retain more of the relationship among mode selection, position, velocity and control, at the cost of additional variables. Hull reformulation does not by itself convexify a nonconvex branch; the circles and any other nonconvex rows still need their appropriate outer treatment.
+For the initial compact guidance model, prefer shared-state/common-heading complete-transition mixing; strengthen weak geometry/contact guards selectively with disaggregated hull/perspective rows. A full trajectory-wide hull is an alternative, not the default. They retain more of the relationship among mode selection, position, velocity and control, at the cost of additional variables. Hull reformulation does not by itself convexify a nonconvex branch; the circles and any other nonconvex rows still need their appropriate outer treatment.
 
 For example, z_land=.5 and z_air=.5 should represent a constrained mixture of the two modeled transition sets, not a way to activate both modes' most favorable coefficients independently. Local hulls can still mix/unmix behavior across successive inputs, so even a valid root relaxation may be too optimistic to provide useful directional guidance. Coupled mode flow, contact-before/after logic and short multi-input disjunctions can tighten it without fixing the remaining integer decisions.
 
