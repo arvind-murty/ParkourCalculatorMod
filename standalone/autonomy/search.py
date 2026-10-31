@@ -124,7 +124,7 @@ def search_allocations(route, evaluate, *, seconds=60, improve=False, rank_equal
 
 
 def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1, improve=False,
-               rank_equal_cost=False, optimize_goal=False, python_executable=None, cancel_event=None, on_attempt=None):
+               rank_equal_cost=False, optimize_goal=False, python_executable=None, cancel_event=None, on_attempt=None, work=None):
     started = time.monotonic()
     route = prepare_route(request)
     if number(seconds, 'search seconds') <= 0:
@@ -174,6 +174,8 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
             if 'ladderTicks' in plan:
                 problem['ladderTicks'] = plan['ladderTicks']
             problem = prepare(problem)
+            if work is not None:
+                work.proposal(problem)
             impossible = contradiction(problem)
             if impossible:
                 return {'status': 'blocked', 'plan': plan, 'certificate': impossible,
@@ -227,6 +229,8 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                 budget = min(candidate_seconds * (attempt + 1), remaining)
                 if attempt:
                     problem['yaw'] = fallback
+                if work is not None:
+                    work.before_solve(problem)
                 result = solve(problem, seconds=budget, stop_on_feasible=not polish,
                                python_executable=python_executable, cancel_event=cancel_event)
                 diagnostics.append({'status': result['status'], 'termination': result.get('termination'),

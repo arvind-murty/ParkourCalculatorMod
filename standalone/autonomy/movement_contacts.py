@@ -34,7 +34,7 @@ def interleave_families(values, key, *, within=None):
 
 
 def contact_variants(solids, horizon, *, schedules=(), start=0, end=None, existing=(),
-                     max_variants=16, max_events=3, deadline=None, cancel_event=None):
+                     max_variants=16, max_events=3, deadline=None, cancel_event=None, box_allowed=None):
     integer(horizon, 'contact horizon', 1, 200)
     integer(start, 'contact start', 0, horizon - 1)
     end = integer(horizon if end is None else end, 'contact end', start + 1, horizon)
@@ -52,9 +52,13 @@ def contact_variants(solids, horizon, *, schedules=(), start=0, end=None, existi
     predictions = []
     for s in schedules:
         for box in solids:
+            if box_allowed is not None and not box_allowed(box):
+                continue
             predictions.extend(predict_ceiling_sequences(s, box, start=start, end=end))
     opportunities = [e for e in contact_opportunities(solids, horizon, ceilings=False) if start <= e['offset'] < end]
     opportunities.extend(e for e in ceiling_opportunities(solids, horizon) if start <= e['offset'] < end)
+    if box_allowed is not None:
+        opportunities = [e for e in opportunities if box_allowed(e['box'])]
     def distance(event):
         tick, box = event['offset'], event['box']
         scores = []
@@ -111,7 +115,7 @@ def contact_variants(solids, horizon, *, schedules=(), start=0, end=None, existi
 
 
 def mixed_schedule_pool(request, solids, *, schedules=(), max_variants=16, max_events=3,
-                        deadline=None, cancel_event=None):
+                        deadline=None, cancel_event=None, box_allowed=None):
     ordered = sorted(schedules, key=lambda s: (s['exitKind'] != 'top', not any(s['hit']), s['ticks']))
     seeds = list(interleave_families(ordered, lambda s: s['entryState']))[:max(1, max_variants)]
     n = request['maxInputs']
@@ -119,7 +123,7 @@ def mixed_schedule_pool(request, solids, *, schedules=(), max_variants=16, max_e
         jump=[f32(.42) if request.get('jumpAtStart') else None] + [None] * (n - 1))
     seeds.append({'ticks': n, 'trace': raw, 'ladderTicks': [False] * (n + 1)})
     proposals = contact_variants(solids, n, schedules=seeds, max_variants=min(256, max_variants),
-                                max_events=max_events, deadline=deadline, cancel_event=cancel_event)
+                                max_events=max_events, deadline=deadline, cancel_event=cancel_event, box_allowed=box_allowed)
     if not proposals['variants']:
         return {'schedules': [], 'contacts': proposals, 'generation': None}
     config = copy.deepcopy(request)

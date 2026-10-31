@@ -4,7 +4,7 @@ import math
 import time
 from dataclasses import asdict, dataclass
 
-from .geometry import merge_boxes, segment_intervals
+from .geometry import contains, intersection, merge_boxes, segment_intervals
 from ..obstacle_geometry import expanded_box
 
 
@@ -41,7 +41,7 @@ def crossings(points, gates):
             if a[axis] <= plane < b[axis] or b[axis] <= plane < a[axis]:
                 f = (plane - a[axis]) / (b[axis] - a[axis])
                 value = a[gate['lateral']] + f * (b[gate['lateral']] - a[gate['lateral']])
-                side = -1 if value <= gate['lo'] else 1 if value >= gate['hi'] else 0
+                side = -1 if value <= gate['lo'] + 1e-7 else 1 if value >= gate['hi'] - 1e-7 else 0
                 token = (gate['id'], 1 if b[axis] > a[axis] else -1, side)
                 events.append((f, gate['id'], token))
         result.extend(dict(token=token, segment=index) for _, _, token in sorted(events))
@@ -55,6 +55,34 @@ def signature(points, gates):
 def projected_boxes(decomposition, cell_ids):
     return merge_boxes([(decomposition.cells[i].bounds[0], 0, decomposition.cells[i].bounds[2],
                          decomposition.cells[i].bounds[3], 0, decomposition.cells[i].bounds[5]) for i in cell_ids])
+
+
+def anchor_box(decomposition, point):
+    patches = [p.bounds for p in decomposition.contacts if p.kind == 'support' and contains(p.bounds, point, 1e-7)]
+    if not patches:
+        return tuple(point) + tuple(point)
+    return tuple(min(p[a] for p in patches) for a in range(3)) + tuple(max(p[a+3] for p in patches) for a in range(3))
+
+
+def walk_projection(decomposition, cells, portals, start, goal):
+    boxes = []
+    for i, cell in enumerate(cells):
+        before = decomposition.portals[portals[i-1]].bounds if i else anchor_box(decomposition, start)
+        after = decomposition.portals[portals[i]].bounds if i < len(portals) else anchor_box(decomposition, goal)
+        envelope = tuple(min(before[a], after[a]) for a in range(3)) + tuple(max(before[a+3], after[a+3]) for a in range(3))
+        clip = intersection(envelope, decomposition.cells[cell].bounds)
+        if clip is not None:
+            boxes.append((clip[0], 0, clip[2], clip[3], 0, clip[5]))
+    return merge_boxes(boxes)
+
+
+def prescribed_projection(decomposition, cells, points):
+    anchors = [anchor_box(decomposition, points[0]), anchor_box(decomposition, points[-1])]
+    envelope = (min([b[0] for b in anchors]+[p[0] for p in points]), 0,
+                min([b[2] for b in anchors]+[p[2] for p in points]),
+                max([b[3] for b in anchors]+[p[0] for p in points]), 0,
+                max([b[5] for b in anchors]+[p[2] for p in points]))
+    return merge_boxes([clip for b in projected_boxes(decomposition, cells) if (clip := intersection(b, envelope)) is not None])
 
 
 @dataclass
@@ -92,7 +120,7 @@ def corridor_for_points(decomposition, points, gates, *, route_id=0, source='pre
             raise ValueError('Prescribed spatial route crosses an obstacle or leaves coverage')
     cells = sorted(cell_ids)
     return Corridor(route_id, cells, [], [list(p) for p in points], signature(points, gates),
-        projected_boxes(decomposition, cells), sum(math.dist(a, b) for a, b in zip(points, points[1:])), source=source)
+        prescribed_projection(decomposition, cells, points), sum(math.dist(a, b) for a, b in zip(points, points[1:])), source=source)
 
 
 def enumerate_routes(scene, decomposition, *, max_routes=50, max_expansions=5000, max_steps=64,
@@ -134,12 +162,12 @@ def enumerate_routes(scene, decomposition, *, max_routes=50, max_expansions=5000
             if full_sig in grouped:
                 corridor = grouped[full_sig]
                 corridor.cells = sorted(set(corridor.cells) | set(cells))
-                corridor.projection = projected_boxes(decomposition, corridor.cells)
+                corridor.projection = merge_boxes(corridor.projection + walk_projection(decomposition, list(cells), list(portals), start, goal))
                 corridor.variants += 1
                 duplicates += 1
             else:
                 grouped[full_sig] = Corridor(len(grouped), list(cells), list(portals), [list(p) for p in finished],
-                    full_sig, projected_boxes(decomposition, cells), length + math.dist(points[-1], goal))
+                    full_sig, walk_projection(decomposition, list(cells), list(portals), start, goal), length + math.dist(points[-1], goal))
                 if len(grouped) >= max_routes:
                     termination = 'route_limit'
                     break
@@ -207,8 +235,10 @@ def projected_segment_covered(projection, a, b, tolerance=1e-7):
     return reach >= 1
 
 
-def audit_candidate(corridor, candidate, gates):
+def audit_candidate(corridor, candidate, gates, *, terminal_pre=False):
     points, references = horizontal_trace(candidate)
+    if terminal_pre and len(points) >= 4:
+        points, references = points[:-2], references[:-2]
     for i, (a, b) in enumerate(zip(points, points[1:])):
         if not projected_segment_covered(corridor.projection, a, b):
             return dict(accepted=False, reason='corridor_projection', segment=i, references=references[i])

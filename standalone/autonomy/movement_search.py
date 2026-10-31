@@ -27,7 +27,8 @@ def movement_settings(scene):
     return settings
 
 
-def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=None, report=None, screen=None):
+def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=None, report=None, screen=None,
+                           context_adapter=None, work=None):
     cfg = movement_settings(scene) if settings is None else settings
     report = report if report is not None else {}
     initial = empty_program(scene['initial'])
@@ -36,6 +37,8 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
     records, termination = [], 'exhausted'
     initial_bounds = [scene['initial']['position'][0]] * 2 + [scene['initial']['position'][2]] * 2
     def budget():
+        if work is not None:
+            work.check()
         if deadline is not None and time.monotonic() >= deadline:
             raise TimeoutError('Movement composition exceeded its budget')
     try:
@@ -64,6 +67,8 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
             context = dict(mode='open', scene=scene, program=program, state=boundary_state(program),
                 maxInputs=remaining, maxEntryInputs=cfg['maxEntryInputs'], checkBudget=budget,
                 deadline=deadline, cancelEvent=cancel_event, normalGap=False)
+            if context_adapter is not None:
+                context_adapter(context)
             for kind in cfg['types']:
                 choices = 0
                 for choice in generate_choices(kind, context):
@@ -94,7 +99,7 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
                     records.append(dict(type=kind, prefixTicks=ticks, termination='exhausted', emitted=choices))
             records.extend(context.get('generationRecords', []))
     except TimeoutError:
-        termination = 'deadline'
+        termination = work.termination if work is not None and work.termination else 'deadline'
     report.update(termination=termination, expandedPrefixes=expanded, generated=generated,
         remainingPrefixes=len(pending), screenedPrefixes=screened, queueDrops=drops, generation=records,
         minimumTicksProven=False, types=cfg['types'])
@@ -102,7 +107,7 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
 
 def find_movement_blocks(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                          improve=False, python_executable=None, cancel_event=None, on_attempt=None,
-                         route_seconds=8):
+                         route_seconds=8, context_adapter=None, candidate_filter=None, work=None):
     from .block_search import prepare_scene
     from .block_contacts import floor_checks, solve_contact_branches
     from .ranking import candidate_rank
@@ -126,10 +131,12 @@ def find_movement_blocks(request, compiler, *, seconds=60, candidate_seconds=2, 
     def screen(program):
         return screen_program(scene, program, compiler, max(.001, deadline - time.monotonic()))
     for program in iter_movement_programs(scene, settings=cfg, deadline=deadline, cancel_event=cancel_event,
-                                          report=report, screen=screen):
+                                          report=report, screen=screen, context_adapter=context_adapter, work=work):
         if time.monotonic() >= deadline:
             break
         compiled = compile_program(scene, program)
+        if work is not None:
+            work.program(program)
         result = solve_contact_branches(compiled['route'], compiled['profiles'],
             floor_checks(scene, [scene['startBlock'], scene['goalBlock']], compiled['profiles']), compiler,
             seconds=min(route_seconds, max(.001, deadline - time.monotonic())), candidate_seconds=candidate_seconds,
@@ -140,7 +147,7 @@ def find_movement_blocks(request, compiler, *, seconds=60, candidate_seconds=2, 
             max_blockages=scene['maxBlockagesPerObstacle'], max_horizontal=scene['maxHorizontalBlockagesPerObstacle'],
             max_vertical=scene['maxVerticalBlockagesPerObstacle'], max_passage_candidates=scene['maxPassageCandidates'],
             solid_blocks=[owners[i] for i in range(len(owners))], max_wall_hits=scene['maxWallHits'],
-            max_wall_candidates=scene['maxWallHitCandidates'])
+            max_wall_candidates=scene['maxWallHitCandidates'], candidate_filter=candidate_filter, work=work)
         attempt = dict(ticks=program['profile']['airtime'], status=result['status'], termination=result['termination'],
                        units=[u['type'] for u in program['movementUnits']])
         if result.get('error'):

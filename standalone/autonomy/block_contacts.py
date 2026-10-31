@@ -111,7 +111,7 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                            python_executable=None, cancel_event=None, geometry=None, motion_bound=None,
                            max_blockages=3, max_horizontal=2, max_vertical=2,
                            max_passage_candidates=128, solid_blocks=None, max_wall_hits=0,
-                           max_wall_candidates=24):
+                           max_wall_candidates=24, candidate_filter=None, work=None):
     route = copy.deepcopy(route)
     if solid_blocks is not None:
         for passage in route.get('passages', []):
@@ -142,6 +142,9 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                 return best_result
             return {'status': 'cancelled', 'termination': 'cancelled', 'best': None,
                     'attempts': inner_attempts, 'contactAttempts': attempts}
+        if work is not None and work.termination:
+            termination = work.termination
+            break
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             termination = 'deadline'
@@ -165,7 +168,7 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
         result = find_route(branch, compiler, seconds=remaining, candidate_seconds=candidate_seconds,
                             retries=retries, improve=improve, rank_equal_cost=rank_equal_cost,
                             optimize_goal=optimize_goal, python_executable=python_executable,
-                            cancel_event=cancel_event)
+                            cancel_event=cancel_event, work=work)
         inner_attempts.extend(result['attempts'])
         conflicts = contact_conflicts(checks, result['best']['plan'], result['best']['candidate']) if result['best'] else []
         attempts.append({'status': result['status'], 'constraintCount': len(rows),
@@ -233,6 +236,17 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                         offer(score + option['score'], rows, new_passages, hits)
                     continue
                 result['best']['geometryCheck'] = checked
+            if candidate_filter is not None:
+                verdict = candidate_filter(result['best']['plan'], result['best']['candidate'], vertical)
+                attempts[-1]['candidateFilter'] = {k: v for k, v in verdict.items() if k != 'alternatives'}
+                if not verdict['accepted']:
+                    attempts[-1].update(status='unknown', termination=verdict.get('reason', 'candidate_filter'))
+                    for extra in verdict.get('alternatives', []):
+                        offer(score + 1, rows + extra, passages, hits)
+                    continue
+                result['best']['corridorCheck'] = verdict
+            if work is not None:
+                work.accepted(result['best'])
             result['best'].update(route=result['best'].get('route', branch), profiles=profiles, contactChecks=checks)
             result['best']['passages'] = passages
             result['best']['hitEvents'] = hits

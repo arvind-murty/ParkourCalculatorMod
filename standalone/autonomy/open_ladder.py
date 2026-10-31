@@ -20,6 +20,8 @@ def ladder_choices(context, kind):
     goal = next(b for b in scene['blocks'] if b['id'] == scene['goalBlock'])
     toward = [(goal['bounds'][0] + goal['bounds'][1]) / 2, (goal['bounds'][2] + goal['bounds'][3]) / 2]
     for region in regions:
+        if context.get('regionAllowed') is not None and not context['regionAllowed'](region):
+            continue
         for wall in movement_contexts(region, solids):
             if context.get('checkBudget'):
                 context['checkBudget']()
@@ -50,7 +52,8 @@ def ladder_choices(context, kind):
                             from .movement_contacts import mixed_schedule_pool
                             mixed = mixed_schedule_pool(request, solids, schedules=pool_cache[key]['schedules'],
                                 max_variants=settings.get('maxContactVariants', 16), max_events=settings.get('maxMixedContacts', 3),
-                                deadline=context.get('deadline'), cancel_event=context.get('cancelEvent'))
+                                deadline=context.get('deadline'), cancel_event=context.get('cancelEvent'),
+                                box_allowed=context.get('boxAllowed'))
                             pool_cache[key]['schedules'].extend(mixed['schedules'])
                             pool_cache[key]['mixedContacts'] = {k: v for k, v in mixed.items() if k != 'schedules'}
                         context.setdefault('generationRecords', []).append(dict(type='ladder', region=region['id'],
