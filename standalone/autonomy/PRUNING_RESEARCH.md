@@ -398,3 +398,7 @@ Implemented expanded-AABB subtraction/merging, explicit boundary strata, partial
 ### 2026-10-31: fixed-route decisions should propagate forward
 
 User clarified a key reason for spatial separation: within one broad route the geometry changes little while arrival ticks change, so evaluate decisions and constraints from the start with little backtracking. Added ordered cell-stage paths and a forward prefix-domain pass. It intersects known per-state position/contact constraints, propagates possible nondecreasing route progress through Y/X/Z phases, permits skipping cells within one tick and repeated interactions within a cell, and preserves explicit route returns. Earlier numerical facings remain adjustable. The pass is a necessary geometric/order relaxation, not a greedy commitment or new time bound. Benchmark with and without it, measuring prefix rejections, cache hits, phase updates and numerical work. Lazy numerical corridor repair remains heuristic.
+
+### 2026-10-31: active tests restricted to non-ladder movement
+
+User requested non-ladder tests for now: stepping, blockages, ceiling, run ticks, landing and hits. Exclude ladders from subsequent benchmark/regression runs and architectural conclusions for this iteration. Preserve earlier ladder observations only as historical diagnostics. Add explicit run-up, ceiling and wall-hit controls alongside open/landing, side blockages, stepping/blip and grind. Continue the isolated worktree; no cross-thread communication.
