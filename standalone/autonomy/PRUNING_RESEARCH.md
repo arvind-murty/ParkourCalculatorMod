@@ -402,3 +402,5 @@ User clarified a key reason for spatial separation: within one broad route the g
 ### 2026-10-31: active tests restricted to non-ladder movement
 
 User requested non-ladder tests for now: stepping, blockages, ceiling, run ticks, landing and hits. Exclude ladders from subsequent benchmark/regression runs and architectural conclusions for this iteration. Preserve earlier ladder observations only as historical diagnostics. Add explicit run-up, ceiling and wall-hit controls alongside open/landing, side blockages, stepping/blip and grind. Continue the isolated worktree; no cross-thread communication.
+
+User follow-up: exclude explicit wall-hit tests because they are rare. Active scope is stepping, blockages, ceilings, run ticks and landing. Remove the new wall-hit benchmark control and exclude any exploratory wall-hit output from the report; production collision behavior remains unchanged.
