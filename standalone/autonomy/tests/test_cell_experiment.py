@@ -41,6 +41,23 @@ class CellExperimentTests(unittest.TestCase):
         self.assertEqual(b['results'][0]['adapter']['allowedBlocks'], 2)
         self.assertEqual(request['initial'], b['results'][0]['adapter']['originalInitialState'])
 
+    def test_deadline_retains_active_prefix_generation_records(self):
+        from standalone.autonomy.movement_generation import GENERATORS
+        from standalone.autonomy.movement_search import iter_movement_programs
+        from standalone.autonomy.tests.test_cell_routes import side_scene
+        scene = side_scene()
+        scene['movementSearch']['types'] = ['normal']
+        class TimedGenerator:
+            def generate(self, context, **options):
+                context['generationRecords'].append(dict(stats=dict(maskWork=17)))
+                raise TimeoutError('synthetic deadline')
+                yield
+        report = {}
+        with patch.dict(GENERATORS, normal=TimedGenerator()):
+            self.assertEqual(list(iter_movement_programs(scene, report=report)), [])
+        self.assertEqual(report['generation'][0]['stats']['maskWork'],17)
+        self.assertEqual(report['termination'],'deadline')
+
     def test_prescribed_route_endpoints_are_checked(self):
         request = json.loads((ROOT/'open.json').read_text())
         with self.assertRaises(ValueError):

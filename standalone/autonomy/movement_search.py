@@ -66,7 +66,7 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
                 continue
             context = dict(mode='open', scene=scene, program=program, state=boundary_state(program),
                 maxInputs=remaining, maxEntryInputs=cfg['maxEntryInputs'], checkBudget=budget,
-                deadline=deadline, cancelEvent=cancel_event, normalGap=False)
+                deadline=deadline, cancelEvent=cancel_event, normalGap=False, generationRecords=records)
             if context_adapter is not None:
                 context_adapter(context)
             for kind in cfg['types']:
@@ -99,7 +99,6 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
                         heapq.heapify(pending)
                 else:
                     records.append(dict(type=kind, prefixTicks=ticks, termination='exhausted', emitted=choices))
-            records.extend(context.get('generationRecords', []))
     except TimeoutError:
         termination = work.termination if work is not None and work.termination else 'deadline'
     report.update(termination=termination, expandedPrefixes=expanded, generated=generated,
