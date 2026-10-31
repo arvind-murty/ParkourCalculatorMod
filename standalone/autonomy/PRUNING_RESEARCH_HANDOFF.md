@@ -4,9 +4,24 @@
 
 ## Start here
 
-Workstream: orchestration within the continuous model. The other workstream owns replay/game integration. Success here is valid IPOPT with the correct movement, inertia, sprint, contacts, ladders and geometry, accepted by scalar validation and the shared finite-scene checker. Game replay and mod Java test suites are outside the current gate. Read `standalone/AGENTS.md`, repository `CONTEXT.md` and [GENERIC_COMPOSITION.md](GENERIC_COMPOSITION.md).
+Workstream: orchestration within the continuous model. Local replay/compiler work is implemented and consolidated; the integration agent is no longer active, and research does not need to wait for a separate branch/import. Success here is valid IPOPT with the correct movement, inertia, sprint, contacts, ladders and geometry, accepted by scalar validation and the shared finite-scene checker. Final actual-world validation is a later mod step. Game replay and mod Java test suites are outside the current research gate. Read `standalone/AGENTS.md`, repository `CONTEXT.md` and [GENERIC_COMPOSITION.md](GENERIC_COMPOSITION.md).
 
 Current canonical branch/worktree: `feature/ipopt-consolidated`, `/Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-consolidated`. Read [the consolidation record](../CONSOLIDATION.md) and use this branch for future work. The prior orchestration branch `codex/run-ticks-planning` and integration branch remain historical snapshots. Their standalone implementations are combined here. Commit finished features separately and use another isolated worktree for parallel research. Compare `485c0a8` to the canonical branch for the complete standalone work, or `e09f2a7` for the orchestration additions over integration. The original orchestration series began at `e2a7b22` after `769c632`; those old IDs remain provenance pointers.
+
+## Research checkout and review context
+
+Read the latest [`feature/ipopt-consolidated` on the user's fork](https://github.com/arvind-murty/ParkourCalculatorMod/tree/feature/ipopt-consolidated), including this handoff and `standalone/CONSOLIDATION.md`. The implemented consolidation checkpoint is `b5a1199`; subsequent handoff-only commits do not change solver behavior. For an isolated research branch, with `origin` pointing to `https://github.com/arvind-murty/ParkourCalculatorMod.git`:
+
+```sh
+git fetch origin feature/ipopt-consolidated
+git worktree add -b research/ipopt-pruning ../ParkourCalculatorMod-ipopt-pruning origin/feature/ipopt-consolidated
+```
+
+The user's fork `main` was fast-forwarded to upstream `485c0a8` before opening the standalone PR. [The main-to-feature comparison](https://github.com/arvind-murty/ParkourCalculatorMod/compare/main...feature/ipopt-consolidated) therefore isolates this work. `codex/run-ticks-planning`, `feature/ipopt-mod-integration`, `feature/ipopt-standalone` and `feature/ipopt-clean` are preserved provenance, not the current research baseline.
+
+Some standalone dependencies intentionally live outside `standalone/`: `core/.../replay/` supplies finite collision checking, declared contacts and angle/TAS realization; `forge-core/.../replay/` supplies the shared input/sprint compiler and local replay. `ExactJumpModel` has an optional collision-resolver overload; existing callers retain the original path. These helpers require no Minecraft client and are not UI/loader wiring. Reuse them instead of creating a Python or private Java copy of sprint/input/collision behavior. The current compiler reads checked-in classes, not a historical Git snapshot.
+
+The current assignment is deep research and a ranked pruning proposal. Water remains deferred. Distinguish safe elimination, heuristic ranking/drop and work scheduling. Propose experiments and coverage checks before changing candidate families. Runtime setup is local and ignored: the canonical worktree currently reuses the old runtime through a symlink, so create a fresh environment from pinned requirements in a portable/new checkout.
 
 ## What is implemented
 
@@ -95,7 +110,7 @@ Code navigation: `movement_search.py` owns the generic queue/screen; `movement_g
 
 ## Validation checkpoint and reproduction pointers
 
-Latest implementation commits: `b49a205` ladder-ceiling ownership and `b5d9095` saved endpoint-stop witnesses. Latest gate: 64 focused standalone methods in 54.220 seconds, plus saved-evidence validation, for 65 methods total. This includes fresh full-state solves, existing generated approach/second-ladder/final-air ceilings, generic five-ladder composition, stepping and combined contacts. No tests or new benchmarks were run for this documentation-only handoff.
+Latest consolidated validation at `b5a1199`: 51 numerical tests pass in 24.539 seconds and 65 focused orchestration methods pass in 56.037 seconds, with the native worker/shared compiler enabled. Both Java helpers build together. Corrected Real11 200/400 spans also pass local angle repair/export and fresh TAS reload/replay, using declared contacts; those checks do not supply missing real-world geometry. The orchestration gate includes generated approach/second-ladder/final-air ceilings, generic five-ladder composition, stepping and combined contacts. Ladder-ceiling ownership/evidence were reapplied as `4472da0`/`835d4b2`; older documents cite their source IDs `b49a205`/`b5d9095`. No tests or new benchmarks were run for this handoff-only update.
 
 Start with `tests/test_generic_composition.py`, `test_movement_generation.py`, `test_movement_contacts.py`, `test_ladder_ceiling.py`, `test_ladder_schedules.py` and `test_stepping_cases.py`. Saved evidence is under `experiments/ladder-climbing-ceiling`, `experiments/contact-combinations`, `experiments/ladder-schedules` and `experiments/block-route-search`. Some examples prescribe schedules, and some old request yaws are saved witnesses. Explicitly identify genuinely cold inputs.
 

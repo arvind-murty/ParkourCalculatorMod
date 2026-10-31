@@ -1,5 +1,11 @@
 # Orchestration compaction handoff
 
+## Research agent entry point and PR base, 2026-10-30
+
+Read the latest `origin/feature/ipopt-consolidated` from `arvind-murty/ParkourCalculatorMod`, starting at [PRUNING_RESEARCH_HANDOFF.md](PRUNING_RESEARCH_HANDOFF.md). It now includes an isolated research-worktree recipe, the actual shared Java dependencies outside `standalone/`, current validation and canonical/source commit mapping. The integration agent has stopped; no further import or coordination with that old branch is required. The assignment remains deep pruning research; water and pruning implementation remain deferred from this handoff task.
+
+The user's fork `main` was fast-forwarded to upstream `485c0a8` before creating the PR from `feature/ipopt-consolidated`, so `main...feature/ipopt-consolidated` excludes unrelated upstream updates. Shared `core/.../replay`, `forge-core/.../replay` and the additive exact-model resolver hook are intentional standalone dependencies. Current continuous acceptance and local replay/export acceptance are distinct, and final actual-world validation still belongs to the mod.
+
 ## Canonical standalone branch, 2026-10-30
 
 The user requested consolidation after the integration agent stopped. Continue on `feature/ipopt-consolidated` in `/Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-consolidated`. Read [standalone/README.md](../README.md) and [CONSOLIDATION.md](../CONSOLIDATION.md). This branch includes the numerical solver, all orchestration, shared movement compilation, local replay and TAS export. The prior branch/worktree instructions below are historical. Orchestration and replay now build against the same checked-in movement classes and extended collision checker; historical source extraction is removed. Water remains deferred; pruning research is the next task.
