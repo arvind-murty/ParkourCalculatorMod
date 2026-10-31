@@ -18,7 +18,7 @@ class CellGeometryTests(unittest.TestCase):
         d = decompose(scene)
         rng = random.Random(42)
         for _ in range(1500):
-            point = [rng.uniform(-5, 6) for _ in range(3)]
+            point = [rng.uniform(d.bounds[a], d.bounds[a+3]) for a in range(3)]
             occupied = any(all(b[a] < point[a] < b[a + 3] for a in range(3)) for b in map(expanded_box, solids))
             self.assertEqual(bool(d.locate(point)), not occupied)
         volumes = [c for c in d.cells if c.dimension == 3]

@@ -1,9 +1,9 @@
 import itertools
-import math
 import time
 from dataclasses import asdict, dataclass
 
-from ..obstacle_geometry import box_bounds, expanded_box
+from ..obstacle_geometry import BODY_HEIGHT, box_bounds, expanded_box
+from ..route import HALF_WIDTH
 
 
 def dimension(box):
@@ -131,7 +131,11 @@ class Decomposition:
 def decompose(scene, *, max_cells=20000, deadline=None):
     started = time.monotonic()
     geometry = scene['collisionScene']
-    bounds = tuple(box_bounds(list(geometry['bounds']), 'decomposition bounds'))
+    source_bounds = box_bounds(list(geometry['bounds']), 'decomposition bounds')
+    bounds = (source_bounds[0] + HALF_WIDTH, source_bounds[1], source_bounds[2] + HALF_WIDTH,
+              source_bounds[3] - HALF_WIDTH, source_bounds[4] - BODY_HEIGHT, source_bounds[5] - HALF_WIDTH)
+    if any(bounds[a] > bounds[a + 3] for a in range(3)):
+        raise ValueError('Scene coverage is smaller than the player body')
     solids = [tuple(expanded_box(b)) for b in geometry['solids']]
     raw = union_subtract([bounds], solids, max_cells, deadline=deadline)
     volumes = merge_boxes(raw)
