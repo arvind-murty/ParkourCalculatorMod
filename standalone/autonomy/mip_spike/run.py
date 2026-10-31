@@ -14,6 +14,20 @@ from standalone.ipopt import prepare, solve, validate
 from .cases import CASES, build_case
 
 
+class ObservedCompiler:
+    def __init__(self, compiler, started):
+        self.compiler, self.started, self.firstAcceptedSeconds = compiler, started, None
+
+    def __getattr__(self, name):
+        return getattr(self.compiler, name)
+
+    def check_scene(self, *args, **kwargs):
+        result = self.compiler.check_scene(*args, **kwargs)
+        if result['feasible'] and self.firstAcceptedSeconds is None:
+            self.firstAcceptedSeconds = time.monotonic() - self.started
+        return result
+
+
 def acceptance(case, candidate, compiler, seconds):
     if not candidate or not candidate.get('feasible'):
         return dict(feasible=False, reason='scalar_model')
@@ -30,27 +44,30 @@ def acceptance(case, candidate, compiler, seconds):
                 candidate=candidate if checked['feasible'] else None)
 
 
-def existing(case, compiler, *, seconds, python):
+def existing(case, compiler, *, seconds, python, production=False):
     scene = case['scene']
     started = time.monotonic()
+    observer = ObservedCompiler(compiler, started)
     result = solve_contact_branches(case['route'], case['profiles'],
-        floor_checks(scene, [scene['startBlock'], scene['goalBlock']], case['profiles']), compiler,
+        floor_checks(scene, [scene['startBlock'], scene['goalBlock']], case['profiles']), observer,
         seconds=seconds, candidate_seconds=min(2, seconds), retries=1,
         max_branches=scene['maxContactBranches'], geometry=scene['collisionScene'],
         motion_bound=dict(storedSpeedNorm=2, movementAfterSupportCheck=2),
         max_blockages=scene['maxBlockagesPerObstacle'],
         max_horizontal=scene['maxHorizontalBlockagesPerObstacle'], max_vertical=scene['maxVerticalBlockagesPerObstacle'],
         max_passage_candidates=scene['maxPassageCandidates'],
-        python_executable=python)
+        python_executable=python, rank_equal_cost=production, optimize_goal=production)
     best = result.get('best')
     checked = acceptance(case, validate(case['problem'], best['candidate']['yaw']), compiler,
                          max(.01, seconds - (time.monotonic() - started))) if best else None
-    return dict(method='existing', elapsedSeconds=time.monotonic() - started,
+    return dict(method='existing-production' if production else 'existing', elapsedSeconds=time.monotonic() - started,
         status=result['status'], termination=result['termination'],
         attempts=len(result.get('attempts', [])), geometryAttempts=len(result.get('contactAttempts', [])),
         accepted=bool(best and best['geometryCheck']['feasible'] and checked['feasible']),
         ticks=best['plan']['ticks'] if best else None, objective=best['candidate']['objective'] if best else None,
         evidence=best, commonAcceptance=checked,
+        firstAcceptedSeconds=observer.firstAcceptedSeconds, optimizeGoal=production,
+        attemptDiagnostics=result.get('attempts', []), geometryDiagnostics=result.get('contactAttempts', []),
         candidateFamily='existing bounded contact/passage branches; supplied route/Y/contact schedule')
 
 
@@ -112,11 +129,13 @@ def mixed(case, compiler, *, control, seconds, python, output, max_proposals=3):
         forbidden.append(master['selectedFaces'])
         if not case['disjunctions']:
             break
-    return dict(method='scip-' + control + '-ipopt', elapsedSeconds=time.monotonic() - started,
+    elapsed = time.monotonic() - started
+    return dict(method='scip-' + control + '-ipopt', elapsedSeconds=elapsed,
         accepted=candidate is not None, status='feasible' if candidate else 'unknown',
         ticks=case['plan']['ticks'] if candidate else None, objective=candidate['objective'] if candidate else None,
         attempts=attempts, candidate=candidate, heuristicAssignmentDrops=len(forbidden),
         noGoodCutsAreInfeasibilityProofs=False, globalOptimalityClaimed=False,
+        firstAcceptedSeconds=elapsed if candidate else None, optimizeGoal=False,
         candidateFamily='stagewise finite-box clearance, automatic inertia/clamps; supplied route/Y/contact schedule')
 
 
@@ -124,11 +143,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--cases', nargs='+', choices=CASES, default=list(CASES))
     parser.add_argument('--seconds', type=float, default=15)
-    parser.add_argument('--methods', nargs='+', choices=['existing', 'circle', 'disk'], default=['existing', 'circle', 'disk'])
+    parser.add_argument('--methods', nargs='+', choices=['production', 'existing', 'circle', 'disk'],
+                        default=['production', 'existing', 'circle', 'disk'])
     parser.add_argument('--output', required=True)
     parser.add_argument('--compiler', default=os.environ.get('PKC_RUN_TICKS_COMPILER', 'standalone/autonomy/build/compiler.json'))
     parser.add_argument('--python', default=os.environ.get('PKC_IPOPT_PYTHON', str(Path.cwd() / '.venv-ipopt/bin/python')))
     args = parser.parse_args()
+    if not math.isfinite(args.seconds) or args.seconds <= 0:
+        parser.error('--seconds must be finite and positive')
     output = Path(args.output)
     output.mkdir(parents=True, exist_ok=True)
     results = []
@@ -137,17 +159,17 @@ def main():
             case = build_case(name, compiler)
             (output / (name + '.case.json')).write_text(json.dumps(case, indent=2) + '\n')
             for method in args.methods:
-                if method == 'existing':
-                    result = existing(case, compiler, seconds=args.seconds, python=args.python)
+                if method in ('production', 'existing'):
+                    result = existing(case, compiler, seconds=args.seconds, python=args.python, production=method == 'production')
                 else:
                     result = mixed(case, compiler, control=method, seconds=args.seconds, python=args.python, output=output)
                 (output / (name + '-' + method + '.result.json')).write_text(json.dumps(result, indent=2) + '\n')
                 item = dict(case=name, preparationSeconds=case['preparationSeconds'],
-                    **{k: result[k] for k in ('method', 'accepted', 'status', 'elapsedSeconds', 'ticks', 'objective')})
+                    **{k: result[k] for k in ('method', 'accepted', 'status', 'elapsedSeconds', 'ticks', 'objective', 'firstAcceptedSeconds', 'optimizeGoal')})
                 results.append(item)
                 print(json.dumps(item), flush=True)
                 (output / 'summary.json').write_text(json.dumps(dict(results=results, fixedHorizon=True,
-                    routeAndYDiscoveryBenchmarked=False, globallyOptimalityClaimed=False,
+                    routeAndYDiscoveryBenchmarked=False, globalOptimalityClaimed=False,
                     candidateFamiliesDiffer=True, perMethodBudgetSeconds=args.seconds), indent=2) + '\n')
 
 

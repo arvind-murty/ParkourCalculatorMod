@@ -1,0 +1,1578 @@
+{
+  "name": "wall-ceiling",
+  "scene": {
+    "version": 1,
+    "sceneModel": "collision_boxes",
+    "geometryBounds": [
+      -10,
+      -5,
+      -10,
+      10,
+      10,
+      10
+    ],
+    "initial": {
+      "position": [
+        0.8,
+        1,
+        0.5
+      ],
+      "velocity": [
+        1.2,
+        -0.0784000015258789,
+        0.25
+      ],
+      "yaw": 0.0
+    },
+    "startBlock": "start",
+    "goalBlock": "goal",
+    "blocks": [
+      {
+        "id": "start",
+        "sourceBlock": "start",
+        "solidIndex": 0,
+        "bounds": [
+          0,
+          1,
+          0,
+          1
+        ],
+        "top": 1
+      },
+      {
+        "id": "goal",
+        "sourceBlock": "goal",
+        "solidIndex": 1,
+        "bounds": [
+          1.3,
+          2,
+          1,
+          2
+        ],
+        "top": 1
+      },
+      {
+        "id": "wall",
+        "sourceBlock": "wall",
+        "solidIndex": 2,
+        "bounds": [
+          2,
+          3,
+          -3,
+          5
+        ],
+        "top": 5
+      },
+      {
+        "id": "ceiling",
+        "sourceBlock": "ceiling",
+        "solidIndex": 3,
+        "bounds": [
+          -2,
+          5,
+          -2,
+          5
+        ],
+        "top": 4
+      }
+    ],
+    "maxJumps": 1,
+    "maxRunTicksPerJump": 0,
+    "maxTotalRunTicks": 0,
+    "maxContactBranches": 40,
+    "maxWallHits": 1,
+    "maxWallHitCandidates": 24,
+    "ceilingHits": true,
+    "objective": {
+      "axis": "Z",
+      "sense": "MAX"
+    },
+    "maxContactCombinations": 64,
+    "maxSteppingProfiles": 128,
+    "maxCombinedEvents": 3,
+    "collisionScene": {
+      "version": 1,
+      "profile": "minecraft-1.8.9",
+      "bounds": [
+        -10,
+        -5,
+        -10,
+        10,
+        10,
+        10
+      ],
+      "solids": [
+        [
+          0,
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        [
+          1.3,
+          0,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          2,
+          0,
+          -3,
+          3,
+          5,
+          5
+        ],
+        [
+          -2,
+          3,
+          -2,
+          5,
+          4,
+          5
+        ]
+      ],
+      "stepHeight": 0.6
+    },
+    "stairBoost": true,
+    "inputs": {
+      "sprint": true,
+      "force45": true,
+      "forward": 0.9800000190734863,
+      "strafe": 0.0,
+      "incomingSprint": false
+    },
+    "maxPrefixes": 200,
+    "maxQueuedPrefixes": 4000,
+    "maxFlightInputs": 200,
+    "maxBlockagesPerObstacle": 3,
+    "maxHorizontalBlockagesPerObstacle": 2,
+    "maxVerticalBlockagesPerObstacle": 2,
+    "maxPassageCandidates": 128,
+    "supportClearance": 1e-06
+  },
+  "route": {
+    "version": 1,
+    "initial": {
+      "position": [
+        0.8,
+        1,
+        0.5
+      ],
+      "velocity": [
+        1.2,
+        -0.0784000015258789,
+        0.25
+      ],
+      "yaw": 0.0
+    },
+    "blocks": [
+      {
+        "id": "start@0",
+        "bounds": [
+          0,
+          1,
+          0,
+          1
+        ],
+        "top": 1,
+        "_derivedFootprint": [
+          -0.3000000119209289,
+          1.3000000119209287,
+          -0.3000000119209289,
+          1.3000000119209287
+        ]
+      },
+      {
+        "id": "goal@1",
+        "bounds": [
+          1.3,
+          2,
+          1,
+          2
+        ],
+        "top": 1,
+        "_derivedFootprint": [
+          0.9999999880790712,
+          2.3000000119209285,
+          0.6999999880790713,
+          2.3000000119209285
+        ]
+      }
+    ],
+    "inputs": {
+      "sprint": true,
+      "force45": true,
+      "forward": 0.9800000190734863,
+      "strafe": 0.0,
+      "incomingSprint": false
+    },
+    "objective": {
+      "axis": "Z",
+      "sense": "MAX"
+    },
+    "airtimes": [
+      3
+    ],
+    "kinds": [
+      "jump"
+    ],
+    "contactEntries": [
+      null
+    ],
+    "walkOffExits": [
+      null
+    ],
+    "maxTotalRunTicks": 0,
+    "runBounds": [
+      [
+        0,
+        0
+      ]
+    ],
+    "supportClearance": 1e-06,
+    "landingPhases": [
+      "pre"
+    ],
+    "constraints": [],
+    "passageCaps": {
+      "horizontal": 2,
+      "vertical": 2,
+      "total": 3
+    },
+    "passages": [],
+    "hitEvents": [
+      {
+        "leg": 0,
+        "offset": 0,
+        "axis": "X",
+        "direction": 1,
+        "plane": 1.699999988079071,
+        "box": [
+          2,
+          0,
+          -3,
+          3,
+          5,
+          5
+        ],
+        "solidIndex": 2,
+        "blockId": "wall",
+        "avoidOffsets": [
+          0,
+          1,
+          2,
+          3
+        ]
+      }
+    ],
+    "ceilingEvents": [
+      {
+        "offset": 0,
+        "plane": 1.2000000476837158,
+        "box": [
+          -2,
+          3,
+          -2,
+          5,
+          4,
+          5
+        ],
+        "solidIndex": 3,
+        "blockId": "ceiling",
+        "leg": 0
+      }
+    ],
+    "profileDerivation": {
+      "kind": "selected_height_profiles",
+      "suppliedAirtimes": false,
+      "verticalModel": "standalone.ipopt.ladder",
+      "solidSideFaces": false
+    },
+    "sharedMovement": true
+  },
+  "profiles": [
+    {
+      "airtime": 3,
+      "landingPhase": "pre",
+      "position": [
+        1,
+        1.2000000476837158,
+        1.1216000461578368,
+        1
+      ],
+      "velocity": [
+        -0.0784000015258789,
+        -0.0784000015258789,
+        -0.1552320045166016,
+        -0.0784000015258789
+      ],
+      "grounded": [
+        true,
+        false,
+        false,
+        true
+      ],
+      "contacts": [
+        {
+          "state": 1,
+          "plane": 1.2000000476837158,
+          "direction": 1
+        },
+        {
+          "state": 3,
+          "plane": 1,
+          "direction": -1
+        }
+      ],
+      "jump": [
+        true,
+        false,
+        false
+      ],
+      "ceilingEvent": {
+        "offset": 0,
+        "plane": 1.2000000476837158,
+        "box": [
+          -2,
+          3,
+          -2,
+          5,
+          4,
+          5
+        ],
+        "solidIndex": 3,
+        "blockId": "ceiling"
+      },
+      "sourceBlock": "start@0",
+      "targetBlock": "goal@1",
+      "profileKind": "ceiling"
+    }
+  ],
+  "plan": {
+    "ticks": 3,
+    "grounded": [
+      true,
+      false,
+      false
+    ],
+    "jump": [
+      true,
+      false,
+      false
+    ],
+    "events": [
+      {
+        "leg": 0,
+        "landed": 0,
+        "jump": 0,
+        "landing": 3,
+        "runTicks": 0,
+        "kind": "jump"
+      }
+    ],
+    "supportChecks": [
+      [
+        0,
+        0,
+        "initial"
+      ],
+      [
+        2,
+        1,
+        "landing"
+      ]
+    ],
+    "exitChecks": [],
+    "walls": [
+      {
+        "mode": "X",
+        "t1": 0,
+        "cmp": "GE",
+        "rhs": -0.29999901192092887,
+        "name": "initial:0:X:lo"
+      },
+      {
+        "mode": "X",
+        "t1": 0,
+        "cmp": "LE",
+        "rhs": 1.2999990119209286,
+        "name": "initial:0:X:hi"
+      },
+      {
+        "mode": "Z",
+        "t1": 0,
+        "cmp": "GE",
+        "rhs": -0.29999901192092887,
+        "name": "initial:0:Z:lo"
+      },
+      {
+        "mode": "Z",
+        "t1": 0,
+        "cmp": "LE",
+        "rhs": 1.2999990119209286,
+        "name": "initial:0:Z:hi"
+      },
+      {
+        "mode": "X",
+        "t1": 2,
+        "cmp": "GE",
+        "rhs": 1.0000009880790712,
+        "name": "landing:1:X:lo"
+      },
+      {
+        "mode": "X",
+        "t1": 2,
+        "cmp": "LE",
+        "rhs": 2.299999011920928,
+        "name": "landing:1:X:hi"
+      },
+      {
+        "mode": "Z",
+        "t1": 2,
+        "cmp": "GE",
+        "rhs": 0.7000009880790714,
+        "name": "landing:1:Z:lo"
+      },
+      {
+        "mode": "Z",
+        "t1": 2,
+        "cmp": "LE",
+        "rhs": 2.299999011920928,
+        "name": "landing:1:Z:hi"
+      },
+      {
+        "mode": "X",
+        "t1": 0,
+        "cmp": "LE",
+        "rhs": 1.699999988079071,
+        "name": "wall_hit:0:X:avoid"
+      },
+      {
+        "mode": "X",
+        "t1": 1,
+        "cmp": "LE",
+        "rhs": 1.699999988079071,
+        "name": "wall_hit:0:X:avoid"
+      },
+      {
+        "mode": "X",
+        "t1": 2,
+        "cmp": "LE",
+        "rhs": 1.699999988079071,
+        "name": "wall_hit:0:X:avoid"
+      },
+      {
+        "mode": "X",
+        "t1": 3,
+        "cmp": "LE",
+        "rhs": 1.699999988079071,
+        "name": "wall_hit:0:X:avoid"
+      },
+      {
+        "mode": "Z",
+        "t1": 0,
+        "cmp": "GE",
+        "rhs": -3.299999011920929,
+        "name": "wall_hit:0:X:finite_lo"
+      },
+      {
+        "mode": "Z",
+        "t1": 0,
+        "cmp": "LE",
+        "rhs": 5.299999011920929,
+        "name": "wall_hit:0:X:finite_hi"
+      },
+      {
+        "mode": "X",
+        "t1": 2,
+        "cmp": "LE",
+        "rhs": 1.6999989880790711,
+        "name": "wall_hit:0:X:reverse"
+      },
+      {
+        "mode": "X",
+        "t1": 0,
+        "cmp": "GE",
+        "rhs": -2.299999011920929,
+        "name": "ceiling_hit:finite_lo"
+      },
+      {
+        "mode": "X",
+        "t1": 0,
+        "cmp": "LE",
+        "rhs": 5.299999011920929,
+        "name": "ceiling_hit:finite_hi"
+      },
+      {
+        "mode": "Z",
+        "t1": 0,
+        "cmp": "GE",
+        "rhs": -2.299999011920929,
+        "name": "ceiling_hit:finite_lo"
+      },
+      {
+        "mode": "Z",
+        "t1": 0,
+        "cmp": "LE",
+        "rhs": 5.299999011920929,
+        "name": "ceiling_hit:finite_hi"
+      }
+    ],
+    "allocation": [
+      0
+    ],
+    "stage": "jump",
+    "passageFailures": [],
+    "contacts": [
+      {
+        "state": 1,
+        "axis": 0,
+        "direction": 1,
+        "plane": 1.699999988079071
+      }
+    ],
+    "sceneContacts": [
+      {
+        "state": 1,
+        "axis": 0,
+        "direction": 1,
+        "plane": 1.699999988079071,
+        "box": [
+          2,
+          0,
+          -3,
+          3,
+          5,
+          5
+        ]
+      },
+      {
+        "state": 1,
+        "axis": 1,
+        "plane": 1.2000000476837158,
+        "direction": 1,
+        "box": [
+          -2,
+          3,
+          -2,
+          5,
+          4,
+          5
+        ]
+      }
+    ],
+    "vertical": {
+      "profile": "minecraft-1.8.9",
+      "position": 1,
+      "velocity": -0.0784000015258789,
+      "onGround": true,
+      "previousHorizontalCollision": false,
+      "threshold": 0.005,
+      "jumpVelocity": [
+        0.41999998688697815,
+        null,
+        null
+      ],
+      "sneak": [
+        false,
+        false,
+        false
+      ],
+      "contacts": [
+        {
+          "state": 1,
+          "plane": 1.2000000476837158,
+          "direction": 1
+        },
+        {
+          "state": 3,
+          "plane": 1,
+          "direction": -1
+        }
+      ],
+      "referencePosition": [
+        1,
+        1.2000000476837158,
+        1.1216000461578368,
+        1
+      ],
+      "referenceVelocity": [
+        -0.0784000015258789,
+        -0.0784000015258789,
+        -0.1552320045166016,
+        -0.0784000015258789
+      ]
+    },
+    "movementComposition": true
+  },
+  "problem": {
+    "magnitude": [
+      0.32739998400211334,
+      0.02599999835384377,
+      0.019999999341613214
+    ],
+    "friction": [
+      0.546000063419342,
+      0.9100000262260437,
+      0.9100000262260437
+    ],
+    "base": [
+      1.5707963267948966,
+      0.7853981633974483,
+      0.7853981633974483
+    ],
+    "movement": {
+      "profile": "minecraft-1.8.9",
+      "compiler": "mod-input-state-v1",
+      "horizontalCollision": [
+        false,
+        true,
+        false,
+        false
+      ],
+      "ground": [
+        true,
+        false,
+        false
+      ],
+      "sprinting": [
+        true,
+        false,
+        true
+      ],
+      "airSprinting": [
+        false,
+        true,
+        false
+      ],
+      "moveForward": [
+        0.98,
+        0.98,
+        0.98
+      ],
+      "moveStrafe": [
+        0.0,
+        0.98,
+        0.98
+      ]
+    },
+    "vertical": {
+      "profile": "minecraft-1.8.9",
+      "position": 1,
+      "velocity": -0.0784000015258789,
+      "onGround": true,
+      "previousHorizontalCollision": false,
+      "threshold": 0.005,
+      "jumpVelocity": [
+        0.41999998688697815,
+        null,
+        null
+      ],
+      "sneak": [
+        false,
+        false,
+        false
+      ],
+      "contacts": [
+        {
+          "state": 1,
+          "plane": 1.2000000476837158,
+          "direction": 1
+        },
+        {
+          "state": 3,
+          "plane": 1,
+          "direction": -1
+        }
+      ],
+      "referencePosition": [
+        1,
+        1.2000000476837158,
+        1.1216000461578368,
+        1
+      ],
+      "referenceVelocity": [
+        -0.0784000015258789,
+        -0.0784000015258789,
+        -0.1552320045166016,
+        -0.0784000015258789
+      ]
+    },
+    "model": "FixedMovementCompiler:mod-input-state-v1:f057c0c",
+    "version": 1,
+    "ticks": 3,
+    "position": [
+      0.8,
+      0.5
+    ],
+    "velocity": [
+      1.2,
+      0.25
+    ],
+    "yaw": [
+      -48.99091309842978,
+      -3.990913098429779,
+      -3.990913098429779
+    ],
+    "threshold": 0.005,
+    "walls": [
+      {
+        "mode": "X",
+        "t1": 0,
+        "cmp": "GE",
+        "rhs": -0.29999901192092887,
+        "name": "initial:0:X:lo",
+        "op": "PLUS"
+      },
+      {
+        "mode": "X",
+        "t1": 0,
+        "cmp": "LE",
+        "rhs": 1.2999990119209286,
+        "name": "initial:0:X:hi",
+        "op": "PLUS"
+      },
+      {
+        "mode": "Z",
+        "t1": 0,
+        "cmp": "GE",
+        "rhs": -0.29999901192092887,
+        "name": "initial:0:Z:lo",
+        "op": "PLUS"
+      },
+      {
+        "mode": "Z",
+        "t1": 0,
+        "cmp": "LE",
+        "rhs": 1.2999990119209286,
+        "name": "initial:0:Z:hi",
+        "op": "PLUS"
+      },
+      {
+        "mode": "X",
+        "t1": 2,
+        "cmp": "GE",
+        "rhs": 1.0000009880790712,
+        "name": "landing:1:X:lo",
+        "op": "PLUS"
+      },
+      {
+        "mode": "X",
+        "t1": 2,
+        "cmp": "LE",
+        "rhs": 2.299999011920928,
+        "name": "landing:1:X:hi",
+        "op": "PLUS"
+      },
+      {
+        "mode": "Z",
+        "t1": 2,
+        "cmp": "GE",
+        "rhs": 0.7000009880790714,
+        "name": "landing:1:Z:lo",
+        "op": "PLUS"
+      },
+      {
+        "mode": "Z",
+        "t1": 2,
+        "cmp": "LE",
+        "rhs": 2.299999011920928,
+        "name": "landing:1:Z:hi",
+        "op": "PLUS"
+      },
+      {
+        "mode": "X",
+        "t1": 0,
+        "cmp": "LE",
+        "rhs": 1.699999988079071,
+        "name": "wall_hit:0:X:avoid",
+        "op": "PLUS"
+      },
+      {
+        "mode": "X",
+        "t1": 1,
+        "cmp": "LE",
+        "rhs": 1.699999988079071,
+        "name": "wall_hit:0:X:avoid",
+        "op": "PLUS"
+      },
+      {
+        "mode": "X",
+        "t1": 2,
+        "cmp": "LE",
+        "rhs": 1.699999988079071,
+        "name": "wall_hit:0:X:avoid",
+        "op": "PLUS"
+      },
+      {
+        "mode": "X",
+        "t1": 3,
+        "cmp": "LE",
+        "rhs": 1.699999988079071,
+        "name": "wall_hit:0:X:avoid",
+        "op": "PLUS"
+      },
+      {
+        "mode": "Z",
+        "t1": 0,
+        "cmp": "GE",
+        "rhs": -3.299999011920929,
+        "name": "wall_hit:0:X:finite_lo",
+        "op": "PLUS"
+      },
+      {
+        "mode": "Z",
+        "t1": 0,
+        "cmp": "LE",
+        "rhs": 5.299999011920929,
+        "name": "wall_hit:0:X:finite_hi",
+        "op": "PLUS"
+      },
+      {
+        "mode": "X",
+        "t1": 2,
+        "cmp": "LE",
+        "rhs": 1.6999989880790711,
+        "name": "wall_hit:0:X:reverse",
+        "op": "PLUS"
+      },
+      {
+        "mode": "X",
+        "t1": 0,
+        "cmp": "GE",
+        "rhs": -2.299999011920929,
+        "name": "ceiling_hit:finite_lo",
+        "op": "PLUS"
+      },
+      {
+        "mode": "X",
+        "t1": 0,
+        "cmp": "LE",
+        "rhs": 5.299999011920929,
+        "name": "ceiling_hit:finite_hi",
+        "op": "PLUS"
+      },
+      {
+        "mode": "Z",
+        "t1": 0,
+        "cmp": "GE",
+        "rhs": -2.299999011920929,
+        "name": "ceiling_hit:finite_lo",
+        "op": "PLUS"
+      },
+      {
+        "mode": "Z",
+        "t1": 0,
+        "cmp": "LE",
+        "rhs": 5.299999011920929,
+        "name": "ceiling_hit:finite_hi",
+        "op": "PLUS"
+      }
+    ],
+    "contacts": [
+      {
+        "state": 1,
+        "axis": 0,
+        "direction": 1,
+        "plane": 1.699999988079071
+      }
+    ],
+    "objective": {
+      "axis": "Z",
+      "sense": "MAX",
+      "tick": 3,
+      "type": "POSITION",
+      "smoothLambda": 0.0
+    },
+    "ladderTicks": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "startYaw": 0.0,
+    "seconds": 10.0,
+    "stopOnFeasible": false,
+    "maxIterations": 10000
+  },
+  "vertical": {
+    "feasible": true,
+    "vertical": {
+      "profile": "minecraft-1.8.9",
+      "position": 1,
+      "velocity": -0.0784000015258789,
+      "onGround": true,
+      "previousHorizontalCollision": false,
+      "threshold": 0.005,
+      "jumpVelocity": [
+        0.41999998688697815,
+        null,
+        null
+      ],
+      "sneak": [
+        false,
+        false,
+        false
+      ],
+      "contacts": [
+        {
+          "state": 1,
+          "plane": 1.2000000476837158,
+          "direction": 1
+        },
+        {
+          "state": 3,
+          "plane": 1,
+          "direction": -1
+        }
+      ]
+    },
+    "y": [
+      1,
+      1.2000000476837158,
+      1.1216000461578368,
+      1
+    ],
+    "vy": [
+      -0.0784000015258789,
+      -0.0784000015258789,
+      -0.1552320045166016,
+      -0.0784000015258789
+    ],
+    "onGround": [
+      true,
+      false,
+      false,
+      true
+    ]
+  },
+  "disjunctions": [
+    {
+      "tick": 0,
+      "solidIndex": 2,
+      "stage": "Y",
+      "options": [
+        {
+          "axis": "X",
+          "direction": -1,
+          "rows": [
+            {
+              "mode": "X",
+              "t1": 0,
+              "cmp": "LE",
+              "rhs": 1.6999997880790712,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "X",
+          "direction": 1,
+          "rows": [
+            {
+              "mode": "X",
+              "t1": 0,
+              "cmp": "GE",
+              "rhs": 3.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "Z",
+          "direction": -1,
+          "rows": [
+            {
+              "mode": "Z",
+              "t1": 0,
+              "cmp": "LE",
+              "rhs": -3.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "Z",
+          "direction": 1,
+          "rows": [
+            {
+              "mode": "Z",
+              "t1": 0,
+              "cmp": "GE",
+              "rhs": 5.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 0,
+      "solidIndex": 2,
+      "stage": "X",
+      "options": [
+        {
+          "axis": "X",
+          "direction": -1,
+          "rows": [
+            {
+              "mode": "X",
+              "t1": 0,
+              "cmp": "LE",
+              "rhs": 1.6999997880790712,
+              "name": "mip:clearance"
+            },
+            {
+              "mode": "X",
+              "t1": 1,
+              "cmp": "LE",
+              "rhs": 1.699999988079071,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "X",
+          "direction": 1,
+          "rows": [
+            {
+              "mode": "X",
+              "t1": 0,
+              "cmp": "GE",
+              "rhs": 3.300000211920929,
+              "name": "mip:clearance"
+            },
+            {
+              "mode": "X",
+              "t1": 1,
+              "cmp": "GE",
+              "rhs": 3.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "Z",
+          "direction": -1,
+          "rows": [
+            {
+              "mode": "Z",
+              "t1": 0,
+              "cmp": "LE",
+              "rhs": -3.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "Z",
+          "direction": 1,
+          "rows": [
+            {
+              "mode": "Z",
+              "t1": 0,
+              "cmp": "GE",
+              "rhs": 5.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 0,
+      "solidIndex": 2,
+      "stage": "Z",
+      "options": [
+        {
+          "axis": "X",
+          "direction": -1,
+          "rows": [
+            {
+              "mode": "X",
+              "t1": 1,
+              "cmp": "LE",
+              "rhs": 1.699999988079071,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "X",
+          "direction": 1,
+          "rows": [
+            {
+              "mode": "X",
+              "t1": 1,
+              "cmp": "GE",
+              "rhs": 3.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "Z",
+          "direction": -1,
+          "rows": [
+            {
+              "mode": "Z",
+              "t1": 0,
+              "cmp": "LE",
+              "rhs": -3.300000211920929,
+              "name": "mip:clearance"
+            },
+            {
+              "mode": "Z",
+              "t1": 1,
+              "cmp": "LE",
+              "rhs": -3.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "Z",
+          "direction": 1,
+          "rows": [
+            {
+              "mode": "Z",
+              "t1": 0,
+              "cmp": "GE",
+              "rhs": 5.300000211920929,
+              "name": "mip:clearance"
+            },
+            {
+              "mode": "Z",
+              "t1": 1,
+              "cmp": "GE",
+              "rhs": 5.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1,
+      "solidIndex": 2,
+      "stage": "Y",
+      "options": [
+        {
+          "axis": "X",
+          "direction": -1,
+          "rows": [
+            {
+              "mode": "X",
+              "t1": 1,
+              "cmp": "LE",
+              "rhs": 1.699999988079071,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "X",
+          "direction": 1,
+          "rows": [
+            {
+              "mode": "X",
+              "t1": 1,
+              "cmp": "GE",
+              "rhs": 3.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "Z",
+          "direction": -1,
+          "rows": [
+            {
+              "mode": "Z",
+              "t1": 1,
+              "cmp": "LE",
+              "rhs": -3.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "Z",
+          "direction": 1,
+          "rows": [
+            {
+              "mode": "Z",
+              "t1": 1,
+              "cmp": "GE",
+              "rhs": 5.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1,
+      "solidIndex": 2,
+      "stage": "X",
+      "options": [
+        {
+          "axis": "X",
+          "direction": -1,
+          "rows": [
+            {
+              "mode": "X",
+              "t1": 1,
+              "cmp": "LE",
+              "rhs": 1.699999988079071,
+              "name": "mip:clearance"
+            },
+            {
+              "mode": "X",
+              "t1": 2,
+              "cmp": "LE",
+              "rhs": 1.6999997880790712,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "X",
+          "direction": 1,
+          "rows": [
+            {
+              "mode": "X",
+              "t1": 1,
+              "cmp": "GE",
+              "rhs": 3.300000211920929,
+              "name": "mip:clearance"
+            },
+            {
+              "mode": "X",
+              "t1": 2,
+              "cmp": "GE",
+              "rhs": 3.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "Z",
+          "direction": -1,
+          "rows": [
+            {
+              "mode": "Z",
+              "t1": 1,
+              "cmp": "LE",
+              "rhs": -3.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "Z",
+          "direction": 1,
+          "rows": [
+            {
+              "mode": "Z",
+              "t1": 1,
+              "cmp": "GE",
+              "rhs": 5.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1,
+      "solidIndex": 2,
+      "stage": "Z",
+      "options": [
+        {
+          "axis": "X",
+          "direction": -1,
+          "rows": [
+            {
+              "mode": "X",
+              "t1": 2,
+              "cmp": "LE",
+              "rhs": 1.6999997880790712,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "X",
+          "direction": 1,
+          "rows": [
+            {
+              "mode": "X",
+              "t1": 2,
+              "cmp": "GE",
+              "rhs": 3.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "Z",
+          "direction": -1,
+          "rows": [
+            {
+              "mode": "Z",
+              "t1": 1,
+              "cmp": "LE",
+              "rhs": -3.300000211920929,
+              "name": "mip:clearance"
+            },
+            {
+              "mode": "Z",
+              "t1": 2,
+              "cmp": "LE",
+              "rhs": -3.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "Z",
+          "direction": 1,
+          "rows": [
+            {
+              "mode": "Z",
+              "t1": 1,
+              "cmp": "GE",
+              "rhs": 5.300000211920929,
+              "name": "mip:clearance"
+            },
+            {
+              "mode": "Z",
+              "t1": 2,
+              "cmp": "GE",
+              "rhs": 5.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 2,
+      "solidIndex": 2,
+      "stage": "Y",
+      "options": [
+        {
+          "axis": "X",
+          "direction": -1,
+          "rows": [
+            {
+              "mode": "X",
+              "t1": 2,
+              "cmp": "LE",
+              "rhs": 1.6999997880790712,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "X",
+          "direction": 1,
+          "rows": [
+            {
+              "mode": "X",
+              "t1": 2,
+              "cmp": "GE",
+              "rhs": 3.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "Z",
+          "direction": -1,
+          "rows": [
+            {
+              "mode": "Z",
+              "t1": 2,
+              "cmp": "LE",
+              "rhs": -3.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "Z",
+          "direction": 1,
+          "rows": [
+            {
+              "mode": "Z",
+              "t1": 2,
+              "cmp": "GE",
+              "rhs": 5.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 2,
+      "solidIndex": 2,
+      "stage": "X",
+      "options": [
+        {
+          "axis": "X",
+          "direction": -1,
+          "rows": [
+            {
+              "mode": "X",
+              "t1": 2,
+              "cmp": "LE",
+              "rhs": 1.6999997880790712,
+              "name": "mip:clearance"
+            },
+            {
+              "mode": "X",
+              "t1": 3,
+              "cmp": "LE",
+              "rhs": 1.6999997880790712,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "X",
+          "direction": 1,
+          "rows": [
+            {
+              "mode": "X",
+              "t1": 2,
+              "cmp": "GE",
+              "rhs": 3.300000211920929,
+              "name": "mip:clearance"
+            },
+            {
+              "mode": "X",
+              "t1": 3,
+              "cmp": "GE",
+              "rhs": 3.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "Z",
+          "direction": -1,
+          "rows": [
+            {
+              "mode": "Z",
+              "t1": 2,
+              "cmp": "LE",
+              "rhs": -3.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "Z",
+          "direction": 1,
+          "rows": [
+            {
+              "mode": "Z",
+              "t1": 2,
+              "cmp": "GE",
+              "rhs": 5.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 2,
+      "solidIndex": 2,
+      "stage": "Z",
+      "options": [
+        {
+          "axis": "X",
+          "direction": -1,
+          "rows": [
+            {
+              "mode": "X",
+              "t1": 3,
+              "cmp": "LE",
+              "rhs": 1.6999997880790712,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "X",
+          "direction": 1,
+          "rows": [
+            {
+              "mode": "X",
+              "t1": 3,
+              "cmp": "GE",
+              "rhs": 3.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "Z",
+          "direction": -1,
+          "rows": [
+            {
+              "mode": "Z",
+              "t1": 2,
+              "cmp": "LE",
+              "rhs": -3.300000211920929,
+              "name": "mip:clearance"
+            },
+            {
+              "mode": "Z",
+              "t1": 3,
+              "cmp": "LE",
+              "rhs": -3.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        },
+        {
+          "axis": "Z",
+          "direction": 1,
+          "rows": [
+            {
+              "mode": "Z",
+              "t1": 2,
+              "cmp": "GE",
+              "rhs": 5.300000211920929,
+              "name": "mip:clearance"
+            },
+            {
+              "mode": "Z",
+              "t1": 3,
+              "cmp": "GE",
+              "rhs": 5.300000211920929,
+              "name": "mip:clearance"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "preparationSeconds": 0.0022935383021831512,
+  "source": "experiments/one-tick-contacts/wall-ceiling-result.json",
+  "sourceSha256": "0a896716312f154b6ddf5b8381f1a1cc6cd15bc0c9f59212554143d33b946e25",
+  "fixedHorizon": true,
+  "fixedVerticalSchedule": true,
+  "prescribedContactHistory": true,
+  "initialYawUsesSavedWitness": false,
+  "routeDiscoveryBenchmarked": false
+}

@@ -1,4 +1,9 @@
+import copy
+import hashlib
 import importlib.util
+import json
+import os
+from pathlib import Path
 import unittest
 
 from standalone.ipopt import prepare, validate
@@ -115,6 +120,58 @@ class MixedModelTests(unittest.TestCase):
                          forbidden=[result['selectedFaces']])
         self.assertNotEqual(opposite['selectedFaces'], result['selectedFaces'])
         self.assertTrue(validate(prepare(problem()), opposite['yaw'])['feasible'])
+
+
+@unittest.skipUnless(os.environ.get('PKC_RUN_TICKS_COMPILER'), 'Set PKC_RUN_TICKS_COMPILER for shared-scene evidence checks')
+class SavedSceneTests(unittest.TestCase):
+    def setUp(self):
+        from standalone.autonomy.compiler import JavaCompiler
+        self.compiler = JavaCompiler(json.loads(Path(os.environ['PKC_RUN_TICKS_COMPILER']).read_text()))
+        self.addCleanup(self.compiler.close)
+        self.directory = Path(__file__).parents[1] / 'experiments/mixed-integer-spike'
+
+    def test_every_saved_witness_replays_original_and_selected_constraints_and_finite_scene(self):
+        from .cases import CASES
+        from .run import acceptance
+        manifest = json.loads((self.directory / 'manifest.json').read_text())
+        self.assertEqual(set(manifest['cases']), set(CASES))
+        self.assertEqual(len(manifest['witnesses']), 16)
+        for name in manifest['witnesses']:
+            with self.subTest(witness=name):
+                evidence = json.loads((self.directory / name).read_text())
+                source = self.directory / evidence['case']
+                self.assertEqual(hashlib.sha256(source.read_bytes()).hexdigest(), evidence['caseSha256'])
+                case = json.loads(source.read_text())
+                p = copy.deepcopy(case['problem'])
+                p['walls'].extend(evidence['selectedRows'])
+                checked = validate(prepare(p), evidence['candidate']['yaw'])
+                self.assertTrue(checked['feasible'])
+                for key in ('positions', 'velocity', 'y', 'vy', 'onGround'):
+                    self.assertEqual(checked[key], evidence['candidate'][key])
+                self.assertTrue(acceptance(case, checked, self.compiler, 5)['feasible'])
+                self.assertEqual(checked['positions'][0], case['problem']['position'])
+                self.assertEqual(checked['velocity'][0], case['problem']['velocity'])
+                self.assertEqual(checked['y'], case['vertical']['y'])
+                if case['name'] == 'repeat-support':
+                    self.assertEqual([t for t, jump in enumerate(case['plan']['jump']) if jump], [0, 12])
+                    self.assertTrue(checked['onGround'][12])
+                self.assertFalse(evidence['globalOptimalityClaimed'])
+
+    def test_saved_contacts_and_membership_are_required_by_independent_scene_acceptance(self):
+        from standalone.autonomy.obstacle_geometry import check_geometry
+        for case_name, remove_ceiling in [('wall-reset', False), ('ladder-end-stop', True)]:
+            evidence = json.loads((self.directory / (case_name + '-circle.witness.json')).read_text())
+            case = json.loads((self.directory / evidence['case']).read_text())
+            plan = copy.deepcopy(case['plan'])
+            selected = next(c for c in plan['sceneContacts'] if (c['axis'] == 1 and c['direction'] == 1) == remove_ceiling)
+            plan['sceneContacts'].remove(selected)
+            self.assertFalse(check_geometry(case['scene']['collisionScene'], plan, evidence['candidate'],
+                                           case['vertical'], self.compiler, 5)['feasible'])
+            if remove_ceiling:
+                plan = copy.deepcopy(case['plan'])
+                plan['ladderTicks'][0] = False
+                self.assertFalse(check_geometry(case['scene']['collisionScene'], plan, evidence['candidate'],
+                                               case['vertical'], self.compiler, 5)['feasible'])
 
 
 if __name__ == '__main__':

@@ -1,0 +1,30 @@
+{
+  "cases": [
+    "cross-neo",
+    "wide-neo",
+    "interleaved",
+    "wall-reset",
+    "wall-ceiling",
+    "ladder-continuous",
+    "ladder-end-stop",
+    "repeat-support"
+  ],
+  "witnesses": [
+    "cross-neo-circle.witness.json",
+    "cross-neo-disk.witness.json",
+    "wide-neo-circle.witness.json",
+    "wide-neo-disk.witness.json",
+    "interleaved-circle.witness.json",
+    "interleaved-disk.witness.json",
+    "wall-reset-circle.witness.json",
+    "wall-reset-disk.witness.json",
+    "wall-ceiling-circle.witness.json",
+    "wall-ceiling-disk.witness.json",
+    "ladder-continuous-circle.witness.json",
+    "ladder-continuous-disk.witness.json",
+    "ladder-end-stop-circle.witness.json",
+    "ladder-end-stop-disk.witness.json",
+    "repeat-support-circle.witness.json",
+    "repeat-support-disk.witness.json"
+  ]
+}

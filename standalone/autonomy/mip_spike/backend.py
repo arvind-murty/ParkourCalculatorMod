@@ -14,6 +14,8 @@ def solve(request, *, seconds=10, control='circle', forbidden=()):
     from pyscipopt import Model, quicksum
     if control not in ('circle', 'disk'):
         raise ValueError('Choose circle or disk controls')
+    if not math.isfinite(seconds) or seconds <= 0:
+        raise ValueError('The solve budget must be finite and positive')
     problem = prepare(request['problem'])
     if any(row['mode'] not in ('X', 'Z') for row in problem['walls']):
         raise ValueError('The spike supports X/Z positional rows and free facing')

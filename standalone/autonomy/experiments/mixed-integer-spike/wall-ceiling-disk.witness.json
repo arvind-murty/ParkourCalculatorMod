@@ -1,0 +1,229 @@
+{
+  "case": "wall-ceiling.case.json",
+  "caseSha256": "00b75a1ea35700e7b1cf6119a28f0c24af7f6d9885238a3a5067e93a0012537f",
+  "method": "scip-disk-ipopt",
+  "candidate": {
+    "feasible": true,
+    "violation": 0.0,
+    "worstConstraint": null,
+    "objective": 1.7492074063564598,
+    "missedContacts": [],
+    "wrongSideContacts": [],
+    "patternMismatches": [],
+    "yaw": [
+      -7.897953385010205e-11,
+      45.002537824181374,
+      45.00075877322776
+    ],
+    "positions": [
+      [
+        0.8,
+        0.5
+      ],
+      [
+        1.699999988079071,
+        1.0773999840021133
+      ],
+      [
+        1.6999988364510614,
+        1.4186604102139333
+      ],
+      [
+        1.699998571589248,
+        1.7492074063564598
+      ]
+    ],
+    "velocity": [
+      [
+        1.2,
+        0.25
+      ],
+      [
+        0.0,
+        0.31526042788348096
+      ],
+      [
+        -1.0479815188966634e-06,
+        0.310546996802667
+      ],
+      [
+        -2.4102425703105896e-07,
+        0.300797775158639
+      ]
+    ],
+    "movementMismatches": [],
+    "horizontalCollision": [
+      false,
+      true,
+      false,
+      false
+    ],
+    "ladderPattern": [
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        0
+      ]
+    ],
+    "ladderPatternMismatches": [],
+    "y": [
+      1,
+      1.2000000476837158,
+      1.1216000461578368,
+      1
+    ],
+    "vy": [
+      -0.0784000015258789,
+      -0.0784000015258789,
+      -0.1552320045166016,
+      -0.0784000015258789
+    ],
+    "onGround": [
+      true,
+      false,
+      false,
+      true
+    ],
+    "verticalFailures": [],
+    "resume": {
+      "y": 1,
+      "vy": -0.0784000015258789,
+      "onGround": true,
+      "previousHorizontalCollision": false
+    },
+    "rawMovement": [
+      [
+        1.2000000000004514,
+        0.5773999840021133
+      ],
+      [
+        -1.1516280095538647e-06,
+        0.34126042621181996
+      ],
+      [
+        -2.648618132799796e-07,
+        0.3305469961425264
+      ]
+    ],
+    "friction": [
+      0.546000063419342,
+      0.9100000262260437,
+      0.9100000262260437
+    ],
+    "movement": {
+      "profile": "minecraft-1.8.9",
+      "compiler": "mod-input-state-v1",
+      "horizontalCollision": [
+        false,
+        true,
+        false,
+        false
+      ],
+      "ground": [
+        true,
+        false,
+        false
+      ],
+      "sprinting": [
+        true,
+        false,
+        true
+      ],
+      "airSprinting": [
+        false,
+        true,
+        false
+      ],
+      "moveForward": [
+        0.98,
+        0.98,
+        0.98
+      ],
+      "moveStrafe": [
+        0.0,
+        0.98,
+        0.98
+      ]
+    }
+  },
+  "selectedRows": [
+    {
+      "mode": "X",
+      "t1": 0,
+      "cmp": "LE",
+      "rhs": 1.6999997880790712,
+      "name": "mip:clearance"
+    },
+    {
+      "mode": "X",
+      "t1": 1,
+      "cmp": "LE",
+      "rhs": 1.699999988079071,
+      "name": "mip:clearance"
+    },
+    {
+      "mode": "X",
+      "t1": 2,
+      "cmp": "LE",
+      "rhs": 1.6999997880790712,
+      "name": "mip:clearance"
+    },
+    {
+      "mode": "X",
+      "t1": 3,
+      "cmp": "LE",
+      "rhs": 1.6999997880790712,
+      "name": "mip:clearance"
+    }
+  ],
+  "selectedFaces": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "geometryCheck": {
+    "feasible": true,
+    "ticks": 3
+  },
+  "elapsedSeconds": 0.09518671408295631,
+  "objective": 1.7492074063564598,
+  "master": {
+    "status": "optimal",
+    "control": "disk",
+    "buildSeconds": 0.0023455843329429626,
+    "solveSeconds": 0.007078,
+    "elapsedSeconds": 0.009466122835874557,
+    "nodes": 1,
+    "variables": 148,
+    "binaries": 45,
+    "geometryDisjunctions": 9,
+    "solutions": 1,
+    "backend": "pyscipopt",
+    "backendVersion": "6.3.0",
+    "scipVersion": "10.0.2",
+    "minimumTicksProven": false,
+    "globalModelProofClaimed": false,
+    "inertiaNumericalGuard": 1e-08,
+    "objective": 1.749207406651258
+  },
+  "refinementStatus": "feasible",
+  "refinementTermination": "first_feasible",
+  "controlNormRange": [
+    0.999999999648749,
+    1.0000000004349068
+  ],
+  "globalOptimalityClaimed": false
+}

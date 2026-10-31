@@ -1,0 +1,156 @@
+[
+  {
+    "case": "ladder-end-stop-production.result.json",
+    "status": "unknown",
+    "termination": "contact_search_exhausted",
+    "attempts": [
+      {
+        "status": "feasible",
+        "problemHash": "644f758b0f4d1afb4ecbaeae9ecb93c16a77fff3355ec0929c6190a9a152acf7",
+        "diagnostics": [
+          {
+            "status": "feasible",
+            "termination": "worker_finished",
+            "elapsedSeconds": 0.5067711211740971,
+            "error": null
+          }
+        ],
+        "allocation": [
+          0
+        ],
+        "stage": "jump",
+        "leg": 0
+      }
+    ],
+    "geometry": [
+      {
+        "status": "unknown",
+        "constraintCount": 0,
+        "passageCount": 0,
+        "wallHitCount": 0,
+        "wallHitGeneration": {
+          "generated": 0,
+          "candidateDrops": 0
+        },
+        "passageKinds": [],
+        "conflicts": [],
+        "termination": "search_exhausted",
+        "geometryCheck": {
+          "feasible": false,
+          "tick": 9,
+          "reason": "scene_collision",
+          "positionError": 1.0437339881264052e-10,
+          "contactMismatch": true,
+          "occupancyMismatch": false,
+          "velocityError": 0.055433610009946455,
+          "actualPosition": [
+            0.699999988079071,
+            1.0,
+            1.8384914521878093
+          ],
+          "clips": [
+            {
+              "box": [
+                1.0,
+                0.0,
+                -1.0,
+                2.0,
+                4.0,
+                2.0
+              ],
+              "axis": 0
+            }
+          ],
+          "solidIndex": 1,
+          "axis": 0
+        },
+        "passageGeneration": {
+          "generated": 0,
+          "candidateDrops": 0,
+          "timingPoolDrops": 0,
+          "generationIncomplete": false,
+          "reachPruned": 0,
+          "budgetPruned": 56,
+          "verticalFacesPruned": 2
+        }
+      }
+    ]
+  },
+  {
+    "case": "ladder-continuous-production.result.json",
+    "status": "unknown",
+    "termination": "contact_search_exhausted",
+    "attempts": [
+      {
+        "status": "feasible",
+        "problemHash": "70f0c775a2a09235d01721ab4b10e09ad4b194b0c817d59423b0e8eec7758563",
+        "diagnostics": [
+          {
+            "status": "feasible",
+            "termination": "worker_finished",
+            "elapsedSeconds": 0.7370909601449966,
+            "error": null
+          }
+        ],
+        "allocation": [
+          0
+        ],
+        "stage": "jump",
+        "leg": 0
+      }
+    ],
+    "geometry": [
+      {
+        "status": "unknown",
+        "constraintCount": 0,
+        "passageCount": 0,
+        "wallHitCount": 0,
+        "wallHitGeneration": {
+          "generated": 0,
+          "candidateDrops": 0
+        },
+        "passageKinds": [],
+        "conflicts": [],
+        "termination": "search_exhausted",
+        "geometryCheck": {
+          "feasible": false,
+          "tick": 11,
+          "reason": "scene_collision",
+          "positionError": 1.5752758764087105e-08,
+          "contactMismatch": true,
+          "occupancyMismatch": false,
+          "velocityError": 0.06418769071429226,
+          "actualPosition": [
+            0.699999988079071,
+            1.0,
+            2.07423823218446
+          ],
+          "clips": [
+            {
+              "box": [
+                1.0,
+                0.0,
+                -1.0,
+                2.0,
+                4.0,
+                2.0
+              ],
+              "axis": 0
+            }
+          ],
+          "solidIndex": 1,
+          "axis": 0
+        },
+        "passageGeneration": {
+          "generated": 0,
+          "candidateDrops": 0,
+          "timingPoolDrops": 0,
+          "generationIncomplete": false,
+          "reachPruned": 0,
+          "budgetPruned": 56,
+          "verticalFacesPruned": 2
+        }
+      }
+    ]
+  }
+]
