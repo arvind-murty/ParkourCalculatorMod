@@ -1,5 +1,7 @@
 # Replay and movement handoff, updated 2026-10-28
 
+Consolidation update, 2026-10-30: the user requested one branch after the integration agent stopped. Current development is on `feature/ipopt-consolidated`; solver, orchestration, shared movement compilation and local replay are combined. See [standalone setup](../README.md) and [the consolidation record](../CONSOLIDATION.md). Branch/import instructions later in this document are historical; no cross-branch import is required on the consolidated branch. Physics/replay limitations below remain applicable.
+
 This is the cumulative update for the autonomous-solve agent, including the local replay implementation, movement compilation fix and latest user decisions. It supersedes the deployment/planning paragraphs in the older handoff.
 
 ## Ownership and delivery boundary

@@ -1,18 +1,13 @@
 gradle.afterProject { core ->
     if (core.path != ':core') return
+    def forgeCore = gradle.rootProject.project(':forge-core')
     def autonomy = new File(core.rootProject.projectDir, 'standalone/autonomy')
     def output = new File(autonomy, 'build/classes')
-    def shared = new File(autonomy, 'build/shared-movement')
-    core.tasks.register('materializeRunTicksMovement', Exec) {
-        commandLine 'python3', new File(autonomy, 'materialize_movement.py'), core.rootProject.projectDir
-    }
+    def sharedClasspath = core.sourceSets.main.output + core.configurations.testRuntimeClasspath + core.files(core.provider { forgeCore.sourceSets.main.output })
     core.tasks.register('compileRunTicksPhysics', JavaCompile) {
-        dependsOn core.tasks.named('materializeRunTicksMovement')
+        dependsOn core.tasks.named('classes'), ':forge-core:classes'
         source new File(autonomy, 'java')
-        source new File(shared, 'core/src/main/java')
-        source new File(shared, 'forge-core/src/main/java')
-        source core.file('src/main/java/de/legoshi/parkourcalc/core/replay/StaticScene.java')
-        classpath = core.configurations.testRuntimeClasspath
+        classpath = sharedClasspath
         destinationDirectory = output
         options.release = 8
     }
@@ -20,7 +15,7 @@ gradle.afterProject { core ->
         dependsOn core.tasks.named('compileRunTicksPhysics')
         doLast {
             def command = [new File(System.getProperty('java.home'), 'bin/java').absolutePath,
-                           '-cp', (core.files(output) + core.configurations.testRuntimeClasspath).asPath,
+                           '-cp', (core.files(output) + sharedClasspath).asPath,
                            'de.legoshi.parkourcalc.autonomy.CompileRunTicksPhysics']
             def config = new File(autonomy, 'build/compiler.json')
             config.parentFile.mkdirs()

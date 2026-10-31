@@ -1,10 +1,10 @@
-gradle.projectsEvaluated {
-    def core = gradle.rootProject.project(':core')
+gradle.afterProject { core ->
+    if (core.path != ':core') return
     def standalone = new File(gradle.rootProject.projectDir, 'standalone/ipopt')
     def forgeCore = gradle.rootProject.project(':forge-core')
-    def replayClasspath = core.sourceSets.test.runtimeClasspath + forgeCore.sourceSets.main.output
+    def replayClasspath = core.sourceSets.test.runtimeClasspath + core.files(core.provider { forgeCore.sourceSets.main.output })
     core.tasks.register('compileStandaloneIpoptExport', JavaCompile) {
-        dependsOn core.tasks.named('testClasses'), forgeCore.tasks.named('classes')
+        dependsOn core.tasks.named('testClasses'), ':forge-core:classes'
         source new File(standalone, 'java')
         classpath = replayClasspath
         destinationDirectory = new File(standalone, 'build/classes')

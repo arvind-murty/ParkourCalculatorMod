@@ -1,5 +1,7 @@
 # Standalone continuous IPOPT solver
 
+Canonical branch: `feature/ipopt-consolidated`. This package, automatic orchestration and local replay share one branch and movement implementation. See [standalone setup](../README.md) and [consolidation details](../CONSOLIDATION.md).
+
 This directory provides a Python API and command-line solver for fixed-input horizontal trajectories. It runs independently of Minecraft. An optional headless Java exporter reads ordinary captured TAS files using the repository's existing physics compiler. The mod's engine, UI and save format are unchanged.
 
 Implementation findings, validation results and archived research provenance are summarized in [FINDINGS.md](FINDINGS.md).

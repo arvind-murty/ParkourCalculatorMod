@@ -1,5 +1,11 @@
 # Orchestration compaction handoff
 
+## Canonical standalone branch, 2026-10-30
+
+The user requested consolidation after the integration agent stopped. Continue on `feature/ipopt-consolidated` in `/Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-consolidated`. Read [standalone/README.md](../README.md) and [CONSOLIDATION.md](../CONSOLIDATION.md). This branch includes the numerical solver, all orchestration, shared movement compilation, local replay and TAS export. The prior branch/worktree instructions below are historical. Orchestration and replay now build against the same checked-in movement classes and extended collision checker; historical source extraction is removed. Water remains deferred; pruning research is the next task.
+
+Consolidated acceptance: both helpers build; 51 numerical tests and 65 focused orchestration tests pass; corrected Real11 200/400 spans solve and pass exact local repair/export plus JSON reload/replay. Original branches remain preserved. See the consolidation record for source provenance, commands, local outputs and the declared-contact scope of the replay checks.
+
 ## Current direction: pruning research handoff, 2026-10-30
 
 The user deferred water and wants the existing solver/search made faster. They requested documentation and publication for another agent to research pruning, with no new implementation or experiments in this task. Start with [PRUNING_RESEARCH_HANDOFF.md](PRUNING_RESEARCH_HANDOFF.md): current coverage, generic versus legacy execution paths, schedule enumeration, actual work limits, historical performance evidence, research pointers and correctness constraints. It supersedes older suggestions to implement water next.

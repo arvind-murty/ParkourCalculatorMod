@@ -1,5 +1,7 @@
 # Standalone IPOPT handoff for the autonomous-solve agent
 
+Consolidation update, 2026-10-30: use `feature/ipopt-consolidated` and [standalone setup](../README.md). The current branch contains both orchestration and the integration/replay implementation. Earlier branch/import/ownership instructions are historical; see [CONSOLIDATION.md](../CONSOLIDATION.md).
+
 Read [RECENT_REPLAY_HANDOFF.md](RECENT_REPLAY_HANDOFF.md) first for the short current handoff. Later baseline/planning paragraphs in this longer document predate the implemented local backend and are superseded by that handoff and MOVEMENT_PORT.md.
 
 Updated 2026-10-28: the current handoff now covers all replay/compiler changes since the original baseline, runnable compile/solve/replay commands, corrected 400-input success, publication/import guidance and unfinished window state carry. Final actual-world validation belongs to the mod after manual TAS import; no running client or mandatory complete-scene export is required by the standalone workflow. The implementation now exists; older statements below saying otherwise are historical.

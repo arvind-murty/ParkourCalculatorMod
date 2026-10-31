@@ -6,7 +6,7 @@
 
 Workstream: orchestration within the continuous model. The other workstream owns replay/game integration. Success here is valid IPOPT with the correct movement, inertia, sprint, contacts, ladders and geometry, accepted by scalar validation and the shared finite-scene checker. Game replay and mod Java test suites are outside the current gate. Read `standalone/AGENTS.md`, repository `CONTEXT.md` and [GENERIC_COMPOSITION.md](GENERIC_COMPOSITION.md).
 
-Current isolated worktree: `/Users/arvindmurty/CS/ParkourCalculatorMod-run-ticks`, branch `codex/run-ticks-planning`. Commit finished features separately. Use a separate worktree for parallel research/implementation; do not edit the integration worktree. The first orchestration commit is `e2a7b22`; its parent, `769c632778bdef254b2105201adf2f4b732c6b45`, is the comparison base for the full orchestration diff. Comparing this branch to `main` includes substantial unrelated inherited solver history.
+Current canonical branch/worktree: `feature/ipopt-consolidated`, `/Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-consolidated`. Read [the consolidation record](../CONSOLIDATION.md) and use this branch for future work. The prior orchestration branch `codex/run-ticks-planning` and integration branch remain historical snapshots. Their standalone implementations are combined here. Commit finished features separately and use another isolated worktree for parallel research. Compare `485c0a8` to the canonical branch for the complete standalone work, or `e09f2a7` for the orchestration additions over integration. The original orchestration series began at `e2a7b22` after `769c632`; those old IDs remain provenance pointers.
 
 ## What is implemented
 
@@ -106,6 +106,6 @@ python3 -m unittest standalone.autonomy.tests.test_ladder_ceiling \
   standalone.autonomy.tests.test_generic_composition -v
 ```
 
-`build/`, `.venv-ipopt/` and generated compiler configuration are local/ignored. See the existing compiler Gradle helper if a new worktree needs preparation. Shared movement sources are pinned by `materialize_movement.py` to `f057c0ce9b454ae1ce2706843bb141cce799b5cb`; the local shared `StaticScene` is deliberately compiled separately. The native worker executable should retain its `.venv-ipopt/bin/python` symlink path. Do not rebuild helper classes during active solves or use Python's timed faulthandler diagnostic on this macOS native runtime.
+`build/`, `.venv-ipopt/` and generated compiler configuration are local/ignored. See [standalone setup](../README.md) if a new worktree needs preparation. Both orchestration and replay compile against the same current core/Forge classes and extended `StaticScene`; the old historical-source materialization step has been removed. The native worker executable should retain its `.venv-ipopt/bin/python` symlink path. Do not rebuild helper classes during active solves or use Python's timed faulthandler diagnostic on this macOS native runtime.
 
 Expected next research deliverable: a short ranked proposal identifying each candidate reduction's assumptions, whether it is sound or heuristic, the exact generation layer it affects and how to test that useful routes survive. Implementation and new performance experiments are deferred from this handoff task.
