@@ -4,6 +4,7 @@ import unittest
 
 from standalone.autonomy.cell_routes.geometry import contains, decompose, dimension, intersection, segment_covered
 from standalone.autonomy.obstacle_geometry import BODY_HEIGHT, expanded_box
+from standalone.autonomy.route import HALF_WIDTH
 
 
 def scene_for(solids, bounds=(-5, -5, -5, 6, 6, 6)):
@@ -63,6 +64,21 @@ class CellGeometryTests(unittest.TestCase):
         self.assertTrue(segment_covered(d, [-4, 3, 0], [4, 3, 0]))
         self.assertFalse(segment_covered(d, [-4, .5, .5], [4, .5, .5]))
         self.assertFalse(segment_covered(d, [8, 3, 0], [9, 3, 0]))
+
+    def test_corner_only_free_connection_has_an_incidence_route(self):
+        h = HALF_WIDTH
+        d = decompose(scene_for([[h,0,h,3-h,10,3-h],[-3+h,0,-3+h,-h,10,-h]],bounds=(-3,0,-3,3,10,3)))
+        pending = d.locate([-1,1,1])
+        target,seen = set(d.locate([1,1,-1])),set(pending)
+        adjacent = d.neighbors()
+        while pending:
+            cell=pending.pop()
+            for neighbor,_ in adjacent[cell]:
+                if neighbor not in seen:
+                    seen.add(neighbor)
+                    pending.append(neighbor)
+        self.assertTrue(seen & target)
+        self.assertTrue(d.locate([0,1,0]))
 
     def test_geometry_limit_and_deadline_do_not_silently_truncate(self):
         scene = scene_for([[0, 0, 0, 1, 1, 1]])

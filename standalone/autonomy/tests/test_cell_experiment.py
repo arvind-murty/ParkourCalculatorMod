@@ -41,6 +41,18 @@ class CellExperimentTests(unittest.TestCase):
         self.assertEqual(b['results'][0]['adapter']['allowedBlocks'], 2)
         self.assertEqual(request['initial'], b['results'][0]['adapter']['originalInitialState'])
 
+    def test_one_input_step_family_exhausts_without_losing_complete_programs(self):
+        request=json.loads((Path(__file__).parents[1]/'fixtures/stepping/normal_step.json').read_text())['request']
+        request['movementSearch']=dict(types=['stepping'],maxInputs=1,maxPrefixes=64,maxQueuedPrefixes=64,maxChoicesPerType=128)
+        points=json.loads((ROOT/'normal-step-route.json').read_text())
+        runs=[run_arm(request,arm,seconds=2,spatial_points=points) for arm in ('generic','prescribed')]
+        for result in runs:
+            generation=result['results'][0]['movementGeneration']
+            self.assertEqual(generation['termination'],'exhausted')
+            self.assertEqual(generation['queueDrops'],0)
+            self.assertGreater(compact(result)['completePrograms'],0)
+        self.assertEqual(compact(runs[0])['completePrograms'],compact(runs[1])['completePrograms'])
+
     def test_deadline_retains_active_prefix_generation_records(self):
         from standalone.autonomy.movement_generation import GENERATORS
         from standalone.autonomy.movement_search import iter_movement_programs
