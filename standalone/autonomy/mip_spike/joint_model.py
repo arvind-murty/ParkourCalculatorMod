@@ -29,7 +29,7 @@ def departure_domains(case, horizon):
     return result
 
 
-def solve_horizon(case, horizon, *, seconds=10, optimize=False, allocation=None, fixed_yaw=None):
+def solve_horizon(case, horizon, *, seconds=10, optimize=False, allocation=None, fixed_yaw=None, capture_incumbents=False):
     import pyscipopt
     from pyscipopt import Model, quicksum
     if not math.isfinite(seconds) or seconds <= 0:
@@ -168,6 +168,46 @@ def solve_horizon(case, horizon, *, seconds=10, optimize=False, allocation=None,
     objective = route['objective']
     axis = 0 if objective['axis'] == 'X' else 2
     model.setObjective(coordinates[-1][axis], 'maximize' if objective['sense'] == 'MAX' else 'minimize')
+    def snapshot(solution):
+        times = [max(choices, key=lambda t: float(solution[choices[t]])) for choices in depart]
+        chosen = [t - (times[leg - 1] + profiles[leg - 1]['airtime'] if leg else 0) for leg, t in enumerate(times)]
+        names = [max(choices, key=lambda name: float(solution[choices[name]])) for choices in mode]
+        acceleration = [[float(solution[v]) for v in u] for u in controls]
+        selected, rows = extract_passages(solution, passages, horizon, initial=origin)
+        value_of = lambda expression: float(expression) if isinstance(expression, (int, float)) else float(solution[expression])
+        return dict(allocation=chosen, departures=times, modes=names, acceleration=acceleration,
+            yaw=[math.degrees(math.atan2(u[1], u[0]) - case['modes'][name]['base']) for name, u in zip(names, acceleration)],
+            positions=[[float(solution[v]) for v in row] for row in coordinates],
+            velocity=[[float(solution[v]) for v in row] for row in velocity],
+            y=[float(solution[row[1]]) for row in coordinates],
+            vy=[value_of(v) for v in vys], onGround=[value_of(v) > .5 for v in grounded],
+            selectedPassages=selected, selectedRows=rows, objective=float(model.getSolObjVal(solution)))
+
+    history, root = [], {}
+    dropped = [0]
+    if capture_incumbents:
+        from pyscipopt import Eventhdlr, SCIP_EVENTTYPE
+
+        class IncumbentCapture(Eventhdlr):
+            def eventinit(self):
+                self.model.catchEvent(SCIP_EVENTTYPE.BESTSOLFOUND | SCIP_EVENTTYPE.LPSOLVED, self)
+
+            def eventexit(self):
+                self.model.dropEvent(SCIP_EVENTTYPE.BESTSOLFOUND | SCIP_EVENTTYPE.LPSOLVED, self)
+
+            def eventexec(self, event):
+                if event.getType() & SCIP_EVENTTYPE.LPSOLVED and self.model.getDepth() == 0 and not root:
+                    value = self.model.getDualbound()
+                    root.update(firstRootLpSeconds=time.monotonic() - started,
+                                dualBound=None if self.model.isInfinity(abs(value)) else value)
+                if event.getType() & SCIP_EVENTTYPE.BESTSOLFOUND:
+                    if len(history) < 32:
+                        history.append(dict(availableSeconds=time.monotonic() - started,
+                                            nodes=self.model.getNNodes(), candidate=snapshot(self.model.getBestSol())))
+                    else:
+                        dropped[0] += 1
+
+        model.includeEventhdlr(IncumbentCapture(), 'trajectory_capture', 'capture numerical incumbents for independent validation')
     built = time.monotonic()
     model.setRealParam('limits/time', max(.001, seconds - (built - started)))
     model.optimize()
@@ -177,21 +217,13 @@ def solve_horizon(case, horizon, *, seconds=10, optimize=False, allocation=None,
         departureChoices=sum(map(len, depart)), inertiaBinaries=len(inertia_vars),
         completeAllocationsGenerated=0, fixedAllocation=allocation is not None, optimizeGoal=optimize,
         backendVersion=pyscipopt.__version__, minimumTicksProven=False, physicalInfeasibilityClaimed=False)
+    if capture_incumbents:
+        result.update(incumbents=history, uncapturedIncumbents=dropped[0], root=root,
+                      lpIterations=model.getNLPIterations(), lpSolves=model.getNLPs())
+        for key, value in [('dualBound', model.getDualbound()), ('primalBound', model.getPrimalbound()), ('gap', model.getGap())]:
+            result[key] = None if not math.isfinite(value) or model.isInfinity(abs(value)) else value
     if model.getNSols():
-        solution = model.getBestSol()
-        times = [max(choices, key=lambda t: float(solution[choices[t]])) for choices in depart]
-        chosen = [t - (times[leg - 1] + profiles[leg - 1]['airtime'] if leg else 0) for leg, t in enumerate(times)]
-        names = [max(choices, key=lambda name: float(solution[choices[name]])) for choices in mode]
-        acceleration = [[float(solution[v]) for v in u] for u in controls]
-        selected, rows = extract_passages(solution, passages, horizon, initial=origin)
-        value_of = lambda expression: float(expression) if isinstance(expression, (int, float)) else float(solution[expression])
-        result.update(allocation=chosen, departures=times, modes=names, acceleration=acceleration,
-            yaw=[math.degrees(math.atan2(u[1], u[0]) - case['modes'][name]['base']) for name, u in zip(names, acceleration)],
-            positions=[[float(solution[v]) for v in row] for row in coordinates],
-            velocity=[[float(solution[v]) for v in row] for row in velocity],
-            y=[float(solution[row[1]]) for row in coordinates],
-            vy=[value_of(v) for v in vys], onGround=[value_of(v) > .5 for v in grounded],
-            selectedPassages=selected, selectedRows=rows, objective=float(model.getSolObjVal(solution)))
+        result.update(snapshot(model.getBestSol()))
     return result
 
 
@@ -210,7 +242,8 @@ def main():
     args = parser.parse_args()
     request = json.loads(Path(args.input).read_text())
     result = solve_horizon(request['case'], request['horizon'], seconds=args.seconds,
-                           optimize=request.get('optimize', False), allocation=request.get('allocation'))
+                           optimize=request.get('optimize', False), allocation=request.get('allocation'),
+                           capture_incumbents=request.get('captureIncumbents', False))
     Path(args.output).write_text(json.dumps(result, indent=2, allow_nan=False) + '\n')
 
 
