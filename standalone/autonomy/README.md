@@ -4,6 +4,8 @@ Latest standalone orchestration: [generic movement programs](GENERIC_COMPOSITION
 
 For a compacted session, start with [COMPACTION_HANDOFF.md](COMPACTION_HANDOFF.md): implementation checkpoint, user decisions, tested results, remaining gaps and next tasks.
 
+Current direction, 2026-10-30: water is deferred. See [PRUNING_RESEARCH_HANDOFF.md](PRUNING_RESEARCH_HANDOFF.md) for the current solver/schedule-generation state and research pointers for improving discovery speed. Generic movement composition and climbing-owned ceilings are implemented; older milestone sections below retain historical limits.
+
 Status, 2026-10-26: **run ticks are prototyped** within the continuous model. [RUN_TICKS_PLAN.md](RUN_TICKS_PLAN.md) records what works, the measured results and deferred work. Current orchestration work has moved to the [block solver](BLOCK_SOLVER_PLAN.md). Replay export and game integration are outside this milestone.
 
 The [collision-box obstacle search](OBSTACLE_SEARCH.md) now implements height pruning, cross neo/wide neo blockage chains, finite source-obstacle clearance and shared swept-collision acceptance. It reuses the integration agent's `StaticScene`; the corrected shared movement compiler now supports generated one-input wall reversals and ceiling-hit profiles.
