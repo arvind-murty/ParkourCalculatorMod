@@ -25,6 +25,10 @@ Some standalone dependencies intentionally live outside `standalone/`: `core/...
 
 The current assignment is deep research and a ranked pruning proposal. Water remains deferred. Distinguish safe elimination, heuristic ranking/drop and work scheduling. Propose experiments and coverage checks before changing candidate families. Runtime setup is local and ignored: the canonical worktree currently reuses the old runtime through a symlink, so create a fresh environment from pinned requirements in a portable/new checkout.
 
+## Living research discussion
+
+[PRUNING_RESEARCH.md](PRUNING_RESEARCH.md) records the pruning proposals, the shortest-path versus branch-and-bound framework evaluation, decision status and subsequent discussion checkpoints. The user requests that relevant findings and decisions be persisted there after each research turn. Framework recommendations are not user-approved implementation decisions.
+
 ## What is implemented
 
 | Family | Current coverage |
