@@ -1,5 +1,7 @@
 # Continuous decision relaxation with full-strength controls
 
+Latest update, 2026-10-31: the user now welcomes disk controls when they buy convexity. [CONVEX_ROUTE_GUIDANCE_PLAN.md](CONVEX_ROUTE_GUIDANCE_PLAN.md) supersedes the circle-first experiment order below, verifies existing native disk machinery, specifies a fully convex disaggregated alternative and records the remaining implementation gaps. The compact circle/disk comparison remains useful, but changing only its control set does not convexify its mode/state products. The earlier coordinated discussion is retained below as design history.
+
 2026-10-31. User priorities: the optimistic reference should resemble the eventual physically optimized trajectory and be easy for the generic continuous solver. The user explicitly authorized renewed coordination with the mixed-integer agent. Solver quality remains an accepted assumption for this design discussion. This note records that exchange; neither implementation was edited or merged, and no new timing experiment was run.
 
 ## Agreed recommendation
