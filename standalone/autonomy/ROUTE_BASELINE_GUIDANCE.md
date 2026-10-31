@@ -4,6 +4,8 @@
 
 This is a design formalization and primary-source review. No solver implementation or new numerical measurement accompanies this turn.
 
+Subsequent user refinement: assume IPOPT is good enough and focus on the model-inclusion guarantee. [ROUTE_MIP_RELAXATION.md](ROUTE_MIP_RELAXATION.md) develops the mixed-integer/continuous-relaxation construction. Earlier numerical-certificate qualifications below remain background, not a request to reopen solver-quality discussion.
+
 ## What the user is proposing
 
 The missing context in a local choice, such as passing a blockage on tick 4 versus tick 5, is its effect on the rest of the route. A route-specific optimistic continuation supplies that context. Decisions can be selected largely forward, while numerical optimization continues to adjust every earlier facing from the original initial state.
