@@ -60,6 +60,12 @@ class CellRouteTests(unittest.TestCase):
         self.assertGreater(report['remaining'], 0)
         self.assertEqual(report['maxVisits'], 2)
 
+    def test_touching_a_gate_then_returning_does_not_create_crossings(self):
+        gate = dict(id=0, axis=0, lateral=2, plane=2, lo=0, hi=1)
+        for points in [[[1,1,-1],[2,1,-1],[1,1,-1]], [[3,1,-1],[2,1,-1],[3,1,-1]]]:
+            self.assertEqual(crossings(points, [gate]), [])
+        self.assertEqual(len(crossings([[1,1,-1],[2,1,-1],[2,2,-1],[3,2,-1]], [gate])), 1)
+
     def test_blocked_prescribed_trace_and_budget_expiry_are_explicit(self):
         scene = side_scene()
         d = decompose(scene)

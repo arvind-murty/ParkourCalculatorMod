@@ -33,19 +33,25 @@ def landmarks(scene):
 
 
 def crossings(points, gates):
-    result = []
-    for index, (a, b) in enumerate(zip(points, points[1:])):
-        events = []
-        for gate in gates:
-            axis, plane = gate['axis'], gate['plane']
-            if a[axis] <= plane < b[axis] or b[axis] <= plane < a[axis]:
-                f = (plane - a[axis]) / (b[axis] - a[axis])
-                value = a[gate['lateral']] + f * (b[gate['lateral']] - a[gate['lateral']])
+    events = []
+    for gate in gates:
+        axis, plane = gate['axis'], gate['plane']
+        previous = 0
+        for index, (a, b) in enumerate(zip(points, points[1:])):
+            first = (a[axis] > plane) - (a[axis] < plane)
+            second = (b[axis] > plane) - (b[axis] < plane)
+            if first:
+                previous = first
+            if not second:
+                continue
+            if previous and second != previous:
+                f = (plane-a[axis])/(b[axis]-a[axis])
+                value = a[gate['lateral']] + f*(b[gate['lateral']]-a[gate['lateral']])
                 side = -1 if value <= gate['lo'] + 1e-7 else 1 if value >= gate['hi'] - 1e-7 else 0
-                token = (gate['id'], 1 if b[axis] > a[axis] else -1, side)
-                events.append((f, gate['id'], token))
-        result.extend(dict(token=token, segment=index) for _, _, token in sorted(events))
-    return result
+                token = (gate['id'], second, side)
+                events.append((index, f, gate['id'], token))
+            previous = second
+    return [dict(token=token, segment=index) for index, _, _, token in sorted(events)]
 
 
 def signature(points, gates):
