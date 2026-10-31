@@ -60,6 +60,19 @@ class CellRouteTests(unittest.TestCase):
         self.assertGreater(report['remaining'], 0)
         self.assertEqual(report['maxVisits'], 2)
 
+    def test_goal_is_a_landing_region_even_when_its_center_is_blocked(self):
+        scene = side_scene()
+        scene['blocks'] = [scene['blocks'][0], dict(id='goal',sourceBlock='goal',solidIndex=1,top=1,bounds=[4,8,0,1]),
+                           dict(id='wall',sourceBlock='wall',solidIndex=2,top=5,bounds=[6,7,-1,2])]
+        scene['collisionScene']['solids'] = [[0,0,0,1,1,1],[4,0,0,8,1,1],[6,0,-1,7,5,2]]
+        d = decompose(scene)
+        self.assertEqual(d.locate([6,1,.5]), [])
+        routes,report = enumerate_routes(scene,d,max_routes=1,max_expansions=200)
+        self.assertTrue(routes,report)
+        self.assertFalse(report['missingGoal'])
+        self.assertTrue(d.locate(routes[0].points[-1]))
+        self.assertEqual(landmarks(scene),[])
+
     def test_touching_a_gate_then_returning_does_not_create_crossings(self):
         gate = dict(id=0, axis=0, lateral=2, plane=2, lo=0, hi=1)
         for points in [[[1,1,-1],[2,1,-1],[1,1,-1]], [[3,1,-1],[2,1,-1],[3,1,-1]]]:

@@ -51,7 +51,6 @@ class CellExperimentTests(unittest.TestCase):
             def generate(self, context, **options):
                 context['generationRecords'].append(dict(stats=dict(maskWork=17)))
                 raise TimeoutError('synthetic deadline')
-                yield
         report = {}
         with patch.dict(GENERATORS, normal=TimedGenerator()):
             self.assertEqual(list(iter_movement_programs(scene, report=report)), [])
@@ -72,6 +71,21 @@ class CellNumericalTests(unittest.TestCase):
     def setUp(self):
         self.compiler = JavaCompiler(json.loads(Path(os.environ['PKC_RUN_TICKS_COMPILER']).read_text()))
         self.addCleanup(self.compiler.close)
+
+    def test_goal_region_preserves_faster_grind_landing_before_an_interior_gate(self):
+        fixture = Path(__file__).parents[1]/'fixtures/generic-grind-blip.json'
+        request = json.loads(fixture.read_text())
+        request['movementSearch']['maxPrefixes'] = 64
+        points = json.loads((ROOT/'grind-route.json').read_text())
+        runs = [run_arm(request,arm,mode='solve',seconds=8,max_solver_calls=12,route_seconds=2,
+            compiler=self.compiler,python_executable=os.environ['PKC_IPOPT_PYTHON'],spatial_points=points)
+            for arm in ('generic','prescribed')]
+        for result in runs:
+            self.assertEqual(result['status'],'feasible')
+            self.assertEqual(result['best']['plan']['ticks'],5)
+            self.assertTrue(result['best']['geometryCheck']['feasible'])
+            self.assertLess(result['best']['candidate']['positions'][-1][0],2.425)
+        self.assertAlmostEqual(runs[0]['best']['candidate']['objective'],runs[1]['best']['candidate']['objective'],places=6)
 
     def test_all_arms_preserve_original_state_acceptance_and_terminal_runoff(self):
         request = json.loads((ROOT/'open.json').read_text())

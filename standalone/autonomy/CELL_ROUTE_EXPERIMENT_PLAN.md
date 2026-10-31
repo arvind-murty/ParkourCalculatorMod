@@ -15,6 +15,8 @@ Build an isolated experimental pipeline that:
 
 Success is not a particular search algorithm name. It is retained useful routes, accepted whole-trajectory solutions, measured local decision reduction and a clear diagnosis of whether another abstraction is needed. Continue to rank accepted results by elapsed ticks and then the configured X/Z objective. Results are best found, not global optima.
 
+Current user test scope: stepping, blockages, ceilings, run ticks and landing. Ladder and explicit wall-hit experiments are deferred for this iteration.
+
 Deferred: new time/objective lower bounds, exact reachable-set propagation, a new branch-and-bound engine, sophisticated estimated edge-time models, production routing changes, water and game/UI integration. Preserve existing necessary validity checks and apply the same existing screens in comparisons; do not remove them just because new lower-bound research is deferred.
 
 ## Isolation before any implementation

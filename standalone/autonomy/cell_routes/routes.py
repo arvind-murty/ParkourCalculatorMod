@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass, field
 
 from .geometry import contains, intersection, merge_boxes, segment_intervals
 from ..obstacle_geometry import expanded_box
+from ..route import center_bounds
 
 
 def midpoint(box):
@@ -18,14 +19,26 @@ def goal_point(scene):
             (block['bounds'][2] + block['bounds'][3]) / 2)
 
 
+def goal_region(scene):
+    block = next(b for b in scene['blocks'] if b['id'] == scene['goalBlock'])
+    b = center_bounds(block)
+    margin = scene.get('supportClearance', 1e-6)
+    return (b[0]+margin, block['top'], b[2]+margin, b[1]-margin, block['top'], b[3]-margin)
+
+
+def distance_to_box(point, box):
+    return math.sqrt(sum(max(box[a]-point[a], 0, point[a]-box[a+3])**2 for a in range(3)))
+
+
 def landmarks(scene):
     start, goal = scene['initial']['position'], goal_point(scene)
     axis = 0 if abs(goal[0] - start[0]) >= abs(goal[2] - start[2]) else 2
     lateral = 2 if axis == 0 else 0
+    terminal = goal_region(scene)
     result = []
     for box in merge_boxes(scene['collisionScene']['solids']):
         plane = (box[axis] + box[axis + 3]) / 2
-        if min(start[axis], goal[axis]) < plane < max(start[axis], goal[axis]):
+        if min(start[axis], goal[axis]) < plane < max(start[axis], goal[axis]) and not terminal[axis] <= plane <= terminal[axis+3]:
             expanded = expanded_box(box)
             result.append(dict(id=len(result), axis=axis, lateral=lateral, plane=plane,
                 lo=expanded[lateral], hi=expanded[lateral + 3], box=box))
@@ -145,10 +158,12 @@ def enumerate_routes(scene, decomposition, *, max_routes=50, max_expansions=5000
         if type(value) is not int or value < 1:
             raise ValueError(key + ' must be a positive integer')
     start, goal = tuple(scene['initial']['position']), goal_point(scene)
-    starts, goals = decomposition.locate(start), set(decomposition.locate(goal))
+    terminal = goal_region(scene)
+    starts = decomposition.locate(start)
+    goals = {c.id: overlap for c in decomposition.cells if (overlap := intersection(c.bounds, terminal)) is not None}
     gates, adjacent = landmarks(scene), decomposition.neighbors()
     serial = itertools.count()
-    queue = [(math.dist(start, goal), next(serial), 0., c, (c,), (), (start,)) for c in starts]
+    queue = [(distance_to_box(start, terminal), next(serial), 0., c, (c,), (), (start,)) for c in starts]
     heapq.heapify(queue)
     representatives, grouped = {}, {}
     expanded, dominated, visit_drops, depth_drops, duplicates = 0, 0, 0, 0, 0
@@ -173,19 +188,20 @@ def enumerate_routes(scene, decomposition, *, max_routes=50, max_expansions=5000
         representatives[key] = length
         expanded += 1
         if cell in goals:
-            finished = points + (tuple(goal),)
+            endpoint = midpoint(goals[cell])
+            finished = points + (endpoint,)
             full_sig = signature(finished, gates)
             if full_sig in grouped:
                 corridor = grouped[full_sig]
                 corridor.cells = sorted(set(corridor.cells) | set(cells))
-                corridor.projection = merge_boxes(corridor.projection + walk_projection(decomposition, list(cells), list(portals), start, goal))
+                corridor.projection = merge_boxes(corridor.projection + walk_projection(decomposition, list(cells), list(portals), start, endpoint))
                 if list(cells) not in corridor.stage_paths:
                     corridor.stage_paths.append(list(cells))
                 corridor.variants += 1
                 duplicates += 1
             else:
                 grouped[full_sig] = Corridor(len(grouped), list(cells), list(portals), [list(p) for p in finished],
-                    full_sig, walk_projection(decomposition, list(cells), list(portals), start, goal), length + math.dist(points[-1], goal), stage_paths=[list(cells)])
+                    full_sig, walk_projection(decomposition, list(cells), list(portals), start, endpoint), length + math.dist(points[-1], endpoint), stage_paths=[list(cells)])
                 if len(grouped) >= max_routes:
                     termination = 'route_limit'
                     break
@@ -204,7 +220,7 @@ def enumerate_routes(scene, decomposition, *, max_routes=50, max_expansions=5000
             reverse_count = sum(token[1] != (1 if goal[gates[token[0]]['axis']] > start[gates[token[0]]['axis']] else -1) for token in next_signature)
             revisit_count = len(cells) + 1 - len(set(cells + (neighbor,)))
             ordering_penalty = (reverse_count + revisit_count) * math.dist(decomposition.bounds[:3], decomposition.bounds[3:])
-            heapq.heappush(queue, (distance + math.dist(p, goal) + ordering_penalty, next(serial), distance,
+            heapq.heappush(queue, (distance + distance_to_box(p, terminal) + ordering_penalty, next(serial), distance,
                 neighbor, cells + (neighbor,), portals + (portal_id,), points + (p,)))
     return list(grouped.values()), dict(termination=termination, expanded=expanded, remaining=len(queue),
         dominanceDrops=dominated, visitDrops=visit_drops, depthDrops=depth_drops, groupedDuplicates=duplicates,
