@@ -12,6 +12,8 @@ Current canonical branch/worktree: `feature/ipopt-consolidated`, `/Users/arvindm
 
 Read the latest [`feature/ipopt-consolidated` on the user's fork](https://github.com/arvind-murty/ParkourCalculatorMod/tree/feature/ipopt-consolidated), including this handoff and `standalone/CONSOLIDATION.md`. The implemented consolidation checkpoint is `b5a1199`; subsequent handoff-only commits do not change solver behavior. For an isolated research branch, with `origin` pointing to `https://github.com/arvind-murty/ParkourCalculatorMod.git`:
 
+Review: [PR #1, consolidated standalone IPOPT route solver and local replay](https://github.com/arvind-murty/ParkourCalculatorMod/pull/1), targeting `arvind-murty/ParkourCalculatorMod:main`. Its description explains the full pipeline, supported movement, shared Java changes, validation and limits. Research should read the current PR head branch, rather than assume the implementation has merged into `main`.
+
 ```sh
 git fetch origin feature/ipopt-consolidated
 git worktree add -b research/ipopt-pruning ../ParkourCalculatorMod-ipopt-pruning origin/feature/ipopt-consolidated
