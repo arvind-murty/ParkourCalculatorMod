@@ -1,5 +1,7 @@
 # Convex decision model with normal momentum carry
 
+Ceiling/stepping follow-up: [DYNAMIC_CONTACT_DECISIONS.md](DYNAMIC_CONTACT_DECISIONS.md) extends the proposed decision model to choices that alter Y/VY, ground state and subsequent acceleration/friction. A contact method must select its transition and successor, not only a clearance constraint. The current prototype has not implemented this extension.
+
 2026-10-31. User clarification: omit only inertia thresholds during input-decision search. Keep stored velocity, friction, acceleration and ordinary momentum propagation. The user expects the threshold's physical effect to be small and wants later closed-form/SLP/B&B passes to handle inertia patterns. This supersedes the previous recommendation to prioritize strengthening the carry hull.
 
 This turn explains the existing implementation and records the revised model direction. No runtime source or benchmark was changed. Existing reported measurements used the carry hull; they are historical evidence, not measurements of the proposed no-threshold model.

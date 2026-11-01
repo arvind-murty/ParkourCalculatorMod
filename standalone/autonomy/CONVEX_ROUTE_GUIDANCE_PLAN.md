@@ -1,5 +1,7 @@
 # Convex route guidance: scope and first experiment
 
+Dynamic-contact clarification, 2026-10-31: [DYNAMIC_CONTACT_DECISIONS.md](DYNAMIC_CONTACT_DECISIONS.md) describes the next substantive model extension: optional ceiling/stepping transitions over shared 3D state, with exact input/ground timing and explicit outer treatment of nonconvex step-winner guards. Passage-timing measurements do not establish this capability.
+
 Latest user direction, 2026-10-31: omit only inertia thresholds for decision selection, carry velocity normally, and defer inertia-pattern refinement. [NO_THRESHOLD_DECISION_MODEL.md](NO_THRESHOLD_DECISION_MODEL.md) supersedes the carry-hull recommendation below for the next model. Existing benchmark results still describe the earlier hull implementation.
 
 Implementation update, 2026-10-31: the restricted experiment is implemented in `route_guidance/` and measured. [Results and recommendations](experiments/route-guidance/README.md) supersede the prospective status below. Clarabel supplies the genuine SOCP backend; all three arms have witness-lift checks. Prefer convex conditional values with retained alternatives. The current helper defaults to width two after a measured greedy timing counterexample. General variable-Y stepping/ceiling coverage and integration with the cell-route opportunity generator remain unfinished. The original experiment specification follows as design history.
