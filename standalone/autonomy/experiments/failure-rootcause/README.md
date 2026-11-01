@@ -1,5 +1,7 @@
 # Search failure root-cause probes
 
+Subsequent user-authorized implementation: [the three runtime fixes and validation](../failure-fixes/README.md), source `bc7659b8`. The research-only/default-unchanged descriptions below refer to the original archived investigation.
+
 This work investigates generic mechanisms behind proposal starvation and loss of fully feasible candidates. It does not change the production/default solver, the scalar movement model, physical acceptance, the score or the current experimental window policy. All behavioral changes below are isolated research hooks. Earlier facings remain free and all problems begin at the original full initial position/velocity. Velocity thresholds are zero. Ladders and intentional wall hits remain excluded.
 
 [Results and generic fixes](RESULTS.md) identify complete-proposal starvation/eviction, mismatched incumbent validity between layers, and skipped fallback seeds at degenerate angular starts. Counterexamples reject naive goal-only scheduling and replacing optimization with seed return. The evidence spans additional controls and explicitly separates warm feasibility, cold discovery and scalar-only numerical behavior.

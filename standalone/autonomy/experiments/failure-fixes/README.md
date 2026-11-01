@@ -42,3 +42,7 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 .venv-guidance/bin/python \
 ```
 
 The scalar reproduction command remains in the [root-cause README](../failure-rootcause/README.md). New low-level and outer-search regression tests cover fallback budgets without inference, preserved incumbents, invalid seeds, continued repair, cancellation/errors, complete-plan publication, queue-cap starvation and the captured known post-turn prefix. Standalone numerical and wider test results plus reproducible inputs/outputs are archived in `evidence/`.
+
+Validation at implementation source `bc7659b8`: 59 focused compiler/IPOPT tests pass; all 54 IPOPT tests pass with numerical integration enabled; wider autonomy runs 384 tests with 83 environment skips and no failures, excluding the already documented baseline repeated-ladder-ceiling failure. No mod Gradle test suite was run.
+
+All 98 returned physical witnesses in the warm, pool-validation and window reruns pass independent replay (34 + 17 + 47). Scalar-only probes are counted separately. In the inherited warm diagnostic schema, `lostValidSeed` flags an invalid final inner proposal after a valid seed; final `result.best` and replay describe whether the fixed outer search retained a valid incumbent. It is not a claim that the fixed search still loses that seed.
