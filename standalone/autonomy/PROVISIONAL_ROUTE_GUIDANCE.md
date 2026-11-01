@@ -50,3 +50,15 @@ Compare the current lazy initialization with geometry-aware provisional continua
 Measure first-rollout route/scene validity, required geometry repairs, useful arrival-state information, revisions of provisional choices, sensitivity of earlier-choice ranking to the default, retained successful alternatives, total work and final accepted times/objectives. Verify all accepted witnesses with the shared scene checker. This evaluates whether the initial solve is informative instead of merely counting whether it returned a scalar-feasible path.
 
 No mixed-input/disk relaxation, certified bound, new physics/constraint family, richer score or time/progress-frontier implementation is proposed as a prerequisite. Intentional final wall hits, ladders and velocity thresholds remain excluded in the current tests.
+
+## Close clusters versus separated decisions
+
+The recommendation can apply to both; the discrete decision cluster and the numerical lookahead horizon are different concepts.
+
+Close/coupled A and B: enumerate their compatible joint discrete variants as the current cluster policy already does. A provisional continuation is primarily context beyond that cluster. Do not replace the required joint A/B comparison with a greedy default for B when B is tightly coupled to A.
+
+A and B separated by, for example, ten air inputs: normally keep separate discrete searches. While exploring A, a longer reference/rollout may include a provisional fixed B variant to account for B's obstacle/turn without enumerating every A x B combination. Later explore B's variants for the retained A histories, re-solving all continuous facings from the original full state. The earlier physical input/constraint history is conditional, and its intermediate numerical position/velocity is never frozen. This is separate discrete selection with globally revisable continuous facings, not a requirement to merge every downstream event into one combinatorial cluster.
+
+If the actual evaluated prefix ends before B, B cannot be phased through inside that prefix and its avoidance constraints are not inherently required there. A longer rollout that reaches/passes B must include a supported provisional B interaction. Merely mentioning B in an untimed guide does not enforce it. Numerical lookahead through B while scoring A at an earlier common state would require the orchestrator to request that objective tick explicitly; it is a possible use of the existing objective interface, not behavior silently attributed to the current prefix evaluator. The existing common-tick score need not otherwise change.
+
+Ten air inputs are not a proof of independence: carried momentum and position can make B require preparation earlier. Keep A/B separate initially when appropriate, and increase lookahead, retain multiple downstream defaults, or merge a cluster if actual continuation feasibility or earlier-choice ranking is highly sensitive to B. Do not use a fixed tick-gap threshold as a dominance/independence proof. This remains recommended policy, not newly implemented behavior.
