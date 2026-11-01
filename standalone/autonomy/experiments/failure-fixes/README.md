@@ -1,5 +1,7 @@
 # Generic scheduling, incumbent and initialization fixes
 
+Subsequent user-directed fixes: [orchestrator coverage and stored-state results](../orchestrator-fixes/README.md). These fix adjacent-cell repair and carry pending search state; the cold window turn now accepts 13 ticks. Earlier unknown-turn results below remain historical measurements. The continuous solver is unchanged.
+
 The user authorized fixing the three mechanisms isolated in [the root-cause research](../failure-rootcause/RESULTS.md). This changes the standalone runtime on isolated branch `research/ipopt-cell-routes`; older research-only statements describe historical source revisions.
 
 - Zero-threshold solves now try the supplied fallback within the same total deadline. Normal momentum carry is unchanged; no threshold/pattern inference is introduced. Custom-yaw objectives also orient the fallback correctly.
