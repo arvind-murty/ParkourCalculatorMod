@@ -1,6 +1,8 @@
 # Use the existing cell route as the first decision guide
 
-2026-10-31. User asked why another trajectory initializer is needed when the cell route already supplies the rough spatial path. Proposed simply connecting route endpoints and using that geometry to define local progress objectives. Recommendation: test this geometric proxy first. Mixed-input and provisional full-route solves are optional later improvements, not prerequisites. No new runtime code or benchmark was added in this explanatory turn.
+Latest policy, 2026-11-01: the user selects comparison as far forward as possible before the next separate decision, retention of similarly scoring alternatives, and joint treatment of nearby coupled decisions. This is the next design target. The current implementation still uses explicit checkpoint schedules and a fixed-width pool; adaptive decision windows and objective-band retention are not implemented or measured yet.
+
+Original proposal, 2026-10-31: use the cell-route polyline as the geometric proxy. Mixed-input and provisional full-route solves remain optional later improvements, not prerequisites.
 
 ## Existing representation already supplies a guide
 
@@ -9,6 +11,36 @@
 Thus a cheap untimed polyline already exists. It supplies the broad direction and upcoming turns that motivated cell decomposition. It does not need to satisfy gravity, acceleration or an exact tick schedule to serve as an objective guide. Its numerical midpoint choices are references; the solver must retain freedom to cross elsewhere in the portal or land elsewhere in the allowed goal region.
 
 Connecting endpoints means connecting the successive cell/portal anchors within the selected corridor. A single global start-goal chord could erase the intended obstacle side or cross a blocked region. Optional shortcutting must preserve corridor membership and ordered progress. Straight segments through the existing points are sufficient for the first baseline; no new path-smoothing algorithm is required.
+
+## Decision clusters and the latest useful comparison
+
+Treat a group of nearby decisions as one local decision cluster. Enumerate compatible joint choices for the cluster, including event timing and method choices, regenerate their actual physical profiles, and compare those joint alternatives after their effects have developed. Do not greedily commit the first member of a tightly coupled group and only afterward consider its neighbors.
+
+Temporal proximity is a first grouping signal. Overlapping possible timing ranges, a shared turn/contact sequence, or one choice changing the next choice's availability/timing are additional reasons to expand the cluster. The grouping threshold and dependence detector need experiments; no fixed tick distance is selected here. Existing single-event physical generators do not by themselves establish independent feasibility of every joint combination.
+
+For each cluster, extend its alternatives through the available decision-free continuation to the latest common absolute state h immediately before the next separate unresolved decision. Preserve one h, one route stage and one horizontal direction for the entire sibling batch. Do not give a candidate a longer horizon merely because its next decision happens later. If the window contains a turnaround, complete the turn before comparing, using the outgoing segment's common direction.
+
+Indexing: the stored position p[q] is the state before input q. Thus, if the next decision controls input q, comparing immediately before that input means scoring p[q], the state after input q-1. It does not mean scoring p[q-1] and accidentally stopping one input earlier. Time-indexed collision/contact effects must also be placed using their actual movement phase.
+
+The next decision's time can differ among siblings and may remain a range until solved. The horizon cannot depend on each sibling's optimized endpoint. A conservative first policy is to stop before the earliest possible onset of the next unresolved decision across the batch. If that leaves no common useful post-cluster/post-turn comparison point, or the next decision is causally coupled, include that decision in the cluster and choose a later common boundary. Estimated opportunity times are proposals, not proofs that a free-facing optimizer cannot interact sooner; acceptance must check the actual event order and detect an unresolved interaction entering the scoring prefix. Do not silently fix future event times merely to make the comparison convenient.
+
+## Retain an objective band
+
+For a shared comparison, normalize the objective to maximization and let S_i = d dot p_i[h]. Retain valid alternatives satisfying:
+
+```text
+S_best - S_i <= epsilon
+```
+
+With unit horizontal d, epsilon is a horizontal progress gap in blocks. Use objective differences, not a percentage of the absolute coordinate-based score, which changes with the map's origin. No numerical epsilon is selected yet. Calibrate it jointly with the later horizon, using independently continued siblings and their best-found full results.
+
+The current short-window counterexamples illustrate this dependency: the useful early-jump ceiling alternative is 0.210311 blocks behind at state 7; the useful normal-step alternative is 0.382581 blocks behind the best slab-boost score at state 4. A tighter band would drop them at those old horizons. These gaps are diagnostic observations, not proposed default tolerances, necessary gaps at later h, or certified global-optimum losses.
+
+Retain distinct method/timing/contact continuations within the band even if their position scores are nearly equal. Their carried velocity and vertical/contact state can differ. Merge truly equivalent symbolic profiles, not states merely because they occupy the same cell or have similar scores. Numerical unknowns need a separate work reserve; missing a score is not evidence of a large gap.
+
+A hard resource cap is still useful when many alternatives lie in the band. Treat any such omission as a recorded heuristic budget drop, separate from falling outside the band. Balance initial continuation work among retained parents before spending remaining work by score. The new objective band replaces fixed top-k as the intended quality-retention policy; a pool cap remains an independent work limit, not a claim that only k candidates are worth keeping.
+
+Position-only band filtering remains a heuristic, not a dominance proof. Later comparison reduces one source of ranking error but does not make the score a complete continuation value. No velocity term, height objective, mixed initializer or new bound is introduced by this policy.
 
 ## Minimum local evaluator
 
@@ -61,6 +93,8 @@ Measured follow-up: [90-run results](experiments/checkpoint-guidance/RESULTS.md)
 Finite descendant budgets also make pool width nonmonotone: a one-history grind search finds 11 ticks while the four-history search finds 13. Next targeted tests should balance work per retained parent and use a later common comparison tick on unresolved ceiling/descent cases. The evidence does not establish a need for another mixed initializer or a bound.
 
 Results-review recommendation: retain this architecture provisionally. Prioritize per-parent continuation work allocation, an independently continued sibling-family diagnostic, then common-h lookahead sweeps. Measure top-one/top-two/top-four useful-method retention and completed-route loss, keeping numerical unknowns separate. After understanding ranking quality, reduce easy-route overhead and test automatic checkpoint proposals on unseen routes. The full ordered follow-up is in the results report. This is a proposed next-work order, not a claim that those changes are implemented or that the user selected new implementation work.
+
+2026-11-01 user-selected refinement: the next comparison should test joint decision clusters with the latest common pre-next-decision horizon and objective-band retention. Fair per-parent work allocation and independent sibling continuation remain necessary controls. Compare band tolerances, cluster sizes and horizon placement against the existing fixed-tick/fixed-width implementation, counting all generation/solver work. In addition to top-k diagnostics, measure which useful alternatives survive the band, retained pool size, cap drops and best-found completed-route loss. The policy is agreed; its clustering rule, tolerance values and runtime implementation remain to be established.
 
 Compare current ordering against this direction/progress-guided ordering on the same selected corridors and local decision opportunities. Include passage timing, normal step versus jump/slab boost, ceiling hit versus avoid/grind, optional landing versus overflight, a turn and the known multi-support discovery control. Keep the same generation/work budgets, original-state solves and physical acceptance. Ladder and intentional wall-hit tests remain excluded.
 

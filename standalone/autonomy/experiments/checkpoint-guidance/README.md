@@ -2,6 +2,8 @@
 
 Implemented in the isolated `research/ipopt-cell-routes` worktree. This experiment tests the user's position-only local score on the existing cell-route polyline. It runs normal, ceiling and stepping movement, including blockage avoidance, run inputs and landing. The production search default is unchanged.
 
+Next policy, agreed 2026-11-01: [decision clusters and objective-band retention](../../GEOMETRIC_DECISION_GUIDANCE.md) compare joint nearby choices as far forward as possible before the next separate decision, then retain similarly scoring alternatives. The measured implementation described below still uses authored checkpoint ticks and a fixed-width pool. This policy refinement has not been implemented or benchmarked.
+
 ## Model and algorithm
 
 Choose an outgoing horizontal polyline segment and a shared absolute state tick `h` for each comparison window. The score is `direction dot position[h]`, with the same normalized horizontal direction and `h` for every candidate in that window. Tick zero is the original pre-input state; input `h-1` produces state `h`. Y is excluded from the score. Different methods may have different Y, ground state and vertical phase at `h`.
