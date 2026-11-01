@@ -5,11 +5,12 @@ import time
 from standalone.autonomy.block_contacts import floor_checks, solve_contact_branches
 from standalone.autonomy.block_search import prepare_scene
 from standalone.autonomy.movement_composition import compile_program, empty_program, program_physics_key
-from standalone.autonomy.movement_search import iter_movement_programs, movement_settings, screen_program
+from standalone.autonomy.movement_search import movement_settings, screen_program
 from standalone.autonomy.ranking import candidate_rank
 from standalone.autonomy.route import supports
 from standalone.ipopt.model import integer, number
 from .checkpoints import checkpoint, retain_prefix
+from .decision_windows import DecisionPolicy, fair_programs, plan_windows, retain_candidates, score_features
 from .geometry import decompose
 from .local import CorridorAdapter, CountingCompiler, SearchWork
 from .routes import corridor_for_points, enumerate_routes, landmarks
@@ -88,10 +89,12 @@ def _key(program):
     return hashlib.sha256(program_physics_key(program).encode()).hexdigest()
 
 
-def find_checkpoint_route(request, compiler, *, checkpoints, corridor=None, spatial_points=None, seconds=30,
+def find_checkpoint_route(request, compiler, *, checkpoints=None, corridor=None, spatial_points=None, seconds=30,
                           candidate_seconds=1, score_seconds=3, max_solver_calls=128,
                           max_candidates=24, beam_width=4, unknown_slots=1, score_call_limit=8,
-                          final_call_limit=24, order='guided', python_executable=None, cancel_event=None):
+                          final_call_limit=24, order='guided', python_executable=None, cancel_event=None,
+                          opportunities=None, cluster_gap=2, objective_gap=None, fair_parents=False,
+                          initial_programs=None):
     started = time.monotonic()
     for name, value in [('seconds', seconds), ('candidate_seconds', candidate_seconds), ('score_seconds', score_seconds)]:
         if number(value, name) <= 0:
@@ -102,6 +105,12 @@ def find_checkpoint_route(request, compiler, *, checkpoints, corridor=None, spat
     integer(unknown_slots, 'unknown_slots', 0, beam_width)
     if order not in ('guided', 'generation'):
         raise ValueError('Ordering must be guided or generation')
+    if type(fair_parents) is not bool:
+        raise ValueError('fair_parents must be boolean')
+    if objective_gap is not None and number(objective_gap,'objective_gap') < 0:
+        raise ValueError('objective_gap must be nonnegative')
+    if opportunities is not None and checkpoints is not None:
+        raise ValueError('Supply opportunities or checkpoint ticks, not both')
     if request.get('maxWallHits', 0):
         raise ValueError('Intentional wall-hit experiments are excluded')
     scene = prepare_scene(dict(request, maxWallHits=0))
@@ -121,7 +130,10 @@ def find_checkpoint_route(request, compiler, *, checkpoints, corridor=None, spat
             objectiveOptimalityProven=False, minimumTicksProven=False)
     if cancel_event is not None and cancel_event.is_set():
         return unfinished('cancelled')
-    d, gates = decompose(scene, deadline=deadline), landmarks(scene)
+    try:
+        d, gates = decompose(scene, deadline=deadline), landmarks(scene)
+    except TimeoutError:
+        return unfinished('deadline')
     route_report = None
     if corridor is None:
         if spatial_points is not None:
@@ -139,16 +151,28 @@ def find_checkpoint_route(request, compiler, *, checkpoints, corridor=None, spat
                 result['routeGeneration'] = route_report
                 return result
             corridor = routes[0]
-    plans = [checkpoint(corridor, gates, spec) for spec in checkpoints]
+    window_plan = plan_windows(opportunities,gap=cluster_gap,max_inputs=cfg['maxInputs']) if opportunities is not None else None
+    policy = DecisionPolicy(window_plan,scene) if window_plan is not None else None
+    specs = window_plan['checkpoints'] if window_plan is not None else checkpoints or []
+    plans = [checkpoint(corridor, gates, spec) for spec in specs]
     if any(a.tick >= b.tick or a.segment > b.segment for a, b in zip(plans, plans[1:])):
         raise ValueError('Checkpoints must increase in absolute tick and ordered route segment')
     if plans and plans[-1].tick > cfg['maxInputs']:
         raise ValueError('Checkpoint exceeds movement horizon')
     adapter = CorridorAdapter(scene, corridor, gates, decomposition=d)
-    motion = _motion_bound(scene, counted, min(score_seconds, seconds))
+    try:
+        work.check()
+        motion = _motion_bound(scene, counted, max(.001,min(score_seconds,deadline-time.monotonic())))
+    except TimeoutError:
+        return unfinished('deadline')
     seed = empty_program(scene['initial'], threshold=0.)
     seed['terminalSupport'] = scene['startBlock']
-    frontier, windows, best, final_attempts, generation_reports = [seed], [], None, [], []
+    frontier = [seed] if initial_programs is None else list(initial_programs)
+    if not frontier or any(p['initial']!=seed['initial'] or p.get('threshold',.005)!=0. for p in frontier):
+        raise ValueError('Initial programs must preserve the original state and zero thresholds')
+    if policy is not None and any(not policy(p) for p in frontier):
+        raise ValueError('Initial programs violate the opportunity ranges')
+    windows, best, final_attempts, generation_reports = [], None, [], []
     expanded = 0
     termination = 'checkpoint_search_finished'
     def screen(program):
@@ -170,10 +194,10 @@ def find_checkpoint_route(request, compiler, *, checkpoints, corridor=None, spat
                 break
             report, batch, solved, unknown, seen = {}, [], [], [], set()
             local_cfg = dict(cfg, maxPrefixes=cfg['maxPrefixes']-expanded)
-            generator = iter_movement_programs(scene, settings=local_cfg, deadline=deadline, cancel_event=cancel_event,
-                report=report, context_adapter=adapter.context, work=work,
+            generator = fair_programs(scene,frontier,cfg=local_cfg,fair=fair_parents,
+                deadline=deadline, cancel_event=cancel_event,report=report, context_adapter=adapter.context, work=work,
                 screen=screen,
-                checkpoint_tick=target.tick if target else None, initial_programs=frontier, threshold=0.)
+                checkpoint_tick=target.tick if target else None, threshold=0., program_filter=policy)
             capped = False
             for program in generator:
                 try:
@@ -206,8 +230,16 @@ def find_checkpoint_route(request, compiler, *, checkpoints, corridor=None, spat
                     methods=[u.get('case', u['type']) for u in program['movementUnits']], status=result['status'],
                     termination=result['termination'], value=result['best']['candidate']['objective'] if result['best'] else None,
                     work=result['work'], comparisonStage=result.get('comparisonStage'))
+                record['parent'] = program.get('searchParent')
+                if policy is not None:
+                    record['decisionAudit'] = policy.audit(program)
+                    if not complete:
+                        record['program'] = program
                 if result['best'] is not None:
                     record['witness'] = result['best']
+                    if not complete:
+                        record['features'] = score_features(result['best'],actual_target,
+                            goal_box=policy.goal_box if policy is not None else None)
                 if result.get('error'):
                     record['error'] = result['error']
                 batch.append(record)
@@ -234,15 +266,15 @@ def find_checkpoint_route(request, compiler, *, checkpoints, corridor=None, spat
                 report['termination'] = 'candidate_limit'
             if target is None:
                 final_attempts = batch
-                termination = report.get('termination', 'search_finished')
+                if termination not in ('error','cancelled','deadline','numerical_call_limit'):
+                    termination = report.get('termination', 'search_finished')
                 break
-            ranked = sorted(solved, key=lambda pair: -pair[0]['value']) if order == 'guided' else solved
-            keep_scored = max(0, beam_width-min(unknown_slots, len(unknown)))
-            retained = ranked[:keep_scored]+unknown[:beam_width-min(keep_scored, len(ranked))]
+            retained, retention = retain_candidates(solved,unknown,cap=beam_width,unknown_slots=unknown_slots,
+                                                   epsilon=objective_gap,order=order)
             frontier = [p for _, p in retained]
             windows.append(dict(checkpoint=target.to_dict(), generation=report, candidates=batch,
                 retained=[r['id'] for r, _ in retained], scored=len(solved), unknown=len(unknown),
-                heuristicDrops=max(0, len(solved)+len(unknown)-len(retained)), order=order))
+                heuristicDrops=max(0, len(solved)+len(unknown)-len(retained)), order=order,retention=retention))
             if termination in ('error', 'cancelled', 'deadline', 'numerical_call_limit'):
                 break
     except TimeoutError:
@@ -253,4 +285,5 @@ def find_checkpoint_route(request, compiler, *, checkpoints, corridor=None, spat
         movementGeneration=generation_reports, expandedPrefixes=expanded,
         work=work.summary(), compiler=counted.summary(), elapsedSeconds=time.monotonic()-started,
         order=order, threshold=0., checkpoints=[p.to_dict() for p in plans],
+        decisionPlan=window_plan,objectiveGap=objective_gap,fairParents=fair_parents,
         objectiveOptimalityProven=False, minimumTicksProven=False)

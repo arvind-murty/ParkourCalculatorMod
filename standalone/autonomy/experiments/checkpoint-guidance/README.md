@@ -2,7 +2,7 @@
 
 Implemented in the isolated `research/ipopt-cell-routes` worktree. This experiment tests the user's position-only local score on the existing cell-route polyline. It runs normal, ceiling and stepping movement, including blockage avoidance, run inputs and landing. The production search default is unchanged.
 
-Next policy, agreed 2026-11-01: [decision clusters and objective-band retention](../../GEOMETRIC_DECISION_GUIDANCE.md) compare joint nearby choices as far forward as possible before the next separate decision, then retain similarly scoring alternatives. The measured implementation described below still uses authored checkpoint ticks and a fixed-width pool. This policy refinement has not been implemented or benchmarked.
+Follow-up, 2026-11-01: [joint decision windows and objective bands](../decision-windows/README.md) now implement clustering supplied opportunity ranges, comparison before the next separate decision, near-tie retention and fair per-parent work quotas. The older measurements below describe the explicit-tick/fixed-width implementation. A richer multi-tick or velocity score is deferred while the new experiment diagnoses useful discarded alternatives.
 
 ## Model and algorithm
 

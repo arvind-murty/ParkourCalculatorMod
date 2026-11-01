@@ -28,7 +28,8 @@ def movement_settings(scene):
 
 
 def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=None, report=None, screen=None,
-                           context_adapter=None, work=None, checkpoint_tick=None, initial_programs=None, threshold=.005):
+                           context_adapter=None, work=None, checkpoint_tick=None, initial_programs=None, threshold=.005,
+                           program_filter=None):
     cfg = movement_settings(scene) if settings is None else settings
     report = report if report is not None else {}
     if checkpoint_tick is not None:
@@ -43,7 +44,7 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
         raise ValueError('Checkpoint seeds must end before the comparison tick')
     heapq.heapify(pending)
     serial, expanded, generated, screened, drops, seen = len(seeds), 0, 0, 0, 0, set()
-    records, termination = [], 'exhausted'
+    records, termination, policy_rejections = [], 'exhausted', 0
     initial_bounds = [scene['initial']['position'][0]] * 2 + [scene['initial']['position'][2]] * 2
     def budget():
         if work is not None:
@@ -108,6 +109,9 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
                                 child['terminalSupport'] = scene['goalBlock']
                     if child is None or not entry_possible(child['profile'], initial_bounds):
                         continue
+                    if program_filter is not None and not program_filter(child):
+                        policy_rejections += 1
+                        continue
                     if context.get('prefixFilter') is not None and not context['prefixFilter'](child):
                         continue
                     key = program_physics_key(child) if checkpoint_tick is not None else json.dumps(
@@ -129,9 +133,13 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
                     records.append(dict(type=kind, prefixTicks=ticks, termination='exhausted', emitted=choices))
     except TimeoutError:
         termination = work.termination if work is not None and work.termination else 'deadline'
-    report.update(termination=termination, expandedPrefixes=expanded, generated=generated,
-        remainingPrefixes=len(pending), screenedPrefixes=screened, queueDrops=drops, generation=records,
-        minimumTicksProven=False, types=cfg['types'])
+    except GeneratorExit:
+        termination = 'consumer_closed'
+        raise
+    finally:
+        report.update(termination=termination, expandedPrefixes=expanded, generated=generated,
+            remainingPrefixes=len(pending), screenedPrefixes=screened, queueDrops=drops, generation=records,
+            policyRejections=policy_rejections, minimumTicksProven=False, types=cfg['types'])
 
 
 def find_movement_blocks(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
