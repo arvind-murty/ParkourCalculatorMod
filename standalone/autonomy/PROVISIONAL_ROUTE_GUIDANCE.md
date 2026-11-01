@@ -1,5 +1,7 @@
 # Informative initial solves with provisional route choices
 
+Latest user clarification, 2026-11-01: sequentially commit/retain discrete decisions within a spatial route, then re-solve from the original state with all earlier facings free for later decisions. No intermediate numerical state is fixed. Weak dependence of earlier decisions on separated later ones is a provisional hypothesis; retain alternatives and reopen/cluster when maps demonstrate coupling. The user selects the time/progress frontier as the next workstream. Earlier proposals to prioritize a new upfront/provisional-rollout mechanism are not the current next step.
+
 Discussion, 2026-11-01. User clarifies that solve-then-refine can be useful: solving an earlier decision reveals its effect on later ones. The failure to avoid is an initial numerical path that phases through an important downstream obstacle and therefore gives misleading information. This is a recommendation, not an implemented new policy or a claim of measured superiority.
 
 ## Recommended middle ground
