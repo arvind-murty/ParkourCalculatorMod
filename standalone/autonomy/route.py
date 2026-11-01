@@ -14,6 +14,10 @@ def prepare_route(request):
     if not isinstance(route, dict) or type(route.get('version')) is not int or route['version'] != 1:
         raise ValueError('Expected a version 1 block route')
     route['objective'] = objective_spec(route.get('objective'))
+    if type(route.get('terminalSupportRequired', True)) is not bool:
+        raise ValueError('terminalSupportRequired must be boolean')
+    if number(route.get('physicsThreshold', .005), 'physicsThreshold') < 0:
+        raise ValueError('physicsThreshold must be nonnegative')
     blocks = route.get('blocks')
     if not isinstance(blocks, list) or len(blocks) < 2:
         raise ValueError('Supply a start block and at least one landing block')
@@ -197,7 +201,8 @@ def schedule(route, allocation, stage='jump'):
                 supports_at.append((fire - 1, i, 'run'))
             exit_checks.append((fire, i))
         state += airtime
-        supports_at.append((state if route['landingPhases'][i] == 'post' else state - 1, i + 1, 'landing'))
+        if route.get('terminalSupportRequired', True) or i+1 < len(route['airtimes']):
+            supports_at.append((state if route['landingPhases'][i] == 'post' else state - 1, i + 1, 'landing'))
         events.append({'leg': i, 'landed': landing, 'jump': fire, 'landing': state, 'runTicks': extra,
                        'kind': route['kinds'][i]})
     if sum(allocation) > route['maxTotalRunTicks']:
@@ -351,4 +356,7 @@ def initial_guess(route, plan, parent=None):
         for t in range(len(result)):
             if (not parent or t >= len(parent['candidate']['yaw'])) and not plan['jump'][t]:
                 result[t] += 45
+    if parent is None and route.get('warmYaw'):
+        prior = route['warmYaw']
+        result[:min(len(prior), len(result))] = prior[:len(result)]
     return result

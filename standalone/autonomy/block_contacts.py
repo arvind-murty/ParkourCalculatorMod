@@ -18,7 +18,7 @@ def floor_checks(scene, block_ids, profiles):
     for leg, profile in enumerate(profiles):
         target_top = by_id[block_ids[leg + 1]]['top']
         jumps = profile.get('jump', [True] + [False] * (profile['airtime'] - 1))
-        config = {'threshold': .005, 'jumpVelocity': [f32(.42) if j else None for j in jumps],
+        config = {'threshold': profile.get('threshold', .005), 'jumpVelocity': [f32(.42) if j else None for j in jumps],
                   'sneak': profile.get('sneak', [False] * profile['airtime'])}
         for offset in range(profile['airtime']):
             y = profile['position'][offset]
@@ -80,7 +80,7 @@ def validate_vertical_schedule(route, profiles, plan):
     contacts = merge_contacts([dict(c, axis=1) for c in contacts] + plan.get('verticalContacts', []))
     vertical = {'profile': 'minecraft-1.8.9', 'position': route['initial']['position'][1],
                 'velocity': route['initial']['velocity'][1], 'onGround': True,
-                'previousHorizontalCollision': False, 'threshold': .005,
+                'previousHorizontalCollision': False, 'threshold': route.get('physicsThreshold', .005),
                 'jumpVelocity': [f32(.42) if jump else None for jump in plan['jump']],
                 'sneak': plan.get('sneak', [False] * n),
                 'contacts': [{k: v for k, v in c.items() if k != 'axis'} for c in contacts]}

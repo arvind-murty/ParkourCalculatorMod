@@ -14,7 +14,7 @@ def _flags(values, name, length=None):
 
 
 def trace_ladder_schedule(initial, ladder, sneak, hit, *, jump=None, target_top=None, min_landing_state=0, contacts=None,
-                          occupied_y_bounds=None, stop_on_landing=True):
+                          occupied_y_bounds=None, stop_on_landing=True, threshold=.005):
     hit = _flags(hit, 'hit')
     n = integer(len(hit), 'ticks', 1, 200)
     ladder = _flags(ladder, 'ladder', n + 1)
@@ -52,8 +52,10 @@ def trace_ladder_schedule(initial, ladder, sneak, hit, *, jump=None, target_top=
             raise ValueError('Vertical contact direction must be -1 or 1')
     selected = [{k: v for k, v in c.items() if k != 'axis'}
                 for c in merge_contacts([dict(c, axis=1) for c in selected])]
+    if number(threshold, 'velocity threshold') < 0:
+        raise ValueError('Velocity threshold must be nonnegative')
     config = {'profile': 'minecraft-1.8.9', 'position': y, 'velocity': vy, 'onGround': ground,
-              'previousHorizontalCollision': previous, 'threshold': .005,
+              'previousHorizontalCollision': previous, 'threshold': threshold,
               'jumpVelocity': impulses, 'sneak': sneak, 'contacts': selected}
     positions, velocities, grounds, moves, refreshes, failures = [y], [vy], [ground], [], [], []
     landed = False

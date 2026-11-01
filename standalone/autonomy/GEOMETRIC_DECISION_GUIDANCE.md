@@ -54,7 +54,7 @@ Retain a small configurable set of promising alternatives, apply genuine local f
 
 ## Next experiment and escalation rule
 
-The current generator uses cell routes mainly for filtering and constraint propagation. The untested addition is using their existing polyline to rank and optimize local candidates.
+Implemented follow-up: [checkpoint guidance](experiments/checkpoint-guidance/README.md) uses the existing polyline to rank physical partial programs at shared absolute ticks. Checkpoint ticks/segments are supplied explicitly. Position-only scoring, no-threshold normal momentum carry, original-state solves and free earlier facings are implemented. The production default is unchanged. The experiment below is the measurement contract; current results live with the implementation report.
 
 Compare current ordering against this direction/progress-guided ordering on the same selected corridors and local decision opportunities. Include passage timing, normal step versus jump/slab boost, ceiling hit versus avoid/grind, optional landing versus overflight, a turn and the known multi-support discovery control. Keep the same generation/work budgets, original-state solves and physical acceptance. Ladder and intentional wall-hit tests remain excluded.
 
@@ -64,6 +64,6 @@ If it fails, identify the missing information and test a small targeted addition
 
 ## Source context
 
-Repository source checks: `Corridor.points`, the portal midpoint extension and goal-region handling in `cell_routes/routes.py`; ordered-stage propagation and candidate auditing in `cell_routes/local.py`; direction objectives in `standalone/ipopt/model.py` and `worker.py`. These show that the basic route geometry and directional numerical objective already exist. They do not constitute a measured implementation of this candidate-ranking strategy.
+Repository source checks: `Corridor.points`, the portal midpoint extension and goal-region handling in `cell_routes/routes.py`; ordered-stage propagation and candidate auditing in `cell_routes/local.py`; direction objectives in `standalone/ipopt/model.py` and `worker.py`. Implementation: `cell_routes/checkpoints.py`, `checkpoint_search.py` and `checkpoint_experiment.py`. Tests check common absolute ticks across different heights, correct outgoing turn stage, independent replay and reoptimization of earlier facings after a later constraint.
 
 Geometric path following is an established source of direction guidance; [Coulter's CMU report](https://publications.ri.cmu.edu/implementation-of-the-pure-pursuit-path-tracking-algorithm) is background for that idea. This proposal uses geometric targets to score discrete parkour decisions, not the report's vehicle steering controller or its performance claims.

@@ -1,6 +1,6 @@
 # Cell-route experiment plan
 
-Current follow-up, 2026-10-31: the geometry experiment below is completed. The subsequent optimistic-guidance pilot is also implemented and measured in [route-guidance results](experiments/route-guidance/README.md). Use convex conditional values with retained alternatives as the next integration candidate. The guide operates on supplied ordinary support/event families; connecting it to the cell-route generator and covering general stepping/ceiling histories remain separate work.
+Current follow-up, 2026-10-31: the geometry experiment below and the [optimistic-guidance pilot](experiments/route-guidance/README.md) are completed. The user's subsequent choice is geometric position-only guidance at shared post-turn absolute ticks, superseding the mixed/provisional-initializer-first recommendations. This is implemented in [checkpoint guidance](experiments/checkpoint-guidance/README.md), including physical stepping/ceiling choices, no velocity thresholds and free whole-history facings. Checkpoint times are explicit; cold spatial-route selection and bounds remain separate work.
 
 2026-10-31. Current planning baseline: `feature/ipopt-consolidated@99ecfe9`, recheck at implementation start. This is the active next-work plan. The user has deferred lower-bound research and wants to establish the cell decomposition, spatial paths and local decisions, then benchmark whether this hierarchy sufficiently reduces the remaining search. This turn changes documentation only.
 

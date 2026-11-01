@@ -168,9 +168,9 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
             problem = dict(coefficients, version=1, ticks=plan['ticks'],
                            position=[route['initial']['position'][0], route['initial']['position'][2]],
                            velocity=[route['initial']['velocity'][0], route['initial']['velocity'][2]],
-                           yaw=initial_guess(route, plan, parent), threshold=.005, walls=plan['walls'],
+                           yaw=initial_guess(route, plan, parent), threshold=route.get('physicsThreshold', .005), walls=plan['walls'],
                            contacts=plan.get('contacts', []),
-                           objective=dict(route['objective'], tick=plan['ticks']))
+                           objective=dict(route.get('guideObjective', route['objective']), tick=plan['ticks']))
             if 'ladderTicks' in plan:
                 problem['ladderTicks'] = plan['ladderTicks']
             problem = prepare(problem)

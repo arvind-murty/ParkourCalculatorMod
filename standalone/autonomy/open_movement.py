@@ -5,21 +5,21 @@ from .movement_composition import movement_choice, scalar_initial
 from .vertical_profiles import trace_ladder_schedule
 
 
-def replay(initial, ticks, *, jumping=False, contacts=(), finite=(), ladder=None, sneak=None):
+def replay(initial, ticks, *, jumping=False, contacts=(), finite=(), ladder=None, sneak=None, threshold=.005):
     initial = scalar_initial(initial)
     ladder = list(ladder) if ladder is not None else [False] * (ticks + 1)
     sneak = list(sneak) if sneak is not None else [False] * ticks
     hit = [any(c['axis'] != 'Y' and c['offset'] == t for c in finite) for t in range(ticks)]
     return trace_ladder_schedule(initial, ladder, sneak, hit,
         jump=[f32(.42) if jumping else None] + [None] * (ticks - 1),
-        contacts=contacts, stop_on_landing=False)
+        contacts=contacts, stop_on_landing=False, threshold=threshold)
 
 
 def approaches(context):
     initial = scalar_initial(context['state'])
     horizon = min(context.get('maxInputs', 200), 200)
     for jumping in ([True, False] if initial['onGround'] else [False]):
-        trace = replay(initial, horizon, jumping=jumping)
+        trace = replay(initial, horizon, jumping=jumping, threshold=context.get('threshold', .005))
         if trace['status'] != 'invalid':
             yield initial, jumping, trace
 
@@ -35,7 +35,7 @@ def event_choice(context, kind, initial, duration, *, jumping=False, vertical=()
                  constraints=(), units=None, ladder=None, sneak=None, ladder_events=(), support=None,
                  landing_phase='post'):
     trace = replay(initial, duration, jumping=jumping, contacts=vertical, finite=finite,
-                   ladder=ladder, sneak=sneak)
+                   ladder=ladder, sneak=sneak, threshold=context.get('threshold', .005))
     if trace['status'] == 'invalid':
         return None
     return movement_choice(kind, initial, trace, contacts=finite, cases=cases, constraints=constraints,
@@ -68,6 +68,6 @@ def normal_choices(context):
             if choice:
                 yield choice
         if context.get('normalGap', False):
-            choice = event_choice(context, 'normal', initial, 1, jumping=jumping)
+            choice = event_choice(context, 'normal', initial, context.get('normalGapInputs', 1), jumping=jumping)
             if choice:
                 yield choice

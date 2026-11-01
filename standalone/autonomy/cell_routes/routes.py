@@ -269,7 +269,7 @@ def projected_segment_covered(projection, a, b, tolerance=1e-7):
     return reach >= 1
 
 
-def audit_candidate(corridor, candidate, gates, *, terminal_pre=False):
+def audit_candidate(corridor, candidate, gates, *, terminal_pre=False, partial=False):
     points, references = horizontal_trace(candidate)
     if terminal_pre and len(points) >= 4:
         points, references = points[:-2], references[:-2]
@@ -278,8 +278,9 @@ def audit_candidate(corridor, candidate, gates, *, terminal_pre=False):
             return dict(accepted=False, reason='corridor_projection', segment=i, references=references[i])
     events = crossings(points, gates)
     actual = tuple(e['token'] for e in events)
-    if actual != corridor.signature:
+    expected = corridor.signature[:len(actual)] if partial else corridor.signature
+    if actual != expected:
         mismatch = next((i for i, pair in enumerate(zip(actual, corridor.signature)) if pair[0] != pair[1]), min(len(actual), len(corridor.signature)))
         return dict(accepted=False, reason='corridor_signature', mismatch=mismatch, actual=actual,
                     events=events, references=references)
-    return dict(accepted=True, signature=actual, validation='horizontal_corridor_and_ordered_gate_crossings')
+    return dict(accepted=True, signature=actual, partial=partial, validation='horizontal_corridor_and_ordered_gate_crossings')

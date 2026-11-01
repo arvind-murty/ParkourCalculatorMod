@@ -1,7 +1,8 @@
 import copy
+import json
 
 from standalone.ipopt.ladder import vertical_carry
-from standalone.ipopt.model import integer
+from standalone.ipopt.model import integer, number
 from .contact_combinations import merge_contacts
 from .movement_units import compile_units, profile_program, shifted_unit
 from .vertical_profiles import trace_ladder_schedule
@@ -17,14 +18,19 @@ def scalar_initial(initial):
                 previousHorizontalCollision=initial.get('previousHorizontalCollision', False))
 
 
-def empty_program(initial):
+def empty_program(initial, *, threshold=.005):
+    if number(threshold, 'program threshold') < 0:
+        raise ValueError('Program threshold must be nonnegative')
     initial = scalar_initial(initial)
     profile = dict(airtime=0, position=[initial['position']], velocity=[initial['velocity']],
         grounded=[initial['onGround']], jump=[], sneak=[], ladderTicks=[False], contacts=[],
         contactEvents=[], caseEvents=[], positionConstraints=[], generatedUnits=[],
         composition='movement_program', landingPhase='post')
-    return dict(initial=initial, profile=profile, ladderEvents=[], movementUnits=[],
-                terminal='open', terminalSupport=None, interactions=0, trace=None)
+    program = dict(initial=initial, profile=profile, ladderEvents=[], movementUnits=[],
+                   terminal='open', terminalSupport=None, interactions=0, trace=None)
+    if threshold != .005:
+        program['threshold'] = threshold
+    return program
 
 
 def boundary_state(program, on_ladder=False):
@@ -46,6 +52,8 @@ def profile_from_trace(trace, *, contacts=(), cases=(), constraints=(), units=No
         positionConstraints=copy.deepcopy(list(constraints)), landingPhase=landing_phase,
         composition='movement_program')
     profile['generatedUnits'] = copy.deepcopy(units) if units is not None else profile_program(profile)
+    if trace['vertical']['threshold'] != .005:
+        profile['threshold'] = trace['vertical']['threshold']
     return profile
 
 
@@ -129,7 +137,8 @@ def append_choice(program, choice, *, max_inputs=200):
     hit = [any(c['axis'] != 'Y' and c['offset'] == t for c in contacts) for t in range(cut + size)]
     from standalone.ipopt.ladder import f32
     trace = trace_ladder_schedule(program['initial'], ladder, sneak, hit,
-        jump=[f32(.42) if value else None for value in jump], contacts=vertical, stop_on_landing=False)
+        jump=[f32(.42) if value else None for value in jump], contacts=vertical, stop_on_landing=False,
+        threshold=program.get('threshold', .005))
     if trace['status'] == 'invalid' or trace['ticks'] != cut + size:
         return None
     if trace['position'][:cut + 1] != old['position'] or trace['onGround'][:cut + 1] != old['grounded']:
@@ -177,9 +186,64 @@ def append_choice(program, choice, *, max_inputs=200):
     masks = compile_units(profile['airtime'], units)
     if events and masks['ladderTicks'] != ladder:
         raise ValueError('Movement units disagree with composed ladder membership')
-    return dict(initial=copy.deepcopy(program['initial']), profile=profile, ladderEvents=events,
-                movementUnits=units, terminal='open', terminalSupport=choice.get('terminalSupport'),
-                interactions=program['interactions'] + int(choice.get('interaction', False)), trace=trace)
+    result = dict(initial=copy.deepcopy(program['initial']), profile=profile, ladderEvents=events,
+                  movementUnits=units, terminal='open', terminalSupport=choice.get('terminalSupport'),
+                  interactions=program['interactions'] + int(choice.get('interaction', False)), trace=trace)
+    for key in ('threshold', 'guideSeedYaw'):
+        if key in program:
+            result[key] = copy.deepcopy(program[key])
+    return result
+
+
+def truncate_program(program, ticks):
+    n = program['profile']['airtime']
+    integer(ticks, 'prefix ticks', 1, n)
+    if ticks == n:
+        return copy.deepcopy(program)
+    if program['ladderEvents'] or any(program['profile']['ladderTicks']):
+        raise ValueError('Checkpoint truncation currently supports non-ladder programs')
+    result = copy.deepcopy(program)
+    profile = result['profile']
+    profile['airtime'] = ticks
+    for key in ('position', 'velocity', 'grounded', 'ladderTicks'):
+        profile[key] = profile[key][:ticks+1]
+    for key in ('jump', 'sneak'):
+        profile[key] = profile[key][:ticks]
+    profile['contacts'] = [c for c in profile['contacts'] if c['state'] <= ticks]
+    profile['contactEvents'] = [c for c in profile['contactEvents'] if c['offset'] < ticks]
+    profile['caseEvents'] = [c for c in profile['caseEvents'] if c['input'] < ticks]
+    for event in profile['caseEvents']:
+        event['anchors'] = {k: v for k, v in event.get('anchors', {}).items() if v <= ticks}
+    profile['positionConstraints'] = [r for r in profile['positionConstraints']
+                                      if r['t1'] <= ticks and (r.get('t2') is None or r['t2'] <= ticks)]
+    from .movement_units import profile_program
+    profile['generatedUnits'] = profile_program(profile)
+    profile['landingPhase'] = 'post'
+    result.update(movementUnits=copy.deepcopy(profile['generatedUnits']), terminal='open', terminalSupport=None,
+                  interactions=sum(u['type'] != 'normal' for u in profile['generatedUnits']))
+    trace = result['trace']
+    for key in ('position', 'velocity', 'onGround', 'ladderTicks'):
+        trace[key] = trace[key][:ticks+1]
+    for key in ('movement', 'climbRefreshed', 'sneak', 'hit'):
+        trace[key] = trace[key][:ticks]
+    trace['ticks'] = ticks
+    trace['vertical']['jumpVelocity'] = trace['vertical']['jumpVelocity'][:ticks]
+    trace['vertical']['sneak'] = trace['vertical']['sneak'][:ticks]
+    trace['vertical']['contacts'] = [c for c in trace['vertical']['contacts'] if c['state'] <= ticks]
+    trace['resume'] = dict(position=profile['position'][-1], velocity=profile['velocity'][-1],
+                           onGround=profile['grounded'][-1], previousHorizontalCollision=trace['hit'][-1], onLadder=False)
+    if 'guideSeedYaw' in result:
+        result['guideSeedYaw'] = result['guideSeedYaw'][:ticks]
+    return result
+
+
+def program_physics_key(program):
+    profile = {k: v for k, v in program['profile'].items() if k != 'generatedUnits'}
+    profile['positionConstraints'] = sorted(
+        [{k: v for k, v in row.items() if k != 'name'} for row in profile['positionConstraints']],
+        key=lambda row: json.dumps(row, sort_keys=True))
+    return json.dumps([profile, program['terminalSupport'], program.get('threshold', .005),
+                       program['ladderEvents']], sort_keys=True)
 
 
 def compile_program(scene, program, *, require_complete=True):
@@ -193,4 +257,10 @@ def compile_program(scene, program, *, require_complete=True):
     compiled = compile_block_path(scene, [scene['startBlock'], scene['goalBlock']], [edge])
     compiled['route']['maxTotalRunTicks'] = 0
     compiled['route']['runBounds'] = [[0, 0]]
+    if not require_complete:
+        compiled['route']['terminalSupportRequired'] = False
+    if 'threshold' in program:
+        compiled['route']['physicsThreshold'] = program['threshold']
+    if 'guideSeedYaw' in program:
+        compiled['route']['warmYaw'] = program['guideSeedYaw'][:]
     return compiled

@@ -2,6 +2,8 @@
 
 Isolated cell-route experiment: [implementation, non-ladder benchmarks and next decisions](experiments/cell-routes/README.md), branch `research/ipopt-cell-routes`. Bounds remain deferred.
 
+Local decision follow-up: [geometric checkpoint guidance](experiments/checkpoint-guidance/README.md) scores physical alternatives at a common absolute tick using the cell-route direction, with no velocity thresholds and all earlier facings free. Experimental entry point: `python -m standalone.autonomy.cell_routes.checkpoint_experiment`.
+
 Latest standalone orchestration: [generic movement programs](GENERIC_COMPOSITION.md) chain normal, stepping, ceiling and ladder phases through one open-state queue. Collision-box `solve_blocks` inputs use this path by default; `--support-search` retains the legacy support-profile strategy. Use focused standalone IPOPT/scalar/scene tests, as specified in `standalone/AGENTS.md`.
 
 Canonical branch: `feature/ipopt-consolidated`. Solver, orchestration and local replay now live together. See [standalone setup](../README.md) and [the consolidation record](../CONSOLIDATION.md). For a compacted session, start with [COMPACTION_HANDOFF.md](COMPACTION_HANDOFF.md): implementation checkpoint, user decisions, tested results, remaining gaps and next tasks.

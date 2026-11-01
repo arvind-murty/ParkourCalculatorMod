@@ -187,11 +187,12 @@ class CorridorAdapter:
     def row(self, mode, state, cmp, value):
         return dict(leg=0, offset=state, mode=mode, cmp=cmp, rhs=value, name='cell_corridor:' + str(self.corridor.id))
 
-    def candidate(self, plan, candidate, vertical):
+    def candidate(self, plan, candidate, vertical, *, partial=False):
         self.counts['corridorAudits'] += 1
         n = len(candidate['positions']) - 1
         terminal_pre = any(tick == n-1 and kind == 'landing' for tick, _, kind in plan.get('supportChecks', []))
-        checked = audit_candidate(self.corridor, dict(candidate, y=vertical['y']), self.gates, terminal_pre=terminal_pre)
+        checked = audit_candidate(self.corridor, dict(candidate, y=vertical['y']), self.gates,
+                                  terminal_pre=terminal_pre, partial=partial)
         if checked['accepted']:
             return checked
         self.counts['corridorRejections'] += 1

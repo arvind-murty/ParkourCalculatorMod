@@ -50,7 +50,7 @@ def verify_witness(scene, witness, compiler, seconds):
     coefficient = compiler.compile(route, plan, seconds)
     problem = prepare(dict(coefficient, version=1, ticks=plan['ticks'],
         position=scene['initial']['position'][::2], velocity=scene['initial']['velocity'][::2],
-        yaw=best['candidate']['yaw'], threshold=.005, walls=plan['walls'], contacts=plan.get('contacts', []),
+        yaw=best['candidate']['yaw'], threshold=route.get('physicsThreshold', .005), walls=plan['walls'], contacts=plan.get('contacts', []),
         ladderTicks=plan.get('ladderTicks', [False]*(plan['ticks']+1)),
         objective=dict(scene['objective'], tick=plan['ticks'])))
     candidate = validate(problem, problem['yaw'])

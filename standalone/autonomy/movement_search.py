@@ -6,7 +6,7 @@ import time
 
 from standalone.ipopt.model import integer, number
 from .case_profiles import entry_possible
-from .movement_composition import append_choice, boundary_state, compile_program, empty_program
+from .movement_composition import append_choice, boundary_state, compile_program, empty_program, truncate_program, program_physics_key
 from .movement_generation import GENERATORS, generate_choices
 
 
@@ -28,12 +28,21 @@ def movement_settings(scene):
 
 
 def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=None, report=None, screen=None,
-                           context_adapter=None, work=None):
+                           context_adapter=None, work=None, checkpoint_tick=None, initial_programs=None, threshold=.005):
     cfg = movement_settings(scene) if settings is None else settings
     report = report if report is not None else {}
-    initial = empty_program(scene['initial'])
+    if checkpoint_tick is not None:
+        integer(checkpoint_tick, 'checkpoint tick', 1, cfg['maxInputs'])
+    initial = empty_program(scene['initial'], threshold=threshold)
     initial['terminalSupport'] = scene['startBlock']
-    pending, serial, expanded, generated, screened, drops, seen = [(0, 0, initial)], 0, 0, 0, 0, 0, set()
+    seeds = [initial] if initial_programs is None else list(initial_programs)
+    if any(p['initial'] != initial['initial'] or p.get('threshold', .005) != threshold for p in seeds):
+        raise ValueError('Checkpoint seeds must preserve the original vertical state and physics threshold')
+    pending = [(p['profile']['airtime'], i, p) for i, p in enumerate(seeds)]
+    if checkpoint_tick is not None and any(t >= checkpoint_tick for t, _, _ in pending):
+        raise ValueError('Checkpoint seeds must end before the comparison tick')
+    heapq.heapify(pending)
+    serial, expanded, generated, screened, drops, seen = len(seeds), 0, 0, 0, 0, set()
     records, termination = [], 'exhausted'
     initial_bounds = [scene['initial']['position'][0]] * 2 + [scene['initial']['position'][2]] * 2
     def budget():
@@ -56,6 +65,10 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
             expanded += 1
             report.update(expandedPrefixes=expanded, generated=generated, remainingPrefixes=len(pending),
                           screenedPrefixes=screened, queueDrops=drops, generation=records, minimumTicksProven=False)
+            if checkpoint_tick is not None and ticks == checkpoint_tick:
+                report.update(checkpointTick=checkpoint_tick, checkpointPrefixes=report.get('checkpointPrefixes', 0)+1)
+                yield program
+                continue
             if ticks and program['terminalSupport'] == scene['goalBlock'] and program['profile']['grounded'][-1] \
                     and (not scene.get('ladderSearch', {}).get('requireLadder') or program['ladderEvents']):
                 program['terminal'] = 'landed'
@@ -66,7 +79,11 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
                 continue
             context = dict(mode='open', scene=scene, program=program, state=boundary_state(program),
                 maxInputs=remaining, maxEntryInputs=cfg['maxEntryInputs'], checkBudget=budget,
-                deadline=deadline, cancelEvent=cancel_event, normalGap=False, generationRecords=records)
+                deadline=deadline, cancelEvent=cancel_event, normalGap=checkpoint_tick is not None, generationRecords=records)
+            if program.get('threshold', .005) != .005:
+                context['threshold'] = program['threshold']
+            if checkpoint_tick is not None:
+                context['normalGapInputs'] = checkpoint_tick-ticks
             if context_adapter is not None:
                 context_adapter(context)
             for kind in cfg['types']:
@@ -79,11 +96,22 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
                     choices += 1
                     generated += 1
                     child = append_choice(program, choice, max_inputs=cfg['maxInputs'])
+                    if child is not None and checkpoint_tick is not None and child['profile']['airtime'] > checkpoint_tick:
+                        child = truncate_program(child, checkpoint_tick)
+                    if child is not None and checkpoint_tick is not None and child['profile']['grounded'][-1]:
+                        goal = next(b for b in scene['blocks'] if b['id'] == scene['goalBlock'])
+                        if abs(child['profile']['position'][-1]-goal['top']) < 1e-7:
+                            box = scene['collisionScene']['solids'][goal['solidIndex']]
+                            at = child['profile']['airtime']-1
+                            events = child['profile']['contactEvents']+child['profile']['caseEvents']
+                            if any(e.get('offset', e.get('input')) == at and e.get('box') == box for e in events):
+                                child['terminalSupport'] = scene['goalBlock']
                     if child is None or not entry_possible(child['profile'], initial_bounds):
                         continue
                     if context.get('prefixFilter') is not None and not context['prefixFilter'](child):
                         continue
-                    key = json.dumps([child['profile'], [(e['column']['id'], e['wall'], e['entryFace'], e['exitFace'],
+                    key = program_physics_key(child) if checkpoint_tick is not None else json.dumps(
+                        [child['profile'], [(e['column']['id'], e['wall'], e['entryFace'], e['exitFace'],
                         e['schedule']['entryState'], e['schedule']['exitState']) for e in child['ladderEvents']]], sort_keys=True)
                     if key in seen:
                         continue
@@ -186,5 +214,5 @@ def screen_program(scene, program, compiler, seconds):
     coefficient = compiler.compile(route, plan, seconds)
     rows = [row for row in plan['walls'] if not row.get('name', '').startswith('landing:1:')]
     return contradiction(dict(coefficient, ticks=plan['ticks'], position=scene['initial']['position'][::2],
-        velocity=scene['initial']['velocity'][::2], walls=rows, contacts=plan['contacts'],
+        velocity=scene['initial']['velocity'][::2], threshold=route.get('physicsThreshold', .005), walls=rows, contacts=plan['contacts'],
         ladderTicks=plan.get('ladderTicks', [False] * (plan['ticks'] + 1))))
