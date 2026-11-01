@@ -1,5 +1,7 @@
 # Time-first progress frontiers at meaningful events
 
+Latest investigation: [generic failure causes](experiments/failure-rootcause/RESULTS.md). The grind generator already constructed complete proposals, but its short-prefix queue starved and evicted them before verification. The numerical layer preserves inner-model incumbents, while the outer physical validator can lose an otherwise valid seed. A separate no-threshold fast path skips fallback starts and fails some analytically feasible angular-start controls. Research prototypes and counterexamples support fixing these contracts before relying on the proposed frontier; no production/default fix or frontier implementation is selected by this explanatory record.
+
 2026-11-01. User identifies the earlier goal landing behind the ceiling/stepping counterexamples and proposes retaining the farthest progress for each tick count, keeping later candidates that gain progress over earlier ones, and trying shorter times first. This is the next design direction. The existing shared-tick objective-band implementation is unchanged in this discussion turn.
 
 ## What the counterexamples actually establish

@@ -2,6 +2,8 @@
 
 This work investigates generic mechanisms behind proposal starvation and loss of fully feasible candidates. It does not change the production/default solver, the scalar movement model, physical acceptance, the score or the current experimental window policy. All behavioral changes below are isolated research hooks. Earlier facings remain free and all problems begin at the original full initial position/velocity. Velocity thresholds are zero. Ladders and intentional wall hits remain excluded.
 
+[Results and generic fixes](RESULTS.md) identify complete-proposal starvation/eviction, mismatched incumbent validity between layers, and skipped fallback seeds at degenerate angular starts. Counterexamples reject naive goal-only scheduling and replacing optimization with seed return. The evidence spans additional controls and explicitly separates warm feasibility, cold discovery and scalar-only numerical behavior.
+
 ## Numerical-layer contract
 
 The low-level solver validates and preserves the best candidate for its supplied constraint model. Corridor membership, optional-floor conflicts and finite-scene collision checks happen later in `solve_contact_branches`. A higher-scoring inner candidate can fail those additional guards. Returning only the best inner candidate hides a fully valid earlier seed from the outer incumbent.
@@ -39,6 +41,16 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 .venv-guidance/bin/python \
   -m standalone.autonomy.cell_routes.failure_diagnostic --part verify \
   --generation-input standalone/autonomy/build/failure-generation.json.gz \
   --output standalone/autonomy/build/failure-verify.json.gz
+
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 .venv-guidance/bin/python \
+  -m standalone.autonomy.cell_routes.repair_diagnostic \
+  --input standalone/autonomy/build/failure-generation.json.gz \
+  --output standalone/autonomy/build/failure-repair.json.gz
+
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 .venv-guidance/bin/python \
+  -m standalone.autonomy.cell_routes.scalar_seed_diagnostic \
+  --capture standalone/autonomy/experiments/failure-rootcause/evidence/failure-scalar-capture.json.gz \
+  --output standalone/autonomy/build/failure-scalar.json.gz
 ```
 
 Reports contain exact requests/programs, guard outcomes, generation counts, optimizer inputs/outputs, work caps and source commit. Conclusions must distinguish original-example failures, additional controls, deliberately adverse objectives, and warm versus cold discovery. Parameters are research limits rather than recommended production defaults.

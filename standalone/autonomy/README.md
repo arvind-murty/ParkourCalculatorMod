@@ -6,6 +6,8 @@ Local decision follow-up: [geometric checkpoint guidance](experiments/checkpoint
 
 Current experiment: [joint decision windows and objective bands](experiments/decision-windows/README.md) cluster supplied opportunity ranges and compare before the next separate opportunity. [Measured failures](experiments/decision-windows/RESULTS.md) distinguish useful early-contact alternatives from dense-cluster generation and turn repair failures. Multi-tick and velocity score changes remain deferred.
 
+Latest investigation: [generic failure causes and tested solution prototypes](experiments/failure-rootcause/RESULTS.md). Queue starvation/eviction, layered incumbent validity and skipped no-threshold fallback starts are isolated before changing default search or score design.
+
 Latest standalone orchestration: [generic movement programs](GENERIC_COMPOSITION.md) chain normal, stepping, ceiling and ladder phases through one open-state queue. Collision-box `solve_blocks` inputs use this path by default; `--support-search` retains the legacy support-profile strategy. Use focused standalone IPOPT/scalar/scene tests, as specified in `standalone/AGENTS.md`.
 
 Canonical branch: `feature/ipopt-consolidated`. Solver, orchestration and local replay now live together. See [standalone setup](../README.md) and [the consolidation record](../CONSOLIDATION.md). For a compacted session, start with [COMPACTION_HANDOFF.md](COMPACTION_HANDOFF.md): implementation checkpoint, user decisions, tested results, remaining gaps and next tasks.
