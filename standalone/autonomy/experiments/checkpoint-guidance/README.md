@@ -52,6 +52,16 @@ The report stores exact fixtures, source commit, all candidates, retained IDs, a
 
 ## Validation and results
 
-Focused numerical checks: 26 pass, including the new checkpoint tests and existing cell, stepping and movement-composition integration tests. The broader autonomy gate passes 359 tests with 81 environment skips after excluding one previously reproduced ladder failure. IPOPT: 51 tests, eight environment skips, no failures. The ladder failure predates this implementation and ladders are outside this experiment.
+Focused checks with the compiler/IPOPT enabled: 26 pass, including the new checkpoint tests and existing cell, stepping and movement-composition integration tests. The broader autonomy gate runs 359 tests with 81 environment skips and no failures after excluding one previously reproduced ladder failure. IPOPT: 51 tests, eight environment skips, no failures. The ladder failure predates this implementation and ladders are outside this experiment.
+
+```sh
+PKC_RUN_TICKS_COMPILER="$PWD/standalone/autonomy/build/compiler.json" \
+PKC_IPOPT_PYTHON="$PWD/.venv-guidance/bin/python" \
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 .venv-guidance/bin/python -m unittest \
+  standalone.autonomy.tests.test_checkpoint_guidance \
+  standalone.autonomy.tests.test_cell_experiment.CellNumericalTests \
+  standalone.autonomy.tests.test_stepping_cases.SteppingNumericalTests \
+  standalone.autonomy.tests.test_movement_composition.MovementCompositionIntegrationTests -q
+```
 
 Repeated measurements and the greedy diagnostic are recorded in `RESULTS.md` with their source and saved evidence. Fixtures are deliberately small, with supplied spatial polylines and explicit checkpoint times. They test local decision guidance within a route; they do not establish cold spatial-route discovery or exhaustive optimality.

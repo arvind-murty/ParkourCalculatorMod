@@ -1,5 +1,7 @@
 # Solver and schedule-generation research handoff
 
+Latest implementation, 2026-10-31: [geometric checkpoint guidance](experiments/checkpoint-guidance/README.md) and [measured results](experiments/checkpoint-guidance/RESULTS.md), isolated branch `research/ipopt-cell-routes`, implementation commit `5e36f490`. This is the current user-selected follow-up to the completed cell and mixed-input pilots. Compare physical local alternatives at one absolute tick using the existing route's horizontal direction, with normal momentum and zero velocity thresholds. All earlier facings stay free and every solve starts from the original full state. Checkpoint ticks are explicit configuration. Ninety capped runs and 456 independent witness replays support checkpoint frontiers and retained alternatives; greedy position-only ranking has a concrete ceiling counterexample. The dated authorization limits below describe the original handoff task, not the user's subsequent implementation authorization.
+
 2026-10-30. Current user direction: defer water and focus on making the existing solver faster. This checkpoint documents implementation and research leads only. No new pruning, profiling run, schedule reduction or search-policy change is authorized by this documentation task.
 
 ## Start here
