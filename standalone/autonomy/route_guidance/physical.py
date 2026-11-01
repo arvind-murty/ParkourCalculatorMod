@@ -9,7 +9,7 @@ from standalone.autonomy.block_contacts import validate_vertical_schedule
 from standalone.autonomy.obstacle_geometry import check_geometry
 from standalone.autonomy.route import initial_guess, schedule, supports
 from standalone.ipopt import prepare, solve, validate
-from .graph import assignments, carry_vertices, edge_path
+from .graph import assignments, edge_path
 
 
 def rounded_assignment(family, relaxation):
@@ -141,13 +141,12 @@ def lift_witness(family, model, selection, candidate):
         values[model['masses'][i]] = 1
         values[model['inputs'][i]] = candidate['positions'][t]+candidate['velocity'][t]
         values[model['outputs'][i]] = candidate['positions'][t+1]+candidate['velocity'][t+1]
-        lo, hi = family['bounds'][t]
         angle = edge['base']+math.radians(candidate['yaw'][t])
         values[model['controls'][i]] = [edge['magnitude']*math.cos(angle), edge['magnitude']*math.sin(angle)]
         for axis in (0, 1):
             velocity = candidate['velocity'][t][axis]
             carry = velocity if abs(velocity) >= family['threshold'] else 0.
             values[model['carries'][i][axis]] = carry
-            vertices = carry_vertices(lo[axis+2], hi[axis+2], family['threshold'])
+            vertices = model['carryPoints'][i][axis]
             values[model['weights'][i][axis]] = _hull_weights(vertices, (velocity, carry))
     return dict(violation=float(p.violation(values)), initialState=values[model['states'][0]].tolist())

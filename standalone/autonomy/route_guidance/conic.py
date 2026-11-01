@@ -93,10 +93,13 @@ class ConeProgram:
         return raw + 1e-9*(1+abs(raw)), float(np.max(np.abs(residual), initial=0))
 
 
-def build_conic(family, fixed=None):
+def build_conic(family, fixed=None, *, carry_pattern=None):
     started = time.monotonic()
     p = ConeProgram()
     n, edges = family['ticks'], family['edges']
+    if carry_pattern is not None and (len(carry_pattern) != n or any(
+            len(row) != 2 or any(type(b) is not int or b not in (-1, 0, 1) for b in row) for row in carry_pattern)):
+        raise ValueError('A restricted carry pattern needs two signed/zero branches per input')
     states = [p.vector('state:'+str(t), *family['bounds'][t]) for t in range(n+1)]
     masses = [p.variable('mass:'+str(i), 0, 1) for i in range(len(edges))]
     choices = [p.variable('choice:'+str(i), 0, 1) for i in range(len(family['options']))]
@@ -107,7 +110,7 @@ def build_conic(family, fixed=None):
         p.eq({masses[i]: 1})
     for i in option_zeros:
         p.eq({choices[i]: 1})
-    inputs, outputs, carries, controls, weights = [], [], [], [], []
+    inputs, outputs, carries, controls, weights, carry_points = [], [], [], [], [], []
     for i, edge in enumerate(edges):
         t, z = edge['tick'], masses[i]
         lo, hi = family['bounds'][t]
@@ -118,9 +121,17 @@ def build_conic(family, fixed=None):
         p.scaled_bounds(y, next_lo, next_hi, z)
         a = p.vector('acceleration:'+str(i), [-edge['magnitude']]*2, [edge['magnitude']]*2)
         p.cones.append([{z: -edge['magnitude']}, {a[0]: -1}, {a[1]: -1}])
-        c, eta = [], []
+        c, eta, points = [], [], []
         for axis in (0, 1):
             vertices = carry_vertices(lo[axis+2], hi[axis+2], family['threshold'])
+            if carry_pattern is not None:
+                branch = carry_pattern[t][axis]
+                vertices = [(v, v if branch else 0.) for v in (lo[axis+2], hi[axis+2])]
+                if branch:
+                    p.le(linear((-branch, x[axis+2]), (family['threshold'], z)))
+                else:
+                    p.le(linear((1, x[axis+2]), (-family['threshold'], z)))
+                    p.le(linear((-1, x[axis+2]), (-family['threshold'], z)))
             v = p.variable('carry:'+str(i)+':'+str(axis), min(0, min(v[1] for v in vertices)),
                            max(0, max(v[1] for v in vertices)))
             w = [p.variable('hull:'+str(i)+':'+str(axis)+':'+str(j), 0, 1) for j in range(len(vertices))]
@@ -131,6 +142,7 @@ def build_conic(family, fixed=None):
             p.eq(linear((1, y[axis+2]), (-edge['friction'], v), (-edge['friction'], a[axis])))
             c.append(v)
             eta.append(w)
+            points.append(vertices)
         for guard in edge['guards']:
             output = guard['where'] == 'out'
             var = (y if output else x)[guard['axis']]
@@ -149,6 +161,7 @@ def build_conic(family, fixed=None):
         controls.append(a)
         carries.append(c)
         weights.append(eta)
+        carry_points.append(points)
     for node in family['nodes']:
         ins, outs = family['incoming'][node], family['outgoing'][node]
         p.eq(linear(*[(1, masses[i]) for i in outs], *[(-1, masses[i]) for i in ins]),
@@ -173,6 +186,8 @@ def build_conic(family, fixed=None):
     cost = {states[n][axis]: -sign}
     return dict(program=p, states=states, masses=masses, choices=choices, inputs=inputs, outputs=outputs,
                 carries=carries, controls=controls, weights=weights, cost=cost,
+                carryPoints=carry_points, carryPatternRestricted=carry_pattern is not None,
+                family=family, fixed=dict(fixed or {}),
                 buildSeconds=time.monotonic()-started)
 
 
@@ -180,6 +195,8 @@ def solve_conic(family, fixed=None, *, seconds=5, built=None):
     import clarabel
     from scipy import sparse
     started = time.monotonic()
+    if built is not None and (built['family'] is not family or built['fixed'] != dict(fixed or {})):
+        raise ValueError('A built conic model must match its family and committed decisions')
     model = built or build_conic(family, fixed)
     p = model['program']
     a, b, q, cones = p.data(model['cost'])
@@ -203,4 +220,5 @@ def solve_conic(family, fixed=None, *, seconds=5, built=None):
                 choices=[float(x[j]) for j in model['choices']] if solved else None,
                 controls=[[float(x[j]) for j in indices] for indices in model['controls']] if solved else None,
                 iterations=result.iterations, buildSeconds=model['buildSeconds'], solveSeconds=result.solve_time,
-                elapsedSeconds=time.monotonic()-started, variables=len(q), rows=len(b), fixed=fixed or {})
+                elapsedSeconds=time.monotonic()-started, variables=len(q), rows=len(b), fixed=fixed or {},
+                carryPatternRestricted=model['carryPatternRestricted'])

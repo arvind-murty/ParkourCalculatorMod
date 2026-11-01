@@ -27,12 +27,12 @@ def rank_candidates(family, arm, fixed, decision, *, seconds=3, seed=None):
                   -(r['upperBound'] if r.get('upperBound') is not None else r['value'] or 0.)))
 
 
-def guide_route(family, arm, compiler, *, seconds=3, refine_seconds=2, root=None, beam_width=1):
+def guide_route(family, arm, compiler, *, seconds=3, refine_seconds=2, root=None, beam_width=2):
     if type(beam_width) is not int or beam_width < 1:
         raise ValueError('beam_width must be positive')
     started = time.monotonic()
     root = root or relaxation(family, arm, seconds=seconds)
-    frontier, trace = [({}, root)], []
+    frontier, trace, drops = [({}, root)], [], 0
     for decision, domain in decisions(family).items():
         if len(domain) == 1:
             for fixed, _ in frontier:
@@ -46,7 +46,9 @@ def guide_route(family, arm, compiler, *, seconds=3, refine_seconds=2, root=None
             expanded.extend((dict(fixed, **{decision: r['fixed'][decision]}), r) for r in solved)
         if not expanded:
             return dict(status='unknown', termination='no_solved_conditional_reference', trace=trace,
-                        elapsedSeconds=time.monotonic()-started, beamWidth=beam_width)
+                        elapsedSeconds=time.monotonic()-started, beamWidth=beam_width,
+                        objectiveOptimalityProven=False, heuristicDrops=drops)
+        drops += max(0, len(expanded)-beam_width)
         frontier = sorted(expanded, key=lambda pair: -(pair[1]['upperBound']
                         if pair[1].get('upperBound') is not None else pair[1]['value']))[:beam_width]
     attempts, best = [], None
@@ -65,5 +67,6 @@ def guide_route(family, arm, compiler, *, seconds=3, refine_seconds=2, root=None
     return dict(status=accepted['status'], termination='physical_refinement', trace=trace, fixed=fixed,
                 refinement=accepted, finalReference=current, refinementAttempts=attempts,
                 elapsedSeconds=time.monotonic()-started, beamWidth=beam_width,
+                objectiveOptimalityProven=False, heuristicDrops=drops,
                 physicalCalls=sum(r['numericalCalls'] for r in attempts), backtracks=0,
                 relaxationCalls=sum(len(t['candidates'])*(1 if arm == 'convex_disk' else 2) for t in trace))

@@ -25,7 +25,9 @@ The conic backend is Clarabel, using its direct sparse interface. The two compac
 
 `build_family` accepts `route`, `ticks`, optional `avoidances`, absolute position `walls`, a `name` and an optional `collisionScene`. The route uses the existing `sceneModel=open_air_supports` format. Each avoidance has an ID, leg, two signed X/Z faces and integer gate-offset choices. The existing Y-X-Z order determines whether a change of face requires clearance on the same state or consecutive states. Supplied collision solids are checked during physical acceptance; omission of their clearance rows from a relaxation is optimistic, not a feasibility assertion. Without a collision scene, rectangular support volumes are generated.
 
-`guidance.rank_candidates` fixes one real departure/passage choice and reoptimizes the remaining relaxed trajectory. `guide_route` retains one or more promising partial assignments and physically refines the retained complete choices. The beam width is an explicit heuristic cap. Unknown branches are recorded; their absence from the beam is not a proof of infeasibility or dominance.
+Indices are zero-based: state t is the position before input t, and T inputs produce states 0 through T. Departure decisions identify input indices. Passage gate choices identify position-state offsets relative to that leg's departure. Several inputs can occupy the same spatial region.
+
+`guidance.rank_candidates` fixes one real departure/passage choice and reoptimizes the remaining relaxed trajectory. `guide_route` defaults to retaining two promising partial assignments and physically refines the retained complete choices. The beam width is an explicit heuristic cap. Unknown branches and heuristic drops are recorded; their absence from the beam is not a proof of infeasibility or dominance. The benchmark explicitly requests width one for its greedy control.
 
 ## The bound argument
 
@@ -57,6 +59,8 @@ The benchmark exhausts each small declared discrete family, with whole-trajector
 For each arm, it records root build/solve time and size, objective gap to the best accepted enumerated trajectory, time-aligned position/velocity differences, arc-length-aligned shape differences, control slack, fractional flow, conditional ranking and physical refinement. Greedy and width-two guidance are compared. Their physical calls include the actual numerical starts. Full source, dependency versions and compiler-config digest accompany the saved output.
 
 Circle versus compact disk isolates the control-set enlargement. Comparing either with the SOCP also changes state/mode coupling. Their relative tightness must be measured; it is not justified by the circle/disk inclusion alone. A good relaxed objective need not identify a unique nearby reference trajectory, and upper-bound ordering alone does not prove an ordering of feasible alternatives.
+
+[Measured results and recommendations](../experiments/route-guidance/README.md) include repeated comparisons, independent replay and an inertia ablation. The latter fixes the inertia pattern observed in an accepted witness while keeping its facings free. `build_conic(..., carry_pattern=...)` explicitly marks that restricted model. It bounds only the specified pattern and must not replace the inclusive carry hull for a route-wide bound.
 
 Focused verification:
 

@@ -103,6 +103,19 @@ class GuidanceGraphTests(unittest.TestCase):
 
 @unittest.skipUnless(NUMERICAL, 'Install route_guidance/requirements.txt')
 class GuidanceNumericalTests(unittest.TestCase):
+    def test_dual_projection_and_box_residual_correction_cover_known_optimum(self):
+        from standalone.autonomy.route_guidance.conic import ConeProgram
+        import numpy as np
+        p = ConeProgram()
+        mass, x = p.variable('mass', 1, 1), p.variable('x', -2, 3)
+        p.cones.append([{mass: -1}, {x: -1}])
+        a, b, q, _ = p.data({x: -1})
+        rng = np.random.default_rng(724)
+        for _ in range(30):
+            upper, residual = p.upper_value(a, b, q, rng.normal(size=len(b)))
+            self.assertGreaterEqual(upper, 1-1e-9)
+            self.assertGreaterEqual(residual, 0)
+
     def test_fixed_history_disk_matches_analytic_affine_oracle(self):
         from standalone.autonomy.route_guidance.conic import solve_conic
         request = dict(route=ordinary(), ticks=12)
@@ -146,7 +159,7 @@ class GuidanceNumericalTests(unittest.TestCase):
                     self.assertLess(audit_compact_witness(family, arm, selection, candidate)['violation'], 1e-8)
 
     def test_conditional_bounds_nest_and_compact_circle_is_in_disk(self):
-        from standalone.autonomy.route_guidance.conic import solve_conic
+        from standalone.autonomy.route_guidance.conic import build_conic, solve_conic
         from standalone.autonomy.route_guidance.compact import solve_compact
         family = build_family(dict(route=ordinary(2, 1), ticks=25), Coefficients())
         parent = solve_conic(family)
@@ -161,6 +174,8 @@ class GuidanceNumericalTests(unittest.TestCase):
         self.assertEqual(disk['status'], 'solved')
         self.assertLessEqual(circle['value'], disk['value']+1e-6)
         self.assertAlmostEqual(circle['states'][0][0], .5, places=12)
+        with self.assertRaises(ValueError):
+            solve_conic(family, {'departure:0': 0}, built=build_conic(family))
 
 
 @unittest.skipUnless(NUMERICAL and os.environ.get('PKC_RUN_TICKS_COMPILER'),
@@ -201,6 +216,33 @@ class GuidancePhysicalTests(unittest.TestCase):
         self.assertEqual(physical['candidate']['velocity'][0], [0., 0.])
         self.assertLess(lift_witness(family, model, physical['selection'], physical['candidate'])['violation'], 1e-7)
         self.assertGreaterEqual(root['upperBound']+1e-7, physical['value'])
+
+    def test_retaining_two_timings_recovers_the_narrow_support_ranking_counterexample(self):
+        from standalone.autonomy.route_guidance.conic import build_conic, solve_conic
+        from standalone.autonomy.route_guidance.guidance import guide_route
+        from standalone.autonomy.route_guidance.physical import lift_witness
+        request = json.loads((ROOT/'experiments/route-guidance/fixtures/narrow-fast-entry.json').read_text())
+        family = build_family(request, self.compiler)
+        root = solve_conic(family)
+        greedy = guide_route(family, 'convex_disk', self.compiler, root=root, refine_seconds=3, beam_width=1)
+        beam = guide_route(family, 'convex_disk', self.compiler, root=root, refine_seconds=3, beam_width=2)
+        self.assertEqual(greedy['status'], 'feasible')
+        self.assertEqual(beam['status'], 'feasible')
+        self.assertEqual(greedy['fixed']['departure:0'], 1)
+        self.assertEqual(beam['fixed']['departure:0'], 0)
+        self.assertGreater(beam['refinement']['value']-greedy['refinement']['value'], .2)
+        self.assertTrue(beam['refinement']['geometryCheck']['feasible'])
+        self.assertGreaterEqual(root['upperBound'], beam['refinement']['value'])
+        self.assertFalse(beam['objectiveOptimalityProven'])
+        physical = greedy['refinement']
+        pattern = [[0 if abs(v) < family['threshold'] else 1 if v > 0 else -1 for v in row]
+                   for row in physical['candidate']['velocity'][:-1]]
+        fixed = physical['selection']['fixed']
+        model = build_conic(family, fixed, carry_pattern=pattern)
+        restricted = solve_conic(family, fixed, built=model)
+        self.assertTrue(restricted['carryPatternRestricted'])
+        self.assertAlmostEqual(restricted['value'], physical['value'], places=6)
+        self.assertLess(lift_witness(family, model, physical['selection'], physical['candidate'])['violation'], 1e-7)
 
 
 if __name__ == '__main__':

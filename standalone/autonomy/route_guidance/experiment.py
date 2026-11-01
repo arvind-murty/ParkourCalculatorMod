@@ -123,7 +123,7 @@ def run_case(request, compiler, *, seconds=3, refine_seconds=2, max_assignments=
             continue
         rounded = rounded_assignment(family, root)
         root_refined = refine(family, rounded, compiler, seed=root, seconds=refine_seconds)
-        guide = guide_route(family, arm, compiler, seconds=seconds, refine_seconds=refine_seconds, root=root)
+        guide = guide_route(family, arm, compiler, seconds=seconds, refine_seconds=refine_seconds, root=root, beam_width=1)
         beam = guide_route(family, arm, compiler, seconds=seconds, refine_seconds=refine_seconds, root=root, beam_width=2)
         entry = dict(root=root, controlStats=control_stats(family, root), rootRefinement=root_refined,
                      guided=guide, beam=beam, rankings=_ranking(family, guide, real))
