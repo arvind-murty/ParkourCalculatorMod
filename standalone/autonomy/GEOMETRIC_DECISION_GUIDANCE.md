@@ -12,7 +12,9 @@ Connecting endpoints means connecting the successive cell/portal anchors within 
 
 ## Minimum local evaluator
 
-For a pending decision, select a common guide point beyond that interaction, such as the next useful exit or a little farther along the polyline. Determine a common horizontal forward direction d for its alternatives. Do not choose each candidate's direction after seeing its optimized result.
+User refinement: use a comparison checkpoint between decisions/portals, after the relevant turnaround, where the outgoing horizontal objective is unambiguous. This follows the user's commit-window comparison intuition. All siblings use the same absolute tick and the same signed horizontal objective. The checkpoint is an evaluation time/route stage, not a hard spatial endpoint or committed facing.
+
+For a pending decision, use the cell-route polyline to identify the outgoing straight segment beyond the turn and before the next interaction. Determine its common horizontal forward direction d. Do not choose each candidate's direction after seeing its optimized result, or score alternatives on opposite sides of a turnaround using an inappropriate direction.
 
 For tick 4 versus tick 5 alternatives, pick a common later absolute state h. Solve each candidate's original-state prefix through h with its actual discrete movement/contact constraints, all earlier facings variable, and objective:
 
@@ -20,17 +22,19 @@ For tick 4 versus tick 5 alternatives, pick a common later absolute state h. Sol
 maximize d dot p[h]
 ```
 
-The guide supplies where to make progress. The existing continuous physical model determines how far each candidate can get while satisfying its selected input/contact effects. This needs neither a mixed future-contact model nor a solved full-route reference.
+The guide supplies where to make progress. For an axis-aligned outgoing segment this can simply be maximize X, minimize X, maximize Z or minimize Z; use a directional projection for other orientations. The existing continuous physical model determines how far each candidate can get while satisfying its selected input/contact effects. This needs neither a mixed future-contact model nor a solved full-route reference.
+
+Y is excluded from the comparison objective. Candidates need not share a height or vertical phase at the checkpoint. Their actual Y/contact/ground dynamics still determine feasibility and horizontal movement coefficients; no equality of Y, scalar 3D path distance or nominal time-parameterized Y trace should be imposed merely for comparison.
 
 The standalone objective already supports an arbitrary horizontal direction through `customYaw`; both `standalone/ipopt/model.py` and `worker.py` use the corresponding signed X/Z projection. This is enough for a direction-only prototype. Adding a velocity term is a separate change, not an existing combined objective silently assumed available.
 
 Use the full selected prefix from the original initial position and velocity. A prior solved position/velocity at the decision is a seed, never a fixed endpoint. The evaluated candidate includes real step/ceiling effects; the geometric guide itself need not choose a method or encode those dynamics.
 
-Where alternative methods have different durations, do not compare progress at their separate endpoints without accounting for time. Prefer a common absolute lookahead horizon with a well-defined local continuation. An alternative comparison can use arrival time at a common downstream cross-section and its outgoing state. Both are heuristic local objectives, and the experiment must state which it uses. Extending the lookahead past another unresolved physical interaction may require including that interaction in the local window rather than pretending its effect is known.
+Different method durations are compared at that same absolute h, rather than their separate endpoints or separate offsets after completion. Choose h so the comparison represents the intended outgoing segment for the batch. If a checkpoint lies inside a turnaround or is too early for the alternatives, adjust it for the whole batch. If another unresolved interaction must be crossed before a useful checkpoint, include the needed local decisions in the window or select another valid common checkpoint. Do not silently give candidates different comparison times.
 
 ## Small extensions only if measurements require them
 
-Position-only progress is the first baseline. A candidate farther forward may have poor outgoing momentum, so a subsequent ablation can test:
+Position-only progress at the shared post-turn tick is the agreed first baseline. Velocity weighting is deferred unless measured errors justify it. A possible later ablation is:
 
 ```text
 d dot (p[h] + ell*v[h])
