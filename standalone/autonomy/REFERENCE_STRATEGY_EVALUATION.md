@@ -1,5 +1,7 @@
 # Choosing a whole-route reference strategy
 
+Latest simplification: [GEOMETRIC_DECISION_GUIDANCE.md](GEOMETRIC_DECISION_GUIDANCE.md) supersedes the initializer-first recommendation below. The existing cell-route polyline may already provide adequate direction for local decisions. Test that cheap guide first; provisional physical drafts and mixed-input references should address a measured shortcoming rather than be prerequisites.
+
 2026-10-31. User clarification: the relaxed solve exists to provide a useful general trajectory before local decisions are optimized. A mixed-input baseline must include unresolved ceiling, stepping, landing, input and timing alternatives together. Picking those methods first defeats that baseline's purpose. The alternative is to choose provisional variants, optimize a complete draft, then revisit local decisions using its whole-route context.
 
 Recommendation: build the provisional-draft/improvement pipeline next and retain a bounded mixed-decision comparison. This is a recommendation awaiting the user's selection, not an assertion that they have chosen one option. A comprehensive mixed SOCP should not block the first-pass baseline. No runtime source or measurements changed in this evaluation turn.

@@ -1,5 +1,7 @@
 # Convex route guidance: scope and first experiment
 
+Current baseline recommendation: test [geometric decision guidance](GEOMETRIC_DECISION_GUIDANCE.md) directly from the existing cell route before investing in another initializer. Mixed dynamics remain a possible later source of additional guidance; they are not required to obtain a rough route direction.
+
 Current evaluation, 2026-10-31: [REFERENCE_STRATEGY_EVALUATION.md](REFERENCE_STRATEGY_EVALUATION.md) restores the primary goal of useful initial whole-route context. Recommendation: implement provisional drafts and iterative decision improvement as the next baseline, and compare a genuine mixed-method initializer on dynamic-contact cases. Convexity and upper bounds are supporting properties; the existing fixed-profile SOCP experiment does not establish that a mixed ceiling/stepping baseline works.
 
 Dynamic-contact clarification, 2026-10-31: [DYNAMIC_CONTACT_DECISIONS.md](DYNAMIC_CONTACT_DECISIONS.md) describes the next substantive model extension: optional ceiling/stepping transitions over shared 3D state, with exact input/ground timing and explicit outer treatment of nonconvex step-winner guards. Passage-timing measurements do not establish this capability.
