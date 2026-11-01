@@ -1,5 +1,7 @@
 # Convex route guidance: scope and first experiment
 
+Current evaluation, 2026-10-31: [REFERENCE_STRATEGY_EVALUATION.md](REFERENCE_STRATEGY_EVALUATION.md) restores the primary goal of useful initial whole-route context. Recommendation: implement provisional drafts and iterative decision improvement as the next baseline, and compare a genuine mixed-method initializer on dynamic-contact cases. Convexity and upper bounds are supporting properties; the existing fixed-profile SOCP experiment does not establish that a mixed ceiling/stepping baseline works.
+
 Dynamic-contact clarification, 2026-10-31: [DYNAMIC_CONTACT_DECISIONS.md](DYNAMIC_CONTACT_DECISIONS.md) describes the next substantive model extension: optional ceiling/stepping transitions over shared 3D state, with exact input/ground timing and explicit outer treatment of nonconvex step-winner guards. Passage-timing measurements do not establish this capability.
 
 Latest user direction, 2026-10-31: omit only inertia thresholds for decision selection, carry velocity normally, and defer inertia-pattern refinement. [NO_THRESHOLD_DECISION_MODEL.md](NO_THRESHOLD_DECISION_MODEL.md) supersedes the carry-hull recommendation below for the next model. Existing benchmark results still describe the earlier hull implementation.

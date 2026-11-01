@@ -1,5 +1,7 @@
 # Route-guidance model comparison
 
+Subsequent goal review: [REFERENCE_STRATEGY_EVALUATION.md](../../REFERENCE_STRATEGY_EVALUATION.md) recommends a provisional-draft/improvement baseline first, with a focused comparison against a genuine mixed ceiling/stepping initializer. This report compares formulations within the older fixed-profile pilot; its SOCP recommendation does not establish which overall reference-construction strategy is best. The agreed no-threshold model has not been benchmarked here.
+
 2026-10-31. Implemented and measured in the isolated `research/ipopt-cell-routes` worktree. The recommended first backend is the convex disk SOCP, using conditional whole-route values and retaining alternative decisions. The compact circle adds cost without a consistent objective or trajectory advantage in this sample. The initial relaxed trajectory is not reliably close enough to use as an unquestioned direction guide.
 
 This is an experimental model/guidance API. It does not replace the cell-route or generic movement-program generator. Coverage is ordinary jump/run/landing and two-face horizontal avoidance on a supplied support sequence. Arbitrary stepping/ceiling histories, other support sequences, ladders and intentional wall hits are outside the implemented family.

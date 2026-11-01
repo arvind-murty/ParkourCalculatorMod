@@ -1,5 +1,7 @@
 # Ceiling and stepping decisions change the transition law
 
+Goal clarification: [REFERENCE_STRATEGY_EVALUATION.md](REFERENCE_STRATEGY_EVALUATION.md) makes the intended use explicit. All covered methods/timings must remain unresolved in the initial mixed baseline. Selecting a method and applying its transition is a later conditional comparison or a provisional-draft initialization, not a prerequisite for that mixed solve. The old passage-only pilot has not tested this full baseline.
+
 2026-10-31. User emphasized that passage timing with unchanged physics is the easy case. The important local decisions include ceiling contacts and alternative stepping methods, which alter vertical motion, ground/input state and subsequent horizontal coefficients. This note extends the no-threshold design; it is not an implemented SOCP extension or a new benchmark.
 
 ## The prototype's actual limitation

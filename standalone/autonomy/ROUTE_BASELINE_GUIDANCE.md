@@ -1,5 +1,7 @@
 # Route-specific optimistic continuation guidance
 
+Goal clarification, 2026-10-31: [REFERENCE_STRATEGY_EVALUATION.md](REFERENCE_STRATEGY_EVALUATION.md) compares two ways to obtain the initial whole-route context: a genuine mixed-method solve with unresolved contact choices, and provisional complete drafts followed by local improvement. The latest recommendation prioritizes the latter baseline while testing whether mixed guidance adds value. The earlier focus on optimistic certificates below is useful background, not the primary acceptance criterion for a reference.
+
 2026-10-31. User proposal after the cell-route prototype: keep all facings variable, but guide discrete decisions forward using an optimistic baseline for the selected spatial route. Compare a candidate interaction/tick choice against a simplified full-route continuation, or approximate its continuation value shortly after the interaction. This reopens a scoped bound/reference question; it does not select a global branch-and-bound engine. Ladders and explicit wall-hit experiments remain outside the active test scope.
 
 This is a design formalization and primary-source review. No solver implementation or new numerical measurement accompanies this turn.
