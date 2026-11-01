@@ -13,7 +13,7 @@ class FailureDiagnosticTests(unittest.TestCase):
         cfg = dict(movement_settings(scene),maxInputs=16,maxPrefixes=64,maxQueuedPrefixes=96)
         scene['blocks'][-1]['top'] = 1
         original_report,probe_report = {},{}
-        original = list(iter_movement_programs(scene,settings=cfg,threshold=0.,report=original_report))
+        original = list(iter_movement_programs(scene,settings=cfg,threshold=0.,report=original_report,queue_policy='legacy'))
         self.assertTrue(original)
         probe = list(instrumented_generator(QueueAudit(scene['goalBlock'],'shortest'),KeyAudit(False))(
             scene,settings=cfg,threshold=0.,report=probe_report))

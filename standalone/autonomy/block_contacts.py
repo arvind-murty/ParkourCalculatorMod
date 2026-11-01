@@ -165,16 +165,91 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
         branch['hitEvents'] = hits
         if best_result is not None:
             branch['maxTotalRunTicks'] = min(branch['maxTotalRunTicks'], best_result['best']['cost'])
+        audit_cache, audit_errors = {}, []
+
+        def audit(best):
+            key = (tuple(best['allocation']), best['plan']['ticks'], tuple(best['candidate']['yaw']))
+            if key in audit_cache:
+                return audit_cache[key]
+            plan, candidate = best['plan'], best['candidate']
+            checked = dict(conflicts=contact_conflicts(checks, plan, candidate), accepted=False)
+            if not checked['conflicts']:
+                vertical = validate_vertical_schedule(branch, profiles, plan)
+                checked['vertical'] = vertical
+                if not vertical['feasible']:
+                    checked['reason'] = 'vertical_schedule_mismatch'
+                elif any(not passage_y_valid(p, plan['events'][p['leg']], profiles[p['leg']]) for p in passages):
+                    checked['reason'] = 'passage_y_mismatch'
+                else:
+                    verdict = candidate_filter(plan, candidate, vertical) if candidate_filter is not None else dict(accepted=True)
+                    checked['verdict'] = verdict
+                    if not verdict['accepted']:
+                        checked['reason'] = verdict.get('reason', 'candidate_filter')
+                    elif geometry is not None:
+                        remaining = deadline-time.monotonic()
+                        if remaining <= 0:
+                            raise TimeoutError('Geometry validation exceeded the contact budget')
+                        checked['geometryCheck'] = check_geometry(geometry, plan, candidate, vertical, compiler, remaining)
+                        checked['accepted'] = checked['geometryCheck']['feasible']
+                    else:
+                        checked['accepted'] = True
+            audit_cache[key] = checked
+            return checked
+
+        def enrich(best, checked):
+            best = copy.deepcopy(best)
+            best.update(route=best.get('route', branch), profiles=profiles, contactChecks=checks,
+                passages=passages, hitEvents=hits, ceilingEvents=branch.get('ceilingEvents', []),
+                blockageTimeline=gate_timeline(passages, best['plan']['events']),
+                blockageUsage=[{'blockId': value if kind == 'block' else 'solid:' + str(value), **counts}
+                    for (kind, value), counts in blockage_usage(passages).items()], vertical=checked['vertical']['vertical'])
+            best['candidate'].update({key: checked['vertical'][key] for key in ('y', 'vy', 'onGround')})
+            if candidate_filter is not None:
+                best['corridorCheck'] = checked['verdict']
+            if 'geometryCheck' in checked:
+                best['geometryCheck'] = checked['geometryCheck']
+            return best
+
+        def retain(best):
+            nonlocal best_result
+            if best_result is not None and candidate_rank(best, route['objective']) >= candidate_rank(best_result['best'], route['objective']):
+                return
+            try:
+                checked = audit(best)
+            except (TimeoutError, ValueError, RuntimeError, OSError) as error:
+                audit_errors.append(str(error))
+                return
+            if checked['accepted']:
+                accepted = enrich(best, checked)
+                if work is not None:
+                    work.accepted(accepted)
+                    checked['reportedAcceptance'] = True
+                best_result = dict(status='feasible', best=accepted, termination='validated_incumbent',
+                    attempts=inner_attempts, contactAttempts=attempts, minimumProven=False)
+
         result = find_route(branch, compiler, seconds=remaining, candidate_seconds=candidate_seconds,
                             retries=retries, improve=improve, rank_equal_cost=rank_equal_cost,
                             optimize_goal=optimize_goal, python_executable=python_executable,
-                            cancel_event=cancel_event, work=work)
+                            cancel_event=cancel_event, work=work, on_candidate=retain)
         inner_attempts.extend(result['attempts'])
-        conflicts = contact_conflicts(checks, result['best']['plan'], result['best']['candidate']) if result['best'] else []
+        try:
+            checked = audit(result['best']) if result['best'] else None
+        except TimeoutError:
+            termination = 'geometry_deadline'
+            break
+        except (ValueError, RuntimeError, OSError) as error:
+            if best_result is not None:
+                best_result.update(termination='geometry_error', error=str(error),
+                                   attempts=inner_attempts, contactAttempts=attempts)
+                return best_result
+            return dict(status='error', termination='geometry_check', error=str(error), best=None,
+                        attempts=inner_attempts, contactAttempts=attempts)
+        conflicts = checked['conflicts'] if checked else []
         attempts.append({'status': result['status'], 'constraintCount': len(rows),
                          'passageCount': len(passages),
                          'wallHitCount': len(hits), 'wallHitGeneration': {k: v for k, v in hit_pool.items() if k != 'options'},
                          'passageKinds': [p['kind'] for p in passages],
+                         'incumbentAuditErrors': audit_errors,
                          'conflicts': [{'block': c['block']['id'], 'state': c['state'], 'reason': c['reason']}
                                        for c in conflicts], 'termination': result['termination']})
         if result['status'] in ('error', 'cancelled'):
@@ -186,41 +261,16 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
         if result['best'] is None:
             continue
         if not conflicts:
-            vertical = validate_vertical_schedule(branch, profiles, result['best']['plan'])
-            if not vertical['feasible']:
-                attempts[-1]['status'] = 'unknown'
-                attempts[-1]['termination'] = 'vertical_schedule_mismatch'
+            if 'verdict' in checked and candidate_filter is not None:
+                attempts[-1]['candidateFilter'] = {k: v for k, v in checked['verdict'].items() if k != 'alternatives'}
+            if 'reason' in checked:
+                attempts[-1].update(status='unknown', termination=checked['reason'])
+                for extra in checked.get('verdict', {}).get('alternatives', []):
+                    offer(score + 1, rows + extra, passages, hits)
                 continue
-            if any(not passage_y_valid(p, result['best']['plan']['events'][p['leg']], profiles[p['leg']]) for p in passages):
-                attempts[-1].update(status='unknown', termination='passage_y_mismatch')
-                continue
-            if candidate_filter is not None:
-                verdict = candidate_filter(result['best']['plan'], result['best']['candidate'], vertical)
-                attempts[-1]['candidateFilter'] = {k: v for k, v in verdict.items() if k != 'alternatives'}
-                if not verdict['accepted']:
-                    attempts[-1].update(status='unknown', termination=verdict.get('reason', 'candidate_filter'))
-                    for extra in verdict.get('alternatives', []):
-                        offer(score + 1, rows + extra, passages, hits)
-                    continue
-                result['best']['corridorCheck'] = verdict
+            audit_result = checked
             if geometry is not None:
-                remaining = deadline - time.monotonic()
-                if remaining <= 0:
-                    termination = 'deadline'
-                    break
-                try:
-                    checked = check_geometry(geometry, result['best']['plan'], result['best']['candidate'],
-                                             vertical, compiler, remaining)
-                except TimeoutError:
-                    termination = 'geometry_deadline'
-                    break
-                except (ValueError, RuntimeError, OSError) as error:
-                    if best_result is not None:
-                        best_result.update(termination='geometry_error', error=str(error),
-                                           attempts=inner_attempts, contactAttempts=attempts)
-                        return best_result
-                    return {'status': 'error', 'termination': 'geometry_check', 'error': str(error),
-                            'best': None, 'attempts': inner_attempts, 'contactAttempts': attempts}
+                checked = audit_result['geometryCheck']
                 attempts[-1]['geometryCheck'] = checked
                 if not checked['feasible']:
                     attempts[-1]['status'] = 'unknown'
@@ -245,21 +295,15 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                         offer(score + option['score'], rows, new_passages, hits)
                     continue
                 result['best']['geometryCheck'] = checked
-            if work is not None:
+            result['best'] = enrich(result['best'], audit_result)
+            if work is not None and not audit_result.get('reportedAcceptance'):
                 work.accepted(result['best'])
-            result['best'].update(route=result['best'].get('route', branch), profiles=profiles, contactChecks=checks)
-            result['best']['passages'] = passages
-            result['best']['hitEvents'] = hits
-            result['best']['ceilingEvents'] = branch.get('ceilingEvents', [])
-            result['best']['blockageTimeline'] = gate_timeline(passages, result['best']['plan']['events'])
-            result['best']['blockageUsage'] = [{'blockId': value if kind == 'block' else 'solid:' + str(value), **counts}
-                                              for (kind, value), counts in blockage_usage(passages).items()]
-            result['best']['vertical'] = vertical['vertical']
-            result['best']['candidate'].update({key: vertical[key] for key in ('y', 'vy', 'onGround')})
             result.update(attempts=inner_attempts, contactAttempts=attempts)
             if not rank_equal_cost:
+                if best_result is not None and candidate_rank(best_result['best'], route['objective']) < candidate_rank(result['best'], route['objective']):
+                    return best_result
                 return result
-            if best_result is None or candidate_rank(result['best'], route['objective']) < candidate_rank(best_result['best'], route['objective']):
+            if best_result is None or candidate_rank(result['best'], route['objective']) <= candidate_rank(best_result['best'], route['objective']):
                 best_result = result
             continue
         conflict = conflicts[0]

@@ -20,7 +20,9 @@ def candidate_rank(best, objective):
 
 
 def objective_seed(problem):
-    target = 0 if problem['objective']['axis'] == 'X' else math.pi / 2
+    objective = problem['objective']
+    target = math.radians(objective['customYaw'])+math.pi/2 if objective.get('customYaw') is not None else (
+        0 if objective['axis'] == 'X' else math.pi / 2)
     if problem['objective']['sense'] == 'MIN':
         target += math.pi
     seed = []

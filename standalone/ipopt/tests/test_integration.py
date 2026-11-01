@@ -18,6 +18,19 @@ RUNTIME = os.environ.get('PKC_IPOPT_PYTHON')
 
 @unittest.skipUnless(RUNTIME, 'Set PKC_IPOPT_PYTHON to run CasADi/IPOPT integration tests')
 class IntegrationTests(unittest.TestCase):
+    def test_zero_threshold_axis_extremum_recovers_with_declared_fallback(self):
+        request = problem(4)
+        request.update(position=[0, 0], velocity=[0, 0], magnitude=[1.]*4, base=[0.]*4,
+                       threshold=0., yaw=[0.]*4, fallbackYaw=[5.]*4)
+        extent = validate(prepare(request), request['yaw'])['objective']
+        request['walls'] = [dict(mode='X', t1=4, cmp='GE', rhs=.2*extent),
+                            dict(mode='X', t1=4, cmp='LE', rhs=.5*extent)]
+        result = solve(request, seconds=2, python_executable=RUNTIME)
+        self.assertTrue(result['feasible'], result)
+        self.assertIn('fallback', [p['seed'] for p in result['phases']])
+        self.assertTrue(all(p['kind'] == 'carry' for p in result['phases']))
+        self.assertTrue(validate(prepare(request), result['candidate']['yaw'])['feasible'])
+
     def test_known_optimum_with_relative_position_and_facing_rows(self):
         request = problem(4)
         request.update(velocity=[0, 0], magnitude=[0.1] * 4, threshold=0.005, yaw=[-90] * 4)

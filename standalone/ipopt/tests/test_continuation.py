@@ -62,6 +62,39 @@ class ContinuationTests(unittest.TestCase):
         self.assertEqual(incumbent.best['yaw'], [90, 90])
         self.assertEqual(len(events), 2)
 
+    def test_zero_threshold_uses_fallback_without_inertia_inference(self):
+        request = self.request()
+        request.update(threshold=0, fallbackYaw=[90, 90], seconds=1, stopOnFeasible=False)
+        calls, events = [], []
+        now = [0.]
+
+        def phase(problem, yaw, pattern, seconds, stop, consider, kind, seed):
+            calls.append((seed, seconds, pattern))
+            now[0] += seconds
+            if seed == 'fallback':
+                consider([0, 0])
+            return yaw, 'Solve_Succeeded'
+
+        run(request, phase, lambda yaw: self.fail('Threshold inference in carry-only mode'),
+            events.append, clock=lambda: now[0])
+        self.assertEqual([c[0] for c in calls], ['initial', 'fallback'])
+        self.assertAlmostEqual(sum(c[1] for c in calls), 1.)
+        self.assertTrue(all(c[2] == [[2, 2], [2, 2]] for c in calls))
+        self.assertEqual(events[-1]['yaw'], [0, 0])
+
+    def test_zero_threshold_failed_fallback_preserves_valid_incumbent(self):
+        request = self.request()
+        request.update(threshold=0, yaw=[0, 0], fallbackYaw=[90, 90])
+        request['walls'] = [{'mode': 'X', 't1': 2, 'cmp': 'GE', 'rhs': .1}]
+        events = []
+
+        def phase(*args):
+            return [180, 180], 'Maximum_WallTime_Exceeded'
+
+        run(request, phase, lambda yaw: self.fail('Threshold inference in carry-only mode'), events.append)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]['yaw'], [0, 0])
+
     def test_explicit_pattern_is_preserved(self):
         request = self.request()
         request['inertiaPattern'] = [[0, 0], [-1, 0]]

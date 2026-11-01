@@ -51,15 +51,23 @@ def run(problem, phase, infer, emit, clock=time.monotonic):
         incumbent.consider(result)
         return result, True
 
-    if 'inertiaPattern' in problem or problem['threshold'] == 0:
-        solve_phase(problem['yaw'], problem.get('inertiaPattern', free), end, 1,
-                    'fixed_pattern' if 'inertiaPattern' in problem else 'carry', 'initial')
+    if 'inertiaPattern' in problem:
+        solve_phase(problem['yaw'], problem['inertiaPattern'], end, 1, 'fixed_pattern', 'initial')
         return status
 
     seeds = [('initial', problem['yaw'])]
     fallback = problem.get('fallbackYaw')
     if fallback is not None and fallback != problem['yaw']:
         seeds.append(('fallback', fallback))
+    if problem['threshold'] == 0:
+        for index, (name, seed) in enumerate(seeds):
+            incumbent.consider(seed)
+            if incumbent.best is not None and problem['stopOnFeasible']:
+                return 'User_Requested_Stop'
+            remaining = end - clock()
+            deadline = clock() + remaining * .4 if index + 1 < len(seeds) else end
+            solve_phase(seed, free, deadline, 1, 'carry', name)
+        return status
     for index, (name, seed) in enumerate(seeds):
         remaining = end - clock()
         deadline = clock() + remaining * 0.4 if index + 1 < len(seeds) else end

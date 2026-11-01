@@ -13,7 +13,7 @@ from .movement_generation import GENERATORS, generate_choices
 def movement_settings(scene):
     settings = dict(scene.get('movementSearch', {}))
     defaults = dict(maxInputs=200, maxPrefixes=256, maxQueuedPrefixes=512, maxChoicesPerType=64,
-                    maxInteractions=200, maxEntryInputs=14,
+                    maxInteractions=200, maxEntryInputs=14, expansionsPerProposal=8,
                     types=list(GENERATORS))
     if set(settings) - set(defaults):
         raise ValueError('Unsupported movement search settings')
@@ -29,8 +29,10 @@ def movement_settings(scene):
 
 def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=None, report=None, screen=None,
                            context_adapter=None, work=None, checkpoint_tick=None, initial_programs=None, threshold=.005,
-                           program_filter=None):
+                           program_filter=None, queue_policy='balanced'):
     cfg = movement_settings(scene) if settings is None else settings
+    if queue_policy not in ('balanced', 'legacy'):
+        raise ValueError('Unknown movement queue policy')
     report = report if report is not None else {}
     if checkpoint_tick is not None:
         integer(checkpoint_tick, 'checkpoint tick', 1, cfg['maxInputs'])
@@ -45,6 +47,28 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
     heapq.heapify(pending)
     serial, expanded, generated, screened, drops, seen = len(seeds), 0, 0, 0, 0, set()
     records, termination, policy_rejections = [], 'exhausted', 0
+    ready, since_proposal, cursor, complete_drops, proposals = [], 0, -1, 0, 0
+
+    def complete(program):
+        ticks = program['profile']['airtime']
+        return checkpoint_tick is not None and ticks == checkpoint_tick or (
+            ticks and program['terminalSupport'] == scene['goalBlock'] and program['profile']['grounded'][-1]
+            and (not scene.get('ladderSearch', {}).get('requireLadder') or program['ladderEvents']))
+
+    def fair_subset(items, count):
+        buckets = {}
+        for item in sorted(items, key=lambda item: item[1]):
+            buckets.setdefault(item[0], []).append(item)
+        result = []
+        while buckets and len(result) < count:
+            for tick in sorted(buckets):
+                result.append(buckets[tick].pop(0))
+                if not buckets[tick]:
+                    del buckets[tick]
+                if len(result) == count:
+                    break
+        return result
+
     initial_bounds = [scene['initial']['position'][0]] * 2 + [scene['initial']['position'][2]] * 2
     def budget():
         if work is not None:
@@ -52,27 +76,49 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
         if deadline is not None and time.monotonic() >= deadline:
             raise TimeoutError('Movement composition exceeded its budget')
     try:
-        while pending:
+        while pending or ready:
             budget()
             if cancel_event is not None and cancel_event.is_set():
                 termination = 'cancelled'
                 break
+            if ready and (not pending or expanded >= cfg['maxPrefixes'] or proposals == 0
+                          or since_proposal >= cfg.get('expansionsPerProposal', 8)):
+                ticks, _, program = heapq.heappop(ready)
+                since_proposal = 0
+                if ticks > report.get('maxAcceptedTicks', cfg['maxInputs']):
+                    continue
+                if checkpoint_tick is not None and ticks == checkpoint_tick:
+                    report.update(checkpointTick=checkpoint_tick, checkpointPrefixes=report.get('checkpointPrefixes', 0)+1)
+                else:
+                    program['terminal'] = 'landed'
+                proposals += 1
+                report.update(expandedPrefixes=expanded, generated=generated, remainingPrefixes=len(pending)+len(ready))
+                yield program
+                continue
             if expanded >= cfg['maxPrefixes']:
                 termination = 'prefix_limit'
                 break
-            ticks, _, program = heapq.heappop(pending)
+            if queue_policy == 'balanced' and expanded % 2:
+                times = sorted({item[0] for item in pending})
+                cursor = next((tick for tick in times if tick > cursor), times[0])
+                item = min((item for item in pending if item[0] == cursor), key=lambda item: item[1])
+                pending.remove(item)
+                heapq.heapify(pending)
+                ticks, _, program = item
+            else:
+                ticks, _, program = heapq.heappop(pending)
             if ticks > report.get('maxAcceptedTicks', cfg['maxInputs']):
                 continue
             expanded += 1
-            report.update(expandedPrefixes=expanded, generated=generated, remainingPrefixes=len(pending),
+            since_proposal += 1
+            report.update(expandedPrefixes=expanded, generated=generated, remainingPrefixes=len(pending)+len(ready),
                           screenedPrefixes=screened, queueDrops=drops, generation=records, minimumTicksProven=False)
-            if checkpoint_tick is not None and ticks == checkpoint_tick:
-                report.update(checkpointTick=checkpoint_tick, checkpointPrefixes=report.get('checkpointPrefixes', 0)+1)
-                yield program
-                continue
-            if ticks and program['terminalSupport'] == scene['goalBlock'] and program['profile']['grounded'][-1] \
-                    and (not scene.get('ladderSearch', {}).get('requireLadder') or program['ladderEvents']):
-                program['terminal'] = 'landed'
+            if complete(program):
+                if checkpoint_tick is not None and ticks == checkpoint_tick:
+                    report.update(checkpointTick=checkpoint_tick, checkpointPrefixes=report.get('checkpointPrefixes', 0)+1)
+                else:
+                    program['terminal'] = 'landed'
+                proposals += 1
                 yield program
                 continue
             remaining = cfg['maxInputs'] - ticks
@@ -124,11 +170,19 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
                         screened += 1
                         continue
                     serial += 1
-                    heapq.heappush(pending, (child['profile']['airtime'], serial, child))
-                    if len(pending) > cfg['maxQueuedPrefixes']:
-                        drops += len(pending) - cfg['maxQueuedPrefixes']
-                        pending = heapq.nsmallest(cfg['maxQueuedPrefixes'], pending)
-                        heapq.heapify(pending)
+                    item = (child['profile']['airtime'], serial, child)
+                    if queue_policy == 'balanced' and complete(child):
+                        heapq.heappush(ready, item)
+                        if len(ready) > cfg['maxQueuedPrefixes']:
+                            complete_drops += len(ready)-cfg['maxQueuedPrefixes']
+                            ready = heapq.nsmallest(cfg['maxQueuedPrefixes'], ready)
+                            heapq.heapify(ready)
+                    else:
+                        heapq.heappush(pending, item)
+                        if len(pending) > cfg['maxQueuedPrefixes']:
+                            drops += len(pending) - cfg['maxQueuedPrefixes']
+                            pending = fair_subset(pending, cfg['maxQueuedPrefixes']) if queue_policy == 'balanced' else heapq.nsmallest(cfg['maxQueuedPrefixes'], pending)
+                            heapq.heapify(pending)
                 else:
                     records.append(dict(type=kind, prefixTicks=ticks, termination='exhausted', emitted=choices))
     except TimeoutError:
@@ -138,7 +192,8 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
         raise
     finally:
         report.update(termination=termination, expandedPrefixes=expanded, generated=generated,
-            remainingPrefixes=len(pending), screenedPrefixes=screened, queueDrops=drops, generation=records,
+            remainingPrefixes=len(pending)+len(ready), screenedPrefixes=screened, queueDrops=drops+complete_drops, generation=records,
+            partialQueueDrops=drops, completeQueueDrops=complete_drops, queuedCompletePrograms=len(ready), emittedPrograms=proposals, queuePolicy=queue_policy,
             policyRejections=policy_rejections, minimumTicksProven=False, types=cfg['types'])
 
 

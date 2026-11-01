@@ -63,6 +63,15 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, c
         route['constraints'].extend(checkpoint.rows())
     scoped = ScopedWork(work, solver_calls, min(work.deadline or math.inf, time.monotonic()+seconds))
     owners = [b['sourceBlock'] for b in scene['blocks']]
+    def candidate_filter(plan, candidate, vertical):
+        verdict = adapter.candidate(plan, candidate, vertical, partial=not complete)
+        if verdict['accepted'] and checkpoint is not None:
+            staged = dict(candidate, **{key: vertical[key] for key in ('y', 'vy', 'onGround')})
+            stage = checkpoint.stage(staged, adapter.gates)
+            if not stage['accepted']:
+                return dict(verdict, accepted=False, reason='checkpoint_not_after_turn', comparisonStage=stage)
+        return verdict
+
     result = solve_contact_branches(route, profiles, floor_checks(scene, [scene['startBlock'], scene['goalBlock']], profiles),
         compiler, seconds=seconds, candidate_seconds=candidate_seconds, retries=0,
         max_branches=scene['maxContactBranches'], improve=True, rank_equal_cost=True, optimize_goal=True,
@@ -70,7 +79,7 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, c
         motion_bound=motion_bound, max_blockages=scene['maxBlockagesPerObstacle'],
         max_horizontal=scene['maxHorizontalBlockagesPerObstacle'], max_vertical=scene['maxVerticalBlockagesPerObstacle'],
         max_passage_candidates=scene['maxPassageCandidates'], solid_blocks=owners, max_wall_hits=0,
-        candidate_filter=lambda plan, candidate, vertical: adapter.candidate(plan, candidate, vertical, partial=not complete), work=scoped)
+        candidate_filter=candidate_filter, work=scoped)
     if result['best'] is not None:
         if checkpoint is not None:
             stage = checkpoint.stage(result['best']['candidate'], adapter.gates)

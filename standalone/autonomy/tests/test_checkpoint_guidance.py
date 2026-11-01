@@ -167,6 +167,24 @@ class CheckpointNumericalTests(unittest.TestCase):
         self.compiler = JavaCompiler(json.loads(Path(os.environ['PKC_RUN_TICKS_COMPILER']).read_text()))
         self.addCleanup(self.compiler.close)
 
+    def test_known_post_turn_seed_survives_polishing_and_replays(self):
+        import gzip
+        from standalone.autonomy.cell_routes.checkpoint_experiment import replay_witness
+        probe = json.loads(gzip.decompress((ROOT/'experiments/decision-windows/evidence/turn-known-prefix-probe.json.gz').read_bytes()))
+        scene = prepare_scene(probe['fixture']['request'])
+        d, gates = decompose(scene), landmarks(scene)
+        corridor = corridor_for_points(d, probe['fixture']['spatialPoints'], gates)
+        adapter = CorridorAdapter(scene, corridor, gates, decomposition=d)
+        cp = checkpoint(corridor, gates, dict(tick=probe['checkpoint']['tick'], segment=probe['checkpoint']['segment']))
+        work = SearchWork(4, deadline=time.monotonic()+3)
+        result = evaluate_program(scene, probe['program'], self.compiler, adapter, work,
+            _motion_bound(scene, self.compiler, 2), checkpoint=cp, seconds=2, candidate_seconds=.7,
+            solver_calls=4, python_executable=os.environ['PKC_IPOPT_PYTHON'])
+        self.assertEqual(result['status'], 'feasible', result)
+        self.assertGreaterEqual(result['best']['candidate']['objective'], probe['knownPrefixWitness']['candidate']['objective']-1e-7)
+        self.assertTrue(result['comparisonStage']['accepted'])
+        self.assertTrue(replay_witness(scene, result['best'], self.compiler)['passed'])
+
     def test_common_tick_scores_distinct_y_with_normal_momentum_carry(self):
         scene = flat_scene()
         d, gates = decompose(scene), landmarks(scene)

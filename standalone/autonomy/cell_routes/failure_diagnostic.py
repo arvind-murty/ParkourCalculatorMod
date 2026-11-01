@@ -13,7 +13,7 @@ from standalone.autonomy.block_contacts import contact_conflicts, floor_checks, 
 from standalone.autonomy.block_search import prepare_scene
 from standalone.autonomy.compiler import JavaCompiler
 from standalone.autonomy.movement_composition import compile_program, truncate_program
-from standalone.autonomy.movement_search import movement_settings, screen_program
+from standalone.autonomy.movement_search import iter_movement_programs, movement_settings, screen_program
 from standalone.autonomy.obstacle_geometry import check_geometry
 from standalone.autonomy.route import prepare_route, schedule, supports
 from standalone.autonomy import search
@@ -61,7 +61,7 @@ def run_generation(compiler, policy, canonical, *, expansions=512, queue_cap=384
             adapter = CorridorAdapter(scene,corridor_for_points(d,points,gates),gates,decomposition=d)
         domain = DecisionPolicy(plan_windows(opportunities,gap=1,max_inputs=cfg['maxInputs']),scene) if opportunities is not None else None
         queue,keys = QueueAudit(scene['goalBlock'],policy),KeyAudit(canonical)
-        generate = instrumented_generator(queue,keys)
+        generate = iter_movement_programs if policy == 'balanced' else instrumented_generator(queue,keys)
         report,completed = {},[]
         def screen(program):
             if program['profile']['position'][1] < scene['initial']['position'][1]-1e-7 and any(
@@ -96,7 +96,7 @@ def run_generation(compiler, policy, canonical, *, expansions=512, queue_cap=384
             request=copy.deepcopy(request),spatialPoints=points,
             context='prescribed_corridor' if adapter else 'unconditioned_scene',opportunityDomains=opportunities,
             firstCompleteExpanded=completed[0]['expandedAtYield'] if completed else None,
-            completed=completed,generation=report,queue=queue.summary(),metadataDuplicates=keys.metadata_duplicates,
+            completed=completed,generation=report,queue=(dict(policy='balanced', instrumentation=False) if policy == 'balanced' else queue.summary()),metadataDuplicates=keys.metadata_duplicates,
             uniqueLegacyKeys=len(keys.legacy),uniquePhysicalKeys=len(keys.physical),equivalence=equivalence,
             compiler=counted.summary(),instrumentedSeconds=time.monotonic()-started))
         print(json.dumps({k:v for k,v in results[-1].items() if k in

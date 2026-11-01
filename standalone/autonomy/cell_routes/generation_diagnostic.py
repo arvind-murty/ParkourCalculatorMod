@@ -112,7 +112,10 @@ def instrumented_generator(queue, keys):
         raise ValueError('The research key hook no longer matches the generator')
     namespace = dict(movement_search.__dict__,heapq=queue,_research_key=keys)
     exec(compile(ast.fix_missing_locations(tree),'<generation research hooks>','exec'),namespace)
-    return namespace['iter_movement_programs']
+    def generate(*args, **kwargs):
+        kwargs['queue_policy'] = 'legacy'
+        return namespace['iter_movement_programs'](*args, **kwargs)
+    return generate
 
 
 def save(path, data):

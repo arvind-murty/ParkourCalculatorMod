@@ -124,7 +124,7 @@ def search_allocations(route, evaluate, *, seconds=60, improve=False, rank_equal
 
 
 def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1, improve=False,
-               rank_equal_cost=False, optimize_goal=False, python_executable=None, cancel_event=None, on_attempt=None, work=None):
+               rank_equal_cost=False, optimize_goal=False, python_executable=None, cancel_event=None, on_attempt=None, work=None, on_candidate=None):
     started = time.monotonic()
     route = prepare_route(request)
     if number(seconds, 'search seconds') <= 0:
@@ -219,6 +219,37 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                     problem['yaw'], fallback = fallback, problem['yaw']
             if fallback != problem['yaw']:
                 problem['fallbackYaw'] = fallback
+            def checked_candidate(yaw, failures=None):
+                candidate = validate(problem, yaw)
+                failed = [{'state': tick, 'block': index, 'kind': kind}
+                          for tick, index, kind in plan['supportChecks']
+                          if not supports(route['blocks'][index], *candidate['positions'][tick], kind=kind)]
+                failed.extend({'state': tick, 'block': index, 'kind': 'run_off_still_supported'}
+                              for tick, index in plan['exitChecks']
+                              if supports(route['blocks'][index], *candidate['positions'][tick], kind='run'))
+                if failures is not None:
+                    failures.extend(failed)
+                if not candidate['feasible'] or failed:
+                    return None
+                candidate['rawMovement'] = [[(value if abs(value) >= problem['threshold'] else 0)
+                    + problem['magnitude'][t] * (math.cos(angle) if axis == 0 else math.sin(angle))
+                    for axis, value in enumerate(candidate['velocity'][t])]
+                    for t, yaw in enumerate(candidate['yaw'])
+                    for angle in [problem['base'][t] + math.radians(yaw)]]
+                if 'movement' in problem:
+                    candidate['movement'] = problem['movement']
+                candidate['friction'] = problem['friction']
+                return candidate
+
+            def publish(candidate):
+                if on_candidate is None or stage != 'jump' or len(allocation) != len(route['airtimes']):
+                    return
+                checked = checked_candidate(candidate['yaw'])
+                if checked is not None:
+                    on_candidate(dict(allocation=list(allocation), cost=sum(allocation), candidate=checked,
+                        plan=copy.deepcopy(plan), problemHash=fingerprint(problem), route=copy.deepcopy(route),
+                        groundRunTicks=sum(allocation)+sum(kind == 'step' for kind in route['kinds'])))
+
             diagnostics = []
             for attempt in range(retries + 1):
                 if cancel_event is not None and cancel_event.is_set():
@@ -232,31 +263,18 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                 if work is not None:
                     work.before_solve(problem)
                 result = solve(problem, seconds=budget, stop_on_feasible=not polish,
-                               python_executable=python_executable, cancel_event=cancel_event)
+                               python_executable=python_executable, cancel_event=cancel_event, on_incumbent=publish)
                 diagnostics.append({'status': result['status'], 'termination': result.get('termination'),
                                     'elapsedSeconds': result.get('elapsedSeconds'), 'error': result.get('error')})
                 if result['status'] == 'cancelled':
                     return {'status': 'cancelled', 'diagnostics': diagnostics}
                 if result['feasible']:
-                    candidate = validate(problem, result['candidate']['yaw'])
-                    failed = [{'state': tick, 'block': index, 'kind': kind}
-                              for tick, index, kind in plan['supportChecks']
-                              if not supports(route['blocks'][index], *candidate['positions'][tick], kind=kind)]
-                    failed.extend({'state': tick, 'block': index, 'kind': 'run_off_still_supported'}
-                                  for tick, index in plan['exitChecks']
-                                  if supports(route['blocks'][index], *candidate['positions'][tick], kind='run'))
-                    if candidate['feasible'] and not failed:
-                        candidate['rawMovement'] = [[(value if abs(value) >= problem['threshold'] else 0)
-                            + problem['magnitude'][t] * (math.cos(angle) if axis == 0 else math.sin(angle))
-                            for axis, value in enumerate(candidate['velocity'][t])]
-                            for t, yaw in enumerate(candidate['yaw'])
-                            for angle in [problem['base'][t] + math.radians(yaw)]]
-                        if 'movement' in problem:
-                            candidate['movement'] = problem['movement']
-                        candidate['friction'] = problem['friction']
+                    failed = []
+                    candidate = checked_candidate(result['candidate']['yaw'], failed)
+                    diagnostics[-1]['supportFailures'] = failed
+                    if candidate is not None:
                         return {'status': 'feasible', 'candidate': candidate, 'plan': plan,
                                 'problemHash': fingerprint(problem), 'diagnostics': diagnostics}
-                    diagnostics[-1]['supportFailures'] = failed
                 if result['status'] == 'error':
                     return {'status': 'error', 'diagnostics': diagnostics, 'error': result.get('error')}
             return {'status': 'unknown', 'plan': plan, 'diagnostics': diagnostics,
