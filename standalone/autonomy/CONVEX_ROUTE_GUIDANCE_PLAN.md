@@ -1,5 +1,7 @@
 # Convex route guidance: scope and first experiment
 
+Implementation update, 2026-10-31: the restricted experiment is implemented in `route_guidance/` and measured. [Results and recommendations](experiments/route-guidance/README.md) supersede the prospective status below. Clarabel supplies the genuine SOCP backend; all three arms have witness-lift checks. Prefer convex conditional values with retained alternatives. The current helper defaults to width two after a measured greedy timing counterexample. General variable-Y stepping/ceiling coverage and integration with the cell-route opportunity generator remain unfinished. The original experiment specification follows as design history.
+
 2026-10-31. The user welcomes disk controls if they buy convexity and expects reduced acceleration to be rarely advantageous. This supersedes the earlier default of trying the circle model first. Both agents confirmed the distinction between relaxing acceleration and convexifying the entire decision model. This is a design specification, not an implemented solver or a new benchmark.
 
 ## Status and recommendation
