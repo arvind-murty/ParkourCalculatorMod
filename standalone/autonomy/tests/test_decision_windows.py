@@ -21,6 +21,18 @@ def decision(name, lo, hi, **kwargs):
 
 
 class DecisionWindowTests(unittest.TestCase):
+    def test_fixture_domains_include_the_known_physical_controls(self):
+        from standalone.autonomy.cell_routes.window_diagnostic import controls
+        root = Path(__file__).parents[1]/'experiments'
+        for name,_,label,fixture,best in controls(root):
+            scene = prepare_scene(fixture['request'])
+            plan = plan_windows(fixture['opportunities'],gap=fixture['settings']['cluster_gap'],
+                                max_inputs=scene['movementSearch']['maxInputs'])
+            audit = DecisionPolicy(plan,scene).audit(best['movementProgram'])
+            self.assertTrue(audit['accepted'],(name,label,audit['unmatched']))
+            if name=='grind-or-run':
+                self.assertEqual(len(plan['clusters']),1)
+
     def test_joint_cluster_runs_to_the_next_input_not_one_state_earlier(self):
         plan = plan_windows([decision('step',0,1),decision('jump',1,3),decision('ceiling',4,5),
                              decision('landing',12,15)],gap=2,max_inputs=30)

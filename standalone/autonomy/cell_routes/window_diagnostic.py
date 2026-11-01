@@ -13,7 +13,7 @@ from standalone.autonomy.movement_composition import truncate_program
 from .checkpoint_experiment import brief, replay_witness
 from .checkpoint_search import _key, _motion_bound, evaluate_program, find_checkpoint_route
 from .checkpoints import checkpoint, retain_prefix
-from .decision_windows import score_features
+from .decision_windows import DecisionPolicy, plan_windows, score_features
 from .geometry import decompose
 from .local import CorridorAdapter, SearchWork
 from .routes import corridor_for_points, landmarks
@@ -81,6 +81,11 @@ def main():
                 adapter = CorridorAdapter(scene,corridor,gates,decomposition=d)
                 motion = _motion_bound(scene,compiler,2)
                 full = copy.deepcopy(known['movementProgram'])
+                policy = DecisionPolicy(plan_windows(fixture['opportunities'],gap=fixture['settings']['cluster_gap'],
+                                                     max_inputs=scene['movementSearch']['maxInputs']),scene)
+                audit = policy.audit(full)
+                if not audit['accepted']:
+                    raise ValueError('Diagnostic control lies outside the tested opportunity domains')
                 full['guideSeedYaw'] = known['candidate']['yaw'][:]
                 for h in horizons:
                     program = truncate_program(full,h)
@@ -90,7 +95,7 @@ def main():
                         seconds=4,candidate_seconds=.8,solver_calls=16,python_executable=args.python)
                     record = dict(name=name,label=label,repeat=repeat,h=h,prefixKey=_key(program),
                         knownTicks=known['plan']['ticks'],score=None,scoreResult=score,
-                        reference=None,bestCompletion=None,continuation=None)
+                        reference=None,bestCompletion=None,continuation=None,fixture=fixture,opportunityAudit=audit)
                     completed, reference_best = [], None
                     if score['best'] is not None:
                         record['score'] = score['best']['candidate']['objective']
