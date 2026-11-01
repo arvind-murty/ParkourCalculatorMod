@@ -148,6 +148,9 @@ def plots(report, fixtures, output):
     axes[0].legend(fontsize=8)
     fig.savefig(output/'reference-nonuniqueness.svg')
     plt.close(fig)
+    for name in ('reference-trajectories.svg', 'model-times.svg', 'conditional-rankings.svg', 'reference-nonuniqueness.svg'):
+        path = output/name
+        path.write_text('\n'.join(line.rstrip() for line in path.read_text().splitlines())+'\n')
 
 
 def main():
