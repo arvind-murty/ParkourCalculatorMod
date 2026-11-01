@@ -13,7 +13,8 @@ def _rows(rows):
 def context(route, profiles, geometry, scope):
     return json.loads(json.dumps(dict(route={k:v for k,v in route.items() if k not in _VARIABLE_ROUTE_FIELDS},
         constraints=[r for r in route['constraints'] if not r.get('name', '').startswith('checkpoint_probe:')],
-        profiles=profiles, geometry=geometry, scope=scope, terminalSupportRequired=route.get('terminalSupportRequired', True),
+        profiles=profiles, geometry=geometry, scope=scope, objective=route.get('guideObjective', route['objective']),
+        terminalSupportRequired=route.get('terminalSupportRequired', True),
         probeConstraints=[r for r in route['constraints'] if r.get('name', '').startswith('checkpoint_probe:')]), sort_keys=True))
 
 

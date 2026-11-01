@@ -126,6 +126,7 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
     if exact_resume:
         seen.update(resume_state.get('seen', []))
     resumed_branches = 0
+    reference_yaw = copy.deepcopy(resume_state.get('referenceWarmYaw')) if resuming else None
     hit_pool = wall_hit_options(route, profiles, geometry, solid_blocks, motion_bound, max_wall_candidates) \
         if geometry is not None and max_wall_hits else {'options': [], 'generated': 0, 'candidateDrops': 0}
 
@@ -162,7 +163,8 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
     def finish(result):
         result['repairState'] = dict(version=1, context=current_context,
             pending=[save_branch(score, rows, passages, hits, yaw) for score, _, rows, passages, hits, yaw in sorted(queue)],
-            unresolved=copy.deepcopy(unresolved), seen=sorted(seen), incumbent=copy.deepcopy(best_branch))
+            unresolved=copy.deepcopy(unresolved), seen=sorted(seen), incumbent=copy.deepcopy(best_branch),
+            referenceWarmYaw=copy.deepcopy(reference_yaw))
         result['repairResume'] = dict(requested=resume_state is not None, compatible=resuming,
                                      exact=exact_resume, resumedBranches=resumed_branches)
         return result
@@ -197,7 +199,9 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
         branch['constraints'].extend(rows)
         branch['passages'] = passages
         branch['hitEvents'] = hits
-        if proposal_yaw is not None:
+        if reference_yaw is not None:
+            branch['warmYaw'] = reference_yaw
+        elif proposal_yaw is not None:
             branch['warmYaw'] = proposal_yaw
         if best_result is not None:
             branch['maxTotalRunTicks'] = min(branch['maxTotalRunTicks'], best_result['best']['cost'])
@@ -247,7 +251,7 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
             return best
 
         def retain(best):
-            nonlocal best_result, best_branch, proposal_yaw
+            nonlocal best_result, best_branch, proposal_yaw, reference_yaw
             proposal_yaw = best['candidate']['yaw'][:]
             if best_result is not None and candidate_rank(best, route['objective']) >= candidate_rank(best_result['best'], route['objective']):
                 return
@@ -258,6 +262,8 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                 return
             if checked['accepted']:
                 accepted = enrich(best, checked)
+                if reference_yaw is None:
+                    reference_yaw = accepted['candidate']['yaw'][:]
                 best_branch = save_branch(score, rows, passages, hits, accepted['candidate']['yaw'])
                 if work is not None:
                     work.accepted(accepted)
@@ -341,6 +347,8 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                     continue
                 result['best']['geometryCheck'] = checked
             result['best'] = enrich(result['best'], audit_result)
+            if reference_yaw is None:
+                reference_yaw = result['best']['candidate']['yaw'][:]
             if work is not None and not audit_result.get('reportedAcceptance'):
                 work.accepted(result['best'])
             result.update(attempts=inner_attempts, contactAttempts=attempts)

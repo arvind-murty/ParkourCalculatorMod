@@ -4,7 +4,7 @@ import time
 
 from standalone.autonomy.block_contacts import floor_checks, solve_contact_branches
 from standalone.autonomy.block_search import prepare_scene
-from standalone.autonomy.movement_composition import compile_program, empty_program, program_physics_key, program_search_key
+from standalone.autonomy.movement_composition import compile_program, empty_program, program_search_key
 from standalone.autonomy.movement_search import movement_settings, screen_program
 from standalone.autonomy.ranking import candidate_rank
 from standalone.autonomy.route import supports

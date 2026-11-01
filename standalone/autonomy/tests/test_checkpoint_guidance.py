@@ -167,6 +167,31 @@ class CheckpointNumericalTests(unittest.TestCase):
         self.compiler = JavaCompiler(json.loads(Path(os.environ['PKC_RUN_TICKS_COMPILER']).read_text()))
         self.addCleanup(self.compiler.close)
 
+    def test_repair_does_not_replace_a_supplied_seed_with_a_rejected_proposal(self):
+        import gzip
+        from standalone.autonomy.block_contacts import floor_checks, solve_contact_branches
+        from standalone.autonomy.cell_routes.checkpoint_experiment import replay_witness
+        records = json.loads(gzip.decompress((ROOT/'experiments/failure-fixes/evidence/fix-warm.json.gz').read_bytes()))['runs']
+        saved = next(r for r in records if r['name']=='turn-blockage-alternate_turn'
+                     and r['direction']=='reverse' and r['seedKind']=='known')
+        scene = prepare_scene(saved['request'])
+        compiled = compile_program(scene, saved['program'], require_complete=False)
+        compiled['route']['guideObjective'] = saved['calls'][0]['problem']['objective']
+        d, gates = decompose(scene), landmarks(scene)
+        corridor = corridor_for_points(d, saved['spatialPoints'], gates)
+        adapter = CorridorAdapter(scene, corridor, gates, decomposition=d)
+        work = SearchWork(4, deadline=time.monotonic()+3)
+        result = solve_contact_branches(compiled['route'], compiled['profiles'],
+            floor_checks(scene, [scene['startBlock'],scene['goalBlock']], compiled['profiles']), self.compiler,
+            seconds=3, candidate_seconds=.7, retries=0, max_branches=scene['maxContactBranches'],
+            improve=True, rank_equal_cost=True, optimize_goal=True, python_executable=os.environ['PKC_IPOPT_PYTHON'],
+            geometry=scene['collisionScene'], motion_bound=_motion_bound(scene,self.compiler,2),
+            solid_blocks=[b['sourceBlock'] for b in scene['blocks']], work=work,
+            candidate_filter=lambda p,c,v:adapter.candidate(p,c,v,partial=True))
+        self.assertIsNotNone(result['best'])
+        self.assertGreaterEqual(result['best']['candidate']['objective'],saved['result']['best']['candidate']['objective']-1e-6)
+        self.assertTrue(replay_witness(scene,result['best'],self.compiler)['passed'])
+
     def test_known_post_turn_seed_survives_polishing_and_replays(self):
         import gzip
         from standalone.autonomy.cell_routes.checkpoint_experiment import replay_witness

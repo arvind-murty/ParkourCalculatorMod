@@ -6,7 +6,7 @@ import time
 
 from standalone.ipopt.model import integer, number
 from .case_profiles import entry_possible
-from .movement_composition import append_choice, boundary_state, compile_program, empty_program, truncate_program, program_physics_key, program_search_key
+from .movement_composition import append_choice, boundary_state, compile_program, empty_program, truncate_program, program_search_key
 from .movement_generation import GENERATORS, generate_choices
 
 
