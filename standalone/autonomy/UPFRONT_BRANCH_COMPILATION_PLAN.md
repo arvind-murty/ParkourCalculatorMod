@@ -1,5 +1,7 @@
 # Select and compose existing constraints before IPOPT
 
+Latest discussion, 2026-11-01: [provisional route-aware initial solves](PROVISIONAL_ROUTE_GUIDANCE.md). User emphasizes the value of numerical feedback from earlier decisions to later ones. The recommendation is to preserve important route/obstacle geometry using reasonable existing provisional choices, then refine their timing/method after the solve—not enumerate every downstream alternative first. Fixed decisions within a call remain revisable across calls. This is a proposed middle ground, not a shipped or user-approved policy.
+
 Revised planning record, 2026-11-01. User correctly points out that movement, blockage, hit/avoid, ceiling and stepping constraints are already implemented. The previous plan overstated the missing machinery and proposed unnecessarily rederiving movement guards. This revision supersedes that implementation scope: reuse the existing catalogue and compiler. The remaining work is selecting relevant existing alternatives before a numerical solve and ensuring their composition covers the selected route.
 
 ## What already exists and remains authoritative

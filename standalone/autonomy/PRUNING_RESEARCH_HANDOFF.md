@@ -1,5 +1,7 @@
 # Solver and schedule-generation research handoff
 
+Latest discussion, 2026-11-01: [provisional route-aware solves](PROVISIONAL_ROUTE_GUIDANCE.md). User says initial solves can usefully inform later decisions; the issue is unrepresentative phasing through downstream blockers. Recommend default existing geometry-respecting continuations with revisable timings/methods, rather than exhaustive future decisions before the first solve. All choices remain orchestrator-owned and IPOPT is unchanged. Recommendation only; no runtime change this turn.
+
 Latest scope correction, 2026-11-01: [revised upfront plan](UPFRONT_BRANCH_COMPILATION_PLAN.md). Reuse the already implemented movement, stepping, ceiling, contact and blockage constraints. Remaining work is selecting and composing relevant existing block/tick/face alternatives before IPOPT, replacing current post-solve selection. Do not rebuild the movement catalogue or derive a second collision/stepping compiler; the preceding broader plan is superseded.
 
 Latest requested plan, 2026-11-01: [upfront fixed-branch compilation](UPFRONT_BRANCH_COMPILATION_PLAN.md). User selects completing orchestrator inputs/constraints before IPOPT, ahead of the time/progress frontier. The plan identifies phase/contact/stepping/readiness obligations, unchanged-solver expressibility limits, staged deliverables and strict acceptance/coverage metrics. This is planning, not a shipped compiler or newly approved solver redesign.
