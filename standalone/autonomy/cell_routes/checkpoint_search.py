@@ -4,12 +4,12 @@ import time
 
 from standalone.autonomy.block_contacts import floor_checks, solve_contact_branches
 from standalone.autonomy.block_search import prepare_scene
-from standalone.autonomy.movement_composition import compile_program, empty_program, program_physics_key
+from standalone.autonomy.movement_composition import compile_program, empty_program, program_physics_key, program_search_key
 from standalone.autonomy.movement_search import movement_settings, screen_program
 from standalone.autonomy.ranking import candidate_rank
 from standalone.autonomy.route import supports
 from standalone.ipopt.model import integer, number
-from .checkpoints import checkpoint, retain_prefix
+from .checkpoints import checkpoint, retain_prefix, retain_unresolved
 from .decision_windows import DecisionPolicy, fair_programs, plan_windows, retain_candidates, score_features
 from .geometry import decompose
 from .local import CorridorAdapter, CountingCompiler, SearchWork
@@ -79,7 +79,8 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, c
         motion_bound=motion_bound, max_blockages=scene['maxBlockagesPerObstacle'],
         max_horizontal=scene['maxHorizontalBlockagesPerObstacle'], max_vertical=scene['maxVerticalBlockagesPerObstacle'],
         max_passage_candidates=scene['maxPassageCandidates'], solid_blocks=owners, max_wall_hits=0,
-        candidate_filter=candidate_filter, work=scoped)
+        candidate_filter=candidate_filter, work=scoped, resume_state=program.get('repairState'),
+        repair_scope=(dict(corridor=adapter.corridor.to_dict(), gates=adapter.gates) if hasattr(adapter, 'corridor') else None))
     if result['best'] is not None:
         if checkpoint is not None:
             stage = checkpoint.stage(result['best']['candidate'], adapter.gates)
@@ -95,7 +96,7 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, c
 
 
 def _key(program):
-    return hashlib.sha256(program_physics_key(program).encode()).hexdigest()
+    return hashlib.sha256(program_search_key(program).encode()).hexdigest()
 
 
 def find_checkpoint_route(request, compiler, *, checkpoints=None, corridor=None, spatial_points=None, seconds=30,
@@ -262,7 +263,10 @@ def find_checkpoint_route(request, compiler, *, checkpoints=None, corridor=None,
                     else:
                         solved.append((record, retain_prefix(program, result['best'])))
                 elif not complete:
-                    unknown.append((record, program))
+                    record['repairResume'] = result.get('repairResume')
+                    pending = retain_unresolved(program, result.get('repairState'))
+                    record['program'] = pending
+                    unknown.append((record, pending))
                 if result['status'] in ('error', 'cancelled'):
                     termination = result['status']
                     break

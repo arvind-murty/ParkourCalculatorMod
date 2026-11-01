@@ -1,4 +1,5 @@
 import copy
+import hashlib
 import json
 
 from standalone.ipopt.ladder import vertical_carry
@@ -189,7 +190,7 @@ def append_choice(program, choice, *, max_inputs=200):
     result = dict(initial=copy.deepcopy(program['initial']), profile=profile, ladderEvents=events,
                   movementUnits=units, terminal='open', terminalSupport=choice.get('terminalSupport'),
                   interactions=program['interactions'] + int(choice.get('interaction', False)), trace=trace)
-    for key in ('threshold', 'guideSeedYaw'):
+    for key in ('threshold', 'guideSeedYaw', 'repairState'):
         if key in program:
             result[key] = copy.deepcopy(program[key])
     return result
@@ -244,6 +245,14 @@ def program_physics_key(program):
         key=lambda row: json.dumps(row, sort_keys=True))
     return json.dumps([profile, program['terminalSupport'], program.get('threshold', .005),
                        program['ladderEvents']], sort_keys=True)
+
+
+
+def program_search_key(program):
+    key = program_physics_key(program)
+    if program.get('repairState') is not None:
+        key += '|repair=' + hashlib.sha256(json.dumps(program['repairState'],sort_keys=True).encode()).hexdigest()
+    return key
 
 
 def compile_program(scene, program, *, require_complete=True):

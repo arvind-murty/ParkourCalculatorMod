@@ -6,7 +6,7 @@ import time
 
 from standalone.ipopt.model import integer, number
 from .case_profiles import entry_possible
-from .movement_composition import append_choice, boundary_state, compile_program, empty_program, truncate_program, program_physics_key
+from .movement_composition import append_choice, boundary_state, compile_program, empty_program, truncate_program, program_physics_key, program_search_key
 from .movement_generation import GENERATORS, generate_choices
 
 
@@ -160,7 +160,7 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
                         continue
                     if context.get('prefixFilter') is not None and not context['prefixFilter'](child):
                         continue
-                    key = program_physics_key(child) if checkpoint_tick is not None else json.dumps(
+                    key = program_search_key(child) if checkpoint_tick is not None or child.get('repairState') is not None else json.dumps(
                         [child['profile'], [(e['column']['id'], e['wall'], e['entryFace'], e['exitFace'],
                         e['schedule']['entryState'], e['schedule']['exitState']) for e in child['ladderEvents']]], sort_keys=True)
                     if key in seen:

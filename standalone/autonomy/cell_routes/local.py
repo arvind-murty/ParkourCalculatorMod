@@ -6,6 +6,7 @@ import time
 
 from .geometry import intersection
 from .routes import audit_candidate
+from .corridor_guards import movement_regions
 from ..obstacle_geometry import expanded_box
 
 
@@ -204,7 +205,11 @@ class CorridorAdapter:
             t, phase = divmod(i, 3)
             xs = [t, t+1] if phase == 1 else [t+1] if phase == 2 else [t]
             zs = [t, t+1] if phase == 2 else [t]
-            for p in self.corridor.projection:
+            if not hasattr(self, 'phase_regions'):
+                self.phase_regions = {0: self.corridor.projection,
+                    1: movement_regions(self.corridor.projection, 0),
+                    2: movement_regions(self.corridor.projection, 2)}
+            for p in self.phase_regions[phase]:
                 rows = [self.row(mode, state, cmp, value) for mode, states, lo, hi in
                         [('X', xs, p[0], p[3]), ('Z', zs, p[2], p[5])]
                         for state in states for cmp, value in [('GE', lo), ('LE', hi)]]

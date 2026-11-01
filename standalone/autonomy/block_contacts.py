@@ -10,6 +10,7 @@ from .search import find_route
 from .blockages import blockage_usage, gate_timeline, passage_options, passage_y_valid, within_caps
 from .obstacle_geometry import check_geometry
 from .hit_events import wall_hit_options
+from .repair_state import branch_key, compatible, context as repair_context
 
 
 def floor_checks(scene, block_ids, profiles):
@@ -111,37 +112,70 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                            python_executable=None, cancel_event=None, geometry=None, motion_bound=None,
                            max_blockages=3, max_horizontal=2, max_vertical=2,
                            max_passage_candidates=128, solid_blocks=None, max_wall_hits=0,
-                           max_wall_candidates=24, candidate_filter=None, work=None):
+                           max_wall_candidates=24, candidate_filter=None, work=None, resume_state=None, repair_scope=None):
     route = copy.deepcopy(route)
     if solid_blocks is not None:
         for passage in route.get('passages', []):
             passage['blockId'] = solid_blocks[passage['solidIndex']]
     deadline = time.monotonic() + seconds
-    queue, seen, serial = [(0.0, 0, [], route.get('passages', []), route.get('hitEvents', []))], set(), 0
+    queue, seen, serial, unresolved = [], set(), 0, []
+    current_context = repair_context(route, profiles, geometry, repair_scope)
+    resuming = (isinstance(resume_state, dict) and resume_state.get('version') == 1
+                and compatible(resume_state.get('context'), current_context))
+    exact_resume = resuming and resume_state['context'] == current_context
+    if exact_resume:
+        seen.update(resume_state.get('seen', []))
+    resumed_branches = 0
     hit_pool = wall_hit_options(route, profiles, geometry, solid_blocks, motion_bound, max_wall_candidates) \
         if geometry is not None and max_wall_hits else {'options': [], 'generated': 0, 'candidateDrops': 0}
 
-    def offer(score, rows, passages, hits):
+    def offer(score, rows, passages, hits, warm_yaw=None):
         nonlocal serial
-        key = (tuple(sorted((r['leg'], r['offset'], r['mode'], r['cmp'], r['rhs']) for r in rows)),
-               tuple(sorted((p['leg'], p['solidIndex'], tuple((f['axis'], f['direction'], f['plane']) for f in p['faces']),
-                             tuple(p['gates'])) for p in passages)),
-               tuple(sorted((h['leg'], h['offset'], h['axis'], h['direction'], h['solidIndex']) for h in hits)))
+        key = branch_key(rows, passages, hits)
         if key in seen:
             return
         seen.add(key)
         serial += 1
-        heapq.heappush(queue, (score, serial, rows, passages, hits))
+        heapq.heappush(queue, (score, serial, copy.deepcopy(rows), copy.deepcopy(passages), copy.deepcopy(hits),
+                              copy.deepcopy(warm_yaw)))
+
+    if resuming:
+        pending = ([resume_state['incumbent']] if resume_state.get('incumbent') is not None else [])+resume_state.get('pending', [])
+        deferred = resume_state.get('unresolved', [])
+        floor = max([b['score'] for b in pending]+[0.])+1
+        restored = set()
+        for index, saved in enumerate(pending+deferred):
+            key = branch_key(saved['rows'], saved['passages'], saved['hits'])
+            if key in restored:
+                continue
+            restored.add(key)
+            seen.discard(key)
+            offer(saved['score'] if index < len(pending) else floor+saved['score'],
+                  saved['rows'], saved['passages'], saved['hits'], saved.get('warmYaw'))
+        resumed_branches = len(queue)
+    if not exact_resume:
+        offer(max([b[0] for b in queue]+[-1.])+1, [], route.get('passages', []), route.get('hitEvents', []), route.get('warmYaw'))
+
+    def save_branch(score, rows, passages, hits, warm_yaw):
+        return copy.deepcopy(dict(score=score, rows=rows, passages=passages, hits=hits, warmYaw=warm_yaw))
+
+    def finish(result):
+        result['repairState'] = dict(version=1, context=current_context,
+            pending=[save_branch(score, rows, passages, hits, yaw) for score, _, rows, passages, hits, yaw in sorted(queue)],
+            unresolved=copy.deepcopy(unresolved), seen=sorted(seen), incumbent=copy.deepcopy(best_branch))
+        result['repairResume'] = dict(requested=resume_state is not None, compatible=resuming,
+                                     exact=exact_resume, resumedBranches=resumed_branches)
+        return result
     attempts, inner_attempts = [], []
-    best_result = None
+    best_result, best_branch = None, None
     termination = 'contact_search_exhausted'
     while queue and len(attempts) < max_branches:
         if cancel_event is not None and cancel_event.is_set():
             if best_result is not None:
                 best_result.update(termination='cancelled', attempts=inner_attempts, contactAttempts=attempts)
-                return best_result
-            return {'status': 'cancelled', 'termination': 'cancelled', 'best': None,
-                    'attempts': inner_attempts, 'contactAttempts': attempts}
+                return finish(best_result)
+            return finish({'status': 'cancelled', 'termination': 'cancelled', 'best': None,
+                    'attempts': inner_attempts, 'contactAttempts': attempts})
         if work is not None and work.termination:
             termination = work.termination
             break
@@ -149,7 +183,7 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
         if remaining <= 0:
             termination = 'deadline'
             break
-        score, _, rows, passages, hits = heapq.heappop(queue)
+        score, _, rows, passages, hits, proposal_yaw = heapq.heappop(queue)
         if len(hits) < max_wall_hits:
             for index, hit in enumerate(hit_pool['options']):
                 if any(e['leg'] == hit['leg'] and e['axis'] == hit['axis'] and e['offset'] == hit['offset']
@@ -158,11 +192,13 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                 if any(h['leg'] == hit['leg'] and h['axis'] == hit['axis']
                        and h['offset'] == hit['offset'] for h in hits):
                     continue
-                offer(score + 10 + index * .01, rows, passages, hits + [hit])
+                offer(score + 10 + index * .01, rows, passages, hits + [hit], proposal_yaw)
         branch = copy.deepcopy(route)
         branch['constraints'].extend(rows)
         branch['passages'] = passages
         branch['hitEvents'] = hits
+        if proposal_yaw is not None:
+            branch['warmYaw'] = proposal_yaw
         if best_result is not None:
             branch['maxTotalRunTicks'] = min(branch['maxTotalRunTicks'], best_result['best']['cost'])
         audit_cache, audit_errors = {}, []
@@ -211,7 +247,8 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
             return best
 
         def retain(best):
-            nonlocal best_result
+            nonlocal best_result, best_branch, proposal_yaw
+            proposal_yaw = best['candidate']['yaw'][:]
             if best_result is not None and candidate_rank(best, route['objective']) >= candidate_rank(best_result['best'], route['objective']):
                 return
             try:
@@ -221,6 +258,7 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                 return
             if checked['accepted']:
                 accepted = enrich(best, checked)
+                best_branch = save_branch(score, rows, passages, hits, accepted['candidate']['yaw'])
                 if work is not None:
                     work.accepted(accepted)
                     checked['reportedAcceptance'] = True
@@ -232,18 +270,22 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                             optimize_goal=optimize_goal, python_executable=python_executable,
                             cancel_event=cancel_event, work=work, on_candidate=retain)
         inner_attempts.extend(result['attempts'])
+        if result['best'] is not None:
+            proposal_yaw = result['best']['candidate']['yaw'][:]
         try:
             checked = audit(result['best']) if result['best'] else None
         except TimeoutError:
+            unresolved.append(save_branch(score, rows, passages, hits, proposal_yaw))
             termination = 'geometry_deadline'
             break
         except (ValueError, RuntimeError, OSError) as error:
+            unresolved.append(save_branch(score, rows, passages, hits, proposal_yaw))
             if best_result is not None:
                 best_result.update(termination='geometry_error', error=str(error),
                                    attempts=inner_attempts, contactAttempts=attempts)
-                return best_result
-            return dict(status='error', termination='geometry_check', error=str(error), best=None,
-                        attempts=inner_attempts, contactAttempts=attempts)
+                return finish(best_result)
+            return finish(dict(status='error', termination='geometry_check', error=str(error), best=None,
+                        attempts=inner_attempts, contactAttempts=attempts))
         conflicts = checked['conflicts'] if checked else []
         attempts.append({'status': result['status'], 'constraintCount': len(rows),
                          'passageCount': len(passages),
@@ -253,12 +295,15 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                          'conflicts': [{'block': c['block']['id'], 'state': c['state'], 'reason': c['reason']}
                                        for c in conflicts], 'termination': result['termination']})
         if result['status'] in ('error', 'cancelled'):
+            unresolved.append(save_branch(score, rows, passages, hits, proposal_yaw))
             if best_result is not None:
                 best_result.update(termination=result['status'], attempts=inner_attempts, contactAttempts=attempts)
-                return best_result
+                return finish(best_result)
             result.update(attempts=inner_attempts, contactAttempts=attempts)
-            return result
+            return finish(result)
         if result['best'] is None:
+            if result['status'] == 'unknown':
+                unresolved.append(save_branch(score, rows, passages, hits, proposal_yaw))
             continue
         if not conflicts:
             if 'verdict' in checked and candidate_filter is not None:
@@ -266,7 +311,7 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
             if 'reason' in checked:
                 attempts[-1].update(status='unknown', termination=checked['reason'])
                 for extra in checked.get('verdict', {}).get('alternatives', []):
-                    offer(score + 1, rows + extra, passages, hits)
+                    offer(score + 1, rows + extra, passages, hits, proposal_yaw)
                 continue
             audit_result = checked
             if geometry is not None:
@@ -292,7 +337,7 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                         new_passages = [p for p in passages if (p['leg'], p['solidIndex']) != (leg, index)] + [option['passage']]
                         if not within_caps(new_passages, branch['passageCaps']):
                             continue
-                        offer(score + option['score'], rows, new_passages, hits)
+                        offer(score + option['score'], rows, new_passages, hits, proposal_yaw)
                     continue
                 result['best']['geometryCheck'] = checked
             result['best'] = enrich(result['best'], audit_result)
@@ -301,20 +346,22 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
             result.update(attempts=inner_attempts, contactAttempts=attempts)
             if not rank_equal_cost:
                 if best_result is not None and candidate_rank(best_result['best'], route['objective']) < candidate_rank(result['best'], route['objective']):
-                    return best_result
-                return result
+                    return finish(best_result)
+                best_branch = save_branch(score, rows, passages, hits, result['best']['candidate']['yaw'])
+                return finish(result)
             if best_result is None or candidate_rank(result['best'], route['objective']) <= candidate_rank(best_result['best'], route['objective']):
                 best_result = result
+                best_branch = save_branch(score, rows, passages, hits, result['best']['candidate']['yaw'])
             continue
         conflict = conflicts[0]
         for row in avoid_contact_rows(conflict, max(route['supportClearance'], 2e-7)):
             new_rows = rows + [row]
             delta = abs(conflict['position'][0 if row['mode'] == 'X' else 1] - row['rhs'])
-            offer(score + delta, new_rows, passages, hits)
+            offer(score + delta, new_rows, passages, hits, proposal_yaw)
     if queue and len(attempts) >= max_branches:
         termination = 'contact_branch_limit'
     if best_result is not None:
         best_result.update(termination=termination, attempts=inner_attempts, contactAttempts=attempts)
-        return best_result
-    return {'status': 'unknown', 'termination': termination, 'best': None,
-            'attempts': inner_attempts, 'contactAttempts': attempts}
+        return finish(best_result)
+    return finish({'status': 'unknown', 'termination': termination, 'best': None,
+            'attempts': inner_attempts, 'contactAttempts': attempts})

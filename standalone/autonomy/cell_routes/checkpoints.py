@@ -85,6 +85,7 @@ def checkpoint(corridor, gates, spec):
 
 def retain_prefix(program, best):
     result = copy.deepcopy(program)
+    result.pop('repairState', None)
     retained = result['profile']['positionConstraints']
     identities = {repr(sorted(r.items())) for r in retained}
     for row in best['plan']['walls']:
@@ -98,4 +99,15 @@ def retain_prefix(program, best):
             retained.append(chosen)
             identities.add(identity)
     result['guideSeedYaw'] = best['candidate']['yaw'][:]
+    return result
+
+
+def retain_unresolved(program, state):
+    result = copy.deepcopy(program)
+    if state is not None:
+        result['repairState'] = copy.deepcopy(state)
+        for branch in state['pending']+state['unresolved']:
+            if branch.get('warmYaw') is not None:
+                result['guideSeedYaw'] = branch['warmYaw'][:]
+                break
     return result
