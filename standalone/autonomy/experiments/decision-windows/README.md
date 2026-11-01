@@ -2,6 +2,8 @@
 
 This implements the user's 2026-11-01 policy in the isolated `research/ipopt-cell-routes` worktree. Nearby choices are enumerated jointly, comparisons extend to the next separate opportunity's earliest input, and an objective-gap band selects similarly scoring histories. The score remains horizontal position at one shared absolute state. Velocity and earlier states are recorded for diagnosis only.
 
+[Measured results](RESULTS.md): 54 cold searches, 54 controlled prefix/continuation trials, and 402 successful independent witness replays. Later comparison does not eliminate the ceiling/stepping ranking reversals. The useful alternatives have different next-contact timing even though the slower histories lead in recorded horizontal position and forward velocity. Dense-cluster generation and turn repair/window failures are recorded separately from those score errors.
+
 ## Opportunity and cluster model
 
 `cell_routes.decision_windows.plan_windows` consumes explicit opportunity IDs, inclusive absolute input ranges, optional kinds (`jump`, `stepping`, `ceiling`, `landing`, `passage`), optional `dependsOn` IDs, and optional `readyState`/outgoing `segment`/comparison `region` metadata. It merges overlapping/nearby ranges, dependencies and intervening opportunities, and a following opportunity whose onset is too early for the current cluster's ready state. The final cluster continues to the real goal.
@@ -32,7 +34,7 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 .venv-guidance/bin/python \
   --repeats 3 --gaps fixed 0.25 0.5
 ```
 
-`fixed` and numeric bands use the same new windows, opportunity domains, hard pool cap and budgets. Their difference is retention. All saved accepted prefix and final witnesses are independently replayed.
+`fixed` and numeric bands use the same new windows, opportunity domains, hard pool cap and budgets. Their difference is retention. The fixed-width control preserves legacy filling of unused scored slots with unknowns, while band mode limits unknowns to `unknown_slots`; comparisons with fixed therefore include that work-allocation difference. Numeric bands use the same unknown cap and isolate the gap choice more closely. All saved accepted prefix and final witnesses are independently replayed.
 
 The diagnostic separately uses known accepted early/late jump, normal-step/slab-boost and grind-chain histories from the prior source `5e36f490` evidence. It truncates them at several shared horizons, reoptimizes their prefixes from the original state, and independently searches their continuations. It also reoptimizes each known full symbolic schedule with the newly retained prefix guards, providing a compatible feasible completion control when accepted. An unconditioned historical completion is not silently counted as feasible for a new retained branch. This is warm controlled ranking evidence, not cold discovery or a global optimum.
 

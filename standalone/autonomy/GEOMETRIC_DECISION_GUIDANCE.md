@@ -2,6 +2,8 @@
 
 Latest implementation, 2026-11-01: [joint decision windows](experiments/decision-windows/README.md) implement comparison before the next separate opportunity, retention of similarly scoring alternatives, and joint treatment of nearby coupled decisions. Clusters and shared checkpoints are computed from supplied opportunity time ranges/dependencies; objective bands and per-parent work quotas are implemented. Automatic opportunity timing discovery remains separate. Position-only scoring is retained; clear-tick position/velocity/contact features are diagnostic data for a later score experiment.
 
+Latest measurements: [joint-window results](experiments/decision-windows/RESULTS.md), numerical source `d9cffafc`, 54 cold searches plus 54 controlled prefix/continuation trials and 402 independently passing saved witness replays. The faster-completing ceiling/step histories fall farther behind in horizontal score as h moves later. Slower histories also lead in forward velocity at every recorded common clear tick. Preserve different next-contact timing/flight-phase histories as the next retention hypothesis; adding a positive forward-velocity bonus or averaging these stored progress samples would still favor the slower examples. No richer score has been selected or implemented. A dense grind cluster and a turn with no accepted partial scores expose distinct generation/repair/readiness limits.
+
 Original proposal, 2026-10-31: use the cell-route polyline as the geometric proxy. Mixed-input and provisional full-route solves remain optional later improvements, not prerequisites.
 
 ## Existing representation already supplies a guide
