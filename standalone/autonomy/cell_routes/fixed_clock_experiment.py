@@ -4,6 +4,7 @@ import math
 from pathlib import Path
 import subprocess
 import sys
+import itertools
 
 from standalone.autonomy.block_search import prepare_scene
 from standalone.autonomy.compiler import JavaCompiler
@@ -17,7 +18,7 @@ from .two_goal_experiment import witnesses
 from .window_experiment import save
 
 
-def run(fixture,compiler,*,on_window=None,python_executable=None):
+def run(fixture,compiler,*,on_window=None,python_executable=None,initial_programs=None):
     scene=prepare_scene(fixture['request'])
     d,gates=decompose(scene),landmarks(scene)
     corridor=corridor_for_points(d,fixture['spatialPoints'],gates)
@@ -34,13 +35,15 @@ def run(fixture,compiler,*,on_window=None,python_executable=None):
     policy=SupportOrder(scene,fixture['requiredSupports'],fixture['terminalTick'])
     result=find_checkpoint_route(fixture['request'],compiler,corridor=corridor,checkpoints=checkpoints,
         terminal_checkpoint=terminal,program_filter=policy,python_executable=python_executable,on_window=on_window,
+        initial_programs=initial_programs,
         program_priority=policy.priority if fixture.get('prioritizeSupportProgress') else None,
         **fixture['settings'])
     result['supportOrder']=fixture['requiredSupports']
     if result['best'] is not None:
         result['bestSupportAudit']=policy.audit(result['best']['movementProgram'])
     validation=[]
-    for witness in witnesses(result):
+    final_witnesses=(r['witness'] for r in result.get('finalAttempts',[]) if 'witness' in r)
+    for witness in itertools.chain(witnesses(result),final_witnesses):
         checked=replay_witness(scene,witness,compiler)
         validation.append(checked)
         if not checked['passed']:raise RuntimeError('Fixed-clock witness failed independent replay')
@@ -52,9 +55,20 @@ def main():
     parser.add_argument('--input',type=Path,required=True)
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--compiler',type=Path,default=Path('standalone/autonomy/build/compiler.json'))
+    parser.add_argument('--resume',type=Path)
     args=parser.parse_args()
     fixture=json.loads(args.input.read_text())
     report=dict(source=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),fixture=fixture,windows=[])
+    seeds=None
+    if args.resume is not None:
+        from .failure_diagnostic import read
+        previous=read(args.resume)
+        prior=previous.get('result',previous)
+        window=next((w for w in reversed(prior['windows']) if w['retained']),None)
+        if window is None:raise ValueError('No retained comparison histories to resume')
+        by_id={c['id']:c['program'] for c in window['candidates'] if 'program' in c}
+        seeds=[by_id[i] for i in window['retained']]
+        report['resume']=dict(source=str(args.resume),tick=window['checkpoint']['tick'],histories=len(seeds))
     def progress(window):
         report['windows'].append(window)
         save(args.output,report)
@@ -62,7 +76,7 @@ def main():
             retained=len(window['retained']),generation=window['generation']['termination'],
             progress=[c['value'] for c in window['candidates'] if c['id'] in window['retained']])),flush=True)
     with JavaCompiler(json.loads(args.compiler.read_text())) as compiler:
-        result,validation=run(fixture,compiler,on_window=progress,python_executable=sys.executable)
+        result,validation=run(fixture,compiler,on_window=progress,python_executable=sys.executable,initial_programs=seeds)
     report.update(result=result,validation=validation)
     save(args.output,report)
     best=result['best']
