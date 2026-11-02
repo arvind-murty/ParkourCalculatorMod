@@ -103,3 +103,7 @@ This is the new search path. There is no opt-in rollout phase or deployment gate
 Deliver separate tests for spatial-goal timing, same-clock objective comparisons, the fact that farther does not imply faster, similar-candidate preservation, clearly-worse classification, unknowns, original-state/free-facing continuation, and full reference audits that detect a discarded eventual winner. Keep all accepted witness replays and work diagnostics.
 
 Report accomplishments, remaining limits and next steps after each implementation checkpoint. Important remaining limits are finite candidate coverage, comparator choice, unobserved future effects, reference-solve unknowns and combinatorial continuation cost. We are measuring these assumptions, not claiming exact dominance from time/distance or recreating the movement machinery.
+
+## Implementation checkpoint, 2026-11-01
+
+The runtime now implements separate goal/clock contracts, conservative retention as the default, saved alternatives, original-state continuation and bounded failure reopening. Final landing and intermediate region goals are supported. comparison_audit.py and two_goal_experiment.py implement the additional-candidate continuation/replay reference with separate budgets and explicit incomplete status. Existing movement/constraint builders and IPOPT are reused. The source-pinned six-scene measurements and full-pool reference results are pending at this checkpoint; do not interpret implementation coverage as proven search completeness or optimality.

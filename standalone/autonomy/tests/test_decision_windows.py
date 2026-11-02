@@ -129,7 +129,7 @@ class DecisionWindowNumericalTests(unittest.TestCase):
                 max_solver_calls=48,score_call_limit=4,score_seconds=2,candidate_seconds=.7,
                 python_executable=os.environ['PKC_IPOPT_PYTHON'])
             self.assertEqual(result['checkpoints'][0]['tick'],6)
-            self.assertEqual(result['windows'][0]['retention']['policy'],'objective_band')
+            self.assertEqual(result['windows'][0]['retention']['policy'],'two_goal_margin')
             scored = [c for c in result['windows'][0]['candidates'] if c['value'] is not None and not c['complete']]
             self.assertTrue(scored)
             for record in scored:

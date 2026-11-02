@@ -111,3 +111,15 @@ def retain_unresolved(program, state):
                 result['guideSeedYaw'] = branch['warmYaw'][:]
                 break
     return result
+
+
+def retain_decisions(program, result, *, facing_guess=None):
+    retained = copy.deepcopy(program)
+    if result.get('repairState') is not None:
+        retained['repairState'] = copy.deepcopy(result['repairState'])
+    best = result.get('best')
+    if best is not None:
+        facing_guess = best['candidate']['yaw']
+    if facing_guess is not None:
+        retained['guideSeedYaw'] = facing_guess[:retained['profile']['airtime']]
+    return retained
