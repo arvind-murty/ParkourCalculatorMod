@@ -66,6 +66,21 @@ class TimeProgressTests(unittest.TestCase):
 
 
 class ComparisonAuditTests(unittest.TestCase):
+    def test_retaining_decisions_does_not_commit_clock_optimum_guards_or_states(self):
+        from standalone.autonomy.cell_routes.checkpoints import retain_decisions
+        program=dict(initial=dict(position=[1,2,3],velocity=[.2,0,.1]),
+            profile=dict(airtime=2,positionConstraints=[dict(mode='X',rhs=1)]))
+        before=copy.deepcopy(program)
+        result=dict(best=dict(candidate=dict(yaw=[20,30],positions=[[1,3],[2,3],[3,3]]),
+            plan=dict(walls=[dict(mode='F',rhs=20),dict(mode='X',rhs=9)])),repairState=dict(pending=[],unresolved=[]))
+        retained=retain_decisions(program,result)
+        self.assertEqual(program,before)
+        self.assertEqual(retained['initial'],before['initial'])
+        self.assertEqual(retained['profile'],before['profile'])
+        self.assertEqual(retained['guideSeedYaw'],[20,30])
+        self.assertEqual(retained['repairState'],result['repairState'])
+        self.assertIsNot(retained['repairState'],result['repairState'])
+
     def test_completed_candidate_in_window_is_already_final_evaluated(self):
         from standalone.autonomy.cell_routes.comparison_audit import source_entries
         result=dict(windows=[dict(retained=[],retention=dict(decisions={}),

@@ -4,6 +4,7 @@ import time
 from standalone.autonomy.block_search import prepare_scene
 from standalone.autonomy.movement_search import iter_movement_programs, movement_settings, screen_program
 from standalone.autonomy.ranking import candidate_rank
+from standalone.ipopt.model import integer, number
 from .geometry import decompose
 from .local import CorridorAdapter, CountingCompiler, SearchWork
 from .routes import corridor_for_points, landmarks
@@ -65,6 +66,11 @@ def source_entries(result):
 def run_full_audit(request,result,compiler,*,seconds_per_candidate=4,candidate_seconds=.7,solver_calls=48,
                    program_limit=None,python_executable=None,cancel_event=None,on_candidate=None):
     from .checkpoint_search import _motion_bound,evaluate_program
+    for name,value in [('seconds_per_candidate',seconds_per_candidate),('candidate_seconds',candidate_seconds)]:
+        if number(value,name)<=0:raise ValueError('Reference budgets must be positive')
+    integer(solver_calls,'reference solver calls',1,200000)
+    if program_limit is not None:integer(program_limit,'reference program limit',1,200000)
+    started=time.monotonic()
     scene=prepare_scene(request)
     counted=CountingCompiler(compiler)
     d,gates=decompose(scene),landmarks(scene)
@@ -77,7 +83,8 @@ def run_full_audit(request,result,compiler,*,seconds_per_candidate=4,candidate_s
         from .decision_windows import DecisionPolicy
         policy=DecisionPolicy(result['decisionPlan'],scene)
     def evaluate(entry):
-        deadline=time.monotonic()+seconds_per_candidate
+        candidate_started=time.monotonic()
+        deadline=candidate_started+seconds_per_candidate
         work=SearchWork(solver_calls,deadline=deadline)
         generation,trials={},[]
         best=None
@@ -126,9 +133,13 @@ def run_full_audit(request,result,compiler,*,seconds_per_candidate=4,candidate_s
             and not any(r.get('termination')=='choice_limit' for r in generation.get('generation',[]))
         return dict(best=best,trials=trials,generation=generation,work=work.summary(),complete=complete,
             unknownPrograms=unknown,progressRetentionEnabled=False,programLimitReached=capped,
+            elapsedSeconds=time.monotonic()-candidate_started,
             interpretation='all_produced_continuations_tested_without_progress_retention_when_complete')
     audit=audit_pool(source_entries(result),evaluate,objective=scene['objective'],incumbent=result.get('best'),on_candidate=on_candidate)
     audit.update(compiler=counted.summary(),sourceGenerationComplete=all(
         r.get('termination')=='exhausted' for r in result.get('movementGeneration',[])),
+        elapsedSeconds=time.monotonic()-started,
+        referenceSettings=dict(secondsPerCandidate=seconds_per_candidate,candidateSeconds=candidate_seconds,
+            solverCallsPerCandidate=solver_calls,programLimit=program_limit),
         interpretation='finite_generated_pool_counterfactual_audit_not_global_optimality')
     return audit
