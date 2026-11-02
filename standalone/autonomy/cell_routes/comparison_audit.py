@@ -8,6 +8,7 @@ from standalone.ipopt.model import integer, number
 from .geometry import decompose
 from .local import CorridorAdapter, CountingCompiler, SearchWork
 from .routes import corridor_for_points, landmarks
+from .time_progress import generation_exhausted
 
 
 def audit_pool(entries, evaluate, *, objective, incumbent=None, on_candidate=None):
@@ -61,13 +62,6 @@ def source_entries(result):
             entry['id']='rescue'+str(index)+':'+entry['id']
             entries.append(entry)
     return entries
-
-
-def generation_exhausted(report):
-    return (report.get('termination')=='exhausted' and not report.get('queueDrops',0)
-        and not report.get('remainingPrefixes',0)
-        and all(generation_exhausted(parent) for parent in report.get('parents',[]))
-        and not any(row.get('termination')=='choice_limit' for row in report.get('generation',[])))
 
 
 def run_full_audit(request,result,compiler,*,seconds_per_candidate=4,candidate_seconds=.7,solver_calls=48,

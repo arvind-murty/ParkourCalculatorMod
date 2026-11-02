@@ -8,6 +8,7 @@ from standalone.autonomy.movement_search import iter_movement_programs, movement
 from standalone.autonomy.ranking import candidate_rank
 from standalone.ipopt.model import integer, number
 from .checkpoints import checkpoint
+from .time_progress import generation_exhausted
 
 
 def goal_spec(scene, spec=None):
@@ -158,7 +159,7 @@ def probe_spatial(scene,program,compiler,adapter,work,motion,*,spec=None,seconds
         arrival=region_arrival(best['candidate'],spec,adapter)
         if arrival is None:raise RuntimeError('Validated region witness has no matching spatial achievement')
     else:arrival=best['plan']['ticks'] if best is not None else None
-    generation_complete=not incomplete and report.get('termination','exhausted')=='exhausted'
+    generation_complete=not incomplete and (not report or generation_exhausted(report))
     measurement=dict(goal=spec,status='feasible' if best is not None else 'unknown',ticks=arrival,
         interpretation='elapsed_time_to_shared_spatial_goal_not_clock_objective',minimumProven=False,
         generationComplete=generation_complete,unresolvedAttempts=sum(a['status']=='unknown' for a in attempts),
