@@ -17,6 +17,12 @@ from standalone.autonomy.tests.test_checkpoint_guidance import flat_scene, progr
 
 
 class FixedClockTests(unittest.TestCase):
+    def test_spatial_goals_must_match_the_comparison_checkpoints(self):
+        scene=flat_scene()
+        with self.assertRaisesRegex(ValueError,'one shared spatial goal'):
+            find_checkpoint_route(scene,object(),checkpoints=[],spatial_goals=[dict(kind='landing',block='goal')],
+                spatial_points=[[.5,1,.5],[5.5,1,.5]])
+
     def test_explicit_clock_preserves_direction_without_goal_region(self):
         route=Corridor(0,[],[],[[0,1,0],[2,1,0]],(),[],2.)
         cp=Checkpoint(8,-1,(0.,1.),(0.,1.,0.),(0.,1.,10.),())

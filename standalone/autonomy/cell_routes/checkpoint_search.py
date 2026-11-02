@@ -117,7 +117,7 @@ def find_checkpoint_route(request, compiler, *, checkpoints=None, corridor=None,
                           initial_programs=None, comparison_policy='time_progress', spatial_goal=None,
                           spatial_seconds=1.5, spatial_calls=4, spatial_candidates=4, spatial_prefixes=64,
                           time_margin=1, progress_margin=None, rescue_passes=1, terminal_checkpoint=None, program_filter=None,
-                          on_window=None):
+                          on_window=None, spatial_goals=None):
     integer(rescue_passes,'rescue passes',0,100)
     if comparison_policy not in ('time_progress','objective_band','unpruned'):
         raise ValueError('Unknown comparison policy')
@@ -193,6 +193,9 @@ def find_checkpoint_route(request, compiler, *, checkpoints=None, corridor=None,
         return (policy is None or policy(program)) and (program_filter is None or program_filter(program))
     specs = window_plan['checkpoints'] if window_plan is not None else checkpoints or []
     plans = [checkpoint(corridor, gates, spec) for spec in specs]
+    if spatial_goals is not None and len(spatial_goals)!=len(plans):
+        raise ValueError('Supply one shared spatial goal per comparison checkpoint')
+    goals_by_tick={p.tick:goal_spec(scene,g) for p,g in zip(plans,spatial_goals or [])}
     terminal_plan=checkpoint(corridor,gates,terminal_checkpoint) if terminal_checkpoint is not None else None
     if terminal_plan is not None and (terminal_plan.tick>cfg['maxInputs'] or any(p.tick>=terminal_plan.tick for p in plans)):
         raise ValueError('Terminal clock must follow every comparison checkpoint and fit the movement horizon')
@@ -230,6 +233,7 @@ def find_checkpoint_route(request, compiler, *, checkpoints=None, corridor=None,
     try:
         for target in plans+[terminal_plan]:
             final_clock=terminal_plan is not None and target is terminal_plan
+            window_goal=goals_by_tick.get(target.tick,spatial_goal) if target is not None else spatial_goal
             work.check()
             if expanded >= cfg['maxPrefixes']:
                 termination = 'prefix_limit'
@@ -279,10 +283,10 @@ def find_checkpoint_route(request, compiler, *, checkpoints=None, corridor=None,
                     required_landing=scene['goalBlock'] if complete and not final_clock and comparison_policy!='objective_band' else None)
                 spatial = None
                 if not final_clock and comparison_policy!='objective_band' and target is not None and (not complete or
-                        spatial_goal!=dict(kind='landing',block=scene['goalBlock'])):
+                        window_goal!=dict(kind='landing',block=scene['goalBlock'])):
                     try:
                         work.check()
-                        spatial = probe_spatial(scene,program,counted,adapter,work,motion,spec=spatial_goal,
+                        spatial = probe_spatial(scene,program,counted,adapter,work,motion,spec=window_goal,
                             seconds=max(.001,min(spatial_seconds,deadline-time.monotonic())),
                             candidate_seconds=candidate_seconds,solver_calls=spatial_calls,
                             max_candidates=spatial_candidates,max_prefixes=spatial_prefixes,
@@ -303,14 +307,14 @@ def find_checkpoint_route(request, compiler, *, checkpoints=None, corridor=None,
                 if spatial is not None:
                     record['spatial_results'][spatial['key']]=spatial['measurement']
                     record['spatial_probe']=spatial
-                elif complete and not final_clock and result['best'] is not None and spatial_goal==dict(kind='landing',block=scene['goalBlock']):
-                    record['spatial_results'][goal_key(scene,spatial_goal,corridor)]=dict(
-                        goal=spatial_goal,status='feasible',ticks=result['best']['plan']['ticks'],minimumProven=False,
+                elif complete and not final_clock and result['best'] is not None and window_goal==dict(kind='landing',block=scene['goalBlock']):
+                    record['spatial_results'][goal_key(scene,window_goal,corridor)]=dict(
+                        goal=window_goal,status='feasible',ticks=result['best']['plan']['ticks'],minimumProven=False,
                         interpretation='elapsed_time_to_shared_spatial_goal_not_clock_objective')
-                spatial_key=goal_key(scene,spatial_goal,corridor)
+                spatial_key=goal_key(scene,window_goal,corridor)
                 record['required_spatial']=[spatial_key]
                 if spatial_key not in record['spatial_results']:
-                    record['spatial_results'][spatial_key]=dict(goal=spatial_goal,status='unknown',ticks=None)
+                    record['spatial_results'][spatial_key]=dict(goal=window_goal,status='unknown',ticks=None)
                 if terminal_plan is None and spatial is not None and spatial['best'] is not None and spatial['finalGoal']:
                     completion=spatial['best']
                     completion.update(movementProgram=spatial['program'],blockIds=[scene['startBlock'],scene['goalBlock']])
@@ -336,6 +340,7 @@ def find_checkpoint_route(request, compiler, *, checkpoints=None, corridor=None,
                         candidate.update(movementProgram=program, blockIds=[scene['startBlock'], scene['goalBlock']])
                         if best is None or candidate_rank(candidate, scene['objective']) < candidate_rank(best, scene['objective']):
                             best = candidate
+                            if final_clock:work.accepted(candidate)
                             if terminal_plan is None and comparison_policy!='unpruned':report['maxAcceptedTicks'] = best['plan']['ticks']
                     else:
                         solved.append((record, retain_prefix(program, result['best'])))
@@ -406,7 +411,7 @@ def find_checkpoint_route(request, compiler, *, checkpoints=None, corridor=None,
                 comparison_policy=comparison_policy,spatial_goal=spatial_goal,spatial_seconds=spatial_seconds,
                 spatial_calls=spatial_calls,spatial_candidates=spatial_candidates,spatial_prefixes=spatial_prefixes,
                 time_margin=time_margin,progress_margin=progress_margin,rescue_passes=0,terminal_checkpoint=terminal_plan,
-                program_filter=program_filter,on_window=on_window)
+                program_filter=program_filter,on_window=on_window,spatial_goals=spatial_goals)
             rescues.append(dict(candidate=item['id'],selection=item['selection'],result=rescued))
             for counter in ('solverCalls','numericalProposals','acceptedBranches'):
                 work.counts[counter]+=rescued['work'].get(counter,0)
@@ -432,4 +437,5 @@ def find_checkpoint_route(request, compiler, *, checkpoints=None, corridor=None,
         comparisonMargins=dict(time=time_margin,progress=progress_margin),
         objectiveOptimalityProven=False, minimumTicksProven=False,
         terminalCheckpoint=terminal_plan.to_dict() if terminal_plan is not None else None,
+        spatialGoalsByCheckpoint=goals_by_tick,
         goalType='fixed_absolute_tick_objective' if terminal_plan is not None else 'landing_time')
