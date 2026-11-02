@@ -1,59 +1,37 @@
-# Time-first progress frontiers at meaningful events
+# Time and progress comparisons: two distinct goals
 
-Latest requested implementation plan, 2026-11-01: [time/progress implementation](TIME_PROGRESS_IMPLEMENTATION_PLAN.md). This is the next selected workstream. Generate comparable event/time labels before retention (a fixed-tick batch alone cannot supply a time frontier), prioritize actual goal completion first, then intermediate stages; reuse existing movement builders and full-original-state free-facing solves. Preserve alternatives/resumption and test sequential coupling against joint controls. Planning only; no frontier runtime implementation has shipped yet.
+Authoritative user clarification, 2026-11-01. The new path is to generate the supported candidates and evaluate them in two complementary ways. We are not trying to generate candidates specifically at different completion times. See [the implementation plan](TIME_PROGRESS_IMPLEMENTATION_PLAN.md).
 
-Latest user clarification, 2026-11-01: sequentially commit/retain discrete decisions within a spatial route, then re-solve from the original state with all earlier facings free for later decisions. No intermediate numerical state is fixed. Weak dependence of earlier decisions on separated later ones is a provisional hypothesis; retain alternatives and reopen/cluster when maps demonstrate coupling. The user selects the time/progress frontier as the next workstream. Earlier proposals to prioritize a new upfront/provisional-rollout mechanism are not the current next step.
+## Spatial goal: compare elapsed time
 
-Latest status, 2026-11-01: [orchestrator fixes](experiments/orchestrator-fixes/README.md) now accept the cold grind in 11 ticks and cold turn in 13 under unchanged window limits. The frontier described here remains unimplemented; older failure counts below describe their dated sources. Inputs and constraints are selected by the orchestrator before IPOPT, whose existing continuous-facing model stays unchanged. Completing upfront geometric branch compilation takes priority, followed by this event-ready retention policy and broader coverage benchmarks.
+Hold a physical target fixed: for example, land on the same block or complete the same passage. Determine the earliest validated achievement time found for each candidate. This comparison helps identify the fastest potential route.
 
-Latest authorized runtime fixes, 2026-11-01: [implementation and validation](experiments/failure-fixes/README.md). The standalone runtime now preserves fully physically accepted incumbents separately from repair proposals, honors fallback starts in zero-threshold carry mode, and separates completed proposals from partial-prefix eviction with balanced discovery. The grind window search now accepts 11 ticks; all 28 known warm cases survive with no observed successful-baseline objective loss. Cold turn discovery remains unknown under current limits. The event-ready time/progress frontier and richer scores remain deferred. Normal momentum, zero thresholds in the current experiments, original initial state and free earlier facings are preserved. Historical no-runtime-change statements below apply to their dated research turns.
+Landing requires the actual declared finite contact; being airborne over the goal is insufficient. Preserve input/state indexing: an event produced by input t is observed at state t+1. Earlier unresolved times remain unknown. A found time is not automatically a proof of minimum time.
 
-Latest investigation: [generic failure causes](experiments/failure-rootcause/RESULTS.md). The grind generator already constructed complete proposals, but its short-prefix queue starved and evicted them before verification. The numerical layer preserves inner-model incumbents, while the outer physical validator can lose an otherwise valid seed. A separate no-threshold fast path skips fallback starts and fails some analytically feasible angular-start controls. Research prototypes and counterexamples support fixing these contracts before relying on the proposed frontier; no production/default fix or frontier implementation is selected by this explanatory record.
+## Time goal: compare objective
 
-2026-11-01. User identifies the earlier goal landing behind the ceiling/stepping counterexamples and proposes retaining the farthest progress for each tick count, keeping later candidates that gain progress over earlier ones, and trying shorter times first. This is the next design direction. The existing shared-tick objective-band implementation is unchanged in this discussion turn.
+Hold the absolute elapsed state tick h fixed across candidates. Optimize/measure the same horizontal objective S(h), usually progress/distance along the shared outgoing route direction. Compare after turnarounds where the direction is meaningful. Y is feasibility, not a height reward.
 
-## What the counterexamples actually establish
+This is a proxy for which candidate goes farthest. It is not equivalent to the shortest time to a spatial goal. Do not compare progress sampled at each candidate's own arrival time and call it a same-time objective comparison. Record spatial-goal times and fixed-clock objectives separately.
 
-Both pairs complete the required goal contact earlier with the smaller total tick count. Ceiling: jump input 0, goal contact state 12; the other history runs for four inputs, jumps at input 4, hits the ceiling at state 8 and lands at state 13. Its final flight is shorter, nine inputs versus twelve, but its total elapsed time is longer. Stepping: normal step input 0 then jump input 1 lands at state 13; slab boost input 0, landing state 2 and jump input 2 lands at state 14. The last flight has the same duration, with a later takeoff.
+## Retention
 
-Thus total elapsed time to a required event, including run-up, contact resets and flight, is the relevant quantity. These terminal examples do not by themselves establish a need for a more elaborate horizontal score. The previous prefix comparisons optimized horizontal progress while leaving the different remaining times to actual goal contact outside the value being compared. Final route ranking already prefers ticks before progress; early retention did not carry that criterion.
+Preserve similar candidates and time/progress tradeoffs. A slightly slower or slightly shorter-progress history is not a reason to discard it. Only mark a candidate heuristically worse when the evidence shows a meaningful disadvantage under comparable conditions, without an offsetting advantage. Unknown measurements do not count as bad measurements.
 
-## Comparable labels
+Do not construct a false dominance argument from the fastest candidate and a different farthest candidate. A genuine tradeoff may sit between those two. Even comparison with one apparently better peer is heuristic because physical/contact/velocity history can affect later choices.
 
-Use a meaningful route stage/event sigma and absolute elapsed tick tau. A label contains the symbolic prefix and selected decisions, completed stage/contact conditions, tau, horizontal progress S, solver/validation status and optional trajectory/yaw seeds. Every solve retains the original full initial state and free earlier facings. A stored numerical intermediate state is not a committed starting point.
+Keep near alternatives, symbolic diversity, accepted incumbents and resumable search state. Resource-cap omissions are reported independently from comparisons that classify a candidate as markedly worse. At the final goal, the earlier accepted completion remains the fastest even if a later route has a larger horizontal objective.
 
-For each tau, optimize progress among candidates that actually satisfy that stage's conditions at tau. A goal-landing candidate must satisfy the actual finite goal contact; an airborne candidate above the block has not completed that stage. Use the existing Y/X/Z phase-aware acceptance rather than an endpoint-only box test. Other stages may be portals or the boundary before a new interaction; do not force an artificial landing on a block a spatial route can skip.
+## Commitment and provisional assumptions
 
-This replaces comparisons across unlike readiness states with a time-indexed frontier for a common stage. Within each tau bucket, siblings still share an absolute tick and horizontal direction. Across buckets, elapsed time is an explicit objective component, so different evaluation times are no longer being compared as equal-cost progress scores. Normalize direction/progress consistently across the same stage.
+Commit/retain discrete inputs and constraints within a spatial-route branch. For later decisions, re-solve from the original full state with all earlier facings free. Do not fix optimized intermediate positions or velocities. Nearby coupled decisions remain jointly considered; weak coupling of farther decisions is provisional and can be overturned by maps.
 
-Let F_sigma(tau) be the best progress found for a valid label at that stage and time. Preserve a few similarly good but meaningfully different histories within each tau bucket. Maintain the cumulative earlier envelope:
+Retain alternatives and support reopening/expanded clusters when evidence warrants it. A failed numerical continuation is not a proof that the earlier decision was wrong. Successful-but-suboptimal commitments must also be checked through reference comparisons.
 
-```text
-M_sigma(tau) = max F_sigma(s) over completed/validated earlier times s < tau
-```
+## Regression is part of the design
 
-A later label earns a place on the basic time/progress frontier if it provides more progress than the earlier envelope. Compare against all earlier times, not only the immediately preceding tick; some time buckets may be empty. No numerical improvement tolerance or per-bucket near-tie threshold is selected here.
+Full regression must additionally optimize/simulate the continuations of near and would-be-discarded candidates, including apparently inferior ones, to discover whether they produce the best final route. Replaying only retained results does not validate pruning.
 
-For an intermediate stage, earlier/lower-progress and later/higher-progress labels are both useful tradeoffs. Try the earlier label's continuation first and preserve the later one as a fallback. At the actual final goal, an accepted earlier completion wins under the current ticks-first objective, even when a later completion is farther along the goal axis. Continue improving progress among tied earliest-time completions. Earlier unresolved times stay unknown; finding a valid completion does not certify every earlier time impossible.
+Use unpruned/joint or exhaustive references over declared finite test domains, independently validate returned witnesses, and record every discarded candidate that ties/beats the heuristic result. Give this reference evaluation sufficient separately reported work; unknown or unevaluated branches leave the audit incomplete. On larger domains explicitly report incomplete coverage instead of claiming optimality preservation.
 
-Time/progress alone is still a heuristic compression of intermediate labels: different carried velocity and contact state can affect the suffix. Keep near-ties or a small state/contact diversity reserve where justified. Do not call scalar frontier exclusion a proof of physical dominance. Y remains in stage feasibility, not a height reward in the objective.
-
-## Scheduling and generator consequences
-
-Schedule complete event/cluster candidates by increasing tau, with bounded work per time bucket and per retained parent. Keep unknowns explicit and avoid starving later fallbacks indefinitely on an unresolved early bucket. Retain every accepted incumbent before polishing it.
-
-This is different from expanding all shorter partial prefixes first. The grind generator already does the latter: in the failing recorded search, its generation records reach only prefix tick 9 before 512 expansions are consumed, while a known full witness finishes at tick 11. It generated 2704 choices and dropped 230 queued prefixes; no complete numerical proposal reached the solver. A terminal frontier alone would not help that run because no terminal labels are produced. Apply useful compaction at completed intermediate interactions, and construct a bounded set of complete event-time plans early rather than exhaustively expanding all short histories.
-
-The proposed frontier addresses the time-versus-progress retention mismatch. Within-cluster proposal ordering, contact/phase-aware label grouping, and feasible-incumbent preservation remain separate required work. A richer weighted score is deferred.
-
-## Severity of the current discovery failures
-
-The current late-window cold prototype fails two of six small supplied-route scenes, repeatedly. This is a material robustness problem for this prototype. The earlier manual-window pipeline found known 11-tick grind and 16-tick turn witnesses, so those physical solutions are representable and accepted by the shared model. Different domains/settings prevent claiming a controlled overall regression rate, but the new policy is not ready as a robust replacement.
-
-Grind: about 4.2 seconds, 512 expanded prefixes, 2704 generated choices, 230 queue drops, zero numerical solver calls. This is short-prefix enumeration and cluster granularity. More total solver time alone does not help when the prefix cap stops generation first.
-
-Turn: about 8.6 seconds and 63 solver calls in the fixed control, with zero accepted prefix scores. Twelve of 16 partial candidates hit a local cap of four calls, three exhaust contact search, and one fails the post-turn stage. The global 128-call budget is not exhausted. The same scene therefore has both local repair-allocation and candidate-handling issues.
-
-Additional single-case probe at source e24e61e8: truncate the known accepted 16-tick turn program at state 10 and reuse its facings as a seed. The prefix passes scalar physics, finite scene replay, corridor audit, the new post-turn checkpoint and opportunity ranges. Nevertheless the existing optimize/repair path returns unknown after four calls in about 0.64 seconds. Its first optimized output violates the corridor, then it spends the remaining work on repairs. It fails to return the already-valid seed as an incumbent. This shows that missing initial facings or an impossible checkpoint alone cannot explain this case. Validate and preserve feasible seeds before optimization, and return them when later polishing/repair runs out of work.
-
-The [probe artifact](experiments/decision-windows/evidence/turn-known-prefix-probe.json.gz) preserves its input/control and output evidence. This is one controlled diagnostic, not a new repeated benchmark. Its conclusion is incumbent preservation needs correction; it does not establish all turn failures have the same cause. No solver/runtime fix or time-frontier implementation was made in this explanatory turn.
+This is the selected new search path, not an opt-in rollout project. Existing movement/constraint builders and IPOPT remain unchanged. No runtime implementation is claimed by this planning update. The earlier source-specific failure reports remain in PRUNING_RESEARCH.md and the experiment directories; the earlier unknown grind/turn failures have already been fixed (current controls find 11 and 13 ticks respectively).

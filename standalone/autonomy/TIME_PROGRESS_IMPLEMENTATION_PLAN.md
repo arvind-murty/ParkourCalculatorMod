@@ -1,131 +1,105 @@
-# Implementation plan: comparable-event time/progress frontiers
+# Implementation plan: spatial-goal time and fixed-time progress comparisons
 
-2026-11-01. User selects this next and requests a plan. No implementation is shipped by this record. Work remains in isolated `research/ipopt-cell-routes`; reuse the existing movement/constraint builders, numerical solver, physical checker and saved-search-state machinery.
+Revised 2026-11-01 after the user's distinctions. This is our selected new search direction, not a rollout proposal. Planning only in this turn; no runtime behavior is claimed implemented here. Work stays in isolated `research/ipopt-cell-routes`, reusing existing candidate generation, movement/constraint builders, numerical solving, physical checks and saved state.
 
-## Preserve the existing search model
+## 1. Preserve candidate generation and the decision model
 
-Within one spatial route, enumerate close/coupled discrete choices jointly and normally handle separated choices sequentially. Commit/retain symbolic input and constraint choices within a branch. Every later solve starts at the original full state and can change all earlier facings; no solved intermediate position, velocity or facing becomes fixed.
+Generate the candidate discrete histories within the declared supported search domain: nearby coupled choices jointly, separated choices sequentially, with earlier decisions retained in each branch. The purpose is to consider the candidates, not to manufacture a collection with deliberately different finishing times. Different timing outcomes arise from the candidates and their continuous optimization. Do not bias generation around a preselected list of arrival-time buckets or require candidates to finish at distinct times.
 
-Weak dependence of earlier discrete choices on separated later choices is a working hypothesis. Keep alternatives and the ability to reopen earlier choices; benchmark against joint controls on maps that challenge the hypothesis. This frontier is heuristic retention, not a proof of state dominance or global optimality.
+Generation still uses existing constraints and necessary feasibility screens. Any finite horizon, work limit or heuristic generation omission is recorded separately from the comparison/retention policy. A truncated generated pool is not all legal game paths.
 
-No new movement physics, mixed-input relaxation, objective bounds, velocity-weighted score, ladder family, intentional final wall-hit family or inertia-threshold logic. Normal momentum carries and current velocity thresholds remain zero. The recent fallback/incumbent/queue/adjacent-cell/resume fixes remain in use.
+Each numerical call fixes the selected discrete inputs and constraints while all facings remain variable. Later decisions are evaluated by re-solving from the original full initial state, not by fixing a previously optimized intermediate position, velocity or facing. Weak coupling of separated decisions remains a hypothesis to test. No new movement physics, mixed-input relaxation, richer weighted objective, velocity-threshold logic or objective bound. Normal momentum carries and current thresholds stay zero.
 
-## The implementation gap to solve
+## 2. Evaluate the same candidate pool in two different ways
 
-`plan_windows` currently creates a single fixed comparison tick before the next supplied opportunity. `find_checkpoint_route` generates/truncates candidates to that tick, evaluates horizontal position, and calls `retain_candidates` with one score per candidate. Final ranking is already ticks-first.
+The central distinction is what is held fixed and what is optimized/measured.
 
-Simply adding time buckets to those same records does not solve the problem: all scored prefixes in that batch have the same tick count. In the ceiling/step examples, the faster goal completion can be discarded at a preceding progress-only checkpoint before the final ticks-first comparison occurs.
+| Comparison | Shared condition | Measured/optimized quantity | Meaning |
+| --- | --- | --- | --- |
+| Spatial goal | Same physical target/readiness, such as actual landing on block G or completing the same portal passage | Elapsed absolute ticks T to achieve it | Evidence about the fastest potential route |
+| Time goal | Same absolute elapsed state tick h, same route direction/reference and applicable comparison context | Horizontal objective S(h), normally distance/progress | Proxy for which candidate goes farthest; not necessarily fastest |
 
-The change must affect which complete event/time candidates reach retention, not merely sort final accepted solutions differently. A required final goal landing is an event to compare, not automatically another independent control decision that forces stopping all candidates just before it. Avoid classifying opportunities using fixture names such as "finish"; represent terminal goal requirements explicitly or derive them from the declared goal contact/terminal support.
+For candidate c and spatial predicate G, record the earliest physically accepted achievement time found T_c(G), together with feasibility/unknown and search-coverage status. For a final goal, require the actual finite goal contact, not merely an airborne position over the block. Intermediate goals use their declared region/contact/passage requirements; do not invent a landing when none is needed. For an event produced by input t, the corresponding state tick is t+1.
 
-## 1. Define comparable stages and event labels
+The first valid crossing/contact that satisfies G matters. Do not relabel later samples of an already-completed event as new arrival times. Numerical/branch search may need to test permissible horizons/timings to estimate T_c(G), but that is an evaluator implementation detail, not a directive to generate candidates specifically at different completion times. Unknown earlier times stay unknown; best found arrival is not a minimum-time certificate by default.
 
-Add a stage description containing spatial-route identity, event kind, target/required passage signature, common horizontal direction/anchor, accepted readiness condition, allowed absolute tick range and relationship to the decision cluster. Initially support:
+For a common absolute time h, solve/evaluate the candidate's existing horizontal objective S_c(h). All compared candidates use the same h, common normalized direction and anchor, and suitable route-stage conditions. Choose comparison points after relevant turnarounds and before another separate decision where possible, following the existing comparison policy. Y determines physical feasibility, not a distance reward. Evaluate multiple predeclared common h values only if useful; do not combine them with a new weighted score in this work.
 
-- Actual required goal landing, validated by the existing finite contact and terminal ground conditions.
-- Existing explicit portal/outgoing-route stages after a turn, with their required crossing order and declared boundary/readiness conditions.
-- Fixed-tick checkpoints as a compatibility mode: a single time bucket, with no claim that this alone corrects timing errors.
+A clock comparison must not give one candidate more elapsed time because its event ends later. In particular, do not compare S_a(T_a(G)) with S_b(T_b(G)) as though it were the common-time objective comparison. Those are positions at different times. A candidate record needs separate spatial-goal results and fixed-time objective results, not just one pair of arrival time and progress sampled at that arrival.
 
-Never compare an airborne state merely above the goal with a completed goal landing. Do not force intermediate routes to land if their stage is a portal/free-space event. Y contributes to required feasibility, never a height reward. Do not silently treat different contact requirements, spatial routes or outgoing directions as the same stage.
+When a candidate's terminal program ends before h, do not fabricate a held endpoint or zero movement. Its final-goal timing is already meaningful. If an intermediate-goal history needs a later fixed-time evaluation, construct a valid continuation using the existing model; otherwise mark that objective result unavailable/unknown. Lack of that measurement is not evidence that the candidate is poor.
 
-For an input t that completes an event, use absolute state tick t+1, preserving the current pre-input indexing. Record the collision phase for validation where relevant. A selected first-crossing event must be validated as such; do not label arbitrary later samples of an already-passed event as new arrival times. An outgoing evaluation region can instead deliberately permit a range of evaluation ticks, but that is a different declared stage contract.
+## 3. Record comparison context and validation explicitly
 
-For a fully accepted label store:
-
-```text
-route/stage identity; absolute tick tau; horizontal progress S;
-symbolic decisions and constraints; physical/contact/method identity;
-accepted witness and optional facing guess; parent provenance;
-validation/search status and resumable pending alternatives
-```
-
-Use S = d dot (p[tau] - common_stage_anchor) with one normalized direction d. This is the existing horizontal projection with a common offset; no new solver objective is needed. Store numerical velocity/contact information for diversity/diagnosis, without freezing it or adding a velocity bonus.
-
-## 2. Generate actual event-time candidates before pruning
-
-Reuse the current generators and composition. Given a stage, produce supported discrete programs that complete/satisfy it at different admissible tau values. Derive candidate timings from existing event schedules, opportunity/reachability domains and goal/cell conditions; do not require a solved trajectory to define all time buckets.
-
-For terminal goal comparisons, generate complete goal-contact programs directly. Do not insert a mandatory progress-only pre-goal cutoff merely because a terminal landing range is listed as an opportunity. This is the first integration milestone because it directly addresses the known ceiling/step mistakes.
-
-For intermediate stages, permit multiple input counts for the same declared stage. Compile existing passage/case/region constraints and evaluate each selected program from the original state. An event cannot be called complete based only on its symbolic Y schedule; require the existing scalar, finite-scene, corridor and stage checks before it participates in the accepted frontier.
-
-Use a common stage/timing specification for sibling comparisons. A candidate does not choose its own scoring direction, relax readiness or acquire an arbitrary extra horizon after seeing its result. If completing the stage crosses another genuinely unresolved decision, honor the existing cluster/dependency structure or report that the proposed comparison boundary is unsuitable. Do not silently optimize through a different unselected physical interaction.
-
-This is potentially more work than one fixed-tick solve. Reuse already accepted witnesses and compatible symbolic contexts; count every generation/screen/solve attempt. Avoid solving every tick independently when an existing generated event already provides its exact completion time.
-
-## 3. Implement the retention policy as a pure component
-
-For one stage, group validated labels by tau. In each group find the best progress F(tau) and retain near-best, symbolically distinct alternatives within a configurable same-time band. Do not duplicate a physical/constraint/search context merely because it has multiple metadata descriptions.
-
-Process time groups in increasing tau and maintain the cumulative earlier envelope:
+Represent a candidate with stable identity, route and discrete decisions, parent/provenance, constraint/search state, facing guesses and accepted witnesses. Attach separate results:
 
 ```text
-M(tau) = max F(s) for validated earlier times s < tau
+spatial_results[G] = accepted time found, validation, unknown/coverage information
+clock_results[h, direction, context] = objective, validation, unknown information
 ```
 
-A later candidate is core-frontier eligible when its progress exceeds M(tau) by the declared comparison tolerance. The earliest accepted group is eligible without an earlier reference. Check all earlier times, not only tau-1, since time buckets may be missing.
+Shared goals and clocks are declared before comparing candidates. Do not allow candidates to select more favorable goal semantics, directions or evaluation times after their results are known. Different spatial targets, route stages or clock conditions are not silently comparable.
 
-Example, one intermediate stage:
+Use the existing scalar, finite-scene and route/readiness checks. A selected Y schedule alone does not establish a spatial achievement. Store contact/velocity/method information for preserving different histories and for diagnosis, not as fixed continuation states or an added objective.
 
-| tau | best progress | Core retention |
-| --- | --- | --- |
-| 8 | 3.0 | Keep: earliest |
-| 9 | 2.9 | Behind the earlier envelope |
-| 10 | 3.5 | Keep: later but farther |
-| 12 | 3.4 | Behind the tau-10 result |
-| 13 | 3.8 | Keep: later but farther |
+Avoid the existing failure where a mandatory progress-only cutoff before terminal landing removes the faster completion before its spatial-goal time can be evaluated. Required final landing is a target to compare, not automatically another independent control opportunity that forces stopping just before it. Identify it from explicit goal semantics/contact ownership, not fixture names.
 
-A near-best candidate in a later bucket that itself fails to improve the earlier envelope is not automatically a core tradeoff merely because its bucket champion qualifies. It may earn a separate diversity-reserve slot, with the reason logged.
+## 4. Preserve similar candidates; remove only clearly worse ones
 
-Separate four mechanisms in configuration and diagnostics: same-time objective band; cross-time improvement tolerance; physical/method diversity reserve; hard resource caps. Unknowns have their own reserve and never receive invented progress or infeasibility. Derive numerical near-equality handling from the existing tolerance contract and report sensitivity to the ranking band; do not tune constants to the two original fixtures.
+Keep candidates competitive in spatial-goal time, competitive in fixed-clock objective, and useful time/progress tradeoffs. A faster arrival and a farther-at-h trajectory are distinct pieces of evidence; do not collapse them into one score or automatically prefer one at an intermediate decision.
 
-A non-improving label may have better future potential because its contact/velocity/discrete history differs. Therefore cross-time exclusions are heuristic. Retain a bounded diversity reserve and park omitted labels with enough provenance/state to reconsider them. Hard-cap drops are recorded separately from envelope exclusions. A cap smaller than the eligible time frontier cannot truthfully preserve every eligible time group; report that loss explicitly.
+Replace strict frontier exclusion with a conservative margin-based heuristic. Compare only known results under matching G/h contexts. A candidate can be marked clearly worse when a comparable alternative is no worse on the available relevant time/progress criteria and better by a meaningful margin on at least one. Preserve small differences and tradeoffs. For example:
 
-## 4. Schedule earlier accepted event times first
+- Faster to G but less progress at h: retain both histories.
+- Similar time and similar progress: retain both, especially if symbolic/contact histories differ.
+- Materially slower to G and materially less progress at the same h: a candidate for heuristic omission.
+- Missing/unknown goal or clock measurement: keep unresolved; do not manufacture a bad score.
 
-Extend the protected completed-program scheduling rather than reverting to shortest-partial-prefix expansion. Queue ready event/time candidates and retained continuations primarily by increasing tau, with bounded work quanta across time buckets/parents and a discovery share for new alternatives.
+Use explicit time and objective margins, distinct from floating-point feasibility tolerance. Calibrate and report sensitivity with regression results, not fixture-specific tuning. The initial implementation should favor retaining ambiguous cases. Do not compare a candidate with unrelated best-time and best-distance envelopes and falsely assert that a single peer dominates it.
 
-At an intermediate stage, try the earlier useful prefix first while retaining later/farther fallbacks. At the actual final goal, a valid earlier landing wins regardless of the later candidate's larger horizontal progress; optimize progress among tied earliest completions. Preserve every accepted incumbent before further work.
+These comparisons are still heuristics: unscored momentum/contact details or later discrete choices can reverse an apparent ranking. Retain symbolic diversity, saved alternatives and accepted incumbents. Exact duplicate merging must preserve pending search work. Hard-cap evictions are separately labeled resource losses, not evidence of marked inferiority. Keep omitted candidates available for regression evaluation and, subject to explicit storage limits, runtime reopening.
 
-Unknown earlier times do not block every later fallback indefinitely, and a found completion does not prove earlier unknown times impossible. Do not claim minimum time unless the requisite coverage/proof actually exists. Keep current shared solver-call/deadline counters and saved pending state so work cannot be hidden in retries or extra timing buckets.
+At the actual final goal, earlier verified completion wins under the existing final objective; a later farther completion does not change which is faster. Preserve near alternatives for validation/analysis and use the objective to refine ties as appropriate. Intermediate comparisons remain proxies for eventual route quality.
 
-## 5. Carry decisions forward and support revisiting them
+## 5. Schedule and continue without freezing earlier numerical states
 
-Use existing `retain_prefix`/repair-state mechanisms to retain selected input and geometric decisions, not numerical endpoint values. When exploring B, re-solve the original full prefix with retained A decisions and B variants; all earlier facings remain free.
+Use spatial-goal timing to prioritize faster potential routes and fixed-clock progress to preserve promising farther-reaching alternatives. Reuse the protected completed-candidate queue and balanced work among parents/unknowns. Do not revert to exhausting all short partial prefixes before any complete candidate can be tested.
 
-Retain non-winning A histories as bounded alternatives rather than treating score exclusion as a proof. The first version should store and expose parked alternatives and allow a bounded reopening/rescue pass when continuations remain unresolved or exhaust the active histories. Such a failure does not prove A wrong. Reusing an old known-worse numerical state is not the rescue; reopening changes the discrete/constraint history and re-solves continuously.
+For A followed by B, retain A's selected discrete decisions, enumerate B's choices and re-solve all continuous facings from the original state. Keep similar A alternatives. Saved failed/pending branches remain resumable. A later unresolved continuation may justify reopening an earlier decision or enlarging a cluster, but it is not proof of infeasibility or of an incorrect A choice.
 
-A successful but suboptimal commitment can go unnoticed at runtime. Test this explicitly against joint or small exhaustive controls; do not pretend a failure-trigger alone detects every coupling loss. Record when reopening or enlarged clusters rescue feasibility or improve final time/objective, and use that evidence to revise clustering/retention. No unconditional ten-air-input independence rule.
+A successful but slower route may also expose a bad heuristic commitment, so failure-triggered reopening alone is insufficient validation. Joint/unpruned regression controls must measure these hidden losses. No universal independence claim based on a ten-air-input gap.
 
-## 6. Reuse and concrete code ownership
+## 6. Full regression must continue the additional candidates
 
-- New pure `cell_routes/time_progress.py`: label grouping, cumulative envelope, reserves/caps, deterministic retention and explanatory diagnostics.
-- Stage/validation extensions beside `cell_routes/checkpoints.py`: stage identity, event acceptance and absolute timing. Reuse current checkpoint/goal/contact checks.
-- `decision_windows.py`: distinguish discrete opportunities from terminal event requirements; preserve existing cluster logic and compatibility mode.
-- `movement_search.py` / existing generators: expose complete stage candidates with variable event times using existing physics/constraints and the protected completion queue.
-- `checkpoint_search.py`: evaluate labels, apply the new frontier, retain original-state symbolic histories and schedule continuations. Keep current position-band policy as an explicit comparison arm.
-- Existing experiment drivers/checker: collect all work and independently replay every returned accepted witness.
+The ordinary search may deprioritize/omit candidates that appear clearly worse. Full regression must additionally optimize and simulate their continuations, including the candidates classified as worse. Merely storing them or reporting that the retained routes replay is insufficient evidence that the heuristic works.
 
-Keep the new mode optional until its acceptance gates pass. Do not silently claim variable-time behavior in the old fixed-checkpoint mode. No changes to IPOPT/physics are required.
+For each declared finite regression search domain:
 
-## 7. Tests and measured acceptance
+1. Capture the candidate pool and all omission reasons before retention. Include near-ties, tradeoffs and candidates the heuristic would discard. Distinguish proven impossible branches from unknowns and resource omissions.
+2. Run the planned heuristic search and record its accepted final results/work.
+3. Evaluate the additional candidate continuations from the original state, with the same existing physical model and full facing reoptimization. Check the later discrete alternatives, rather than merely replaying one already-poor facing sequence.
+4. Build an unpruned/joint or exhaustive reference over that finite test domain where tractable. Disable the tested retention heuristic in the reference continuations too; otherwise later pruning can conceal the counterexample.
+5. Independently replay every accepted witness and compare final completion times and configured objectives. Record which would-be-discarded or merely near candidate ties/improves the best result, how much is lost and which earlier discrete decision needs reopening.
+6. Save each false exclusion as a reproducible regression and revise the heuristic generically. Report final-quality losses even if both searches return feasible routes.
 
-Pure tests cover cumulative-envelope retention, missing buckets, same-time ties, near-equality, opposite axis/directional objectives, coordinate translation, distinct stage keys, diversity reserves, unknowns, cap omissions and deterministic ordering.
+Full regression has its own explicit larger evaluation budget so omitted candidates are actually examined. Matched-work comparisons remain useful separately for practical performance; they must not starve the reference and then claim the heuristic preserved optimality. Numerical unknowns or incomplete reference expansion make that audit incomplete, not evidence that the omitted histories cannot win.
 
-Semantic/integration tests cover actual goal landing versus airborne-over-goal, different Y histories at the same valid portal stage, first-event input/state indexing, same-stage variable timings, no fake intermediate landing, multiple portal phases, unknown preservation, original initial position/velocity, free earlier facings and persisted repair state. Retaining labels cannot freeze numerical states or remove accepted incumbents.
+On larger maps where the full finite domain cannot be completed, explicitly report generated/evaluated/unevaluated coverage and label any sampled diagnostic as partial. Do not call a capped or sampled reference exhaustive. Best found reference results are not certified global optima outside their proven/fully evaluated domain.
 
-Regression controls include the known earlier/later ceiling and step histories, revalidated under current zero-threshold physics. The new policy should expose the actual earlier goal completion before progress-only filtering can lose it. Final ticks-first ranking alone is insufficient evidence because it already exists. Separate controlled witness coverage from genuine cold search success.
+The tests must challenge both the retention rule and the weak-coupling assumption: nearby clusters, separated decisions with strong coupling, different landing/ceiling/step histories, both travel directions, missing measurements, and identical positions with different physical histories. Revalidate existing early/late ceiling and step controls under current physics. Keep the existing six cold controls, including grind11 and turn13, and add held-out geometry.
 
-Run the existing six cold scenes and additional independent scenes, including deliberately coupled distant decisions, under matched total solver/generation budgets. Preserve the current successful grind11/turn13 controls; investigate any quality regression generically. Compare position-band, time/progress frontier, and frontier plus diversity/rescue. Use joint/small exhaustive references where tractable to measure—not assume—the loss from sequential commitments. Sweep retention tolerances/caps without optimizing parameters to individual fixtures.
+## 7. Implementation sequence and code reuse
 
-Report final accepted times/objectives, validity/replay outcomes, time groups proposed/accepted/missing, retained and parked histories, reasons for every omission, numerical calls, generation/compilation work, total time and rescue improvements. Finite tests establish observed behavior, not global completeness or optimality. All accepted witnesses must independently replay.
+1. **Separate evaluation contracts and records.** Add spatial-goal time and fixed-clock objective results beside existing checkpoints; reuse movement/contact/readiness validation and original-state solving.
+2. **Evaluate candidates before misleading retention.** Adapt the current pipeline so existing candidates can obtain the appropriate spatial and/or clock results before a progress-only cutoff erases them. Start with final-goal versus fixed-clock ceiling/step controls, then intermediate shared spatial goals. Generation remains driven by supported discrete candidates, not desired differences in completion time.
+3. **Implement conservative retention.** A pure component in `cell_routes/time_progress.py` handles matching contexts, meaningful margins, near candidates, tradeoffs, unknowns and omission diagnostics. Existing fixed-clock band policy remains a regression comparator only.
+4. **Integrate continuation and saved alternatives.** Reuse protected ready queues, discrete commitment, global facing reoptimization, repair-state resumption and incumbent preservation. Add bounded reopening with explicit provenance.
+5. **Run full additional-candidate regression.** Continue would-be-discarded candidates and compare with unpruned/joint finite-domain references; add every quality counterexample to tests. Also measure total generation-plus-solve cost and active candidate counts.
 
-## Implementation milestones and scope boundary
+This is the new search path. There is no opt-in rollout phase or deployment gate in this plan. Historical policies are retained only as experimental baselines where useful. Tests are for correctness and understanding the heuristic, not a separate rollout project.
 
-1. Pure frontier policy and diagnostics/tests.
-2. Terminal event generation/retention integration and ceiling/step regressions.
-3. Intermediate comparable-event variable timing, original-state continuation and saved alternatives.
-4. Bounded rescue plus coupled-map controls and matched-work benchmark.
-5. Supported-mode rollout with accomplishments/limitations/next-step report.
+## Deliverables, limits and reporting
 
-This work does not rebuild the movement catalogue, change IPOPT, introduce a richer weighted score or redesign the initial route guide. It implements the agreed retention/scheduling change while measuring its provisional assumptions. Main risks are event comparability, generation coverage before retention, cross-time state differences, total candidate growth and sequential coupling. Each is logged/tested separately instead of attributed generically to insufficient budgets.
+Deliver separate tests for spatial-goal timing, same-clock objective comparisons, the fact that farther does not imply faster, similar-candidate preservation, clearly-worse classification, unknowns, original-state/free-facing continuation, and full reference audits that detect a discarded eventual winner. Keep all accepted witness replays and work diagnostics.
+
+Report accomplishments, remaining limits and next steps after each implementation checkpoint. Important remaining limits are finite candidate coverage, comparator choice, unobserved future effects, reference-solve unknowns and combinatorial continuation cost. We are measuring these assumptions, not claiming exact dominance from time/distance or recreating the movement machinery.
