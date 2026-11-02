@@ -29,7 +29,7 @@ def movement_settings(scene):
 
 def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=None, report=None, screen=None,
                            context_adapter=None, work=None, checkpoint_tick=None, initial_programs=None, threshold=.005,
-                           program_filter=None, queue_policy='balanced', stop_on_goal=True):
+                           program_filter=None, queue_policy='balanced', stop_on_goal=True, program_priority=None):
     cfg = movement_settings(scene) if settings is None else settings
     if queue_policy not in ('balanced', 'legacy'):
         raise ValueError('Unknown movement queue policy')
@@ -75,6 +75,12 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
             work.check()
         if deadline is not None and time.monotonic() >= deadline:
             raise TimeoutError('Movement composition exceeded its budget')
+    def ranked(item):return program_priority(item[2]),item[0],item[1]
+    def take(items):
+        item=min(items,key=ranked)
+        items.remove(item)
+        heapq.heapify(items)
+        return item
     try:
         while pending or ready:
             budget()
@@ -82,8 +88,10 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
                 termination = 'cancelled'
                 break
             if ready and (not pending or expanded >= cfg['maxPrefixes'] or proposals == 0
-                          or since_proposal >= cfg.get('expansionsPerProposal', 8)):
-                ticks, _, program = heapq.heappop(ready)
+                          or since_proposal >= cfg.get('expansionsPerProposal', 8)) and (
+                    program_priority is None or not pending or expanded>=cfg['maxPrefixes']
+                    or ranked(min(ready,key=ranked))[0]<=ranked(min(pending,key=ranked))[0]):
+                ticks, _, program = take(ready) if program_priority is not None else heapq.heappop(ready)
                 since_proposal = 0
                 if ticks > report.get('maxAcceptedTicks', cfg['maxInputs']):
                     continue
@@ -98,7 +106,9 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
             if expanded >= cfg['maxPrefixes']:
                 termination = 'prefix_limit'
                 break
-            if queue_policy == 'balanced' and expanded % 2:
+            if program_priority is not None:
+                ticks,_,program=take(pending)
+            elif queue_policy == 'balanced' and expanded % 2:
                 times = sorted({item[0] for item in pending})
                 cursor = next((tick for tick in times if tick > cursor), times[0])
                 item = min((item for item in pending if item[0] == cursor), key=lambda item: item[1])
@@ -175,13 +185,13 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
                         heapq.heappush(ready, item)
                         if len(ready) > cfg['maxQueuedPrefixes']:
                             complete_drops += len(ready)-cfg['maxQueuedPrefixes']
-                            ready = heapq.nsmallest(cfg['maxQueuedPrefixes'], ready)
+                            ready = sorted(ready,key=ranked)[:cfg['maxQueuedPrefixes']] if program_priority is not None else heapq.nsmallest(cfg['maxQueuedPrefixes'], ready)
                             heapq.heapify(ready)
                     else:
                         heapq.heappush(pending, item)
                         if len(pending) > cfg['maxQueuedPrefixes']:
                             drops += len(pending) - cfg['maxQueuedPrefixes']
-                            pending = fair_subset(pending, cfg['maxQueuedPrefixes']) if queue_policy == 'balanced' else heapq.nsmallest(cfg['maxQueuedPrefixes'], pending)
+                            pending = sorted(pending,key=ranked)[:cfg['maxQueuedPrefixes']] if program_priority is not None else fair_subset(pending, cfg['maxQueuedPrefixes']) if queue_policy == 'balanced' else heapq.nsmallest(cfg['maxQueuedPrefixes'], pending)
                             heapq.heapify(pending)
                 else:
                     records.append(dict(type=kind, prefixTicks=ticks, termination='exhausted', emitted=choices))
@@ -194,7 +204,8 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
         report.update(termination=termination, expandedPrefixes=expanded, generated=generated,
             remainingPrefixes=len(pending)+len(ready), screenedPrefixes=screened, queueDrops=drops+complete_drops, generation=records,
             partialQueueDrops=drops, completeQueueDrops=complete_drops, queuedCompletePrograms=len(ready), emittedPrograms=proposals, queuePolicy=queue_policy,
-            policyRejections=policy_rejections, minimumTicksProven=False, types=cfg['types'])
+            policyRejections=policy_rejections, minimumTicksProven=False, types=cfg['types'],
+            explicitProgramPriority=program_priority is not None)
 
 
 def find_movement_blocks(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,

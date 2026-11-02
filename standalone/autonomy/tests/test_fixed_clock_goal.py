@@ -17,6 +17,21 @@ from standalone.autonomy.tests.test_checkpoint_guidance import flat_scene, progr
 
 
 class FixedClockTests(unittest.TestCase):
+    def test_priority_proposes_the_actual_intermediate_contact_before_an_air_gap(self):
+        from standalone.autonomy.cell_routes.support_order import SupportOrder
+        scene=flat_scene()
+        policy=SupportOrder(scene,['goal'],32)
+        def first(priority):
+            g=iter_movement_programs(scene,checkpoint_tick=16,threshold=0.,stop_on_goal=False,
+                deadline=time.monotonic()+2,program_priority=priority)
+            try:return next(g)
+            finally:g.close()
+        ordinary,ranked=first(None),first(policy.priority)
+        self.assertEqual(ordinary['profile']['airtime'],16)
+        self.assertEqual(ranked['profile']['airtime'],16)
+        self.assertEqual(policy.audit(ordinary)['progress'],0)
+        self.assertEqual(policy.audit(ranked)['progress'],1)
+
     def test_spatial_goals_must_match_the_comparison_checkpoints(self):
         scene=flat_scene()
         with self.assertRaisesRegex(ValueError,'one shared spatial goal'):

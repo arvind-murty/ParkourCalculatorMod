@@ -34,6 +34,7 @@ def run(fixture,compiler,*,on_window=None,python_executable=None):
     policy=SupportOrder(scene,fixture['requiredSupports'],fixture['terminalTick'])
     result=find_checkpoint_route(fixture['request'],compiler,corridor=corridor,checkpoints=checkpoints,
         terminal_checkpoint=terminal,program_filter=policy,python_executable=python_executable,on_window=on_window,
+        program_priority=policy.priority if fixture.get('prioritizeSupportProgress') else None,
         **fixture['settings'])
     result['supportOrder']=fixture['requiredSupports']
     if result['best'] is not None:

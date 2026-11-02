@@ -35,3 +35,5 @@ class SupportOrder:
                     reason=None if accepted else 'unfinished_support_order_at_clock')
 
     def __call__(self,program):return self.audit(program)['accepted']
+
+    def priority(self,program):return -self.audit(program)['progress']

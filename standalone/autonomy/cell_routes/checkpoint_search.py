@@ -117,7 +117,7 @@ def find_checkpoint_route(request, compiler, *, checkpoints=None, corridor=None,
                           initial_programs=None, comparison_policy='time_progress', spatial_goal=None,
                           spatial_seconds=1.5, spatial_calls=4, spatial_candidates=4, spatial_prefixes=64,
                           time_margin=1, progress_margin=None, rescue_passes=1, terminal_checkpoint=None, program_filter=None,
-                          on_window=None, spatial_goals=None):
+                          on_window=None, spatial_goals=None, program_priority=None):
     integer(rescue_passes,'rescue passes',0,100)
     if comparison_policy not in ('time_progress','objective_band','unpruned'):
         raise ValueError('Unknown comparison policy')
@@ -247,7 +247,7 @@ def find_checkpoint_route(request, compiler, *, checkpoints=None, corridor=None,
                 deadline=deadline, cancel_event=cancel_event,report=report, context_adapter=adapter.context, work=work,
                 screen=screen,
                 checkpoint_tick=target.tick if target else None, threshold=0., program_filter=accepted_program,
-                stop_on_goal=terminal_plan is None)
+                stop_on_goal=terminal_plan is None,program_priority=program_priority)
             capped = False
             for program in generator:
                 try:
@@ -411,7 +411,8 @@ def find_checkpoint_route(request, compiler, *, checkpoints=None, corridor=None,
                 comparison_policy=comparison_policy,spatial_goal=spatial_goal,spatial_seconds=spatial_seconds,
                 spatial_calls=spatial_calls,spatial_candidates=spatial_candidates,spatial_prefixes=spatial_prefixes,
                 time_margin=time_margin,progress_margin=progress_margin,rescue_passes=0,terminal_checkpoint=terminal_plan,
-                program_filter=program_filter,on_window=on_window,spatial_goals=spatial_goals)
+                program_filter=program_filter,on_window=on_window,spatial_goals=spatial_goals,
+                program_priority=program_priority)
             rescues.append(dict(candidate=item['id'],selection=item['selection'],result=rescued))
             for counter in ('solverCalls','numericalProposals','acceptedBranches'):
                 work.counts[counter]+=rescued['work'].get(counter,0)
