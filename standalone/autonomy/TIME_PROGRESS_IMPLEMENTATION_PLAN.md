@@ -1,6 +1,6 @@
 # Implementation plan: spatial-goal time and fixed-time progress comparisons
 
-Revised 2026-11-01 after the user's distinctions. This is our selected new search direction, not a rollout proposal. Planning only in this turn; no runtime behavior is claimed implemented here. Work stays in isolated `research/ipopt-cell-routes`, reusing existing candidate generation, movement/constraint builders, numerical solving, physical checks and saved state.
+Revised 2026-11-01 after the user's distinctions. This is our selected new search direction, not a rollout proposal. Implementation is now delivered; see the dated status below and [measured results](experiments/two-goal-comparisons/README.md). Work stays in isolated `research/ipopt-cell-routes`, reusing existing candidate generation, movement/constraint builders, numerical solving, physical checks and saved state.
 
 ## 1. Preserve candidate generation and the decision model
 
@@ -106,4 +106,11 @@ Report accomplishments, remaining limits and next steps after each implementatio
 
 ## Implementation checkpoint, 2026-11-01
 
-The runtime now implements separate goal/clock contracts, conservative retention as the default, saved alternatives, original-state continuation and bounded failure reopening. Final landing and intermediate region goals are supported. comparison_audit.py and two_goal_experiment.py implement the additional-candidate continuation/replay reference with separate budgets and explicit incomplete status. Existing movement/constraint builders and IPOPT are reused. The source-pinned six-scene measurements and full-pool reference results are pending at this checkpoint; do not interpret implementation coverage as proven search completeness or optimality.
+The runtime now implements separate goal/clock contracts, conservative retention as the default, saved alternatives, original-state continuation and bounded failure reopening. Final landing and intermediate region goals are supported. comparison_audit.py and two_goal_experiment.py implement the additional-candidate continuation/replay reference with separate budgets and explicit incomplete status. Existing movement/constraint builders and IPOPT are reused. This checkpoint preceded the measurements below; implementation coverage does not establish search completeness or optimality.
+
+
+## Measured completion, 2026-11-02
+
+Implementation and references are complete for the declared test scope. [Results, reproduction commands and archived evidence](experiments/two-goal-comparisons/README.md) cover six existing scenes and two new separated-jump controls. The ceiling, stepping and turn improve by one tick; other completions are preserved. All 305 saved source histories were processed without progress retention in the reference; 371 complete numerical programs were tested and all 435 accepted search/reference witnesses replay. No omitted candidate wins or ties the fastest found time. The 50 incomplete unrestricted references remain labeled incomplete. Eleven incomplete competitive omissions receive additional generation with the incumbent finishing time as horizon; none can produce a complete program within that horizon in the supported catalogue. This closes that saved-pool omission question, not all ungenerated histories or continuous global optimality.
+
+The new path is default. Similar/tradeoff candidates are retained subject to separately labeled hard caps. Spatial time is best-found rather than certified; unknown scores are not poor scores. Failure reopening is bounded; success-quality errors are tested through the separate references. Supplied routes/opportunity ranges, capped generation, lazy constraint discovery, coupling on more adverse maps and repeated continuation cost remain limitations. Measured original-six work increases from 202 to 282 numerical calls and from 682 to 2,111 total prefix expansions. Next work should reduce duplicate symbolic generation and test nearer spatial goals/stronger coupling before inventing a richer weighted score. No IPOPT or movement-model redesign is required by these results.

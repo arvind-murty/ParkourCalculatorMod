@@ -1,6 +1,6 @@
 # Time and progress comparisons: two distinct goals
 
-Authoritative user clarification, 2026-11-01. The new path is to generate the supported candidates and evaluate them in two complementary ways. We are not trying to generate candidates specifically at different completion times. See [the implementation plan](TIME_PROGRESS_IMPLEMENTATION_PLAN.md).
+Authoritative user clarification, 2026-11-01. The new path is to generate the supported candidates and evaluate them in two complementary ways. We are not trying to generate candidates specifically at different completion times. See [the implementation plan](TIME_PROGRESS_IMPLEMENTATION_PLAN.md) and [implemented behavior and measurements](experiments/two-goal-comparisons/README.md). The separate comparisons are now the default checkpoint-search policy.
 
 ## Spatial goal: compare elapsed time
 
