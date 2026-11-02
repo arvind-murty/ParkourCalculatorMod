@@ -61,6 +61,11 @@ class Checkpoint:
 
 
 def checkpoint(corridor, gates, spec):
+    if isinstance(spec,Checkpoint):
+        integer(spec.tick,'checkpoint tick',1,200)
+        if len(spec.direction)!=2 or abs(math.hypot(*spec.direction)-1)>1e-7:
+            raise ValueError('Explicit checkpoint direction must be a unit horizontal vector')
+        return spec
     if not isinstance(spec, dict) or set(spec)-{'tick', 'segment', 'region'}:
         raise ValueError('Checkpoint needs tick and optional outgoing segment/region')
     tick = integer(spec.get('tick'), 'checkpoint tick', 1, 200)

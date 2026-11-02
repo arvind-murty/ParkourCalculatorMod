@@ -29,7 +29,7 @@ def movement_settings(scene):
 
 def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=None, report=None, screen=None,
                            context_adapter=None, work=None, checkpoint_tick=None, initial_programs=None, threshold=.005,
-                           program_filter=None, queue_policy='balanced'):
+                           program_filter=None, queue_policy='balanced', stop_on_goal=True):
     cfg = movement_settings(scene) if settings is None else settings
     if queue_policy not in ('balanced', 'legacy'):
         raise ValueError('Unknown movement queue policy')
@@ -52,7 +52,7 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
     def complete(program):
         ticks = program['profile']['airtime']
         return checkpoint_tick is not None and ticks == checkpoint_tick or (
-            ticks and program['terminalSupport'] == scene['goalBlock'] and program['profile']['grounded'][-1]
+            stop_on_goal and ticks and program['terminalSupport'] == scene['goalBlock'] and program['profile']['grounded'][-1]
             and (not scene.get('ladderSearch', {}).get('requireLadder') or program['ladderEvents']))
 
     def fair_subset(items, count):
