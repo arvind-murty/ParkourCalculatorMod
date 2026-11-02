@@ -63,6 +63,13 @@ def source_entries(result):
     return entries
 
 
+def generation_exhausted(report):
+    return (report.get('termination')=='exhausted' and not report.get('queueDrops',0)
+        and not report.get('remainingPrefixes',0)
+        and all(generation_exhausted(parent) for parent in report.get('parents',[]))
+        and not any(row.get('termination')=='choice_limit' for row in report.get('generation',[])))
+
+
 def run_full_audit(request,result,compiler,*,seconds_per_candidate=4,candidate_seconds=.7,solver_calls=48,
                    program_limit=None,python_executable=None,cancel_event=None,on_candidate=None):
     from .checkpoint_search import _motion_bound,evaluate_program
@@ -129,15 +136,14 @@ def run_full_audit(request,result,compiler,*,seconds_per_candidate=4,candidate_s
         finally:
             if hasattr(candidates,'close'):candidates.close()
         unknown=sum(t['result']['status']=='unknown' and not t['provenFixedProgramImpossible'] for t in trials)
-        complete=not capped and generation.get('termination')=='exhausted' and not unknown and not generation.get('queueDrops',0) \
-            and not any(r.get('termination')=='choice_limit' for r in generation.get('generation',[]))
+        complete=not capped and generation_exhausted(generation) and not unknown
         return dict(best=best,trials=trials,generation=generation,work=work.summary(),complete=complete,
             unknownPrograms=unknown,progressRetentionEnabled=False,programLimitReached=capped,
             elapsedSeconds=time.monotonic()-candidate_started,
             interpretation='all_produced_continuations_tested_without_progress_retention_when_complete')
     audit=audit_pool(source_entries(result),evaluate,objective=scene['objective'],incumbent=result.get('best'),on_candidate=on_candidate)
     audit.update(compiler=counted.summary(),sourceGenerationComplete=all(
-        r.get('termination')=='exhausted' for r in result.get('movementGeneration',[])),
+        generation_exhausted(r) for r in result.get('movementGeneration',[])),
         elapsedSeconds=time.monotonic()-started,
         referenceSettings=dict(secondsPerCandidate=seconds_per_candidate,candidateSeconds=candidate_seconds,
             solverCallsPerCandidate=solver_calls,programLimit=program_limit),

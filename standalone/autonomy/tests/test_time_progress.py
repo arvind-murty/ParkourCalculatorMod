@@ -66,6 +66,14 @@ class TimeProgressTests(unittest.TestCase):
 
 
 class ComparisonAuditTests(unittest.TestCase):
+    def test_reference_exhaustion_requires_uncapped_parent_generation(self):
+        from standalone.autonomy.cell_routes.comparison_audit import generation_exhausted
+        self.assertTrue(generation_exhausted(dict(termination='exhausted')))
+        self.assertFalse(generation_exhausted(dict(termination='exhausted',queueDrops=1)))
+        self.assertFalse(generation_exhausted(dict(termination='exhausted',remainingPrefixes=1)))
+        self.assertFalse(generation_exhausted(dict(termination='exhausted',
+            parents=[dict(termination='exhausted',generation=[dict(termination='choice_limit')])])))
+
     def test_retaining_decisions_does_not_commit_clock_optimum_guards_or_states(self):
         from standalone.autonomy.cell_routes.checkpoints import retain_decisions
         program=dict(initial=dict(position=[1,2,3],velocity=[.2,0,.1]),
