@@ -71,7 +71,7 @@ def generation_exhausted(report):
 
 
 def run_full_audit(request,result,compiler,*,seconds_per_candidate=4,candidate_seconds=.7,solver_calls=48,
-                   program_limit=None,python_executable=None,cancel_event=None,on_candidate=None):
+                   program_limit=None,python_executable=None,cancel_event=None,on_candidate=None,candidate_entries=None):
     from .checkpoint_search import _motion_bound,evaluate_program
     for name,value in [('seconds_per_candidate',seconds_per_candidate),('candidate_seconds',candidate_seconds)]:
         if number(value,name)<=0:raise ValueError('Reference budgets must be positive')
@@ -141,11 +141,12 @@ def run_full_audit(request,result,compiler,*,seconds_per_candidate=4,candidate_s
             unknownPrograms=unknown,progressRetentionEnabled=False,programLimitReached=capped,
             elapsedSeconds=time.monotonic()-candidate_started,
             interpretation='all_produced_continuations_tested_without_progress_retention_when_complete')
-    audit=audit_pool(source_entries(result),evaluate,objective=scene['objective'],incumbent=result.get('best'),on_candidate=on_candidate)
+    entries=source_entries(result) if candidate_entries is None else candidate_entries
+    audit=audit_pool(entries,evaluate,objective=scene['objective'],incumbent=result.get('best'),on_candidate=on_candidate)
     audit.update(compiler=counted.summary(),sourceGenerationComplete=all(
         generation_exhausted(r) for r in result.get('movementGeneration',[])),
         elapsedSeconds=time.monotonic()-started,
         referenceSettings=dict(secondsPerCandidate=seconds_per_candidate,candidateSeconds=candidate_seconds,
-            solverCallsPerCandidate=solver_calls,programLimit=program_limit),
+            solverCallsPerCandidate=solver_calls,programLimit=program_limit,movementSettings=cfg),
         interpretation='finite_generated_pool_counterfactual_audit_not_global_optimality')
     return audit

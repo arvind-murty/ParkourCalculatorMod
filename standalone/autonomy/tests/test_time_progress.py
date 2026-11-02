@@ -66,6 +66,23 @@ class TimeProgressTests(unittest.TestCase):
 
 
 class ComparisonAuditTests(unittest.TestCase):
+    def test_competitive_followup_targets_incomplete_omissions_and_keeps_physics(self):
+        from standalone.autonomy.cell_routes.two_goal_experiment import competitive_followup
+        def program(t):return dict(profile=dict(airtime=t),initial=dict(position=[1,2,3]))
+        candidates=[dict(id=k,decision_program=program(t)) for k,t in [('kept',10),('unknown',10),('late',15),('done',10)]]
+        request=dict(initial=dict(position=[1,2,3]),movementSearch=dict(maxInputs=30,maxInteractions=2))
+        run=dict(fixture=dict(request=request),result=dict(best=dict(plan=dict(ticks=12)),
+            windows=[dict(candidates=candidates,retained=['kept'],retention=dict(decisions={}))]))
+        prior=dict(candidates=[dict(candidate='0:'+k,selection=kind,result=dict(complete=complete)) for k,kind,complete
+            in [('kept','retained',False),('unknown','unknown_resource_cap',False),('late','resource_cap',False),
+                ('done','markedly_worse',True)]])
+        narrowed,entries=competitive_followup(run,prior)
+        self.assertEqual([e['id'] for e in entries],['0:unknown'])
+        self.assertEqual(narrowed['initial'],request['initial'])
+        self.assertEqual(narrowed['movementSearch']['maxInputs'],12)
+        self.assertEqual(narrowed['movementSearch']['maxInteractions'],2)
+        self.assertEqual(request['movementSearch']['maxInputs'],30)
+
     def test_reference_exhaustion_requires_uncapped_parent_generation(self):
         from standalone.autonomy.cell_routes.comparison_audit import generation_exhausted
         self.assertTrue(generation_exhausted(dict(termination='exhausted')))
