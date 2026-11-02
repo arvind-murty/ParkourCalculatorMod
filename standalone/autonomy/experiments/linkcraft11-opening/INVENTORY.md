@@ -1,5 +1,7 @@
 # Linkcraft Real11 opening support inventory
 
+Superseded for setup by [the user-supplied blocks and mod-derived landing bounds](PLAYER_BOUNDS.md). The earlier table below remains provenance for the initial JSON-only investigation; its guessed support IDs and ambiguous extents are not the current user block list.
+
 2026-11-02. Source: `/Users/arvindmurty/Downloads/LinkcraftII_Competition_01/real/11.json`, SHA256 `af5d2d1bc6e0ab466f1b6cf309f3a26e76e4a63765ac8b15ff02fb4ad55d28bf`. The requested scope is the opening few jumps, using the JSON alone, followed by user verification before modeling/solving. The table includes the start and first five recorded landing surfaces to provide lookahead. No new numerical solve has been run.
 
 The source has `angleSolver.selectedBlocks: []`. There is no explicit collision-box or block-type list. It contains authored player-center constraints and recorded position/ground states. The inventory is therefore a set of unconfirmed candidate supports, not an exported collision scene. Exact source intervals/provenance are saved in `support-inventory.json`.
