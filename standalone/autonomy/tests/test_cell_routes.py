@@ -17,6 +17,22 @@ def side_scene():
 
 
 class CellRouteTests(unittest.TestCase):
+    def test_support_corner_keeps_both_free_regions_without_filling_the_obstacle(self):
+        scene = prepare_scene(dict(version=1, sceneModel='collision_boxes',
+            geometryBounds=[-3,-3,-2,7,5,4],
+            initial=dict(position=[2,1,.5],velocity=[0,-.0784000015258789,0],yaw=0),
+            startBlock='support',goalBlock='neighbor',maxWallHits=0,
+            blocks=[dict(id='support',boxes=[[0,0,0,5,1,2]]),
+                    dict(id='neighbor',boxes=[[-1,0,1,0,2,2]])]))
+        d = decompose(scene)
+        corner,turn,other = [-.1,1,.2],[.5,1,.2],[.5,1,1.5]
+        self.assertTrue(d.locate(corner))
+        self.assertTrue(d.locate(other))
+        self.assertFalse(d.locate([-.1,1,.9]))
+        self.assertTrue(segment_covered(d,corner,turn))
+        self.assertTrue(segment_covered(d,turn,other))
+        self.assertFalse(segment_covered(d,corner,other))
+
     def test_both_obstacle_sides_and_overflight_are_distinct_proposals(self):
         scene = side_scene()
         d = decompose(scene)
