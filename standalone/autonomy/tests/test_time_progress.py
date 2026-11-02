@@ -66,6 +66,22 @@ class TimeProgressTests(unittest.TestCase):
 
 
 class ComparisonAuditTests(unittest.TestCase):
+    def test_numerical_error_cannot_be_reported_as_completed_reference(self):
+        from unittest.mock import patch
+        from standalone.autonomy.cell_routes.comparison_audit import run_full_audit
+        from standalone.autonomy.tests.test_checkpoint_guidance import flat_scene
+        scene=flat_scene()
+        source=dict(corridor=dict(points=[[.5,1,.5],[5.5,1,.5]]))
+        entries=[dict(id='error',selection='resource_cap',
+            program=dict(terminalSupport=scene['goalBlock'],profile=dict(grounded=[True],airtime=12)))]
+        failed=dict(status='error',termination='worker_failed',best=None,attempts=[],contactAttempts=[])
+        with patch('standalone.autonomy.cell_routes.checkpoint_search._motion_bound',return_value={}), \
+                patch('standalone.autonomy.cell_routes.checkpoint_search.evaluate_program',return_value=failed):
+            audit=run_full_audit(scene,source,object(),candidate_entries=entries)
+        self.assertTrue(audit['allCandidatesProcessed'])
+        self.assertFalse(audit['continuationAuditComplete'])
+        self.assertEqual(audit['candidates'][0]['result']['unknownPrograms'],1)
+
     def test_competitive_followup_targets_incomplete_omissions_and_keeps_physics(self):
         from standalone.autonomy.cell_routes.two_goal_experiment import competitive_followup
         def program(t):return dict(profile=dict(airtime=t),initial=dict(position=[1,2,3]))

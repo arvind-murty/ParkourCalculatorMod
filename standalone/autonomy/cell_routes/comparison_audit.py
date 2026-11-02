@@ -129,7 +129,8 @@ def run_full_audit(request,result,compiler,*,seconds_per_candidate=4,candidate_s
                 trials.append(trial)
         finally:
             if hasattr(candidates,'close'):candidates.close()
-        unknown=sum(t['result']['status']=='unknown' and not t['provenFixedProgramImpossible'] for t in trials)
+        unknown=sum((t['result']['status'] in ('error','cancelled') or t['result'].get('best') is None)
+            and not t['provenFixedProgramImpossible'] for t in trials)
         complete=not capped and generation_exhausted(generation) and not unknown
         return dict(best=best,trials=trials,generation=generation,work=work.summary(),complete=complete,
             unknownPrograms=unknown,progressRetentionEnabled=False,programLimitReached=capped,
