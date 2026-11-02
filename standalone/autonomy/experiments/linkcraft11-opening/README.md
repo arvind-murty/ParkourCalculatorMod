@@ -1,5 +1,7 @@
 # Linkcraft Real11 opening: fixed-clock solve and retention counterexample
 
+Subsequent user clarification: the intended case has no extra run ticks and only the B6 blockage choice. The [execution audit](EXECUTION_AUDIT.md) explains exactly how the pilot searched an unnecessarily broader problem, lists cells/routes/decision combinations/pruning/commitments and distinguishes scalar from physical acceptance. Its scope correction supersedes interpreting the early-history counterexample as evidence that this intended simple solve needs more candidates or a more elaborate score. [Every main-run evaluated prefix and its retention decision](audit/CANDIDATES.md).
+
 2026-11-02. Isolated branch `research/ipopt-cell-routes`, numerical source through `f21d58ea`. The requested opening has a valid standalone result: **maximum Z found at absolute state tick64 is -1093.2675533415547**. Final X728.9505324575503, feetY6.796735600668692, airborne. No B7 landing is required or present in this candidate. It is approximately0.43245 blocks beyond B7's far player-center support edge. This is a best-found feasible result, not an optimality certificate.
 
 [Solution summary](solution-summary.json), [full solution and fixed movement program](solution.json.gz), [per-tick trajectory](trajectory.csv), [exact retention counterexample](coupling-counterexample.json), [control measurements](control-summary.json), [evidence manifest](evidence-manifest.json).
@@ -62,6 +64,8 @@ This is evidence of earlier-input and future-decision coupling on a fixed spatia
 Two mechanisms need to stay distinct. Proposal ordering improved which relevant contacts were attempted. Retention still excluded a useful history even after obtaining accepted local scores. A larger resource cap alone cannot repair a rule that labels the history markedly worse. Removing the corridor signature and then the corridor filter leaves one fast failed schedule unknown after the same single numerical problem, before geometry/corridor audits; that diagnostic supplies no evidence that the corridor caused its failure.
 
 ## Next work supported by this evidence
+
+The execution audit and user's no-run clarification narrow the immediate next step: hold the ordinary no-run jump chain fixed and enumerate the actual B6 passage choices with full constraints before IPOPT. The broader suggestions below are potential later work for genuinely larger decision domains, not prerequisites established by this simple case.
 
 1. Integrate a generic constructive complete continuation into orchestration using the existing builders. Obtain a valid full-route baseline before trusting local exclusions on a long route. Keep unknown continuation checks explicit.
 2. Reopen distinct saved input/contact histories when complete continuation changes rankings, including after a successful solve. Preserve the Real11 counterexample as the acceptance case; compare reopened histories from the original state with all facings free.

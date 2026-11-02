@@ -17,6 +17,10 @@
       "bytes": 2699,
       "sha256": "bc714a834a4a6e344274a77016ff5e3f86b4c5b270fc71cc15fce9e33cf1cdd7"
     },
+    "EXECUTION_AUDIT.md": {
+      "bytes": 27826,
+      "sha256": "ce04f75ea6a3197091388f978d577b233b01b416e4b439975670cb6f6b0722a1"
+    },
     "INVENTORY.md": {
       "bytes": 4286,
       "sha256": "5ce12e3a2673107e1cff486b7521ec92bee20656acced9fe1ac2054061ceaf60"
@@ -26,8 +30,68 @@
       "sha256": "c8fc939832148e519b1f584e12356cacd41e862f4969d6f9729f20c7748152e4"
     },
     "README.md": {
-      "bytes": 10836,
-      "sha256": "f093e992f3ab24ee666af19fc4c462ffd91f20f6a6f03367a072fcecfd55b170"
+      "bytes": 11776,
+      "sha256": "23fe7c148f87f268d8094d19c45213332c0210806b2da1935648f7854a377bea"
+    },
+    "audit/CANDIDATES.md": {
+      "bytes": 8550,
+      "sha256": "59201e7d4ea8354afd3e2c02f03552d83f303814b7645491a86294698202a8a6"
+    },
+    "audit/CELLS.md": {
+      "bytes": 3711,
+      "sha256": "d34e424c2cdd82aec869b6edfa4672fe73ad6c5f2d2bf2bde35892063114b31e"
+    },
+    "audit/FINAL_REPAIRS.md": {
+      "bytes": 2479,
+      "sha256": "5e553385fb33f73f90b9ae21486d396bb067a7d3308c9d4d184e72981a282230"
+    },
+    "audit/call-accounting.json": {
+      "bytes": 25851,
+      "sha256": "3d2671fc11168ab6fb4eac25e31686a8b9f3ee2923d186c22fd4554b8182ace8"
+    },
+    "audit/candidate-ledger.csv": {
+      "bytes": 353695,
+      "sha256": "9a1cb83620a3652d99dbdeba6181f51c702d8ce6ba89263b394f3fe20d06055f"
+    },
+    "audit/candidate-programs.json.gz": {
+      "bytes": 2512784,
+      "sha256": "fa3b01717ba326e9de170813ef384cef84c9b1f95c0aaf278ce1a7aefcfa5390"
+    },
+    "audit/cells-and-route.json": {
+      "bytes": 111127,
+      "sha256": "7002f522ec250092f7e326cea5cb0243d25c6ee3b33f5afcadd3830c5e25143a"
+    },
+    "audit/detailed-evaluations.csv": {
+      "bytes": 49885,
+      "sha256": "7aba2bb5c506393e5271731726c1e27eb74b169b9e059309ac36074488a0eef0"
+    },
+    "audit/detailed-repair-branches.json.gz": {
+      "bytes": 43123,
+      "sha256": "2751b1350533c67b3e84f19f1e1c9b7d2d80c3cc7bef7543718eb4763ae0ed13"
+    },
+    "audit/repair-attempts.csv": {
+      "bytes": 36815,
+      "sha256": "90e6775fcdca2133d992cc645ad129ade98863199ca9b7a6c01793ec226b7adf"
+    },
+    "audit/verification.json": {
+      "bytes": 434,
+      "sha256": "c65684cc28ca4cdc22d6c8af7e31f7aa2e935165b622937551775d4d33c980b2"
+    },
+    "audit/windows-and-generation.json": {
+      "bytes": 360886,
+      "sha256": "c360ca64caf63fa688c486ab3d73505be0b8640c7cdcb2b3f8dd498f23527825"
+    },
+    "audit/winning-cell-visits.json": {
+      "bytes": 801,
+      "sha256": "a36dd508ae600712ffcf82102a889698f014fa97dbb3c6fc7b237c15f2df42f2"
+    },
+    "audit/winning-fixed-call.json": {
+      "bytes": 125578,
+      "sha256": "bc3cc1aeb78c901d2065b812449ef0b182bb00366f88aa0f39c9313e30fd4de1"
+    },
+    "audit_trace.py": {
+      "bytes": 14653,
+      "sha256": "cd5f4160a7de92ce4e27196c13ff0375c4ade7d69ef7012ff1df27082ddd8791"
     },
     "b1-corner-check.json": {
       "bytes": 3559,
@@ -209,5 +273,10 @@
       "bytes": 2130,
       "sha256": "47eb5e2639c0a81736294983dfde4ff46571f989467a9443a3a03077701c46e4"
     }
+  },
+  "audit": {
+    "generator": "audit_trace.py",
+    "numericalSolvesRun": false,
+    "verification": "audit/verification.json"
   }
 }
