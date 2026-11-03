@@ -18,8 +18,8 @@
       "sha256": "bc714a834a4a6e344274a77016ff5e3f86b4c5b270fc71cc15fce9e33cf1cdd7"
     },
     "EXECUTION_AUDIT.md": {
-      "bytes": 29649,
-      "sha256": "a92c5e0f1f5cb9f7ec5f3722fe0ebdbb5ab4bb4ebfd20ee42781a67bbe3344f8"
+      "bytes": 32613,
+      "sha256": "d970669ca66276edd2b2a3518da59965c39841b951a64d06a093535861867f7e"
     },
     "INVENTORY.md": {
       "bytes": 4286,
@@ -30,8 +30,8 @@
       "sha256": "c8fc939832148e519b1f584e12356cacd41e862f4969d6f9729f20c7748152e4"
     },
     "README.md": {
-      "bytes": 11776,
-      "sha256": "23fe7c148f87f268d8094d19c45213332c0210806b2da1935648f7854a377bea"
+      "bytes": 12344,
+      "sha256": "10f2ab48503e154a009b8473ee939eaeb3ab74becd4782d13a3dd45f37688f92"
     },
     "audit/CANDIDATES.md": {
       "bytes": 8550,
@@ -76,6 +76,18 @@
     "audit/same-clock-check.json": {
       "bytes": 3085,
       "sha256": "da45bbed278e7b86459f643a291a09ead4f512a9f07a27777999eda52b5f5fd1"
+    },
+    "audit/setup-crossover.csv": {
+      "bytes": 7722,
+      "sha256": "635c3a254a627884e0a0f18d35f610037def2f667db6e7ac2b54b91c4f044c2f"
+    },
+    "audit/setup-crossover.json": {
+      "bytes": 5711,
+      "sha256": "ba536086dc6517a5144473281d5a0932a2d716027bf2c7e8ccf259aa9e98b0d3"
+    },
+    "audit/setup-crossover.png": {
+      "bytes": 108963,
+      "sha256": "ab0a66307bb4c24ef0bec826ebbf4630392e2ded1379a504775a4ab34044702a"
     },
     "audit/verification.json": {
       "bytes": 434,
@@ -240,6 +252,10 @@
     "fixtures/clock64.json": {
       "bytes": 4465,
       "sha256": "9e769335fc85bb9dbc60de9a64ff3916091a2729a71c407273bbaf362b0aec61"
+    },
+    "measure_setup_crossover.py": {
+      "bytes": 5115,
+      "sha256": "e740140ee3ba9d2759664b7d25a33791df3601c01585b39df951268f84f0a47c"
     },
     "replay_solution.py": {
       "bytes": 955,
