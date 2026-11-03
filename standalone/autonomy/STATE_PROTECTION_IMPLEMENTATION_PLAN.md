@@ -1,5 +1,7 @@
 # Implementation plan: velocity and schedule protection
 
+2026-11-03 scheduling update: [the consolidated DFS/interaction plan](DFS_INTERACTION_IMPLEMENTATION_PLAN.md) supersedes the old global prefix-length processing key/window traversal below. Preserve the comparison protections as specified, but compare time at a shared spatial goal and explore the selected branch in depth.
+
 Current consolidated implementation scope/order: [ORCHESTRATOR_IMPLEMENTATION_PLAN.md](ORCHESTRATOR_IMPLEMENTATION_PLAN.md). This document supplies supporting detail; all workstreams included by the consolidated plan remain required even where an older section describes a separate implementation slice.
 
 2026-11-02. The new protections and saved deferrals are implemented on isolated branch `research/ipopt-cell-routes`. See [the consolidated status](ORCHESTRATOR_IMPLEMENTATION_PLAN.md#implemented-status) and [results](experiments/orchestrator-fixes/README.md). Existing IPOPT equations, movement/constraint builders, full-original-state re-solves, variable earlier facings and normal momentum with zero thresholds are retained. The diagnosis and original acceptance criteria below remain the design record.

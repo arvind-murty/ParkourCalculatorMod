@@ -18,7 +18,9 @@ The position-Y, vertical-velocity, ground, jump and sneak histories through10 ma
 
 ## 2. Why was P01 continued before P02?
 
-For numerical evaluation, the scheduler uses `(prefix inputs, -effective jumps, grounded run inputs, stable ID)`. It does not use the spatial-probe arrival time or promise to alternate initial families.
+“Prefix inputs” means the number of elapsed simulated ticks covered by the current partial candidate, counted from the original start. Each input is one tick of controls, including run, jump and air ticks. P01/P02 cover inputs0..9 and therefore have length10; P03..P07 cover0..27 and have length28. It is the partial-model horizon, not a measured completion time. All candidates compared at the same fixed checkpoint tie on this field; it does not establish which full route finishes sooner.
+
+For numerical evaluation, the scheduler uses `(prefix inputs, -effective jumps, grounded run inputs, stable ID)`. It does not use the spatial-probe arrival time or promise to alternate initial families. This means the current first priority favors shorter simulated partial histories. Applying the user's fewest-ticks ordering to that quantity conflates search depth with time to a shared spatial goal. At one fixed checkpoint this field ties and cannot establish earlier route completion; this priority interpretation must be revisited as a scheduling issue.
 
 | Candidate | Processing key, before stable ID | Consequence |
 | --- | --- | --- |
@@ -119,3 +121,7 @@ The interaction-gate plan addresses item4. It does not by itself fix family allo
 - [Original complete candidate/constraint tables](CANDIDATE_AUDIT.md), [208-call ledger](WORKER_CALLS.md), [saved source reports](../evidence/cold-summary.json), and [question-specific extracted evidence](question-evidence.json).
 - Ordering/availability: movement_frontier.py, solve_spec.processing_key, decision_windows.fair_programs and checkpoint_search.py's ready/numerical queues and window barrier. Eligibility: SupportOrder.audit, prefix_viability and normal_choices.
 - A classification error in the prior audit prose was corrected while verifying the records: the57 saved generation exclusions comprise25 dead falls,29 interval contradictions and3 norm contradictions. They were not56 dead falls plus an initial-floor rejection. The raw proof records and208-worker-call accounting are unchanged.
+
+## Subsequent scheduling decision
+
+The user has now replaced the audited prefix-length ordering and window barrier with the [consolidated DFS/interaction plan](../../../DFS_INTERACTION_IMPLEMENTATION_PLAN.md). Compare at a shared spatial point, explore P02 first on the observed earlier B2 arrival, and retain P01 for backtracking. The sections above describe the old runtime and its failure, not the desired new policy. Reuse of decisions between completed solves remains deferred.

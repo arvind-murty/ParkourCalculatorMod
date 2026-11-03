@@ -1,5 +1,7 @@
 # Preliminary plan: generate only relevant, distinct interaction models
 
+Current consolidated scope: [DFS_INTERACTION_IMPLEMENTATION_PLAN.md](DFS_INTERACTION_IMPLEMENTATION_PLAN.md). This document supplies the interaction half; the user now also selects depth-first decision traversal and backtracking.
+
 2026-11-03. User requests moving relevance filtering to the correct place and making it robust. This is a preliminary implementation plan, not a claim that runtime changes have been made. It closes a gap in workstreams3/4 of [the consolidated plan](ORCHESTRATOR_IMPLEMENTATION_PLAN.md), rather than introducing another continuous solver or larger budgets.
 
 ## Governing invariant, clarified by the user
@@ -59,7 +61,7 @@ This establishes a second placement/scope gap: useful interaction information is
 
 ## Scope
 
-This work keeps the current continuous model, free facings from the original state, normal momentum with zero inertia thresholds, selected non-ladder movement families, corridor policy and comparison margins. Changing schedule protection, speculative future-time bounds, corridor equivalence or parking policy remains separate. Do not claim that eliminating orphan prefixes or duplicate descriptions proves P06/P07 globally inferior.
+This work keeps the current continuous model, free facings from the original state, normal momentum with zero inertia thresholds, selected non-ladder movement families, corridor policy and comparison margins. The outer traversal/selection change is now covered by the consolidated DFS plan. Independent redesign of schedule protections, speculative future-time bounds and corridor equivalence remains separate. Do not claim that eliminating orphan prefixes or duplicate descriptions proves P06/P07 globally inferior.
 
 
 ### Confirmed B4 reachability exclusion for the ordinary prefix

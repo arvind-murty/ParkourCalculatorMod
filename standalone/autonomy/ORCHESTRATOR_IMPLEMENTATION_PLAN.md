@@ -1,5 +1,7 @@
 # Consolidated orchestrator implementation plan
 
+Current implementation authority, 2026-11-03: [DFS_INTERACTION_IMPLEMENTATION_PLAN.md](DFS_INTERACTION_IMPLEMENTATION_PLAN.md). The user replaces shortest-prefix/window-drain traversal with ordered depth-first completion and backtracking, together with the shared early interaction gate. The seven-workstream record below describes the prior implementation; its old global ordering/window behavior is superseded, not a requirement to preserve.
+
 2026-11-02. This is the authoritative implementation scope and ordering. The seven behavioral workstreams below are now wired into the standalone checkpoint orchestrator. Numerical validation is recorded in [the implementation results](experiments/orchestrator-fixes/README.md). Cold Real11 completion and broad false-pruning measurement remain open acceptance items; implementing persistence does not establish efficient complete discovery. Corridor failure logging originated in3082f8fc.
 
 ## Implemented status
@@ -77,7 +79,7 @@ Keep inherited work only in compatible contexts. Give the current candidate's co
 
 **Acceptance:** no dispatch of complete candidates with a known relevant B6 requirement missing. The saved old24-call trace becomes a regression for exact supplied rows/scope rather than a cap-inflation target. Preserve a validated incumbent across invalid polish, errors and cancellation; keep legitimate early B2 avoidance where the shared screen cannot exclude it. See [constraint/scope details](CORRIDOR_CONSTRAINT_FIX_PLAN.md).
 
-## 5. Comparison protections and exact processing order
+## 5. Comparison protections and prior processing order, superseded
 
 **Change:** extract position, stored velocity, schedule, counts and phase/context from one accepted witness. Use the existing common direction to obtain forward position, forward velocity and horizontal speed magnitude. Do not mix witnesses or add velocity-objective solves.
 
