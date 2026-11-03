@@ -118,3 +118,37 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH="$PWD" .venv-guidance/bin/py
   --input standalone/autonomy/experiments/last-jump-runs/evidence/real11-retry-after-handoff.json.gz \
   --output /tmp/extraction-probe.json
 ```
+
+## What state is actually used, and where do109MB go?
+
+[Byte accounting](snapshot-breakdown.json) measures the same late progress checkpoint. The figures below are additive; MB means decimal megabytes:
+
+| Component | Bytes represented |
+| --- | --- |
+| Historical comparison windows, saved twice | 29.49MB compact JSON |
+| Everything else, including live state and additional history/copies | 15.24MB compact JSON |
+| Indentation/newlines/spaces added by pretty formatting | 64.57MB |
+| **Current progress JSON** | **109.30MB** |
+
+The input scene/settings fixture itself is only3,227 compact bytes. The100MB is not the map or a single trajectory. The two identical window histories are `report.windows` and `report.searchState.windows`,14.743MB each. They account for about66% of compact data. JSON writes each occurrence by value even if they shared references in memory.
+
+For the modern resume path, the scheduler uses:
+
+- Version/context/initial roots and counters, to restore compatible work and identities.
+- Active DFS stack, saved siblings, deferred refinement/suspended frames and their selected discrete programs/constraints.
+- Movement-generation pending/ready queues, current expansion/cursors and seen identities.
+- Numerical-repair pending/unresolved/in-flight work, selected interaction alternatives, generator cursors and seen identities, accepted witnesses and facing seeds.
+- The best validated result, needed for comparisons and independent replay on resume.
+- Learned per-pattern local-run minima and exclusion identities.
+
+Historical `windows` are appended and returned for reports; they are not consulted to choose the next branch in current DFS. The CLI prefers `searchState` for exact resume. Only the legacy fallback for old reports without searchState reconstructs parents from windows. Existing post-run audit/replay helpers use those histories, so the fix is to store them once outside the frequently rewritten working checkpoint, not delete the evidence.
+
+Even the remaining15.24MB is not a minimal checkpoint. The saved frame collections contain nine frame locations but only seven distinct frame IDs. `frames` repeats closed-frame records also held in `refinements`; final-attempt records and witness/child/accepted-result copies repeat related data. Actual semantic owners of unfinished execution must remain unique, as existing checks require, even if audit views reference them elsewhere.
+
+A further3.757MB across stored generator seen lists consists of258 full serialized program-key strings. Their membership is used for deduplication, but their full bodies are not reconstructed from those strings. Using64-character SHA256 identities would represent those lists in about17KB, consistent with existing hashed candidate IDs, while pending programs remain available separately. This requires versioned/compatible key handling and tests; merely truncating strings would be wrong.
+
+The active generator pending programs account for about2.11MB in this representation. Those discrete alternatives and their constraints are useful working data and must not be arbitrarily discarded. Keys, immutable program definitions and accepted witnesses can be stored once and referenced; historical requests/diagnostics can live in an audit store. A smaller layout needs resume-equivalence validation; this audit does not claim a proven minimum byte count.
+
+Source trace: `depth_first` reads stack/refinement/suspended frames to schedule; its `windows` are append/report data. `movement_frontier` restores pending/ready/expansion/seen. `block_contacts` restores queues, accepted state, choices and seen identities; `attemptLog`/`contactLog` are preserved to continue audit history. Their inclusion in the same object does not make every historical diagnostic necessary for numerical continuation. The structured breakdown has nested views; only peer fields within a view should be added together.
+
+No production checkpoint/schema change was made in this audit. The recommended split is a small operational checkpoint plus immutable, separately stored audit/program objects and durable updates, preserving every pending candidate and completed numerical identity.

@@ -522,6 +522,7 @@ Evidence filenames identify different runs/contexts; do not treat reports as exe
 | [extraction_probe.py](../autonomy/experiments/last-jump-runs/row-benchmark/extraction_probe.py) | Reproduce extraction off/on and original-constraint monitoring on a stored request; no route discovery. |
 | [results.json](../autonomy/experiments/last-jump-runs/row-benchmark/results.json) | Structured experiment data/settings/provenance: results. |
 | [run.log](../autonomy/experiments/last-jump-runs/row-benchmark/run.log) | Captured commands/test/runtime output or investigation notes; source-era evidence. |
+| [snapshot-breakdown.json](../autonomy/experiments/last-jump-runs/row-benchmark/snapshot-breakdown.json) | Offline checkpoint byte accounting and live-state versus historical-data trace; production unchanged. |
 
 ## autonomy/experiments/linkcraft11-j0-j16
 
