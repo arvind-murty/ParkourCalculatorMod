@@ -85,6 +85,8 @@ The old scored/unknown slot limits must not become permanent losses of protected
 
 Use the existing candidate/repair persistence where possible, extending it with an explicit active/deferred cursor. The existing one-item failure rescue is insufficient because it can miss a protected history or stop revisiting after a successful solve. The queue must resume deferred work during normal search too.
 
+Terminal persistence must store the outgoing result's repair state rather than the `decision_program` copy of its incoming parent state. Concrete Real11 candidate1a006630c0... consumes24 requests and gets24 again on the outer resume from its55-input checkpoint; candidate2396e5d72c... consumes16 before a deadline, then restarts with24. A controlled true continuation of the former starts with174 pending64-input repairs, not the parent's125. Save pending/seen/unresolved branches, accepted incumbent/seeds and outer cursor under a compatible physical-program/context key. This is orchestration-work persistence; it does not require storing IPOPT's internal optimizer iterations. See [the concrete examples](experiments/linkcraft11-opening/OTHER_FAILURES.md#concrete-examples-of-the-lost-terminal-progress).
+
 ## 5. Use the exact evaluation order
 
 Sort generated ready candidates and resumed work by `(n,-J,R,id)` before numerical evaluation; use the same ordering for selected parent work. At a common clock n ties. At a shared spatial event the different elapsed times remain primary. Keep stable IDs through save/load so ordering is deterministic.

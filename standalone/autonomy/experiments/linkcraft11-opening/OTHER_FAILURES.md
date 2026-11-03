@@ -117,6 +117,22 @@ Of20 final candidates in the resumed run:
 
 The result is unknown after126.5s because of the20-candidate limit, not a300-second timeout. It does not test the missed B3-wait branch or reopen the earlier setup choices. This is a real persistence/continuation gap in what the outer resume operation currently provides. It is separate from the warm-repair scheduling problem: the two exact inner-resume controls above do restore terminal work, yet still need an effective base-branch opportunity.
 
+### Concrete examples of the lost terminal progress
+
+The progress to checkpoint is the orchestrator's search over fixed geometry/constraint branches. Each numerical request still solves a fixed program from the original start. We are not proposing to checkpoint/restart IPOPT's internal iteration, Hessian or line-search state.
+
+| Actual final candidate | Original attempt | Retained55 resume | What was reused/lost |
+| --- | --- | --- | --- |
+| 2, ID1a006630c0..., jumps5/17/26/35/46/61 |24 numerical requests, call cap |24 requests, call cap again | restores55-input pending125/unresolved1; does not restore the new64-input repair frontier |
+| 18, ID2396e5d72c..., jumps5/17/26/35/47/63 |16 requests before deadline |24 requests from the old parent state | a larger second allowance does not mean24 additional unexplored branches after the first16 |
+| 1, ID9b0ac80db0..., jumps9/18/27/37/52 |one request, unknown |one request, unknown again | re-evaluates the same fixed final candidate with the same incoming55-input repair state |
+
+For candidate2, the recorded incoming55-input state contains125 pending repairs, one unresolved branch and an incumbent repair. The controlled faithful re-evaluation consumes24 requests and returns a64-input state with174 pending branches and one unresolved branch. A real continuation restores that174-branch frontier: the first inner-resume control reports `exact=true`, restores175 branches including the unresolved branch, and finishes with222 pending. The next finishes with270. These174/222/270 counts come from the controlled follow-up, not from nonexistent old final-subattempt logs.
+
+The old outer resume instead reads the last `windows` entry, reconstructs its eight retained55-input programs, and regenerates finals. The final records keep `decision_program`, status, termination and work counters, but discard the returned64-input `repairState`, pending branches, per-final continuation cursor and ordered inner attempts. `decision_program.repairState` is the incoming55-input checkpoint, not the result of that final evaluation. Hence18 candidate IDs repeat in the same order. This establishes repeated candidates and a reset search frontier; it does not establish that every individual numerical request was bit-identical, because old final subattempts were not preserved and numerical timing can change the path.
+
+The required fix is to save each final candidate's outgoing repair state, already-processed/dedup information, queued/unresolved alternatives, best accepted witness/warm seeds and the outer enumeration cursor, keyed by its fixed physical program and compatible solve context. On resume, continue those queues and then advance to new candidates. All facings remain free in every new numerical solve. The separate repair-ordering fix is still needed: the true inner-resume controls preserve work correctly but can spend it on an unhelpful inherited queue order.
+
 ## Generic conclusions and fixes suggested by this evidence
 
 1. **Generation coverage:** preserve/revisit alternate inputs at the decision that needs changing. Do not spend the first proposal batch elaborating later events of unvalidated earlier contact schedules. Measure the user's new(n,-J,R) ordering on the exact saved-parent/proposal fixture; do not assume velocity guards alone fix it.
