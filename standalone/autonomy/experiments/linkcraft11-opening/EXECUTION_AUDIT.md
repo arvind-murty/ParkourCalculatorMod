@@ -113,6 +113,24 @@ The exact80 combinations and each drop reason are in [CANDIDATES.md](audit/CANDI
 | H10-16 | [8] | [0..7] | 2.721058 | 17 | retain |
 | H10-18 | [9] | [0..8] | 2.717278 | 18 | retain |
 
+### Same-clock check: what the labels0 and8 mean
+
+The labels0/8 above are **first-jump input indices**, not progress amounts, comparison ticks or elapsed airtime. Both programs start at absolute state0 with position[746.5,5,-1104.5] and zero horizontal velocity. Both execute inputs0..9 and are scored at the same absolute state10, before input10. Each saved witness has11 states. The jump0 candidate is not compared at0 and the jump8 candidate is not compared at8, nor is either compared ten ticks after its own jump.
+
+| Candidate | Inputs before the comparison | State10 X | State10 Z | State10 feetY | State10 progress |
+| --- | --- | ---: | ---: | ---: | ---: |
+| first jump0 | jump at0, then air inputs1..9 | 744.414624 | -1103.326976 | 5.495201 | 2.392651 |
+| first jump8 | ground-run inputs0..7, jump at8, air input9 | 744.128392 | -1103.165971 | 5.753200 | 2.721058 |
+
+Both use exactly the same direction and anchor:
+
+```text
+progress10 = -0.8715755371245493 * (X[10] - 746.5)
+             +0.49026123963255896 * (Z[10] + 1104.5)
+```
+
+Recomputing from the saved coordinates reproduces2.3926512670823836 and2.7210580043446644. The run-then-jump alternative is ahead by0.3284067373 in this horizontal proxy at that clock. Ground acceleration builds speed while the immediate-jump alternative spends most inputs in the lower air-acceleration regime; the delayed sprint-jump boost is also close to the comparison. The saved progresses at absolute states2/4/6/8/10 are0.532160/0.963714/1.420404/1.897909/2.392651 for jump0, and0.330980/0.831610/1.382816/1.949099/2.721058 for jump8. Jump8 starts behind, then overtakes within this window. This does not establish better future completion or make that run-tick alternative relevant to the user's no-run solve. [Exact same-clock extraction](audit/same-clock-check.json).
+
 Other retained10-tick prefixes have initial jump4/5/6/7, a nonjump/run-off prefix and a fully unknown prefix. Thus the search had already committed to several irrelevant ground-run alternatives before it ever reached B6. The zero-run initial jump0 history was parked. H10-19 also drops as markedly worse; it contains no jump and ground inputs0..9. Near-identical input lists can have different selected terminal contacts, which is why they remain distinct records.
 
 At28, retained parents include jump histories[9,18,27] with B2/B3 contacts18/27, but also slower histories[5,17,26] and[6,18,27] with an extra B1 hop. At44 the retained set has an unknown fast history[9,18,27,37] and two distinct slower contact variants with jumps[5,17,26,35], B2@26 and B3@35. By55 the known retained slower histories are still at/just beyond B4, while the fast B5@52 history remains unknown. The exact prefix, contacts, parent ID and retained order are in the appendix. No final main-search program at64 was accepted. Resuming the same retained55-tick set evaluates20 more final programs with383 calls and still returns unknown.
