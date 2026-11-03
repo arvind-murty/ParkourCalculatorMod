@@ -2,7 +2,7 @@ import copy
 import time
 
 from .case_profiles import entry_possible
-from .movement_composition import append_choice, boundary_state, empty_program, program_physics_key, truncate_program
+from .movement_composition import append_choice, boundary_state, empty_program, program_physics_key, program_search_key, truncate_program
 from .movement_generation import generate_choices
 from .solve_spec import digest, processing_key
 
@@ -13,13 +13,13 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
     initial = empty_program(scene['initial'], threshold=threshold)
     initial['terminalSupport'] = scene['startBlock']
     seeds = [initial] if initial_programs is None else initial_programs
-    context = digest(dict(scene=scene, settings={k: v for k, v in settings.items() if k not in
+    context = digest(dict(version=2, scene=scene, settings={k: v for k, v in settings.items() if k not in
         ('maxPrefixes', 'maxQueuedPrefixes', 'maxChoicesPerType', 'expansionsPerProposal')},
-        roots=[program_physics_key(p) for p in seeds], checkpoint=checkpoint_tick, threshold=threshold,
+        roots=[program_search_key(p) for p in seeds], checkpoint=checkpoint_tick, threshold=threshold,
         stopOnGoal=stop_on_goal))
     if continuation is not None and continuation.get('context') != context:
         raise ValueError('Incompatible movement generation checkpoint')
-    state = copy.deepcopy(continuation) if continuation is not None else dict(version=1, context=context,
+    state = copy.deepcopy(continuation) if continuation is not None else dict(version=2, context=context,
         pending=copy.deepcopy(seeds), ready=[], expansion=None, seen=[], generated=0, expanded=0, emitted=0,
         screened=0, policyRejections=0, exhausted=False)
     state.setdefault('exclusions', [])
@@ -119,6 +119,15 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                 e['cursor'] += 1
                 state['generated'] += 1
             child = append_choice(e['program'], e['choice'], max_inputs=settings['maxInputs'])
+            if child is not None and screen is not None:
+                proof = screen(child)
+                if proof is not None:
+                    state['screened'] += 1
+                    state['exclusions'].append(dict(id=digest(program_physics_key(child)),
+                        ticks=child['profile']['airtime'], proof=proof, scope='full_proposal_before_projection'))
+                    e.pop('choice', None)
+                    update()
+                    continue
             if child is not None and checkpoint_tick is not None and child['profile']['airtime'] > checkpoint_tick:
                 child = truncate_program(child, checkpoint_tick)
             accepted = child is not None and entry_possible(child['profile'], initial_bounds)
@@ -127,7 +136,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                 accepted = False
             if accepted and context_data.get('prefixFilter') is not None and not context_data['prefixFilter'](child):
                 accepted = False
-            identity = program_physics_key(child) if accepted else None
+            identity = program_search_key(child) if accepted else None
             if identity in seen:
                 accepted = False
             if accepted and screen is not None:

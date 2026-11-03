@@ -161,6 +161,9 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
                     choices += 1
                     generated += 1
                     child = append_choice(program, choice, max_inputs=cfg['maxInputs'])
+                    if child is not None and screen is not None and screen(child) is not None:
+                        screened += 1
+                        continue
                     if child is not None and checkpoint_tick is not None and child['profile']['airtime'] > checkpoint_tick:
                         child = truncate_program(child, checkpoint_tick)
                     if child is not None and checkpoint_tick is not None and child['profile']['grounded'][-1]:
@@ -239,10 +242,16 @@ def find_movement_blocks(request, compiler, *, seconds=60, candidate_seconds=2, 
                         groundMagnitude=sample['magnitude'][0])
     owners = {b['solidIndex']: b['sourceBlock'] for b in scene['blocks']}
     report, attempts, best = {}, [], None
+    from .interactions import InteractionGate
+    gate = InteractionGate(scene, compiler, seconds=candidate_seconds)
+    def configure(context):
+        if context_adapter is not None:
+            context_adapter(context)
+        gate.context(context)
     def screen(program):
-        return screen_program(scene, program, compiler, max(.001, deadline - time.monotonic()))
+        return gate.required(program) or screen_program(scene, program, compiler, max(.001, deadline - time.monotonic()))
     for program in iter_movement_programs(scene, settings=cfg, deadline=deadline, cancel_event=cancel_event,
-                                          report=report, screen=screen, context_adapter=context_adapter, work=work):
+                                          report=report, screen=screen, context_adapter=configure, work=work):
         if time.monotonic() >= deadline:
             break
         compiled = compile_program(scene, program)
@@ -284,6 +293,12 @@ def screen_program(scene, program, compiler, seconds):
     from .block_contacts import validate_vertical_schedule
     from .route import prepare_route, schedule
     from .screen import contradiction
+    profile = program['profile']
+    if profile['position'][1] < scene['initial']['position'][1]-1e-7:
+        from .route import supports
+        if any(abs(b['top']-scene['initial']['position'][1])<1e-7 and supports(
+                b,scene['initial']['position'][0],scene['initial']['position'][2]) for b in scene['blocks']):
+            return dict(reason='unselected_initial_floor')
     compiled = compile_program(scene, program, require_complete=False)
     route = prepare_route(compiled['route'])
     plan = schedule(route, [0])

@@ -32,10 +32,10 @@ class FixedClockTests(unittest.TestCase):
         self.assertEqual(policy.audit(ordinary)['progress'],0)
         self.assertEqual(policy.audit(ranked)['progress'],1)
 
-    def test_spatial_goals_must_match_the_comparison_checkpoints(self):
+    def test_unknown_spatial_goal_is_rejected_before_compilation(self):
         scene=flat_scene()
-        with self.assertRaisesRegex(ValueError,'one shared spatial goal'):
-            find_checkpoint_route(scene,object(),checkpoints=[],spatial_goals=[dict(kind='landing',block='goal')],
+        with self.assertRaisesRegex(ValueError,'Landing comparison requires'):
+            find_checkpoint_route(scene,object(),checkpoints=[],spatial_goals=[dict(kind='landing',block='missing')],
                 spatial_points=[[.5,1,.5],[5.5,1,.5]])
 
     def test_explicit_clock_preserves_direction_without_goal_region(self):
