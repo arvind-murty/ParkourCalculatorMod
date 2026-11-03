@@ -4,6 +4,7 @@ A fresh agent should start at [standalone/AGENTS.md](../AGENTS.md) and [current 
 
 | Task | Reading path |
 | --- | --- |
+| Integrate changes since the original AGENTS snapshot | [Corridor-agent handoff](CORRIDOR_AGENT_HANDOFF.md) |
 | Answer a Real11 question now | [Real11 guide](REAL11_GUIDE.md) → exact audit/question/call artifact |
 | Understand execution and file ownership | [Architecture](ARCHITECTURE.md) → [code map](CODE_MAP.md) → [function index](FUNCTION_INDEX.md) |
 | Run/debug a case | [Runbook](RUNBOOK.md) → [testing](TESTING.md) → [results and debugging](RESULTS_AND_DEBUGGING.md) |

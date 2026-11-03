@@ -112,6 +112,7 @@ All tracked standalone Markdown plus this consolidation. Read [AGENTS](../AGENTS
 | [autonomy/route_guidance/README.md](../autonomy/route_guidance/README.md) | Experimental route guidance | Mechanics/research reference; current decisions control scope |
 | [docs/ARCHITECTURE.md](ARCHITECTURE.md) | Architecture and execution flow | Current navigation/guidance |
 | [docs/CODE_MAP.md](CODE_MAP.md) | Production code map | Current navigation/guidance |
+| [docs/CORRIDOR_AGENT_HANDOFF.md](CORRIDOR_AGENT_HANDOFF.md) | Handoff: changes since the standalone AGENTS consolidation | Current navigation/guidance |
 | [docs/CURRENT_STATE.md](CURRENT_STATE.md) | Current standalone state | Current navigation/guidance |
 | [docs/DECISIONS_AND_PLANS.md](DECISIONS_AND_PLANS.md) | Decisions and plan authority | Current navigation/guidance |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | Writing code and fixes | Current navigation/guidance |

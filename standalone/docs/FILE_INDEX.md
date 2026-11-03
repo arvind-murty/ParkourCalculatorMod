@@ -1008,6 +1008,7 @@ Evidence filenames identify different runs/contexts; do not treat reports as exe
 | --- | --- |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Architecture and execution flow. See documentation index for authority/status. |
 | [CODE_MAP.md](CODE_MAP.md) | Production code map. See documentation index for authority/status. |
+| [CORRIDOR_AGENT_HANDOFF.md](CORRIDOR_AGENT_HANDOFF.md) | Handoff: changes since the standalone AGENTS consolidation. See documentation index for authority/status. |
 | [CURRENT_STATE.md](CURRENT_STATE.md) | Current standalone state. See documentation index for authority/status. |
 | [DECISIONS_AND_PLANS.md](DECISIONS_AND_PLANS.md) | Decisions and plan authority. See documentation index for authority/status. |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | Writing code and fixes. See documentation index for authority/status. |

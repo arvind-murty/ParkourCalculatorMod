@@ -59,3 +59,15 @@ The user clarified minimum-run pruning for identical interaction patterns. The [
 ## Selected local-run fix implemented; continuation-time improvement deferred
 
 The latest user decision selects local last-jump runs, not total run count. `db211b2b` implements that policy and preserves audit programs; see [implementation/evidence](experiments/last-jump-runs/README.md). Additional time pruning stays deferred: first establish that a completed interaction family admits no faster suffix, then reason about delayed prefixes. Do not implement the earlier nine-input propagation suggestion merely because it appears in the historical audit. B3 corridor checks are unchanged and are explained in section7 of that audit.
+
+## Independent work while corridor/cell decomposition changes elsewhere
+
+Recommendation, not a new implementation commitment: prioritize a small end-to-end false-pruning audit of the latest-jump minimum-run heuristic. Existing52 focused tests validate counting, pattern separation, dispatch and resume; the remaining question is whether choosing a feasible minimum-run prefix loses a better or uniquely feasible later continuation. Use small non-Real11 scenes with prescribed support/interaction sequences and unambiguous spatial guides, run the existing pruning-on/off control, and complete saved excluded candidates. Compare terminal feasibility, earliest tick, secondary objective and worker count; preserve unresolved cases as unknown. Include ordinary consecutive jumps, stepping, ceilings and a change of travel direction. If a counterexample appears, reduce it to a regression before deciding whether/how to reopen extra-run alternatives. Do not modify corridor/cell code or add continuation-time bounds for this audit.
+
+A second independent task is request/work accounting on existing evidence and those small cases: distinguish distinct input schedules, alternative hard-constraint models, exact repeated numerical requests, symbolic generation, numerical solving and validation/reporting cost. Existing dedup/logging must be reused; establish a specific duplicate or expensive stage before proposing another optimization or changing candidate caps.
+
+Further Real11 solves remain deferred. Corridor/cell decomposition belongs to the other agent. Additional time pruning, discrete decision transfer and inertia-threshold work retain their prior deferred status.
+
+## Latest retry authorization
+
+The user now authorizes another fresh Real11 run after pushing the current branch and writing the [corridor-agent handoff](../docs/CORRIDOR_AGENT_HANDOFF.md). Keep local-run pruning enabled, candidate caps unchanged, and existing corridor-related calls visible. Corridor/cell changes remain with the other agent; additional time pruning stays deferred.
