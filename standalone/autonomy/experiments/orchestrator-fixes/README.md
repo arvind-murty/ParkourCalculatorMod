@@ -68,3 +68,8 @@ The regression script saves the complete fixed-reference/resume results, exact c
 4. Expand full retained/discarded continuation audits to maps with actual pruning and interacting decisions. Keep all false-pruning counterexamples and unresolved outcomes.
 
 Larger candidate caps, inertia-threshold patterns, global objective bounds and mixed-input relaxations remain separate work.
+
+
+## Complete candidate audit, 2026-11-03
+
+[All candidates and constraint variants](audit/CANDIDATE_AUDIT.md) lists7 main programs,227 handled constraint branches,19 spatial-probe evaluations and the untried frontier. [All208 worker-call slots](audit/WORKER_CALLS.md) reconcile172 main calls plus36 spatial calls. All172 main worker returns were feasible; all62 corridor-rejected traces pass independent physical replay. This corrects the earlier hypothesis that failed main IPOPT feasibility solves explained the stall. The audit records logging gaps and separates pruning proposals from scheduling issues; no search policy was changed.

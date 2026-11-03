@@ -1,0 +1,30 @@
+{
+  "worker-calls.csv": {
+    "bytes": 38776,
+    "sha256": "8d2adf116a16f1a7be6d88688acaf63c661734c9cef13b6792914ef2f94ec3fb"
+  },
+  "candidate-ledger.json.gz": {
+    "bytes": 2253663,
+    "sha256": "b9d8ceda0ac7d7c6bc23119f8dead3641c8db64928cd6ae501ccbd7c386288e7"
+  },
+  "counts.json": {
+    "bytes": 639,
+    "sha256": "53d1f092dc05172e2d223929a63c8638b82b89514616f8919d6210f05c5b584a"
+  },
+  "tests.log": {
+    "bytes": 101,
+    "sha256": "21237b7b94be38e7481f6cf577a77772d11287e7c8830cf1fc2e6c9e723e7661"
+  },
+  "WORKER_CALLS.md": {
+    "bytes": 38361,
+    "sha256": "5bc31b86b328674e340c51351d83f837093d3327d7ecc5d2cfe7bfb9e36f33b7"
+  },
+  "CANDIDATE_AUDIT.md": {
+    "bytes": 98331,
+    "sha256": "bdbbfae855ca119927728a66d37d8991b9ff3e7b3cb59d0b03a6a490e490e793"
+  },
+  "generator": {
+    "path": "standalone/autonomy/experiments/orchestrator-fixes/audit_candidates.py",
+    "sha256": "a88b5d914129f3b24306206d189e7378dfe017138fdbaa63437d9cfdb7108725"
+  }
+}
