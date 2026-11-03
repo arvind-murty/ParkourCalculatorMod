@@ -15,6 +15,23 @@ The goal remains maximumZ at absolute64 with required B2/B3/B4/B5 support intera
 
 All old accepted prefix/probe witnesses remain valid on replay. `Unknown` means no accepted full64-input incumbent was found by that search. `Exhausted` in the top-level first/second reports does not certify that every spatial route or discrete history was considered: earlier windows had already stopped at candidate caps and discarded/parked histories.
 
+## Did we stop or prune too early?
+
+Yes, both occurred, but they require distinct fixes:
+
+| Mechanism | Evidence | Improvement |
+| --- | --- | --- |
+| Early comparative pruning | immediate0 is marked worse at10 in the nearer-goal/contact-priority trials, yet yields the best tested completed continuation | apply selected schedule/velocity/run/jump protections and preserve eligible overflow |
+| Early resource omission | the distant trial drops immediate0 at the scored cap; only one parked history receives a bounded rescue | turn eligible overflow into pending work that is actually processed |
+| Enumeration cut off | numerical selection stops at20 state44 proposals; corrected B3 wait appears125 and known valid continuation135 | evaluate successive batches while keeping the generator frontier/cursor; include meaningful earlier-choice alternatives |
+| Useful repair branch starved | the current program's base branch sits behind127 inherited repairs; promoting that same branch succeeds under8s/24calls | give fresh base/latest useful seed work alongside inherited repairs |
+| Restart instead of continued terminal search | resumed run repeats18 prior finals,335of383 calls, then stops at20 candidates after126.5s | restore terminal repair queues/results and enumeration cursor, rather than restarting their same per-program caps |
+| Unfinishable branches retained | a fall atY=-8.606 and two accepted rescue falls have no finite normal/stepping continuation | add scoped future-event viability rejection using existing builders/reach checks |
+
+The usefulB3-wait branch was never evaluated inside the original batch, so it was not rejected by an IPOPT feasibility result or a numerical score. The final base branch was queued but received no useful opportunity in the observed failed passes. Distinguish these from the explicit wrong state10 heuristic exclusion. Some parked history data survives, but neither a live generator continuation nor each final program's repair progress is fully resumed by the current driver.
+
+Recommended next behavior: keep current margins and active batch sizes; use the selected(n,-J,R) order, preserve useful candidates with the new guards, treat batch limits as yields with saved work, and continue until the genuine declared work limit or remaining-frontier exhaustion. Keep a valid incumbent throughout. For a deadline stop, report pending coverage explicitly and resume it later. A new processing order can help coverage, but the exact125/135 regression must verify it; ordering alone does not guarantee the useful candidate enters the first20. No production changes are claimed by this recommendation.
+
 ## 1. Distant B5: poor next-event coverage, followed by dead-end prefixes
 
 The initial10-input frontier has no useful accepted arrival-time measurement to the distant B5. Two of its spatial probes attempt B5 landing at64 and remain unknown after one and four numerical requests respectively; their failed full input programs were not preserved by the old probe summary. Immediate-jump0 is lost to the scored resource cap; the retained set mostly contains initial jumps3..9 and one unresolved run-off history. This early loss is already covered by the new protection plan, but is not the only failure.
