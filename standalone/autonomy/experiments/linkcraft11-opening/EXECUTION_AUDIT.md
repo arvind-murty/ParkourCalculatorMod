@@ -107,6 +107,34 @@ states 0..15:C31; 16..20:C26; 21:C25/C26 boundary;
 
 C3 is outside the guide's selected cell list. It is nevertheless allowed by the corridor's horizontal projection once the airborne player goes beyond B7 and descends belowY7. This illustrates the actual corridor contract, not an unreported extra enumerated spatial route. Finite-scene collision checking still applies. Exact visits are in [winning-cell-visits.json](audit/winning-cell-visits.json).
 
+### Direction extraction versus directions actually used
+
+For a polyline segment between shared guide waypoints A,B, the existing `horizontal_segments` helper computes `d=normalize(B_XZ-A_XZ)`, skips vertical segments and merges collinear horizontal ones. The cell sequence alone has no unique tangent; the representative points supply it. This guide is hand-authored. The automatic route enumerator, which was not used here, builds its own representative polyline through portal midpoints. These are geometric progress references, not fixed player facings or necessarily the optimum center line through the cells.
+
+The actual seven horizontal directions of the saved guide are:
+
+| Segment | Start X/Z | End X/Z | Unit direction(X,Z) |
+| --- | --- | --- | --- |
+| start toward B1 corner | [746.5,-1104.5] | [742.1,-1104.8] | [-0.997684,-0.068024] |
+| B1 corner toward B2 | [742.1,-1104.8] | [741.5,-1103.5] | [-0.419058,+0.907959] |
+| B2 toward B3 | [741.5,-1103.5] | [738.5,-1100.5] | [-0.707107,+0.707107] |
+| B3 toward B4 | [738.5,-1100.5] | [734.5,-1099.5] | [-0.970143,+0.242536] |
+| B4 toward B5 approach | [734.5,-1099.5] | [730.5,-1095.7] | [-0.724999,+0.688749] |
+| B5 toward B6's left side | [730.5,-1095.7] | [728.9,-1095.7] | [-1,0] |
+| after the B6 turn toward +Z | [728.9,-1095.7] | [728.9,-1088] | [0,+1] |
+
+The last entry merges the two collinear +Z pieces separated by the B7 reference point. Vertical guide movement between entries supplies no horizontal direction. B5's approach reference is offset from its physical center for clearance; center-to-centerB4->B5 would instead yield[-0.707107,+0.707107]. Do not silently mix those two conventions.
+
+The fixed-clock experiment explicitly constructs different scoring directions rather than selecting the above segment for each clock:
+
+| Actual score clock | Construction | Direction(X,Z) |
+| --- | --- | --- |
+| 10,28,44 | original start[746.5,-1104.5] to physical B5 center[730.5,-1095.5], delta[-16,+9] | [-0.871575537,+0.490261240] |
+| 55 | explicit +Z override | [0,+1] |
+| 64 | user-specified maximumZ objective | [0,+1] |
+
+The earlier B2 event-state example separately uses its outgoingB2->B3 direction. No runtime change has replaced the pilot's coarse early score with per-segment scores. [Exact extracted vectors and source configuration](audit/route-directions.json).
+
 ## 3. Decisions: intended versus actually generated
 
 | Quantity | Intended simplified case | What this experiment did |

@@ -18,8 +18,8 @@
       "sha256": "bc714a834a4a6e344274a77016ff5e3f86b4c5b270fc71cc15fce9e33cf1cdd7"
     },
     "EXECUTION_AUDIT.md": {
-      "bytes": 34368,
-      "sha256": "fa83fa5da0d3855b8e87753fbb327d1a07181161a3021b2e33be48ebc6fed500"
+      "bytes": 36714,
+      "sha256": "a6b016c99cbace8d6f31605cafde42a9ed43dd5b7a7393683963b8a5f48f2756"
     },
     "INVENTORY.md": {
       "bytes": 4286,
@@ -80,6 +80,10 @@
     "audit/repair-attempts.csv": {
       "bytes": 36815,
       "sha256": "90e6775fcdca2133d992cc645ad129ade98863199ca9b7a6c01793ec226b7adf"
+    },
+    "audit/route-directions.json": {
+      "bytes": 3593,
+      "sha256": "ce6b2977bc5e26d56cbd077f091e40649c33b939e37d0c23d9cb171f4c987ff9"
     },
     "audit/same-clock-check.json": {
       "bytes": 3085,
