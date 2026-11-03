@@ -402,6 +402,12 @@ Source snapshot: current DFS implementation source, including request-audit logg
 - `run_summary` — def, line 56.
 - `main` — def, line 89.
 
+## [autonomy/experiments/last-jump-runs/summarize_retry.py](../autonomy/experiments/last-jump-runs/summarize_retry.py)
+
+- `summarize` — def, line 13.
+- `render` — def, line 48.
+- `main` — def, line 60.
+
 ## [autonomy/experiments/linkcraft11-opening/audit_trace.py](../autonomy/experiments/linkcraft11-opening/audit_trace.py)
 
 - `read` — def, line 18.

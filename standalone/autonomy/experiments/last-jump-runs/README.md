@@ -2,7 +2,7 @@
 
 Runtime `db211b2b` implements the user's local heuristic: once a jump interaction pattern has a validated feasible representative, skip copies with more ordinary ground runs immediately before that latest jump. This is based on local preparation, not cumulative run count. Cold Real11's B4@40→jump43 has3 runs here even though the whole prefix has15.
 
-No continuous physics, final objective, facing freedom or corridor rule changes. Continuation-time bounds remain deferred; the existing elapsed-input cutoff is unchanged. See the [answers document](../virtual-finish/PRUNING_AUDIT.md), especially sections6–8, for the local-count decision. The user's latest steering defers further Real11 runs and corridor work; this acceptance record uses focused regressions only.
+No continuous physics, final objective, facing freedom or corridor rule changes. Continuation-time bounds remain deferred; the existing elapsed-input cutoff is unchanged. See the [answers document](../virtual-finish/PRUNING_AUDIT.md), especially sections6–8, for the local-count decision. At the focused-test boundary the user deferred Real11/corridor work; the later authorized retry is linked below. Corridor/cell improvements remain with the other agent.
 
 ## Generic behavior
 
@@ -36,3 +36,7 @@ An earlier already-started benchmark completed before the stop instruction; its 
 The production rule contains no Real11 run-count threshold, block IDs or coordinates. For each matching interaction pattern it learns `k` from validated feasible solves, counts each candidate's local preparation as `jumpInput - groundState`, and excludes only counts greater than the learned `k`. A subsequently feasible smaller count replaces `k`.
 
 The generic regression now exercises learned minima0,1,2,5,9, checks equality/smaller alternatives and verifies dynamic tightening. All52 focused tests pass again with no skips in17.118s: [log](evidence/generic-focused-tests.log), [summary](evidence/generic-focused-summary.json). No production change or Real11 solve was needed for this confirmation. The3/4 values in the explanation are only the archived Real11 example.
+
+## Subsequent authorized retry
+
+After pushing the [handoff](../../../docs/CORRIDOR_AGENT_HANDOFF.md), a fresh combined Real11 run was authorized and completed: [result and pruning accounting](REAL11_RETRY.md), [all12 requests](REAL11_RETRY_CALLS.md). It preserves calls8/9, excludes nine extra-run candidates before dispatch, finds67 / Z≈−1093.82313, and passes all13 replay checks. The initial0 root remains pending.

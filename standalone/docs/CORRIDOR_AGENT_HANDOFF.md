@@ -80,3 +80,7 @@ Do not rebuild shared Java helpers while another numerical run is using their cl
 The pre-local-run virtual-goal combined cold run found67 / Z≈−1093.82313; an independent initial0-only cold diagnostic found64 / Z≈−1093.26755. Those are best-found observations, not global certificates or proof that combined DFS visited initial0. [Raw reports/ledgers](../autonomy/experiments/virtual-finish/README.md).
 
 The user now authorizes another **fresh combined Real11 retry after this handoff is pushed**, with the current local-run policy enabled and corridor behavior unchanged. New evidence must use new paths; do not overwrite the archived reports, inject a known schedule/yaw or silently raise candidate caps. The retry will be documented separately after completion. Corridor/cell improvements remain the other agent's work; time bounds, inertia-threshold work and discrete decision transfer remain deferred.
+
+## Retry now completed
+
+The fresh retry at source `61355976` is complete: [result/limitations](../autonomy/experiments/last-jump-runs/REAL11_RETRY.md) and [all12 calls](../autonomy/experiments/last-jump-runs/REAL11_RETRY_CALLS.md). Calls8/9 remain; nine simple extra-run copies are excluded. Best is67 / Z≈−1093.82313,13/13 replay checks pass, and initial0 remains pending. An extra equal-run variant adds a B6 avoidance row (not a corridor row), so inspect exact constraints before labelling all remaining work as corridor duplication. Runtime and corridor code are unchanged from the pushed handoff source.

@@ -490,6 +490,9 @@ Evidence filenames identify different runs/contexts; do not treat reports as exe
 | File | Purpose |
 | --- | --- |
 | [README.md](../autonomy/experiments/last-jump-runs/README.md) | Minimum runs before the latest jump. See documentation index for authority/status. |
+| [REAL11_RETRY.md](../autonomy/experiments/last-jump-runs/REAL11_RETRY.md) | Real11 retry after the handoff push. See documentation index for authority/status. |
+| [REAL11_RETRY_CALLS.md](../autonomy/experiments/last-jump-runs/REAL11_RETRY_CALLS.md) | Fresh Real11 retry: numerical requests. See documentation index for authority/status. |
+| [summarize_retry.py](../autonomy/experiments/last-jump-runs/summarize_retry.py) | Fixture-specific diagnostic script: summarize retry. Inspect its main/CLI before running; outputs may mutate evidence. |
 
 ## autonomy/experiments/last-jump-runs/evidence
 
@@ -499,6 +502,10 @@ Evidence filenames identify different runs/contexts; do not treat reports as exe
 | [focused-tests.log](../autonomy/experiments/last-jump-runs/evidence/focused-tests.log) | Captured commands/test/runtime output or investigation notes; source-era evidence. |
 | [generic-focused-summary.json](../autonomy/experiments/last-jump-runs/evidence/generic-focused-summary.json) | Structured experiment data/settings/provenance: generic focused summary. |
 | [generic-focused-tests.log](../autonomy/experiments/last-jump-runs/evidence/generic-focused-tests.log) | Captured commands/test/runtime output or investigation notes; source-era evidence. |
+| [real11-retry-after-handoff.json.gz](../autonomy/experiments/last-jump-runs/evidence/real11-retry-after-handoff.json.gz) | Compressed exact result/request/continuation evidence; inspect owning experiment and source fields before reuse. |
+| [real11-retry-after-handoff.log](../autonomy/experiments/last-jump-runs/evidence/real11-retry-after-handoff.log) | Captured commands/test/runtime output or investigation notes; source-era evidence. |
+| [real11-retry-manifest.json](../autonomy/experiments/last-jump-runs/evidence/real11-retry-manifest.json) | Structured experiment data/settings/provenance: real11 retry manifest. |
+| [real11-retry-summary.json](../autonomy/experiments/last-jump-runs/evidence/real11-retry-summary.json) | Structured experiment data/settings/provenance: real11 retry summary. |
 
 ## autonomy/experiments/linkcraft11-j0-j16
 

@@ -67,3 +67,7 @@ Named step/grind events need special care in **the shared envelope**, not separa
 
 
 Final recorded acceptance:368 non-ladder autonomy tests and54 IPOPT tests pass;25 post-logging repair/terminal tests pass. Cold Real11 reaches a first full route in91.22s/eight calls; two150s sessions make14 calls total with zero repeated completed requests and all10/18 witness replays passing. Best Z64 is−1094.5755032869683. The zero-run root alternative remains pending; the known seeded reference is about1.308 blocks farther. See source-specific logs/results rather than treating this as global optimality or a fully green ladder-inclusive suite.
+
+## Latest authorized combined retry
+
+After the [corridor-agent handoff](CORRIDOR_AGENT_HANDOFF.md) was pushed and verified at61355976, the fresh combined Real11 retry found67 / Z≈−1093.82313 with12 worker calls, nine latest-jump extra-run exclusions and13/13 independent replay checks passing. Calls8/9 persist and the initial0 root remains saved but uncontinued. [Full accounting](../autonomy/experiments/last-jump-runs/REAL11_RETRY.md). No corridor/cell, continuous-model or continuation-time-bound change was made.
