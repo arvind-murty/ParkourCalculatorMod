@@ -10,6 +10,27 @@ Hold a physical target fixed: for example, land on the same block or complete th
 
 Landing requires the actual declared finite contact; being airborne over the goal is insufficient. Preserve input/state indexing: an event produced by input t is observed at state t+1. Earlier unresolved times remain unknown. A found time is not automatically a proof of minimum time.
 
+### Compare arrival states at a shared spatial event
+
+Recommendation following the user's event-alignment question, 2026-11-02: retain an arrival label `L_E=(t_E,p_XZ_E,v_XZ_E,mode_E)` at a shared map event E, alongside the existing common-clock progress label. E must mean the same block/portal and compatible approach/contact phase. Comparing each route's next landing is insufficient if those are on different blocks. On Real11, compare both arrivals atB2, not the immediate setup's return toB1 against the delayed setup's landing onB2.
+
+Velocity can be compared at different absolute times when aligned to that common event, provided elapsed time stays in the label. A consistent prelanding sample is possible; the preferred canonical sample is the fully resolved landing state before its next input. It includes collision/friction effects and places ordinary landings in the same ready-to-jump mode. Full X/Z position still varies within the support region and must accompany velocity. Stepping/ceiling/airborne portal modes require their own consistent phase; they cannot all be merged as ordinary grounded arrival.
+
+The same-clock and same-event labels answer complementary questions:
+
+| Alignment | What stays fixed | Measurements | Interpretation |
+| --- | --- | --- | --- |
+| common clock | absolute stateh | p/v at h plus movement phase | how far/how fast at the same elapsed time |
+| common map event | block/portal and contact phase | elapsed arrivalt and p/v there | time spent to reach a comparable stage, and the state available afterward |
+
+Do not interpret p/v at different event times as a same-clock objective comparison, or combine p from h with v from E into one physical state. They are separate labels, each measured from one accepted witness. Grounded does not guarantee identical future state: lateral alignment, direction of momentum and selected next interaction still matter. Arrival time, position and velocity create tradeoffs rather than an automatically justified scalar ranking or dominance certificate.
+
+Concrete found complete trajectories atB2, after landing: immediate0 arrives at21, X/Z[740.816154,-1102.565592], outgoing velocity0.265297 towardB3; delayed8 arrives at17, X/Z[742.033572,-1102.902301], outgoing velocity0.242594. The immediate setup costs4 extra ticks but is1.098933 blocks farther along theB2-to-B3 direction at its own arrival and has greater outgoing velocity. That is a reason to retain both. These states come from the saved64-optimized continuations; the earlier independently optimizedB2 probes land at other p/v, so these numbers are not a proof of a unique best arrival state for either program.
+
+Choosing between them requires future value: for minimum completion time compare `t_E + remaining_time(q_E)`; for the common terminalh compare what each event state can achieve with `h-t_E` inputs left. The future term depends on the remaining map and is not determined by speed alone. Reuse existing fixed-input continuations to the next shared meaningful event or downstream decision group to estimate it; preserve unresolved/tradeoff alternatives. In Real11 there are just two protected setup families, so carrying both throughB6/final64 is a practical choice. No evidence establishes that jump0 is necessary or globally optimal; it wins among the complete continuations tested. Every continuation solve still starts from the original state with earlier facings free; arrival labels are summaries for ranking, not frozen numerical splice states.
+
+This is a documented recommendation for extending the existing time/progress framework, not implemented runtime behavior. Exact event evidence is archived with the Real11 experiment.
+
 ## Time goal: compare objective
 
 Hold the absolute elapsed state tick h fixed across candidates. Optimize/measure the same horizontal objective S(h), usually progress/distance along the shared outgoing route direction. Compare after turnarounds where the direction is meaningful. Y is feasibility, not a height reward.
