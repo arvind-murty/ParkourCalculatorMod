@@ -2,6 +2,18 @@
 
 Revised 2026-11-01 after the user's distinctions. This is our selected new search direction, not a rollout proposal. Implementation is now delivered; see the dated status below and [measured results](experiments/two-goal-comparisons/README.md). Work stays in isolated `research/ipopt-cell-routes`, reusing existing candidate generation, movement/constraint builders, numerical solving, physical checks and saved state.
 
+## Latest selected refinement, 2026-11-02
+
+The earlier two-goal implementation exists; the following newly selected refinements are not implemented yet. Follow [the precise schedule/order rules](TIME_PROGRESS_FRONTIER.md#selected-schedule-comparison-and-processing-rules):
+
+- Gate absolute-tick position/velocity pruning on matching ground/air/jump schedules and compatible contact context. Count equality alone does not establish phase equality.
+- Across different schedules, do not discard a candidate in favor of a peer if the candidate has fewer run inputs OR more effective grounded jump inputs. Preserve shared-event time/state tradeoffs and the user-selected0/8 setup families.
+- Use the exact processing order `(total elapsed ticks, -actual jump count, grounded nonjump count)`, with a stable final tie-break. Supersede the pilot's support-progress-first ordering for this policy; processing rank is separate from retention protection.
+- Extract counts from existing composed profiles. Grounded nonjump inputs can be embedded even when the inner run allocation is zero. Do not count airborne duration or ignored jump presses as jumps.
+- Preserve position/velocity from the same accepted witness, existing fixed movement/geometry constraints, full-original-state free-facing resolves and normal momentum with zero thresholds. Feasibility screens, resumable deferrals and honest resource-omission reporting remain.
+
+Acceptance cases for the eventual policy change: at commonstate10 the0 setup (n10,J1,R0) precedes8 (n10,J1,R8), while both survive; atB2 the found8 setup(n17,J1,R8) precedes0(n21,J2,R0), while0 survives on both structural guards. Add equal-count/different-schedule and more-jumps/fewer-runs tradeoff controls; verify a lower short score never bypasses the cross-schedule protection. No new numerical solve or runtime change was made in this planning turn.
+
 
 ## Accuracy priority, 2026-11-02
 

@@ -4,6 +4,37 @@ Authoritative user clarification, 2026-11-01. The new path is to generate the su
 
 Latest user refinement, 2026-11-02: retain the separate time/progress comparisons, and include both horizontal position and velocity in the fixed-clock progress assessment. This is a selected design direction; current runtime retention still uses position-only clock results. Both Real11 initial0/8 setup families remain explicitly protected by the user's preceding decision. The policy/solver has not been changed by this discussion.
 
+## Selected schedule comparison and processing rules
+
+Latest explicit user rules, 2026-11-02. These supersede using absolute-clock progress to eliminate candidates with different ground/air schedules. This section records selected policy, pending implementation; no runtime behavior changes in this discussion turn.
+
+1. Use absolute-tick position/velocity comparisons only for decisions whose ground/air/jump schedule is the same, with compatible incoming and contact context. Equality of elapsed tick or equality of aggregate counts does not establish the same jump phase. A per-input run/jump/air sequence distinguishes the schedules.
+2. When schedules differ, protect a candidate against a peer-based heuristic exclusion if it has **fewer run inputs OR more actual jump takeoffs** than that peer. Either advantage is sufficient. This preserves a structural reason for later benefit even when the short horizontal score and nearby arrival time favor the peer. The guard provides retention protection, not a proof that the protected candidate is faster or farther.
+3. Continue using shared spatial-event time/state labels for comparisons across schedules, retaining time/state and structural tradeoffs. A candidate can still be rejected by a valid feasibility screen or merged as an exact equivalent. A resource limit is a separately recorded omission and must not be relabeled as inferiority; protect the selected setup families and keep deferred work resumable.
+4. Process candidates lexicographically by **fewest total elapsed ticks, then most jumps, then fewest run ticks**. Use a stable deterministic tie-break only after those three values. Processing priority does not authorize pruning a later candidate.
+
+Definitions for a constructed prefix with n inputs:
+
+```text
+J(c) = number of effective grounded jump inputs in inputs0..n-1
+R(c) = number of grounded inputs without such a jump in inputs0..n-1
+processing_key(c) = (n, -J(c), R(c), stable_tie_break)
+
+protect(c, peer), for different schedules:
+    R(c) < R(peer) OR J(c) > J(peer)
+```
+
+Jump count means actual takeoff/jump-regime inputs, not all airborne inputs or ignored midair jump presses. Run count includes grounded nonjump inputs already embedded in the composed movement profile; the inner solver's additional-run allocation[0] is not that count. Count the whole compared constructed prefix, not a longer provisional future used only to estimate a spatial goal. Total ticks includes both ground and air inputs. At a shared clock all prefixes have the same n, so jump count and run count determine their order. At a shared map event the different elapsed arrival times remain the primary processing key.
+
+Real11 examples:
+
+| Comparison | Immediate setup | Delayed setup | Processing and protection |
+| --- | --- | --- | --- |
+| state10 prefixes | n10,J1,R0 | n10,J1,R8 | immediate first; its fewer runs protect it against delayed setup |
+| found B2 arrival prefixes | n21,J2,R0 | n17,J1,R8 | delayed first by elapsed time; immediate remains protected by fewer runs and more jumps |
+
+The delayed setup remains useful for its earlier arrival; the protection of the immediate setup does not eliminate the delayed one. Both user-selected families survive. Equal J/R counts with different schedules still do not permit a cross-phase absolute-clock dominance claim. The earlier Real11 support-progress-first proposal hook is an experimental ordering, not the newly selected priority order; it must not silently override this lexicographic key when implementing the refinement.
+
 ## Spatial goal: compare elapsed time
 
 Hold a physical target fixed: for example, land on the same block or complete the same passage. Determine the earliest validated achievement time found for each candidate. This comparison helps identify the fastest potential route.
@@ -20,7 +51,7 @@ The same-clock and same-event labels answer complementary questions:
 
 | Alignment | What stays fixed | Measurements | Interpretation |
 | --- | --- | --- | --- |
-| common clock | absolute stateh | p/v at h plus movement phase | how far/how fast at the same elapsed time |
+| common clock | absolute stateh and matching ground/air/jump schedule | p/v at h plus compatible movement/contact context | how far/how fast at the same elapsed time and phase |
 | common map event | block/portal and contact phase | elapsed arrivalt and p/v there | time spent to reach a comparable stage, and the state available afterward |
 
 Do not interpret p/v at different event times as a same-clock objective comparison, or combine p from h with v from E into one physical state. They are separate labels, each measured from one accepted witness. Grounded does not guarantee identical future state: lateral alignment, direction of momentum and selected next interaction still matter. Arrival time, position and velocity create tradeoffs rather than an automatically justified scalar ranking or dominance certificate.
@@ -34,6 +65,8 @@ This is a documented recommendation for extending the existing time/progress fra
 ## Time goal: compare objective
 
 Hold the absolute elapsed state tick h fixed across candidates. Optimize/measure the same horizontal objective S(h), usually progress/distance along the shared outgoing route direction. Compare after turnarounds where the direction is meaningful. Y is feasibility, not a height reward.
+
+The selected schedule rule above gates use of this comparison for pruning: identical clock alone is insufficient when the ground/air/jump inputs differ. Cross-schedule scores may still be logged for diagnosis, but do not justify the old state10 exclusion of the immediate setup.
 
 This is a proxy for which candidate goes farthest. It is not equivalent to the shortest time to a spatial goal. Do not compare progress sampled at each candidate's own arrival time and call it a same-time objective comparison. Record spatial-goal times and fixed-clock objectives separately.
 
