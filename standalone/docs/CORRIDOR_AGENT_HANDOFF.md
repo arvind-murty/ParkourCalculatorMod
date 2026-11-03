@@ -84,3 +84,7 @@ The user now authorizes another **fresh combined Real11 retry after this handoff
 ## Retry now completed
 
 The fresh retry at source `61355976` is complete: [result/limitations](../autonomy/experiments/last-jump-runs/REAL11_RETRY.md) and [all12 calls](../autonomy/experiments/last-jump-runs/REAL11_RETRY_CALLS.md). Calls8/9 remain; nine simple extra-run copies are excluded. Best is67 / Z≈−1093.82313,13/13 replay checks pass, and initial0 remains pending. An extra equal-run variant adds a B6 avoidance row (not a corridor row), so inspect exact constraints before labelling all remaining work as corridor duplication. Runtime and corridor code are unchanged from the pushed handoff source.
+
+## Subsequent row-count finding
+
+[Hard-row audit](../autonomy/experiments/last-jump-runs/HARD_ROWS_AUDIT.md): the initial8 request already had278 rows before local-run pruning; the~100-row example was initial0. The278 entries contain164 exact duplicate constraints (114 distinct;91 strongest simple X/Z bounds). Ordinary footprint bounds are duplicated by contact compilation and retained compiled walls. This is a separate final-assembly cleanup opportunity, not evidence that the corridor retry introduced hundreds of new decisions. No runtime fix is included in that audit.

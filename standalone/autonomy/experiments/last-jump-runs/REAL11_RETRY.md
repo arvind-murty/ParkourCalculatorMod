@@ -52,3 +52,13 @@ PYTHONPATH="$PWD" .venv-guidance/bin/python \
 ```
 
 No production code or test expectations were changed for this retry. The52 focused regression acceptance remains the latest implementation gate.
+
+## Budget and “hard rows” clarification
+
+Yes, this session stopped at its300-second wall-time search deadline. The recorded317.53s includes progress persistence and post-deadline handling. First completion arrived after101.85s; the remaining budget explored other histories/constraint variants. It did not exhaust the solver-call allowance:12 of1024 calls were used. Unfinished work is saved, including the initial0 root; timeout is not an infeasibility verdict.
+
+“Hard rows” in the call ledger is exactly `len(worker_request['walls'])`: the number of explicit scalar constraint records sent with that numerical problem. For example, `X[56] >= 731.3000010119209` is one row. A rectangular player-center landing region generally contributes four bounds (lower/upper X and Z); constraints on multiple ticks contribute additional rows. Rows can include support/landing, avoidance, corridor-repair and inherited constraints. The count is neither the number of decisions nor the number of ticks, and it can include repeated/redundant entries. It does not count the model's automatically constructed motion equations, control restrictions or other separately represented solver conditions. “Hard” means the solver is asked to satisfy the condition within numerical tolerance, rather than merely reward it in the objective.
+
+## Detailed constraint-count audit
+
+[Hard-row audit](HARD_ROWS_AUDIT.md) compares the earlier~100-row initial0 request with the278-row initial8 request. The latter already had278 in the prior combined run. It contains164 exact duplicate entries (114 distinct constraints); merging weaker simple bounds would leave91. Counts and assembly provenance are documented without a new solve or runtime change.
