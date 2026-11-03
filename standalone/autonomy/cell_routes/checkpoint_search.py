@@ -81,7 +81,7 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, c
             return dict(verdict,accepted=False,reason='spatial_goal_not_satisfied')
         if verdict['accepted'] and checkpoint is not None and scope['purpose'] == 'complete':
             staged = dict(candidate, **{key: vertical[key] for key in ('y', 'vy', 'onGround')})
-            stage = checkpoint.stage(staged, adapter.gates)
+            stage = checkpoint.stage(staged, scoped_adapter.gates)
             if not stage['accepted']:
                 return dict(verdict, accepted=False, reason='checkpoint_not_after_turn', comparisonStage=stage)
         return verdict
@@ -129,11 +129,11 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, c
         max_horizontal=scene['maxHorizontalBlockagesPerObstacle'], max_vertical=scene['maxVerticalBlockagesPerObstacle'],
         max_passage_candidates=scene['maxPassageCandidates'], solid_blocks=owners, max_wall_hits=0,
         candidate_filter=candidate_filter, work=scoped, resume_state=program.get('repairState'),
-        repair_scope=dict(solveIdentity=identity, scope=scope, assemblyVersion=4),
+        repair_scope=dict(solveIdentity=identity, scope=scope, assemblyVersion=5),
         validation_scope=scope, initial_variants=variants, on_progress=on_progress, retry_unresolved=retry_unresolved)
     if result['best'] is not None:
         if checkpoint is not None and scope['purpose'] == 'complete':
-            stage = checkpoint.stage(result['best']['candidate'], adapter.gates)
+            stage = checkpoint.stage(result['best']['candidate'], scoped_adapter.gates)
             result['comparisonStage'] = stage
             if not stage['accepted']:
                 result['deferredCandidate'] = result['best']

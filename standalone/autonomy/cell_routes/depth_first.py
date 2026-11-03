@@ -77,16 +77,16 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
         raise ValueError('DFS roots must preserve original state and zero inertia thresholds')
     if any(not accepted_program(p) for p in roots):
         raise ValueError('DFS roots violate the decision domain')
-    context = digest(dict(version=3, kind='ordered_goal_dfs', scene={k:v for k,v in scene.items() if k!='movementSearch'},
+    context = digest(dict(version=4, kind='ordered_goal_dfs', scene={k:v for k,v in scene.items() if k!='movementSearch'},
         domain={k:v for k,v in cfg.items() if k not in ('maxPrefixes','maxQueuedPrefixes','maxChoicesPerType','expansionsPerProposal')},
         roots=[program_search_key(p) for p in roots], goals=goal_list,
         terminal=terminal_plan.to_dict() if terminal_plan else None, corridor=adapter.corridor.to_dict(),
         windows=window_plan, filter=getattr(program_filter, 'checkpoint_identity', None),
         margins=[time_margin,progress_margin], physics=motion))
-    if resume_state is not None and (resume_state.get('version') != 3 or
+    if resume_state is not None and (resume_state.get('version') != 4 or
             resume_state.get('kind') != 'ordered_goal_dfs' or resume_state.get('context') != context):
         raise ValueError('Incompatible DFS continuation; old checkpoint queues require explicit reconstruction')
-    state = copy.deepcopy(resume_state) if resume_state is not None else dict(version=3, kind='ordered_goal_dfs',
+    state = copy.deepcopy(resume_state) if resume_state is not None else dict(version=4, kind='ordered_goal_dfs',
         context=context, initialRoots=roots, stack=[], suspended=[], refinements=[], frames=[], transitions=[],
         windows=[], finalAttempts=[], best=None, cumulativeCalls=0, session=0, expanded=0, nextFrame=0)
     state['session'] += 1
