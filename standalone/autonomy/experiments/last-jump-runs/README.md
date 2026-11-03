@@ -30,3 +30,9 @@ Reproduce from the physical repository root with the native environment configur
 ```
 
 An earlier already-started benchmark completed before the stop instruction; its artifacts are retained locally under ignored `standalone/autonomy/build/deferred-local-run-benchmark-db211b2b/` and are outside this focused validation record. No Real11 process remains running. Original evidence in `virtual-finish/evidence` remains unchanged.
+
+## Generic threshold verification
+
+The production rule contains no Real11 run-count threshold, block IDs or coordinates. For each matching interaction pattern it learns `k` from validated feasible solves, counts each candidate's local preparation as `jumpInput - groundState`, and excludes only counts greater than the learned `k`. A subsequently feasible smaller count replaces `k`.
+
+The generic regression now exercises learned minima0,1,2,5,9, checks equality/smaller alternatives and verifies dynamic tightening. All52 focused tests pass again with no skips in17.118s: [log](evidence/generic-focused-tests.log), [summary](evidence/generic-focused-summary.json). No production change or Real11 solve was needed for this confirmation. The3/4 values in the explanation are only the archived Real11 example.

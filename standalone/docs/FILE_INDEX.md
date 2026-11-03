@@ -497,6 +497,8 @@ Evidence filenames identify different runs/contexts; do not treat reports as exe
 | --- | --- |
 | [focused-summary.json](../autonomy/experiments/last-jump-runs/evidence/focused-summary.json) | Structured experiment data/settings/provenance: focused summary. |
 | [focused-tests.log](../autonomy/experiments/last-jump-runs/evidence/focused-tests.log) | Captured commands/test/runtime output or investigation notes; source-era evidence. |
+| [generic-focused-summary.json](../autonomy/experiments/last-jump-runs/evidence/generic-focused-summary.json) | Structured experiment data/settings/provenance: generic focused summary. |
+| [generic-focused-tests.log](../autonomy/experiments/last-jump-runs/evidence/generic-focused-tests.log) | Captured commands/test/runtime output or investigation notes; source-era evidence. |
 
 ## autonomy/experiments/linkcraft11-j0-j16
 

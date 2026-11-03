@@ -27,12 +27,21 @@ class MinimumRunTests(unittest.TestCase):
     def setUp(self):self.scene=flat_scene()
 
     def test_same_last_jump_discards_more_runs_but_keeps_equal_and_fewer(self):
-        reps={};p=flight(self.scene,2);remember(reps,latest_jump(p,self.scene),'feasible',p['profile']['airtime'])
-        self.assertIsNone(exclusion(reps,latest_jump(flight(self.scene,1),self.scene)))
-        self.assertIsNone(exclusion(reps,latest_jump(flight(self.scene,2),self.scene)))
-        q=exclusion(reps,latest_jump(flight(self.scene,3),self.scene))
-        self.assertEqual((q['runTicks'],q['minimumFeasibleRunTicks']),(3,2))
-        self.assertEqual(q['representative'],'feasible')
+        for minimum in (0,1,2,5,9):
+            with self.subTest(minimum=minimum):
+                reps={};p=flight(self.scene,minimum)
+                remember(reps,latest_jump(p,self.scene),'feasible',p['profile']['airtime'])
+                self.assertIsNone(exclusion(reps,latest_jump(flight(self.scene,minimum),self.scene)))
+                q=exclusion(reps,latest_jump(flight(self.scene,minimum+1),self.scene))
+                self.assertEqual((q['runTicks'],q['minimumFeasibleRunTicks']),(minimum+1,minimum))
+                self.assertEqual(q['representative'],'feasible')
+                if minimum:
+                    shorter=flight(self.scene,minimum-1);description=latest_jump(shorter,self.scene)
+                    self.assertIsNone(exclusion(reps,description))
+                    remember(reps,description,'shorter_feasible',shorter['profile']['airtime'])
+                    q=exclusion(reps,latest_jump(p,self.scene))
+                    self.assertEqual(q['minimumFeasibleRunTicks'],minimum-1)
+                    self.assertEqual(q['representative'],'shorter_feasible')
 
     def test_equal_run_timing_variants_and_distinct_obstacle_choices_survive(self):
         p=flight(self.scene,0);q=flight(self.scene,1)

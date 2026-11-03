@@ -162,3 +162,7 @@ The pattern preserves prior decisions, support identity, relative in-air contact
 Representatives survive exact resume. Each heuristic exclusion records the local count, feasible peer and discrete program for later false-pruning checks; changing the pruning policy changes the resume context. The rule is active before numerical dispatch and in symbolic filtering. It is not a proof that extra runs can never help a different map or later interaction.
 
 **All52 focused regression tests passed with no skips**, including native compilation/IPOPT tests, dispatch controls, unknown preservation, resume, distinct interactions and the archived cold/initial0 counterexamples. [Implementation and test evidence](../last-jump-runs/README.md). The user's latest steering defers additional Real11 solves and corridor work. Section7 remains a description of archived behavior; no corridor change or additional continuation-time bound was implemented.
+
+## 9. Genericity clarification: three/four are example values
+
+The algorithm has no hardcoded3/4 threshold or Real11 block/tick coordinates. It learns a local run minimum `k` per matching interaction pattern from validated feasible results, excludes candidates with a larger local count, and updates `k` when a smaller feasible result arrives. Generic regressions cover minima0,1,2,5,9 plus dynamic tightening; all52 focused tests pass with no skips. [Verification evidence](../last-jump-runs/README.md#generic-threshold-verification). Runtime code is unchanged; no Real11 solve was run for this check.

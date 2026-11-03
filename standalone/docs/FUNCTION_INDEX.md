@@ -1336,19 +1336,19 @@ Source snapshot: current DFS implementation source, including request-audit logg
 - `MinimumRunTests` — class, line 26.
 - `MinimumRunTests.setUp` — def, line 27.
 - `MinimumRunTests.test_same_last_jump_discards_more_runs_but_keeps_equal_and_fewer` — def, line 29.
-- `MinimumRunTests.test_equal_run_timing_variants_and_distinct_obstacle_choices_survive` — def, line 37.
-- `MinimumRunTests.test_interacting_or_unclassified_ground_preparation_is_retained` — def, line 47.
-- `MinimumRunTests.test_changed_prior_decisions_do_not_share_a_representative` — def, line 56.
-- `ArchivedMinimumRunTests` — class, line 64.
-- `ArchivedMinimumRunTests.setUpClass` — def, line 66.
-- `ArchivedMinimumRunTests.test_real11_last_jump_three_runs_excludes_four_not_total_fifteen` — def, line 77.
-- `ArchivedMinimumRunTests.test_real11_zero_run_last_jump_excludes_all_delayed_prefix_calls` — def, line 85.
-- `ArchivedMinimumRunTests.test_real11_initial_histories_and_terminal_contacts_stay_distinct` — def, line 91.
-- `MinimumRunDfsTests` — class, line 98.
-- `MinimumRunDfsTests.search` — def, line 99.
-- `MinimumRunDfsTests.test_prunes_before_dispatch_and_can_replay_exclusions_as_a_control` — def, line 123.
-- `MinimumRunDfsTests.test_unknown_earlier_timing_is_preserved_and_does_not_establish_minimum` — def, line 128.
-- `MinimumRunDfsTests.test_feasible_representative_survives_resume_and_policy_mismatch_is_rejected` — def, line 133.
+- `MinimumRunTests.test_equal_run_timing_variants_and_distinct_obstacle_choices_survive` — def, line 46.
+- `MinimumRunTests.test_interacting_or_unclassified_ground_preparation_is_retained` — def, line 56.
+- `MinimumRunTests.test_changed_prior_decisions_do_not_share_a_representative` — def, line 65.
+- `ArchivedMinimumRunTests` — class, line 73.
+- `ArchivedMinimumRunTests.setUpClass` — def, line 75.
+- `ArchivedMinimumRunTests.test_real11_last_jump_three_runs_excludes_four_not_total_fifteen` — def, line 86.
+- `ArchivedMinimumRunTests.test_real11_zero_run_last_jump_excludes_all_delayed_prefix_calls` — def, line 94.
+- `ArchivedMinimumRunTests.test_real11_initial_histories_and_terminal_contacts_stay_distinct` — def, line 100.
+- `MinimumRunDfsTests` — class, line 107.
+- `MinimumRunDfsTests.search` — def, line 108.
+- `MinimumRunDfsTests.test_prunes_before_dispatch_and_can_replay_exclusions_as_a_control` — def, line 132.
+- `MinimumRunDfsTests.test_unknown_earlier_timing_is_preserved_and_does_not_establish_minimum` — def, line 137.
+- `MinimumRunDfsTests.test_feasible_representative_survives_resume_and_policy_mismatch_is_rejected` — def, line 142.
 
 ## [autonomy/tests/test_movement_composition.py](../autonomy/tests/test_movement_composition.py)
 
