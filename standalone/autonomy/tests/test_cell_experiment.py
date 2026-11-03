@@ -31,14 +31,14 @@ class CellExperimentTests(unittest.TestCase):
         self.assertEqual(work.summary()['solverCalls'], 1)
         self.assertEqual(work.termination, 'numerical_call_limit')
 
-    def test_prescribed_generation_reduces_remote_support_choices(self):
+    def test_prescribed_points_do_not_remove_remote_free_space(self):
         request = json.loads((ROOT/'remote-supports.json').read_text())
         points = json.loads((ROOT/'remote-supports-route.json').read_text())
         a = run_arm(request, 'generic', seconds=2)
         b = run_arm(request, 'prescribed', spatial_points=points, seconds=2)
-        self.assertLess(compact(b)['generatedChoices'], compact(a)['generatedChoices'])
+        self.assertEqual(compact(b)['generatedChoices'], compact(a)['generatedChoices'])
         self.assertEqual(b['numericalCalls'], 0)
-        self.assertEqual(b['results'][0]['adapter']['allowedBlocks'], 2)
+        self.assertEqual(b['results'][0]['adapter']['allowedBlocks'], len(request['blocks']))
         self.assertEqual(request['initial'], b['results'][0]['adapter']['originalInitialState'])
 
     def test_one_input_step_family_exhausts_without_losing_complete_programs(self):

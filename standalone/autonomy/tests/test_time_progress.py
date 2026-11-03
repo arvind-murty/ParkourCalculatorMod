@@ -5,9 +5,10 @@ from standalone.autonomy.cell_routes.time_progress import retain_two_goals
 
 
 def label(name,tick,score,*,clock='clock:10',goal='landing:G'):
+    state=dict(motion=dict(schedule=['A']*10,phase='same',jumps=1,runs=0),forwardVelocity=0.,speed=0.)
     record=dict(id=name,required_spatial=[goal],required_clocks=[clock],
         spatial_results={goal:dict(status='feasible' if tick is not None else 'unknown',ticks=tick)},
-        clock_results={clock:dict(status='feasible' if score is not None else 'unknown',objective=score)})
+        clock_results={clock:dict(status='feasible' if score is not None else 'unknown',objective=score,state=state)})
     return record,dict(name=name)
 
 
@@ -56,7 +57,9 @@ class TimeProgressTests(unittest.TestCase):
         kept,report=retain_two_goals([label('fast',10,1),label('far',20,5),label('middle',15,3)],cap=2)
         self.assertEqual({r['id'] for r,_ in kept},{'fast','far'})
         self.assertEqual(report['markedlyWorse'],0)
-        self.assertEqual(report['decisions']['middle']['reason'],'resource_cap')
+        self.assertEqual(report['decisions']['middle']['reason'],'deferred')
+        self.assertEqual(report['deferred'], ['middle'])
+        self.assertEqual(report['resourceDrops'], 0)
 
     def test_translation_does_not_change_classification(self):
         a=[label('best',10,5),label('worse',15,3)]

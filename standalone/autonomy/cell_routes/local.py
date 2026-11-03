@@ -188,6 +188,20 @@ class CorridorAdapter:
     def row(self, mode, state, cmp, value):
         return dict(leg=0, offset=state, mode=mode, cmp=cmp, rhs=value, name='cell_corridor:' + str(self.corridor.id))
 
+    def scoped(self, scope):
+        result = copy.copy(self)
+        result.corridor = copy.deepcopy(self.corridor)
+        active = {tuple(self.scene['collisionScene']['solids'][i]) for i in scope['solidIndices']}
+        result.gates = [g for g in self.gates if tuple(g['box']) in active]
+        ids = {g['id'] for g in result.gates}
+        result.corridor.signature = tuple(token for token in self.corridor.signature if token[0] in ids)
+        if scope['purpose'] == 'preliminary' and len(active) != len(self.scene['collisionScene']['solids']):
+            if self.decomposition is not None:
+                from .routes import projected_boxes
+                result.corridor.projection = projected_boxes(self.decomposition, [c.id for c in self.decomposition.cells])
+        result.validation_scope = scope
+        return result
+
     def failure_diagnostics(self, checked, plan, candidate, vertical, partial, alternatives):
         failure = dict(reason=checked['reason'])
         if checked['reason'] == 'corridor_projection':
@@ -208,7 +222,8 @@ class CorridorAdapter:
         fields = ('positions', 'velocity', 'yaw', 'rawMovement', 'movement', 'friction', 'objective')
         return copy.deepcopy(dict(version=1, corridorHash=key, corridor=corridor, gates=self.gates,
             scope=dict(horizonInputs=len(candidate['positions'])-1, partialSignature=partial,
-                       projection='whole_trajectory', modeledInteractionScope='unspecified'),
+                       projection='modeled_horizon' if hasattr(self, 'validation_scope') else 'whole_trajectory',
+                       modeledInteractionScope=getattr(self, 'validation_scope', 'unspecified')),
             failure=failure, plan=plan, candidate={k: candidate[k] for k in fields if k in candidate},
             vertical=vertical, repairAlternatives=alternatives))
 
@@ -245,7 +260,7 @@ class CorridorAdapter:
             if i < len(self.corridor.signature) and i < len(checked['events']):
                 expected, actual = self.corridor.signature[i], checked['events'][i]
                 if expected[:2] == actual['token'][:2]:
-                    gate = self.gates[expected[0]]
+                    gate = next(g for g in self.gates if g['id'] == expected[0])
                     refs = checked['references'][actual['segment']]
                     mode, state = ('X', refs[0]) if gate['lateral'] == 0 else ('Z', refs[1])
                     side = expected[2]

@@ -31,6 +31,46 @@ VERTICAL=dict(feasible=True,vertical={},y=[1]*3,vy=[0]*3,onGround=[True]*3)
 
 
 class RepairResumeTests(unittest.TestCase):
+    def test_extended_program_keeps_guess_without_copying_exact_old_problem_work(self):
+        scene=flat_scene()
+        parent=next(p for p in programs(scene,2) if p['profile']['jump'][0])
+        parent['guideSeedYaw']=[12.,13.]
+        parent['repairState']=dict(context=dict(scope=dict(solveIdentity='old-exact-problem')),pending=[dict(rows=[])])
+        generator=iter_movement_programs(scene,checkpoint_tick=4,threshold=0.,initial_programs=[parent])
+        child=next(generator);generator.close()
+        self.assertNotIn('repairState',child)
+        self.assertEqual(child['guideSeedYaw'],[12.,13.])
+        self.assertEqual(len(parent['repairState']['pending']),1)
+
+    def test_valid_saved_incumbent_does_not_need_another_numerical_request(self):
+        first=self.invoke(route(),lambda *a,**k:outcome(),lambda *a:dict(accepted=True))
+        second=self.invoke(route(),lambda *a,**k:self.fail('Completed request restarted'),lambda *a:dict(accepted=True),
+                           resume_state=json.loads(json.dumps(first['repairState'])))
+        self.assertEqual(second['status'],'feasible')
+        self.assertEqual(second['attempts'],[])
+
+    def test_worker_interruption_restores_the_inflight_branch(self):
+        checkpoints=[]
+        def interrupted(*args,**kwargs):raise RuntimeError('synthetic interruption')
+        with self.assertRaises(RuntimeError):
+            self.invoke(route(),interrupted,lambda *a:dict(accepted=True),
+                on_progress=lambda state:checkpoints.append(json.loads(json.dumps(state))))
+        self.assertIsNotNone(checkpoints[-1]['inFlight'])
+        called=[]
+        def resumed(*args,**kwargs):called.append(True);return outcome()
+        second=self.invoke(route(),resumed,lambda *a:dict(accepted=True),resume_state=checkpoints[-1])
+        self.assertEqual(called,[True])
+        self.assertEqual(second['status'],'feasible')
+        self.assertIsNone(second['repairState']['inFlight'])
+
+    def test_unknown_retry_is_explicit_and_not_a_completed_result(self):
+        first=self.invoke(route(),lambda *a,**k:dict(status='unknown',termination='deadline',best=None,attempts=[]),
+            lambda *a:dict(accepted=True))
+        second=self.invoke(route(),lambda *a,**k:self.fail('Unknown retried without request'),lambda *a:dict(accepted=True),
+            resume_state=first['repairState'],retry_unresolved=False)
+        self.assertEqual(len(second['repairState']['unresolved']),1)
+        self.assertIsNone(second['best'])
+
     def invoke(self, request, find, filter_candidate, **kwargs):
         with patch('standalone.autonomy.block_contacts.find_route',side_effect=find), \
              patch('standalone.autonomy.block_contacts.validate_vertical_schedule',return_value=VERTICAL):
@@ -135,7 +175,7 @@ class RepairResumeTests(unittest.TestCase):
         state=dict(version=1,context=ctx,pending=[branch],unresolved=[],seen=[])
         retained=retain_unresolved(first,state)
         self.assertEqual(program_physics_key(first),program_physics_key(retained))
-        self.assertNotEqual(_key(first),_key(retained))
+        self.assertEqual(_key(first),_key(retained))
         generator=iter_movement_programs(scene,checkpoint_tick=4,threshold=0.,initial_programs=[retained],deadline=time.monotonic()+2)
         extended=next(generator);generator.close()
         self.assertEqual(extended['repairState'],state)

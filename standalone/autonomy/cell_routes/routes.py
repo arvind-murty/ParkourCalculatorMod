@@ -96,12 +96,7 @@ def walk_projection(decomposition, cells, portals, start, goal):
 
 
 def prescribed_projection(decomposition, cells, points):
-    anchors = [anchor_box(decomposition, points[0]), anchor_box(decomposition, points[-1])]
-    envelope = (min([b[0] for b in anchors]+[p[0] for p in points]), 0,
-                min([b[2] for b in anchors]+[p[2] for p in points]),
-                max([b[3] for b in anchors]+[p[0] for p in points]), 0,
-                max([b[5] for b in anchors]+[p[2] for p in points]))
-    return merge_boxes([clip for b in projected_boxes(decomposition, cells) if (clip := intersection(b, envelope)) is not None])
+    return projected_boxes(decomposition, [c.id for c in decomposition.cells])
 
 
 @dataclass
@@ -149,7 +144,7 @@ def corridor_for_points(decomposition, points, gates, *, route_id=0, source='pre
             covered = hi
     cells = sorted(cell_ids)
     return Corridor(route_id, cells, [], [list(p) for p in points], signature(points, gates),
-        prescribed_projection(decomposition, cells, points), sum(math.dist(a, b) for a, b in zip(points, points[1:])), source=source, stage_paths=[ordered_cells])
+        prescribed_projection(decomposition, cells, points), sum(math.dist(a, b) for a, b in zip(points, points[1:])), source=source)
 
 
 def enumerate_routes(scene, decomposition, *, max_routes=50, max_expansions=5000, max_steps=64,
@@ -194,14 +189,12 @@ def enumerate_routes(scene, decomposition, *, max_routes=50, max_expansions=5000
             if full_sig in grouped:
                 corridor = grouped[full_sig]
                 corridor.cells = sorted(set(corridor.cells) | set(cells))
-                corridor.projection = merge_boxes(corridor.projection + walk_projection(decomposition, list(cells), list(portals), start, endpoint))
-                if list(cells) not in corridor.stage_paths:
-                    corridor.stage_paths.append(list(cells))
+                corridor.projection = projected_boxes(decomposition, [c.id for c in decomposition.cells])
                 corridor.variants += 1
                 duplicates += 1
             else:
                 grouped[full_sig] = Corridor(len(grouped), list(cells), list(portals), [list(p) for p in finished],
-                    full_sig, walk_projection(decomposition, list(cells), list(portals), start, endpoint), length + math.dist(points[-1], endpoint), stage_paths=[list(cells)])
+                    full_sig, projected_boxes(decomposition, [c.id for c in decomposition.cells]), length + math.dist(points[-1], endpoint))
                 if len(grouped) >= max_routes:
                     termination = 'route_limit'
                     break

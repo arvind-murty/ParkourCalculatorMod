@@ -16,9 +16,10 @@ from .routes import corridor_for_points,landmarks
 from .support_order import SupportOrder
 from .two_goal_experiment import witnesses
 from .window_experiment import save
+from standalone.autonomy.solve_spec import full_witness
 
 
-def run(fixture,compiler,*,on_window=None,python_executable=None,initial_programs=None):
+def run(fixture,compiler,*,on_window=None,python_executable=None,initial_programs=None,resume_state=None,on_progress=None,retry_unknown=False):
     scene=prepare_scene(fixture['request'])
     d,gates=decompose(scene),landmarks(scene)
     corridor=corridor_for_points(d,fixture['spatialPoints'],gates)
@@ -32,17 +33,17 @@ def run(fixture,compiler,*,on_window=None,python_executable=None,initial_program
                  for t in fixture['comparisonTicks']]
     direction=tuple(fixture['terminalDirection'])
     terminal=Checkpoint(fixture['terminalTick'],-1,direction,initial,tuple(corridor.points[-1]),corridor.signature)
-    policy=SupportOrder(scene,fixture['requiredSupports'],fixture['terminalTick'])
+    policy=SupportOrder(scene,fixture['requiredSupports'],fixture['terminalTick'],fixture.get('initialJumpInputs'))
     result=find_checkpoint_route(fixture['request'],compiler,corridor=corridor,checkpoints=checkpoints,
         terminal_checkpoint=terminal,program_filter=policy,python_executable=python_executable,on_window=on_window,
         initial_programs=initial_programs,
-        program_priority=policy.priority if fixture.get('prioritizeSupportProgress') else None,
+        resume_state=resume_state,on_progress=on_progress,retry_unknown=retry_unknown,
         **fixture['settings'])
     result['supportOrder']=fixture['requiredSupports']
     if result['best'] is not None:
         result['bestSupportAudit']=policy.audit(result['best']['movementProgram'])
     validation=[]
-    final_witnesses=(r['witness'] for r in result.get('finalAttempts',[]) if 'witness' in r)
+    final_witnesses=(r['witness'] for r in result.get('finalAttempts',[]) if 'witness' in r and full_witness(r['witness']))
     for witness in itertools.chain(witnesses(result),final_witnesses):
         checked=replay_witness(scene,witness,compiler)
         validation.append(checked)
@@ -56,19 +57,25 @@ def main():
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--compiler',type=Path,default=Path('standalone/autonomy/build/compiler.json'))
     parser.add_argument('--resume',type=Path)
+    parser.add_argument('--retry-unknown',action='store_true')
     args=parser.parse_args()
     fixture=json.loads(args.input.read_text())
     report=dict(source=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),fixture=fixture,windows=[])
-    seeds=None
+    seeds, resumed = None, None
     if args.resume is not None:
         from .failure_diagnostic import read
         previous=read(args.resume)
         prior=previous.get('result',previous)
-        window=next((w for w in reversed(prior['windows']) if w['retained']),None)
-        if window is None:raise ValueError('No retained comparison histories to resume')
-        by_id={c['id']:c['program'] for c in window['candidates'] if 'program' in c}
-        seeds=[by_id[i] for i in window['retained']]
-        report['resume']=dict(source=str(args.resume),tick=window['checkpoint']['tick'],histories=len(seeds))
+        resumed=prior.get('searchState',previous.get('searchState'))
+        if resumed is not None:
+            report['resume']=dict(source=str(args.resume),kind='exact_search_continuation')
+        else:
+            window=next((w for w in reversed(prior.get('windows',[])) if w['retained']),None)
+            if window is None:raise ValueError('Legacy report has no retained histories; exact continuation is unavailable')
+            by_id={c['id']:c['program'] for c in window['candidates'] if 'program' in c}
+            seeds=[by_id[i] for i in window['retained']]
+            report['resume']=dict(source=str(args.resume),kind='legacy_parent_reconstruction',
+                                  tick=window['checkpoint']['tick'],histories=len(seeds))
     def progress(window):
         report['windows'].append(window)
         save(args.output,report)
@@ -76,7 +83,12 @@ def main():
             retained=len(window['retained']),generation=window['generation']['termination'],
             progress=[c['value'] for c in window['candidates'] if c['id'] in window['retained']])),flush=True)
     with JavaCompiler(json.loads(args.compiler.read_text())) as compiler:
-        result,validation=run(fixture,compiler,on_window=progress,python_executable=sys.executable,initial_programs=seeds)
+        def checkpoint_progress(state):
+            report['searchState']=state
+            save(args.output,report)
+        result,validation=run(fixture,compiler,on_window=progress,python_executable=sys.executable,initial_programs=seeds,
+            resume_state=resumed,on_progress=checkpoint_progress,retry_unknown=args.retry_unknown)
+    report.pop('searchState',None)
     report.update(result=result,validation=validation)
     save(args.output,report)
     best=result['best']

@@ -190,8 +190,10 @@ def append_choice(program, choice, *, max_inputs=200):
     result = dict(initial=copy.deepcopy(program['initial']), profile=profile, ladderEvents=events,
                   movementUnits=units, terminal='open', terminalSupport=choice.get('terminalSupport'),
                   interactions=program['interactions'] + int(choice.get('interaction', False)), trace=trace)
-    for key in ('threshold', 'guideSeedYaw', 'repairState'):
+    for key in ('threshold', 'guideSeedYaw', 'repairState', 'solveScope'):
         if key in program:
+            if key == 'repairState' and (program[key].get('context', {}).get('scope') or {}).get('solveIdentity'):
+                continue
             result[key] = copy.deepcopy(program[key])
     return result
 

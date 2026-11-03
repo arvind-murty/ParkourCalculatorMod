@@ -22,6 +22,8 @@ def compatible(previous, current):
     if not isinstance(previous, dict) or previous.get('route') != current['route'] or previous.get('geometry') != current['geometry'] \
             or previous.get('scope') != current['scope']:
         return False
+    if any(previous.get(k) != current.get(k) for k in ('objective', 'probeConstraints', 'terminalSupportRequired')):
+        return False
     if not _rows(previous.get('constraints', [])) <= _rows(current['constraints']):
         return False
     old, new = previous.get('profiles', []), current['profiles']

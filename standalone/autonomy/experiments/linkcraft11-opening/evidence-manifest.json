@@ -372,6 +372,14 @@
     "audit/corridor-failure.png": {
       "bytes": 149619,
       "sha256": "0bf588b52a915806702ca7f7d6d08d1cf5c93ce7c63657bc1827d20bab857526"
+    },
+    "probe_b2_reachability.py": {
+      "bytes": 4214,
+      "sha256": "482214a617ee1b597d50b10d1c324d41aeadbc3f8e0a14477abf299098d6a760"
+    },
+    "audit/b2-reachability.json": {
+      "bytes": 61787,
+      "sha256": "7eea52c68840a89f69ee50b51f982f8ccb71d99738a04a25da97c97262ad980e"
     }
   },
   "audit": {

@@ -29,8 +29,16 @@ def movement_settings(scene):
 
 def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=None, report=None, screen=None,
                            context_adapter=None, work=None, checkpoint_tick=None, initial_programs=None, threshold=.005,
-                           program_filter=None, queue_policy='balanced', stop_on_goal=True, program_priority=None):
+                           program_filter=None, queue_policy='balanced', stop_on_goal=True, program_priority=None,
+                           persistent=False, continuation=None):
     cfg = movement_settings(scene) if settings is None else settings
+    if persistent:
+        from .movement_frontier import persistent_programs
+        yield from persistent_programs(scene, settings=cfg, report=report if report is not None else {},
+            continuation=continuation, deadline=deadline, cancel_event=cancel_event, work=work,
+            initial_programs=initial_programs, checkpoint_tick=checkpoint_tick, threshold=threshold, screen=screen,
+            context_adapter=context_adapter, program_filter=program_filter, stop_on_goal=stop_on_goal)
+        return
     if queue_policy not in ('balanced', 'legacy'):
         raise ValueError('Unknown movement queue policy')
     report = report if report is not None else {}

@@ -143,7 +143,7 @@ def score_features(best, cp, *, goal_box=None, samples=4):
 def fair_programs(scene, seeds, *, cfg, fair, report, **kwargs):
     from standalone.autonomy.movement_search import iter_movement_programs
     from .checkpoint_search import _key
-    if not fair:
+    if not fair or kwargs.get('persistent'):
         yield from iter_movement_programs(scene,settings=cfg,initial_programs=seeds,report=report,**kwargs)
         return
     count = len(seeds)

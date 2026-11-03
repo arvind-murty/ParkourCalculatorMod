@@ -1,15 +1,25 @@
 class SupportOrder:
-    def __init__(self,scene,supports,terminal_tick):
+    def __init__(self,scene,supports,terminal_tick,initial_jump_inputs=None):
         ids={b['id'] for b in scene['blocks']}
         if not supports or len(set(supports))!=len(supports) or any(s not in ids for s in supports):
             raise ValueError('Support order requires distinct scene block IDs')
         self.supports=list(supports)
         self.start=scene['startBlock']
         self.terminal_tick=terminal_tick
+        self.initial_jump_inputs = sorted(set(initial_jump_inputs)) if initial_jump_inputs is not None else None
+        if self.initial_jump_inputs is not None and (not self.initial_jump_inputs or any(
+                type(t) is not int or not 0 <= t < terminal_tick for t in self.initial_jump_inputs)):
+            raise ValueError('Initial jump inputs must fit the solve horizon')
+        self.checkpoint_identity = dict(supports=self.supports, start=self.start, terminalTick=terminal_tick,
+                                       initialJumpInputs=self.initial_jump_inputs)
         self.boxes={tuple(scene['collisionScene']['solids'][b['solidIndex']]):b['id'] for b in scene['blocks']}
 
     def audit(self,program):
         p=program['profile']
+        if self.initial_jump_inputs is not None:
+            jumps = [t for t, j in enumerate(p['jump']) if j and p['grounded'][t]]
+            if jumps and jumps[0] not in self.initial_jump_inputs or not jumps and p['airtime'] > max(self.initial_jump_inputs):
+                return dict(accepted=False, progress=0, observed=[], reason='initial_jump_domain')
         events=[]
         for e in p.get('contactEvents',[]):
             if e.get('axis')=='Y' and e.get('direction')==-1 and tuple(e['box']) in self.boxes:
@@ -35,5 +45,8 @@ class SupportOrder:
                     reason=None if accepted else 'unfinished_support_order_at_clock')
 
     def __call__(self,program):return self.audit(program)['accepted']
+
+    def remaining(self, program):
+        return self.supports[self.audit(program)['progress']:]
 
     def priority(self,program):return -self.audit(program)['progress']

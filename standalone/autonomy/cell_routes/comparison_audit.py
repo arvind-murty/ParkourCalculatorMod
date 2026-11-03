@@ -55,7 +55,7 @@ def source_entries(result):
         if 'decision_program' in record:
             entries.append(dict(id='final:'+record['id'],selection='final_evaluated',program=record['decision_program']))
     for record in result.get('unevaluatedCandidates',[]):
-        entries.append(dict(id='unevaluated:'+str(record['window'])+':'+record['id'],
+        entries.append(dict(id='unevaluated:'+str(record.get('window','unknown'))+':'+record['id'],
                             selection=record['selection'],program=record['program']))
     for index,rescue in enumerate(result.get('rescues',[])):
         for entry in source_entries(rescue['result']):

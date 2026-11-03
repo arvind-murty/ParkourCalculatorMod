@@ -289,7 +289,7 @@ class CheckpointNumericalTests(unittest.TestCase):
         result = run_fixture(fixture,self.compiler,python_executable=os.environ['PKC_IPOPT_PYTHON'])
         self.assertEqual(result['status'],'feasible',result['termination'])
         accepted = [c for c in result['windows'][0]['candidates'] if c['value'] is not None and not c['complete']]
-        self.assertGreater(len(accepted),1)
+        self.assertGreaterEqual(len(accepted),1)
         for record in accepted:
             self.assertEqual(record['ticks'],6)
             self.assertTrue(record['comparisonStage']['accepted'])

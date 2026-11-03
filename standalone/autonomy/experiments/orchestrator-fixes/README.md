@@ -1,54 +1,70 @@
-# Orchestrator coverage and continuation-state fixes
+# Orchestrator fixes and regression results
 
-User ruling: keep the existing continuous solver. The orchestrator selects inputs and constraints within a spatial route before each IPOPT call. Facings remain continuous variables. Geometry/timing decisions belong in orchestration; a model-feasible trajectory rejected by physical geometry exposes an incomplete selected branch. See the [contract](../../cell_routes/ORCHESTRATOR_CONTRACT.md). No IPOPT model/interface change accompanies these fixes.
+The earlier e3d1087b coverage/repair milestone and its unchanged evidence are preserved in [LEGACY_RESULTS.md](LEGACY_RESULTS.md). The current implementation/evidence below are a separate milestone.
 
-Implementation sources: `90ab0a28` fixes axis-corridor coverage and stores unresolved search state; `e3d1087b` preserves validated reference guesses while resuming repairs. This work remains on isolated branch `research/ipopt-cell-routes`.
+2026-11-02. Implementation on isolated research/ipopt-cell-routes. The seven workstreams in [the consolidated plan](../../ORCHESTRATOR_IMPLEMENTATION_PLAN.md) are wired into the standalone checkpoint orchestrator. This does not establish complete cold discovery or heuristic optimality.
 
-## Fixed bugs
+## Behavior
 
-The corridor repair previously required an offending axis movement to fit within one original projected rectangle. This excluded valid movements across adjacent rectangles. `movement_regions` sweeps the rectangle union into exact axis-movement regions, including closed boundary slices. The orchestrator emits the existing X/Z position bounds. Tests check both axes/directions, shared boundaries, genuine gaps and equivalence against union coverage over a coordinate grid. This fixes geometric projection coverage, not every ordered-gate/physical decision coverage issue.
+- Each evaluation declares its original state, fixed movement/contact program, geometry/body/coefficient identity, objective, modeled blocks/horizon and preliminary/complete scope. Preliminary guidance checks its declared scope and cannot become a complete incumbent. Complete evaluations supply obstacle alternatives before IPOPT and still require full scene validation.
+- Existing normal/stepping/ceiling/contact/avoid builders produce the constraints. IPOPT still receives fixed discrete inputs and constraints, with every facing free from the original state. Momentum is carried normally; inertia thresholds remain zero. No ladder, water or intentional wall-hit search is added.
+- Spatial projections come from the declared free-space decomposition, without bounding them by helper waypoints or selected-cell seams. Route signatures remain checked and logged. The broad horizontal projection is not a physical collision model; the shared scene checker remains authoritative for physical acceptance.
+- One shared interaction helper handles mandatory contacts, unwanted contact relevance and avoid-branch screening. It combines swept Y/X/Z phase envelopes, position/velocity intervals, norm travel bounds and an optional linear feasibility refinement. The refinement uses a circumscribed16-face acceleration polygon and fixed contact equations. It excludes only numerical LP infeasibility; solver uncertainty, unsupported cases or missing SciPy retain the alternative. This does not change the continuous problem dispatched to IPOPT.
+- Constraint alternatives are generated with serializable cursors. Vertically irrelevant phases, unreachable interactions, equivalent rows and implied floor-avoid clauses do not consume fresh numerical calls. Guide trajectories order alternatives but are never hard reachability bounds. Vertical passage options remain available even for a selected lateral route.
+- Accepted-witness position and velocity are compared at the same declared absolute tick. Greater forward velocity, greater horizontal speed or close/ahead position protect a compatible-schedule candidate. Different schedules/phases and unavailable metadata remain incomparable. Existing0.25-block and1-tick margins are retained.
+- Available work uses `(elapsed inputs, -effective grounded jumps, grounded nonjump inputs, stable ID)`. Active batch/retention sizes yield saved deferred work rather than deleting eligible candidates. Explicit user jump/run limits are enforced; absent limits are not silently replaced by block-search defaults.
+- Versioned search checkpoints save outer symbolic generation, active/deferred programs, current numerical variants, unresolved requests, in-flight work and validated incumbents. Completed exact-context requests are cached. `--retry-unknown` deliberately retries unresolved numerical outcomes; ordinary resume continues pending work without automatically spending another budget on every unknown. Old parent-only reports are explicitly reconstructed, not called exact resumes.
+- Exact old-problem repair queues are not copied into every longer child program: their full solve identities cannot match a changed horizon. The parent work remains saved and its accepted facing guess can guide the child. Compatible legacy prefix repair machinery remains available to its existing callers.
+- A conservative viability screen rejects a descending airborne prefix only when mandatory contacts remain and every possible first floor contact is excluded through the remaining horizon. It considers every supplied support with unconstrained horizontal reach. Grounded/rising, unsupported and potentially recoverable cases remain unknown. Optional terminal flight needs no invented final landing.
 
-Contact search now serializes pending and unresolved rows, passage/hit selections, deduplication history, incumbent branch hints and facing guesses. Unknown prefixes carry that state through physical extension and resume matching branches. Search identity distinguishes different pending repair work. Original position/velocity, scene, corridor and the selected physical prefix are compatibility checked. Changed context starts a fresh search; compatible extension retains conditional branches but reopens the base branch because old failures are not infeasibility certificates. Every candidate is validated again. No intermediate X/Z endpoint or facing is pinned.
+## Measured controls
 
-A regression during implementation showed why proposal guesses and validated references must be stored separately: replacing a supplied valid reference with an invalid scalar winner lost 0.9693 progress on an existing reverse-turn stress test. Repairs now prefer a fully validated reference guess when available and otherwise use saved proposal guesses. This is initialization only. The saved reference never substitutes for acceptance under new constraints. A numerical regression checks the previously successful objective.
+| Control | Result |
+| --- | --- |
+| Fixed Real11 reference, original recorded schedule/yaw used only as a diagnostic seed | Independent full replay passes at state64, Z=-1093.2675546360433 versus recorded-1093.2675533415547, about1.3e-6 difference. First accepted branch in about1.1s in the separate40s control. |
+| Numerical saved-frontier control |2 calls before saving plus8 after restoration; exact compatible resume; zero repeated completed branches; validated incumbent preserved; more alternatives remain pending. |
+| B2 relevance on that fixed program | All possible extra B2 contact phases excluded before avoidance enumeration; intended finite landing rows remain. B6 alternatives are already included in complete requests. |
+| Historical falling prefixes |43 distinct scalar boundary cases rejected, including Y2.9305/Y3.5797 at28 and Y-8.6062 at44. Required contacts remain, all support tops are at least5, and descent has no possible first floor contact. |
+| Separate two-jump map |24-input completion, X=8.622964650232278,18 worker calls, about4.63s. All stored witnesses independently replay. |
+| Two-jump continuation audit | All11 saved intermediate/final entries processed to exhausted supported continuation domains; no unknown entries; no better completion than the search incumbent. This map had no heuristic drops, so it does not measure a nontrivial false-pruning rate. |
 
-The pilot still discovers some missing geometry through lazy validation/repair. These fixes do not claim all pilot calls already contain all relevant geometry. Completing fixed branch selection before IPOPT is remaining orchestrator work, not a reason to add route decisions to the continuous model.
+The reference schedule/yaw is not supplied to cold discovery. Reference recovery demonstrates correct complete model assembly, not discovery of the correct discrete sequence.
 
-## Measurements
+Cold Real11 uses the declared B1..B7 geometry, initial0/8 families, generated later normal/stepping choices and unchanged20-candidate/8-active settings. The first300s session uses150 numerical calls and stops at the28-input comparison window with no final64-input incumbent. Both initial families survive state10. The next300s exact continuation adds36 calls, advances past the unfinished0/16 self-hop program to0/17, and still has no final incumbent. Completed work is retained instead of restarting the earlier window. A third300s continuation adds22 calls, bringing the cumulative total to208, and still stops at28. Across both resume boundaries, zero completed branch identities are dispatched again. See evidence/cold-summary.json. These runs overlap some independent tests, so wall times are observations rather than controlled speed comparisons.
 
-At final runtime source `e3d1087b`, with the previous window fixtures and numerical limits unchanged:
+This is an unresolved discovery/performance failure, not successful cold recovery. The current engine exhausts the available constraint alternatives in a comparison window before advancing the window. It can spend substantial time enumerating/probing late self-hop and timing histories which the first-event-only viability test cannot certify dead. Position/velocity and schedule guards intentionally do not discard those histories. The LP relaxation also admits false positives, and full route-signature checks still reject some scalar/physical candidates. No arbitrary candidate-limit increase is proposed as the remedy.
 
-| Window scene | Before these fixes | After |
-| --- | ---: | ---: |
-| Open | 12 | 12 |
-| Ceiling | 13 | 13 |
-| Multiple supports | 14 | 14 |
-| Stepping | 14 | 14 |
-| Dense grind/run | 11 | 11 |
-| Blockage turn | Unknown | 13 |
+## Regression coverage
 
-The cold turn uses about 10.4 of 20 seconds and 75 of 128 permitted solves. Four tick-10 prefixes receive accepted scores, whereas none did before. This is a valid found route, not an optimality claim.
+- Final standalone fast discovery:451 tests,89 skipped, one ladder-composition failure reproduced unchanged on clean3082f8fc. Wider numerical discovery:450 tests/449 pass, with only that same baseline failure, in742.3s. This wider process started before the final old-queue-copy regression was added; the final94-test focused gate covers that addition.
+- Focused numerical orchestration contracts:94 tests passed at the final implementation boundary;49 of50 pure contracts pass with one numerical environment skip when the bridge is absent. Includes normal air/run/landing, stepping, ceilings, complete/preliminary scope, selected clip envelopes, velocity/schedule guards, late generation, in-flight restore and completed-result reuse.
+- IPOPT model suite:54 tests,9 optional tests skipped, all executed tests pass.
+- Randomized feasible-control and selected-clip checks ensure the interval/LP screens contain known trajectories. A coupled position/velocity counterexample exercises a useful exclusion. A vertical-clearance route counterexample prevents lateral signatures from removing necessary Y-face alternatives.
+- The independent two-jump audit completes all entries. Wider maps with actual heuristic exclusions still require retained-versus-discarded completion audits; no global optimality claim is made.
 
-The 36 warm contract conditions yield 35 accepted cases (28/28 known-valid starts, 7/8 deliberately perturbed starts), versus 34 previously. No previously successful objective regresses by more than 1e-6. Reverse objectives are stress conditions rather than separate scene geometries.
+No mod Gradle build or game client is required for this standalone work. The known ladder failure is outside this milestone and is recorded rather than hidden or fixed opportunistically.
 
-A matched pause/resume probe uses the same cold complete programs and up to twelve solver calls. For the 12-tick program, restarting three four-call searches remains unknown after twelve calls; storing/resuming the frontier accepts a replayed route after seven cumulative calls. A single uninterrupted twelve-call allowance accepts after six. For the 16-tick program, all three modes accept; the four-call modes need four calls, while the single allowance spends twelve including continued optimization. These are six bounded conditions, not a broad scheduling-speed claim.
+## Reproduction
 
-All 92 returned witnesses pass independent replay: 35 warm, 52 window/goal, five pause/resume. These counts are distinct from older archived matrices. One new run per condition is saved; no repeatability, completeness, or global-optimality claim is made. Independent replay uses the scalar/shared finite-scene models, not an actual Minecraft client.
-
-## Validation and reproduction
-
-The focused compiler/IPOPT integration gate passes 63 tests. Wider autonomy runs 394 tests, with 84 environment skips and no failures after excluding the already documented baseline repeated-ladder-ceiling failure. No mod Gradle suite was run.
-
-Use the standalone compiler/IPOPT environment, with `OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1`:
+From the isolated worktree, set the existing compiler/Python environment:
 
 ```sh
-.venv-guidance/bin/python -m standalone.autonomy.cell_routes.fix_validation \
-  --part warm --output standalone/autonomy/build/orchestrator-fixes-warm.json.gz
-.venv-guidance/bin/python -m standalone.autonomy.cell_routes.repair_resume_experiment \
-  --output standalone/autonomy/build/orchestrator-fixes-resume.json.gz
-.venv-guidance/bin/python -m standalone.autonomy.cell_routes.window_experiment \
-  --input standalone/autonomy/experiments/decision-windows/fixtures --gaps 0.25 \
-  --output standalone/autonomy/build/orchestrator-fixes-windows.json.gz
+export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1
+export PKC_RUN_TICKS_COMPILER="$PWD/standalone/autonomy/build/compiler.json"
+export PKC_IPOPT_PYTHON="$PWD/.venv-guidance/bin/python"
+export PYTHONPATH="$PWD"
+.venv-guidance/bin/python standalone/autonomy/experiments/orchestrator-fixes/regressions.py
+.venv-guidance/bin/python -m standalone.autonomy.cell_routes.fixed_clock_experiment --input standalone/autonomy/experiments/linkcraft11-opening/fixtures/clock64-orchestrator.json --output /tmp/orchestrator-cold.json.gz
+.venv-guidance/bin/python -m standalone.autonomy.cell_routes.fixed_clock_experiment --input standalone/autonomy/experiments/linkcraft11-opening/fixtures/clock64-orchestrator.json --resume /tmp/orchestrator-cold.json.gz --output /tmp/orchestrator-resumed.json.gz
 ```
 
-Exact requests/programs, selected guards, resumed state, accepted witnesses, work summaries and test logs are in [evidence](evidence/summary.json), with source and SHA-256 hashes in [the manifest](evidence/manifest.json).
+The regression script saves the complete fixed-reference/resume results, exact constraints, outgoing repair state and historical fall proofs. Compressed search/audit reports and logs live under evidence/. Source hashes distinguish the implementation from the earlier corridor-only logging experiment. Earlier prototype checkpoints with other assembly/context versions are not exact continuations of this implementation.
+
+## Remaining work
+
+1. Resolve cold discovery by measuring constraint-variant generation and necessary future reachability. Extend dead-prefix reasoning beyond the first floor only when an optimistic continuation graph covers intermediate supports, steps, ceilings, self jumps and waits. A failure to directly reach the next required block is not sufficient.
+2. Reduce provably redundant constraint alternatives and repeated compatible assembly, while retaining genuinely distinct timing/side choices and numerical unknowns. Consider explicit saved downstream/provisional work if exhausting one local program still blocks useful completion; preserve the agreed scheduling semantics and measure the change.
+3. Audit corridor-only rejections with independent physical replay before changing that policy. A physically valid other-signature result is not proof that the selected route was completed.
+4. Expand full retained/discarded continuation audits to maps with actual pruning and interacting decisions. Keep all false-pruning counterexamples and unresolved outcomes.
+
+Larger candidate caps, inertia-threshold patterns, global objective bounds and mixed-input relaxations remain separate work.
