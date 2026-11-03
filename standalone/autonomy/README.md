@@ -1,5 +1,7 @@
 # Run ticks over a block route
 
+> Current entry: [standalone AGENTS](../AGENTS.md), [current state](../docs/CURRENT_STATE.md), [approved DFS/early-interaction plan](DFS_INTERACTION_IMPLEMENTATION_PLAN.md). The experiment updates below are chronological; current runtime still uses checkpoint traversal and the new plan is not implemented.
+
 Isolated cell-route experiment: [implementation, non-ladder benchmarks and next decisions](experiments/cell-routes/README.md), branch `research/ipopt-cell-routes`. Bounds remain deferred.
 
 Local decision follow-up: [geometric checkpoint guidance](experiments/checkpoint-guidance/README.md) scores physical alternatives at a common absolute tick using the cell-route direction, with no velocity thresholds and all earlier facings free. Experimental entry point: `python -m standalone.autonomy.cell_routes.checkpoint_experiment`.

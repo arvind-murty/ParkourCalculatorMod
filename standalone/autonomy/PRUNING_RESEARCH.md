@@ -1,5 +1,7 @@
 # Pruning research and search framework
 
+> Historical research chronology. For current scope/status use [current state](../docs/CURRENT_STATE.md), [decisions](../docs/DECISIONS_AND_PLANS.md) and [approved implementation plan](DFS_INTERACTION_IMPLEMENTATION_PLAN.md). Later user decisions supersede older proposals below.
+
 2026-10-30. Living research record for the consolidated standalone solver. Update this document after each research discussion with relevant findings, user decisions, recommendations and open questions. Canonical branch: `feature/ipopt-consolidated`. Initial research checkpoint: `65db8c5`; latest checkout confirmed during planning: `99ecfe9`. No runtime behavior changes or new performance measurements accompany this record.
 
 Read [PRUNING_RESEARCH_HANDOFF.md](PRUNING_RESEARCH_HANDOFF.md), [GENERIC_COMPOSITION.md](GENERIC_COMPOSITION.md) and [SEARCH_OBJECTIVE.md](SEARCH_OBJECTIVE.md) for implementation context and movement requirements.

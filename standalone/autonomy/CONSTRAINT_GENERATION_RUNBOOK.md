@@ -1,5 +1,7 @@
 # Reusing the mod's block constraints in route discovery
 
+> Current authority: [DFS/early-interaction plan](DFS_INTERACTION_IMPLEMENTATION_PLAN.md), [current state](../docs/CURRENT_STATE.md). The seven-workstream fixes are implemented to their recorded scope; universal early builder gating, ownership and DFS remain pending. Earlier pending statements below are historical, superseded by the implemented workflow section and current plan.
+
 
 Current full implementation plan: [ORCHESTRATOR_IMPLEMENTATION_PLAN.md](ORCHESTRATOR_IMPLEMENTATION_PLAN.md). Corridor logging is implemented; the seven selected behavioral workstreams are pending. Keep scope/geometry/constraint selection, comparison protections, full search resumption and dead-prefix exclusion together in acceptance.
 

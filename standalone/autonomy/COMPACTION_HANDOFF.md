@@ -1,5 +1,7 @@
 # Orchestration compaction handoff
 
+> Historical 2026-10-30 consolidation handoff. Branch/PR and deferred-work instructions below are source-era context. Start instead at [standalone AGENTS](../AGENTS.md) and [current state](../docs/CURRENT_STATE.md).
+
 ## Research agent entry point and PR base, 2026-10-30
 
 Read the latest `origin/feature/ipopt-consolidated` from `arvind-murty/ParkourCalculatorMod`, starting at [PRUNING_RESEARCH_HANDOFF.md](PRUNING_RESEARCH_HANDOFF.md). Review [PR #1](https://github.com/arvind-murty/ParkourCalculatorMod/pull/1); the implementation is on its head branch and is not yet merged into fork `main`. The handoff includes an isolated research-worktree recipe, the actual shared Java dependencies outside `standalone/`, current validation and canonical/source commit mapping. The integration agent has stopped; no further import or coordination with that old branch is required. The assignment remains deep pruning research; water and pruning implementation remain deferred from this handoff task.

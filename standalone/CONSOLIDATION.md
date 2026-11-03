@@ -1,5 +1,7 @@
 # Standalone branch consolidation
 
+> Historical consolidation provenance. Current branch and instructions: [AGENTS.md](AGENTS.md), [current state](docs/CURRENT_STATE.md). The canonical branch named below is the consolidation source, not the active research branch.
+
 2026-10-30. The user requested one branch for all standalone IPOPT work after the integration agent stopped. The canonical branch is `feature/ipopt-consolidated`, in `/Users/arvindmurty/CS/ParkourCalculatorMod-ipopt-consolidated`. Existing source branches/worktrees were preserved.
 
 ## Sources and scope
