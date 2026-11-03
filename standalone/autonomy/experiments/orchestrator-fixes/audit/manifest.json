@@ -20,11 +20,31 @@
     "sha256": "5bc31b86b328674e340c51351d83f837093d3327d7ecc5d2cfe7bfb9e36f33b7"
   },
   "CANDIDATE_AUDIT.md": {
-    "bytes": 98331,
-    "sha256": "bdbbfae855ca119927728a66d37d8991b9ff3e7b3cb59d0b03a6a490e490e793"
+    "bytes": 98422,
+    "sha256": "76793aa5fb5aa0f4507703832569ba24e6d3f12b1b6c1d714782f30b240fba1a"
   },
   "generator": {
     "path": "standalone/autonomy/experiments/orchestrator-fixes/audit_candidates.py",
     "sha256": "a88b5d914129f3b24306206d189e7378dfe017138fdbaa63437d9cfdb7108725"
+  },
+  "PRUNING_FOLLOWUP.md": {
+    "bytes": 8404,
+    "sha256": "61db8a25eccda146923a25bac2d5b1d719ae5d9aac8a5bb96f047e7d973a8533"
+  },
+  "program-inclusion.json": {
+    "bytes": 503,
+    "sha256": "5b4da77e1625c0cce8bb1a59db3f5f7a68bfcd9c79162a07d7b29e6fc9bd5591"
+  },
+  "generation-detail.json": {
+    "bytes": 60639,
+    "sha256": "5a923795623a9541677d6c3bca7a9313ac0ecc70931e595d9b7e6b1fdb036fb5"
+  },
+  "audit_candidates.py": {
+    "path": "standalone/autonomy/experiments/orchestrator-fixes/audit_candidates.py",
+    "sha256": "029b2c2645ae8a0a5e029ec3ca29b2f25fa52200c2f9b5d1c19432d2019571eb"
+  },
+  "audit_generation.py": {
+    "path": "standalone/autonomy/experiments/orchestrator-fixes/audit_generation.py",
+    "sha256": "d9b63286f0232ceea07fef6cf35907b41b45a4db55db567e54f3d5d5657b27eb"
   }
 }

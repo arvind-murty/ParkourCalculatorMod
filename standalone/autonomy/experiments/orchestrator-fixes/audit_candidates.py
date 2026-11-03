@@ -429,6 +429,7 @@ def render(audit):
     emit('## Reproduce and inspect')
     emit('Run the saved-data audit, with optional existing Java scene replay and no IPOPT calls:\n\n```sh\nOPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH="$PWD" .venv-guidance/bin/python standalone/autonomy/experiments/orchestrator-fixes/audit_candidates.py --compiler standalone/autonomy/build/compiler.json\n```')
     emit('Sources: evidence/orchestrator-real11-stable{,-resume,-resume2}.json.gz. Full float constraints, branch keys, candidate traces, available solver diagnostics, scope, session mapping, ambiguous validation alignments, probe winners and independent physical replays are in [candidate-ledger.json.gz](candidate-ledger.json.gz). Source-file SHA-256 hashes and reconciled counts are embedded there. The audit uses existing constraint builders and copies the captured initial-support bounds; it does not change any model, run IPOPT or prove global optimality.')
+    emit('Follow-up: [duplicate-generation evidence and justified reductions](PRUNING_FOLLOWUP.md).')
     return '\n'.join(out)
 
 
