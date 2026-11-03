@@ -51,3 +51,7 @@ The existing search deduplication avoids repeated branch models; it does **not**
 Canonicalize final solver rows after assembly: remove exact duplicate mathematical constraints and, for simple positional bounds, keep the strongest lower/upper bound. Preserve source names/owners as provenance for diagnostics and future projection rather than treating those labels as different numerical requirements. Do not discard distinct interaction choices, rederive physics or change corridor semantics. Mixed expressions and facing rows need their own exact treatment; the91-row count above is specifically established for this all-simple-bound request.
 
 This cleanup is separate from the deferred completion-time pruning and from corridor/cell redesign. No runtime code, candidate count or solve budget was changed in this audit.
+
+## Measured performance follow-up
+
+[Fixed-request A/B and callback benchmark](row-benchmark/README.md): duplicate removal improves a solve phase from46ms to34ms (33ms with strongest bounds), while fresh-worker medians are about199ms versus177/183ms. Ordinary per-request preparation/hash/validation overhead is milliseconds. A larger measured issue is synchronous progress encoding/compression: a late109MB JSON snapshot takes about4s and can consume a numerical-call deadline by itself. The benchmark rechecks all24 A/B outcomes against the original rows and does not change production behavior. The full317.53s has not been exclusively profiled; do not attribute all remaining time to row duplication or reporting.

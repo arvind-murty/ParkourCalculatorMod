@@ -509,6 +509,18 @@ Evidence filenames identify different runs/contexts; do not treat reports as exe
 | [real11-retry-manifest.json](../autonomy/experiments/last-jump-runs/evidence/real11-retry-manifest.json) | Structured experiment data/settings/provenance: real11 retry manifest. |
 | [real11-retry-summary.json](../autonomy/experiments/last-jump-runs/evidence/real11-retry-summary.json) | Structured experiment data/settings/provenance: real11 retry summary. |
 
+## autonomy/experiments/last-jump-runs/row-benchmark
+
+| File | Purpose |
+| --- | --- |
+| [README.md](../autonomy/experiments/last-jump-runs/row-benchmark/README.md) | Do duplicate rows cost time?. See documentation index for authority/status. |
+| [benchmark.py](../autonomy/experiments/last-jump-runs/row-benchmark/benchmark.py) | Fixture-specific diagnostic script: benchmark. Inspect its main/CLI before running; outputs may mutate evidence. |
+| [callback-results.json](../autonomy/experiments/last-jump-runs/row-benchmark/callback-results.json) | Structured experiment data/settings/provenance: callback results. |
+| [callback.log](../autonomy/experiments/last-jump-runs/row-benchmark/callback.log) | Captured commands/test/runtime output or investigation notes; source-era evidence. |
+| [callback_probe.py](../autonomy/experiments/last-jump-runs/row-benchmark/callback_probe.py) | Fixture-specific diagnostic script: callback probe. Inspect its main/CLI before running; outputs may mutate evidence. |
+| [results.json](../autonomy/experiments/last-jump-runs/row-benchmark/results.json) | Structured experiment data/settings/provenance: results. |
+| [run.log](../autonomy/experiments/last-jump-runs/row-benchmark/run.log) | Captured commands/test/runtime output or investigation notes; source-era evidence. |
+
 ## autonomy/experiments/linkcraft11-j0-j16
 
 | File | Purpose |

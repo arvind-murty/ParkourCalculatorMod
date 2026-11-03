@@ -88,3 +88,7 @@ The fresh retry at source `61355976` is complete: [result/limitations](../autono
 ## Subsequent row-count finding
 
 [Hard-row audit](../autonomy/experiments/last-jump-runs/HARD_ROWS_AUDIT.md): the initial8 request already had278 rows before local-run pruning; the~100-row example was initial0. The278 entries contain164 exact duplicate constraints (114 distinct;91 strongest simple X/Z bounds). Ordinary footprint bounds are duplicated by contact compilation and retained compiled walls. This is a separate final-assembly cleanup opportunity, not evidence that the corridor retry introduced hundreds of new decisions. No runtime fix is included in that audit.
+
+## Measured independent overhead
+
+[Row-cost/callback benchmark](../autonomy/experiments/last-jump-runs/row-benchmark/README.md) finds small absolute solver gains from row cleanup and a larger synchronous whole-state reporting cost. A late progress payload is109MB as indented JSON and costs≈4s to encode/compress; the callback consumes the solver's wall-time budget. This is separate from corridor correctness and remains an unimplemented performance improvement. Preserve in-flight/repair/incumbent durability when addressing it.

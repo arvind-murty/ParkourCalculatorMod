@@ -402,6 +402,19 @@ Source snapshot: current DFS implementation source, including request-audit logg
 - `run_summary` — def, line 56.
 - `main` — def, line 89.
 
+## [autonomy/experiments/last-jump-runs/row-benchmark/benchmark.py](../autonomy/experiments/last-jump-runs/row-benchmark/benchmark.py)
+
+- `canonical` — def, line 20.
+- `variants` — def, line 24.
+- `find_request` — def, line 35.
+- `one_solve` — def, line 47.
+- `time_operation` — def, line 75.
+- `main` — def, line 81.
+
+## [autonomy/experiments/last-jump-runs/row-benchmark/callback_probe.py](../autonomy/experiments/last-jump-runs/row-benchmark/callback_probe.py)
+
+- `main` — def, line 14.
+
 ## [autonomy/experiments/last-jump-runs/summarize_retry.py](../autonomy/experiments/last-jump-runs/summarize_retry.py)
 
 - `summarize` — def, line 13.
