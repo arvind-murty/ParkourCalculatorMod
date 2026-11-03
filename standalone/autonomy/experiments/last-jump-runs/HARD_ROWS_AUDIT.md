@@ -55,3 +55,7 @@ This cleanup is separate from the deferred completion-time pruning and from corr
 ## Measured performance follow-up
 
 [Fixed-request A/B and callback benchmark](row-benchmark/README.md): duplicate removal improves a solve phase from46ms to34ms (33ms with strongest bounds), while fresh-worker medians are about199ms versus177/183ms. Ordinary per-request preparation/hash/validation overhead is milliseconds. A larger measured issue is synchronous progress encoding/compression: a late109MB JSON snapshot takes about4s and can consume a numerical-call deadline by itself. The benchmark rechecks all24 A/B outcomes against the original rows and does not change production behavior. The full317.53s has not been exclusively profiled; do not attribute all remaining time to row duplication or reporting.
+
+## Bound extraction and snapshots explained
+
+The [follow-up probe/explanation](row-benchmark/README.md#can-we-simply-enable-bound-extraction) confirms extraction finds a valid solution faster in this sample, but the current monitor misinterprets the returned constraint vector and rejects it. Recomputing the original constraint expressions in the monitor fixes that in the prototype; the one-line option change is therefore insufficient. Production remains unchanged. The same page explains snapshot contents, synchronous full-report rewrites and why saving can consume a numerical-call deadline even while the worker subprocess continues. Bound extraction does not shrink those stored Python records.

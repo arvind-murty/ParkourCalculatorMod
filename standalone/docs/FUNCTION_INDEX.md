@@ -415,6 +415,10 @@ Source snapshot: current DFS implementation source, including request-audit logg
 
 - `main` — def, line 14.
 
+## [autonomy/experiments/last-jump-runs/row-benchmark/extraction_probe.py](../autonomy/experiments/last-jump-runs/row-benchmark/extraction_probe.py)
+
+- `main` — def, line 13.
+
 ## [autonomy/experiments/last-jump-runs/summarize_retry.py](../autonomy/experiments/last-jump-runs/summarize_retry.py)
 
 - `summarize` — def, line 13.

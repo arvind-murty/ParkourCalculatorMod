@@ -78,3 +78,43 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH="$PWD" .venv-guidance/bin/py
   --input standalone/autonomy/experiments/last-jump-runs/evidence/real11-retry-after-handoff.json.gz \
   --output /tmp/row-callback-probe.json
 ```
+
+## Can we simply enable bound extraction?
+
+It is a promising optimization, but the one-line toggle is not compatible with the current monitor. [Probe data](extraction-probe.json) and `extraction_probe.py` test three cases on the saved request, without changing production:
+
+| Probe | Backend | Original constraints at backend's final point | Our existing monitor |
+| --- | --- | --- | --- |
+| Extraction off | converges in17 iterations | feasible | accepts |
+| Extraction on, stock monitor | converges in11 iterations | feasible | rejects |
+| Extraction on, recompute original expressions for monitoring | converges in11 iterations | feasible | accepts |
+
+The stock monitor interprets CasADi's returned `g` vector against the original row bounds. With extraction enabled in installed CasADi3.8.1, that interpretation fails: its largest apparent residual is about35.31, while independent scalar validation confirms the actual final point is feasible. The backend is not returning an invalid solution; the monitor rejects a valid one and the current phase fallback can return the old seed instead. The prototype checks the original `g(x)` expression directly before reporting incumbents, preserving full original-row validation.
+
+Thus enabling `detect_simple_bounds=True` plus a small monitor compatibility change is a concrete next implementation. The flag alone is not a drop-in change in this worker. Production remains unchanged pending focused worker regressions, including incumbent/early-stop behavior and non-simple constraints. Extraction also leaves the Python row lists, inherited state and JSON payloads intact, so it cannot remove orchestration/reporting overhead by itself. The [CasADi option documentation](https://web.casadi.org/api/internal/d4/d89/group__nlpsol.html) describes extraction as moving single-variable constraint rows to variable bounds.
+
+## What exactly is snapshot saving?
+
+A snapshot is a checkpoint of search progress so a budget stop or restart can resume without losing candidates or replaying completed requests. It contains the DFS stack and siblings, discrete programs/constraints, current in-flight request and repair/generation cursors, seen/completed work, feasible incumbents and local-run representatives. Our current file also embeds full diagnostic/audit history: numerical requests, candidate trajectories, past windows, accepted variants and repeated copies of related records.
+
+The current sequence is:
+
+1. The worker emits an improved candidate; the parent validates it and updates the incumbent.
+2. The parent builds an inner repair-state snapshot and attaches it to the outer DFS state.
+3. The progress callback rewrites the **whole report**, using indented JSON and gzip, then atomically replaces the checkpoint file.
+4. Only after this returns does the parent continue receiving worker messages and checking the search queue.
+
+This is synchronous work in the orchestration process. The IPOPT subprocess can continue or finish meanwhile, but the parent cannot collect its updates until saving finishes. The same wall-time deadlines continue to advance. That is why the probe's otherwise0.235-second numerical call returns `time_limit` after4.169 seconds with one large save; its accepted incumbent is still preserved.
+
+The measured109MB is one late **uncompressed progress payload**, not merely the278-row request (about44KB). It includes extensive repeated history. About4.04 seconds was JSON encoding plus compression alone, excluding disk writes. Compact formatting lowers the same payload to44.73MB and0.746 seconds, but several such saves can still exhaust a two-second call budget.
+
+A better design keeps current mutable resume state small, records immutable audit/request/trajectory data once and refers to it by identity, and avoids rewriting the entire accumulated history for every incumbent. Small durable records for in-flight/completed work and incumbent updates can preserve resumability, with periodic/full checkpoints and a final report on exit. This is a recommended change, not an implemented redesign. It is separate from corridor work and does not require changing solver physics or the decisions being searched.
+
+Reproduce only the extraction compatibility probe:
+
+```sh
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH="$PWD" .venv-guidance/bin/python \
+  standalone/autonomy/experiments/last-jump-runs/row-benchmark/extraction_probe.py \
+  --input standalone/autonomy/experiments/last-jump-runs/evidence/real11-retry-after-handoff.json.gz \
+  --output /tmp/extraction-probe.json
+```

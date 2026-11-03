@@ -518,6 +518,8 @@ Evidence filenames identify different runs/contexts; do not treat reports as exe
 | [callback-results.json](../autonomy/experiments/last-jump-runs/row-benchmark/callback-results.json) | Structured experiment data/settings/provenance: callback results. |
 | [callback.log](../autonomy/experiments/last-jump-runs/row-benchmark/callback.log) | Captured commands/test/runtime output or investigation notes; source-era evidence. |
 | [callback_probe.py](../autonomy/experiments/last-jump-runs/row-benchmark/callback_probe.py) | Fixture-specific diagnostic script: callback probe. Inspect its main/CLI before running; outputs may mutate evidence. |
+| [extraction-probe.json](../autonomy/experiments/last-jump-runs/row-benchmark/extraction-probe.json) | Fixed-request extraction/monitor compatibility probe results; production unchanged. |
+| [extraction_probe.py](../autonomy/experiments/last-jump-runs/row-benchmark/extraction_probe.py) | Reproduce extraction off/on and original-constraint monitoring on a stored request; no route discovery. |
 | [results.json](../autonomy/experiments/last-jump-runs/row-benchmark/results.json) | Structured experiment data/settings/provenance: results. |
 | [run.log](../autonomy/experiments/last-jump-runs/row-benchmark/run.log) | Captured commands/test/runtime output or investigation notes; source-era evidence. |
 
