@@ -11,6 +11,7 @@ from standalone.autonomy.solve_spec import digest, motion_record, processing_key
 from .checkpoints import Checkpoint, retain_prefix
 from .comparison_goals import goal_spec, goal_key, region_arrival, _landing_prefixes
 from standalone.autonomy.terminal_goals import KIND, bind_goal, satisfied
+from .minimum_runs import POLICY_VERSION, latest_jump, remember, exclusion
 
 
 def candidate_key(program):
@@ -58,7 +59,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
                  accepted_program, program_filter, roots, resume_state, retry_unknown, deadline, started,
                  candidate_seconds, score_seconds, score_calls, final_calls, batch_size, python_executable,
                  cancel_event, on_progress, on_window, time_margin, progress_margin, route_report,
-                 window_plan, comparison_policy):
+                 window_plan, comparison_policy, minimum_run_pruning):
     from .checkpoint_search import evaluate_program
     from .checkpoint_experiment import replay_witness
 
@@ -83,7 +84,8 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
         roots=[program_search_key(p) for p in roots], goals=goal_list,
         terminal=terminal_plan.to_dict() if terminal_plan else None, corridor=adapter.corridor.to_dict(),
         windows=window_plan, filter=getattr(program_filter, 'checkpoint_identity', None),
-        margins=[time_margin,progress_margin], physics=motion))
+        margins=[time_margin,progress_margin], physics=motion,
+        minimumRunPolicy=POLICY_VERSION if minimum_run_pruning else None))
     if resume_state is not None and (resume_state.get('version') != 5 or
             resume_state.get('kind') != 'ordered_goal_dfs' or resume_state.get('context') != context):
         raise ValueError('Incompatible DFS continuation; old checkpoint queues require explicit reconstruction')
@@ -96,6 +98,8 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
         raise ValueError('Saved DFS incumbent no longer passes independent replay')
     gate = InteractionGate(scene, compiler, seconds=candidate_seconds)
     state.setdefault('timeBoundExclusions',[])
+    state.setdefault('minimumRunExclusions',[])
+    excluded_runs={(r['frame'],r['candidate']) for r in state['minimumRunExclusions']}
     viability_counts = dict(checked=0, excluded=0)
     termination = 'exhausted'
 
@@ -127,15 +131,26 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
                 incumbentTick=state['best']['plan']['ticks'])
         return None
 
-    def eligible(program):
+    def run_bound(program, f):
+        if not minimum_run_pruning or f is None:return None
+        proof=exclusion(f.get('minimumRuns',{}),latest_jump(program,scene))
+        if proof is not None:
+            identity=candidate_key(program);key=(f['id'],identity)
+            if key not in excluded_runs:
+                excluded_runs.add(key)
+                saved={k:copy.deepcopy(v) for k,v in program.items() if k!='repairState'}
+                state['minimumRunExclusions'].append(dict(frame=f['id'],candidate=identity,proof=proof,program=saved))
+        return proof
+
+    def eligible(program, f=None):
         proof=time_bound(program)
         if proof is not None:
             state['timeBoundExclusions'].append(dict(id=candidate_key(program),proof=proof))
             return False
-        return accepted_program(program)
+        return run_bound(program,f) is None and accepted_program(program)
 
-    def screen(program):
-        bound=time_bound(program)
+    def screen(program, f=None):
+        bound=time_bound(program) or run_bound(program,f)
         if bound is not None:
             return bound
         required = program_filter.remaining(program) if hasattr(program_filter,'remaining') else (
@@ -168,7 +183,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
             while f['directRoot']<len(f['parents']):
                 parent=f['parents'][f['directRoot']]
                 existing=bind_goal(parent,f['goal'],scene.get('supportClearance',1e-6))
-                if existing.get('terminalGoal')==f['goal'] and eligible(existing):
+                if existing.get('terminalGoal')==f['goal'] and eligible(existing,f):
                     f['ready'].append(existing)
                 remaining=cfg['maxInputs']-parent['profile']['airtime']
                 if remaining>0:
@@ -182,7 +197,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
                             child=append_choice(parent,choice,max_inputs=cfg['maxInputs'])
                             if child is not None:
                                 child=bind_goal(child,f['goal'],scene.get('supportClearance',1e-6))
-                                if child.get('terminalGoal')==f['goal'] and eligible(child) and screen(child) is None:
+                                if child.get('terminalGoal')==f['goal'] and eligible(child,f) and screen(child,f) is None:
                                     identity=candidate_key(child)
                                     if identity not in {candidate_key(p) for p in f['ready']} | {r['id'] for r in f['records']}:
                                         f['ready'].append(child)
@@ -219,7 +234,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
                         f['directChoice'] = choice
                         if choice['profile']['airtime']==remaining:
                             child = append_choice(p,choice,max_inputs=cfg['maxInputs'])
-                            if child is not None and accepted_program(child) and screen(child) is None:
+                            if child is not None and accepted_program(child) and screen(child,f) is None:
                                 identity = candidate_key(child)
                                 if identity not in {r['id'] for r in f['records']}:
                                     f['ready'].append(child)
@@ -248,8 +263,8 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
         settings = dict(cfg,maxPrefixes=max(1,cfg['maxPrefixes']-(state['expanded']-initial_expanded)))
         source = iter_movement_programs(target_scene,settings=settings,report=report,initial_programs=f['parents'],
             continuation=report.get('continuation'), persistent=True, checkpoint_tick=cp.tick if cp else None,
-            threshold=0., deadline=deadline,cancel_event=cancel_event,work=work,screen=screen,
-            context_adapter=configure,program_filter=eligible,stop_on_goal=cp is None,
+            threshold=0., deadline=deadline,cancel_event=cancel_event,work=work,screen=lambda p:screen(p,f),
+            context_adapter=configure,program_filter=lambda p:eligible(p,f),stop_on_goal=cp is None,
             terminal_goal=f['goal'] if f['goal'] and f['goal']['kind']==KIND else None)
         seen = {r['id'] for r in f['records']} | {candidate_key(p) for p in f['ready']}
         try:
@@ -364,6 +379,8 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
             record['guidanceWitness'] = record.pop('witness')
             record.pop('child',None)
             record.update(status='unknown',termination='preliminary_scope_not_a_terminal_witness')
+        if minimum_run_pruning and record.get('witness') and final_validated:
+            remember(f.setdefault('minimumRuns',{}),latest_jump(program,scene),identity,record['arrival'])
         if record.get('witness') and final_validated and (terminal(f) or terminal_plan is None and f['index']==len(goal_list)-1):
             from standalone.autonomy.ranking import candidate_rank
             candidate = copy.deepcopy(record['witness'])
@@ -454,13 +471,13 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
                             break
                         f['ready'].remove(program)
                         previous = next((r for r in f['records'] if r['id']==candidate_key(program)),None)
-                    if not eligible(program):
+                    if not eligible(program,f):
                         f['inFlight']=None
-                        transition('time_or_policy_exclusion',f,candidate=candidate_key(program))
+                        transition('candidate_exclusion',f,candidate=candidate_key(program))
                         continue
                     score(f,program,previous)
                 f['phase'] = 'select'
-            options = [r for r in f['records'] if r.get('witness') and not r['tried']]
+            options = [r for r in f['records'] if r.get('witness') and not r['tried'] and run_bound(r['program'],f) is None]
             if options:
                 chosen = min(options,key=arrival_key)
                 chosen['tried'] = True
@@ -493,7 +510,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
             if f['ready']:
                 f['phase'] = 'score'
                 continue
-            pending = next((r for r in f['records'] if numerical_pending(r) and
+            pending = next((r for r in f['records'] if run_bound(r['program'],f) is None and numerical_pending(r) and
                 r.get('refinementSession')!=state['session']),None)
             if pending is not None:
                 pending['refinementSession'] = state['session']
@@ -520,5 +537,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
         parkedCandidates=[],unevaluatedCandidates=[],rescues=[],comparisonMargins=dict(time=time_margin,progress=progress_margin),
         objectiveOptimalityProven=False,minimumTicksProven=False,searchState=state,
         resume=dict(exact=state['session']>1,session=state['session']),interactionGate=gate.summary(),viability=viability_counts,
+        minimumRunPruning=dict(enabled=minimum_run_pruning,version=POLICY_VERSION,excluded=len(state['minimumRunExclusions']),
+            scope='ordinary_ground_hold_before_latest_jump',certifiedDominance=False),
         terminalCheckpoint=terminal_plan.to_dict() if terminal_plan else None,
         goalType='fixed_absolute_tick_objective' if terminal_plan else 'earliest_virtual_landing_height' if goal_list[-1]['kind']==KIND else 'landing_time')

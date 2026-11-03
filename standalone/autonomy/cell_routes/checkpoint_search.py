@@ -173,7 +173,8 @@ def find_checkpoint_route(request, compiler, *, checkpoints=None, corridor=None,
                           spatial_seconds=1.5, spatial_calls=4, spatial_candidates=4, spatial_prefixes=64,
                           time_margin=1, progress_margin=None, rescue_passes=1, terminal_checkpoint=None, program_filter=None,
                           on_window=None, spatial_goals=None, program_priority=None, resume_state=None, on_progress=None,
-                          retry_unknown=False):
+                          retry_unknown=False, minimum_run_pruning=True):
+    if type(minimum_run_pruning) is not bool:raise ValueError('minimum_run_pruning must be boolean')
     integer(rescue_passes,'rescue passes',0,100)
     if comparison_policy not in ('time_progress','objective_band','unpruned'):
         raise ValueError('Unknown comparison policy')
@@ -271,7 +272,7 @@ def find_checkpoint_route(request, compiler, *, checkpoints=None, corridor=None,
         return unfinished('deadline')
     from .depth_first import search_goals
     return search_goals(scene, counted, adapter, work, motion, cfg=cfg, plans=plans,
-        goals=spatial_goals, default_goal=spatial_goal, terminal_plan=terminal_plan,
+        goals=spatial_goals, default_goal=spatial_goal, terminal_plan=terminal_plan, minimum_run_pruning=minimum_run_pruning,
         accepted_program=accepted_program, program_filter=program_filter, roots=initial_programs,
         resume_state=resume_state, retry_unknown=retry_unknown, deadline=deadline, started=started,
         candidate_seconds=candidate_seconds, score_seconds=score_seconds, score_calls=score_call_limit,
