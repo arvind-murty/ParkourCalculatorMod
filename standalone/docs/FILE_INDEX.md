@@ -1099,3 +1099,15 @@ Evidence filenames identify different runs/contexts; do not treat reports as exe
 | [test_model.py](../ipopt/tests/test_model.py) | Tests: continuous carry and inertia are distinct; contact resets only normal velocity; subtolerance missed contact never resets velocity (additional cases in file). |
 | [test_movement.py](../ipopt/tests/test_movement.py) | Tests: boundary touch cannot claim the compiled wall hit; ground changes cannot silently keep old acceleration; collision assumptions must match declared schedule (additional cases in file). |
 | [test_solver.py](../ipopt/tests/test_solver.py) | Tests: timeout stops worker that never reads large request; active cancellation discards candidate; timeout retains validated incumbent (additional cases in file). |
+
+
+## Shared checkpoint additions (2026-11-03)
+
+| File | Purpose |
+| --- | --- |
+| [checkpoint_store.py](../autonomy/checkpoint_store.py) | Lossless shared object store, atomic manifests, repair patch roots, compaction, legacy reader and ordinary JSON export. |
+| [checkpoint_persistence.py](../autonomy/cell_routes/checkpoint_persistence.py) | DFS persistence adapter; one-copy historical windows and durable repair-only updates with alias handling. |
+| [test_checkpoint_store.py](../autonomy/tests/test_checkpoint_store.py) | Storage/atomicity/equality, interruption, completed-call dedup, DFS and native callback/replay regressions. |
+| [CHECKPOINT_STORAGE.md](CHECKPOINT_STORAGE.md) | Storage format/runbook, callback assumptions, file map, measurements and limits. |
+| [checkpoint_probe.py](../autonomy/experiments/last-jump-runs/row-benchmark/checkpoint_probe.py) | Saved-state and fixed-NLP storage benchmark; no route discovery. |
+| [checkpoint-results.json](../autonomy/experiments/last-jump-runs/row-benchmark/checkpoint-results.json) | Source hashes, sizes, timings, exact equality and fixed-request results. |

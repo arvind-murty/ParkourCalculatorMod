@@ -59,3 +59,8 @@ For the same interaction pattern (support/obstacle/contact choices), test the le
 ## Latest implementation: local run pruning; time reasoning deferred
 
 User clarification supersedes a total-run interpretation: compare ordinary preparation runs immediately before the **last effective jump**, keeping prior decisions and interaction choices fixed. Implemented at `db211b2b`, with [results](../autonomy/experiments/last-jump-runs/README.md). Earlier missing-status paragraphs describe the archived pre-policy audit. Higher-run copies are heuristic exclusions with saved audit programs; smaller/unknown/equal-run alternatives and distinct interactions remain eligible. Keep the additional completion-time reasoning deferred: proving no faster continuation of7–9 before ruling out10–12 is a separate future improvement. No new remaining-time bound is introduced.
+
+
+## Checkpoint cleanup shipped (2026-11-03)
+
+The user's instruction to remove extraneous snapshot material is implemented as [lossless shared persistence](CHECKPOINT_STORAGE.md), rather than deleting requested audit evidence or pending work. Store unchanged content once, archive immutable window snapshots once, save repair/call-count deltas against the dispatch checkpoint during a solve, and compact obsolete roots after final publication. Maintain ordinary JSON export/legacy resume and independent mutable copies on decode. Storage version1 is independent of unchanged DFS schema5. Generic replay/resume tests and the saved-data probe verify no loss of accepted/pending/completed work. Simple-bound extraction, numerical-row canonicalization, corridor changes and new time pruning are still separate.

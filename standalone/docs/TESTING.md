@@ -65,3 +65,8 @@ Current DFS acceptance: [results and logs](../autonomy/experiments/dfs-interacti
 ## Latest-jump run pruning
 
 `test_minimum_runs` combines generic dispatch/resume/unknown controls with archived Real11 programs. It checks local preparation counts and preserves different prior interactions, hard obstacle-side rows and free/physical terminal contacts. Full counterfactual controls can set `minimum_run_pruning=False` in fresh fixture settings; policy changes intentionally invalidate exact resume. Saved `minimumRunExclusions` include each discrete program and the representative causing exclusion. Continuation-time pruning remains deferred and is not required for this policy.
+
+
+## Shared checkpoint persistence
+
+`test_checkpoint_store` covers exact JSON round trips, repeated-content storage, mutation isolation, failed publication preserving the previous root, legacy files/companion identity, patch compaction, saved pending repairs, completed-request dedup, and DFS interruption/sibling continuation. Its native regression checks each repair publication against the entire live state and independently replays the final witness. Run it with the existing minimum-run/DFS/continuation/terminal gates; the current combined set passes74 tests with compiler/IPOPT enabled and no skips. See [storage](CHECKPOINT_STORAGE.md) and the [saved-data benchmark](../autonomy/experiments/last-jump-runs/row-benchmark/checkpoint_probe.py); no full Real11 search is needed for these checks.

@@ -71,3 +71,8 @@ Final recorded acceptance:368 non-ladder autonomy tests and54 IPOPT tests pass;2
 ## Latest authorized combined retry
 
 After the [corridor-agent handoff](CORRIDOR_AGENT_HANDOFF.md) was pushed and verified at61355976, the fresh combined Real11 retry found67 / Z≈−1093.82313 with12 worker calls, nine latest-jump extra-run exclusions and13/13 independent replay checks passing. Calls8/9 persist and the initial0 root remains saved but uncontinued. [Full accounting](../autonomy/experiments/last-jump-runs/REAL11_RETRY.md). No corridor/cell, continuous-model or continuation-time-bound change was made.
+
+
+## Checkpoint cleanup implemented (2026-11-03)
+
+The fixed-clock CLI now uses [shared checkpoint storage](CHECKPOINT_STORAGE.md): compact single-copy content plus small durable repair updates during numerical solving, replacing synchronous whole-report rewrites. All audit data and exact continuation state remain recoverable; DFS schema5 and search/corridor/model behavior are unchanged. New outputs are a manifest plus `.store.sqlite3` companion; use `read_report` or the documented JSON export. The saved full Real11 report round-trips exactly in1.97MB versus6.30MB old gzip (166.63MB indented). Repair saves are about12ms versus4.28s for the old full-payload encoding/compression probe.74 focused tests pass with native dependencies/no skips; no new Real11 search. In-memory audit copies and some full-transition/copying cost remain.

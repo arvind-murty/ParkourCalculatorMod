@@ -152,3 +152,45 @@ The active generator pending programs account for about2.11MB in this representa
 Source trace: `depth_first` reads stack/refinement/suspended frames to schedule; its `windows` are append/report data. `movement_frontier` restores pending/ready/expansion/seen. `block_contacts` restores queues, accepted state, choices and seen identities; `attemptLog`/`contactLog` are preserved to continue audit history. Their inclusion in the same object does not make every historical diagnostic necessary for numerical continuation. The structured breakdown has nested views; only peer fields within a view should be added together.
 
 No production checkpoint/schema change was made in this audit. The recommended split is a small operational checkpoint plus immutable, separately stored audit/program objects and durable updates, preserving every pending candidate and completed numerical identity.
+
+
+## Checkpoint cleanup implemented (2026-11-03)
+
+The earlier reporting recommendation is now implemented for the fixed-clock CLI. [Format and callback contract](../../../../docs/CHECKPOINT_STORAGE.md), [probe source](checkpoint_probe.py), [results/source hashes](checkpoint-results.json). Production numerical rows and simple-bound extraction remain unchanged.
+
+Repeated content is stored once in a compressed SQLite companion. Window snapshots are archived once. Full checkpoints publish at DFS transitions; numerical repair progress writes small durable replacements against the dispatch root, including aliases of the same active program. Final compaction removes obsolete roots. All runtime search state remains JSON-compatible and DFS schema5 is unchanged. Legacy files and ordinary JSON export remain available.
+
+| Measurement | Result |
+| --- | --- |
+| Original complete report |166,627,153 bytes indented /68,405,810 compact /6,302,813 gzip |
+| Same complete report, manifest + compacted store | **1,974,444 bytes**;10,565,118 bytes of unique encoded content |
+| Complete decoded report equals original | **Yes**, including all windows/requests/results/constraints/audit history |
+| Late state with an active candidate, old pretty encode + gzip |110,518,965 bytes;4.284s (excludes disk) |
+| New initial archival + full checkpoint |1.193s including disk |
+| Five durable repair updates | **12.46ms median**, including disk |
+| Final full report save and compaction |0.878s |
+
+The active-candidate probe inserts a saved candidate into the outer dispatch state, so its110.52MB differs from the earlier109.30MB stopped-state measurement. The final-report comparison above uses the **exact original entire report**, not that modified progress payload. Stores are temporary benchmark artifacts; the source and compact measurement JSON are committed.
+
+A fixed recorded278-row NLP with a2s budget completes both phases with three repair saves (about12–14ms each), with the same objective as the no-callback control. The observed0.210s versus0.284s wrapper elapsed values are single samples with startup noise, not evidence that adding persistence accelerates the solver. They show the new callback no longer exhausts this budget; earlier full-report callback probes returned `time_limit`. No full route search was run and there is no measured overall Real11 speedup yet. Full transition saves and inner repair-state copies still cost time; in-memory histories remain.
+
+Focused tests:74 pass in17.945s, native compiler/IPOPT enabled, no skips. Includes failed publication recovery, mutable-reference independence, old/new format reading, pending work and completed-request resume, DFS backtracking, and equality of every native repair publication to the full live state before independent replay.
+
+```sh
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH="$PWD" .venv-guidance/bin/python \
+  standalone/autonomy/experiments/last-jump-runs/row-benchmark/checkpoint_probe.py \
+  --input standalone/autonomy/experiments/last-jump-runs/evidence/real11-retry-after-handoff.json.gz \
+  --output /tmp/checkpoint-results-new.json
+
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
+PKC_RUN_TICKS_COMPILER="$PWD/standalone/autonomy/build/compiler.json" \
+PKC_IPOPT_PYTHON="$PWD/.venv-guidance/bin/python" PYTHONPATH="$PWD" \
+.venv-guidance/bin/python -m unittest \
+  standalone.autonomy.tests.test_checkpoint_store \
+  standalone.autonomy.tests.test_minimum_runs \
+  standalone.autonomy.tests.test_depth_first \
+  standalone.autonomy.tests.test_orchestrator_continuation \
+  standalone.autonomy.tests.test_fixed_clock_goal \
+  standalone.autonomy.tests.test_terminal_goals \
+  standalone.autonomy.tests.test_repair_resume -v
+```

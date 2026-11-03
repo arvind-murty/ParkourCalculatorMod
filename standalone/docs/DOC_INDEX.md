@@ -4,6 +4,7 @@ All tracked standalone Markdown plus this consolidation. Read [AGENTS](../AGENTS
 
 | Document | Topic | Authority/status |
 | --- | --- | --- |
+| [docs/CHECKPOINT_STORAGE.md](CHECKPOINT_STORAGE.md) | Shared checkpoint format, resume/export, callback contract and measured cleanup | Current implementation/runbook |
 | [AGENTS.md](../AGENTS.md) | Standalone agent entry point | Current navigation/guidance |
 | [CONSOLIDATION.md](../CONSOLIDATION.md) | Standalone branch consolidation | Historical; contains superseded branch/policy/status |
 | [README.md](../README.md) | Standalone route search and IPOPT | Current navigation/guidance |

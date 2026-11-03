@@ -1,6 +1,5 @@
 import argparse
 import copy
-import gzip
 import json
 import math
 from pathlib import Path
@@ -18,6 +17,7 @@ from standalone.autonomy.obstacle_geometry import check_geometry
 from standalone.autonomy.route import prepare_route, schedule, supports
 from standalone.autonomy import search
 from standalone.ipopt import prepare, validate
+from standalone.autonomy.checkpoint_store import read_report
 from .checkpoint_search import _motion_bound
 from .checkpoints import checkpoint, retain_prefix
 from .decision_windows import DecisionPolicy, plan_windows
@@ -31,7 +31,7 @@ ROOT = Path(__file__).parents[1]/'experiments'
 
 
 def read(path):
-    return json.loads(gzip.decompress(path.read_bytes())) if path.suffix=='.gz' else json.loads(path.read_text())
+    return read_report(path)
 
 
 def generation_scenes():

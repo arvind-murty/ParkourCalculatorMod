@@ -118,3 +118,15 @@ PYTHONPATH="$PWD" .venv-guidance/bin/python \
 ```
 
 The included reports stop with a valid incumbent plus saved unfinished work. To continue them use the fixed-clock CLI, the same archived fixture, `--resume` on the saved resume report and a **new** output path. Ordinary continuation does not intentionally retry completed or unresolved numerical requests; `--retry-unknown` reopens unresolved ones. Report pending root/subtree coverage and any time spent serializing state; the time setting is a search budget, not a hard process-duration guarantee.
+
+
+## Current checkpoint files and JSON export
+
+New `fixed_clock_experiment` output paths hold a small manifest; the data is in the companion `<output-name>.store.sqlite3`. Copy both files together, retaining the companion basename. `--resume` accepts the manifest path or old self-contained JSON reports. Inspect using `standalone.autonomy.checkpoint_store.read_report`; do not feed the manifest directly to a raw JSON audit parser. Export if needed:
+
+```sh
+.venv-guidance/bin/python -m standalone.autonomy.checkpoint_store \
+  /tmp/real11-cold-new.json.gz --output /tmp/real11-export.json.gz
+```
+
+[Storage details](CHECKPOINT_STORAGE.md) describe commit ordering, repair-delta assumptions, final compaction, file purposes, measurements and focused resume tests. This changes persistence only; fixture context and DFS schema5 compatibility rules remain.

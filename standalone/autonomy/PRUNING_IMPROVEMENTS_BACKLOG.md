@@ -87,3 +87,8 @@ The user now authorizes another fresh Real11 run after pushing the current branc
 ## Measured contents of the oversized checkpoint
 
 [Snapshot byte/use audit](experiments/last-jump-runs/row-benchmark/README.md#what-state-is-actually-used-and-where-do109mb-go):109.30MB pretty progress JSON comprises64.57MB formatting plus44.73MB compact data. Historical windows are saved identically twice (29.49MB total), about66% of compact data, and current DFS does not read those histories for scheduling. Remaining15.24MB still includes archival/witness duplication. Seen lists contain258 full program-key strings occupying3.757MB;64-character hashes would be about17KB, while actual pending programs must remain. Separate live resume state from single-copy audit/program objects and validate resume equivalence. Do not discard unknown/sibling programs or change key semantics without compatible versioning. Measurement-only audit; no production format change yet.
+
+
+## Checkpoint overhead: implemented scope (2026-11-03)
+
+The earlier snapshot cleanup recommendation is now implemented for the fixed-clock CLI; see [storage/runbook/contracts](../docs/CHECKPOINT_STORAGE.md). Content sharing removes repeated physical history/program blobs; repair updates avoid walking the whole report inside numerical callbacks. Pending/unknown work, accepted variants and complete audit evidence remain. Saved full report166.63MB pretty /6.30MB gzip becomes1.97MB stored with exact round-trip equality; repair-save median12.46ms.74 focused tests pass/no skips. Inner snapshot copying, in-memory audit duplication and transition-level timing remain possible follow-ups if profiling justifies them. This does not implement simple-bound extraction, row canonicalization or any new pruning.

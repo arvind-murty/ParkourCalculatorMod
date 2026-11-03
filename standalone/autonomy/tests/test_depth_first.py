@@ -74,7 +74,8 @@ class DepthFirstTests(unittest.TestCase):
              patch('standalone.autonomy.cell_routes.checkpoint_experiment.replay_witness',return_value=dict(passed=True)):
             return find_checkpoint_route(scene,object(),spatial_points=[[.5,1,.5],[5.5,1,.5]],
                 checkpoints=[] if getattr(self,'no_clocks',False) else [dict(tick=10)],spatial_goals=[dict(kind='landing',block='goal')],terminal_checkpoint=cp,
-                seconds=3,max_solver_calls=limit,resume_state=state,program_filter=Policy())
+                seconds=3,max_solver_calls=limit,resume_state=state,program_filter=Policy(),
+                on_progress=getattr(self,'progress',None))
 
     def test_common_goal_arrival_wins_and_completes_before_later_sibling(self):
         self.calls=[]

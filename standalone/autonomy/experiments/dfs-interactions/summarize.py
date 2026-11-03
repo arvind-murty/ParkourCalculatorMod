@@ -1,13 +1,12 @@
 import argparse
-import gzip
 import hashlib
 import json
 from pathlib import Path
+from standalone.autonomy.checkpoint_store import read_report
 
 
 def read(path):
-    with gzip.open(path,'rt') as stream:
-        return json.load(stream)
+    return read_report(path)
 
 
 def records(state):

@@ -307,7 +307,12 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
                 tuple(scene['initial']['position']),(),tuple(spec['region']))
         def progress(repair):
             f['inFlight']['program']['repairState'] = repair
-            publish()
+            state['cumulativeCalls'] = prior_calls+work.counts['solverCalls']
+            repair_progress = getattr(on_progress,'repair_progress',None)
+            if repair_progress is not None:
+                repair_progress(state)
+            else:
+                publish()
         result = evaluate_program(target_scene,program,compiler,adapter,work,motion,checkpoint=cp,
             seconds=max(.001,min(score_seconds,deadline-time.monotonic())),candidate_seconds=candidate_seconds,
             solver_calls=final_calls if final_frame(f) else score_calls,python_executable=python_executable,

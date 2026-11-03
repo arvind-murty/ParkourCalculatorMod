@@ -16,7 +16,8 @@ from .geometry import decompose
 from .routes import corridor_for_points,landmarks
 from .support_order import SupportOrder
 from .two_goal_experiment import witnesses
-from .window_experiment import save
+from standalone.autonomy.checkpoint_store import CheckpointStore, read_report
+from .checkpoint_persistence import SearchCheckpoint
 from standalone.autonomy.solve_spec import full_witness
 
 
@@ -99,11 +100,10 @@ def main():
     parser.add_argument('--retry-unknown',action='store_true')
     args=parser.parse_args()
     fixture=json.loads(args.input.read_text())
-    report=dict(source=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),fixture=fixture,windows=[])
+    report=dict(source=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),fixture=fixture)
     seeds, resumed = None, None
     if args.resume is not None:
-        from .failure_diagnostic import read
-        previous=read(args.resume)
+        previous=read_report(args.resume)
         prior=previous.get('result',previous)
         resumed=prior.get('searchState',previous.get('searchState'))
         if resumed is not None:
@@ -116,20 +116,14 @@ def main():
             report['resume']=dict(source=str(args.resume),kind='legacy_parent_reconstruction',
                                   tick=window['checkpoint']['tick'],histories=len(seeds))
     def progress(window):
-        report['windows'].append(window)
-        save(args.output,report)
         print(json.dumps(dict(tick=window['checkpoint']['tick'],scored=window['scored'],unknown=window['unknown'],
             retained=len(window['retained']),generation=window['generation']['termination'],
             progress=[c['value'] for c in window['candidates'] if c['id'] in window['retained']])),flush=True)
-    with JavaCompiler(json.loads(args.compiler.read_text())) as compiler:
-        def checkpoint_progress(state):
-            report['searchState']=state
-            save(args.output,report)
+    with CheckpointStore(args.output) as store, JavaCompiler(json.loads(args.compiler.read_text())) as compiler:
+        checkpoint_progress=SearchCheckpoint(store,report)
         result,validation=run(fixture,compiler,on_window=progress,python_executable=sys.executable,initial_programs=seeds,
             resume_state=resumed,on_progress=checkpoint_progress,retry_unknown=args.retry_unknown)
-    report.pop('searchState',None)
-    report.update(result=result,validation=validation)
-    save(args.output,report)
+        checkpoint_progress.finish(result,validation)
     best=result['best']
     print(json.dumps(dict(status=result['status'],termination=result['termination'],elapsed=result['elapsedSeconds'],
         work=result['work'],position=[best['candidate']['positions'][-1][0],best['candidate']['y'][-1],

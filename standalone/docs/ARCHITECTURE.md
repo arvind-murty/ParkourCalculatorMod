@@ -48,3 +48,8 @@ The **outer search** selects discrete programs; `searchState` contains generated
 Resume requires matching model/context identity, including horizon, goal/objective, scope, geometry, inputs, contacts and coefficients. A longer child is a new numerical problem, not an exact continuation of its shorter parent's raw queue. Existing code retains compatible facing guesses and preserves old work under its own identity. IPOPT internal iterations/Hessians are not serialized.
 
 The current DFS implementation uses version5 comparison frames/backtracking without a global window barrier. `acceptedVariants` in inner repair state preserves accepted fixed-constraint alternatives separately from the local best objective. A frame has one execution owner among active, suspended and deferred-refinement queues. Do not call an old checkpoint queue an exact DFS continuation without explicit schema conversion.
+
+
+## Checkpoint storage boundary
+
+Search state remains ordinary JSON-compatible DFS schema5. The fixed-clock CLI's [persistence adapter](../autonomy/cell_routes/checkpoint_persistence.py) writes it through [checkpoint_store](../autonomy/checkpoint_store.py): shared immutable stored objects, transition checkpoints and small repair updates against a frozen dispatch root. Decoding restores the full report/audit shape. [Storage contracts and file map](CHECKPOINT_STORAGE.md) explain the optional repair-progress callback, aliases, legacy reads and JSON export; read these before adding mutations inside evaluation.

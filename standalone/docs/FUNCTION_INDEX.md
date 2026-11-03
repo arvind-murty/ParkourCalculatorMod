@@ -1812,3 +1812,61 @@ Source snapshot: current DFS implementation source, including request-audit logg
 - `fixed_phase` — def, line 105.
 - `phase` — def, line 226.
 - `main` — def, line 275.
+
+
+# Shared checkpoint definitions (2026-11-03)
+
+See [storage contracts](CHECKPOINT_STORAGE.md) before changing repair persistence.
+
+## [autonomy/checkpoint_store.py](../autonomy/checkpoint_store.py)
+
+- `StoredValue` — class, line 21.
+- `StoredValue.__init__` — method, line 22.
+- `_json` — def, line 26.
+- `_atomic_json` — def, line 30.
+- `CheckpointStore` — class, line 37.
+- `CheckpointStore.__init__` — method, line 44.
+- `CheckpointStore.__enter__` — method, line 62.
+- `CheckpointStore.__exit__` — method, line 65.
+- `CheckpointStore.close` — method, line 68.
+- `CheckpointStore.save` — method, line 71.
+- `CheckpointStore.archive` — method, line 76.
+- `CheckpointStore.publish` — method, line 138.
+- `CheckpointStore.patch` — method, line 145.
+- `CheckpointStore.compact` — method, line 159.
+- `read_report` — def, line 194.
+- `main` — def, line 250.
+
+## [autonomy/cell_routes/checkpoint_persistence.py](../autonomy/cell_routes/checkpoint_persistence.py)
+
+- `identity_paths` — def, line 8.
+- `SearchCheckpoint` — class, line 24.
+- `SearchCheckpoint.__init__` — method, line 25.
+- `SearchCheckpoint.state` — method, line 31.
+- `SearchCheckpoint.__call__` — method, line 39.
+- `SearchCheckpoint.repair_progress` — method, line 47.
+- `SearchCheckpoint.finish` — method, line 57.
+
+## [autonomy/tests/test_checkpoint_store.py](../autonomy/tests/test_checkpoint_store.py)
+
+- `StoreCase` — class, line 16.
+- `StoreCase.setUp` — method, line 17.
+- `CheckpointStoreTests` — class, line 23.
+- `CheckpointStoreTests.test_lossless_sharing_without_mutable_aliases` — method, line 24.
+- `CheckpointStoreTests.test_changes_are_detected_across_saves_and_reopening` — method, line 40.
+- `CheckpointStoreTests.test_failed_manifest_publication_preserves_previous_committed_root` — method, line 50.
+- `CheckpointStoreTests.test_legacy_and_companion_errors` — method, line 60.
+- `CheckpointStoreTests.test_patch_and_compaction_keep_needed_roots` — method, line 78.
+- `SearchCheckpointTests` — class, line 92.
+- `SearchCheckpointTests.state` — method, line 93.
+- `SearchCheckpointTests.test_repair_patch_is_full_state_equivalent_including_aliases` — method, line 100.
+- `SearchCheckpointTests.test_completed_repair_is_not_resolved_after_persistent_resume` — method, line 120.
+- `SearchCheckpointTests.test_dfs_continues_siblings_without_repeating_completed_calls` — method, line 136.
+- `SearchCheckpointTests.test_dfs_mid_solve_publication_restores_the_active_candidate` — method, line 151.
+- `SearchCheckpointTests.test_interrupted_repair_keeps_pending_branch_and_audit` — method, line 168.
+- `NativeCheckpointTests` — class, line 191.
+- `NativeCheckpointTests.test_every_native_repair_publication_round_trips_before_completion` — method, line 192.
+
+## [autonomy/experiments/last-jump-runs/row-benchmark/checkpoint_probe.py](../autonomy/experiments/last-jump-runs/row-benchmark/checkpoint_probe.py)
+
+- `main` — def, line 21.

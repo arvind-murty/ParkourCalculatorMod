@@ -92,3 +92,10 @@ The fresh retry at source `61355976` is complete: [result/limitations](../autono
 ## Measured independent overhead
 
 [Row-cost/callback benchmark](../autonomy/experiments/last-jump-runs/row-benchmark/README.md) finds small absolute solver gains from row cleanup and a larger synchronous whole-state reporting cost. A late progress payload is109MB as indented JSON and costs≈4s to encode/compress; the callback consumes the solver's wall-time budget. This is separate from corridor correctness and remains an unimplemented performance improvement. Preserve in-flight/repair/incumbent durability when addressing it.
+
+
+## New persistence integration (2026-11-03)
+
+[Checkpoint storage](CHECKPOINT_STORAGE.md) is implemented after the row/count audits. Fixed-clock outputs now consist of the named JSON(.gz) **manifest and its `.store.sqlite3` companion**. Resume accepts new or legacy files; inspect with `standalone.autonomy.checkpoint_store.read_report`, or export ordinary JSON using the documented CLI. The DFS summary reader is updated. Candidate lists, constraints, unknown queues, repaired variants, call logs and pruning history are preserved; no corridor/cell/model/pruning behavior changes.
+
+`depth_first.score.progress` can call an optional `on_progress.repair_progress(state)` adapter method. Its contract is that evaluation changes only the active program's repairState and cumulativeCalls in the outer state; all active-program aliases are patched. Ordinary callback functions retain the previous full-state interface. If your work adds outer-state mutation during evaluation, extend the adapter and native publication-equality test.74 focused tests pass/no skips. Saved full report equals its decoded store exactly; about12ms repair saves and1.97MB final storage. No new Real11 route solve.
