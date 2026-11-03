@@ -63,19 +63,19 @@ Captured fixtures can contain their own inertia/contact assumptions. Current dec
 
 ## Cold Real11 discovery and resume
 
-The fixture sets a 300-second search with explicit initial-jump domain `[0,8]`, selected support order and state64 objective. This is the current DFS cold-discovery regression; archived pre-DFS failures and current results are distinguished in the Real11 guide. Use fresh output names; do not overwrite committed evidence.
+The current [virtual-finish fixture](../autonomy/experiments/virtual-finish/fixture.json) uses the selected support order and initial-jump domain `[0,8]`, discovers the descending height7 tick with X<729.7 and Z>=-1095.3, and ranks time before Z. The 200-input guard is not a fixed terminal tick. The runner derives collision-query coverage from a conservative reach bound; it adds no terrain. The older state64 fixture and its results remain historical controls. Use fresh output names; do not overwrite committed evidence.
 
 ```sh
 .venv-guidance/bin/python -m standalone.autonomy.cell_routes.fixed_clock_experiment \
-  --input standalone/autonomy/experiments/linkcraft11-opening/fixtures/clock64-orchestrator.json \
+  --input standalone/autonomy/experiments/virtual-finish/fixture.json \
   --output /tmp/real11-cold-new.json.gz
 
 .venv-guidance/bin/python -m standalone.autonomy.cell_routes.fixed_clock_experiment \
-  --input standalone/autonomy/experiments/linkcraft11-opening/fixtures/clock64-orchestrator.json \
+  --input standalone/autonomy/experiments/virtual-finish/fixture.json \
   --resume /tmp/real11-cold-new.json.gz --output /tmp/real11-resumed-new.json.gz
 ```
 
-`--resume` uses saved `searchState` when available. A legacy report with only retained histories is explicitly reconstructed and is **not exact continuation**. `--retry-unknown` intentionally reopens numerical unknowns; ordinary resume does not restart every failed local solve. Current DFS state is version5. Do not silently reuse old raw checkpoint schemas as exact continuation.
+`--resume` uses saved `searchState` when available. A legacy report with only retained histories is explicitly reconstructed and is **not exact continuation**. `--retry-unknown` intentionally reopens numerical unknowns; ordinary resume does not restart every failed local solve. Current DFS state is version5. Goal definitions belong to its context fingerprint; a fixed64 report cannot be resumed as the new virtual finish. `finish` reports the nominal height, actual final Y and actual ground state separately; virtual landing does not create a physical floor. Do not silently reuse old raw checkpoint schemas as exact continuation.
 
 To change budgets, copy the fixture into a new local file and change its settings with provenance; report the changed domain and budget. Fewer-run/more-jump preferences do not authorize silently deleting allowed choices. The seeded reference control below tests a different claim:
 

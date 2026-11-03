@@ -91,8 +91,8 @@ Source snapshot: current DFS implementation source, including request-audit logg
 - `ScopedWork.accepted` — def, line 49.
 - `_motion_bound` — def, line 53.
 - `evaluate_program` — def, line 61.
-- `_key` — def, line 153.
-- `find_checkpoint_route` — def, line 157.
+- `_key` — def, line 163.
+- `find_checkpoint_route` — def, line 167.
 
 ## [autonomy/cell_routes/checkpoints.py](../autonomy/cell_routes/checkpoints.py)
 
@@ -116,11 +116,11 @@ Source snapshot: current DFS implementation source, including request-audit logg
 ## [autonomy/cell_routes/comparison_goals.py](../autonomy/cell_routes/comparison_goals.py)
 
 - `goal_spec` — def, line 14.
-- `goal_key` — def, line 38.
-- `region_arrival` — def, line 44.
-- `landing_satisfied` — def, line 58.
-- `_landing_prefixes` — def, line 63.
-- `probe_spatial` — def, line 79.
+- `goal_key` — def, line 41.
+- `region_arrival` — def, line 47.
+- `landing_satisfied` — def, line 61.
+- `_landing_prefixes` — def, line 66.
+- `probe_spatial` — def, line 82.
 
 ## [autonomy/cell_routes/corridor_guards.py](../autonomy/cell_routes/corridor_guards.py)
 
@@ -140,11 +140,11 @@ Source snapshot: current DFS implementation source, including request-audit logg
 
 ## [autonomy/cell_routes/depth_first.py](../autonomy/cell_routes/depth_first.py)
 
-- `candidate_key` — def, line 15.
-- `arrival_key` — def, line 20.
-- `decision_family` — def, line 25.
-- `commit_arrival` — def, line 36.
-- `search_goals` — def, line 56.
+- `candidate_key` — def, line 16.
+- `arrival_key` — def, line 21.
+- `decision_family` — def, line 26.
+- `commit_arrival` — def, line 37.
+- `search_goals` — def, line 57.
 
 ## [autonomy/cell_routes/experiment.py](../autonomy/cell_routes/experiment.py)
 
@@ -175,8 +175,8 @@ Source snapshot: current DFS implementation source, including request-audit logg
 
 ## [autonomy/cell_routes/fixed_clock_experiment.py](../autonomy/cell_routes/fixed_clock_experiment.py)
 
-- `run` — def, line 22.
-- `main` — def, line 54.
+- `run` — def, line 23.
+- `main` — def, line 93.
 
 ## [autonomy/cell_routes/generation_diagnostic.py](../autonomy/cell_routes/generation_diagnostic.py)
 
@@ -281,10 +281,10 @@ Source snapshot: current DFS implementation source, including request-audit logg
 
 - `SupportOrder` — class, line 1.
 - `SupportOrder.__init__` — def, line 2.
-- `SupportOrder.audit` — def, line 17.
-- `SupportOrder.__call__` — def, line 47.
-- `SupportOrder.remaining` — def, line 49.
-- `SupportOrder.priority` — def, line 52.
+- `SupportOrder.audit` — def, line 20.
+- `SupportOrder.__call__` — def, line 50.
+- `SupportOrder.remaining` — def, line 52.
+- `SupportOrder.priority` — def, line 55.
 
 ## [autonomy/cell_routes/time_progress.py](../autonomy/cell_routes/time_progress.py)
 
@@ -615,20 +615,20 @@ Source snapshot: current DFS implementation source, including request-audit logg
 
 - `register_movement_type` — def, line 10.
 - `generate_choices` — def, line 17.
-- `_unit` — def, line 28.
-- `NormalGenerator` — class, line 36.
-- `NormalGenerator.sneak_inputs` — def, line 37.
-- `NormalGenerator.generate` — def, line 40.
-- `LadderFallGenerator` — class, line 64.
-- `LadderFallGenerator.sneak_inputs` — def, line 65.
-- `LadderFallGenerator.generate` — def, line 68.
-- `LadderClimbGenerator` — class, line 82.
-- `LadderClimbGenerator.sneak_inputs` — def, line 83.
-- `LadderClimbGenerator._choice` — def, line 86.
-- `LadderClimbGenerator.generate` — def, line 108.
-- `generate_unit_programs` — def, line 138.
-- `materialize_generated_units` — def, line 163.
-- `sneak_domain` — def, line 175.
+- `_unit` — def, line 31.
+- `NormalGenerator` — class, line 39.
+- `NormalGenerator.sneak_inputs` — def, line 40.
+- `NormalGenerator.generate` — def, line 43.
+- `LadderFallGenerator` — class, line 67.
+- `LadderFallGenerator.sneak_inputs` — def, line 68.
+- `LadderFallGenerator.generate` — def, line 71.
+- `LadderClimbGenerator` — class, line 85.
+- `LadderClimbGenerator.sneak_inputs` — def, line 86.
+- `LadderClimbGenerator._choice` — def, line 89.
+- `LadderClimbGenerator.generate` — def, line 111.
+- `generate_unit_programs` — def, line 141.
+- `materialize_generated_units` — def, line 166.
+- `sneak_domain` — def, line 178.
 
 ## [autonomy/movement_problem.py](../autonomy/movement_problem.py)
 
@@ -641,8 +641,8 @@ Source snapshot: current DFS implementation source, including request-audit logg
 
 - `movement_settings` — def, line 13.
 - `iter_movement_programs` — def, line 30.
-- `find_movement_blocks` — def, line 222.
-- `screen_program` — def, line 292.
+- `find_movement_blocks` — def, line 224.
+- `screen_program` — def, line 294.
 
 ## [autonomy/movement_units.py](../autonomy/movement_units.py)
 
@@ -816,6 +816,15 @@ Source snapshot: current DFS implementation source, including request-audit logg
 - `SteppingGenerator` — class, line 88.
 - `SteppingGenerator.generate` — def, line 89.
 - `open_stepping_choices` — def, line 121.
+
+## [autonomy/terminal_goals.py](../autonomy/terminal_goals.py)
+
+- `prepare_goal` — def, line 10.
+- `height_clock` — def, line 27.
+- `goal_rows` — def, line 39.
+- `bind_goal` — def, line 45.
+- `satisfied` — def, line 59.
+- `finish_choices` — def, line 69.
 
 ## [autonomy/tests/test_acceptance.py](../autonomy/tests/test_acceptance.py)
 
@@ -1566,6 +1575,17 @@ Source snapshot: current DFS implementation source, including request-audit logg
 - `SteppingNumericalTests.test_grind_continues_through_normal_air_to_a_lower_floor` — def, line 254.
 - `SteppingNumericalTests.test_cold_discovery_covers_the_catalogue_and_allows_composite_height_gain` — def, line 273.
 - `SteppingNumericalTests.test_cold_geometry_discovers_normal_steps_and_exposes_generation_caps` — def, line 290.
+
+## [autonomy/tests/test_terminal_goals.py](../autonomy/tests/test_terminal_goals.py)
+
+- `TerminalGoalTests` — class, line 13.
+- `TerminalGoalTests.setUp` — def, line 14.
+- `TerminalGoalTests.program` — def, line 19.
+- `TerminalGoalTests.test_downward_height_clock_is_not_a_fixed_tick_or_apex` — def, line 23.
+- `TerminalGoalTests.test_goal_rows_are_one_sided_center_bounds_with_no_fake_landing` — def, line 28.
+- `TerminalGoalTests.test_unknown_or_vertical_terminal_rows_are_rejected` — def, line 49.
+- `TerminalGoalNumericalTests` — class, line 56.
+- `TerminalGoalNumericalTests.test_generic_height_goal_can_finish_airborne_beyond_the_physical_block` — def, line 57.
 
 ## [autonomy/tests/test_time_progress.py](../autonomy/tests/test_time_progress.py)
 

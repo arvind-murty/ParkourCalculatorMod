@@ -120,6 +120,7 @@ Evidence filenames identify different runs/contexts; do not treat reports as exe
 | [solve_blocks.py](../autonomy/solve_blocks.py) | CLI for autonomous block-scene solve. |
 | [solve_spec.py](../autonomy/solve_spec.py) | Solve scope, physical/context digests, motion metadata, processing key and validation projection. |
 | [stepping_generation.py](../autonomy/stepping_generation.py) | Named stepping profiles and registered open stepping choices. |
+| [terminal_goals.py](../autonomy/terminal_goals.py) | Generic one-sided horizontal finish bounds at a discovered descending height clock; no artificial terrain. |
 | [vertical_profiles.py](../autonomy/vertical_profiles.py) | Vertical trace flags and existing ladder schedule simulation. |
 
 ## autonomy/cell_routes
@@ -816,6 +817,28 @@ Evidence filenames identify different runs/contexts; do not treat reports as exe
 | [separated-two-jumps-reverse.json](../autonomy/experiments/two-goal-comparisons/fixtures/separated-two-jumps-reverse.json) | Reproducible input/model fixture: separated-two-jumps-reverse.json; owning tests/experiment define domain and expected acceptance. |
 | [separated-two-jumps.json](../autonomy/experiments/two-goal-comparisons/fixtures/separated-two-jumps.json) | Reproducible input/model fixture: separated-two-jumps.json; owning tests/experiment define domain and expected acceptance. |
 
+## autonomy/experiments/virtual-finish
+
+| File | Purpose |
+| --- | --- |
+| [CALLS.md](../autonomy/experiments/virtual-finish/CALLS.md) | Numerical request ledger. See documentation index for authority/status. |
+| [README.md](../autonomy/experiments/virtual-finish/README.md) | Real11 virtual finish. See documentation index for authority/status. |
+| [fixture.json](../autonomy/experiments/virtual-finish/fixture.json) | Structured experiment data/settings/provenance: fixture. |
+| [initial0-fixture.json](../autonomy/experiments/virtual-finish/initial0-fixture.json) | Structured experiment data/settings/provenance: initial0 fixture. |
+
+## autonomy/experiments/virtual-finish/evidence
+
+| File | Purpose |
+| --- | --- |
+| [cold.json.gz](../autonomy/experiments/virtual-finish/evidence/cold.json.gz) | Compressed exact result/request/continuation evidence; inspect owning experiment and source fields before reuse. |
+| [cold.log](../autonomy/experiments/virtual-finish/evidence/cold.log) | Captured commands/test/runtime output or investigation notes; source-era evidence. |
+| [initial0-cold.json.gz](../autonomy/experiments/virtual-finish/evidence/initial0-cold.json.gz) | Compressed exact result/request/continuation evidence; inspect owning experiment and source fields before reuse. |
+| [initial0-cold.log](../autonomy/experiments/virtual-finish/evidence/initial0-cold.log) | Captured commands/test/runtime output or investigation notes; source-era evidence. |
+| [manifest.json](../autonomy/experiments/virtual-finish/evidence/manifest.json) | Structured experiment data/settings/provenance: manifest. |
+| [nonladder-tests.log](../autonomy/experiments/virtual-finish/evidence/nonladder-tests.log) | Captured commands/test/runtime output or investigation notes; source-era evidence. |
+| [summary.json](../autonomy/experiments/virtual-finish/evidence/summary.json) | Structured experiment data/settings/provenance: summary. |
+| [terminal-resume-tests.log](../autonomy/experiments/virtual-finish/evidence/terminal-resume-tests.log) | Captured commands/test/runtime output or investigation notes; source-era evidence. |
+
 ## autonomy/fixtures
 
 | File | Purpose |
@@ -957,6 +980,7 @@ Evidence filenames identify different runs/contexts; do not treat reports as exe
 | [test_search_fixes.py](../autonomy/tests/test_search_fixes.py) | Tests: completed profiles survive partial queue and expansion caps; outer incumbent survives invalid polish and repair continues; invalid seed is never retained (additional cases in file). |
 | [test_shared_contacts.py](../autonomy/tests/test_shared_contacts.py) | Tests: hit cancels sprint with carried air factor; raw wall clip and outward following movement; finite face and nearer wall reject selected hit (additional cases in file). |
 | [test_stepping_cases.py](../autonomy/tests/test_stepping_cases.py) | Tests: legacy prefix without landing phase keeps pre landing timing; legacy boost profile is adapted to its registered owner; scalar named outcomes and rejected controls (additional cases in file). |
+| [test_terminal_goals.py](../autonomy/tests/test_terminal_goals.py) | Unit and native regression checks for discovered virtual landing-height goals and actual physical replay. |
 | [test_time_progress.py](../autonomy/tests/test_time_progress.py) | Tests: fast and far are different and tradeoffs survive; similar candidates are not strictly frontier pruned; only marked inferiority is discarded (additional cases in file). |
 
 ## docs

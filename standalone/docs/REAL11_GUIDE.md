@@ -1,5 +1,15 @@
 # Linkcraft Real11 opening: agent guide
 
+## Current requested terminal goal: virtual B7 landing (2026-11-03)
+
+The user clarified the intended finish after the fixed-clock benchmark. At the B7-height landing event (height7), use the horizontal goal **X < 729.7 and Z >= -1095.3**, with no goal-imposed lower X bound or upper Z bound. The region is a virtual landing target extending indefinitely toward +Z, not B7's original finite support footprint. Its coordinates are player-center bounds; do not expand them by the hitbox again.
+
+The task objective is lexicographic: **minimize the achieved landing tick T, then maximize Z[T] among candidates at that earliest tick**. T is discovered, not fixed to64. Preserve normal momentum, zero inertia thresholds and original-state continuous re-solves. Use existing numerical clearances for strict inequalities.
+
+This goal does not authorize adding artificial side walls or treating an enlarged goal footprint as new collision terrain during the approach. Supplied physical obstacles and the virtual terminal condition remain distinct. Finite implementation envelopes must come from reach/horizon bounds, not arbitrary goal-coordinate caps.
+
+The generic `terminal_goals` adapter and the [new fixture](../autonomy/experiments/virtual-finish/fixture.json) now implement this objective. It discovers the downward height-crossing tick from the existing scalar movement model, adds only endpoint horizontal rows and preserves actual collisions with the supplied scene. An overshooting trajectory can end below height7 and airborne: this is a nominal landing-height clock, not an artificial collision floor. Actual Y and ground state are reported separately. Ordinary finite-support landing choices remain available. The 200-input horizon is a search guard, not a fixed finish. [New cold evidence](../autonomy/experiments/virtual-finish/README.md): combined0/8 DFS finds67 (Z≈−1093.82313); a separate initial0-only cold diagnostic finds64 (Z≈−1093.26755), with no reference seeds. All34 replay checks pass. The combined run still spends its budget in the initial8 subtree, so do not present the diagnostic as default traversal success. Neither run proves the earliest possible tick. All372 selected regression tests pass. The archived91.22s MAXZ-at64 result remains historical.
+
 This guide first describes the archived pre-DFS audit. [Current DFS cold/resume results](../autonomy/experiments/dfs-interactions/README.md) and evidence are a separate, newer corpus. Generic code must not depend on these labels/coordinates/ticks. [Current state](CURRENT_STATE.md) and [current DFS/interaction plan](../autonomy/DFS_INTERACTION_IMPLEMENTATION_PLAN.md) supersede old pilot policies. Read the archived ledgers to answer existing questions before rerunning jobs.
 
 ## What exactly is the task?

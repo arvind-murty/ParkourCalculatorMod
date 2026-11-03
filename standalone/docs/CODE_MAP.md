@@ -54,6 +54,7 @@ Snapshot at the current DFS implementation source, including request-audit loggi
 | [solve_blocks.py](../autonomy/solve_blocks.py) | CLI for autonomous block-scene solve. |
 | [solve_spec.py](../autonomy/solve_spec.py) | Solve scope, physical/context digests, motion metadata, processing key and validation projection. |
 | [stepping_generation.py](../autonomy/stepping_generation.py) | Named stepping profiles and registered open stepping choices. |
+| [terminal_goals.py](../autonomy/terminal_goals.py) | Generic one-sided horizontal finish bounds at a discovered descending height clock; no artificial terrain. |
 | [vertical_profiles.py](../autonomy/vertical_profiles.py) | Vertical trace flags and existing ladder schedule simulation. |
 
 ## autonomy/cell_routes

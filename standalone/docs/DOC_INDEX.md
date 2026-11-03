@@ -105,6 +105,8 @@ All tracked standalone Markdown plus this consolidation. Read [AGENTS](../AGENTS
 | [autonomy/experiments/stepping-mechanics/README.md](../autonomy/experiments/stepping-mechanics/README.md) | Legacy stepping investigation | Source-specific experiment evidence; use current-state guide for status |
 | [autonomy/experiments/stratfinder-review/README.md](../autonomy/experiments/stratfinder-review/README.md) | Stratfinder source-review probe | Source-specific experiment evidence; use current-state guide for status |
 | [autonomy/experiments/two-goal-comparisons/README.md](../autonomy/experiments/two-goal-comparisons/README.md) | Separate spatial-time and fixed-clock comparisons | Source-specific experiment evidence; use current-state guide for status |
+| [autonomy/experiments/virtual-finish/CALLS.md](../autonomy/experiments/virtual-finish/CALLS.md) | Numerical request ledger | Source-specific experiment evidence; use current-state guide for status |
+| [autonomy/experiments/virtual-finish/README.md](../autonomy/experiments/virtual-finish/README.md) | Real11 virtual finish | Source-specific experiment evidence; use current-state guide for status |
 | [autonomy/route_guidance/README.md](../autonomy/route_guidance/README.md) | Experimental route guidance | Mechanics/research reference; current decisions control scope |
 | [docs/ARCHITECTURE.md](ARCHITECTURE.md) | Architecture and execution flow | Current navigation/guidance |
 | [docs/CODE_MAP.md](CODE_MAP.md) | Production code map | Current navigation/guidance |

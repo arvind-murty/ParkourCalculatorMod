@@ -39,6 +39,12 @@ class TerminalGoalTests(unittest.TestCase):
         self.assertTrue(satisfied(tagged,dict(positions=[[100.,20.]]*10),self.goal))
         self.assertFalse(satisfied(tagged,dict(positions=[[1.,20.]]*10),self.goal))
         self.assertEqual(bind_goal(tagged,self.goal),tagged)
+        left=prepare_goal(dict(kind='landing_height_region',height=2.,
+            rows=[dict(mode='X',cmp='LE',rhs=3.,strict=True)]))
+        limited=bind_goal(p,left)
+        self.assertAlmostEqual(limited['profile']['positionConstraints'][-1]['rhs'],2.999999)
+        self.assertTrue(satisfied(limited,dict(positions=[[-100.,100.]]*10),left))
+        self.assertFalse(satisfied(limited,dict(positions=[[3.,100.]]*10),left))
 
     def test_unknown_or_vertical_terminal_rows_are_rejected(self):
         bad=copy.deepcopy(self.goal);bad['rows'][0]['mode']='Y'
@@ -71,6 +77,19 @@ class TerminalGoalNumericalTests(unittest.TestCase):
             self.assertLess(best['candidate']['y'][-1],2.)
             self.assertTrue(replay_witness(scene,best,compiler)['passed'])
             self.assertEqual(result['goalType'],'earliest_virtual_landing_height')
+            restored=find_checkpoint_route(scene,compiler,spatial_points=[[.5,1,.5],[8.,3,.5]],
+                checkpoints=[],spatial_goals=[goal],program_filter=SupportOrder(scene,[],None,[0,1],max_inputs=20),
+                resume_state=json.loads(json.dumps(result['searchState'])),seconds=2,
+                max_candidates=8,max_solver_calls=24,candidate_seconds=.8,score_seconds=2,
+                python_executable=os.environ['PKC_IPOPT_PYTHON'])
+            self.assertTrue(restored['resume']['exact'])
+            self.assertEqual(restored['best']['plan']['ticks'],9)
+            self.assertTrue(replay_witness(scene,restored['best'],compiler)['passed'])
+            changed=dict(goal,height=3.)
+            with self.assertRaisesRegex(ValueError,'Incompatible DFS'):
+                find_checkpoint_route(scene,compiler,spatial_points=[[.5,1,.5],[8.,3,.5]],
+                    checkpoints=[],spatial_goals=[changed],program_filter=SupportOrder(scene,[],None,[0,1],max_inputs=20),
+                    resume_state=result['searchState'],seconds=2,python_executable=os.environ['PKC_IPOPT_PYTHON'])
         self.assertEqual(scene,original)
 
 

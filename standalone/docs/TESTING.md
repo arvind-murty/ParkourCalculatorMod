@@ -57,3 +57,7 @@ For new runs record source revision plus dirty diff, Python/runtime/compiler con
 
 
 Current DFS acceptance: [results and logs](../autonomy/experiments/dfs-interactions/README.md) record368/368 selected non-ladder numerical autonomy tests,54/54 IPOPT tests and25/25 post-logging repair/terminal tests passing. The previous broader466-test process exposed two grind/blip regressions, corrected by retaining named-probe uncertainty; both pass in the final non-ladder gate. The pre-existing ladder baseline remains. Current cold/resume reports reconcile14 worker calls, zero repeated completed requests and all independent witness replays. The final affected-scope pass intentionally excludes dedicated ladder/climbable/vine tests and is not an all-suite green claim.
+
+## Virtual terminal goals
+
+`test_terminal_goals` checks descending-height timing, one-sided player-center rows, strict-bound clearance, no fake floor, generic airborne overshoot and independent native scene replay. Run with the native environment from the runbook; otherwise the integration case skips. Existing fixed-clock and physical landing tests remain separate regressions.
