@@ -4,9 +4,9 @@
 
 ## Current implementation authority
 
-[DFS_INTERACTION_IMPLEMENTATION_PLAN.md](../autonomy/DFS_INTERACTION_IMPLEMENTATION_PLAN.md) is approved and **not yet implemented**. It replaces global shortest-prefix/checkpoint-window traversal with ordered DFS at common spatial decision goals, adopts validated child decision programs, applies one early interaction gate across all builders/checks, removes duplicate effective models before expensive combination, preserves owned prerequisites through projection, and saves a versioned backtracking stack.
+[DFS_INTERACTION_IMPLEMENTATION_PLAN.md](../autonomy/DFS_INTERACTION_IMPLEMENTATION_PLAN.md) is the approved design, implemented at `498c054c` with [results](../autonomy/experiments/dfs-interactions/README.md). It replaces global shortest-prefix/checkpoint-window traversal with ordered DFS at common spatial decision goals, adopts validated child decision programs, applies one early interaction gate across all builders/checks, removes duplicate effective models before expensive combination, preserves owned prerequisites through projection, and saves a versioned backtracking stack.
 
-[GENERATION_RELEVANCE_PLAN.md](../autonomy/GENERATION_RELEVANCE_PLAN.md) supplies interaction/ownership detail; the consolidated DFS plan controls integration and ordering. The seven earlier workstreams in [ORCHESTRATOR_IMPLEMENTATION_PLAN.md](../autonomy/ORCHESTRATOR_IMPLEMENTATION_PLAN.md) are implemented to their recorded scope, but do not close early universal relevance or cold discovery. Its old traversal policy is superseded.
+[GENERATION_RELEVANCE_PLAN.md](../autonomy/GENERATION_RELEVANCE_PLAN.md) supplies interaction/ownership detail; the consolidated DFS plan controls integration and ordering. The seven earlier workstreams in [ORCHESTRATOR_IMPLEMENTATION_PLAN.md](../autonomy/ORCHESTRATOR_IMPLEMENTATION_PLAN.md) were implemented to their recorded scope; the DFS/early-interaction change addresses the later traversal and builder-wiring gaps. Its old traversal policy is superseded.
 
 ## Durable user decisions
 
@@ -35,7 +35,7 @@
 | Mixed-input formulations and disk/SOCP | [mixed-integer research](../autonomy/MIXED_INTEGER_RESEARCH.md), [continuous decisions](../autonomy/CONTINUOUS_DECISION_RELAXATION.md), [guidance plan](../autonomy/CONVEX_ROUTE_GUIDANCE_PLAN.md), [guidance module](../autonomy/route_guidance/README.md) | Restricted-family experiments. Containment depends on modeled choices/domain; numerical local NLP success is not a global certified bound. Omitting obstacle constraints can yield phasing. |
 | No-threshold clarification | [model note](../autonomy/NO_THRESHOLD_DECISION_MODEL.md) | Normal momentum retained; not a new frictionless or memoryless model. |
 | Naive route-direction guidance | [baseline](../autonomy/ROUTE_BASELINE_GUIDANCE.md), [geometric guidance](../autonomy/GEOMETRIC_DECISION_GUIDANCE.md) | Basis of current geometric proxy; richer weighted scoring remains unselected. |
-| Time/progress and state guards | [frontier](../autonomy/TIME_PROGRESS_FRONTIER.md), [state protection](../autonomy/STATE_PROTECTION_IMPLEMENTATION_PLAN.md) | Comparison semantics retained; old processing-key policy superseded by goal-aware DFS. |
+| Time/progress and state guards | [frontier](../autonomy/TIME_PROGRESS_FRONTIER.md), [state protection](../autonomy/STATE_PROTECTION_IMPLEMENTATION_PLAN.md) | Comparison semantics retained; old processing-key policy replaced by goal-aware DFS. |
 | Resume and dead prefixes | [continuation plan](../autonomy/SEARCH_CONTINUATION_FIX_PLAN.md), [implemented results](../autonomy/experiments/orchestrator-fixes/README.md) | Existing machinery to extend; first-floor death proof is conservative and incomplete. |
 | Known future improvements | [backlog](../autonomy/PRUNING_IMPROVEMENTS_BACKLOG.md) | Revisit when a measured map exposes a need, not a mandate to raise counts now. |
 

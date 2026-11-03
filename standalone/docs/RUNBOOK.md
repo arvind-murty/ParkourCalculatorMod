@@ -63,7 +63,7 @@ Captured fixtures can contain their own inertia/contact assumptions. Current dec
 
 ## Cold Real11 discovery and resume
 
-The fixture sets a 300-second search with explicit initial-jump domain `[0,8]`, selected support order and state64 objective. This currently exposes an unresolved orchestration failure. Use fresh output names; do not overwrite committed evidence.
+The fixture sets a 300-second search with explicit initial-jump domain `[0,8]`, selected support order and state64 objective. This is the current DFS cold-discovery regression; archived pre-DFS failures and current results are distinguished in the Real11 guide. Use fresh output names; do not overwrite committed evidence.
 
 ```sh
 .venv-guidance/bin/python -m standalone.autonomy.cell_routes.fixed_clock_experiment \
@@ -75,7 +75,7 @@ The fixture sets a 300-second search with explicit initial-jump domain `[0,8]`, 
   --resume /tmp/real11-cold-new.json.gz --output /tmp/real11-resumed-new.json.gz
 ```
 
-`--resume` uses saved `searchState` when available. A legacy report with only retained histories is explicitly reconstructed and is **not exact continuation**. `--retry-unknown` intentionally reopens numerical unknowns; ordinary resume does not restart every failed local solve. Do not silently reuse old raw checkpoint schemas after implementing DFS.
+`--resume` uses saved `searchState` when available. A legacy report with only retained histories is explicitly reconstructed and is **not exact continuation**. `--retry-unknown` intentionally reopens numerical unknowns; ordinary resume does not restart every failed local solve. Current DFS state is version5. Do not silently reuse old raw checkpoint schemas as exact continuation.
 
 To change budgets, copy the fixture into a new local file and change its settings with provenance; report the changed domain and budget. Fewer-run/more-jump preferences do not authorize silently deleting allowed choices. The seeded reference control below tests a different claim:
 
@@ -98,10 +98,23 @@ python3 standalone/autonomy/experiments/orchestrator-fixes/audit_candidates.py \
 
 This reads the three saved cold reports and reconstructs the ledger. Add `--compiler "$PKC_RUN_TICKS_COMPILER"` for independent replay (Java needed, no IPOPT). Without it, replay fields are not fresh validation. The checked-in audit includes additional follow-up/provenance artifacts not all recreated by that one command. Existing recorded evidence should remain untouched.
 
-`audit_generation.py` performs bounded offline generator/profiler probes and writes into the checked-in audit location by default; inspect it before rerunning. It uses exact decorated coefficient/profile context, not an ad hoc reconstruction. No Java/IPOPT calls occur inside its probe. Three-second samples are not exhausted-domain counts or controlled speedup benchmarks.
+`audit_generation.py` performs bounded offline generator/profiler probes and writes into the checked-in audit location by default; inspect it before rerunning. It uses exact decorated coefficient/profile context, not an ad hoc reconstruction. No Java/IPOPT calls occur inside its probe. The historical script requires its original cursor context; for the current algorithm use `experiments/dfs-interactions/measure_generation.py --output /tmp/generation-new.json`, which explicitly rebuilds new cursors over the old physical models. Three-second samples are not exhausted-domain counts or controlled speedup benchmarks.
 
 ## Replay and TAS export
 
 Use the validated problem/result and effective-input template; add a scene for discovery checks. The full command and report contract are in [REPLAY.md](../ipopt/REPLAY.md). Typical properties: `ipoptCapture`, `ipoptInput`, `ipoptResult`, `ipoptScene`, `ipoptOutput`, `ipoptReport`, `ipoptReplaySeconds`, `ipoptGiveBack` with Gradle task `:core:replayStandaloneIpopt` and init script `standalone/ipopt/export.gradle`.
 
 Only a current `validated` replay report authorizes claiming the exported TAS passed local replay. A pre-existing output file can survive a failed invocation. Declared-contact replay, static-scene discovery and actual-world mod validation are distinct. Full actual-world validation remains a later explicit mod step.
+
+
+Current source-matched validation uses [dfs-interactions/real11-fixture.json](../autonomy/experiments/dfs-interactions/real11-fixture.json): the same geometry/input domain and candidate limits,150s per session. The archived cold and exact-resume reports have the same model-context hash despite additive request logging between sources. Reconcile or regenerate their call table without Java/IPOPT:
+
+```sh
+PYTHONPATH="$PWD" .venv-guidance/bin/python \
+  standalone/autonomy/experiments/dfs-interactions/summarize.py \
+  --cold standalone/autonomy/experiments/dfs-interactions/evidence/real11-cold.json.gz \
+  --resume standalone/autonomy/experiments/dfs-interactions/evidence/real11-resume.json.gz \
+  --output /tmp/dfs-summary-new.json --calls-output /tmp/dfs-calls-new.md
+```
+
+The included reports stop with a valid incumbent plus saved unfinished work. To continue them use the fixed-clock CLI, the same archived fixture, `--resume` on the saved resume report and a **new** output path. Ordinary continuation does not intentionally retry completed or unresolved numerical requests; `--retry-unknown` reopens unresolved ones. Report pending root/subtree coverage and any time spent serializing state; the time setting is a search budget, not a hard process-duration guarantee.

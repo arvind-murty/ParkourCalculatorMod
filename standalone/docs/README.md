@@ -1,6 +1,6 @@
 # Standalone documentation guide
 
-A fresh agent should start at [standalone/AGENTS.md](../AGENTS.md) and [current state](CURRENT_STATE.md). The current worktree is `research/ipopt-cell-routes`; older consolidation branch instructions are historical. No runtime behavior changed in this documentation consolidation.
+A fresh agent should start at [standalone/AGENTS.md](../AGENTS.md) and [current state](CURRENT_STATE.md). The current worktree is `research/ipopt-cell-routes`; older consolidation branch instructions are historical. Documentation consolidation was followed by the DFS/early-interaction implementation at `498c054c`; see the current-state guide for behavior and validation.
 
 | Task | Reading path |
 | --- | --- |
