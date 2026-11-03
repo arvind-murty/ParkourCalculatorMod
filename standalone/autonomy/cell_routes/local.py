@@ -5,7 +5,7 @@ import json
 import time
 
 from .geometry import intersection
-from .routes import audit_candidate
+from .routes import audit_candidate, horizontal_trace
 from .corridor_guards import movement_regions
 from ..obstacle_geometry import expanded_box
 
@@ -188,6 +188,30 @@ class CorridorAdapter:
     def row(self, mode, state, cmp, value):
         return dict(leg=0, offset=state, mode=mode, cmp=cmp, rhs=value, name='cell_corridor:' + str(self.corridor.id))
 
+    def failure_diagnostics(self, checked, plan, candidate, vertical, partial, alternatives):
+        failure = dict(reason=checked['reason'])
+        if checked['reason'] == 'corridor_projection':
+            points, references = horizontal_trace(dict(candidate, y=vertical['y']))
+            segment = checked['segment']
+            tick, phase = divmod(segment, 3)
+            failure.update(segment=segment, input=tick, phase=('Y', 'X', 'Z')[phase],
+                references=references[segment], start=points[segment], end=points[segment+1], tolerance=1e-7)
+        else:
+            mismatch = checked['mismatch']
+            actual = checked['actual']
+            expected = self.corridor.signature
+            failure.update(mismatch=mismatch, expected=expected[mismatch] if mismatch < len(expected) else None,
+                actual=actual[mismatch] if mismatch < len(actual) else None,
+                actualSignature=actual, crossings=checked['events'])
+        corridor = self.corridor.to_dict()
+        key = hashlib.sha256(json.dumps(corridor, sort_keys=True).encode()).hexdigest()
+        fields = ('positions', 'velocity', 'yaw', 'rawMovement', 'movement', 'friction', 'objective')
+        return copy.deepcopy(dict(version=1, corridorHash=key, corridor=corridor, gates=self.gates,
+            scope=dict(horizonInputs=len(candidate['positions'])-1, partialSignature=partial,
+                       projection='whole_trajectory', modeledInteractionScope='unspecified'),
+            failure=failure, plan=plan, candidate={k: candidate[k] for k in fields if k in candidate},
+            vertical=vertical, repairAlternatives=alternatives))
+
     def candidate(self, plan, candidate, vertical, *, partial=False):
         self.counts['corridorAudits'] += 1
         n = len(candidate['positions']) - 1
@@ -197,6 +221,8 @@ class CorridorAdapter:
         if checked['accepted']:
             return checked
         self.counts['corridorRejections'] += 1
+        self.counts['corridorProjectionRejections' if checked['reason'] == 'corridor_projection'
+                    else 'corridorSignatureRejections'] += 1
         alternatives = []
         if len(plan['events']) != 1 or plan['events'][0]['jump'] != 0:
             raise ValueError('Cell corridor adapter expects one original-state movement program')
@@ -229,7 +255,8 @@ class CorridorAdapter:
                     alternatives.append(rows)
         self.counts['corridorRepairBranches'] += len(alternatives)
         return dict(accepted=False, reason=checked['reason'], alternatives=alternatives,
-                    repairComplete=False, actual=checked.get('actual'))
+                    repairComplete=False, actual=checked.get('actual'),
+                    corridorAudit=self.failure_diagnostics(checked, plan, candidate, vertical, partial, alternatives))
 
     def summary(self):
         return dict(self.counts, forwardEnabled=self.forward and self.decomposition is not None and bool(self.corridor.stage_paths),

@@ -26,8 +26,8 @@
       "sha256": "5ce12e3a2673107e1cff486b7521ec92bee20656acced9fe1ac2054061ceaf60"
     },
     "OTHER_FAILURES.md": {
-      "bytes": 23549,
-      "sha256": "2ef968e6f53eb0a34a3c17b5927c27e43b012d63504c99bddc6608ae056b6e96"
+      "bytes": 29280,
+      "sha256": "2eb31f68da70b9a2a2fb2cafe4c0a1dcf4f26816cbd7c153a5c639d4046ff55a"
     },
     "PLAYER_BOUNDS.md": {
       "bytes": 6364,
@@ -356,6 +356,22 @@
     "user-blocks-provisional.json": {
       "bytes": 2130,
       "sha256": "47eb5e2639c0a81736294983dfde4ff46571f989467a9443a3a03077701c46e4"
+    },
+    "probe_corridor_failures.py": {
+      "bytes": 5403,
+      "sha256": "1c7f460b0c1d729fac9e7dd2f7a846de7bea6ff067a3843ea8fc56fde51f5e31"
+    },
+    "evidence/real11-corridor-failures.json.gz": {
+      "bytes": 416850,
+      "sha256": "b44aa356e3518edf80808f8272850a8ae91d6d87e1af7057536d72d6ceb828c9"
+    },
+    "audit/CORRIDOR_FAILURES.md": {
+      "bytes": 8155,
+      "sha256": "094d70f5496d8ac831ebecf27395b2c0ed0ce16aa661a0a6c688fbc1ad6f6e04"
+    },
+    "audit/corridor-failure.png": {
+      "bytes": 149619,
+      "sha256": "0bf588b52a915806702ca7f7d6d08d1cf5c93ce7c63657bc1827d20bab857526"
     }
   },
   "audit": {
@@ -371,5 +387,17 @@
     "controlledEvaluations": 9,
     "acceptedWitnessReplays": 5,
     "productionRuntimeChanged": false
+  },
+  "corridorLoggingValidation": {
+    "schemaVersion": 1,
+    "focusedTests": 25,
+    "workerRequests": 24,
+    "archivedProblemHashesMatch": true,
+    "savedRejectionAudits": 24,
+    "independentSceneChecks": 24,
+    "runtimeSourceHashes": {
+      "standalone/autonomy/cell_routes/local.py": "36741896695d435bc9f0f73215e899eeaa946fb8f13c71a643b9e1ee543aff78",
+      "standalone/autonomy/block_contacts.py": "163fa5c98d88a5058a99c7e69ef81f448b87c6902d5630ec85183022dc9897a7"
+    }
   }
 }

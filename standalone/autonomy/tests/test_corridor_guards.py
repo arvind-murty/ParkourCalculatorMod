@@ -1,5 +1,6 @@
 import collections
 import itertools
+import json
 import unittest
 
 from standalone.autonomy.cell_routes.corridor_guards import movement_regions
@@ -21,6 +22,40 @@ def satisfies(rows, positions):
 
 
 class CorridorGuardTests(unittest.TestCase):
+    def test_projection_failure_logs_exact_phase_and_detached_replay_data(self):
+        a = adapter([(0., 0., 0., 1., 0., 1.)])
+        positions = [[.5, .5], [1.5, 1.5]]
+        wall = dict(mode='X', t1=0, cmp='GE', rhs=.25)
+        plan = dict(ticks=1, events=[dict(jump=0)], walls=[wall])
+        result = a.candidate(plan, dict(positions=positions, yaw=[12.]), dict(y=[1., 1.25]), partial=True)
+        logged = json.loads(json.dumps(result['corridorAudit'], allow_nan=False))
+        self.assertEqual(logged['failure'], dict(reason='corridor_projection', segment=1, input=0, phase='X',
+            references=[1, 0], start=[.5, 1.25, .5], end=[1.5, 1.25, .5], tolerance=1e-7))
+        self.assertEqual(logged['plan']['walls'], [wall])
+        self.assertEqual(logged['repairAlternatives'], result['alternatives'])
+        self.assertTrue(logged['scope']['partialSignature'])
+        self.assertEqual(logged['scope']['projection'], 'whole_trajectory')
+        self.assertEqual(logged['scope']['modeledInteractionScope'], 'unspecified')
+        positions[1][0] = 99.
+        plan['walls'].clear()
+        self.assertEqual(result['corridorAudit']['candidate']['positions'][1][0], 1.5)
+        self.assertEqual(result['corridorAudit']['plan']['walls'], [wall])
+        self.assertEqual(a.counts['corridorProjectionRejections'], 1)
+
+    def test_signature_failure_logs_expected_and_actual_crossing(self):
+        a = adapter([(-3., 0., -3., 3., 0., 3.)])
+        a.gates = [dict(id=0, axis=0, lateral=2, plane=0., lo=-1., hi=1.)]
+        a.corridor.signature = ((0, 1, -1),)
+        result = a.candidate(dict(events=[dict(jump=0)]),
+            dict(positions=[[-1., 2.], [1., 2.]]), dict(y=[1., 1.]))
+        logged = result['corridorAudit']
+        self.assertEqual(logged['failure']['reason'], 'corridor_signature')
+        self.assertEqual(logged['failure']['expected'], (0, 1, -1))
+        self.assertEqual(logged['failure']['actual'], (0, 1, 1))
+        self.assertEqual(logged['gates'], a.gates)
+        self.assertEqual(a.counts['corridorSignatureRejections'], 1)
+        self.assertTrue(result['alternatives'])
+
     def test_crossing_adjacent_rectangles_is_preserved_in_both_axes_and_directions(self):
         base = [(0.,0.,0.,1.,0.,1.), (1.,0.,0.,2.,0.,2.)]
         for swap, reverse in itertools.product((False, True), repeat=2):

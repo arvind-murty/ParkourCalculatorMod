@@ -37,6 +37,35 @@ class RepairResumeTests(unittest.TestCase):
             return solve_contact_branches(request,[],[],object(),seconds=1,candidate_seconds=.1,retries=0,
                 max_branches=1,rank_equal_cost=True,optimize_goal=True,candidate_filter=filter_candidate,**kwargs)
 
+    def test_corridor_diagnostics_survive_branch_result_without_new_replay_calls(self):
+        from standalone.autonomy.cell_routes.local import CorridorAdapter
+        from standalone.autonomy.cell_routes.routes import Corridor
+        request = route()
+        scene = flat_scene()
+        corridor = Corridor(3, [], [], [], (), [(-1., 0., -1., 1., 0., 1.)], 0.)
+        adapter = CorridorAdapter(scene, corridor, [])
+        response = outcome()
+        wall = dict(mode='X', t1=0, cmp='GE', rhs=-.5)
+        response['best']['plan'].update(events=[dict(jump=0)], walls=[wall])
+        response['best']['candidate']['positions'] = [[0., 0.], [2., 0.], [3., 0.]]
+        response['attempts'] = [dict(problemHash='fixed-problem', status='feasible', allocation=[0], stage='jump', leg=0)]
+        def filter_candidate(plan, candidate, vertical):
+            return adapter.candidate(plan, candidate, vertical, partial=True)
+        with patch('standalone.autonomy.block_contacts.check_geometry') as physical:
+            result = self.invoke(request, lambda *a, **k: copy.deepcopy(response), filter_candidate,
+                geometry=scene['collisionScene'])
+        physical.assert_not_called()
+        logged = json.loads(json.dumps(result, allow_nan=False))['contactAttempts'][0]['candidateFilter']['corridorAudit']
+        self.assertEqual(logged['numericalRequests'][0]['problemHash'], 'fixed-problem')
+        self.assertEqual(logged['physicalReplay']['status'], 'not_run')
+        self.assertEqual(logged['failure']['input'], 0)
+        self.assertEqual(logged['failure']['phase'], 'X')
+        self.assertEqual(logged['plan']['walls'], [wall])
+        self.assertEqual(logged['selectedPassages'], [])
+        self.assertEqual(logged['selectedHits'], [])
+        self.assertIsNone(result['best'])
+        self.assertEqual(len(result['repairState']['pending']), 1)
+
     def test_pending_guards_and_facing_guesses_resume_without_repeating_root(self):
         rows=[dict(leg=0,offset=1,mode='X',cmp='GE',rhs=v) for v in (1,2)]
         def filter_candidate(*args):

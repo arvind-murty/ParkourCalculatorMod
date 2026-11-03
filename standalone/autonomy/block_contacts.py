@@ -314,6 +314,15 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
         if not conflicts:
             if 'verdict' in checked and candidate_filter is not None:
                 attempts[-1]['candidateFilter'] = {k: v for k, v in checked['verdict'].items() if k != 'alternatives'}
+                if 'corridorAudit' in checked['verdict']:
+                    logged = copy.deepcopy(checked['verdict']['corridorAudit'])
+                    logged.update(selectedPassages=copy.deepcopy(passages), selectedHits=copy.deepcopy(hits),
+                        extraRows=copy.deepcopy(rows),
+                        numericalRequests=[{k: a[k] for k in ('problemHash', 'status', 'allocation', 'stage', 'leg') if k in a}
+                                           for a in result['attempts']],
+                        physicalReplay=dict(status='not_run' if geometry is not None else 'not_configured',
+                            reason='corridor_rejected_before_scene_validation' if geometry is not None else 'no_scene_configured'))
+                    attempts[-1]['candidateFilter']['corridorAudit'] = logged
             if 'reason' in checked:
                 attempts[-1].update(status='unknown', termination=checked['reason'])
                 for extra in checked.get('verdict', {}).get('alternatives', []):
