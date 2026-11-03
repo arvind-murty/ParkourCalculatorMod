@@ -38,7 +38,7 @@ class InteractionGate:
             rows = [r for r in plan['walls'] if not r.get('name', '').startswith('landing:1:')]
             self.cache[key] = reachable_envelopes(dict(coefficient, ticks=plan['ticks'], walls=rows,
                 position=self.scene['initial']['position'][::2], velocity=self.scene['initial']['velocity'][::2],
-                threshold=program.get('threshold', .005), contacts=plan['contacts'],
+                threshold=program.get('threshold', .005), contacts=plan['contacts'], vertical=vertical['vertical'],
                 ladderTicks=plan.get('ladderTicks', [False]*(plan['ticks']+1))), vertical['y'])
         return self.cache[key]
 

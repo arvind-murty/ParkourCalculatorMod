@@ -97,7 +97,7 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, c
     coefficients = compiler.compile(route, plan, max(.001, min(seconds, candidate_seconds)))
     model = dict(coefficients, version=1, ticks=plan['ticks'], walls=plan['walls'], contacts=plan['contacts'],
         position=scene['initial']['position'][::2], velocity=scene['initial']['velocity'][::2],
-        threshold=route.get('physicsThreshold', .005), objective=dict(route.get('guideObjective', route['objective']), tick=plan['ticks']))
+        threshold=route.get('physicsThreshold', .005), vertical=vertical['vertical'], objective=dict(route.get('guideObjective', route['objective']), tick=plan['ticks']))
     envelopes = reachable_envelopes(model, vertical['y'])
     from standalone.autonomy.solve_spec import digest
     envelopes['modelKey'] = digest(coefficients)
@@ -129,7 +129,7 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, c
         max_horizontal=scene['maxHorizontalBlockagesPerObstacle'], max_vertical=scene['maxVerticalBlockagesPerObstacle'],
         max_passage_candidates=scene['maxPassageCandidates'], solid_blocks=owners, max_wall_hits=0,
         candidate_filter=candidate_filter, work=scoped, resume_state=program.get('repairState'),
-        repair_scope=dict(solveIdentity=identity, scope=scope, assemblyVersion=5),
+        repair_scope=dict(solveIdentity=identity, scope=scope, assemblyVersion=6),
         validation_scope=scope, initial_variants=variants, on_progress=on_progress, retry_unresolved=retry_unresolved)
     if result['best'] is not None:
         if checkpoint is not None and scope['purpose'] == 'complete':

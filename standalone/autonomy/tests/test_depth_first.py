@@ -159,6 +159,21 @@ class InteractionOwnershipTests(unittest.TestCase):
         high=copy.deepcopy(box);high[1]=10.;high[4]=11.
         self.assertTrue(block_interaction(e,high,0)['ruledOut'])
 
+    def test_realized_grind_height_is_not_the_collision_probe_height(self):
+        model=dict(ticks=1,position=[0.,0.],velocity=[.2,0.],magnitude=[.1],friction=[.9],walls=[])
+        ceiling=[.35,2.9,-1.,1.,4.,1.]
+        self.assertTrue(block_interaction(reachable_envelopes(model,[1.,1.]),ceiling,0)['ruledOut'])
+        model['vertical']=dict(contacts=[dict(state=1,case='grind')])
+        envelope=reachable_envelopes(model,[1.,1.])
+        self.assertFalse(block_interaction(envelope,ceiling,0)['ruledOut'])
+        far=ceiling[:];far[0]+=20;far[3]+=20
+        self.assertTrue(block_interaction(envelope,far,0)['ruledOut'])
+        clipped=dict(model,contacts=[dict(state=1,axis=0,plane=.02,direction=1)])
+        probe=reachable_envelopes(clipped,[1.,1.])
+        self.assertLess(probe['states'][1]['X'][1],.05)
+        self.assertGreater(probe['phases'][0]['X']['X'][1],.05)
+        self.assertFalse(block_interaction(probe,ceiling,0)['ruledOut'])
+
 
 class VariantCoverageTests(unittest.TestCase):
     def test_distinct_options_cover_small_exhaustible_clear_trajectories(self):
