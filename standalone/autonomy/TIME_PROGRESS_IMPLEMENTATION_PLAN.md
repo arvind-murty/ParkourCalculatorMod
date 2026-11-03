@@ -2,6 +2,8 @@
 
 Revised 2026-11-01 after the user's distinctions. This is our selected new search direction, not a rollout proposal. Implementation is now delivered; see the dated status below and [measured results](experiments/two-goal-comparisons/README.md). Work stays in isolated `research/ipopt-cell-routes`, reusing existing candidate generation, movement/constraint builders, numerical solving, physical checks and saved state.
 
+Current follow-up plan: [STATE_PROTECTION_IMPLEMENTATION_PLAN.md](STATE_PROTECTION_IMPLEMENTATION_PLAN.md), covering the selected velocity/schedule guards, unchanged0.25-block/1-tick margins, `(n,-J,R)` processing, persisted deferred work, exact audit and standalone/Real11 acceptance gates. The previous two-goal implementation exists; these protections and queue changes remain pending. The proposed0.05 margin is not adopted. This consolidated plan supersedes scattered discussion-only suggestions for the next runtime change; extra velocity-objective solves and unrelated route/generation redesign are outside its scope.
+
 ## Latest selected refinement, 2026-11-02
 
 The earlier two-goal implementation exists; the following newly selected refinements are not implemented yet. Follow [the precise schedule/order rules](TIME_PROGRESS_FRONTIER.md#selected-schedule-comparison-and-processing-rules):
