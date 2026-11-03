@@ -62,7 +62,13 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, c
                      seconds=3, candidate_seconds=1, solver_calls=8, python_executable=None, cancel_event=None,
                      partial_corridor=False, required_landing=None, scope=None, on_progress=None, retry_unresolved=True, first_witness=False):
     complete = checkpoint is None
-    compiled = compile_program(scene, program, require_complete=complete)
+    virtual=program.get('terminalGoal')
+    if virtual is not None:
+        from standalone.autonomy.terminal_goals import prepare_goal, height_clock
+        virtual=prepare_goal(virtual)
+        if not height_clock(program,virtual):
+            raise ValueError('Virtual finish program does not reach its height clock')
+    compiled = compile_program(scene, program, require_complete=complete and virtual is None)
     route, profiles = compiled['route'], compiled['profiles']
     scope = solve_scope(scene, program, scope)
     scoped_adapter = adapter.scoped(scope) if hasattr(adapter, 'scoped') else adapter
@@ -77,6 +83,10 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, c
     def candidate_filter(plan, candidate, vertical):
         p, c, v = validation_prefix(plan, candidate, vertical, scope['through'])
         verdict = scoped_adapter.candidate(p, c, v, partial=not complete or partial_corridor or scope['purpose'] == 'preliminary')
+        if verdict['accepted'] and virtual is not None:
+            from standalone.autonomy.terminal_goals import satisfied
+            if not satisfied(program,candidate,virtual,scene.get('supportClearance',1e-6)):
+                return dict(verdict,accepted=False,reason='virtual_finish_not_satisfied')
         if verdict['accepted'] and required_landing is not None and not landing_satisfied(scene,required_landing,vertical):
             return dict(verdict,accepted=False,reason='spatial_goal_not_satisfied')
         if verdict['accepted'] and checkpoint is not None and scope['purpose'] == 'complete':
@@ -225,7 +235,7 @@ def find_checkpoint_route(request, compiler, *, checkpoints=None, corridor=None,
             if list(spatial_points[0]) != list(scene['initial']['position']):
                 raise ValueError('The spatial guide must start at the original initial position')
             last = spatial_points[-1]
-            if terminal_checkpoint is None and (abs(last[1]-goal['top']) > 1e-7 or not supports(goal,last[0],last[2])):
+            if terminal_checkpoint is None and not (spatial_goals and spatial_goals[-1]['kind']=='landing_height_region') and (abs(last[1]-goal['top']) > 1e-7 or not supports(goal,last[0],last[2])):
                 raise ValueError('The spatial guide must end in the goal landing region')
             corridor = corridor_for_points(d, spatial_points, gates)
         else:
