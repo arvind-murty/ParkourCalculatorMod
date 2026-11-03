@@ -4,6 +4,8 @@
 
 Latest user decision: the immediate-jump0 and run-then-jump8 setups are both meaningful alternatives and must both be retained. The no-run-only interpretation below records the preceding discussion, not authority to discard the8 setup going forward. Keep these two explicit setup families while avoiding unrelated generic enumeration. The measured crossover is documented in the next section.
 
+Latest comparison refinement: the user selects time/progress with both position and velocity in the fixed-clock state assessment. The original state10-only witnesses have forward velocities0.226887836 for0 and0.263399323 for8, so8 wins both horizontal position and velocity there. Preserving both still requires their different jump/contact phase or explicit setup-family protection:0 is descending toward its next landing, while8 is ascending. Full X/Z position and velocity must be recorded from the same accepted witness. [Refined frontier design](../../TIME_PROGRESS_FRONTIER.md#position-and-velocity-at-the-common-clock). This is a documented design direction; no retention implementation or weighted score has changed this turn.
+
 ## When does the immediate-jump advantage appear?
 
 For the two saved complete trajectories, optimized for maximumZ at64, the jump0 setup first regains the lead in the original route-directed progress measure at **absolute state23**,13 ticks after the state10 comparison. It remains ahead in that measure through64. For pureZ the first regained lead is state28. These are different metrics; neither is a new combined score.

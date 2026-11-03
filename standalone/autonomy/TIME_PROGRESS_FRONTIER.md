@@ -2,6 +2,8 @@
 
 Authoritative user clarification, 2026-11-01. The new path is to generate the supported candidates and evaluate them in two complementary ways. We are not trying to generate candidates specifically at different completion times. See [the implementation plan](TIME_PROGRESS_IMPLEMENTATION_PLAN.md) and [implemented behavior and measurements](experiments/two-goal-comparisons/README.md). The separate comparisons are now the default checkpoint-search policy.
 
+Latest user refinement, 2026-11-02: retain the separate time/progress comparisons, and include both horizontal position and velocity in the fixed-clock progress assessment. This is a selected design direction; current runtime retention still uses position-only clock results. Both Real11 initial0/8 setup families remain explicitly protected by the user's preceding decision. The policy/solver has not been changed by this discussion.
+
 ## Spatial goal: compare elapsed time
 
 Hold a physical target fixed: for example, land on the same block or complete the same passage. Determine the earliest validated achievement time found for each candidate. This comparison helps identify the fastest potential route.
@@ -13,6 +15,16 @@ Landing requires the actual declared finite contact; being airborne over the goa
 Hold the absolute elapsed state tick h fixed across candidates. Optimize/measure the same horizontal objective S(h), usually progress/distance along the shared outgoing route direction. Compare after turnarounds where the direction is meaningful. Y is feasibility, not a height reward.
 
 This is a proxy for which candidate goes farthest. It is not equivalent to the shortest time to a spatial goal. Do not compare progress sampled at each candidate's own arrival time and call it a same-time objective comparison. Record spatial-goal times and fixed-clock objectives separately.
+
+### Position and velocity at the common clock
+
+Keep the accepted witness's full horizontal state `(p_XZ(h), v_XZ(h))`. For the shared route direction d and anchor a, report forward position `s=d dot(p-a)` and forward velocity `u=d dot v`; retain perpendicular position/velocity too, since lateral alignment affects a turn or blockage. Use identical absolute h, direction, anchor and stored-velocity convention for every compared candidate. Position and velocity in one state label must come from the same physically accepted trajectory. Combining the best position of one solve with the best velocity of another would invent a state that was never solved.
+
+Proposed initial retention treatment: keep position/velocity tradeoffs explicitly, including farther-but-slower versus nearer-but-faster states, rather than immediately choosing an arbitrary conversion weight. Continue comparing time to the shared spatial goal separately. No weight, velocity margin or rigorous dominance certificate is established by this discussion.
+
+Movement/contact phase is also necessary comparison context. The Real11 state10 witnesses show jump0 has position2.392651 and forward velocity0.226887836, while jump8 has position2.721058 and forward velocity0.263399323. Both horizontal measurements favor8. Yet0 is descending with vy=-0.373904036 and8 is ascending with vy=+0.248135999; their next contact/jump opportunities differ. Protect their distinct setup families as instructed. A horizontal position/velocity frontier alone would still falsely classify0 as inferior if used across those phases. This uses vertical phase for future-event context; the progress objective remains horizontal.
+
+Current IPOPT calls maximize position for a fixed discrete program. Reading velocity from that one returned witness does not explore the program's own continuous position/velocity tradeoff. A possible later experiment is a second fixed-input solve maximizing route-directed velocity while preserving a small allowed loss of position through an explicit row, with full physical validation. That is a proposal, not an implemented or newly selected numerical objective/weight. It would reuse the existing continuous solver and original-state/free-facing contract.
 
 ## Retention
 
