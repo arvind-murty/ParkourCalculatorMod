@@ -363,12 +363,16 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                             optimize_goal=optimize_goal, python_executable=python_executable,
                             cancel_event=cancel_event, work=work, on_candidate=retain)
         inner_attempts.extend(result['attempts'])
-        completed.append(dict(branch=branch_key(rows, passages, hits), status=result['status'],
-                              problemHashes=[a.get('problemHash') for a in result['attempts'] if a.get('problemHash')]))
+        completion = dict(branch=branch_key(rows, passages, hits), status=result['status'],
+            validationStatus='not_run' if result['best'] else 'no_candidate',
+            problemHashes=[a.get('problemHash') for a in result['attempts'] if a.get('problemHash')])
+        completed.append(completion)
         if result['best'] is not None:
             proposal_yaw = result['best']['candidate']['yaw'][:]
         try:
             checked = audit(result['best']) if result['best'] else None
+            if checked is not None:
+                completion['validationStatus'] = 'accepted' if checked.get('accepted') else checked.get('reason','rejected')
         except TimeoutError:
             unresolved.append(save_branch(score, rows, passages, hits, proposal_yaw))
             termination = 'geometry_deadline'
@@ -382,7 +386,7 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
             return finish(dict(status='error', termination='geometry_check', error=str(error), best=None,
                         attempts=inner_attempts, contactAttempts=attempts))
         conflicts = checked['conflicts'] if checked else []
-        attempts.append({'status': result['status'], 'constraintCount': len(rows),
+        attempts.append({'branch': branch_key(rows, passages, hits), 'status': result['status'], 'constraintCount': len(rows),
                          'passageCount': len(passages),
                          'wallHitCount': len(hits), 'wallHitGeneration': {k: v for k, v in hit_pool.items() if k != 'options'},
                          'passageKinds': [p['kind'] for p in passages],

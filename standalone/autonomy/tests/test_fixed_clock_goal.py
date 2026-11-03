@@ -80,6 +80,11 @@ class FixedClockNumericalTests(unittest.TestCase):
             self.assertFalse(best['candidate']['onGround'][-1])
             self.assertFalse(best['route']['terminalSupportRequired'])
             self.assertTrue(replay_witness(prepare_scene(request),best,compiler)['passed'])
+            from standalone.ipopt.model import prepare, fingerprint
+            calls=[d for r in result['finalAttempts'] for a in r['numericalAttempts'] for d in a.get('diagnostics',[])]
+            self.assertTrue(calls)
+            for call in calls:
+                self.assertEqual(fingerprint(prepare(call['request'])),call['problemHash'])
         self.assertEqual(request,original)
         self.assertEqual(result['goalType'],'fixed_absolute_tick_objective')
 
