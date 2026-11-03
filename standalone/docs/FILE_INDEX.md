@@ -822,6 +822,8 @@ Evidence filenames identify different runs/contexts; do not treat reports as exe
 | File | Purpose |
 | --- | --- |
 | [CALLS.md](../autonomy/experiments/virtual-finish/CALLS.md) | Numerical request ledger. See documentation index for authority/status. |
+| [PRUNING_AUDIT.md](../autonomy/experiments/virtual-finish/PRUNING_AUDIT.md) | Why these requests survived pruning. See documentation index for authority/status. |
+| [PRUNING_AUDIT_CHECKS.json](../autonomy/experiments/virtual-finish/PRUNING_AUDIT_CHECKS.json) | Structured experiment data/settings/provenance: PRUNING AUDIT CHECKS. |
 | [README.md](../autonomy/experiments/virtual-finish/README.md) | Real11 virtual finish. See documentation index for authority/status. |
 | [fixture.json](../autonomy/experiments/virtual-finish/fixture.json) | Structured experiment data/settings/provenance: fixture. |
 | [initial0-fixture.json](../autonomy/experiments/virtual-finish/initial0-fixture.json) | Structured experiment data/settings/provenance: initial0 fixture. |

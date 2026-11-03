@@ -63,6 +63,10 @@ P03 completed local work after two worker calls, but the window barrier prevente
 
 Implemented correction: compare arrivals at B2, P02 observed17 versus P01 observed21, follow P02 to completion first, keep P01 for backtracking. These measurements are not proven minimum arrivals. A complete reference from the P01 family ultimately does better at the final objective than the saved delayed continuation; early arrival alone does not authorize dropping the fallback.
 
+## Latest virtual-finish pruning questions
+
+See [the dedicated audit](../autonomy/experiments/virtual-finish/PRUNING_AUDIT.md) for cold10–12, initial0 5–8 and9–15. It separates missing same-interaction minimum-run pruning from the weak elapsed-prefix time cutoff, and identifies corridor repairs versus actual terminal-contact choices. This is an offline explanation, not a new solve or shipped pruning fix.
+
 ## Exact counts and limits of the record
 
 Three saved cold runs, 300 seconds each, total elapsed910.130s. Seven main programs; 227 handled main branches =172 dispatched+37 pre-dispatch screens+18 budget stops. Nineteen spatial program evaluations made36 additional worker calls: **208 total**. All172 main worker returns were numerically feasible. Recorded main worker time47.411s is much smaller than wall time; remaining time includes symbolic generation/assembly/compiler/other work without a complete attribution.

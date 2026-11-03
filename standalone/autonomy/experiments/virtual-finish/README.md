@@ -38,3 +38,7 @@ The simple safe bound excludes programs whose elapsed inputs already exceed the 
 ## Validation
 
 All 372 selected non-ladder autonomy tests passed in 202.64s with the native compiler/IPOPT environment; [full test log](evidence/nonladder-tests.log). The selection excludes test IDs containing ladder/climbable/hanging_vines, as in the earlier baseline. Some remaining composition tests still exercise shared movement machinery. The focused 42-test DFS/continuation/fixed-clock/virtual-goal run also passed. The expanded virtual-goal checks cover strict left bounds, actual airborne overshoot, exact saved-state resume and rejection of a changed goal context; [focused log](evidence/terminal-resume-tests.log). All 27 archived numerical requests reproduce their recorded problem fingerprints. No mod, loader or continuous worker equations changed.
+
+## Pruning clarification after the call audit
+
+[Answers to the pruning questions](PRUNING_AUDIT.md) explain cold10–12, initial0 5–8 and9–15, with [offline checks](PRUNING_AUDIT_CHECKS.json). The current elapsed-time cutoff rejects the slow terminal programs but does not propagate their nine-input ordinary suffix before prefix solves. The clarified minimum-run rule within the same interaction pattern is **not implemented**: run count currently orders DFS work, and timing-sensitive family keys preserve delayed copies. These omissions explain the unnecessary calls; they should not be presented solely as a need for a larger budget or a more elaborate global bound. The audit changes documentation only.

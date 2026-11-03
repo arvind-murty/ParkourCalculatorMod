@@ -35,6 +35,10 @@ The seven earlier workstreams remain: explicit solve scope/identity, scoped corr
 
 The [approved plan](../autonomy/DFS_INTERACTION_IMPLEMENTATION_PLAN.md) remains the design record. [Architecture](ARCHITECTURE.md), [code map](CODE_MAP.md), [runbook](RUNBOOK.md) and [testing](TESTING.md) describe interfaces and validation. Spatial goals no longer require corresponding absolute-clock windows; supplied clocks remain diagnostics. A fixed-clock task does not imply a final landing.
 
+## Latest pruning audit (2026-11-03)
+
+The [virtual-finish pruning audit](../autonomy/experiments/virtual-finish/PRUNING_AUDIT.md) traces every questioned call. The user's clarified heuristic selects a least-run feasible representative for the same interaction pattern and skips extra-run copies in normal search. **This pruning is not implemented**; current DFS sorts by runs and revisits saved timing siblings. Its elapsed-prefix cutoff also lacks propagation of known remaining continuation duration. The audit records these gaps without changing runtime behavior. Equal-time free/physical B7 contact alternatives remain distinct; initial0 calls5–8 are two such models, each with one corridor repair.
+
 ## Durable requirements
 
 - All inputs, events and hard constraints are fixed before IPOPT. Reuse builders; no new fractional decisions or continuous equations.

@@ -1,12 +1,12 @@
 # Numerical request ledger
 
-Every worker diagnostic in the two completed reports. Accepted-variant aliases and repeated saved frame locations are not counted as new calls. Worker success and orchestrator acceptance are separate columns. Full rows, numerical requests, scene checks, repair state and continuation are in the linked raw reports. Hashes below are checked against the stored requests.
+Every worker diagnostic in the two completed reports. Accepted-variant aliases and repeated saved frame locations are not counted as new calls. Worker status and the final result of its enclosing program evaluation are separate columns. A program may require multiple calls: that final result does not indicate whether an individual earlier call passed the corridor/scene checks. See the [pruning audit](PRUNING_AUDIT.md) for per-call acceptance of initial0 calls5–8. Full rows, numerical requests, scene checks, repair state and continuation are in the linked raw reports. Hashes below are checked against the stored requests.
 
 ## cold
 
 [Raw report](evidence/cold.json.gz)
 
-| Call | Goal | Inputs | Grounded jumps | Run inputs | Hard rows | Worker status | Orchestrator result | Hash |
+| Call | Goal | Inputs | Grounded jumps | Run inputs | Hard rows | Worker status | Final program result | Hash |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | b2 | 17 | 8 | 8 | 80 | feasible | feasible: lower_bound_reached | c341eef87b4b |
 | 2 | b2 | 21 | 0,12 | 0 | 24 | feasible | feasible: lower_bound_reached | e838b866eae6 |
@@ -25,7 +25,7 @@ Every worker diagnostic in the two completed reports. Accepted-variant aliases a
 
 [Raw report](evidence/initial0-cold.json.gz)
 
-| Call | Goal | Inputs | Grounded jumps | Run inputs | Hard rows | Worker status | Orchestrator result | Hash |
+| Call | Goal | Inputs | Grounded jumps | Run inputs | Hard rows | Worker status | Final program result | Hash |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | b2 | 21 | 0,12 | 0 | 24 | feasible | feasible: lower_bound_reached | e838b866eae6 |
 | 2 | b3 | 30 | 0,12,21 | 0 | 48 | feasible | feasible: lower_bound_reached | cd67e26a4283 |
