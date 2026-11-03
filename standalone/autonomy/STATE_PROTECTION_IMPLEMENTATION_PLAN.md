@@ -2,6 +2,8 @@
 
 2026-11-02. Selected follow-up to the Real11 audit and user discussion. Work stays in isolated branch `research/ipopt-cell-routes`. This is a plan; the new protections are not implemented yet. Existing IPOPT, movement/constraint builders, full-original-state re-solves, variable earlier facings and normal momentum with zero thresholds remain unchanged.
 
+Subsequent [controlled failure investigation](experiments/linkcraft11-opening/OTHER_FAILURES.md) demonstrates additional blockers this protection plan alone cannot fix: useful earlier timing choices miss the proposal batch, dead discrete falls occupy retention, inherited geometry repairs starve the same fixed program's base problem, and terminal repair progress is not restored by the55-input resume. Address or separately track these in the Real11 acceptance milestone. In particular, a same8-second/24-call ordering control recovers a valid solution without changing movement or unique repair-branch pool; do not attribute every remaining unknown to a low budget. The plan's persistence scope must include final per-program repair state/cursors and fair fresh-base scheduling, not only saved intermediate candidate records.
+
 ## 1. Keep the current margins and define the scope
 
 - Progress margin: existing0.25 blocks. The proposed0.05 value is not adopted.

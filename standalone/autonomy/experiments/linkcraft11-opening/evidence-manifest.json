@@ -18,20 +18,24 @@
       "sha256": "bc714a834a4a6e344274a77016ff5e3f86b4c5b270fc71cc15fce9e33cf1cdd7"
     },
     "EXECUTION_AUDIT.md": {
-      "bytes": 36714,
-      "sha256": "a6b016c99cbace8d6f31605cafde42a9ed43dd5b7a7393683963b8a5f48f2756"
+      "bytes": 37086,
+      "sha256": "2a75aa689b86ff5ef74c646563a8fee0dc52774547bbf7cb62d45f51ebd51406"
     },
     "INVENTORY.md": {
       "bytes": 4286,
       "sha256": "5ce12e3a2673107e1cff486b7521ec92bee20656acced9fe1ac2054061ceaf60"
+    },
+    "OTHER_FAILURES.md": {
+      "bytes": 17975,
+      "sha256": "4ce2addedda784baa610e3a9e07ecd7db9aed80e522c6eb97619d0e5241e08c2"
     },
     "PLAYER_BOUNDS.md": {
       "bytes": 6364,
       "sha256": "c8fc939832148e519b1f584e12356cacd41e862f4969d6f9729f20c7748152e4"
     },
     "README.md": {
-      "bytes": 12344,
-      "sha256": "10f2ab48503e154a009b8473ee939eaeb3ab74becd4782d13a3dd45f37688f92"
+      "bytes": 13183,
+      "sha256": "50e1fec73b3bb4c4f19e629d8e0e2b26bd70634196de9f43aae4d2bcbe902fb5"
     },
     "audit/CANDIDATES.md": {
       "bytes": 8550,
@@ -72,6 +76,10 @@
     "audit/event-aligned-b2.json": {
       "bytes": 2885,
       "sha256": "a3d8cca4a77c09cdb5b733505be2823776ef0fc80c4d90bc2199871b2e2c411c"
+    },
+    "audit/other-failures-summary.json": {
+      "bytes": 101650,
+      "sha256": "dce3996f2002ffe45b3e84e1418da2f663188ecf42d9d00de1516b539990fe1a"
     },
     "audit/position-velocity-check.json": {
       "bytes": 1331,
@@ -201,6 +209,42 @@
       "bytes": 97,
       "sha256": "1d98ce599679b7b57af7d332b24700a71f38a8aa213b290db7a37af78007b4ee"
     },
+    "evidence/real11-failure-fresh.json.gz": {
+      "bytes": 167022,
+      "sha256": "9f7962d8521219bb66703646126fb2f892e5f6ce49fac398ed540dc3caa92dbc"
+    },
+    "evidence/real11-failure-fresh.log": {
+      "bytes": 591,
+      "sha256": "28fc36fbb4bf24a8479373e43605664916ea6c0b86444bab02798d37e5e5f21c"
+    },
+    "evidence/real11-failure-generation.json.gz": {
+      "bytes": 18979,
+      "sha256": "49739999087eebe807b7735cd345c79823cc8127f57fa9a5b56456483bc30d4d"
+    },
+    "evidence/real11-failure-generation.log": {
+      "bytes": 306,
+      "sha256": "fc481f3b31b0c3fdaab852bc2354b2d4a43f523e0cc9cdb4ef9f292b74bb081e"
+    },
+    "evidence/real11-failure-numeric.json.gz": {
+      "bytes": 268183,
+      "sha256": "5958e09db76a631df4c63158d3b8b7db713491b04449e082175a25276ff7c4b8"
+    },
+    "evidence/real11-failure-numeric.log": {
+      "bytes": 922,
+      "sha256": "11c9ccfe7b9d9592670f7cdf93d76a6b5b2b5df6c1f13e2cf03cc966e7ab658a"
+    },
+    "evidence/real11-failure-priority.json.gz": {
+      "bytes": 68476,
+      "sha256": "6824d25abde8afcaac5794fb5b739f1783a79ee404d044f53b96e46de747969a"
+    },
+    "evidence/real11-failure-priority.log": {
+      "bytes": 191,
+      "sha256": "116db469be628fc341b76b49578b8429651194c7f52b54b012947b4c962255da"
+    },
+    "evidence/real11-failure-summary.log": {
+      "bytes": 2422,
+      "sha256": "7680e45ec794f14c852b9e649962b646e07b7869378dab3127d4659d72820f91"
+    },
     "evidence/real11-final-autonomy.log": {
       "bytes": 539,
       "sha256": "f7ada926e55f20d1e764084285c8b50900a0d4f1fda950c8deb52bf233e06ffa"
@@ -269,6 +313,10 @@
       "bytes": 5115,
       "sha256": "e740140ee3ba9d2759664b7d25a33791df3601c01585b39df951268f84f0a47c"
     },
+    "probe_other_failures.py": {
+      "bytes": 10544,
+      "sha256": "f2110a5e77e9eb5dbc988f7a0ad31c6ed9b1ab138914f584c6a4788b10983ccf"
+    },
     "replay_solution.py": {
       "bytes": 955,
       "sha256": "f23014e502a62167cc8576c749986b983fe593159088728556bc5d71789c7910"
@@ -284,6 +332,10 @@
     "summarize_evidence.py": {
       "bytes": 8134,
       "sha256": "1e80c1bb2a421f9f77e2798c5f6c2a670d9fe1c1f856a05e7bccfa313265a233"
+    },
+    "summarize_other_failures.py": {
+      "bytes": 8844,
+      "sha256": "2ecce0c551001c69020d2d53170f0d039d12189adb5cda8d44dc3871a9870997"
     },
     "support-inventory.json": {
       "bytes": 4638,
@@ -310,5 +362,14 @@
     "generator": "audit_trace.py",
     "numericalSolvesRun": false,
     "verification": "audit/verification.json"
+  },
+  "failureFollowup": {
+    "baseCommitBeforeProbes": "f9ed4df4ac0e0c57338da2dea24ee7fc74b2cd9b",
+    "script": "probe_other_failures.py",
+    "summary": "audit/other-failures-summary.json",
+    "numericalWorkerRequests": 182,
+    "controlledEvaluations": 9,
+    "acceptedWitnessReplays": 5,
+    "productionRuntimeChanged": false
   }
 }

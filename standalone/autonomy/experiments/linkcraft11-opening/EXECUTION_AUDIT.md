@@ -1,5 +1,7 @@
 # What actually happened in the Real11 opening experiment
 
+Follow-up: [controlled investigation of the four unknown searches](OTHER_FAILURES.md) adds generation-only exact reproduction, valid missed-continuation checks, inherited repair-queue diagnosis and a same-budget successful ordering control. It also quantifies the final-state resumption gap. The newer evidence refines earlier broad budget/generation descriptions below.
+
 2026-11-02. Reconstructed from the saved reports and the executed source, without new numerical solves. This supersedes the earlier interpretation that the work demonstrates an inherently difficult local-decision problem on this map.
 
 Latest user decision: the immediate-jump0 and run-then-jump8 setups are both meaningful alternatives and must both be retained. The no-run-only interpretation below records the preceding discussion, not authority to discard the8 setup going forward. Keep these two explicit setup families while avoiding unrelated generic enumeration. The measured crossover is documented in the next section.
