@@ -55,3 +55,7 @@ The [corrected Real11 task](experiments/virtual-finish/README.md) makes final ti
 ## Clarification: concrete pruning gaps, not just generic bound research
 
 The user clarified minimum-run pruning for identical interaction patterns. The [virtual-finish call audit](experiments/virtual-finish/PRUNING_AUDIT.md) shows it is currently absent; counts only affect ordering. It also shows known ordinary suffix clocks are already sufficient to reject the listed delayed completions within their unchanged interaction families. Address semantic grouping/feasible-representative exclusion and early suffix-duration propagation before treating these wasted calls as a reason for more candidates or a sophisticated new model. Initial0 5–8 are distinct final contact choices plus corridor repair, not four run schedules. Documentation status only; runtime unchanged.
+
+## Selected local-run fix implemented; continuation-time improvement deferred
+
+The latest user decision selects local last-jump runs, not total run count. `db211b2b` implements that policy and preserves audit programs; see [implementation/evidence](experiments/last-jump-runs/README.md). Additional time pruning stays deferred: first establish that a completed interaction family admits no faster suffix, then reason about delayed prefixes. Do not implement the earlier nine-input propagation suggestion merely because it appears in the historical audit. B3 corridor checks are unchanged and are explained in section7 of that audit.

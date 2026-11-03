@@ -144,6 +144,7 @@ Evidence filenames identify different runs/contexts; do not treat reports as exe
 | [generation_diagnostic.py](../autonomy/cell_routes/generation_diagnostic.py) | Physical/execution keys, generator/queue instrumentation and report saving. |
 | [geometry.py](../autonomy/cell_routes/geometry.py) | AABB subtraction/merging, cells/portals/contact patches, free-space decomposition and segment coverage/SVG. |
 | [local.py](../autonomy/cell_routes/local.py) | Search work budgets/counters, counting compiler and scoped corridor/scene acceptance adapter. |
+| [minimum_runs.py](../autonomy/cell_routes/minimum_runs.py) | Latest-jump ordinary ground-hold pattern normalization, validated feasible representatives and heuristic extra-run exclusions. |
 | [repair_diagnostic.py](../autonomy/cell_routes/repair_diagnostic.py) | Diagnostic of repair queue allocation and failures. |
 | [repair_resume_experiment.py](../autonomy/cell_routes/repair_resume_experiment.py) | Experiment preserving and resuming inner repair work. |
 | [routes.py](../autonomy/cell_routes/routes.py) | Route enumeration, landmarks/signatures, guide polyline/corridor projection and horizontal traces. |
@@ -483,6 +484,19 @@ Evidence filenames identify different runs/contexts; do not treat reports as exe
 | [ladder-side-landing.json](../autonomy/experiments/ladder-search/ladder-side-landing.json) | Structured experiment data/settings/provenance: ladder side landing. |
 | [ladder-thin-top.json](../autonomy/experiments/ladder-search/ladder-thin-top.json) | Structured experiment data/settings/provenance: ladder thin top. |
 | [ladder-top.json](../autonomy/experiments/ladder-search/ladder-top.json) | Structured experiment data/settings/provenance: ladder top. |
+
+## autonomy/experiments/last-jump-runs
+
+| File | Purpose |
+| --- | --- |
+| [README.md](../autonomy/experiments/last-jump-runs/README.md) | Minimum runs before the latest jump. See documentation index for authority/status. |
+
+## autonomy/experiments/last-jump-runs/evidence
+
+| File | Purpose |
+| --- | --- |
+| [focused-summary.json](../autonomy/experiments/last-jump-runs/evidence/focused-summary.json) | Structured experiment data/settings/provenance: focused summary. |
+| [focused-tests.log](../autonomy/experiments/last-jump-runs/evidence/focused-tests.log) | Captured commands/test/runtime output or investigation notes; source-era evidence. |
 
 ## autonomy/experiments/linkcraft11-j0-j16
 
@@ -967,6 +981,7 @@ Evidence filenames identify different runs/contexts; do not treat reports as exe
 | [test_ladder_schedules.py](../autonomy/tests/test_ladder_schedules.py) | Tests: four stop choices omit first final or both hits; two stops are not adjacent and short windows remain valid; invalid climb windows are rejected (additional cases in file). |
 | [test_linkcraft.py](../autonomy/tests/test_linkcraft.py) | Tests: extracts without any recorded facing field; missing geometry is not invented; grounded height change is not silently retimed. |
 | [test_long_ladder_chains.py](../autonomy/tests/test_long_ladder_chains.py) | Tests: saved cold three and prescribed five climbs revalidate full scene; fresh solves start inside first ladder without turning back to its centre. |
+| [test_minimum_runs.py](../autonomy/tests/test_minimum_runs.py) | Generic dispatch/resume/unknown and archived Real11 regressions for local last-jump run pruning. |
 | [test_movement_composition.py](../autonomy/tests/test_movement_composition.py) | Tests: direct transfer seam preserves both regions and entry hit; endpoint stops keep their unit and change actual y carry; units retime together with runs hits and sneak (additional cases in file). |
 | [test_movement_contacts.py](../autonomy/tests/test_movement_contacts.py) | Tests: ceiling regenerates exit time instead of requiring old exit to work; contact assisted entry is generated even without a baseline schedule; repeated ceiling clips during climbing are generated as one sequence (additional cases in file). |
 | [test_movement_entry.py](../autonomy/tests/test_movement_entry.py) | Tests: initial membership needs no provisional jump or fall; expired budget retains every unknown entry as unprobed; unknown numerical results are never infeasibility (additional cases in file). |

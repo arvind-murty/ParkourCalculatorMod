@@ -61,3 +61,7 @@ Current DFS acceptance: [results and logs](../autonomy/experiments/dfs-interacti
 ## Virtual terminal goals
 
 `test_terminal_goals` checks descending-height timing, one-sided player-center rows, strict-bound clearance, no fake floor, generic airborne overshoot and independent native scene replay. Run with the native environment from the runbook; otherwise the integration case skips. Existing fixed-clock and physical landing tests remain separate regressions.
+
+## Latest-jump run pruning
+
+`test_minimum_runs` combines generic dispatch/resume/unknown controls with archived Real11 programs. It checks local preparation counts and preserves different prior interactions, hard obstacle-side rows and free/physical terminal contacts. Full counterfactual controls can set `minimum_run_pruning=False` in fresh fixture settings; policy changes intentionally invalidate exact resume. Saved `minimumRunExclusions` include each discrete program and the representative causing exclusion. Continuation-time pruning remains deferred and is not required for this policy.

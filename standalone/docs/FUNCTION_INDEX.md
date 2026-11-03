@@ -140,11 +140,11 @@ Source snapshot: current DFS implementation source, including request-audit logg
 
 ## [autonomy/cell_routes/depth_first.py](../autonomy/cell_routes/depth_first.py)
 
-- `candidate_key` — def, line 16.
-- `arrival_key` — def, line 21.
-- `decision_family` — def, line 26.
-- `commit_arrival` — def, line 37.
-- `search_goals` — def, line 57.
+- `candidate_key` — def, line 17.
+- `arrival_key` — def, line 22.
+- `decision_family` — def, line 27.
+- `commit_arrival` — def, line 38.
+- `search_goals` — def, line 58.
 
 ## [autonomy/cell_routes/experiment.py](../autonomy/cell_routes/experiment.py)
 
@@ -242,6 +242,13 @@ Source snapshot: current DFS implementation source, including request-audit logg
 - `CorridorAdapter.failure_diagnostics` — def, line 216.
 - `CorridorAdapter.candidate` — def, line 241.
 - `CorridorAdapter.summary` — def, line 287.
+
+## [autonomy/cell_routes/minimum_runs.py](../autonomy/cell_routes/minimum_runs.py)
+
+- `_shift` — def, line 11.
+- `latest_jump` — def, line 20.
+- `remember` — def, line 73.
+- `exclusion` — def, line 80.
 
 ## [autonomy/cell_routes/repair_diagnostic.py](../autonomy/cell_routes/repair_diagnostic.py)
 
@@ -1322,6 +1329,26 @@ Source snapshot: current DFS implementation source, including request-audit logg
 - `LongLadderChainTests` — class, line 19.
 - `LongLadderChainTests.test_saved_cold_three_and_prescribed_five_climbs_revalidate_full_scene` — def, line 20.
 - `LongLadderChainTests.test_fresh_solves_start_inside_first_ladder_without_turning_back_to_its_centre` — def, line 40.
+
+## [autonomy/tests/test_minimum_runs.py](../autonomy/tests/test_minimum_runs.py)
+
+- `flight` — def, line 17.
+- `MinimumRunTests` — class, line 26.
+- `MinimumRunTests.setUp` — def, line 27.
+- `MinimumRunTests.test_same_last_jump_discards_more_runs_but_keeps_equal_and_fewer` — def, line 29.
+- `MinimumRunTests.test_equal_run_timing_variants_and_distinct_obstacle_choices_survive` — def, line 37.
+- `MinimumRunTests.test_interacting_or_unclassified_ground_preparation_is_retained` — def, line 47.
+- `MinimumRunTests.test_changed_prior_decisions_do_not_share_a_representative` — def, line 56.
+- `ArchivedMinimumRunTests` — class, line 64.
+- `ArchivedMinimumRunTests.setUpClass` — def, line 66.
+- `ArchivedMinimumRunTests.test_real11_last_jump_three_runs_excludes_four_not_total_fifteen` — def, line 77.
+- `ArchivedMinimumRunTests.test_real11_zero_run_last_jump_excludes_all_delayed_prefix_calls` — def, line 85.
+- `ArchivedMinimumRunTests.test_real11_initial_histories_and_terminal_contacts_stay_distinct` — def, line 91.
+- `MinimumRunDfsTests` — class, line 98.
+- `MinimumRunDfsTests.search` — def, line 99.
+- `MinimumRunDfsTests.test_prunes_before_dispatch_and_can_replay_exclusions_as_a_control` — def, line 123.
+- `MinimumRunDfsTests.test_unknown_earlier_timing_is_preserved_and_does_not_establish_minimum` — def, line 128.
+- `MinimumRunDfsTests.test_feasible_representative_survives_resume_and_policy_mismatch_is_rejected` — def, line 133.
 
 ## [autonomy/tests/test_movement_composition.py](../autonomy/tests/test_movement_composition.py)
 

@@ -1,6 +1,6 @@
 # Why these requests survived pruning
 
-2026-11-03. Offline audit of runtime `71c9bb7e`, using the unchanged [combined cold report](evidence/cold.json.gz), [initial0 cold report](evidence/initial0-cold.json.gz), [worker ledger](CALLS.md) and current source. No new numerical solves or runtime changes were made for this audit. Answers below distinguish current implementation, the user's clarified heuristic and a proof limited to an unchanged continuation family.
+2026-11-03. Offline audit of runtime `71c9bb7e`, using the unchanged [combined cold report](evidence/cold.json.gz), [initial0 cold report](evidence/initial0-cold.json.gz), [worker ledger](CALLS.md) and current source. No new numerical solves or runtime changes were made for this audit. Sections1–5 describe the archived pre-policy implementation; sections6–8 record the subsequent user decisions and shipped local-count fix. Answers below distinguish the audited implementation, the user's clarified heuristic and a proof limited to an unchanged continuation family.
 
 ## 1. Combined cold: why calls 10–12 followed successful call 9
 
@@ -117,3 +117,48 @@ Minimum-run exclusion is the user's requested heuristic, not a certified dominan
 The earlier results note's suggestion to investigate generic remaining-time bounds was incomplete: it did not call out that the clarified same-interaction minimum-run policy is absent. For these fixed continuation families, known scalar durations already provide the relevant time comparison. This audit corrects the implementation-status description without claiming either fix has been shipped.
 
 Source pointers: [DFS traversal, `time_bound`, `decision_family` and scoring/backtracking](../../cell_routes/depth_first.py), [run/jump ordering metadata](../../solve_spec.py), [existing scalar descent and ordinary landing generation](../../open_movement.py), [virtual finish binding](../../terminal_goals.py), [older state/schedule protection helpers](../../cell_routes/time_progress.py). The [offline checks](PRUNING_AUDIT_CHECKS.json) verify all12 listed representative/delayed-prefix contact comparisons and their nine-input ordinary suffix clocks, plus both exact corridor-row request diffs. No solver budget or runtime code was changed in this audit.
+
+## 6. User decision: continuation-time reasoning remains deferred
+
+The user clarified that propagating a nine-input suffix is not the selected fix. To exclude cold10–12 by final time, we would need to establish that the completed family in7–9 admits no faster continuation (no useful additional block/interaction choices, no extra run ticks to remove), then show the later prefixes cannot improve that result. An ordinary-jump duration alone does not establish this for the still-open search. Keep this as a potential improvement, **deferred**; the recommendations in sections1/4/5 do not authorize implementing it now. Existing elapsed-input cutoff remains unchanged.
+
+The selected implementation is the minimum-run heuristic **on the latest jump**, within the same prior decisions and interaction pattern. At B4@40, jump43 uses three preceding ground runs; the feasible representative in cold7–9 therefore excludes jump44 or later copies (four or more runs) of that last-jump pattern. Earlier run totals do not define this comparison. For initial0, jump40 from B4@40 already validates zero runs for this jump, so extra-run copies should be excluded. Distinct initial0/initial8 histories and distinct contact/passage choices remain separate. Implementation and validation are recorded below when completed.
+
+## 7. Initial0: the B3 corridor in coordinates, and why landing does not imply it
+
+B3's physical box is X=[738,739], Z=[−1101,−1100], top Y=7. Including the player's horizontal half-width, its landing-overlap region for the player's center is approximately X=[737.7,739.3], Z=[−1101.3,−1099.7], with the usual small numerical clearances.
+
+The additional corridor check invents a **vertical reference plane through the middle of B3, X=738.5**. When the player crosses that plane toward decreasing X, the authored guide expects Z to lie inside [−1101.3,−1099.7]. This is a restriction on the approach, separate from actually landing on B3. It does not specify a fixed crossing tick and it does not use Y to exempt an above-block crossing.
+
+The logged token `[3,-1,-1]` means:
+
+| Field | Meaning here |
+| --- | --- |
+| 3 | Reference gate ID3, belonging to B3; this is not a cell ID or tick |
+| First −1 | Cross the X=738.5 reference plane from larger X to smaller X |
+| Second −1 | Z is on the negative-Z side of the expanded B3 footprint: Z≤approximately−1101.3 |
+
+The guide's `[3,-1,0]` has the same plane and travel direction; its final0 means Z is inside the footprint's lateral interval. A final+1 would mean Z≥approximately−1099.7. These three-way labels are generated from the guide; they are not Minecraft collision outcomes.
+
+The rejected paths show the distinction concretely:
+
+| Worker call | State27 (X,Z) | State28 (X,Z) | Z when the X phase crosses738.5 | Landing-approach state29 (X,Z) |
+| --- | --- | --- | --- | --- |
+| 5 | (738.712818,−1101.507353) | (738.420320,−1101.350424) | −1101.507353 | (738.131837,−1101.194267) |
+| 7 | (738.762534,−1101.429240) | (738.476684,−1101.261375) | −1101.429240 | (738.194802,−1101.094384) |
+
+Minecraft resolves the horizontal X movement before Z movement. During input27's X phase, Z is still Z[27]. Both paths therefore cross the reference plane south of the corridor interval, while airborne above B3: Y after that input's Y phase is about7.176759. The following Z movement brings them closer. By state29, both X/Z positions are inside B3's expanded landing-overlap region. The downward Y movement of input29 can then land on top7, producing state30.
+
+Thus a diagonal airborne approach can cross the block's center plane slightly outside its lateral footprint, turn into that footprint, and land successfully. The B3 landing constraints require the correct overlap **at the landing collision phase**; they do not require central alignment at the earlier center-plane crossing. The corridor check is stronger and can reject such a landing approach. The initial rejection happened before independent physical scene validation, so these logs alone establish landing-row satisfaction and corridor rejection, not a separately replay-certified physical path.
+
+The two repair rows at Z[27] force this earlier center-plane crossing into the guide's band. They are not missing B3 landing rows. Keeping the corridor checker was an earlier user choice; this explanation does not change its behavior. Its stronger-than-landing restriction remains relevant when deciding whether these signature checks should eventually be weakened or removed.
+
+## 8. Local-count implementation and focused regression result
+
+Implemented at `db211b2b`: count the consecutive ordinary grounded non-jump inputs immediately before the latest effective jump. For a fixed prior decision prefix and matching last-jump interaction pattern, a scene-validated feasible representative with3 local runs excludes copies with4 or more; a zero-run representative excludes positive-run copies. Earlier run totals are not used as the pruning threshold.
+
+The pattern preserves prior decisions, support identity, relative in-air contacts/cases, scalar schedule and hard constraints. Repeated ordinary standing preparation is normalized away. Distinct obstacle sides and free/physical final contacts remain distinct. Equal-run choices, fewer-run candidates and earlier numerical unknowns remain eligible. A numerical unknown never establishes the feasible threshold. Interacting/unclassified ground preparation, sneak and ladders are conservatively retained.
+
+Representatives survive exact resume. Each heuristic exclusion records the local count, feasible peer and discrete program for later false-pruning checks; changing the pruning policy changes the resume context. The rule is active before numerical dispatch and in symbolic filtering. It is not a proof that extra runs can never help a different map or later interaction.
+
+**All52 focused regression tests passed with no skips**, including native compilation/IPOPT tests, dispatch controls, unknown preservation, resume, distinct interactions and the archived cold/initial0 counterexamples. [Implementation and test evidence](../last-jump-runs/README.md). The user's latest steering defers additional Real11 solves and corridor work. Section7 remains a description of archived behavior; no corridor change or additional continuation-time bound was implemented.
