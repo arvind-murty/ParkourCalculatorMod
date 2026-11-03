@@ -68,3 +68,35 @@ Per-call spatial-probe details, some accepted per-branch objectives and two fina
 Start with the exact-context generation reductions in section 1. They have a clearer correctness argument than discarding timing families or changing a score, and directly address measured duplicate work. Then separately review height-aware route semantics and incremental comparison. Keep P06/P07 until a sound continuation exclusion or an explicitly measured heuristic justifies parking or dropping them.
 
 No runtime behavior was changed. Reproduction: `OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH="$PWD" .venv-guidance/bin/python standalone/autonomy/experiments/orchestrator-fixes/audit_generation.py`. The bounded counts will vary with throughput; exact duplicate examples and saved-context checks are reproducible. [Raw probe and profile](generation-detail.json).
+
+
+## Terminology: passage descriptions and unnecessary generation
+
+A passage description is an ordered list of clearance faces for one block, plus the state indices where the chosen face changes. For example, use the block's +Z clearance inequality through state18, then its +X clearance inequality. These are alternative spellings of avoidance constraints within a fixed movement program and spatial route; they are not new jumps, new spatial routes or automatically distinct numerical problems. Y-face labels describe clearance under the already-fixed scalar trace, not a new ceiling/stepping decision.
+
+The current generator permits up to four faces/three switches under its existing blockage caps and enumerates switch states throughout the prefix. It eventually filters out rows on irrelevant states, but still enumerates many chains/gates that differ only there. On P06/B2, states19..23 add no relevant horizontal constraints, so changing the Z+->X+ gate from18 to19 leaves exactly the same rows: Z+ at16..18 and X+ at24..28. On P07/B3, only27/28 matter; many different earlier face prefixes collapse to the same late rows. Cross-obstacle combination magnifies this before leaf deduplication.
+
+Yes, the current description generation is unnecessarily broad. The concrete remedy is to generate and canonicalize constraints on actual interaction windows, merge gate choices that give identical rows, and deduplicate partial combinations before expensive refinement. Preserve distinct effective constraint sets and relevant cap/resource metadata; do not fix this by raising limits or discarding a jump schedule just because its description stream is large. The100,000-plus descriptions/eight distinct B3 row sets are a bounded observed enumeration prefix, not a proof that the entire domain has only eight possibilities.
+
+
+## Correction: what the seven improvements did and did not finish
+
+The no-horizontal-avoidance rule is implemented and working for phases that remain safely above a block. The earlier seven-workstream completion summary overstated how fully that relevance result had simplified generation. The implementation filters the final rows, but inactive states still have permissive masks, so the face-chain grammar enumerates arbitrary faces/gates there. Complete variants are deduplicated late, after combining blocks and invoking refinement. Early per-obstacle/partial-state canonicalization and generation restricted to meaningful changes are still an implementation gap. No new physical model or larger cap is needed to close it.
+
+The concrete examples are both immediate initial-jump0 histories, not a comparison of initial0 against initial8:
+
+| Audit program | Initial jump | First B1 return | Intervening run inputs | Second jump | B2 horizontal-row states retained | Above/clear gap with no B2 horizontal rows |
+| --- | --- | --- | --- | --- | --- | --- |
+| P06 | 0 | state12 | 12..15 | 16 | 16..18 and24..28 | 19..23 |
+| P07 | 0 | state12 | 12..16 | 17 | 16..19 and25..28 | 20..24 |
+
+A late state can start slightly above B2 top6 yet still need an X/Z condition if that input's Y sweep crosses the top and the selected scalar program does not land on B2. For example P06 state24 is Y6.024424 but input24 falls to Y5.796736; avoiding an unintended landing/side interaction is then relevant. That differs from states19..23 where the relevant phases remain clear. Intended support/landing rows are retained separately.
+
+Thus the model is not receiving side-avoid rows throughout the above-block gap. The generator is redundantly deciding a nominal switch time inside that empty gap, then producing the same actual rows for multiple switch times. Finishing the previously recommended three reductions means closing this generator gap, not reimplementing the above-block exclusion or calling the seven-workstream implementation fully optimized.
+
+
+## Preliminary fix plan and P04/P05 provenance
+
+[GENERATION_RELEVANCE_PLAN.md](../../../GENERATION_RELEVANCE_PLAN.md) now covers early interaction filtering, generation on meaningful states, per-obstacle/partial-state canonicalization, screening full proposals before truncation and preserving row ownership/commitment. No runtime fix is claimed.
+
+P04/P05 are not above B4: feet Y is7.001336 at24 and7.176759 at28, peaking7.252203 below B4 top7.5. Their C23/C01 rows are blip:wall_approach preconditions from a proposed B3-to-B4 blip, with contact at input28 and case at29. Truncation to28 retains the state28 row but removes both owner events. The existing necessary screen rejects both full30-input proposals at state29/X; screening after truncation misses that contradiction. [Exact reproduction](p04-p05-provenance.json.gz). This identifies an orphan future-condition bug in addition to the duplicate-generation issue.

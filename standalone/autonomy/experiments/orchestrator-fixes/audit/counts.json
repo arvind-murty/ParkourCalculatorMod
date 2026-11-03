@@ -25,5 +25,10 @@
   },
   "emittedReady": 20,
   "symbolicFrontier": 16,
-  "generationExclusions": 57
+  "generationExclusions": 57,
+  "generationExclusionReasons": {
+    "interval_reach_contradiction": 29,
+    "descending_without_any_first_floor_contact": 25,
+    "norm_reach_contradiction": 3
+  }
 }

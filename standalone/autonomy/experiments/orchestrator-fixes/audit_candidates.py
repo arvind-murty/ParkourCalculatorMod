@@ -236,7 +236,8 @@ def metrics(audit):
         corridorPhysicalReplay=dict(collections.Counter(str(b['physicalReplay']['feasible']) for b in audit['branches'] if b['physicalReplay'] is not None)),
         emittedReady=sum(f['kind']=='emitted_ready_not_evaluated' for f in audit['frontier']),
         symbolicFrontier=sum(f['kind']!='emitted_ready_not_evaluated' for f in audit['frontier']),
-        generationExclusions=len(audit['generationExclusions']))
+        generationExclusions=len(audit['generationExclusions']),
+        generationExclusionReasons=dict(collections.Counter(x['proof']['reason'] for x in audit['generationExclusions'])))
 
 
 def cell(value):
@@ -321,7 +322,7 @@ def render(audit):
         ('Missing main validation records',2,'Geometry-validation deadline paths; exact branch mapping is partly ambiguous'),
         ('Emitted programs still ready',20,'Listed below; none had a main numerical evaluation'),
         ('Symbolic prefixes awaiting/inside expansion',16,'15 pending +1 in-progress; listed below'),
-        ('Saved pre-numerical movement exclusions',57,'56 dead falls +1 unselected initial floor; all listed below')])
+        ('Saved pre-numerical movement exclusions',57,'25 dead falls,29 interval contradictions,3 norm contradictions; all listed below')])
     rows(['Session','Wall seconds','Numerical proposals','Worker calls','New main branches','Where it stopped'],[
         (i+1,f"{r['elapsedSeconds']:.3f}",r['work'].get('numericalProposals',0),r['work'].get('solverCalls',0),
          sum(b['session']==i+1 for b in audit['branches']), 'state28, unfinished constraint enumeration')
@@ -400,7 +401,7 @@ def render(audit):
          f"{f['y']:.6f} / {f['vy']:.6f} / {f['onGround']}",
          '; '.join(f"{r['mode']}[{r['t1']}] {r['cmp']} {r['rhs']}" for r in f['selectedRows'] if r.get('name','').startswith('blip:')) or '-') for f in audit['frontier']])
     emit('## Every saved movement exclusion before numerical evaluation')
-    emit('These57 saved records contain a physical program hash and proof, but do not retain the full rejected program/decision history. The56 descending-fall proofs exclude a first future floor contact while mandatory supports remain. They are not evidence against the grounded/rising P06/P07 histories. The other record rejects an unselected initial floor. Full proof objects, including every floor top and separating Y envelope, are in the JSON ledger.')
+    emit('These57 saved records contain a physical program hash and proof, but do not retain the full rejected program/decision history. There are25 descending-first-floor exclusions,29 interval reach contradictions and3 norm reach contradictions. The25 fall proofs are not evidence against the grounded/rising P06/P07 histories. Full proof objects, including floor-top/Y separation or interval/norm bounds, are in the JSON ledger. The prior prose calling56 of these dead falls was incorrect; the underlying proof records and208-call count are unchanged.')
     rows(['Rejected ID','Window stage / state','Reason','Saved distinguishing evidence'],[
         (x['id'],str(x['stage'])+' / '+str(x['ticks']),x['proof'].get('reason'),
          f"required={x['proof'].get('remaining')}; maximum future feetY="+str(next(iter(x['proof'].get('floorExclusions',[])),{}).get('maxFeetY','not saved'))) for x in audit['generationExclusions']])
@@ -430,6 +431,7 @@ def render(audit):
     emit('Run the saved-data audit, with optional existing Java scene replay and no IPOPT calls:\n\n```sh\nOPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH="$PWD" .venv-guidance/bin/python standalone/autonomy/experiments/orchestrator-fixes/audit_candidates.py --compiler standalone/autonomy/build/compiler.json\n```')
     emit('Sources: evidence/orchestrator-real11-stable{,-resume,-resume2}.json.gz. Full float constraints, branch keys, candidate traces, available solver diagnostics, scope, session mapping, ambiguous validation alignments, probe winners and independent physical replays are in [candidate-ledger.json.gz](candidate-ledger.json.gz). Source-file SHA-256 hashes and reconciled counts are embedded there. The audit uses existing constraint builders and copies the captured initial-support bounds; it does not change any model, run IPOPT or prove global optimality.')
     emit('Follow-up: [duplicate-generation evidence and justified reductions](PRUNING_FOLLOWUP.md).')
+    emit('User questions, answered sequentially: [candidate ancestry, ordering, timing and work allocation](CANDIDATE_QUESTIONS.md).')
     return '\n'.join(out)
 
 

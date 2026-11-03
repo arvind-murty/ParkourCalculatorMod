@@ -19,7 +19,7 @@
 | Missing main validation records | 2 | Geometry-validation deadline paths; exact branch mapping is partly ambiguous |
 | Emitted programs still ready | 20 | Listed below; none had a main numerical evaluation |
 | Symbolic prefixes awaiting/inside expansion | 16 | 15 pending +1 in-progress; listed below |
-| Saved pre-numerical movement exclusions | 57 | 56 dead falls +1 unselected initial floor; all listed below |
+| Saved pre-numerical movement exclusions | 57 | 25 dead falls,29 interval contradictions,3 norm contradictions; all listed below |
 
 | Session | Wall seconds | Numerical proposals | Worker calls | New main branches | Where it stopped |
 | --- | --- | --- | --- | --- | --- |
@@ -484,7 +484,7 @@ Q rows are complete28-input programs already emitted into the ready batch. F row
 
 ## Every saved movement exclusion before numerical evaluation
 
-These57 saved records contain a physical program hash and proof, but do not retain the full rejected program/decision history. The56 descending-fall proofs exclude a first future floor contact while mandatory supports remain. They are not evidence against the grounded/rising P06/P07 histories. The other record rejects an unselected initial floor. Full proof objects, including every floor top and separating Y envelope, are in the JSON ledger.
+These57 saved records contain a physical program hash and proof, but do not retain the full rejected program/decision history. There are25 descending-first-floor exclusions,29 interval reach contradictions and3 norm reach contradictions. The25 fall proofs are not evidence against the grounded/rising P06/P07 histories. Full proof objects, including floor-top/Y separation or interval/norm bounds, are in the JSON ledger. The prior prose calling56 of these dead falls was incorrect; the underlying proof records and208-call count are unchanged.
 
 | Rejected ID | Window stage / state | Reason | Saved distinguishing evidence |
 | --- | --- | --- | --- |
@@ -680,3 +680,5 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH="$PWD" .venv-guidance/bin/py
 Sources: evidence/orchestrator-real11-stable{,-resume,-resume2}.json.gz. Full float constraints, branch keys, candidate traces, available solver diagnostics, scope, session mapping, ambiguous validation alignments, probe winners and independent physical replays are in [candidate-ledger.json.gz](candidate-ledger.json.gz). Source-file SHA-256 hashes and reconciled counts are embedded there. The audit uses existing constraint builders and copies the captured initial-support bounds; it does not change any model, run IPOPT or prove global optimality.
 
 Follow-up: [duplicate-generation evidence and justified reductions](PRUNING_FOLLOWUP.md).
+
+User questions, answered sequentially: [candidate ancestry, ordering, timing and work allocation](CANDIDATE_QUESTIONS.md).

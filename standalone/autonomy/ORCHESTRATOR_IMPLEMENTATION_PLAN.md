@@ -9,12 +9,18 @@
 | 1 | solve_spec.py plus evaluate_program scoped assembly/validation and physical/context identities | Numerical omitted-wall guidance passes only as preliminary; complete alternative avoids it and independently replays. |
 | 2 | routes.py projects geometry-derived free space without waypoint clips; local.py scopes landmarks/projection | Remote free-space and existing corner/edge tests pass. Projection is deliberately broad; landmark signatures still distinguish routes and sometimes reject physically valid other-route results. |
 | 3 | reachability.py, screen.py and linear_reachability.py | Phase sweeps, interval/norm propagation and optional conservative acceleration-polygon LP. Random feasible trajectories and selected clips survive; B2 extra avoidance excluded in reference control. |
-| 4 | constraint_variants.py feeds complete fixed alternatives to the existing contact/constraint builders | Known reference recovered with B6 alternatives already supplied. Useful validated facing guesses replace stale guesses. No signature-side shortcut removes vertical passage alternatives. |
+| 4 | constraint_variants.py feeds complete fixed alternatives to the existing contact/constraint builders | Known reference recovered with B6 alternatives already supplied. Useful validated facing guesses replace stale guesses. No signature-side shortcut removes vertical passage alternatives. Follow-up identifies an unfinished generation requirement: inactive faces/gates remain enumerable and early per-obstacle/partial-state canonicalization is not implemented. |
 | 5 | time_progress.py protections and solve_spec.processing_key | Same-witness position/velocity, schedule/phase gates, OR protections, exact order and saved deferrals. Existing margins retained. |
 | 6 | block_contacts repair checkpoint, movement_frontier symbolic cursor, checkpoint_search searchState and fixed-clock CLI | Split/resume, in-flight interruption, cached incumbent and explicit unknown-retry tests. Numerical reference resumes2+8 calls with zero repeated completed branches. Capped exploratory spatial probes remain comparison guidance with unknown outcomes, not exhaustive continuation certificates. |
 | 7 | prefix_viability.py before generation scoring and numerical evaluation | Descending below all possible first floors rejects43 distinct historical falls, including the three reported cases. Grounded/rising, lower-support and optional terminal-air controls survive. More general future event-chain impossibility remains unknown. |
 
 All original acceptance criteria below remain the research target. In particular, neither the fixed-reference replay nor unit tests close cold-discovery or heuristic-optimality acceptance.
+
+## Preliminary generator follow-up
+
+User clarification: the governing fix is one shared early block/tick/phase interaction gate across all builders and checks. A provably unreachable interaction produces no block-derived choice, condition or interaction check. Duplicate generation and P04/P05 are consequences of incomplete enforcement of that same invariant, not separate landing/avoid relevance cases.
+
+[GENERATION_RELEVANCE_PLAN.md](GENERATION_RELEVANCE_PLAN.md) records the requested early relevance/canonicalization correction and the P04/P05 ownership/truncation bug. Both remain planned. The full P04/P05 proposals fail the existing shared screen before truncation, while their orphan approach-row prefixes pass afterward. This is not an above-B4 case: their feet remain below B4 top7.5.
 
 ## Fixed requirements
 
