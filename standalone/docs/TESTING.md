@@ -70,3 +70,8 @@ Current DFS acceptance: [results and logs](../autonomy/experiments/dfs-interacti
 ## Shared checkpoint persistence
 
 `test_checkpoint_store` covers exact JSON round trips, repeated-content storage, mutation isolation, failed publication preserving the previous root, legacy files/companion identity, patch compaction, saved pending repairs, completed-request dedup, and DFS interruption/sibling continuation. Its native regression checks each repair publication against the entire live state and independently replays the final witness. Run it with the existing minimum-run/DFS/continuation/terminal gates; the current combined set passes74 tests with compiler/IPOPT enabled and no skips. See [storage](CHECKPOINT_STORAGE.md) and the [saved-data benchmark](../autonomy/experiments/last-jump-runs/row-benchmark/checkpoint_probe.py); no full Real11 search is needed for these checks.
+
+
+## Numerical constraints and extraction
+
+`ipopt/tests/test_constraints.py` covers exact reduction/source ownership mapping, strongest simple bounds, contradictions, angular/relative restrictions, precision and translated feasible controls. `test_worker_bounds.py` launches the configured `PKC_IPOPT_PYTHON` to check recomputed g(x), final-point recovery and early stopping with extraction. Full IPOPT discovery now passes63 tests with native workers; the affected109-test autonomy set also passes without skips. [Commands/contracts/results](IPOPT_CONSTRAINT_REDUCTION.md).

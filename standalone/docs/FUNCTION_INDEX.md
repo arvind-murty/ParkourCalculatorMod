@@ -1870,3 +1870,35 @@ See [storage contracts](CHECKPOINT_STORAGE.md) before changing repair persistenc
 ## [autonomy/experiments/last-jump-runs/row-benchmark/checkpoint_probe.py](../autonomy/experiments/last-jump-runs/row-benchmark/checkpoint_probe.py)
 
 - `main` — def, line 21.
+
+
+# IPOPT constraint cleanup definitions (2026-11-03)
+
+See [constraint contracts](IPOPT_CONSTRAINT_REDUCTION.md) for extraction/monitor and source mapping semantics.
+
+## [ipopt/constraints.py](../ipopt/constraints.py)
+
+- `reduce_walls` — def, line 4.
+
+## [ipopt/tests/test_constraints.py](../ipopt/tests/test_constraints.py)
+
+- `NumericalConstraintTests` — class, line 11.
+- `NumericalConstraintTests.test_strongest_bounds_preserve_all_source_indices_without_mutation` — method, line 12.
+- `NumericalConstraintTests.test_only_exact_facing_relative_and_cross_axis_duplicates_merge` — method, line 22.
+- `NumericalConstraintTests.test_contradictions_equalities_distinct_ticks_and_axes_survive` — method, line 31.
+- `NumericalConstraintTests.test_operator_defaults_and_float_precision` — method, line 36.
+- `NumericalConstraintTests.test_reduction_preserves_acceptance_on_translated_random_trajectories` — method, line 41.
+
+## [ipopt/tests/test_worker_bounds.py](../ipopt/tests/test_worker_bounds.py)
+
+- `WorkerBoundTests` — class, line 11.
+- `WorkerBoundTests.native` — method, line 12.
+- `WorkerBoundTests.test_monitor_checks_expressions_instead_of_supplied_constraint_vector` — method, line 16.
+- `WorkerBoundTests.fixed_phase` — method, line 31.
+- `WorkerBoundTests.test_extraction_with_mixed_rows_and_original_request_validation` — method, line 72.
+- `WorkerBoundTests.test_extracted_final_point_is_preserved_without_iteration_candidates` — method, line 75.
+- `WorkerBoundTests.test_feasibility_early_stop_preserves_validated_incumbent` — method, line 78.
+
+## [autonomy/experiments/last-jump-runs/row-benchmark/production_bounds_probe.py](../autonomy/experiments/last-jump-runs/row-benchmark/production_bounds_probe.py)
+
+- `main` — def, line 16.

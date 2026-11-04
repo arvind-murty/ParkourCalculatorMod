@@ -185,3 +185,10 @@ PKC_IPOPT_PYTHON="$PWD/.venv-ipopt/bin/python" \
 The integration tests cover a known optimum, contradictory constraints reported as unknown, both real11 spans with all facing rows and contacts, warm-start objective recovery, a cap-regime optimization with an analytic optimum, and ladder/Y capture attachment through the CLI. Ladder fixtures must match every recorded Y position and stored vertical velocity. The reduced `real11-ladder-evidence.json.gz` reproduces the inferred first-400-tick schedule without depending on an external capture file.
 
 Other tests cover independent replay, missed and wrong-side contacts, fixed patterns, relative/angular rows, malformed candidates, cancellation, timeout, seed retention, recovery after a failed phase, fallback exploration, rejected fake success, atomic CLI output, ladder timing, vertical contacts/steps and state handoff. The warm-facing fixture contains copied facings from the separately archived 400-tick diagnostic results.
+
+
+## Numerical row reduction and bound extraction
+
+The worker removes exact duplicate wall expressions and retains the strongest lower/upper absolute X/Z bounds for a state. Original request rows, names/ownership and problem hashes remain intact; the parent validator checks every original row. Distinct facing bounds, relative expressions and equalities are preserved. CasADi `detect_simple_bounds` is enabled; the progress monitor evaluates unextracted constraint expressions at each iterate/final point rather than interpreting the transformed returned `g` vector. Solver tolerances and motion/contact equations are unchanged.
+
+Phase diagnostics include `wallReduction` (original/retained counts and original-index source groups), `simpleBoundExtraction`, and `constraintRowsBeforeExtraction` (after reduction, before extraction; not the final backend general-row count). [Detailed contracts, measurements and test results](../docs/IPOPT_CONSTRAINT_REDUCTION.md).

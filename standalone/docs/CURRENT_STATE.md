@@ -76,3 +76,8 @@ After the [corridor-agent handoff](CORRIDOR_AGENT_HANDOFF.md) was pushed and ver
 ## Checkpoint cleanup implemented (2026-11-03)
 
 The fixed-clock CLI now uses [shared checkpoint storage](CHECKPOINT_STORAGE.md): compact single-copy content plus small durable repair updates during numerical solving, replacing synchronous whole-report rewrites. All audit data and exact continuation state remain recoverable; DFS schema5 and search/corridor/model behavior are unchanged. New outputs are a manifest plus `.store.sqlite3` companion; use `read_report` or the documented JSON export. The saved full Real11 report round-trips exactly in1.97MB versus6.30MB old gzip (166.63MB indented). Repair saves are about12ms versus4.28s for the old full-payload encoding/compression probe.74 focused tests pass with native dependencies/no skips; no new Real11 search. In-memory audit copies and some full-transition/copying cost remain.
+
+
+## IPOPT constraint cleanup implemented (2026-11-03)
+
+[Row reduction and bound extraction](IPOPT_CONSTRAINT_REDUCTION.md) now ship in the worker. It removes exact numerical duplicates, keeps strongest absolute X/Z bounds, and enables CasADi extraction with original-expression monitoring on callbacks/final results. Every original row/owner stays in the request for parent validation and diagnostics; search hashes and DFS/resume semantics are unchanged. Saved request278→91 numerical wall rows,17→11 first-phase iterations,47.12→32.54ms graph/setup/first-solve medians; all23 benchmark runs satisfy all original rows.63 IPOPT tests and109 autonomy tests pass/no skips. No new full Real11 search.

@@ -64,3 +64,8 @@ User clarification supersedes a total-run interpretation: compare ordinary prepa
 ## Checkpoint cleanup shipped (2026-11-03)
 
 The user's instruction to remove extraneous snapshot material is implemented as [lossless shared persistence](CHECKPOINT_STORAGE.md), rather than deleting requested audit evidence or pending work. Store unchanged content once, archive immutable window snapshots once, save repair/call-count deltas against the dispatch checkpoint during a solve, and compact obsolete roots after final publication. Maintain ordinary JSON export/legacy resume and independent mutable copies on decode. Storage version1 is independent of unchanged DFS schema5. Generic replay/resume tests and the saved-data probe verify no loss of accepted/pending/completed work. Simple-bound extraction, numerical-row canonicalization, corridor changes and new time pruning are still separate.
+
+
+## IPOPT optimizations shipped (2026-11-03)
+
+The user's implementation request supersedes the earlier pending status for simple-bound extraction/numerical-row canonicalization. [Implemented behavior and evidence](IPOPT_CONSTRAINT_REDUCTION.md): reduce only the worker's numerical rows, retaining original request/provenance/hash/validation; enable extraction after changing the monitor to evaluate unextracted expressions at x, including the final point. Preserve all distinct angular/relative/equality restrictions and original solver tolerances.63 native-enabled IPOPT tests plus109 autonomy checks pass/no skips. Corridor/cell work and new time pruning remain independent.

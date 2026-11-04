@@ -92,3 +92,8 @@ The user now authorizes another fresh Real11 run after pushing the current branc
 ## Checkpoint overhead: implemented scope (2026-11-03)
 
 The earlier snapshot cleanup recommendation is now implemented for the fixed-clock CLI; see [storage/runbook/contracts](../docs/CHECKPOINT_STORAGE.md). Content sharing removes repeated physical history/program blobs; repair updates avoid walking the whole report inside numerical callbacks. Pending/unknown work, accepted variants and complete audit evidence remain. Saved full report166.63MB pretty /6.30MB gzip becomes1.97MB stored with exact round-trip equality; repair-save median12.46ms.74 focused tests pass/no skips. Inner snapshot copying, in-memory audit duplication and transition-level timing remain possible follow-ups if profiling justifies them. This does not implement simple-bound extraction, row canonicalization or any new pruning.
+
+
+## Numerical-row/extraction cleanup: implemented (2026-11-03)
+
+The earlier final-row and monitor compatibility recommendations are implemented in the worker; see [contracts, diagnostics and tests](../docs/IPOPT_CONSTRAINT_REDUCTION.md). The orchestrator still passes all authored/derived constraints; worker-local reduction preserves original request/provenance/hash and every-row parent validation. Facing bounds are not ordered as unwrapped scalar bounds. Extraction checks unextracted g(x) on both callbacks and final output.63 IPOPT plus109 autonomy tests pass/no skips;23 saved-request runs preserve original feasibility and objectives,278→91 numerical walls. Further parent-row/storage canonicalization is not implied; profile before changing physical search keys or constraint ownership.

@@ -1111,3 +1111,15 @@ Evidence filenames identify different runs/contexts; do not treat reports as exe
 | [CHECKPOINT_STORAGE.md](CHECKPOINT_STORAGE.md) | Storage format/runbook, callback assumptions, file map, measurements and limits. |
 | [checkpoint_probe.py](../autonomy/experiments/last-jump-runs/row-benchmark/checkpoint_probe.py) | Saved-state and fixed-NLP storage benchmark; no route discovery. |
 | [checkpoint-results.json](../autonomy/experiments/last-jump-runs/row-benchmark/checkpoint-results.json) | Source hashes, sizes, timings, exact equality and fixed-request results. |
+
+
+## IPOPT constraint cleanup additions (2026-11-03)
+
+| File | Purpose |
+| --- | --- |
+| [constraints.py](../ipopt/constraints.py) | Equivalent numerical row selection with original-source indices; no request mutation. |
+| [test_constraints.py](../ipopt/tests/test_constraints.py) | Reduction/provenance/precision and angular/relative/translated feasible-control checks. |
+| [test_worker_bounds.py](../ipopt/tests/test_worker_bounds.py) | Native extraction, expression monitor, final-point recovery and early-stop regressions. |
+| [IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | Runtime contract, diagnostic meanings, tests, saved-request results and limits. |
+| [production_bounds_probe.py](../autonomy/experiments/last-jump-runs/row-benchmark/production_bounds_probe.py) | Controlled reduction/extraction A/B on the same archived fixed NLP. |
+| [production-bounds-results.json](../autonomy/experiments/last-jump-runs/row-benchmark/production-bounds-results.json) | Source hashes, all23 fixed solves, row mapping, timings and validation. |

@@ -53,3 +53,8 @@ The current DFS implementation uses version5 comparison frames/backtracking with
 ## Checkpoint storage boundary
 
 Search state remains ordinary JSON-compatible DFS schema5. The fixed-clock CLI's [persistence adapter](../autonomy/cell_routes/checkpoint_persistence.py) writes it through [checkpoint_store](../autonomy/checkpoint_store.py): shared immutable stored objects, transition checkpoints and small repair updates against a frozen dispatch root. Decoding restores the full report/audit shape. [Storage contracts and file map](CHECKPOINT_STORAGE.md) explain the optional repair-progress callback, aliases, legacy reads and JSON export; read these before adding mutations inside evaluation.
+
+
+## Numerical constraint assembly
+
+[IPOPT constraints.reduce_walls](../ipopt/constraints.py) performs worker-only equivalent row reduction before symbolic assembly. Original orchestrator constraints/provenance/hash remain intact and are independently validated by the parent. Bound extraction is enabled; `Monitor` checks unextracted g(x) on callbacks and final output. [Constraint contracts and phase diagnostic semantics](IPOPT_CONSTRAINT_REDUCTION.md) describe which rows merge and how to map numerical rows back to every original source.

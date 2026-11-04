@@ -194,3 +194,49 @@ PKC_IPOPT_PYTHON="$PWD/.venv-guidance/bin/python" PYTHONPATH="$PWD" \
   standalone.autonomy.tests.test_terminal_goals \
   standalone.autonomy.tests.test_repair_resume -v
 ```
+
+
+## IPOPT optimizations implemented (2026-11-03)
+
+Both row reduction and bound extraction now ship in production, superseding the earlier pending recommendation. [Implementation/validation contract](../../../../docs/IPOPT_CONSTRAINT_REDUCTION.md), [current controlled probe](production_bounds_probe.py), [all results and code hashes](production-bounds-results.json). The earlier extraction-probe failure is historical; reproduce it at its recorded source, since the production monitor now recomputes unextracted g(x) on callbacks and final output.
+
+Equivalent numerical rows are chosen in the worker; original orchestrator requests/constraints/owners/hashes and every-row parent validation remain intact. Phase `wallReduction` maps numerical rows back to all original indices. Distinct angular/relative/equality restrictions remain; no RHS rounding or motion/tolerance change.
+
+Five repetitions per configuration, rotated order, same fixed67-input problem, corrected expression monitor in every variant,200-iteration cap inactive:
+
+| Configuration | Numerical wall rows | All scalar rows before extraction | Iterations | IPOPT-call median | Graph/setup/first-solve median |
+| --- | --- | --- | --- | --- | --- |
+| Baseline: reduction/extraction off |278 |546 |17 |12.87ms |47.12ms |
+| Reduction only |91 |359 |11 |7.17ms |34.00ms |
+| Extraction only |278 |546 |11 |6.56ms |37.59ms |
+| Production: both enabled |91 |359 |11 |6.21ms |32.54ms |
+
+All20 first-phase runs and three fresh production worker runs satisfy every original row; the first-phase objective spread is1.09e-9. Fresh workers complete both seeds in174–177ms. This is not a full new Real11 route search or a measured whole-search speedup. Original request/audit rows remain intentionally stored; [checkpoint persistence cleanup](../../../../docs/CHECKPOINT_STORAGE.md) handles repeated storage separately.
+
+Validation:63 IPOPT tests pass in10.006s,109 affected autonomy tests pass in31.270s, native compiler/IPOPT enabled, no skips. The pure translated-control test was then strengthened to require a feasible witness in each trial and its five-test module passed again.
+
+```sh
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH="$PWD" .venv-guidance/bin/python \
+  standalone/autonomy/experiments/last-jump-runs/row-benchmark/production_bounds_probe.py \
+  --input standalone/autonomy/experiments/last-jump-runs/evidence/real11-retry-after-handoff.json.gz \
+  --output /tmp/production-bounds-new.json
+
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
+PKC_IPOPT_PYTHON="$PWD/.venv-guidance/bin/python" PYTHONPATH="$PWD" \
+.venv-guidance/bin/python -m unittest discover -s standalone/ipopt/tests -v
+
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
+PKC_RUN_TICKS_COMPILER="$PWD/standalone/autonomy/build/compiler.json" \
+PKC_IPOPT_PYTHON="$PWD/.venv-guidance/bin/python" PYTHONPATH="$PWD" \
+.venv-guidance/bin/python -m unittest \
+  standalone.autonomy.tests.test_checkpoint_store \
+  standalone.autonomy.tests.test_minimum_runs \
+  standalone.autonomy.tests.test_depth_first \
+  standalone.autonomy.tests.test_orchestrator_continuation \
+  standalone.autonomy.tests.test_fixed_clock_goal \
+  standalone.autonomy.tests.test_terminal_goals \
+  standalone.autonomy.tests.test_repair_resume \
+  standalone.autonomy.tests.test_stepping_cases \
+  standalone.autonomy.tests.test_ceiling_contacts \
+  standalone.autonomy.tests.test_contact_combinations -v
+```

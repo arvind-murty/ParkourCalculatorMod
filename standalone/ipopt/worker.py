@@ -10,9 +10,11 @@ import numpy as np
 try:
     from .continuation import run
     from .ladder import CAP
+    from .constraints import reduce_walls
 except ImportError:
     from continuation import run
     from ladder import CAP
+    from constraints import reduce_walls
 
 
 def send(message):
@@ -52,9 +54,10 @@ def forward(problem, yaw, threshold, pattern=None, cap_pattern=None, details=Fal
 
 
 class Monitor(ca.Callback):
-    def __init__(self, nx, ng, decode, lower, upper, stop, on_candidate):
+    def __init__(self, nx, ng, decode, constraints, lower, upper, stop, on_candidate):
         ca.Callback.__init__(self)
         self.nx, self.ng, self.decode = nx, ng, decode
+        self.constraints = constraints
         self.lower, self.upper = np.array(lower), np.array(upper)
         self.stop = stop
         self.on_candidate = on_candidate
@@ -83,8 +86,11 @@ class Monitor(ca.Callback):
         return ca.Sparsity.dense(1, 1) if name == 'f' else ca.Sparsity(0, 1)
 
     def record(self, x, g, f):
-        values = np.array(g).ravel()
-        if not np.all(np.isfinite(values)) or not math.isfinite(f):
+        # With bound extraction, returned/callback g need not carry the original
+        # expressions. Check the unextracted NLP at x on callbacks AND final
+        # output. The parent still replays every original requested wall.
+        values = np.array(self.constraints(x)).ravel()
+        if not np.all(np.isfinite(np.array(x))) or not np.all(np.isfinite(values)) or not math.isfinite(f):
             return False
         violation = max(float(np.max(self.lower - values, initial=0)),
                         float(np.max(values - self.upper, initial=0)))
@@ -164,7 +170,8 @@ def fixed_phase(problem, yaw, pattern, seconds, stop, on_candidate, kind, seed_n
         p.append(pn)
         v.append(vn)
 
-    for wall in problem['walls']:
+    numerical = reduce_walls(problem['walls'])
+    for wall in numerical['walls']:
         mode, t1, t2 = wall['mode'], wall['t1'], wall.get('t2')
         if mode in ('DXZ', 'DZX'):
             dx, dz = ca.fabs(p[t1][0] - p[t2][0]), ca.fabs(p[t1][1] - p[t2][1])
@@ -206,9 +213,11 @@ def fixed_phase(problem, yaw, pattern, seconds, stop, on_candidate, kind, seed_n
     cost *= -1 if objective['sense'] == 'MAX' else 1
     x, g = ca.vertcat(*variables), ca.vertcat(*rows)
     decode = ca.Function('decode', [x], [ca.vertcat(*facings)])
-    monitor = Monitor(x.numel(), g.numel(), decode, lower, upper, stop, on_candidate)
+    constraints = ca.Function('original_constraints', [x], [g])
+    monitor = Monitor(x.numel(), g.numel(), decode, constraints, lower, upper, stop, on_candidate)
     solver = ca.nlpsol('local_ipopt', 'ipopt', {'x': x, 'g': g, 'f': cost}, {
         'print_time': False, 'error_on_fail': False, 'iteration_callback': monitor,
+        'detect_simple_bounds': True,
         'ipopt.print_level': 0, 'ipopt.sb': 'yes', 'ipopt.max_wall_time': max(0.01, seconds),
         'ipopt.max_iter': problem.get('maxIterations', 10000), 'ipopt.tol': 1e-9, 'ipopt.constr_viol_tol': 1e-9,
         'ipopt.acceptable_tol': 1e-8, 'ipopt.acceptable_constr_viol_tol': 1e-9,
@@ -219,7 +228,9 @@ def fixed_phase(problem, yaw, pattern, seconds, stop, on_candidate, kind, seed_n
     send({'type': 'phase', 'status': stats['return_status'], 'iterations': stats['iter_count'],
           'seconds': time.monotonic() - started, 'zeros': int(np.count_nonzero(pattern == 0)),
           'survivors': int(np.count_nonzero(np.abs(pattern) == 1)), 'kind': kind, 'seed': seed_name,
-          'ladderSaturated': sum(b != 0 for row_values in caps for b in row_values), 'capAttempt': attempt})
+          'ladderSaturated': sum(b != 0 for row_values in caps for b in row_values), 'capAttempt': attempt,
+          'simpleBoundExtraction': True, 'constraintRowsBeforeExtraction': g.numel(),
+          'wallReduction': numerical['audit']})
     return monitor.best_yaw if monitor.best_yaw is not None else yaw, stats['return_status'], monitor.best
 
 
