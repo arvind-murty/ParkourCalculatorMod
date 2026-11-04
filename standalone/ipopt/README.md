@@ -192,3 +192,8 @@ Other tests cover independent replay, missed and wrong-side contacts, fixed patt
 The worker removes exact duplicate wall expressions and retains the strongest lower/upper absolute X/Z bounds for a state. Original request rows, names/ownership and problem hashes remain intact; the parent validator checks every original row. Distinct facing bounds, relative expressions and equalities are preserved. CasADi `detect_simple_bounds` is enabled; the progress monitor evaluates unextracted constraint expressions at each iterate/final point rather than interpreting the transformed returned `g` vector. Solver tolerances and motion/contact equations are unchanged.
 
 Phase diagnostics include `wallReduction` (original/retained counts and original-index source groups), `simpleBoundExtraction`, and `constraintRowsBeforeExtraction` (after reduction, before extraction; not the final backend general-row count). [Detailed contracts, measurements and test results](../docs/IPOPT_CONSTRAINT_REDUCTION.md).
+
+
+## Pure feasibility (2026-11-04)
+
+`--feasibility-only`, `stop_on_feasible=True`, or request `stopOnFeasible: true` now uses **constant-zero NLP cost** and first independently validated feasible stopping. Previously it stopped early with the configured directional objective still active. Every original constraint/contact is still checked. `candidate.objective` remains the measured objective of the returned path; `objectiveMode: feasibility` marks that it was not optimized. Optimization mode retains its configured cost. An already valid seed can return before worker startup. [Intermediate orchestration, flat-cost incumbent handling, tests and limits](../docs/IPOPT_FEASIBILITY_MODE.md).

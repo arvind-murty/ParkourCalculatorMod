@@ -81,3 +81,8 @@ The fixed-clock CLI now uses [shared checkpoint storage](CHECKPOINT_STORAGE.md):
 ## IPOPT constraint cleanup implemented (2026-11-03)
 
 [Row reduction and bound extraction](IPOPT_CONSTRAINT_REDUCTION.md) now ship in the worker. It removes exact numerical duplicates, keeps strongest absolute X/Z bounds, and enables CasADi extraction with original-expression monitoring on callbacks/final results. Every original row/owner stays in the request for parent validation and diagnostics; search hashes and DFS/resume semantics are unchanged. Saved request278→91 numerical wall rows,17→11 first-phase iterations,47.12→32.54ms graph/setup/first-solve medians; all23 benchmark runs satisfy all original rows.63 IPOPT tests and109 autonomy tests pass/no skips. No new full Real11 search.
+
+
+## Intermediate pure feasibility implemented (2026-11-04)
+
+At the user's request, [intermediate feasibility mode](IPOPT_FEASIBILITY_MODE.md) now uses a constant-zero NLP objective plus first validated feasibility stopping. Final solves keep the configured objective. Intermediate p/v/progress are measurements of one feasible witness, not optimized scores.64 IPOPT and162 affected autonomy tests pass/no skips; saved requests preserve prior feasible/unknown outcomes. No fresh full Real11 search. The DFS policy fingerprint changed, so pre-change DFS checkpoints require explicit reconstruction; same-policy resume remains exact. Repair mode changes reset the corresponding generation cursor.

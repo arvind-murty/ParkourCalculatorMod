@@ -58,3 +58,8 @@ Search state remains ordinary JSON-compatible DFS schema5. The fixed-clock CLI's
 ## Numerical constraint assembly
 
 [IPOPT constraints.reduce_walls](../ipopt/constraints.py) performs worker-only equivalent row reduction before symbolic assembly. Original orchestrator constraints/provenance/hash remain intact and are independently validated by the parent. Bound extraction is enabled; `Monitor` checks unextracted g(x) on callbacks and final output. [Constraint contracts and phase diagnostic semantics](IPOPT_CONSTRAINT_REDUCTION.md) describe which rows merge and how to map numerical rows back to every original source.
+
+
+## Intermediate solver objective
+
+DFS intermediate goals now request [pure feasibility](IPOPT_FEASIBILITY_MODE.md): constant-zero numerical cost, first scalar-valid result, then ordinary scene/corridor/vertical acceptance and discrete decision commitment. Final goals optimize. Reporting metrics remain available but are not optimized in feasibility mode. Repair state includes objective mode, with generation cursors reset on a mode change; DFS policy fingerprints prevent silent exact resume from the old intermediate-objective policy.

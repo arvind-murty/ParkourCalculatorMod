@@ -104,3 +104,10 @@ The fresh retry at source `61355976` is complete: [result/limitations](../autono
 ## IPOPT numerical cleanup now implemented (2026-11-03)
 
 [Constraint cleanup](IPOPT_CONSTRAINT_REDUCTION.md) is worker-local: exact duplicate rows and weaker absolute X/Z inequalities are omitted numerically, CasADi extraction is enabled, and the monitor checks original assembled expressions at every iterate/final point. Original orchestrator requests, ownership, physical hashes, resume contexts and every-row parent validation are intact. Phase logs add `wallReduction` with original-index provenance, `simpleBoundExtraction`, and `constraintRowsBeforeExtraction` (after reduction, before extraction). No corridor/cell changes.63 IPOPT and109 autonomy tests pass/no skips; saved fixed-request23-run A/B preserves feasibility/objective and reduces278→91 wall rows. No fresh full Real11 route search.
+
+
+## Intermediate objective policy (2026-11-04)
+
+[Pure feasibility mode](IPOPT_FEASIBILITY_MODE.md) is implemented: intermediate DFS evaluations disable polishing and the worker uses constant zero with first validated feasible stopping. Final evaluations retain their objective. All original row/vertical/scene/corridor checks remain. Intermediate position/velocity/objective are unoptimized witness measurements; `objectiveMode` is logged in results/records/diagnostics.64 IPOPT and162 autonomy tests pass/no skips.
+
+DFS schema5 now includes `intermediateObjective: constant_zero_feasibility_v1` in the context fingerprint, so older DFS contexts require explicit reconstruction or their source-era code; do not call it exact continuation. Repair scope includes mode and mode changes clear the constraint-generation cursor before resetting repair work. Same-policy checkpoints and storage format1 keep their existing semantics. No corridor/cell work was changed, and no full new Real11 route solve was run.

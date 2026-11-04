@@ -240,3 +240,30 @@ PKC_IPOPT_PYTHON="$PWD/.venv-guidance/bin/python" PYTHONPATH="$PWD" \
   standalone.autonomy.tests.test_ceiling_contacts \
   standalone.autonomy.tests.test_contact_combinations -v
 ```
+
+
+## Pure feasibility for intermediate solves (2026-11-04)
+
+The user's new policy is implemented: intermediate frames use constant-zero numerical cost and first independently validated feasibility; final frames optimize. [Contracts, mode labels and checkpoint compatibility](../../../../docs/IPOPT_FEASIBILITY_MODE.md). The existing API `stop_on_feasible=True` and CLI `--feasibility-only` now select this behavior; previously they kept a directional objective while stopping early.
+
+[Probe source](feasibility_probe.py), [all measurements](feasibility-results.json). Four archived requests, three rotated repetitions for directional early stop / constant-objective early stop / optimization, plus eight fresh worker runs.36 first-phase records retain unknowns rather than hiding unsuccessful solves.
+
+| Inputs | Archived outcome | Directional early-stop iterations | Constant-objective early-stop iterations | Fresh optimization | Fresh pure feasibility |
+| --- | --- | --- | --- | --- | --- |
+|27 |unknown |118, no accepted point |33, no accepted point |unknown,254ms |unknown,167ms |
+|40 |feasible |16 |16 |feasible,164ms |feasible,115ms |
+|57 |unknown |55, no accepted point |42, no accepted point |unknown,268ms |unknown,236ms |
+|58 |feasible |11 |8 |feasible,186ms |feasible,122ms |
+
+The27/57 requests were already unknown in the archived source; no feasibility-only regression is inferred from those outcomes. Both successful models satisfy every original row, and no invalid candidate is accepted. Times are small fixed-request observations, not a guaranteed speedup. Pure feasibility intentionally returns different measured progress, and that value is not an optimized bound. There is no new full Real11 search.
+
+Validation:64 IPOPT tests pass in11.356s and162 autonomy tests pass in102.950s, compiler/native worker enabled, no skips. New checks assert an actually constant symbolic objective, retain the accepted witness when costs tie, and replay feasibility→optimization of the same hard model after resetting the old cursor. Existing full integration/capture/contacts/stepping/ceiling/checkpoint tests pass. The changed policy fingerprint means pre-change DFS states need explicit reconstruction rather than silent exact continuation.
+
+Reproduce the saved-request comparison:
+
+```sh
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH="$PWD" .venv-guidance/bin/python \
+  standalone/autonomy/experiments/last-jump-runs/row-benchmark/feasibility_probe.py \
+  --input standalone/autonomy/experiments/last-jump-runs/evidence/real11-retry-after-handoff.json.gz \
+  --output /tmp/feasibility-results-new.json
+```

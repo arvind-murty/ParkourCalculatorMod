@@ -128,18 +128,23 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, c
         scoped_adapter.corridor.signature if hasattr(scoped_adapter, 'corridor') and not partial_corridor else ())
     identity = solve_identity(scene, program, route.get('guideObjective', route['objective']), scope,
         getattr(scoped_adapter, 'corridor', None).to_dict() if hasattr(scoped_adapter, 'corridor') else None, coefficients)
+    objective_mode = 'feasibility' if first_witness else 'optimization'
+    saved_repair = program.get('repairState', {})
+    saved_mode = (saved_repair.get('context', {}).get('scope') or {}).get('objectiveMode')
     variants = ConstraintVariants(route, profiles[0], plan, scene['collisionScene'], envelopes, scope,
         checks=checks, gates=scoped_adapter.gates, signature=signature,
-        state=program.get('repairState', {}).get('constraintGeneration'), deadline=scoped.deadline, reference=reference)
+        state=saved_repair.get('constraintGeneration') if saved_mode == objective_mode else None,
+        deadline=scoped.deadline, reference=reference)
     result = solve_contact_branches(route, profiles, checks,
         compiler, seconds=seconds, candidate_seconds=candidate_seconds, retries=0,
-        max_branches=scene['maxContactBranches'], improve=True, rank_equal_cost=not first_witness, optimize_goal=True,
+        max_branches=scene['maxContactBranches'], improve=True, rank_equal_cost=not first_witness, optimize_goal=not first_witness,
         python_executable=python_executable, cancel_event=cancel_event, geometry=scene['collisionScene'],
         motion_bound=motion_bound, max_blockages=scene['maxBlockagesPerObstacle'],
         max_horizontal=scene['maxHorizontalBlockagesPerObstacle'], max_vertical=scene['maxVerticalBlockagesPerObstacle'],
         max_passage_candidates=scene['maxPassageCandidates'], solid_blocks=owners, max_wall_hits=0,
         candidate_filter=candidate_filter, work=scoped, resume_state=program.get('repairState'),
-        repair_scope=dict(solveIdentity=identity, scope=scope, assemblyVersion=6),
+        repair_scope=dict(solveIdentity=identity, scope=scope, assemblyVersion=6,
+            objectiveMode=objective_mode),
         validation_scope=scope, initial_variants=variants, on_progress=on_progress, retry_unresolved=retry_unresolved)
     if result['best'] is not None:
         if checkpoint is not None and scope['purpose'] == 'complete':
@@ -153,6 +158,7 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, c
             work.accepted(result['best'])
     result['work'] = scoped.local.summary()
     result.update(solveScope=scope, solveIdentity=identity,
+                  objectiveMode=objective_mode,
                   fullSceneValidated=result['best'] is not None and scope['purpose'] == 'complete',
                   reachability=dict(excludedSolids=variants.exclusions, interactionGroups=len(variants.items)))
     if result['best'] is not None:

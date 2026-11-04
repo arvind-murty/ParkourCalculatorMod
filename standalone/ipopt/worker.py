@@ -96,9 +96,10 @@ class Monitor(ca.Callback):
                         float(np.max(values - self.upper, initial=0)))
         if violation <= 1e-8:
             yaw = np.array(self.decode(x)).ravel().tolist()
-            if f < self.best:
+            accepted = self.on_candidate(yaw)
+            if f < self.best or accepted and self.stop:
                 self.best, self.best_yaw = f, yaw
-            return self.on_candidate(yaw)
+            return accepted
         return False
 
     def eval(self, arguments):
@@ -211,6 +212,8 @@ def fixed_phase(problem, yaw, pattern, seconds, stop, on_candidate, kind, seed_n
     else:
         cost = point[0 if objective['axis'] == 'X' else 1]
     cost *= -1 if objective['sense'] == 'MAX' else 1
+    if stop:
+        cost = ca.SX(0)
     x, g = ca.vertcat(*variables), ca.vertcat(*rows)
     decode = ca.Function('decode', [x], [ca.vertcat(*facings)])
     constraints = ca.Function('original_constraints', [x], [g])
@@ -230,7 +233,7 @@ def fixed_phase(problem, yaw, pattern, seconds, stop, on_candidate, kind, seed_n
           'survivors': int(np.count_nonzero(np.abs(pattern) == 1)), 'kind': kind, 'seed': seed_name,
           'ladderSaturated': sum(b != 0 for row_values in caps for b in row_values), 'capAttempt': attempt,
           'simpleBoundExtraction': True, 'constraintRowsBeforeExtraction': g.numel(),
-          'wallReduction': numerical['audit']})
+          'wallReduction': numerical['audit'], 'objectiveMode': 'feasibility' if stop else 'optimization'})
     return monitor.best_yaw if monitor.best_yaw is not None else yaw, stats['return_status'], monitor.best
 
 

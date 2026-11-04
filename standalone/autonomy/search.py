@@ -267,7 +267,8 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                 diagnostics.append({'status': result['status'], 'termination': result.get('termination'),
                                     'elapsedSeconds': result.get('elapsedSeconds'), 'error': result.get('error'),
                                     'problemHash': fingerprint(problem), 'request': copy.deepcopy(problem),
-                                    'callOptions': dict(seconds=budget,stopOnFeasible=not polish)})
+                                    'callOptions': dict(seconds=budget,stopOnFeasible=not polish),
+                                    'objectiveMode': 'optimization' if polish else 'feasibility'})
                 if result['status'] == 'cancelled':
                     return {'status': 'cancelled', 'diagnostics': diagnostics}
                 if result['feasible']:

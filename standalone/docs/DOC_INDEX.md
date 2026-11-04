@@ -6,6 +6,7 @@ All tracked standalone Markdown plus this consolidation. Read [AGENTS](../AGENTS
 | --- | --- | --- |
 | [docs/CHECKPOINT_STORAGE.md](CHECKPOINT_STORAGE.md) | Shared checkpoint format, resume/export, callback contract and measured cleanup | Current implementation/runbook |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | Numerical row reduction, extraction/monitor contract, provenance and validation | Current implementation/reference |
+| [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | Constant-objective intermediate solves, final optimization, score semantics and persistence compatibility | Current implementation/reference |
 | [AGENTS.md](../AGENTS.md) | Standalone agent entry point | Current navigation/guidance |
 | [CONSOLIDATION.md](../CONSOLIDATION.md) | Standalone branch consolidation | Historical; contains superseded branch/policy/status |
 | [README.md](../README.md) | Standalone route search and IPOPT | Current navigation/guidance |

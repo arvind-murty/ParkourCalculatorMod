@@ -69,3 +69,8 @@ The user's instruction to remove extraneous snapshot material is implemented as 
 ## IPOPT optimizations shipped (2026-11-03)
 
 The user's implementation request supersedes the earlier pending status for simple-bound extraction/numerical-row canonicalization. [Implemented behavior and evidence](IPOPT_CONSTRAINT_REDUCTION.md): reduce only the worker's numerical rows, retaining original request/provenance/hash/validation; enable extraction after changing the monitor to evaluate unextracted expressions at x, including the final point. Preserve all distinct angular/relative/equality restrictions and original solver tolerances.63 native-enabled IPOPT tests plus109 autonomy checks pass/no skips. Corridor/cell work and new time pruning remain independent.
+
+
+## Intermediate solve policy changed (2026-11-04)
+
+The user wants intermediate calls to be feasibility checks with no particular objective. [Implemented](IPOPT_FEASIBILITY_MODE.md): constant-zero NLP objective for the existing feasibility-only mode; stop at a scalar-valid point, then apply existing orchestrator scene/corridor checks. DFS intermediate frames select first-witness mode, final frames optimize. Keep all hard constraints/momentum/facing variables and original-start re-solving. Intermediate scores are unoptimized observations. DFS context fingerprints the new policy; do not silently load old policy checkpoints as exact continuation.64 IPOPT plus162 autonomy checks pass/no skips. No new objective bounds, corridor changes or full Real11 run.

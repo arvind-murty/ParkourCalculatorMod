@@ -1902,3 +1902,17 @@ See [constraint contracts](IPOPT_CONSTRAINT_REDUCTION.md) for extraction/monitor
 ## [autonomy/experiments/last-jump-runs/row-benchmark/production_bounds_probe.py](../autonomy/experiments/last-jump-runs/row-benchmark/production_bounds_probe.py)
 
 - `main` — def, line 16.
+
+
+# Feasibility-mode additions (2026-11-04)
+
+[Contracts and score semantics](IPOPT_FEASIBILITY_MODE.md). `WorkerBoundTests.test_constant_objective_tie_keeps_the_accepted_point` adds flat-cost incumbent coverage in the existing worker-bound suite.
+
+## [autonomy/tests/test_feasibility_mode.py](../autonomy/tests/test_feasibility_mode.py)
+
+- `FeasibilityModeTests` — class, line 20.
+- `FeasibilityModeTests.test_feasible_intermediate_and_optimized_comparison_use_distinct_repair_work` — method, line 21.
+
+## [autonomy/experiments/last-jump-runs/row-benchmark/feasibility_probe.py](../autonomy/experiments/last-jump-runs/row-benchmark/feasibility_probe.py)
+
+- `main` — def, line 21.

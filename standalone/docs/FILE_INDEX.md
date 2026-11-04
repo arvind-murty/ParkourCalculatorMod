@@ -1123,3 +1123,13 @@ Evidence filenames identify different runs/contexts; do not treat reports as exe
 | [IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | Runtime contract, diagnostic meanings, tests, saved-request results and limits. |
 | [production_bounds_probe.py](../autonomy/experiments/last-jump-runs/row-benchmark/production_bounds_probe.py) | Controlled reduction/extraction A/B on the same archived fixed NLP. |
 | [production-bounds-results.json](../autonomy/experiments/last-jump-runs/row-benchmark/production-bounds-results.json) | Source hashes, all23 fixed solves, row mapping, timings and validation. |
+
+
+## Pure feasibility additions (2026-11-04)
+
+| File | Purpose |
+| --- | --- |
+| [IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | Objective-free intermediate solves, solver/acceptance contracts, persistence changes and evidence. |
+| [test_feasibility_mode.py](../autonomy/tests/test_feasibility_mode.py) | Native intermediate-feasibility/optimization routing, cursor reset and independent replay checks. |
+| [feasibility_probe.py](../autonomy/experiments/last-jump-runs/row-benchmark/feasibility_probe.py) | Fixed-request comparison of directional early stop, constant feasibility and optimization. |
+| [feasibility-results.json](../autonomy/experiments/last-jump-runs/row-benchmark/feasibility-results.json) | Source hashes,36 first-phase runs and eight fresh-worker outcomes, including unknowns. |

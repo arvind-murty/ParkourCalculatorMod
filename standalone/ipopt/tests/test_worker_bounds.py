@@ -28,6 +28,18 @@ class WorkerBoundTests(unittest.TestCase):
             assert len(seen)==1 and monitor.best_yaw==[.2]
         ''')
 
+    def test_constant_objective_tie_keeps_the_accepted_point(self):
+        self.native('''
+            import casadi as ca
+            from standalone.ipopt.worker import Monitor
+            x = ca.SX.sym('x')
+            identity = ca.Function('identity',[x],[x])
+            monitor = Monitor(1,1,identity,identity,[0.],[1.],True,lambda y:y[0]>.5)
+            assert not monitor.record(ca.DM(.2),ca.DM(.2),0.)
+            assert monitor.record(ca.DM(.8),ca.DM(.8),0.)
+            assert monitor.best_yaw==[.8]
+        ''')
+
     def fixed_phase(self, *, stop=False, final_only=False):
         self.native('''
             import copy
@@ -52,6 +64,14 @@ class WorkerBoundTests(unittest.TestCase):
                 if checked['feasible']:candidates.append(checked)
                 return checked['feasible']
             options = dict(stop=STOP,final_only=FINAL_ONLY)
+            factory = worker.ca.nlpsol
+            def inspect(name,plugin,nlp,settings):
+                if options['stop']:
+                    assert nlp['f'].is_constant() and float(nlp['f'])==0.
+                else:
+                    assert not nlp['f'].is_constant()
+                return factory(name,plugin,nlp,settings)
+            worker.ca.nlpsol = inspect
             with patch.object(worker,'send',side_effect=phases.append):
                 if options['final_only']:
                     with patch.object(worker.Monitor,'eval',return_value=[0]):
@@ -64,6 +84,7 @@ class WorkerBoundTests(unittest.TestCase):
             if options['stop']:assert status=='User_Requested_Stop',status
             else:assert abs(validate(request,yaw)['objective']-.18)<1e-6,(yaw,status,cost)
             assert phases[0]['simpleBoundExtraction']
+            assert phases[0]['objectiveMode']==('feasibility' if options['stop'] else 'optimization')
             assert phases[0]['wallReduction']==reduce_walls(request['walls'])['audit']
             assert phases[0]['wallReduction']['retained']<len(request['walls'])
             assert request==original

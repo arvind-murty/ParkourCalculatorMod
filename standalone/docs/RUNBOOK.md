@@ -130,3 +130,8 @@ New `fixed_clock_experiment` output paths hold a small manifest; the data is in 
 ```
 
 [Storage details](CHECKPOINT_STORAGE.md) describe commit ordering, repair-delta assumptions, final compaction, file purposes, measurements and focused resume tests. This changes persistence only; fixture context and DFS schema5 compatibility rules remain.
+
+
+## Pure feasibility versus optimization
+
+The fixed-input CLI's `--feasibility-only` / Python `stop_on_feasible=True` now sets the NLP objective to constant zero and stops at an independently validated feasible point. It previously only stopped early while retaining directional optimization. DFS intermediate goals use this mode automatically; final goals optimize. Reported `candidate.objective` is still a trajectory measurement, with `objectiveMode` identifying its meaning. [Details, tests and checkpoint compatibility](IPOPT_FEASIBILITY_MODE.md): pre-policy DFS checkpoints are not exact-compatible with the new policy fingerprint; preserve them and reconstruct explicitly if needed.

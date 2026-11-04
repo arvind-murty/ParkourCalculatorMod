@@ -97,3 +97,8 @@ The earlier snapshot cleanup recommendation is now implemented for the fixed-clo
 ## Numerical-row/extraction cleanup: implemented (2026-11-03)
 
 The earlier final-row and monitor compatibility recommendations are implemented in the worker; see [contracts, diagnostics and tests](../docs/IPOPT_CONSTRAINT_REDUCTION.md). The orchestrator still passes all authored/derived constraints; worker-local reduction preserves original request/provenance/hash and every-row parent validation. Facing bounds are not ordered as unwrapped scalar bounds. Extraction checks unextracted g(x) on both callbacks and final output.63 IPOPT plus109 autonomy tests pass/no skips;23 saved-request runs preserve original feasibility and objectives,278→91 numerical walls. Further parent-row/storage canonicalization is not implied; profile before changing physical search keys or constraint ownership.
+
+
+## Pure feasibility for intermediate calls (2026-11-04)
+
+[Implemented at the user's request](../docs/IPOPT_FEASIBILITY_MODE.md). Intermediate solves use constant-zero objective and first validated feasibility; final solves keep their objective. This does not add pruning. Treat intermediate progress as a witness observation, not an optimized bound. Existing geometry/constraint checks and unknown handling remain.64 IPOPT and162 autonomy tests pass/no skips; the saved four-request probe preserves feasible/unknown outcomes, with no accepted invalid trajectory. New policy fingerprint requires explicit reconstruction for pre-change DFS states.

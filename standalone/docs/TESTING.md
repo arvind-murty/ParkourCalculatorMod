@@ -75,3 +75,8 @@ Current DFS acceptance: [results and logs](../autonomy/experiments/dfs-interacti
 ## Numerical constraints and extraction
 
 `ipopt/tests/test_constraints.py` covers exact reduction/source ownership mapping, strongest simple bounds, contradictions, angular/relative restrictions, precision and translated feasible controls. `test_worker_bounds.py` launches the configured `PKC_IPOPT_PYTHON` to check recomputed g(x), final-point recovery and early stopping with extraction. Full IPOPT discovery now passes63 tests with native workers; the affected109-test autonomy set also passes without skips. [Commands/contracts/results](IPOPT_CONSTRAINT_REDUCTION.md).
+
+
+## Intermediate feasibility mode
+
+`test_worker_bounds` now verifies a constant symbolic objective in feasibility mode, preservation of a later accepted point when flat costs tie, and unchanged nonconstant final objectives. `autonomy/tests/test_feasibility_mode.py` independently replays intermediate feasibility and later optimization of the same hard model, checking that the feasibility cursor cannot suppress optimization. DFS tests assert intermediate/final routing and record labels. The affected complete set passes64 IPOPT and162 autonomy tests with native dependencies/no skips; [details and saved-request comparison](IPOPT_FEASIBILITY_MODE.md).

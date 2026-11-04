@@ -85,6 +85,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
         terminal=terminal_plan.to_dict() if terminal_plan else None, corridor=adapter.corridor.to_dict(),
         windows=window_plan, filter=getattr(program_filter, 'checkpoint_identity', None),
         margins=[time_margin,progress_margin], physics=motion,
+        intermediateObjective='constant_zero_feasibility_v1',
         minimumRunPolicy=POLICY_VERSION if minimum_run_pruning else None))
     if resume_state is not None and (resume_state.get('version') != 5 or
             resume_state.get('kind') != 'ordered_goal_dfs' or resume_state.get('context') != context):
@@ -322,6 +323,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
         if result.get('repairState') is not None:
             p['repairState'] = result['repairState']
         record = dict(id=identity,program=p,status=result['status'],termination=result['termination'],
+            objectiveMode='optimization' if final_frame(f) else 'feasibility',
             arrival=program['profile']['airtime'] if result['best'] is not None else None,
             value=result['best']['candidate']['objective'] if result['best'] else None,
             family=decision_family(program,f['parents']),work=result['work'],goal=f['goal'],goalKey=goal_key(scene,f['goal'],adapter.corridor) if f['goal'] else None,

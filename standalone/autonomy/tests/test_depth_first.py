@@ -47,6 +47,7 @@ class DepthFirstTests(unittest.TestCase):
         def evaluate(s,p,compiler,adapter,work,motion,**kwargs):
             work.before_solve({})
             n=p['profile']['airtime']
+            self.assertEqual(kwargs['first_witness'],n!=30)
             self.calls.append((p['family'],n))
             if getattr(self,'interrupt_once',None)==(p['family'],n):
                 self.interrupt_once=None
@@ -82,6 +83,9 @@ class DepthFirstTests(unittest.TestCase):
         result=self.run_search(10)
         self.assertEqual(self.calls,[(17,17),(21,21),(17,30),(21,30)])
         self.assertEqual(result['best']['candidate']['objective'],21.)
+        for frame in result['searchState']['frames']:
+            for record in frame['records']:
+                self.assertEqual(record['objectiveMode'],'optimization' if record['complete'] else 'feasibility')
         chosen=[t for t in result['searchState']['transitions'] if t['kind']=='choose' and t['depth']==0]
         self.assertEqual([t['arrival'] for t in chosen],[17,21])
         self.assertFalse(result['objectiveOptimalityProven'])

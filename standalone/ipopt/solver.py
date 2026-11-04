@@ -189,6 +189,7 @@ def solve(request, *, seconds=None, stop_on_feasible=None, python_executable=Non
         best = None
     status = 'cancelled' if cancelled else 'feasible' if best is not None else 'error' if error else 'unknown'
     return {'version': 1, 'status': status, 'feasible': best is not None, 'candidate': best,
+            'objectiveMode': 'feasibility' if problem['stopOnFeasible'] else 'optimization',
             'problemHash': fingerprint(problem), 'elapsedSeconds': time.monotonic() - started,
             'firstFeasibleSeconds': first_feasible,
             'problem': {'ticks': problem['ticks'], 'constraints': len(problem['walls']),
