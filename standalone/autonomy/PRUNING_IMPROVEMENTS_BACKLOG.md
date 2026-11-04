@@ -102,3 +102,8 @@ The earlier final-row and monitor compatibility recommendations are implemented 
 ## Pure feasibility for intermediate calls (2026-11-04)
 
 [Implemented at the user's request](../docs/IPOPT_FEASIBILITY_MODE.md). Intermediate solves use constant-zero objective and first validated feasibility; final solves keep their objective. This does not add pruning. Treat intermediate progress as a witness observation, not an optimized bound. Existing geometry/constraint checks and unknown handling remain.64 IPOPT and162 autonomy tests pass/no skips; the saved four-request probe preserves feasible/unknown outcomes, with no accepted invalid trajectory. New policy fingerprint requires explicit reconstruction for pre-change DFS states.
+
+
+## Measured objective-free intermediate tradeoff (2026-11-04)
+
+[All-nine-request benchmark](experiments/last-jump-runs/row-benchmark/REAL11_INTERMEDIATE_BENCHMARK.md):135 fresh runs plus81 warm probes preserve numerical feasible/unknown outcomes. Pure feasibility and directional early stop have similar successful-case cost; pure witnesses lose0.21–0.47 blocks of Z versus optimization on three numerical-success cases. Keep the requested policy. If p/v guidance or initialization later exposes an actual quality problem, compare directional early stopping before adding a complex score/objective. This evidence does not evaluate scene/corridor acceptance or completed route optimality and authorizes no new pruning.

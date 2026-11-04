@@ -1133,3 +1133,13 @@ Evidence filenames identify different runs/contexts; do not treat reports as exe
 | [test_feasibility_mode.py](../autonomy/tests/test_feasibility_mode.py) | Native intermediate-feasibility/optimization routing, cursor reset and independent replay checks. |
 | [feasibility_probe.py](../autonomy/experiments/last-jump-runs/row-benchmark/feasibility_probe.py) | Fixed-request comparison of directional early stop, constant feasibility and optimization. |
 | [feasibility-results.json](../autonomy/experiments/last-jump-runs/row-benchmark/feasibility-results.json) | Source hashes,36 first-phase runs and eight fresh-worker outcomes, including unknowns. |
+
+
+## Repeated intermediate benchmark additions (2026-11-04)
+
+| File | Purpose |
+| --- | --- |
+| [real11_intermediate_benchmark.py](../autonomy/experiments/last-jump-runs/row-benchmark/real11_intermediate_benchmark.py) | Extract all nonterminal requests once; repeated fresh/warm three-mode comparison, original-row validation and table generation. |
+| [real11-intermediate-results.json.gz](../autonomy/experiments/last-jump-runs/row-benchmark/real11-intermediate-results.json.gz) | Nine exact requests, input/script provenance,135 fresh runs with accepted facings/exit states,81 warm probes and summaries. |
+| [real11-intermediate-results.md](../autonomy/experiments/last-jump-runs/row-benchmark/real11-intermediate-results.md) | Generated nine-case timing/outcome table. |
+| [REAL11_INTERMEDIATE_BENCHMARK.md](../autonomy/experiments/last-jump-runs/row-benchmark/REAL11_INTERMEDIATE_BENCHMARK.md) | Methodology, results, seed bypass, objective-quality tradeoff, limits and reproduction. |

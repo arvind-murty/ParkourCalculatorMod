@@ -267,3 +267,10 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH="$PWD" .venv-guidance/bin/py
   --input standalone/autonomy/experiments/last-jump-runs/evidence/real11-retry-after-handoff.json.gz \
   --output /tmp/feasibility-results-new.json
 ```
+
+
+## All-nine-request repeated Real11 benchmark
+
+[Analysis, setup and reproduction](REAL11_INTERMEDIATE_BENCHMARK.md), [all timing rows](real11-intermediate-results.md), [complete data](real11-intermediate-results.json.gz), [script](real11_intermediate_benchmark.py).135 fresh API/worker runs (nine intermediate requests × three modes × five repetitions), plus81 warm first-phase probes.105 accepted trajectories independently revalidated,30 unknowns; no status disagreements, errors or deadlines.
+
+The principal win is stopping after feasibility. Pure feasibility is139–151ms on the three successful requests needing numerical work, versus180–207ms optimization; directional early stop is about equally fast. Four already valid seeds return in0.2–0.7ms without worker startup. The pure witnesses have0.21–0.47 blocks less measured Z on those three numerical cases. Production policy remains unchanged; these are fixed requests and exclude scene/corridor/orchestration work.

@@ -74,3 +74,8 @@ The user's implementation request supersedes the earlier pending status for simp
 ## Intermediate solve policy changed (2026-11-04)
 
 The user wants intermediate calls to be feasibility checks with no particular objective. [Implemented](IPOPT_FEASIBILITY_MODE.md): constant-zero NLP objective for the existing feasibility-only mode; stop at a scalar-valid point, then apply existing orchestrator scene/corridor checks. DFS intermediate frames select first-witness mode, final frames optimize. Keep all hard constraints/momentum/facing variables and original-start re-solving. Intermediate scores are unoptimized observations. DFS context fingerprints the new policy; do not silently load old policy checkpoints as exact continuation.64 IPOPT plus162 autonomy checks pass/no skips. No new objective bounds, corridor changes or full Real11 run.
+
+
+## Evidence for feasibility mode (2026-11-04)
+
+The requested [repeated Real11 intermediate benchmark](../autonomy/experiments/last-jump-runs/row-benchmark/REAL11_INTERMEDIATE_BENCHMARK.md) is complete. Early stopping is the main gain; eliminating the directional objective adds little successful-case speed and reduces observed witness Z progress by0.21–0.47 blocks in the three numerical successes. Pure feasibility remains the user's selected policy. Directional early stopping is a measured alternative if later p/v guidance or initialization quality matters; do not silently change the policy or claim a full-route outcome from this fixed-request benchmark. All nine requests retain their feasible/unknown outcomes across modes.

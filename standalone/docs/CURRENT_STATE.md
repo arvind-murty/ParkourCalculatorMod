@@ -86,3 +86,8 @@ The fixed-clock CLI now uses [shared checkpoint storage](CHECKPOINT_STORAGE.md):
 ## Intermediate pure feasibility implemented (2026-11-04)
 
 At the user's request, [intermediate feasibility mode](IPOPT_FEASIBILITY_MODE.md) now uses a constant-zero NLP objective plus first validated feasibility stopping. Final solves keep the configured objective. Intermediate p/v/progress are measurements of one feasible witness, not optimized scores.64 IPOPT and162 affected autonomy tests pass/no skips; saved requests preserve prior feasible/unknown outcomes. No fresh full Real11 search. The DFS policy fingerprint changed, so pre-change DFS checkpoints require explicit reconstruction; same-policy resume remains exact. Repair mode changes reset the corresponding generation cursor.
+
+
+## Repeated Real11 intermediate benchmark (2026-11-04)
+
+[All nine intermediate requests](../autonomy/experiments/last-jump-runs/row-benchmark/REAL11_INTERMEDIATE_BENCHMARK.md) were replayed in three modes over five rotated repetitions (135 fresh runs), plus81 warm first-phase probes. All modes agree on numerical feasibility:105 accepted trajectories independently revalidated,30 unknowns, zero errors/timeouts. Four cases have already feasible seeds and early-stop returns take0.2–0.7ms. The three cases requiring successful numerical work take139–151ms pure feasibility versus180–207ms optimization; directional early stop is about equally fast as pure feasibility. Pure witnesses have0.21–0.47 blocks less Z on those three cases. No solver/search policy changed, no scene/corridor callbacks were timed, and no new full Real11 route search was run.

@@ -1916,3 +1916,17 @@ See [constraint contracts](IPOPT_CONSTRAINT_REDUCTION.md) for extraction/monitor
 ## [autonomy/experiments/last-jump-runs/row-benchmark/feasibility_probe.py](../autonomy/experiments/last-jump-runs/row-benchmark/feasibility_probe.py)
 
 - `main` — def, line 21.
+
+
+# Repeated Real11 intermediate benchmark (2026-11-04)
+
+## [autonomy/experiments/last-jump-runs/row-benchmark/real11_intermediate_benchmark.py](../autonomy/experiments/last-jump-runs/row-benchmark/real11_intermediate_benchmark.py)
+
+- `directional_phase` — def, line 15.
+- `worker_main` — def, line 28.
+- `cases_from_report` — def, line 35.
+- `fresh_run` — def, line 64.
+- `warm_run` — def, line 85.
+- `summarize` — def, line 108.
+- `markdown` — def, line 127.
+- `main` — def, line 159.
