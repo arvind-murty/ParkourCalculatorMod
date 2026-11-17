@@ -38,7 +38,7 @@ Compensated summation, problem scaling and higher precision can reduce cancellat
 
 Smaller smoothing increases curvature/conditioning difficulty. The measured weight m/sqrt(norm(g)^2+epsilon^2) is already~1.28e11 at132 versus at most31.72 for other ticks. The current step damps all free multiplier coordinates by rho times the maximum Hessian diagonal. Better scaling/equilibration and damping are separate numerical leads; they do not resolve an exactly ambiguous recovery direction by themselves.
 
-A more coherent numerical experiment is continuation: solve with easier/larger smoothing, warm-start successively smaller values, and measure physical feasibility separately at every stage. Adaptive/homotopy smoothing is an established approach for nonsmooth convex optimization; [Tran-Dinh, Fercoq and Cevher, Adaptive Smoothing Algorithms for Nonsmooth Composite Convex Minimization](https://arxiv.org/abs/1509.00106). Their theory is not automatically a guarantee for this implementation, its early stops, or its nonconvex physical recovery.
+A more coherent numerical experiment is continuation: solve with easier/larger smoothing, warm-start successively smaller values, and measure physical feasibility separately at every stage. Adaptive/homotopy smoothing is an established approach for nonsmooth convex optimization; [Quoc Tran-Dinh, Adaptive Smoothing Algorithms for Nonsmooth Composite Convex Minimization](https://arxiv.org/abs/1509.00106). Their theory is not automatically a guarantee for this implementation, its early stops, or its nonconvex physical recovery.
 
 ## 4. Can we force costates to stay large?
 
