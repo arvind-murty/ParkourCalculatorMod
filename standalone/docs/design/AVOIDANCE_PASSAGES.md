@@ -129,6 +129,12 @@ Each rectangle is its own family, so the switch climb never mixes them, and a
 rectangle is screened jointly with every later item. A repair source refines one
 solved branch and adds no region items.
 
+Independent rectangles are screened as an ordered batch against one approach.
+Encounter preparation likewise batches active-member checks and then candidate
+face-row checks within each phase. Full proofs, exclusion order and the existing
+phase-level budget checks are preserved; conditioning between decisions still
+rebuilds the bounds before downstream batches.
+
 ## Unknown probes and shared collision repair
 
 Named step/grind phases come from both the profile and shared model metadata.

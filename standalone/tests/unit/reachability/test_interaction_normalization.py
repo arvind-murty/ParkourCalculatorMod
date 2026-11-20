@@ -99,6 +99,23 @@ class InteractionNormalizationTests(unittest.TestCase):
         contact = query_interaction(dict(request, role='required_contact'), context())
         self.assertEqual(contact['status'], 'not_ruled_out')
 
+    def test_batches_preserve_complete_proofs_and_observe_later_bound_mutations(self):
+        from parkour_solver.reachability.intervals import interaction_reachability, interaction_reachability_many
+        envelope = context()['envelopes']
+        queries = [dict(regions=[dict(tick=0, phase='X', bounds=[1.,50.,0.,2.,51.,1.])]),
+                   [dict(mode='X', t1=0, cmp='GE', rhs=100.)], {}]
+        before = copy.deepcopy((envelope, queries))
+        first = interaction_reachability_many(envelope, queries)
+        self.assertEqual(first, [interaction_reachability(envelope, q) for q in queries])
+        self.assertEqual([p['ruledOut'] for p in first], [True, True, False])
+        self.assertEqual((envelope, queries), before)
+        envelope['phases'][0]['X']['X'] = [-1000.,1000.]
+        envelope['phases'][0]['X']['Y'] = [-float('inf'),float('inf')]
+        second = interaction_reachability_many(envelope, queries)
+        self.assertEqual(second, [interaction_reachability(envelope, q) for q in queries])
+        self.assertEqual([p['ruledOut'] for p in second], [False, True, False])
+        self.assertEqual(interaction_reachability_many(envelope, []), [])
+
     def test_context_and_probe_uncertainty_invalidate_proofs(self):
         request = dict(box=[1.,50.,0.,2.,51.,1.], role='approach_prerequisite', windows=[dict(tick=0,phase='X')])
         a = query_interaction(request, context())

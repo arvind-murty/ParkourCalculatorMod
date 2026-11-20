@@ -9,6 +9,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <tuple>
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -72,7 +73,37 @@ static std::vector<double> radii(double speed, const std::vector<double>& magnit
     return result;
 }
 
-static py::dict envelopes(py::dict problem, py::object y) {
+struct Envelope {
+    std::vector<State> states;
+    std::vector<std::array<State, 3>> phases;
+    std::vector<bool> uncertain;
+    std::vector<double> travel;
+    py::list velocities;
+    py::object contradiction = py::none(), origin = py::none(), model = py::none();
+
+    py::dict snapshot() const {
+        py::list state_objects, phase_objects;
+        for (auto& state : states) state_objects.append(py::dict("X"_a=list2(state[0][0],state[0][1]),
+            "Z"_a=list2(state[2][0],state[2][1]), "Y"_a=list2(state[1][0],state[1][1])));
+        for (size_t t = 0; t < phases.size(); ++t) {
+            auto a = py::reinterpret_borrow<py::dict>(state_objects[t]), b = py::reinterpret_borrow<py::dict>(state_objects[t+1]);
+            auto bound = [&](int phase, int axis) {return list2(phases[t][phase][axis][0],phases[t][phase][axis][1]);};
+            py::dict phase("Y"_a=py::dict("X"_a=a["X"],"Y"_a=bound(1,1),"Z"_a=a["Z"]),
+                "X"_a=py::dict("X"_a=bound(0,0),"Y"_a=b["Y"],"Z"_a=a["Z"]),
+                "Z"_a=py::dict("X"_a=b["X"],"Y"_a=b["Y"],"Z"_a=bound(2,2)));
+            if (uncertain[t]) {
+                for (auto name : {"Y","X","Z"}) py::reinterpret_borrow<py::dict>(phase[name])["Y"] = list2(-INF,INF);
+                for (int ph : {0,2}) for (int axis : {0,2})
+                    py::reinterpret_borrow<py::dict>(phase[ph == 0 ? "X" : "Z"])[axis == 0 ? "X" : "Z"] = bound(ph,axis);
+            }
+            phase_objects.append(phase);
+        }
+        return py::dict("states"_a=state_objects,"phases"_a=phase_objects,"velocities"_a=velocities,
+            "contradiction"_a=contradiction,"radii"_a=travel,"origin"_a=origin,"model"_a=model);
+    }
+};
+
+static Envelope build_envelope(py::dict problem, py::object y) {
     int n = integer(problem["ticks"]);
     std::map<std::pair<int,int>, Pair> bounds;
     int constrained = 0;
@@ -162,28 +193,24 @@ static py::dict envelopes(py::dict problem, py::object y) {
                     contradiction = py::dict("state"_a=t,"axis"_a=a,"reason"_a="interval_reach_contradiction");
         }
     }
-    py::list state_objects;
-    for (auto& state : states) state_objects.append(py::dict("X"_a=list2(state[0][0],state[0][1]),
-        "Z"_a=list2(state[2][0],state[2][1]), "Y"_a=list2(state[1][0],state[1][1])));
-    py::list phases;
+    std::vector<std::array<State,3>> phases;
     for (int t = 0; t < count-1; ++t) {
-        auto a = py::reinterpret_borrow<py::dict>(state_objects[t]), b = py::reinterpret_borrow<py::dict>(state_objects[t+1]);
-        auto sweep = [&](int axis) {return list2(low(states[t][axis][0],states[t+1][axis][0]),
-                                                   high(states[t][axis][1],states[t+1][axis][1]));};
-        phases.append(py::dict("Y"_a=py::dict("X"_a=a["X"],"Y"_a=sweep(1),"Z"_a=a["Z"]),
-            "X"_a=py::dict("X"_a=sweep(0),"Y"_a=b["Y"],"Z"_a=a["Z"]),
-            "Z"_a=py::dict("X"_a=b["X"],"Y"_a=b["Y"],"Z"_a=sweep(2))));
+        auto& a = states[t]; auto& b = states[t+1];
+        auto sweep = [&](int axis) {return Pair{low(a[axis][0],b[axis][0]),high(a[axis][1],b[axis][1])};};
+        // Array indices follow X/Y/Z even though the physical sweep order is Y/X/Z.
+        phases.push_back({State{sweep(0),b[1],a[2]},State{a[0],sweep(1),a[2]},State{b[0],b[1],sweep(2)}});
     }
+    std::vector<bool> uncertain(phases.size(), false);
     auto vertical = get(problem,"vertical",py::dict());
     for (py::handle contact : get(vertical,"contacts",py::list())) {
         int tick = integer(contact["state"])-1;
         if (!truth(get(contact,"case")) || tick < 0 || tick >= count-1) continue;
-        auto p = py::reinterpret_borrow<py::dict>(phases[tick]);
-        for (auto name : {"Y","X","Z"}) py::reinterpret_borrow<py::dict>(p[name])["Y"] = list2(-INF,INF);
-        for (auto phase : {"X","Z"}) for (int a = 0; a < 2; ++a) {
+        uncertain[tick] = true;
+        for (auto& phase : phases[tick]) phase[1] = Pair{-INF,INF};
+        for (int ph : {0,2}) for (int a = 0; a < 2; ++a) {
             auto b = states[tick][a*2], realized = states[tick+1][a*2], move = movements[tick][a];
-            py::reinterpret_borrow<py::dict>(p[phase])[a == 0 ? "X" : "Z"] =
-                list2(low(low(b[0], b[0]+move[0]),realized[0]), high(high(b[1],b[1]+move[1]),realized[1]));
+            phases[tick][ph][a*2] = Pair{low(low(b[0],b[0]+move[0]),realized[0]),
+                                       high(high(b[1],b[1]+move[1]),realized[1])};
         }
     }
     auto initial_velocity = pair(problem["velocity"]);
@@ -212,88 +239,191 @@ static py::dict envelopes(py::dict problem, py::object y) {
         }
     }
     py::object origin = problem.contains("initialIntervals") ? py::object(py::none()) : py::object(py::list(problem["position"]));
-    return py::dict("states"_a=state_objects,"phases"_a=phases,"velocities"_a=velocities,
-                    "contradiction"_a=contradiction,"radii"_a=travel,"origin"_a=origin,"model"_a=problem);
+    Envelope result;
+    result.states = std::move(states); result.phases = std::move(phases); result.uncertain = std::move(uncertain);
+    result.velocities = velocities; result.travel = std::move(travel);
+    result.contradiction = contradiction; result.origin = origin; result.model = problem;
+    return result;
 }
 
-static py::dict interaction(py::dict envelope, py::object request, bool refine, py::object objective) {
+struct PythonEnvelope {
+    py::dict data;
+    size_t states_size() const {return py::len(data["states"]);}
+    size_t phases_size() const {return py::len(data["phases"]);}
+    Pair state(int tick, const std::string& axis) const {return pair(data["states"][py::int_(tick)][py::str(axis)]);}
+    Pair phase(int tick, const std::string& ph, const std::string& axis) const {
+        return pair(data["phases"][py::int_(tick)][py::str(ph)][py::str(axis)]);
+    }
+    py::object contradiction() const {return get(data,"contradiction");}
+    py::object model() const {return get(data,"model");}
+    py::object origin() const {return get(data,"origin");}
+    bool has_radii() const {return data.contains("radii");}
+    double radius(int tick) const {return number(data["radii"][py::int_(tick)]);}
+};
+struct BatchedPythonEnvelope : PythonEnvelope {
+    explicit BatchedPythonEnvelope(py::dict data) : PythonEnvelope{data} {}
+    // Imports last only for this call: a later batch observes current Python bounds.
+    mutable std::map<std::pair<int,std::string>, Pair> state_cache;
+    mutable std::map<std::tuple<int,std::string,std::string>, Pair> phase_cache;
+    Pair state(int tick, const std::string& axis) const {
+        auto key = std::make_pair(tick,axis); auto found = state_cache.find(key);
+        if (found != state_cache.end()) return found->second;
+        return state_cache[key] = PythonEnvelope::state(tick,axis);
+    }
+    Pair phase(int tick, const std::string& ph, const std::string& axis) const {
+        auto key = std::make_tuple(tick,ph,axis); auto found = phase_cache.find(key);
+        if (found != phase_cache.end()) return found->second;
+        return phase_cache[key] = PythonEnvelope::phase(tick,ph,axis);
+    }
+};
+static int axis_index(const std::string& axis) {
+    if (axis == "X") return 0;
+    if (axis == "Y") return 1;
+    if (axis == "Z") return 2;
+    throw py::key_error(axis);
+}
+struct NativeEnvelope {
+    const Envelope& data;
+    size_t states_size() const {return data.states.size();}
+    size_t phases_size() const {return data.phases.size();}
+    Pair state(int tick, const std::string& axis) const {return data.states.at(tick)[axis_index(axis)];}
+    Pair phase(int tick, const std::string& ph, const std::string& axis) const {
+        return data.phases.at(tick)[axis_index(ph)][axis_index(axis)];
+    }
+    py::object contradiction() const {return data.contradiction;}
+    py::object model() const {return data.model;}
+    py::object origin() const {return data.origin;}
+    bool has_radii() const {return true;}
+    double radius(int tick) const {return data.travel.at(tick);}
+};
+
+struct QueryRow {
+    int tick, other, axis, comparison;
+    bool minus;
+    double rhs;
+    py::object original_rhs, original_comparison;
+};
+struct QueryRegion {
+    int tick;
+    std::string phase;
+    std::array<double,6> box;
+    std::array<py::object,6> original_box;
+    bool interior;
+};
+struct Query {
+    bool alternatives = false;
+    std::vector<Query> children;
+    std::vector<QueryRow> rows;
+    std::vector<QueryRegion> regions;
+    py::object refinement_rows = py::none();
+};
+
+template<class Bounds>
+static Query compile_query(const Bounds& envelope, py::object request) {
     if (py::isinstance<py::list>(request)) request = py::dict("rows"_a=request);
-    py::dict selected = py::cast<py::dict>(request);
-    auto contradiction = get(envelope,"contradiction");
-    if (truth(contradiction)) {
-        py::dict result("ruledOut"_a=true); result.attr("update")(contradiction); return result;
-    }
-    auto retained = []() {return py::dict("ruledOut"_a=false,"reason"_a="not_ruled_out");};
+    auto selected = py::cast<py::dict>(request);
+    Query result;
     if (selected.contains("alternatives")) {
-        py::list results; bool all = true;
-        for (py::handle item : selected["alternatives"]) {
-            py::dict result = interaction(envelope,py::reinterpret_borrow<py::object>(item),refine,objective);
-            all = all && truth(result["ruledOut"]); results.append(result);
-        }
-        if (py::len(results) && all) return py::dict("ruledOut"_a=true,"reason"_a="all_interaction_alternatives_excluded","alternatives"_a=results);
-        return retained();
+        result.alternatives = true;
+        for (auto item : selected["alternatives"])
+            result.children.push_back(compile_query(envelope,py::reinterpret_borrow<py::object>(item)));
+        return result;
     }
-    auto states = py::reinterpret_borrow<py::list>(envelope["states"]);
-    std::map<std::pair<int,std::string>,Pair> tightened;
-    for (py::handle row : get(selected,"rows",py::list())) {
+    result.refinement_rows = get(selected,"rows",py::list());
+    for (auto row : result.refinement_rows) {
         auto axis_object = get(row,"mode");
         if (!py::isinstance<py::str>(axis_object)) continue;
         auto axis = py::cast<std::string>(axis_object);
-        auto t_object = get(row,"t1",get(row,"offset"));
-        if (!horizontal(axis) || t_object.is_none()) continue;
-        int tick = integer(t_object);
-        if (tick < 0 || tick >= py::len(states)) continue;
-        auto key = std::make_pair(tick,axis);
-        auto existing = tightened.find(key);
-        Pair bound = existing == tightened.end() ? pair(states[tick][py::str(axis)]) : existing->second;
-        auto other = get(row,"t2");
-        if (!other.is_none()) {
-            int t2 = integer(other); if (t2 < 0 || t2 >= py::len(states)) continue;
-            auto b = pair(states[t2][py::str(axis)]);
-            if (py::cast<std::string>(get(row,"op",py::str(""))) == "MINUS")
-                bound = {bound[0]-b[1],bound[1]-b[0]};
-            else bound = {bound[0]+b[0],bound[1]+b[1]};
-        }
-        double rhs = number(row["rhs"]); auto cmp = py::cast<std::string>(row["cmp"]);
-        if (((cmp == "GE" || cmp == "EQ") && bound[1] < rhs-1e-7) ||
-            ((cmp == "LE" || cmp == "EQ") && bound[0] > rhs+1e-7))
-            return py::dict("ruledOut"_a=true,"reason"_a="interaction_row_unreachable","tick"_a=tick,
-                "phase"_a="state","axis"_a=axis,"reachable"_a=list2(bound[0],bound[1]),
-                "required"_a=py::dict("cmp"_a=row["cmp"],"rhs"_a=row["rhs"]));
-        if (other.is_none()) tightened[key] = {(cmp == "GE" || cmp == "EQ") ? high(bound[0],rhs-1e-7) : bound[0],
-                                              (cmp == "LE" || cmp == "EQ") ? low(bound[1],rhs+1e-7) : bound[1]};
+        auto tick_object = get(row,"t1",get(row,"offset"));
+        if (!horizontal(axis) || tick_object.is_none()) continue;
+        int tick = integer(tick_object);
+        if (tick < 0 || tick >= envelope.states_size()) continue;
+        auto other_object = get(row,"t2");
+        int other = other_object.is_none() ? -1 : integer(other_object);
+        if (!other_object.is_none() && (other < 0 || other >= envelope.states_size())) continue;
+        auto cmp_object = py::reinterpret_borrow<py::object>(row["cmp"]);
+        auto cmp = py::cast<std::string>(cmp_object);
+        auto rhs = py::reinterpret_borrow<py::object>(row["rhs"]);
+        result.rows.push_back(QueryRow{tick,other,axis == "X" ? 0 : 2,
+            cmp == "GE" ? 1 : cmp == "LE" ? -1 : cmp == "EQ" ? 0 : 2,
+            py::cast<std::string>(get(row,"op",py::str(""))) == "MINUS", number(rhs),rhs,cmp_object});
     }
-    for (py::handle region : get(selected,"regions",py::list())) {
-        int tick = integer(region["tick"]); auto phase = py::cast<std::string>(get(region,"phase",py::str("state")));
-        auto domains = py::reinterpret_borrow<py::list>(envelope[phase == "state" ? "states" : "phases"]);
-        if (tick < 0 || tick >= py::len(domains)) continue;
-        py::object domain = phase == "state" ? py::reinterpret_borrow<py::object>(domains[tick]) : domains[tick][py::str(phase)];
+    for (auto region : get(selected,"regions",py::list())) {
+        int tick = integer(region["tick"]);
+        auto phase = py::cast<std::string>(get(region,"phase",py::str("state")));
+        if (tick < 0 || tick >= (phase == "state" ? envelope.states_size() : envelope.phases_size())) continue;
         auto box = py::reinterpret_borrow<py::sequence>(region["bounds"]);
-        auto origin = get(envelope,"origin");
-        if (!origin.is_none() && envelope.contains("radii")) {
-            double radius = number(envelope["radii"][py::int_((phase == "state" || phase == "Y") ? tick : tick+1)]);
-            auto o = pair(origin); Pair gap;
-            for (int a = 0; a < 2; ++a) gap[a] = high(high(number(box[a*2])-o[a],0.),o[a]-number(box[a*2+3]));
-            double distance = hypot2(gap[0],gap[1]);
-            if (distance > radius+1e-7) return py::dict("ruledOut"_a=true,"reason"_a="interaction_distance_unreachable",
-                "tick"_a=tick,"phase"_a=phase,"gap"_a=distance,"travelUpperBound"_a=radius);
+        QueryRegion compiled; compiled.tick=tick; compiled.phase=phase;
+        compiled.interior=truth(get(region,"interior"));
+        for (int axis=0; axis<6; ++axis) {
+            compiled.original_box[axis]=py::reinterpret_borrow<py::object>(box[axis]);
+            compiled.box[axis]=number(box[axis]);
         }
-        for (int a = 0; a < 3; ++a) {
-            std::string axis(1,"XYZ"[a]); auto bound = pair(domain[py::str(axis)]);
-            bool excluded = truth(get(region,"interior")) ? (bound[1] <= number(box[a]) || bound[0] >= number(box[a+3]))
-                : (bound[1] < number(box[a])-1e-7 || bound[0] > number(box[a+3])+1e-7);
+        result.regions.push_back(std::move(compiled));
+    }
+    return result;
+}
+
+template<class Bounds>
+static py::dict evaluate_query(const Bounds& envelope, const Query& query, bool refine, py::object objective) {
+    auto retained = []() {return py::dict("ruledOut"_a=false,"reason"_a="not_ruled_out");};
+    if (query.alternatives) {
+        py::list results; bool all=true;
+        for (const auto& child : query.children) {
+            auto result=evaluate_query(envelope,child,refine,objective);
+            all=all && truth(result["ruledOut"]); results.append(result);
+        }
+        if (!query.children.empty() && all)
+            return py::dict("ruledOut"_a=true,"reason"_a="all_interaction_alternatives_excluded","alternatives"_a=results);
+        return retained();
+    }
+    std::map<std::pair<int,int>,Pair> tightened;
+    for (const auto& row : query.rows) {
+        std::string axis(1,"XYZ"[row.axis]);
+        auto key=std::make_pair(row.tick,row.axis);
+        auto existing=tightened.find(key);
+        Pair bound=existing == tightened.end() ? envelope.state(row.tick,axis) : existing->second;
+        if (row.other >= 0) {
+            auto other=envelope.state(row.other,axis);
+            bound=row.minus ? Pair{bound[0]-other[1],bound[1]-other[0]} : Pair{bound[0]+other[0],bound[1]+other[1]};
+        }
+        bool ge=row.comparison == 1 || row.comparison == 0, le=row.comparison == -1 || row.comparison == 0;
+        if ((ge && bound[1] < row.rhs-1e-7) || (le && bound[0] > row.rhs+1e-7))
+            return py::dict("ruledOut"_a=true,"reason"_a="interaction_row_unreachable","tick"_a=row.tick,
+                "phase"_a="state","axis"_a=axis,"reachable"_a=list2(bound[0],bound[1]),
+                "required"_a=py::dict("cmp"_a=row.original_comparison,"rhs"_a=row.original_rhs));
+        if (row.other < 0) tightened[key]=Pair{ge ? high(bound[0],row.rhs-1e-7) : bound[0],le ? low(bound[1],row.rhs+1e-7) : bound[1]};
+    }
+    for (const auto& region : query.regions) {
+        const auto& box=region.box;
+        auto origin=envelope.origin();
+        if (!origin.is_none() && envelope.has_radii()) {
+            auto o=pair(origin); Pair gaps;
+            for (int a=0;a<2;++a) gaps[a]=high(high(box[a*2]-o[a],0.),o[a]-box[a*2+3]);
+            double distance=hypot2(gaps[0],gaps[1]);
+            double radius=envelope.radius((region.phase == "state" || region.phase == "Y") ? region.tick : region.tick+1);
+            if (distance > radius+1e-7)
+                return py::dict("ruledOut"_a=true,"reason"_a="interaction_distance_unreachable",
+                    "tick"_a=region.tick,"phase"_a=region.phase,"gap"_a=distance,"travelUpperBound"_a=radius);
+        }
+        for (int a=0;a<3;++a) {
+            std::string axis(1,"XYZ"[a]);
+            auto bound=region.phase == "state" ? envelope.state(region.tick,axis) : envelope.phase(region.tick,region.phase,axis);
+            bool excluded=region.interior ? (bound[1] <= box[a] || bound[0] >= box[a+3])
+                : (bound[1] < box[a]-1e-7 || bound[0] > box[a+3]+1e-7);
             if (excluded) {
-                py::list required; required.append(box[a]); required.append(box[a+3]);
-                return py::dict("ruledOut"_a=true,"reason"_a="interaction_region_unreachable","tick"_a=tick,
-                    "phase"_a=phase,"axis"_a=axis,"reachable"_a=list2(bound[0],bound[1]),"required"_a=required);
+                py::list required; required.append(region.original_box[a]); required.append(region.original_box[a+3]);
+                return py::dict("ruledOut"_a=true,"reason"_a="interaction_region_unreachable",
+                    "tick"_a=region.tick,"phase"_a=region.phase,"axis"_a=axis,
+                    "reachable"_a=list2(bound[0],bound[1]),"required"_a=required);
             }
         }
     }
-    if (refine && !get(envelope,"model").is_none()) {
-        auto checked = py::module_::import("parkour_solver.numerics.disk").attr("screen")(
-            envelope["model"],get(selected,"rows",py::list()),objective);
+    if (refine && !envelope.model().is_none()) {
+        auto checked=py::module_::import("parkour_solver.numerics.disk").attr("screen")(
+            envelope.model(),query.refinement_rows,objective);
         if (!checked.is_none()) {
-            auto outcome = py::cast<std::string>(checked["outcome"]);
+            auto outcome=py::cast<std::string>(checked["outcome"]);
             if (outcome == "infeasible") {
                 py::dict result("ruledOut"_a=true); result.attr("update")(checked["proof"]); return result;
             }
@@ -304,9 +434,50 @@ static py::dict interaction(py::dict envelope, py::object request, bool refine, 
     return retained();
 }
 
+template<class Bounds>
+static py::dict check_interaction(const Bounds& envelope, py::object request, bool refine, py::object objective) {
+    auto contradiction=envelope.contradiction();
+    if (truth(contradiction)) {
+        py::dict result("ruledOut"_a=true); result.attr("update")(contradiction); return result;
+    }
+    return evaluate_query(envelope,compile_query(envelope,request),refine,objective);
+}
+
+template<class Bounds>
+static py::list check_many(const Bounds& envelope, py::iterable requests) {
+    py::list results;
+    auto contradiction=envelope.contradiction();
+    if (truth(contradiction)) {
+        for (auto request : requests) {
+            py::dict result("ruledOut"_a=true); result.attr("update")(contradiction); results.append(result);
+        }
+        return results;
+    }
+    // The complete query tree lives in native storage through evaluation of this batch.
+    std::vector<Query> compiled;
+    for (auto request : requests) compiled.push_back(compile_query(envelope,py::reinterpret_borrow<py::object>(request)));
+    for (const auto& query : compiled) results.append(evaluate_query(envelope,query,false,py::none()));
+    return results;
+}
+
 PYBIND11_MODULE(_pruning_native, module) {
-    module.def("reachable_envelopes", &envelopes, "problem"_a, "y"_a=py::none());
-    module.def("interaction_reachability", &interaction, "envelopes"_a,"interaction"_a,
-               py::kw_only(),"refine"_a=false,"objective"_a=py::none());
+    module.def("reachable_envelopes", [](py::dict problem, py::object y) {return build_envelope(problem,y).snapshot();},
+               "problem"_a, "y"_a=py::none());
+    module.def("interaction_reachability", [](py::dict envelope, py::object request, bool refine, py::object objective) {
+        return check_interaction(PythonEnvelope{envelope},request,refine,objective);
+    }, "envelopes"_a,"interaction"_a,py::kw_only(),"refine"_a=false,"objective"_a=py::none());
+    module.def("interaction_reachability_many", [](py::dict envelope, py::iterable requests) {
+        return check_many(BatchedPythonEnvelope{envelope},requests);
+    });
+    py::class_<Envelope>(module,"Envelope")
+        .def(py::init(&build_envelope),"problem"_a,"y"_a=py::none())
+        .def("snapshot", &Envelope::snapshot)
+        .def("check", [](const Envelope& envelope, py::object request, bool refine, py::object objective) {
+            return check_interaction(NativeEnvelope{envelope},request,refine,objective);
+        }, "interaction"_a,py::kw_only(),"refine"_a=false,"objective"_a=py::none())
+        .def("check_many", [](const Envelope& envelope, py::iterable requests) {return check_many(NativeEnvelope{envelope},requests);});
+    module.def("screen_batch", [](py::dict problem, py::object y, py::iterable requests) {
+        return check_many(NativeEnvelope{build_envelope(problem,y)},requests);
+    });
     module.def("hypot2", &hypot2);
 }

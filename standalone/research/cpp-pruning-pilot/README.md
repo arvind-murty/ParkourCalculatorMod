@@ -1,12 +1,14 @@
 # C++ pruning pilot
 
-This experiment measures a C++17 port of the production
+The first experiment measures a C++17 port of the production
 `reachable_envelopes` and `interaction_reachability` functions in
 [`reachability/intervals.py`](../../src/parkour_solver/reachability/intervals.py).
 They build conservative bounds and reject unreachable movement/contact/avoidance
 choices inside the real candidate-generation and constraint-enumeration paths.
 The pilot can replace both functions in the existing search, including imported
 aliases, without changing production source or its default backend.
+The batched experiment below adds Python batch entry points and an experimental
+native owner while preserving scalar decisions and the default Python backend.
 
 This is an experimental mixed Python/C++ backend, not a full C++ search engine.
 Movement generation, traversal, remaining model preparation and checkpoint storage
@@ -130,3 +132,57 @@ directory and the explicit list of component `benchmark.json` files. It checks
 paired live results and search-transition hashes before writing `REPORT.md` and
 `comparison.json`. Keep full corpora, logs and build metadata with the evidence;
 do not infer a full-migration speedup from a component multiplier.
+
+## Batched experiment
+
+The next experiment adds ordered independent-query batches to encounter phase
+members/faces and finite contact regions. The Python batch calls the existing
+scalar predicate for each request. The native implementation compiles whole query
+trees into C++ row/region/alternative structures and evaluates them against native
+bounds. `Envelope(problem, y).check_many(queries)` retains its bounds in C++;
+`screen_batch(problem, y, queries)` constructs bounds and checks the batch inside
+one call, returning only the complete ordered proofs. They use the real interval
+and travel rules; scalar checks retain the existing optional Clarabel refinement.
+
+The existing search also reads and can mutate Python envelope dictionaries. Its
+public batch bridge imports referenced bounds only for that call. It never reuses
+a hidden native copy after Python mutations. The attempted retained dictionary
+adapter failed the existing probe-uncertainty mutation test and was removed;
+that failure is retained in the experiment evidence. The direct opaque owner
+and the public bridge have separate measurements, because the current Python
+callers still require materialized snapshots.
+
+Capture uses the first 32 batch calls and every 64th later call, up to 128 batches;
+scalar/envelope capture retains its original sampling rule. Existing scalar-gate
+source is preserved as an oracle for query proofs, cache/fallback counts and
+exclusion order. The focused native checks include an explicit between-batch
+mutation regression; additional movement tests exercise contacts, stepping,
+ceiling, composition and existing interruption/resume controls.
+
+```sh
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 ../.venv-guidance/bin/python -B -m tools.profiling.cpp_pruning batch_bench \
+  --corpus /private/var/tmp/cpp-batch-capture-new/corpus.pkl.gz --repetitions 10 \
+  --output /private/var/tmp/cpp-batch-kernels-new
+```
+
+Run the command in three fresh processes, then run the existing serial `matrix`
+command with the newly built extension. `build_and_batch` includes construction,
+query conversion and full decision outputs; `retained_batch` excludes envelope
+construction but includes query conversion; `public_batch` consumes the current
+Python snapshot. Capturing, validation and sanitizer execution remain separate
+from timing. The batched evidence is preserved under
+`/private/var/tmp/standalone-cpp-batch-20261120T134000`; its `REPORT.md` is generated
+by `summarize.py --batch --build <build.json>` with the three explicit kernel
+result files.
+
+The [portable batched results](batch-results.json) record 17.999197x for direct
+construction plus checks, 1.045212x for checks with retained native bounds, and
+0.780464x for the public snapshot bridge. These use a different corpus and return
+boundary from the first experiment; their ratio is not an isolated batching gain.
+Across 20 live runs, completed-search speedup is 1.096448x without checkpoints and
+1.029087x with them. The two extended pairs expanded native `[24, 24]` versus
+Python `[21, 21]`, with no finish. All eight completed pairs match each other and
+the original scalar search-transition hashes. Focused and additional movement
+scope passed 83 and 53 tests, respectively, with no failures, errors or skips.
+Keep the experimental backend separate from the default Python execution; a
+further port must own candidate construction and its private bounds together.

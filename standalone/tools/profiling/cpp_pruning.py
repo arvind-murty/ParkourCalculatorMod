@@ -28,7 +28,7 @@ from parkour_solver.io.provenance import source_hashes, source_revision
 ROOT = STANDALONE_ROOT
 PILOT = ROOT / 'research/cpp-pruning-pilot'
 BUILD = ROOT / 'build/cpp-pruning-pilot'
-NAMES = ('reachable_envelopes', 'interaction_reachability')
+NAMES = ('reachable_envelopes', 'interaction_reachability', 'interaction_reachability_many')
 ORIGINAL = {name: getattr(intervals, name) for name in NAMES}
 spec = importlib.util.spec_from_file_location('_pruning_python_oracle', intervals.__file__)
 ORACLE = importlib.util.module_from_spec(spec)
@@ -48,6 +48,8 @@ def native():
     sys.path.insert(0, str(BUILD))
     import _pruning_native
     return _pruning_native
+
+
 
 
 def exact(a, b, path='result'):
@@ -106,8 +108,9 @@ def build(output):
     rng = random.Random(8127)
     values = [(0.,0.),(1e-310,1e-309),(1e300,1e300)]
     values += [(rng.uniform(-1e6,1e6),rng.uniform(-1e6,1e6)) for _ in range(10000)]
+    module = native()
     for a,b in values:
-        if struct.pack('d',math.hypot(a,b)) != struct.pack('d',native().hypot2(a,b)):
+        if struct.pack('d',math.hypot(a,b)) != struct.pack('d',module.hypot2(a,b)):
             raise AssertionError('Native norm is not bit-exact with this CPython')
     save(output / 'hypot-parity.json', dict(cases=len(values), bitExact=True))
 
@@ -123,9 +126,10 @@ def run(args):
     before = source_hashes()
     metadata = dict(startedAt=stamp(), sourceRevision=source_revision(), sourceHashes=before,
         backend=args.backend, fixture=fixture, durable=args.durable, python=sys.executable,
+        loadAverageAtStart=os.getloadavg(), threadEnvironment={k:os.environ.get(k) for k in ('OPENBLAS_NUM_THREADS','OMP_NUM_THREADS')},
         command=sys.argv, driverSHA256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
     (args.output/'instrumentation-driver.py').write_bytes(Path(__file__).read_bytes())
-    if args.backend == 'native':
+    if args.backend != 'python':
         binary = Path(native().__file__)
         metadata['nativeBinarySHA256'] = hashlib.sha256(binary.read_bytes()).hexdigest()
         metadata['nativeSourceSHA256'] = hashlib.sha256((PILOT/'pruning.cpp').read_bytes()).hexdigest()
@@ -134,7 +138,7 @@ def run(args):
     counts = {name: 0 for name in NAMES}
     checks = {name: 0 for name in NAMES}
     functions = {}
-    if args.backend == 'native':
+    if args.backend != 'python':
         functions = {name: getattr(native(), name) for name in NAMES}
     if args.capture or args.verify:
         for name in NAMES:
@@ -142,7 +146,7 @@ def run(args):
             def wrapped(*a, _name=name, _target=target, **kw):
                 ordinal = counts[_name]
                 counts[_name] += 1
-                selected = args.capture and (ordinal < 128 or ordinal % 64 == 0) and len(captured[_name]) < 1024
+                selected = args.capture and (ordinal < (32 if _name.endswith('_many') else 128) or ordinal % 64 == 0) and len(captured[_name]) < (128 if _name.endswith('_many') else 1024)
                 inputs = copy.deepcopy((a,kw)) if selected else None
                 result = _target(*a,**kw)
                 if args.verify:
@@ -175,7 +179,7 @@ def run(args):
         expandedPrefixes=result.get('expandedPrefixes'),work=result['work'],
         ticks=best['plan']['ticks'] if best else None,objective=best['candidate']['objective'] if best else None,
         validation=validation,liveComparisons=checks,captured={k:len(v) for k,v in captured.items()},calls=counts,
-        finishedAt=stamp(), timing='Whole application run; final report rendering excluded; capture/verification diagnostic when enabled')
+        finishedAt=stamp(), loadAverageAtEnd=os.getloadavg(), timing='Whole application run; final report rendering excluded; capture/verification diagnostic when enabled')
     save(args.output/'summary.json',summary)
     print(json.dumps(summary),flush=True)
 
@@ -186,18 +190,19 @@ def load_cases(paths):
         with gzip.open(path,'rb') as stream:
             value = pickle.load(stream)
         for name in NAMES:
-            cases[name].extend(value['cases'][name])
+            cases[name].extend(value['cases'].get(name, []))
     return cases
 
 
 def validate(args):
     cases = load_cases(args.corpus)
     validated = {}
+    functions = {name:getattr(native(),name) for name in NAMES}
     for name, entries in cases.items():
         for i,entry in enumerate(entries):
             expected = getattr(ORACLE,name)(*entry['args'],**entry['kwargs'])
             exact(entry['expected'],expected,f'{name}[{i}].reference')
-            result = getattr(native(),name)(*entry['args'],**entry['kwargs'])
+            result = functions[name](*entry['args'],**entry['kwargs'])
             exact(expected,result,f'{name}[{i}].native')
             if name == 'reachable_envelopes' and result['model'] is not entry['args'][0]:
                 raise AssertionError('Native envelope must retain model identity')
@@ -219,17 +224,19 @@ def tests(args):
                'tests.unit.reachability.test_proposal_analysis','tests.unit.search.test_transfer_time_bounds',
                'tests.unit.constraints.test_encounters','tests.unit.constraints.test_option_keys',
                'tests.unit.movement.test_block_contacts']
+    modules = args.test_modules or modules
     counts = {name:0 for name in NAMES}
     functions = {}
+    targets = {name:getattr(native(),name) for name in NAMES}
     for name in NAMES:
         def checked(*a,_name=name,**kw):
             # Compare pure bounds without doubling an effectful solver/mock call.
             pure = dict(kw,refine=False) if kw.get('refine') else kw
             expected = getattr(ORACLE,_name)(*a,**pure)
-            actual = getattr(native(),_name)(*a,**pure)
+            actual = targets[_name](*a,**pure)
             exact(expected,actual,_name)
             counts[_name] += 1
-            return getattr(native(),_name)(*a,**kw) if kw.get('refine') else actual
+            return targets[_name](*a,**kw) if kw.get('refine') else actual
         functions[name] = checked
     before = source_hashes()
     with replacements(functions), (args.output/'tests.log').open('w') as log:
@@ -280,6 +287,67 @@ def bench(args):
         timing='Same ordered corpus, warmed calls; Python/C++ public boundaries both materialize outputs; no solver refinement'))
 
 
+
+def batch_bench(args):
+    module = native()
+    entries = load_cases(args.corpus)['interaction_reachability_many']
+    prepared = []
+    for entry in entries:
+        envelope, queries = entry['args']
+        model = envelope['model']
+        states = envelope['states']
+        y = [state['Y'][0] for state in states] if all(state['Y'][0] == state['Y'][1] for state in states) else None
+        python_bounds = ORACLE.reachable_envelopes(model, y)
+        owner = module.Envelope(model, y)
+        exact(python_bounds, owner.snapshot(), 'owned_envelope')
+        expected = ORACLE.interaction_reachability_many(envelope, queries)
+        exact(expected, ORACLE.interaction_reachability_many(python_bounds, queries), 'reconstructed_batch')
+        exact(expected, owner.check_many(queries), 'owned_batch')
+        exact(expected, module.screen_batch(model, y, queries), 'coupled_batch')
+        prepared.append((model, y, envelope, queries, owner, python_bounds))
+    def coupled_python(item):
+        model,y,_,queries,_,_ = item
+        return ORACLE.interaction_reachability_many(ORACLE.reachable_envelopes(model,y),queries)
+    def coupled_native(item):
+        model,y,_,queries,_,_ = item
+        return module.screen_batch(model,y,queries)
+    methods = dict(
+        build_and_batch=(coupled_python,coupled_native),
+        retained_batch=(lambda item: ORACLE.interaction_reachability_many(item[5],item[3]),
+                        lambda item: item[4].check_many(item[3])),
+        public_batch=(lambda item: ORACLE.interaction_reachability_many(item[2],item[3]),
+                      lambda item: module.interaction_reachability_many(item[2],item[3])))
+    rows=[]
+    for name,(python_call,native_call) in methods.items():
+        functions=dict(python=python_call,native=native_call)
+        def measure(function,loops):
+            started=time.perf_counter()
+            for _ in range(loops):
+                for item in prepared:
+                    result=function(item)
+            return time.perf_counter()-started
+        for function in functions.values(): measure(function,1)
+        loops=max(1,min(100,int(.2/max(measure(python_call,1),1e-9))))
+        runs=[]
+        for repetition in range(args.repetitions):
+            row=dict(repetition=repetition,order=['python','native'] if repetition%2==0 else ['native','python'])
+            for backend in row['order']: row[backend]=measure(functions[backend],loops)
+            runs.append(row)
+        row=dict(function=name,cases=len(prepared),loops=loops,runs=runs,
+            pythonMedianSeconds=statistics.median(r['python'] for r in runs),
+            nativeMedianSeconds=statistics.median(r['native'] for r in runs),
+            medianPairedSpeedup=statistics.median(r['python']/r['native'] for r in runs))
+        rows.append(row)
+        print(json.dumps({k:v for k,v in row.items() if k!='runs'}),flush=True)
+    save(args.output/'benchmark.json',dict(rows=rows,sourceRevision=source_revision(),sourceHashes=source_hashes(),
+        driverSHA256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        nativeBinarySHA256=hashlib.sha256(Path(module.__file__).read_bytes()).hexdigest(),
+        corpus={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in args.corpus},
+        batches=len(prepared),queries=sum(len(item[3]) for item in prepared),
+        batchSizes=[len(item[3]) for item in prepared],exactParity=True,
+        timing='Public API calls and full decision outputs included; native owner construction excluded only from retained_batch'))
+
+
 def matrix(args):
     jobs = []
     short = ROOT/'cases/real11/physical-anchors.json'
@@ -316,11 +384,12 @@ def matrix(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action',choices=('build','run','validate','tests','bench','matrix'))
+    parser.add_argument('action',choices=('build','run','validate','tests','bench','batch_bench','matrix'))
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--input',type=Path)
     parser.add_argument('--seconds',type=float,default=90.)
     parser.add_argument('--backend',choices=('python','native'),default='python')
+    parser.add_argument('--test-modules',nargs='+')
     parser.add_argument('--capture',action='store_true')
     parser.add_argument('--verify',action='store_true')
     parser.add_argument('--durable',action='store_true')

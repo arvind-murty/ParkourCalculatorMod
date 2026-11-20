@@ -8,8 +8,8 @@ effective horizontal requirements; fixed vertical clearance is a gap, never a si
 import math
 
 from parkour_solver.constraints.avoidance import blockage_counts, passage_kind, phase_states
-from parkour_solver.reachability.service import block_interaction
-from parkour_solver.reachability.intervals import interaction_reachability
+from parkour_solver.scene.geometry import expanded_box
+from parkour_solver.reachability.intervals import interaction_reachability, interaction_reachability_many
 from parkour_solver.search.identity import digest
 from parkour_solver.spatial.surfaces import intersects, nested
 
@@ -169,8 +169,9 @@ def prepare_encounter(owner, item, envelopes):
                 continue
             # Members the envelope rules out at this phase cannot be touched then; the sides are
             # built around the rest.
-            reachable = [k for k in active
-                         if not block_interaction(envelopes, cluster.solids[k], tick, (phase,), interior=True)['ruledOut']]
+            checks = interaction_reachability_many(envelopes, [dict(alternatives=[dict(regions=[
+                dict(tick=tick, phase=phase, bounds=expanded_box(cluster.solids[k]), interior=True)])]) for k in active])
+            reachable = [k for k, proof in zip(active, checks) if not proof['ruledOut']]
             if not reachable:
                 certain = [i for i in sides(active) if satisfied(result['sides'][i], bounds)]
                 result['coveredPhases'].append([at, certain])
@@ -185,9 +186,11 @@ def prepare_encounter(owner, item, envelopes):
                 continue
             states = {axis: phase_states(tick, phase, axis) for axis in ('X', 'Z')}
             options, costs = {}, {}
-            for i in sides(reachable):
-                rows = [owner.face_row(b, t) for b in result['sides'][i]['bounds'] for t in states[b['axis']]]
-                if interaction_reachability(envelopes, rows)['ruledOut']:
+            faces = [(i, [owner.face_row(b, t) for b in result['sides'][i]['bounds'] for t in states[b['axis']]])
+                     for i in sides(reachable)]
+            checks = interaction_reachability_many(envelopes, [rows for _, rows in faces])
+            for (i, rows), proof in zip(faces, checks):
+                if proof['ruledOut']:
                     owner.metric('excludedFaces')
                     result['excludedFaces'].append([at, i])
                     continue

@@ -1,7 +1,7 @@
 # Performance: measurements, hotspots and invariants
 
 Where solver time goes, what has already been optimized, and the contracts any
-speedup must preserve. Measurements are timed observations of one cold control,
+speedup must preserve. Measurements are timed observations of recorded controls,
 not optimality certificates or guaranteed recoverable speedups.
 
 ## Measuring
@@ -37,7 +37,19 @@ this is exploratory progress evidence, not a time-to-solution speedup.
 The [pilot and portable results](../research/cpp-pruning-pilot/README.md) record
 the exact corpus, build, timing boundary, validation scope and raw evidence paths.
 This measures two pruning functions, not a full C++ migration; the tiny-query
-regression warrants measuring a shared native batch before broadening the port.
+regression motivated the shared native batch experiment below.
+
+The [batched experiment](../research/cpp-pruning-pilot/README.md#batched-experiment)
+measured 17.999197x for native envelope construction plus an ordered query batch,
+returning only decisions. Checks against retained native bounds measured
+1.045212x; checks against mutable Python snapshots measured 0.780464x. These
+boundaries use the same sampled batches within this experiment; they differ from
+the first experiment's corpus and full-envelope return contract.
+The integrated public bridge measured 1.096448x on five completed short pairs
+and 1.029087x on three durable pairs, with identical search-transition hashes
+also matching the scalar baseline. Extended pairs expanded native `[24, 24]`
+versus Python `[21, 21]`, without a finish. This remains a small mixed backend;
+the direct component multiplier does not estimate a complete migration's speed.
 
 ## Real11 cold 300 s controls
 

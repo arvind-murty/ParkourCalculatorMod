@@ -20,6 +20,17 @@ interaction_reachability(envelopes, interaction_constraints)
 
 Use the rows, finite contact footprint and swept phase conditions from the existing movement/contact builders as the interaction description. A query can span multiple phases/ticks where a step or other movement requires them. Unsupported tests or loose envelopes return not_ruled_out; that result is not a feasibility certificate. Disjunctive region choices are ruled out only when all alternatives are excluded. A single required condition excluded by the envelope suffices to reject a conjunctive interaction bundle.
 
+`interaction_reachability_many(envelopes, interactions)` screens an ordered batch
+of independent queries against the same unchanged bounds. It returns the full
+scalar proofs in input order and performs no numerical refinement. Encounter
+preparation batches the active members of each phase, then that phase's candidate
+face rows. Contact-region generation uses `bounds_allowed_many` and
+`InteractionGate.query_many`; per-query approach/fallback accounting and exclusion
+order remain the same as scalar queries. A later batch must observe any intervening
+Python bound mutation. No native handle is serialized with those bounds. The
+[C++ experiment](../../research/cpp-pruning-pilot/README.md) supplies an optional
+research replacement; ordinary execution continues to use Python.
+
 The helper has no target-versus-obstacle policy. Callers interpret its result:
 
 | Query | If ruled out |

@@ -188,3 +188,8 @@ def interaction_reachability(envelopes, interaction, *, refine=False, objective=
         if checked is not None and checked['outcome']=='undecided':
             return dict(ruledOut=False,reason='relaxation_undecided',status=checked['status'],message=checked['message'])
     return dict(ruledOut=False, reason='not_ruled_out')
+
+
+def interaction_reachability_many(envelopes, interactions):
+    """Screen independent queries against one unchanged envelope, preserving order."""
+    return [interaction_reachability(envelopes, query) for query in interactions]

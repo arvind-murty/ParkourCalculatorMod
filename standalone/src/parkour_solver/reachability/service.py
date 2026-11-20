@@ -1,7 +1,7 @@
 import collections
 
 from parkour_solver.scene.geometry import expanded_box
-from parkour_solver.reachability.intervals import interaction_reachability, reachable_envelopes
+from parkour_solver.reachability.intervals import interaction_reachability, interaction_reachability_many, reachable_envelopes
 
 
 PROOF_POLICY = 3
@@ -96,6 +96,17 @@ def bounds_allowed(context, bounds, tick, *, label, jumping=False, phases=('Y', 
         raise ValueError('Generation needs an interactionGate; set it to None to run without reachability')
     gate = context['interactionGate']
     return gate is None or not gate.query(context, bounds, tick, label=label, jumping=jumping, phases=phases)['ruledOut']
+
+
+
+def bounds_allowed_many(context, bounds, tick, *, label, jumping=False, phases=('Y', 'X', 'Z')):
+    if not bounds:
+        return []
+    if 'interactionGate' not in context:
+        raise ValueError('Generation needs an interactionGate; set it to None to run without reachability')
+    gate = context['interactionGate']
+    return ([True]*len(bounds) if gate is None else [not proof['ruledOut'] for proof in
+            gate.query_many(context, bounds, tick, label=label, jumping=jumping, phases=phases)])
 
 
 def candidate_blocks(context, kind='blocks'):
@@ -310,7 +321,7 @@ class InteractionGate:
             self.cache.pop(key)
         return result
 
-    def query(self, context, bounds, tick, *, label, jumping=False, phases=('Y', 'X', 'Z')):
+    def _approach(self, context, tick, jumping):
         from parkour_solver.movement.program import append_choice, program_physics_key
         from parkour_solver.movement.normal import approaches, event_choice, first_descent
         from parkour_solver.search.identity import digest
@@ -344,18 +355,40 @@ class InteractionGate:
         if envelope is None:
             self.metrics['approachFallbacks'] = self.metrics.get('approachFallbacks', 0)+1
             envelope = approach(tick+1)
-        if envelope is None:
-            return dict(ruledOut=False, reason='unknown_approach')
-        at = prefix['profile']['airtime']+tick
-        bounds = list(bounds)
-        bounds[1], bounds[4] = -float('inf'), float('inf')
-        proof = interaction_reachability(envelope, dict(alternatives=[dict(regions=[
-            dict(tick=at, phase=phase, bounds=bounds)]) for phase in phases]))
-        self.checked += 1
-        if proof['ruledOut']:
-            self.exclusions.append(dict(label, frame=context.get('frameId'), horizontal=[bounds[0], bounds[2], bounds[3], bounds[5]],
-                                        input=at, proof=proof))
-        return proof
+        return envelope
+
+    def query(self, context, bounds, tick, *, label, jumping=False, phases=('Y', 'X', 'Z')):
+        return self.query_many(context, [bounds], tick, label=label, jumping=jumping, phases=phases)[0]
+
+    def query_many(self, context, bounds, tick, *, label, jumping=False, phases=('Y', 'X', 'Z')):
+        requests, prepared = [], []
+        # Retain per-query cache/fallback accounting while sharing the native check.
+        for box in bounds:
+            envelope = self._approach(context, tick, jumping)
+            box = list(box)
+            box[1], box[4] = -float('inf'), float('inf')
+            at = context['program']['profile']['airtime']+tick
+            prepared.append((envelope, box, at))
+            requests.append(dict(alternatives=[dict(regions=[dict(tick=at, phase=phase, bounds=box)])
+                                                for phase in phases]))
+        proofs = []
+        index = 0
+        while index < len(prepared):
+            envelope = prepared[index][0]
+            end = index+1
+            while end < len(prepared) and prepared[end][0] is envelope:
+                end += 1
+            checked = ([dict(ruledOut=False, reason='unknown_approach') for _ in range(index, end)]
+                       if envelope is None else interaction_reachability_many(envelope, requests[index:end]))
+            for (current, box, at), proof in zip(prepared[index:end], checked):
+                if current is not None:
+                    self.checked += 1
+                    if proof['ruledOut']:
+                        self.exclusions.append(dict(label, frame=context.get('frameId'),
+                            horizontal=[box[0], box[2], box[3], box[5]], input=at, proof=proof))
+                proofs.append(proof)
+            index = end
+        return proofs
 
     def required(self, program):
         envelope = self.envelopes(program)
