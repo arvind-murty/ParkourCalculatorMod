@@ -24,6 +24,21 @@ Self times subtract instrumented children; inclusive categories overlap; hook
 overhead is included. Keep profiler hooks in `tools/profiling/`, never in
 production code.
 
+## Python/C++ pruning pilot
+
+On the frozen encounter-groups baseline `e9ca522c`, a C++17 port of interval
+envelopes measured 7.141982x faster across three fresh-process corpus runs; the
+individual interaction checks measured 0.924265x. Replacing both inside the real
+Python search measured 1.066065x on five completed short pairs without durable
+checkpoints and 1.030490x on three pairs with them. Every short pair matched
+ticks, objective, work, replay validation and ordered search transitions.
+Two extended deadline pairs expanded Python `[21, 21]` versus native `[22, 21]`;
+this is exploratory progress evidence, not a time-to-solution speedup.
+The [pilot and portable results](../research/cpp-pruning-pilot/README.md) record
+the exact corpus, build, timing boundary, validation scope and raw evidence paths.
+This measures two pruning functions, not a full C++ migration; the tiny-query
+regression warrants measuring a shared native batch before broadening the port.
+
 ## Real11 cold 300 s controls
 
 | Source | Change | Best T | Best Z | Requests / workers | Expanded | Replays | Evidence |

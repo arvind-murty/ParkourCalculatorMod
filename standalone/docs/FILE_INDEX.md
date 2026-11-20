@@ -62,19 +62,19 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/ANCHOR_SEARCH_EXECUTION_REFERENCE.md](ANCHOR_SEARCH_EXECUTION_REFERENCE.md) | 33857 |
 | [docs/ARCHITECTURE.md](ARCHITECTURE.md) | 18017 |
 | [docs/CHECKPOINT_STORAGE.md](CHECKPOINT_STORAGE.md) | 7585 |
-| [docs/CODE_MAP.md](CODE_MAP.md) | 25910 |
+| [docs/CODE_MAP.md](CODE_MAP.md) | 26059 |
 | [docs/CURRENT_STATE.md](CURRENT_STATE.md) | 12584 |
 | [docs/DECISIONS_AND_PLANS.md](DECISIONS_AND_PLANS.md) | 15984 |
 | [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 28686 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11608 |
-| [docs/DOC_INDEX.md](DOC_INDEX.md) | 28019 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 213914 |
+| [docs/DOC_INDEX.md](DOC_INDEX.md) | 28188 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 214583 |
 | [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 79041 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5126 |
 | [docs/LAYOUT.md](LAYOUT.md) | 6373 |
 | [docs/MOD_REFERENCES.md](MOD_REFERENCES.md) | 5279 |
-| [docs/PERFORMANCE.md](PERFORMANCE.md) | 13585 |
+| [docs/PERFORMANCE.md](PERFORMANCE.md) | 14557 |
 | [docs/REAL11_EXTENDED_GEOMETRY.md](REAL11_EXTENDED_GEOMETRY.md) | 12332 |
 | [docs/REAL11_GUIDE.md](REAL11_GUIDE.md) | 20362 |
 | [docs/RESULTS_AND_DEBUGGING.md](RESULTS_AND_DEBUGGING.md) | 16517 |
@@ -107,7 +107,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/reference/MOVEMENT_PORT.md](reference/MOVEMENT_PORT.md) | 12343 |
 | [docs/reference/NUMERICAL_SOLVER.md](reference/NUMERICAL_SOLVER.md) | 23439 |
 | [docs/reference/REPLAY.md](reference/REPLAY.md) | 8680 |
-| [docs/research/GENERIC_ROUTE_DISCOVERY_RESEARCH.md](research/GENERIC_ROUTE_DISCOVERY_RESEARCH.md) | 67882 |
+| [docs/research/GENERIC_ROUTE_DISCOVERY_RESEARCH.md](research/GENERIC_ROUTE_DISCOVERY_RESEARCH.md) | 67868 |
 | [docs/research/HEURISTIC_SOURCE_REVIEW.md](research/HEURISTIC_SOURCE_REVIEW.md) | 17131 |
 | [docs/research/MIXED_INTEGER_RESEARCH.md](research/MIXED_INTEGER_RESEARCH.md) | 15424 |
 | [docs/research/PRUNING_RESEARCH.md](research/PRUNING_RESEARCH.md) | 285642 |
@@ -158,7 +158,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 
 | File | Bytes |
 | --- | ---: |
-| [research/README.md](../research/README.md) | 4420 |
+| [research/README.md](../research/README.md) | 4597 |
 | [research/__init__.py](../research/__init__.py) | 65 |
 | [research/anchor-candidate-audit/.gitignore](../research/anchor-candidate-audit/.gitignore) | 109 |
 | [research/anchor-candidate-audit/README.md](../research/anchor-candidate-audit/README.md) | 10897 |
@@ -596,6 +596,12 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/contact-combinations/ladder-ceiling.json](../research/contact-combinations/ladder-ceiling.json) | 48273 |
 | [research/contact-combinations/three-climbing-ladders.json](../research/contact-combinations/three-climbing-ladders.json) | 262701 |
 | [research/contact-combinations/two-ladders.json](../research/contact-combinations/two-ladders.json) | 141811 |
+| [research/cpp-pruning-pilot/LICENSE.cpython](../research/cpp-pruning-pilot/LICENSE.cpython) | 13936 |
+| [research/cpp-pruning-pilot/README.md](../research/cpp-pruning-pilot/README.md) | 7401 |
+| [research/cpp-pruning-pilot/pruning.cpp](../research/cpp-pruning-pilot/pruning.cpp) | 18033 |
+| [research/cpp-pruning-pilot/requirements.txt](../research/cpp-pruning-pilot/requirements.txt) | 16 |
+| [research/cpp-pruning-pilot/results.json](../research/cpp-pruning-pilot/results.json) | 4378 |
+| [research/cpp-pruning-pilot/summarize.py](../research/cpp-pruning-pilot/summarize.py) | 12942 |
 | [research/decision-windows/README.md](../research/decision-windows/README.md) | 7774 |
 | [research/decision-windows/RESULTS.md](../research/decision-windows/RESULTS.md) | 13187 |
 | [research/decision-windows/analyze_results.py](../research/decision-windows/analyze_results.py) | 4303 |
@@ -1631,7 +1637,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/unit/reachability/test_proposal_analysis.py](../tests/unit/reachability/test_proposal_analysis.py) | 6768 |
 | [tests/unit/reachability/test_screen.py](../tests/unit/reachability/test_screen.py) | 10113 |
 | [tests/unit/search/__init__.py](../tests/unit/search/__init__.py) | 0 |
-| [tests/unit/search/test_anchor_dfs.py](../tests/unit/search/test_anchor_dfs.py) | 33294 |
+| [tests/unit/search/test_anchor_dfs.py](../tests/unit/search/test_anchor_dfs.py) | 33331 |
 | [tests/unit/search/test_anchor_policy.py](../tests/unit/search/test_anchor_policy.py) | 23543 |
 | [tests/unit/search/test_anchor_search.py](../tests/unit/search/test_anchor_search.py) | 37084 |
 | [tests/unit/search/test_anchor_time_bound.py](../tests/unit/search/test_anchor_time_bound.py) | 1919 |
@@ -1686,6 +1692,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tools/profiling/__init__.py](../tools/profiling/__init__.py) | 66 |
 | [tools/profiling/bookkeeping.py](../tools/profiling/bookkeeping.py) | 11994 |
 | [tools/profiling/calibrate.py](../tools/profiling/calibrate.py) | 3578 |
+| [tools/profiling/cpp_pruning.py](../tools/profiling/cpp_pruning.py) | 16558 |
 | [tools/profiling/enumeration.py](../tools/profiling/enumeration.py) | 5326 |
 | [tools/profiling/enumeration_calibrate.py](../tools/profiling/enumeration_calibrate.py) | 4476 |
 | [tools/profiling/enumeration_compare.py](../tools/profiling/enumeration_compare.py) | 3565 |
