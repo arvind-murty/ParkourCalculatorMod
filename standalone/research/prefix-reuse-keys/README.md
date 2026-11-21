@@ -24,7 +24,8 @@ grow with the program's length on every child and survive a port to C++:
 
 - `reachable_envelopes(..., verified=...)` starts the pair loop after the leading
   states that equal an earlier contradiction-free envelope's states and radii,
-  capped at that envelope's last checked state. The gate passes its last 8.
+  capped at that envelope's last checked state. The gate passes its last 8. Replaced
+  by the [parent window](#parent-window) below.
 - `analyze` names an analysis by its `prepare` key, open-terminal flag, scope and
   initial intervals; `required` uses that key as its proof context. `PROOF_POLICY` 4.
 
@@ -87,3 +88,33 @@ same input:
 PYTHONPATH="$PWD" "$PKC_IPOPT_PYTHON" -B research/prefix-reuse-keys/stage_timers.py runs/<new>.json \
   --input research/prefix-reuse-keys/2026-11-21/extended-fixedwork100.json --output runs/<new> --seconds 900 --profile-mode none
 ```
+
+## Parent window
+
+The exact reuse above depends on which envelopes the gate computed earlier. It is
+replaced by a check on the program alone: `append_choice` records the parent's input
+count as `parentTicks`, and `reachable_envelopes` pairs each new state only with the
+other new states and the last `PARENT_WINDOW` (10) parent states (user decision,
+2026-11-21). On the Real11 extended task every travel contradiction between a new and
+a parent state involved one of the last 6 parent states. The window is not exact: it
+can miss a contradiction with an older parent state, which the creation screen's disk
+relaxation and the solve still face. `PROOF_POLICY` 5.
+
+Same fixed-work input and method, old `c7bb81b5` (the reuse above) against the window,
+load average not recorded ([summaries](2026-11-21-window/)):
+
+| Run | Search s | Expanded | Calls / IPOPT | Preparations | Analysis misses / hits | Sequence checks |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| old 1 | 37.98 | 28 | 100 / 22 | 1,412 | 1,426 / 633 | 1,015 |
+| new 1 | 37.58 | 28 | 100 / 22 | 1,412 | 1,426 / 633 | 1,015 |
+| old 2 | 38.05 | 28 | 100 / 22 | 1,412 | 1,426 / 633 | 1,015 |
+| new 2 | 37.03 | 28 | 100 / 22 | 1,412 | 1,426 / 633 | 1,015 |
+
+Mean search time falls 1.9%, with identical transitions in both pairs (19) and in the
+short case (T64, objective -1093.2381026602418, 62 transitions, 4.42 s old, 4.38 s new).
+The reuse had already skipped most pairs; under the stage timers `reachable_envelopes`
+takes 2.78 s old and 2.40 s new over 1,723 calls ([old](2026-11-21-window/stages100-base.json),
+[new](2026-11-21-window/stages100-new.json)). The window bounds each new state's checks
+at 10 parent states however long the program grows. The native gate passed 828 tests
+with no failures, errors or skips ([report](native-gate-window/report.json); run on
+`c7bb81b5` with the window's sources uncommitted).

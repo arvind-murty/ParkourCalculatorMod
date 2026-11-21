@@ -2,12 +2,10 @@ import collections
 import copy
 
 from parkour_solver.scene.geometry import expanded_box
-from parkour_solver.reachability.intervals import interaction_reachability, norm_reference, reachable_envelopes
+from parkour_solver.reachability.intervals import interaction_reachability, reachable_envelopes
 
 
-PROOF_POLICY = 4
-# Recent norm-checked envelopes; a gate's siblings and approaches share their prefix states.
-NORM_REFERENCES = 8
+PROOF_POLICY = 5
 
 
 def interaction_context_key(context):
@@ -222,7 +220,6 @@ class InteractionGate:
         self.relaxation_start = {kind: collections.Counter(counts) for kind, counts in STATS.items()}
         self.block_table, self.jump_traces = {}, {}
         self.approaches = {}
-        self.norm_references = collections.deque(maxlen=NORM_REFERENCES)
 
     def reachable_blocks(self, owner):
         if owner in self.block_table:
@@ -265,9 +262,9 @@ class InteractionGate:
         return self._cached(key,build,'preparation')
 
     def analyze_model(self, route, plan, vertical, *, open_terminal=False, scope=None, initial_intervals=None,
-                      prepared_key=None):
+                      prepared_key=None, parent_ticks=None):
         """`prepared_key`: the `prepare` key that produced route, plan and vertical. The model is a function of it,
-        so it names the analysis instead of the model's own content."""
+        so it names the analysis instead of the model's own content. `parent_ticks`: see `reachable_envelopes`."""
         from parkour_solver.bridge.compiler import coefficient_request
         from parkour_solver.search.identity import digest
         def build_model():
@@ -284,17 +281,14 @@ class InteractionGate:
         built=None
         if prepared_key is not None:
             key=interaction_context_key(dict(prepared=prepared_key,openTerminal=open_terminal,scope=scope,
-                                             initialIntervals=initial_intervals))
+                                             initialIntervals=initial_intervals,parentTicks=parent_ticks))
         else:
             built=build_model()
-            key=interaction_context_key(dict(model=built[0],y=vertical['y'],scope=scope))
+            key=interaction_context_key(dict(model=built[0],y=vertical['y'],scope=scope,parentTicks=parent_ticks))
         def build():
             model,coefficient=built or build_model()
-            envelope=reachable_envelopes(model,vertical['y'],verified=self.norm_references)
+            envelope=reachable_envelopes(model,vertical['y'],parent_ticks=parent_ticks)
             envelope['modelKey']=digest(coefficient)
-            reference=norm_reference(envelope)
-            if reference is not None:
-                self.norm_references.append(reference)
             return dict(key=key,model=model,envelopes=envelope,coefficient=coefficient,y=vertical['y'])
         return self._cached(('analysis',key),build,'analysis')
 
@@ -302,7 +296,8 @@ class InteractionGate:
         prepared=self.prepare(program,scene=scene,require_complete=require_complete)
         if prepared is None:return None
         return self.analyze_model(prepared['route'],prepared['plan'],prepared['vertical'],
-                                  open_terminal=open_terminal,scope=scope,prepared_key=prepared['key'])
+                                  open_terminal=open_terminal,scope=scope,prepared_key=prepared['key'],
+                                  parent_ticks=program.get('parentTicks'))
 
     def condition(self, analysis, rows):
         """Add X/Z prerequisites and repropagate, retaining the compiled physics."""

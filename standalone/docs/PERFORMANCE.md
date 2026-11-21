@@ -124,7 +124,9 @@ uninstrumented generation and DFS self time, `preparation.analyze_model` 56.1 s,
 ([profiles](../research/prefix-reuse-keys/README.md)). Reusing norm-check pairs across
 children and keying analyses by their `prepare` key then cut search time 14.6% on equal
 work (call cap 100) over `fb50d8f8` and 12.6% over the run-tick rework (`8ccc9e49`, which
-itself halves that run), with identical transitions.
+itself halves that run), with identical transitions. Replacing that reuse with a travel check
+of new states against new and the last 10 parent states cut a further 1.9% on that input,
+again with identical transitions.
 
 Constraint enumeration after `86c06e39` runs 2.93x to 3.56x faster on captured
 B6/B7 catalogues, with 94.1% to 94.7% fewer iteration checks and identical

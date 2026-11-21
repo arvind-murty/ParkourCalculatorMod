@@ -3,9 +3,10 @@
 ## Current gate
 
 `tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on main `d9e1ec9c`
-(encounter groups with the run-tick rework and walk-off faces) plus norm-check reuse and
-prepared analysis keys: **828 tests, no failures, errors or skips**, source unchanged during
-the run ([report](../research/prefix-reuse-keys/native-gate-main/report.json)). Wall-time-bound
+(encounter groups with the run-tick rework and walk-off faces) plus prepared analysis keys
+and the parent-window travel check: **828 tests, no failures, errors or skips**, source
+unchanged during the run ([report](../research/prefix-reuse-keys/native-gate-window/report.json);
+run on `c7bb81b5` with the window's sources uncommitted). Wall-time-bound
 tests can fail under load: the three gate runs of the run-tick change each failed a different
 one, each passing in the other runs ([deferred P17](DEFERRED_WORK.md)).
 The gate fails on any skip, so it needs `PKC_RUN_TICKS_COMPILER` for the Java
@@ -27,6 +28,7 @@ persistence without the removed 32/128 limits.
 
 | Source | Tests | Evidence |
 | --- | ---: | --- |
+| `d9e1ec9c` + analyses keyed by their preparation, travel check of new states against new and the last 10 parent states | 828 | [report](../research/prefix-reuse-keys/native-gate-window/report.json) |
 | `d9e1ec9c` + norm-check reuse across children, analyses keyed by their preparation | 828 | [report](../research/prefix-reuse-keys/native-gate-main/report.json) |
 | `fb50d8f8` + run-tick rework, walk-off faces (1 load-sensitive failure, P17) | 827 | [report](../research/encounter-groups/native-gate-runticks/report.json) |
 | `fb50d8f8` + norm-check reuse across children, analyses keyed by their preparation | 817 | [report](../research/prefix-reuse-keys/native-gate/report.json) |

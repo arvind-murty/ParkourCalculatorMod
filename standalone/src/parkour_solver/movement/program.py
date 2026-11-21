@@ -199,9 +199,11 @@ def append_choice(program, choice, *, max_inputs=200):
     masks = compile_units(profile['airtime'], units)
     if events and masks['ladderTicks'] != ladder:
         raise ValueError('Movement units disagree with composed ladder membership')
+    # parentTicks: the reachability travel check pairs only states after the parent's with nearby ones.
     result = dict(initial=copy.deepcopy(program['initial']), profile=profile, ladderEvents=events,
                   movementUnits=units, terminal='open', terminalSupport=choice.get('terminalSupport'),
-                  interactions=program['interactions'] + int(choice.get('interaction', False)), trace=trace)
+                  interactions=program['interactions'] + int(choice.get('interaction', False)), trace=trace,
+                  parentTicks=cut)
     for key in ('threshold', 'guideSeedYaw', 'repairState', 'solveScope', 'committedThrough', 'settledThrough', 'walkOffs'):
         if key in program:
             if key == 'repairState':
@@ -220,6 +222,7 @@ def truncate_program(program, ticks):
     if program['ladderEvents'] or any(program['profile']['ladderTicks']):
         raise ValueError('Checkpoint truncation currently supports non-ladder programs')
     result = copy.deepcopy(program)
+    result.pop('parentTicks', None)
     profile = result['profile']
     profile['airtime'] = ticks
     for key in ('position', 'velocity', 'grounded', 'ladderTicks'):
