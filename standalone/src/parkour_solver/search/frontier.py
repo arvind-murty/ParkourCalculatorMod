@@ -97,9 +97,9 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
     def complete(p):
         if terminal_goal is not None:
             return p.get('terminalGoal')==terminal_goal
-        return (checkpoint_tick is not None and p['profile']['airtime'] == checkpoint_tick or
+        return (checkpoint_tick is not None and p['profile']['duration'] == checkpoint_tick or
             stop_on_goal and p['profile']['grounded'][-1] and p['terminalSupport'] in (stop_supports or [scene['goalBlock']])
-            and p['profile']['airtime'] > 0)
+            and p['profile']['duration'] > 0)
 
     def key(p, identity):
         return priority_key(p, identity) if priority_key else processing_key(p, identity)
@@ -115,13 +115,13 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
         arrivals=[p for block in (stop_supports or [scene['goalBlock']])
                   for p in _landing_prefixes(scene,program,block,reuse_full=True)]
         if not arrivals:return program
-        owned=min(arrivals,key=lambda p:(p['profile']['airtime'],p['terminalSupport']))
-        owned['ownedEndpoint']=owned['profile']['airtime']
+        owned=min(arrivals,key=lambda p:(p['profile']['duration'],p['terminalSupport']))
+        owned['ownedEndpoint']=owned['profile']['duration']
         return owned
 
     def expansion_context(p, run_ticks=True):
         context_data = dict(mode='open', scene=scene, program=p, state=boundary_state(p),
-            maxInputs=settings['maxInputs']-p['profile']['airtime'], maxEntryInputs=settings['maxEntryInputs'],
+            maxInputs=settings['maxInputs']-p['profile']['duration'], maxEntryInputs=settings['maxEntryInputs'],
             checkBudget=budget, deadline=deadline, cancelEvent=cancel_event, normalGap=checkpoint_tick is not None,
             generationRecords=[])
         if terminal_goal is not None:
@@ -129,7 +129,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
         if threshold != .005:
             context_data['threshold'] = threshold
         if checkpoint_tick is not None:
-            context_data['normalGapInputs'] = checkpoint_tick-p['profile']['airtime']
+            context_data['normalGapInputs'] = checkpoint_tick-p['profile']['duration']
         if not run_ticks:
             context_data['runTickChoices'] = False
         if context_adapter is not None:
@@ -152,11 +152,11 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
         effects = no_effects()
         if result['fullProof'] is not None:
             effects['exclusions'].append(dict(id=digest(program_physics_key(full)),
-                ticks=full['profile']['airtime'],proof=result['fullProof'],scope='unused_extension'))
+                ticks=full['profile']['duration'],proof=result['fullProof'],scope='unused_extension'))
         if result['proof'] is not None:
             effects['screened'] += 1
             effects['exclusions'].append(dict(id=digest(program_physics_key(child)),
-                ticks=child['profile']['airtime'],proof=result['proof'],scope='owned_proposal'))
+                ticks=child['profile']['duration'],proof=result['proof'],scope='owned_proposal'))
         return effects
 
     def commit(effects):
@@ -167,7 +167,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
     def accept(child, context_data, effects, queued=()):
         """(child, None) when accepted after the proposal screen, (child, 'seen') when already queued, else (None, why)."""
         before_projection=child
-        if child is not None and checkpoint_tick is not None and child['profile']['airtime'] > checkpoint_tick:
+        if child is not None and checkpoint_tick is not None and child['profile']['duration'] > checkpoint_tick:
             child = truncate_program(child, checkpoint_tick)
         if child is None or not entry_possible(child['profile'], initial_bounds):
             return None, 'rejected'
@@ -183,7 +183,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             proof = screen(child)
             if proof is not None:
                 effects['screened'] += 1
-                effects['exclusions'].append(dict(id=digest(identity), ticks=child['profile']['airtime'], proof=proof))
+                effects['exclusions'].append(dict(id=digest(identity), ticks=child['profile']['duration'], proof=proof))
                 return None, 'screened'
         return child, None
 
@@ -227,7 +227,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
         return {json.dumps(list(target)) for target in run_policy['targets'](base, child)}
 
     def landings_of(child):
-        """{owner: airtime} of an accepted child's earliest landing on each block (owner None off any block).
+        """{owner: duration} of an accepted child's earliest landing on each block (owner None off any block).
 
         A grounded child's is its own. An airborne advantageous jump (its built choice stops at a ceiling hit, or at
         the jump tick of a grind, slab boost or corner jump cancel) lands in its own child's choices: per block, the
@@ -237,17 +237,17 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
         owner_of=lambda p:run_policy['owner'](p['terminalSupport']) if p.get('terminalSupport') else None
         p=child['profile']
         if p['grounded'][-1]:
-            return {owner_of(child):p['airtime']}
+            return {owner_of(child):p['duration']}
         context_data=expansion_context(child)
         proposed=[proposal for kind in settings['types'] for proposal in proposals(kind,context_data)
                   if proposal['program'] is not None and proposal['program']['profile']['grounded'][-1]]
         found={}
-        for proposal in sorted(proposed,key=lambda proposal:proposal['program']['profile']['airtime']):
+        for proposal in sorted(proposed,key=lambda proposal:proposal['program']['profile']['duration']):
             if owner_of(proposal['program']) in found:
                 continue
             landed,_,_=check_child(proposal,context_data)
             if landed is not None and landed['profile']['grounded'][-1]:
-                found.setdefault(owner_of(landed),landed['profile']['airtime'])
+                found.setdefault(owner_of(landed),landed['profile']['duration'])
         return found
 
     def lands_later(base, child):
@@ -322,7 +322,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             """landings_of(child) in ticks after P."""
             key=program_search_key(child)
             if key not in peeked:
-                peeked[key]={owner:airtime-program['profile']['airtime'] for owner,airtime in landings_of(child).items()}
+                peeked[key]={owner:duration-program['profile']['duration'] for owner,duration in landings_of(child).items()}
             return peeked[key]
 
         def built(k, found):
@@ -483,7 +483,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                         continue
                     child,reason=check(item)
                     if child is not None:
-                        found.append((item,child,reason,target,child['profile']['airtime']-program['profile']['airtime']))
+                        found.append((item,child,reason,target,child['profile']['duration']-program['profile']['duration']))
                 return found
             for target,wanted in (('next',lambda o:o==upcoming),('block',lambda o:o not in dead and o!=here and o!=upcoming)):
                 for k in range(start,MAX_ADVANTAGEOUS_RUN_TICKS+1):
@@ -590,7 +590,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                 if complete(program):
                     state['ready'].append(program)
                     continue
-                if program['profile']['airtime'] >= settings['maxInputs'] or program['interactions'] >= settings['maxInteractions']:
+                if program['profile']['duration'] >= settings['maxInputs'] or program['interactions'] >= settings['maxInteractions']:
                     state.pop('nodeInFlight',None)
                     continue
                 if node_evaluator is not None and program.get('needsNodeSolve'):
@@ -668,7 +668,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             # Found before any frontier state changes, so a deadline inside it redoes this proposal.
             landed={}
             if reason is None and 'reached' in e and (child['profile']['grounded'][-1] or lands_later(e['program'],child)):
-                landed={owner:airtime-e['program']['profile']['airtime'] for owner,airtime in landings_of(child).items()}
+                landed={owner:duration-e['program']['profile']['duration'] for owner,duration in landings_of(child).items()}
             commit(effects)
             if reason is None:
                 queue_child(e['program'],e['choice'],child)

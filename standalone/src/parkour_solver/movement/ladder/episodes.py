@@ -52,7 +52,7 @@ def compose_ladder_episodes(source_top, target_top, episodes, *, max_inputs=200,
         min_landing_state=max(e['exitState'] for e in episodes))
     if profile is None:
         return None
-    n = profile['airtime']
+    n = profile['duration']
     hits = [climbing[t] or any(e['axis'] != 'Y' and e['offset'] == t for e in contacts) for t in range(n)]
     trace = trace_ladder_schedule({'position': source_top, 'velocity': initial_velocity, 'onGround': initial_ground},
         profile['ladderTicks'], profile['sneak'], hits,

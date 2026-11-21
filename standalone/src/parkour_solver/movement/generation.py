@@ -89,7 +89,7 @@ class NormalGenerator:
             for name, profile in profiles:
                 if profile is None:
                     continue
-                end = start + profile['airtime']
+                end = start + profile['duration']
                 unit = movement_unit('normal', start, end, jumpInputs=[start] if profile['jump'][0] else [],
                     entryCondition={'kind': 'support', 'top': context['sourceTop']},
                     exitCondition={'kind': 'support', 'top': context['targetTop']})

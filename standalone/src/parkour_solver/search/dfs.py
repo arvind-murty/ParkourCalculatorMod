@@ -27,9 +27,9 @@ def arrival_key(record):
 
 
 def decision_family(program, parents):
-    start = min(p['profile']['airtime'] for p in parents)
+    start = min(p['profile']['duration'] for p in parents)
     p = program['profile']
-    jump = next((t for t in range(start,p['airtime']) if p['jump'][t] and p['grounded'][t]),None)
+    jump = next((t for t in range(start,p['duration']) if p['jump'][t] and p['grounded'][t]),None)
     events = [(e['offset'],e['axis'],e.get('role'),e['boxes']) for e in p.get('contactEvents',[])
         if e['offset']>=start and not (e['axis']=='Y' and p['grounded'][e['offset']] and not p['jump'][e['offset']])]
     events += [(e['input'],e['case'],e.get('boxes')) for e in p.get('caseEvents',[]) if e['input']>=start]
@@ -39,7 +39,7 @@ def decision_family(program, parents):
 
 def commit_arrival(program, best, *, source_program=None, keep_region_choices=False):
     best = copy.deepcopy(best)
-    n = program['profile']['airtime']
+    n = program['profile']['duration']
     source = source_program if source_program is not None else program
     def row_key(row):
         return tuple(row.get(k) for k in ('mode','t1','t2','op','cmp','rhs'))
@@ -303,7 +303,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
 
     def time_bound(program,f=None):
         if state['best'] is None:return None
-        label=dict(T=program['profile']['airtime'])
+        label=dict(T=program['profile']['duration'])
         ctx=dict(fixedTerminal=terminal_plan is not None)
         decision=compare_candidates(label,context=ctx,incumbent=state['best'])
         if decision['action']=='exclude_bound':
@@ -383,10 +383,10 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
 
     def screen(program, f=None):
         bounded=program
-        if anchor_route and f is not None and program.get('ownedEndpoint')!=program['profile']['airtime']:
+        if anchor_route and f is not None and program.get('ownedEndpoint')!=program['profile']['duration']:
             arrivals=[p for b in f['goal'].get('blocks',[f['goal']['block']])
                       for p in _landing_prefixes(scene,program,b)]
-            if arrivals:bounded=min(arrivals,key=lambda p:p['profile']['airtime'])
+            if arrivals:bounded=min(arrivals,key=lambda p:p['profile']['duration'])
         bound=time_bound(bounded,f) or (hard_bound(bounded,f) if anchor_route else None) or run_bound(bounded,f)
         if bound is not None:
             return bound
@@ -479,7 +479,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
             from parkour_solver.scene.route import row_tick
             from parkour_solver.constraints.encounters import settled_through
             from parkour_solver.search.repair import node_alternatives
-            settled=max(settled_through(program['profile'],program['profile']['airtime']),program.get('settledThrough',0))
+            settled=max(settled_through(program['profile'],program['profile']['duration']),program.get('settledThrough',0))
             def branch_program(best):
                 # Retain selected physical walls; never endpoint/velocity/yaw equalities.
                 # A decision check makes an intermediate choice for this branch: the exact rows of every
@@ -499,7 +499,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
                     if k in program:kept[k]=program[k]
                 kept['lastSolvedDepth']=depth
                 point=best['candidate']['positions'][-1]
-                kept.update(decisionPoint=point,decisionPointTick=program['profile']['airtime'],
+                kept.update(decisionPoint=point,decisionPointTick=program['profile']['duration'],
                     decisionPointSource='validated_node',decisionTurnaround=classify(adapter.guide_plan,span,point)['isTurnaround'])
                 return kept
             updated=branch_program(result['best'])
@@ -545,7 +545,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
                 existing=bind_goal(parent,f['goal'],scene.get('supportClearance',1e-6))
                 if existing.get('terminalGoal')==f['goal'] and eligible(existing,f):
                     f['ready'].append(existing)
-                remaining=cfg['maxInputs']-parent['profile']['airtime']
+                remaining=cfg['maxInputs']-parent['profile']['duration']
                 if remaining>0:
                     ctx=dict(mode='open',scene=scene,program=parent,state=boundary_state(parent),maxInputs=remaining,
                         terminalGoal=f['goal'],threshold=0.,checkBudget=work.check)
@@ -581,7 +581,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
             f.setdefault('directCursor',0)
             while f['directRoot']<len(f['parents']):
                 p = f['parents'][f['directRoot']]
-                remaining = terminal_plan.tick-p['profile']['airtime']
+                remaining = terminal_plan.tick-p['profile']['duration']
                 if remaining<=0:
                     f['directRoot'] += 1
                     continue
@@ -593,7 +593,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
                 try:
                     for proposal in source:
                         f['directProposal'] = proposal
-                        if proposal['choice']['profile']['airtime']==remaining:
+                        if proposal['choice']['profile']['duration']==remaining:
                             child = proposal['program']
                             if child is not None and accepted_program(child) and screen(child,f) is None:
                                 identity = candidate_key(child)
@@ -629,8 +629,8 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
             for root in f['parents']:
                 point=root.get('decisionPoint',scene['initial']['position'][::2])
                 root.setdefault('decisionPoint',point)
-                root.setdefault('decisionPointTick',root['profile']['airtime'])
-                root.setdefault('decisionPointSource','original_initial' if not root['profile']['airtime'] else 'validated_anchor')
+                root.setdefault('decisionPointTick',root['profile']['duration'])
+                root.setdefault('decisionPointSource','original_initial' if not root['profile']['duration'] else 'validated_anchor')
                 root['decisionTurnaround']=classify(adapter.guide_plan,span,point)['isTurnaround']
             anchors,task=adapter.anchor_policy['anchors'],adapter.data['task']['block']
             tables={}
@@ -692,7 +692,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
             target_scene['goalBlock'] = landing
         elif f['goal'] and f['goal']['kind']=='region':
             spec = f['goal']
-            cp = Checkpoint(program['profile']['airtime'],-1,(1.,0.),tuple(scene['initial']['position']),
+            cp = Checkpoint(program['profile']['duration'],-1,(1.,0.),tuple(scene['initial']['position']),
                 tuple(scene['initial']['position']),(),tuple(spec['region']))
         active_adapter = stage_adapter(f)
         guidance=guide_objective(f)
@@ -757,7 +757,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
         identity = old['id'] if old else f['inFlight']['id'] if f['inFlight'] is not None else score_key(program,f)
         work.counts['terminalEvaluations' if final_frame(f) else 'spatialGoalEvaluations'] += 1
         f['inFlight'] = dict(id=identity,program=program)
-        transition('dispatch',f,candidate=identity,goal=f['goal'],inputs=program['profile']['airtime'])
+        transition('dispatch',f,candidate=identity,goal=f['goal'],inputs=program['profile']['duration'])
         def progress(repair):
             f['inFlight']['program']['repairState'] = repair
             repair_progress()
@@ -795,7 +795,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
             p['repairState'] = result['repairState']
         record = dict(id=identity,program=p,status=result['status'],termination=result['termination'],
             nodeFeasibility=result.get('nodeFeasibility'),objectiveMode='configured',
-            arrival=program['profile']['airtime'] if result['best'] is not None else None,
+            arrival=program['profile']['duration'] if result['best'] is not None else None,
             value=result['best']['candidate']['objective'] if result['best'] else None,
             family=decision_family(program,f['parents']),work=result['work'],goal=f['goal'],goalKey=goal_key(scene,f['goal'],active_adapter.corridor) if f['goal'] else None,
             evaluations=(old.get('evaluations',[]) if old else [])+[dict(session=state['session'],work=result['work'])],
@@ -809,7 +809,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
         if event_route:
             record['scoreContextKey'] = active_adapter.score_context
             record['guideId'] = active_adapter.guide['id']
-        record['ticks'] = program['profile']['airtime']
+        record['ticks'] = program['profile']['duration']
         record['complete'] = final_frame(f)
         if result['best'] is not None:
             best = result['best']
@@ -826,13 +826,13 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
                 if anchor_route:
                     succeed(f,program)
                 record['child'] = commit_arrival(program,best,source_program=source_program)
-                record['child']['settledThrough'] = record['child']['profile']['airtime']
+                record['child']['settledThrough'] = record['child']['profile']['duration']
                 record['child']['searchParent'] = identity
                 if anchor_route:
                     for k in ('decisionNode','decisionParent','decisionDepth','restoredRun'):
                         if k in program:record['child'][k]=program[k]
                     record['child'].update(decisionPoint=best['candidate']['positions'][-1],
-                        decisionPointTick=program['profile']['airtime'],decisionPointSource='validated_anchor',
+                        decisionPointTick=program['profile']['duration'],decisionPointSource='validated_anchor',
                         lastSolvedDepth=program.get('decisionDepth',0))
                 record['child'].pop('solveScope',None)
         elif old and old.get('witness'):
@@ -867,7 +867,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
                 if transfer['valid'] and key not in state['hardLatches']:
                     state['latchRevision']+=1
                     state['hardLatches'][key]=dict(version=transfer['version'],revision=state['latchRevision'],candidate=identity,
-                        frame=f['id'],model=result.get('solveIdentity'),inputs=program['profile']['airtime'],
+                        frame=f['id'],model=result.get('solveIdentity'),inputs=program['profile']['duration'],
                         transferStructure=transfer)
                     transition('hard_jump_latched',f,span=key,revision=state['latchRevision'])
         if minimum_run_pruning and record.get('witness') and final_validated:
@@ -916,12 +916,12 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
         best = copy.deepcopy(variant['best'])
         if record.get('solveScope') is not None:
             best['validationScope'] = record['solveScope']
-        at = region_arrival(best['candidate'],f['goal'],adapter) if f['goal'] and f['goal']['kind']=='region' else source_program['profile']['airtime']
+        at = region_arrival(best['candidate'],f['goal'],adapter) if f['goal'] and f['goal']['kind']=='region' else source_program['profile']['duration']
         if f['goal'] and f['goal']['kind']==KIND and not satisfied(source_program,best['candidate'],f['goal'],scene.get('supportClearance',1e-6)):
             at=None
         if at is None:
             return None
-        variant_program = truncate_program(source_program,at) if at<source_program['profile']['airtime'] else source_program
+        variant_program = truncate_program(source_program,at) if at<source_program['profile']['duration'] else source_program
         child = commit_arrival(variant_program,best,source_program=source_program)
         child['settledThrough'] = at
         if anchor_route:

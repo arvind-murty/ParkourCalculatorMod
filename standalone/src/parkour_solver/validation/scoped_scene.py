@@ -46,7 +46,7 @@ class CorridorAdapter:
 
     def prefix(self, program):
         profile = program['profile']
-        n = profile['airtime']
+        n = profile['duration']
         rows = profile.get('positionConstraints', [])
         contacts = profile.get('contactEvents', [])
         key = json.dumps([n, rows, contacts], sort_keys=True)

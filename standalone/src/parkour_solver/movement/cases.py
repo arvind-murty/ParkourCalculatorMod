@@ -116,7 +116,7 @@ def case_profile(source_y, target_y, event, *, max_inputs=200, jump_at_start=Tru
         return None
     event.setdefault('type','ceiling' if event['case']=='grind' else 'stepping')
     event.setdefault('anchors',{})
-    profile = dict(airtime=trace['ticks'],landingPhase='post' if finish_at is not None else 'pre',
+    profile = dict(duration=trace['ticks'],landingPhase='post' if finish_at is not None else 'pre',
         position=trace['position'],velocity=trace['velocity'],grounded=trace['onGround'],contacts=trace['vertical']['contacts'],
         jump=[v is not None for v in trace['vertical']['jumpVelocity']],caseEvents=[event],
         positionConstraints=list(constraints),contactEvents=list(contacts))

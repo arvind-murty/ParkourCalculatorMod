@@ -44,7 +44,7 @@ def spans(values):
 
 
 def summary_program(program, boxes):
-    p=program['profile'];n=p['airtime']
+    p=program['profile'];n=p['duration']
     contacts=collections.defaultdict(list)
     for event in p.get('contactEvents',[]):
         name='+'.join(sorted({boxes.get(tuple(b),'unmapped') for b in (event['boxes'] if 'boxes' in event else [event['box']])}))
@@ -137,7 +137,21 @@ def canonical_rows(rows):
     return sorted(set(row_key(r) for r in rows),key=str)
 
 
+def current_profiles(value):
+    """Saved runs written at or before 9ab3ec9c name a profile's input count airtime; rename it duration in place."""
+    if isinstance(value, list):
+        for item in value:
+            current_profiles(item)
+    elif isinstance(value, dict):
+        if 'airtime' in value and 'postExitTicks' not in value:
+            value['duration'] = value.pop('airtime')
+        for item in value.values():
+            current_profiles(item)
+    return value
+
+
 def extract(reports):
+    current_profiles(reports)
     last=reports[-1];state=last['result']['searchState'];scene=prepare_scene(last['fixture']['request'])
     boxes={tuple(scene['collisionScene']['solids'][b['solidIndex']]):b['id'] for b in scene['blocks']}
     final_records=records(last);programs=[];branches=[];probes=[];snapshots=[]

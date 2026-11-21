@@ -29,7 +29,7 @@ class CeilingProfileTests(unittest.TestCase):
             box = [-2, bottom, -2, 5, 5, 3]
             profile = ceiling_profile(1, 1, underside(box), 'ceiling')
             hit = profile['ceilingEvent']['offset']
-            self.assertLess(profile['airtime'], ordinary_jump_profile(1, 1)['airtime'])
+            self.assertLess(profile['duration'], ordinary_jump_profile(1, 1)['duration'])
             self.assertEqual(profile['velocity'][hit + 1], REST_CARRY)
             self.assertLess(profile['position'][hit + 2], profile['position'][hit + 1])
             self.assertEqual(sum(c['direction'] > 0 for c in profile['contacts']), 1)
@@ -38,7 +38,7 @@ class CeilingProfileTests(unittest.TestCase):
             self.assertTrue(all(y < plane for y in profile['position'][hit + 2:]))
         self.assertIsNone(ceiling_profile(1, 1, underside([-2, 5, -2, 5, 6, 3]), 'high'))
         short = ceiling_profile(1, 1, underside([-2, 1 + f32(1.8), -2, 5, 5, 3]), 'low', max_inputs=2)
-        self.assertEqual(short['airtime'], 2)
+        self.assertEqual(short['duration'], 2)
 
 
 class OpenCeilingTests(unittest.TestCase):

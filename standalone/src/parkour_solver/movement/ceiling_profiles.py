@@ -54,7 +54,7 @@ def ceiling_profile(source_top, target_top, option, block_id, *, max_inputs=200)
     integer(max_inputs, 'maximum flight inputs', 2, 200)
     ordinary = ordinary_jump_profile(source_top, source_top)
     plane = option.plane
-    hit = next((t for t in range(ordinary['airtime'])
+    hit = next((t for t in range(ordinary['duration'])
                 if ordinary['position'][t] <= plane < ordinary['position'][t + 1]), None)
     if hit is None:
         return None
@@ -77,7 +77,7 @@ def ceiling_profile(source_top, target_top, option, block_id, *, max_inputs=200)
         if ground:
             if tick <= hit:
                 return None
-            return {'airtime': tick + 1, 'landingPhase': 'pre', 'position': positions, 'velocity': velocities,
+            return {'duration': tick + 1, 'landingPhase': 'pre', 'position': positions, 'velocity': velocities,
                     'grounded': grounded, 'contacts': config['contacts'], 'jump': [True] + [False] * tick,
                     'ceilingEvent': {'offset': hit, 'plane': plane, 'boxes': [list(b) for b in option.boxes],
                                      'surface': option.surface, 'regions': [list(r) for r in option.regions],

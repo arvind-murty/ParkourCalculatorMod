@@ -20,7 +20,7 @@ class GenericCompositionTests(unittest.TestCase):
             choice = event_choice(context, 'normal', context['state'], 1,
                 vertical=[dict(state=1, plane=1, direction=-1)], support='floor')
             program = append_choice(program, choice)
-            self.assertEqual(program['profile']['airtime'], t + 1)
+            self.assertEqual(program['profile']['duration'], t + 1)
         self.assertEqual(program['profile']['position'], [1] * 8)
         self.assertEqual(program['profile']['grounded'], [True] * 8)
         self.assertEqual(program['profile']['velocity'], [REST_CARRY] * 8)
@@ -82,13 +82,13 @@ class GenericOpenGenerationTests(unittest.TestCase):
             choice = next(c for c in generate_choices(kind, context)
                           if any(e['case'] == data['case'] for e in c['profile']['caseEvents']))
             event = choice['profile']['caseEvents'][0]
-            self.assertEqual(choice['profile']['airtime'], event['input'] + 1)
+            self.assertEqual(choice['profile']['duration'], event['input'] + 1)
             self.assertIsNotNone(append_choice(program, choice))
             if name in ('blip_up', 'corner_blip_up'):
                 self.assertTrue(choice['profile']['grounded'][-1])
                 self.assertIsNone(choice['terminalSupport'])
             if name in ('slab_boost', 'grind', 'corner_jump_cancel'):
-                self.assertEqual(choice['profile']['airtime'], 1)
+                self.assertEqual(choice['profile']['duration'], 1)
                 self.assertFalse(choice['profile']['grounded'][-1])
 
     def test_boundary_entry_hit_refreshes_climbing_immediately_and_refines_ownership(self):
@@ -128,7 +128,7 @@ class GenericOpenGenerationTests(unittest.TestCase):
         for event in evidence['route']['ladderEvents']:
             program = append_choice(program, ladder_event_choice(event, start=cut))
             self.assertIsNotNone(program)
-            cut = program['profile']['airtime']
+            cut = program['profile']['duration']
         self.assertEqual(len(program['ladderEvents']), 5)
         self.assertEqual(program['profile']['position'], evidence['candidate']['y'][:cut + 1])
         self.assertFalse(program['profile']['grounded'][-1])
@@ -159,7 +159,7 @@ class GenericQueueTests(unittest.TestCase):
             cfg = movement_settings(dict(scene, movementSearch=dict(types=['test_extension'], maxInputs=3)))
             report = {}
             results = list(iter_movement_programs(scene, settings=cfg, report=report))
-            self.assertEqual([p['profile']['airtime'] for p in results], [1, 2])
+            self.assertEqual([p['profile']['duration'] for p in results], [1, 2])
             self.assertEqual(report['termination'], 'exhausted')
         finally:
             GENERATORS.pop('test_extension')
@@ -195,7 +195,7 @@ ROOT = AUTONOMY_DATA
 
 
 def select(program, scene, kind, predicate):
-    context = dict(mode='open', scene=scene, program=program, state=boundary_state(program), maxInputs=100 - program['profile']['airtime'],
+    context = dict(mode='open', scene=scene, program=program, state=boundary_state(program), maxInputs=100 - program['profile']['duration'],
                    interactionGate=None)
     choice = next(choice for choice in generate_choices(kind, context) if predicate(choice))
     combined = append_choice(program, choice)
@@ -245,7 +245,7 @@ class GenericNumericalTests(unittest.TestCase):
         program = select(program, scene, 'stepping', lambda c: c.get('terminalSupport') == 'raised'
                          and c['profile']['caseEvents'][0]['case'] == 'blip')
         for _ in range(3):
-            program = select(program, scene, 'normal', lambda c: c['profile']['airtime'] == 1
+            program = select(program, scene, 'normal', lambda c: c['profile']['duration'] == 1
                              and not c['profile']['jump'][0] and c.get('terminalSupport') == 'raised')
         program = select(program, scene, 'ceiling', lambda c: any(e['boxes'][0][1] == 2.85 for e in c['profile']['contactEvents']))
         program = select(program, scene, 'normal', lambda c: not c['profile']['jump'][0] and c.get('terminalSupport') == 'goal')
@@ -267,7 +267,7 @@ class GenericNumericalTests(unittest.TestCase):
         cut = 0
         for event in previous['ladderEvents']:
             program = append_choice(program, ladder_event_choice(event, start=cut))
-            cut = program['profile']['airtime']
+            cut = program['profile']['duration']
         program = select(program, scene, 'stepping', lambda c: c.get('terminalSupport') == 'goal' and
             any(r.get('name') == 'blip:wall_avoid' and r['mode'] == 'Z' and r['cmp'] == 'LE'
                 for r in c['profile']['positionConstraints']))
@@ -286,7 +286,7 @@ class GenericNumericalTests(unittest.TestCase):
         cut = 0
         for event in evidence['route']['ladderEvents']:
             program = append_choice(program, ladder_event_choice(event, start=cut))
-            cut = program['profile']['airtime']
+            cut = program['profile']['duration']
         program = select(program, scene, 'normal', lambda c: c.get('terminalSupport') == scene['goalBlock'])
         best = self.solve(scene, program)
         self.assertEqual(best['plan']['ticks'], 58)

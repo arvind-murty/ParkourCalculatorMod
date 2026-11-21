@@ -140,7 +140,7 @@ class MovementEntryIntegrationTests(unittest.TestCase):
             with self.subTest(runs=runs):
                 root=self.root(runs)
                 approach=6 if runs else 5
-                duration=prefix['profile']['airtime']+approach
+                duration=prefix['profile']['duration']+approach
                 problem,plan=build_entry_problem(root,ep['column'],ep['wall'],ep['entryFace'],approach,self.compiler,5,
                                                   prefix=prefix,hit_on_entry=True)
                 self.assertEqual(problem['ticks'],duration+runs)
@@ -183,7 +183,7 @@ class MovementEntryIntegrationTests(unittest.TestCase):
         prefix=compose_ladder_episodes(1,None,episodes[:1],max_inputs=48)
         ep=episodes[1]
         contact=copy.deepcopy(evidence['route']['contactEvents'][0])
-        contact['offset']-=prefix['profile']['airtime']
+        contact['offset']-=prefix['profile']['duration']
         problem,plan=build_entry_problem(root,ep['column'],ep['wall'],ep['entryFace'],5,self.compiler,5,
                                           prefix=prefix,hit_on_entry=True,extra_contacts=[contact])
         self.assertEqual(plan['vertical']['contacts'][-1]['state'],7)

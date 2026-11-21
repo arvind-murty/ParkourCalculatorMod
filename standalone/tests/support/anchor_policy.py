@@ -14,7 +14,7 @@ def scene(goal=(0,0,2,1,3,3)):
 def history(s,names):
     p=empty_program(s['initial'],threshold=0.)
     n=len(names)
-    p['profile'].update(airtime=n,position=[1.]*(n+1),velocity=[0.]*(n+1),
+    p['profile'].update(duration=n,position=[1.]*(n+1),velocity=[0.]*(n+1),
         grounded=[True]*(n+1),jump=[True]*n,sneak=[False]*n,ladderTicks=[False]*(n+1))
     p['profile']['contactEvents']=[dict(offset=i,axis='Y',direction=-1,
         boxes=[s['collisionScene']['solids'][next(b['solidIndex'] for b in s['blocks'] if b['id']==name)]])

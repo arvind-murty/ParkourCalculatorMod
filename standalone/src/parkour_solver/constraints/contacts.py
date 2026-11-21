@@ -19,13 +19,13 @@ def floor_checks(scene, block_ids, profiles, *, envelopes=None):
     by_id = {b['id']: b for b in scene['blocks']}
     for leg, profile in enumerate(profiles):
         target_top = by_id[block_ids[leg + 1]]['top']
-        jumps = profile.get('jump', [True] + [False] * (profile['airtime'] - 1))
+        jumps = profile.get('jump', [True] + [False] * (profile['duration'] - 1))
         config = {'threshold': profile.get('threshold', .005), 'jumpVelocity': [f32(.42) if j else None for j in jumps],
-                  'sneak': profile.get('sneak', [False] * profile['airtime'])}
-        for offset in range(profile['airtime']):
+                  'sneak': profile.get('sneak', [False] * profile['duration'])}
+        for offset in range(profile['duration']):
             y = profile['position'][offset]
             next_y = profile['position'][offset + 1]
-            movement = vertical_move(config, offset, profile['velocity'][offset], profile.get('ladderTicks', [False] * (profile['airtime'] + 1))[offset])
+            movement = vertical_move(config, offset, profile['velocity'][offset], profile.get('ladderTicks', [False] * (profile['duration'] + 1))[offset])
             if movement >= 0:
                 continue
             for block in scene['blocks']:
@@ -38,7 +38,7 @@ def floor_checks(scene, block_ids, profiles, *, envelopes=None):
                 planned_floor = any(e['offset'] == offset and e.get('role') in ('landing', 'step')
                                     and e['plane'] == top and scene['collisionScene']['solids'][block['solidIndex']] in e['boxes']
                                     for e in profile.get('contactEvents', []))
-                if next_y <= top <= y and not planned_floor and not (offset + 1 == profile['airtime'] and top == target_top):
+                if next_y <= top <= y and not planned_floor and not (offset + 1 == profile['duration'] and top == target_top):
                     checks.extend({'leg': leg, 'offset': offset, 'block': copy.deepcopy(block), 'region': region,
                                    'reason': 'earlier_floor'} for region in exposed_tops(scene, block))
         for block in scene['blocks']:

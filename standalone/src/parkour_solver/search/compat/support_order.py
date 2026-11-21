@@ -24,7 +24,7 @@ class SupportOrder:
         p=program['profile']
         if self.initial_jump_inputs is not None:
             jumps = [t for t, j in enumerate(p['jump']) if j and p['grounded'][t]]
-            if jumps and jumps[0] not in self.initial_jump_inputs or not jumps and p['airtime'] > max(self.initial_jump_inputs):
+            if jumps and jumps[0] not in self.initial_jump_inputs or not jumps and p['duration'] > max(self.initial_jump_inputs):
                 return dict(accepted=False, progress=0, observed=[], reason='initial_jump_domain')
         events=[]
         for e in p.get('contactEvents',[]):
@@ -48,7 +48,7 @@ class SupportOrder:
                 return dict(accepted=False,progress=index,observed=observed,reason='support_order')
             current=name
             index+=1
-        accepted=self.terminal_tick is None or p['airtime']!=self.terminal_tick or index==len(self.supports)
+        accepted=self.terminal_tick is None or p['duration']!=self.terminal_tick or index==len(self.supports)
         return dict(accepted=accepted,progress=index,observed=observed,
                     reason=None if accepted else 'unfinished_support_order_at_clock')
 

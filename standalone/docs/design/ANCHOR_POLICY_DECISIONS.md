@@ -313,7 +313,8 @@ time (user, 2026-11-19/20):
   landing input: 12 for a flat jump, 3 for a jump under a ceiling 2 blocks above
   the feet, 2 for a grind, slab boost or corner jump cancel. A run-off has no jump
   input, so its airtime is its air inputs. (The comparison counts' A is different:
-  air inputs only, with the jump input counted in J.)
+  air inputs only, with the jump input counted in J; a profile's `duration` counts
+  all of its inputs, run ticks included.)
 - **Built landings.** A ceiling hit's built choice stops at the hit, and a grind's,
   slab boost's or corner jump cancel's at its jump tick, so each lands in its own
   child's choice. Its landing on each block is the earliest of those choices that

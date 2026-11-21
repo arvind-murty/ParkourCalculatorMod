@@ -169,7 +169,7 @@ class ExposedTopTests(unittest.TestCase):
             landed = next(c for c in normal.normal_choices(context(root)) if c.get('terminalSupport') == 'b1')
             prefixes = [root, append_choice(root, landed)]
             for prefix in prefixes:
-                start = prefix['profile']['airtime']
+                start = prefix['profile']['duration']
                 for jumping in (False, True):
                     ctx = context(prefix)
                     def envelope(inputs):
@@ -208,7 +208,7 @@ class ExposedTopTests(unittest.TestCase):
 
     def test_floor_checks_follow_each_exposed_rectangle_of_a_clipped_top(self):
         scene = box_scene([[0, 0, 0, 2, 1, 2], [2, 0, 1, 3, 3, 2]], [('floor', 1), ('pillar', 3)])
-        profile = dict(airtime=2, position=[1.5, 1.2, .9], velocity=[-.1, -.2, -.3], jump=[False, False], sneak=[False, False])
+        profile = dict(duration=2, position=[1.5, 1.2, .9], velocity=[-.1, -.2, -.3], jump=[False, False], sneak=[False, False])
         start = dict(id='start', top=5)
         checks = [c for c in floor_checks(dict(scene, blocks=scene['blocks'] + [start]), ['start', 'start'], [profile])
                   if c['block']['id'] == 'floor' and c['reason'] == 'earlier_floor']
@@ -351,7 +351,7 @@ class WalkOffFaceTests(unittest.TestCase):
                 offered.append([bool([c for c in open_stepping_choices(context(g)) if not c['profile']['jump'][0]])
                                 for g in (None, gate)])
                 program = append_choice(program, next(c for c in normal_choices(context(None))
-                                                      if c.get('terminalSupport') == 'start' and c['profile']['airtime'] == 1))
+                                                      if c.get('terminalSupport') == 'start' and c['profile']['duration'] == 1))
             self.assertEqual(offered, [[True, False]]*3+[[True, True]])
             self.assertEqual(sorted(e['input'] for e in gate.exclusions
                                     if e['proof']['reason'] == 'launch_support_not_left' and e['owner'] == 'middle'), [0, 1, 2])
@@ -418,7 +418,7 @@ class BlockTableTests(unittest.TestCase):
                          for kind in generated(scene, node, gate, None)]
                 tabled = [[(c['profile'], c.get('terminalSupport')) for c in kind]
                           for kind in generated(scene, node, gate, owner)]
-                self.assertEqual(tabled, plain, (owner, node['profile']['airtime']))
+                self.assertEqual(tabled, plain, (owner, node['profile']['duration']))
                 removed += len(scene['blocks'])-len(gate.reachable_blocks(owner)['blocks'])
         return removed
 
@@ -473,7 +473,7 @@ class RunTickChoiceTests(unittest.TestCase):
                             return [(c['profile'], c.get('terminalSupport')) for c in generate_choices(kind, context)]
                         every = choices()
                         kept = [c for c in every if not grounded or c[0]['jump'][0]]
-                        self.assertEqual(choices(runTickChoices=False), kept, (kind, node['profile']['airtime']))
+                        self.assertEqual(choices(runTickChoices=False), kept, (kind, node['profile']['duration']))
                         withheld |= {(kind, e['case']) for c in every if c not in kept
                                      for e in c[0].get('caseEvents', [])} | {(kind, None) for c in every if c not in kept}
         self.assertGreater(airborne, 0)
@@ -507,7 +507,7 @@ class ParentExtensionTests(unittest.TestCase):
             return list(normal_choices(context))[::7]+list(open_stepping_choices(context))[:3]
         level = [empty_program(scene['initial'], threshold=0.)]
         for depth in range(3):
-            parents = level+[truncate_program(p, p['profile']['airtime']-1) for p in level if p['profile']['airtime'] > 1]
+            parents = level+[truncate_program(p, p['profile']['duration']-1) for p in level if p['profile']['duration'] > 1]
             level = []
             for parent in parents:
                 before = json.dumps(parent, sort_keys=True)

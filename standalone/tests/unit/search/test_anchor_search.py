@@ -280,7 +280,7 @@ class AnchorSearchTests(unittest.TestCase):
                 threshold=0.,node_evaluator=lambda *a:self.fail('Arrival should use mandatory anchor solve'),
                 policy_context=dict(version=1),deadline=time.monotonic()+2)
             p=next(source);source.close()
-        self.assertEqual(p['profile']['airtime'],12)
+        self.assertEqual(p['profile']['duration'],12)
         self.assertEqual(p['terminalSupport'],'goal')
         self.assertEqual(p['profile']['positionConstraints'],[])
 
@@ -391,20 +391,20 @@ class MinimumRunTickTests(unittest.TestCase):
 
     @staticmethod
     def landings(s, program, screen=None):
-        # {block: airtime} of the earliest landing on each block among the generators' choices after program that pass screen.
+        # {block: duration} of the earliest landing on each block among the generators' choices after program that pass screen.
         from parkour_solver.movement.generation import generate_choices
         from parkour_solver.movement.program import append_choice, boundary_state
         settings=movement_settings(s)
         context=dict(mode='open',scene=s,program=program,state=boundary_state(program),interactionGate=None,threshold=0.,
-                     maxInputs=settings['maxInputs']-program['profile']['airtime'],maxEntryInputs=settings['maxEntryInputs'])
+                     maxInputs=settings['maxInputs']-program['profile']['duration'],maxEntryInputs=settings['maxEntryInputs'])
         found={}
         for kind in settings['types']:
             for choice in generate_choices(kind,context):
                 child=append_choice(program,choice,max_inputs=settings['maxInputs'])
                 if (child is not None and child['profile']['grounded'][-1] and child.get('terminalSupport')
                         and (screen is None or screen(child) is None)):
-                    found[child['terminalSupport']]=min(found.get(child['terminalSupport'],child['profile']['airtime']),
-                                                        child['profile']['airtime'])
+                    found[child['terminalSupport']]=min(found.get(child['terminalSupport'],child['profile']['duration']),
+                                                        child['profile']['duration'])
         return found
 
     @staticmethod
@@ -425,7 +425,7 @@ class MinimumRunTickTests(unittest.TestCase):
         self.assertEqual(self.runs(state['pending']),[0])
         self.assertEqual(self.reserves(state),[('scan','next',4)])
         scan=[r for r in state['minimumRunCandidates'] if r['key']=='["scan", "next"]']
-        self.assertEqual([(r['k'],r['N']) for r in scan],[(3,emitted[0]['profile']['airtime'])])
+        self.assertEqual([(r['k'],r['N']) for r in scan],[(3,emitted[0]['profile']['duration'])])
         saved=json.loads(json.dumps(state))
         # While the 3-tick arrival is alive the reserve waits and the queued hop is expanded instead.
         again,alive=self.frontier(screen=self.late(3),continuation=saved,live=emitted)
@@ -449,7 +449,7 @@ class MinimumRunTickTests(unittest.TestCase):
         (child,)=[p for p in emitted+state['pending'] if p.get('decisionNode')==scan['nodes'][0]]
         self.assertEqual(local_counts(child)['J'],0)
         self.assertEqual((scan['k'],scan['A'],scan['N']),
-                         (local_counts(child)['R'],local_counts(child)['A'],child['profile']['airtime']))
+                         (local_counts(child)['R'],local_counts(child)['A'],child['profile']['duration']))
 
     def test_no_run_option_or_reserve_past_the_cap(self):
         from parkour_solver.movement.normal import MAX_ADVANTAGEOUS_RUN_TICKS
@@ -476,8 +476,8 @@ class MinimumRunTickTests(unittest.TestCase):
             blocks=[dict(id='start', boxes=[[-2,0,-2,1,1,2]]), dict(id='middle', boxes=[[1,-1,-2,4,0,2]]),
                     dict(id='goal', boxes=[[6,-1,-1,7,0,1]])], movementSearch=dict(types=['normal'], maxInputs=30)))
         emitted,state=self.frontier(scene=s)
-        jumped=min(p['profile']['airtime'] for p in state['pending'] if p['terminalSupport']=='middle' and local_counts(p)['J'])
-        runoffs=[p['profile']['airtime'] for p in state['pending'] if p['terminalSupport']=='middle' and not local_counts(p)['J']]
+        jumped=min(p['profile']['duration'] for p in state['pending'] if p['terminalSupport']=='middle' and local_counts(p)['J'])
+        runoffs=[p['profile']['duration'] for p in state['pending'] if p['terminalSupport']=='middle' and not local_counts(p)['J']]
         self.assertTrue(runoffs)
         self.assertLess(max(runoffs),jumped)
         # Without a reachability gate in this test a run-off onto goal is built too; middle is the point.
@@ -487,10 +487,10 @@ class MinimumRunTickTests(unittest.TestCase):
         from parkour_solver.reachability import service
         s=ceiling_scene(-2.)
         key='["landing", "low"]'
-        lands=lambda state,jump:sorted((local_counts(p)['R'],p['profile']['airtime']) for p in state['pending']
+        lands=lambda state,jump:sorted((local_counts(p)['R'],p['profile']['duration']) for p in state['pending']
                                        if p['terminalSupport']=='low' and bool(local_counts(p)['J'])==jump)
         emitted,state=self.frontier(scene=s)
-        N=min(p['profile']['airtime'] for p in emitted)
+        N=min(p['profile']['duration'] for p in emitted)
         (_,jumped),=lands(state,True)
         # Falling onto deep low takes longer than N but less than jumping onto it: walked off at once (R 1).
         (_,fell),=lands(state,False)
@@ -530,7 +530,7 @@ class MinimumRunTickTests(unittest.TestCase):
         s=ceiling_scene(-2.,lid=4.3)
         hits=lambda p:not p['profile']['grounded'][-1]
         emitted,state=self.frontier(scene=s)
-        N=min(p['profile']['airtime'] for p in emitted)
+        N=min(p['profile']['duration'] for p in emitted)
         lid='["ceiling", "lid"]'
         self.assertEqual(self.candidates(state,key=lid),[(lid,1,'dominated')])
         self.assertIn(('dominated',lid,1),self.reserves(state))
@@ -591,7 +591,7 @@ class MinimumRunTickTests(unittest.TestCase):
         key='["landing", "low"]'
         pending=self.frontier(scene=s)[1]['pending']
         bound=self.landings(s,next(p for p in pending if self.hits(p) and not local_counts(p)['R']))['low']
-        unhit=min(p['profile']['airtime'] for p in pending if p['terminalSupport']=='low' and local_counts(p)['J'])
+        unhit=min(p['profile']['duration'] for p in pending if p['terminalSupport']=='low' and local_counts(p)['J'])
         self.assertLess(bound,unhit)
         runoffs=lambda minimum:lambda p:(dict(reason='early') if p['profile']['grounded'][-1] and p['terminalSupport']=='low'
                                          and not local_counts(p)['J'] and local_counts(p)['R']<minimum else None)
@@ -616,7 +616,7 @@ class MinimumRunTickTests(unittest.TestCase):
                     dict(id='a', boxes=[[0,0,2,1,1.5,3]]), dict(id='b', boxes=[[0,-2,-4,1,-1,-3]])],
             movementSearch=dict(types=['normal'], maxInputs=40)))
         # N comes from the jump-now landings only.
-        landing=lambda state,name:min(p['profile']['airtime'] for p in state['pending']
+        landing=lambda state,name:min(p['profile']['duration'] for p in state['pending']
                                       if p.get('terminalSupport')==name and local_counts(p)['J'])
         emitted,state=self.frontier(scene=s,screen=self.late(3))
         goal='["anchor", "goal"]'

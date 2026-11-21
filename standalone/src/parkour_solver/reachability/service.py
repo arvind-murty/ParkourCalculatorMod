@@ -194,7 +194,7 @@ def walk_off_tick(program):
     face selection, else None."""
     p=program['profile']
     carried={w['offset'] for w in program.get('walkOffs',[])}
-    cut=next((c for c in reversed(range(p['airtime'])) if p['grounded'][c] and not p['jump'][c]
+    cut=next((c for c in reversed(range(p['duration'])) if p['grounded'][c] and not p['jump'][c]
               and not p['ladderTicks'][c] and p['position'][c+1]<p['position'][c]),None)
     return None if cut in carried else cut
 
@@ -321,7 +321,7 @@ class InteractionGate:
         if proof:
             self.metrics['sequenceExclusions']=self.metrics.get('sequenceExclusions',0)+1
             self.exclusions.append(dict(reason='joint_prerequisites_unreachable',proof=proof,frame=context.get('frameId'),
-                input=context['program']['profile']['airtime'],cases=choice['profile'].get('caseEvents',[])))
+                input=context['program']['profile']['duration'],cases=choice['profile'].get('caseEvents',[])))
         return proof
 
     def check_program(self, program, objective=None):
@@ -429,7 +429,7 @@ class InteractionGate:
         envelope = self.approach(context, tick, jumping=jumping)
         if envelope is None:
             return dict(ruledOut=False, reason='unknown_approach')
-        at = context['program']['profile']['airtime']+tick
+        at = context['program']['profile']['duration']+tick
         bounds = list(bounds)
         bounds[1], bounds[4] = -float('inf'), float('inf')
         proof = interaction_reachability(envelope, dict(alternatives=[dict(regions=[
@@ -447,7 +447,7 @@ class InteractionGate:
         envelope = self.approach(context, 0)
         if envelope is None:
             return True
-        cut = context['program']['profile']['airtime']
+        cut = context['program']['profile']['duration']
         faces = walk_off_faces(context['scene'], context['program'], cut, envelope, landing_boxes)
         self.checked += 1
         if faces is None or faces['options']:

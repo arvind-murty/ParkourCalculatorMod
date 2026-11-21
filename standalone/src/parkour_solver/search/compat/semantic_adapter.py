@@ -149,7 +149,7 @@ class SemanticCorridorAdapter(CorridorAdapter):
         return RouteGuards(self.scene,self.corridor,profile,scope['through'],complete=True,
                            envelopes=envelopes,deadline=deadline,
                            phase_count=3*scope['through']-2 if self.contact_phase_only and
-                           scope['through']==profile['airtime'] and profile.get('landingPhase')=='pre' else None)
+                           scope['through']==profile['duration'] and profile.get('landingPhase')=='pre' else None)
 
     def candidate(self, plan, candidate, vertical, *, partial=False):
         self.counts['corridorAudits'] += 1

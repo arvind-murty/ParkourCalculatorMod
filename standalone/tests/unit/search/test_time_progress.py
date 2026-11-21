@@ -69,7 +69,7 @@ class ComparisonAuditTests(unittest.TestCase):
         scene=flat_scene()
         source=dict(corridor=dict(points=[[.5,1,.5],[5.5,1,.5]]))
         entries=[dict(id='error',selection='resource_cap',
-            program=dict(terminalSupport=scene['goalBlock'],profile=dict(grounded=[True],airtime=12)))]
+            program=dict(terminalSupport=scene['goalBlock'],profile=dict(grounded=[True],duration=12)))]
         failed=dict(status='error',termination='worker_failed',best=None,attempts=[],contactAttempts=[])
         with patch('parkour_solver.search.engine.motion_bound',return_value={}), \
                 patch('parkour_solver.search.engine.evaluate_program',return_value=failed):
@@ -80,7 +80,7 @@ class ComparisonAuditTests(unittest.TestCase):
 
     def test_competitive_followup_targets_incomplete_omissions_and_keeps_physics(self):
         from research.legacy_cell_routes.two_goal_experiment import competitive_followup
-        def program(t):return dict(profile=dict(airtime=t),initial=dict(position=[1,2,3]))
+        def program(t):return dict(profile=dict(duration=t),initial=dict(position=[1,2,3]))
         candidates=[dict(id=k,decision_program=program(t)) for k,t in [('kept',10),('unknown',10),('late',15),('done',10)]]
         request=dict(initial=dict(position=[1,2,3]),movementSearch=dict(maxInputs=30,maxInteractions=2))
         run=dict(fixture=dict(request=request),result=dict(best=dict(plan=dict(ticks=12)),
@@ -106,7 +106,7 @@ class ComparisonAuditTests(unittest.TestCase):
     def test_retaining_decisions_does_not_commit_clock_optimum_guards_or_states(self):
         from parkour_solver.spatial.checkpoints import retain_decisions
         program=dict(initial=dict(position=[1,2,3],velocity=[.2,0,.1]),
-            profile=dict(airtime=2,positionConstraints=[dict(mode='X',rhs=1)]))
+            profile=dict(duration=2,positionConstraints=[dict(mode='X',rhs=1)]))
         before=copy.deepcopy(program)
         result=dict(best=dict(candidate=dict(yaw=[20,30],positions=[[1,3],[2,3],[3,3]]),
             plan=dict(walls=[dict(mode='F',rhs=20),dict(mode='X',rhs=9)])),repairState=dict(pending=[],unresolved=[]))

@@ -42,7 +42,7 @@ def with_contacts(schedule, extra, column, wall, target_top, *, max_inputs=200):
         min_landing_state=s['exitState'])
     if profile is None:
         return None
-    n, ys = profile['airtime'], profile['position']
+    n, ys = profile['duration'], profile['position']
     if any(inside and not column['minY'] <= y < column['maxY'] for y, inside in zip(ys, profile['ladderTicks'])):
         return None
     if s['exitState'] > n or not exit_matches(s['exitKind'], ys[s['exitState']], column):

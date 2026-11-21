@@ -19,6 +19,10 @@ For exact historic reproduction, create a separate checkout of its recorded
 revision and use its recorded patch/configuration. Current controls belong in
 `tools/` or a new experiment directory, with a new output path.
 
+Profiles in evidence and checkpoints written at or before `9ab3ec9c` name a profile's input count
+`airtime`; current code calls it `duration` ([vocabulary](../docs/RESULTS_AND_DEBUGGING.md#vocabulary-and-units-of-work)).
+Read those files with the old key, or with the frozen bundle's own scripts.
+
 | Current tool | Purpose |
 | --- | --- |
 | `python -m tools.geometry_bounds` | Static player collision/landing-cover report; `--faces` adds the production catalog of merged exposed physical faces across all six orientations. |

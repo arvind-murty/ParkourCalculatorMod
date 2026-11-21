@@ -9,7 +9,7 @@ class AnchorTimeBoundTests(unittest.TestCase):
             covers=dict(s=[[0,1,0,2,1,2]],e=[[6,1,0,10,1,2]],n=[[12,1,0,16,1,2]]))
 
     def program(self,support,ground=True):
-        return dict(terminalSupport=support,profile=dict(airtime=8,grounded=[ground]))
+        return dict(terminalSupport=support,profile=dict(duration=8,grounded=[ground]))
 
     def test_wide_regions_relax_guides_and_keep_momentum_speed(self):
         b=remaining_bound(self.guide(),0,self.program('s'),dict(movementAfterSupportCheck=3.))

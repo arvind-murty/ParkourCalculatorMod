@@ -126,9 +126,9 @@ def wall_hit_options(route, profiles, geometry, solid_blocks, motion_bound, limi
                     source_gap = max(0, lo - plane, plane - hi)
                     target_gap = max(0, end_lo - plane, plane - end_hi)
                     for offset in active:
-                        if offset >= profile['airtime'] - 1:
+                        if offset >= profile['duration'] - 1:
                             continue
-                        if source_gap > speed * (offset + 2) or target_gap > speed * (profile['airtime'] - offset):
+                        if source_gap > speed * (offset + 2) or target_gap > speed * (profile['duration'] - offset):
                             continue
                         hit = {'leg': leg, 'offset': offset, 'axis': axis, 'direction': direction, 'plane': plane,
                                'box': copy.deepcopy(box), 'solidIndex': index,

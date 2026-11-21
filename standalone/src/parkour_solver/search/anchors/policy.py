@@ -78,7 +78,7 @@ def visits(scene, program):
     # Some named profiles report only terminalSupport. Include its physical
     # owner without collapsing the input/jump history used by the solver.
     if program.get('terminalSupport') is not None:
-        result.append((program['profile']['airtime'], owner(scene,program['terminalSupport'])))
+        result.append((program['profile']['duration'], owner(scene,program['terminalSupport'])))
     return result
 
 
@@ -162,7 +162,7 @@ def advantageous_targets(scene, base, child, next_owner):
     next anchor; a jump also when it hits a ceiling or is a grind, slab boost or corner jump
     cancel. Run ticks are generated only as the minimum that makes one of these possible.
     """
-    p, start = child['profile'], base['profile']['airtime']
+    p, start = child['profile'], base['profile']['duration']
     by_box = box_owners(scene)
     def owners(boxes):
         return '+'.join(sorted({by_box[tuple(b)] for b in boxes if tuple(b) in by_box}))
@@ -233,7 +233,7 @@ def advantageous_candidates(scene, table, launch, top, next_owner, types, thresh
                                                        contacts=[dict(state=hit+1, plane=plane, direction=1)]), tops))
             if 0 <= plane-t < f32(.42):
                 event = dict(case='grind', input=0, plane=t, clearance=plane-t)
-                add(('grind', names), min((p['airtime'] for u in tops
+                add(('grind', names), min((p['duration'] for u in tops
                                            for p in [case_profile(t, u, event, threshold=threshold)] if p), default=None))
         if 'stepping' in types:
             for b in kinds['stepping']:
@@ -332,7 +332,7 @@ def within_caps(request, program):
         return False
     if 'maxRunTicksPerJump' in request:
         run=0;p=program['profile']
-        for t in range(p['airtime']):
+        for t in range(p['duration']):
             run=run+1 if p['grounded'][t] and not p['jump'][t] else 0
             if run>request['maxRunTicksPerJump']:return False
     return True
@@ -348,7 +348,7 @@ def transfer_structure(scene, program, start, source, target, *, complete=False,
     `until_arrival`, history after the first target arrival belongs to later
     pairs of the same encounter group and is ignored.
     """
-    p=program['profile'];n=p['airtime']
+    p=program['profile'];n=p['duration']
     launches=[t for t in range(start,n) if p['grounded'][t] and p['jump'][t]]
     source,target=owner(scene,source),owner(scene,target)
     contacts=[(t,name) for t,name in visits(scene,program) if start<t<=n]

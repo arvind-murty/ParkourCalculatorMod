@@ -89,7 +89,7 @@ class HangingVineTests(unittest.TestCase):
         for p in result['programs']:
             self.assertEqual(p['episodes'][-1]['hitInputs'],[])
             self.assertEqual(sum(p['profile']['jump']),1)
-            self.assertEqual(p['trace']['position'][:prefix['profile']['airtime']+1],prefix['trace']['position'])
+            self.assertEqual(p['trace']['position'][:prefix['profile']['duration']+1],prefix['trace']['position'])
 
 
 @unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'),

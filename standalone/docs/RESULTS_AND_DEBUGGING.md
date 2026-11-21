@@ -13,6 +13,8 @@ Start with [architecture](ARCHITECTURE.md) for call flow, [runbook](RUNBOOK.md) 
 | Cell / portal / corridor | Spatial decomposition region / opening / selected broad route through regions. No intrinsic tick cost or fixed dynamic state. |
 | Prefix inputs | Number and identities of already modeled **input ticks**, not estimated arrival at a common spatial goal. Old priority incorrectly favored shorter prefixes. |
 | Program | Concrete discrete movement/input/contact history, scalar vertical trace, constraints and provenance; horizontal facings are still variables. |
+| Duration | A profile's `duration`: its number of input ticks, run ticks included. Evidence and checkpoints written at or before `9ab3ec9c` store the same count as `airtime`. |
+| Airtime | A jump's jump input plus its air inputs through the landing: 12 for a flat jump, 3 under a ceiling 2 blocks above the feet, 2 for a grind, slab boost or corner jump cancel. A request's per-leg `route['airtimes']` keeps that name. |
 | Passage description | The phase cover chosen for one box encounter within a landing segment (`constraints/encounters.py`) and the clearance rows it implies. Many descriptions can yield one effective row set. |
 | Constraint variant | One concrete hard row/contact alternative for a fixed program. A schedule can require many such trials. |
 | Branch | One handled constraint alternative. It may be screened or stopped before worker dispatch. |

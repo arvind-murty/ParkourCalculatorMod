@@ -10,6 +10,7 @@ from parkour_solver.reachability.service import InteractionGate
 from parkour_solver.search.movement import screen_program
 from tests.support.checkpoint_guidance import flat_scene
 from tests.support.minimum_runs import flight
+from tests.support.archived_events import current_events
 
 
 class ProposalAnalysisTests(unittest.TestCase):
@@ -33,7 +34,7 @@ class ProposalAnalysisTests(unittest.TestCase):
     def test_compatibility_screen_reuses_the_exact_proposal_and_reports_real_contradiction(self):
         scene=flat_scene();p=flight(scene,0);compiler=Coefficients();gate=InteractionGate(scene,compiler)
         p['profile']['positionConstraints'].append(dict(mode='X',t1=1,cmp='GE',rhs=10000.))
-        p['profile']['constraintOwners'].append(p['profile']['airtime'])
+        p['profile']['constraintOwners'].append(p['profile']['duration'])
         first=screen_program(scene,p,compiler,1.,gate=gate)
         second=screen_program(scene,p,compiler,1.,gate=gate)
         self.assertEqual(first,second)
@@ -74,7 +75,7 @@ class ProposalOwnershipTests(unittest.TestCase):
 
     def test_unprojected_json_resume_screens_identical_model_only_once(self):
         from parkour_solver.movement.generation import assess_proposal
-        program={'profile':{'airtime':12}}
+        program={'profile':{'duration':12}}
         proposal=json.loads(json.dumps(dict(program=program,fullProgram=program,projected=False)))
         gate=Mock();screen=Mock(return_value=None)
         self.assertEqual(assess_proposal(proposal,screen,gate),dict(proof=None,fullProof=None))
@@ -87,14 +88,14 @@ class ProposalOwnershipTests(unittest.TestCase):
         from parkour_solver.movement.generation import assess_proposal
         from parkour_solver.movement.normal import normal_choices
         from parkour_solver.search.comparison import comparison_label
-        scene=flat_scene();arrival=flight(scene,0);n=arrival['profile']['airtime']
+        scene=flat_scene();arrival=flight(scene,0);n=arrival['profile']['duration']
         hold=next(c for c in normal_choices(dict(scene=scene,state=boundary_state(arrival),
             maxInputs=1,threshold=0.,interactionGate=None)) if c.get('terminalSupport')=='goal' and not c['profile']['jump'][0])
         full=append_choice(arrival,hold)
         full['profile']['positionConstraints'].append(dict(mode='X',t1=n+1,cmp='GE',rhs=10000.))
         full['profile']['constraintOwners'].append(n+1)
-        owned=min(_landing_prefixes(scene,full,'goal',reuse_full=True),key=lambda p:p['profile']['airtime'])
-        self.assertEqual(owned['profile']['airtime'],n)
+        owned=min(_landing_prefixes(scene,full,'goal',reuse_full=True),key=lambda p:p['profile']['duration'])
+        self.assertEqual(owned['profile']['duration'],n)
         self.assertEqual(owned['profile']['landingPhase'],'pre')
         self.assertEqual(comparison_label(owned)['R'],0)
         self.assertFalse(any(r.get('rhs')==10000. for r in owned['profile']['positionConstraints']))
@@ -112,12 +113,12 @@ class Real11JointPrerequisiteTests(unittest.TestCase):
         from parkour_solver.movement.stepping import open_stepping_choices
         from parkour_solver.search.anchors.adapter import AnchorAdapter
         base=REGRESSION_FIXTURES
-        data=json.loads(gzip.decompress((base/'anchor-contexts.json.gz').read_bytes()))
+        data=current_events(json.loads(gzip.decompress((base/'anchor-contexts.json.gz').read_bytes())))
         saved=data['contexts']['b3->b4'];p=saved['parent'];scene=prepare_scene(data['request'])
         with PythonCompiler() as compiler:
             adapter=AnchorAdapter(data['domain'],data['graph'],data['policy'],motion=data['motion'],compiler=compiler)
             context=dict(mode='open',scene=scene,program=p,state=boundary_state(p),
-                         maxInputs=200-p['profile']['airtime'],threshold=0.)
+                         maxInputs=200-p['profile']['duration'],threshold=0.)
             # The recorded cursor predates encounter groups; b3->b4 is a one-pair group.
             cursor=dict(saved['cursor'],groupEnd=adapter.group_end(saved['cursor']['anchorIndex']))
             self.assertEqual(cursor['groupEnd'],cursor['anchorIndex'])

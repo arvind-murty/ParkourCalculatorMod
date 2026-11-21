@@ -346,9 +346,9 @@ class AnchorPolicyTests(unittest.TestCase):
             moves=[child for c,child in children(base) if c['profile']['jump'][0] and
                    tuple(key) in advantageous_targets(s,base,child,'goal')]
             ends=[c for m in moves for c in ([m] if landed(m) else [c for _,c in children(m) if landed(c)])]
-            return min(c['profile']['airtime'] for c in ends)-base['profile']['airtime']
+            return min(c['profile']['duration'] for c in ends)-base['profile']['duration']
         def fastest(owner, jump):
-            return min(child['profile']['airtime'] for c,child in children(root)
+            return min(child['profile']['duration'] for c,child in children(root)
                        if c['profile']['jump'][0]==jump and landed(child) and child.get('terminalSupport')==owner)
         table=lambda owner:block_table(s,owner,{})
         entries={e['key']:e for e in advantageous_candidates(s,table,'start',2.,'goal',types,0.)}

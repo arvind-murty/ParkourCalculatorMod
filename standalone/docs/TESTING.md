@@ -2,10 +2,10 @@
 
 ## Current gate
 
-`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on the two-tick jumps
-(`ea972fb8` plus the change: a slab boost's or corner jump cancel's built landing counts
-toward N like a grind's): **833 tests, no failures, errors or skips**, source unchanged
-during the run, at a load average of 2.5 to 3.5 ([report](../research/encounter-groups/native-gate-p16-two-tick-jumps/report.json)).
+`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on the profile rename
+(`9ab3ec9c` plus the change: a profile's input count is `duration`, formerly `airtime`):
+**833 tests, no failures, errors or skips**, source unchanged during the run, at a load
+average of 3.3 to 4.6 ([report](../research/encounter-groups/native-gate-profile-duration/report.json)).
 Wall-time-bound tests can still fail under heavier load ([deferred P17](DEFERRED_WORK.md)).
 The gate fails on any skip, so it needs `PKC_IPOPT_PYTHON` for the IPOPT tests,
 `PKC_RUN_TICKS_COMPILER` for the Java differential tests and the `research` extra for the
@@ -27,6 +27,7 @@ persistence without the removed 32/128 limits.
 
 | Source | Tests | Evidence |
 | --- | ---: | --- |
+| `9ab3ec9c` + profile `airtime` renamed `duration` | 833 | [report](../research/encounter-groups/native-gate-profile-duration/report.json) |
 | `ea972fb8` + two-tick jumps count toward N | 833 | [report](../research/encounter-groups/native-gate-p16-two-tick-jumps/report.json) |
 | `f7c41c13` + bonk landings in minimum-run timing | 832 | [report](../research/encounter-groups/native-gate-p16-bonk-landings/report.json) |
 | `d9e1ec9c` + walk-off follow-ups | 829 | [report](../research/encounter-groups/native-gate-walkoff-followups/report.json) |

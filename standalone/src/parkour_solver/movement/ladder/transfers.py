@@ -51,7 +51,7 @@ def append_ladder_programs(prefix, column, wall, *, toward, max_inputs=200, max_
     integer(max_entry, 'maximum entry inputs', 0, 199)
     integer(max_programs, 'maximum extension programs', 1, 200000)
     integer(min_climb_inputs, 'minimum climb inputs', 0, 200)
-    cut = prefix['profile']['airtime']
+    cut = prefix['profile']['duration']
     used = {e['column']['id'] for e in prefix['episodes']}
     if cut + 2 >= max_inputs or column['id'] in used:
         return {'programs': [], 'generated': 0}
@@ -136,10 +136,10 @@ def finish_programs(prefix, target_top, solids=(), *, max_inputs=200, max_contac
     finish = recompose(prefix, prefix['episodes'], target_top, max_inputs)
     if finish is not None:
         yield finish
-    cut = prefix['profile']['airtime']
+    cut = prefix['profile']['duration']
     if cut >= max_inputs or not max_contact_variants:
         return
-    seed = {'ticks': finish['profile']['airtime'], 'trace': finish['trace'],
+    seed = {'ticks': finish['profile']['duration'], 'trace': finish['trace'],
             'ladderTicks': finish['profile']['ladderTicks']} if finish is not None else program_seed(prefix, max_inputs)
     if cut >= seed['ticks']:
         return
@@ -168,7 +168,7 @@ def iter_chain_programs(first, regions, solids, target, *, max_inputs=200, max_e
     if initial is None:
         report.update(generated=0, termination='invalid_initial_prefix')
         return
-    pending, serial, expanded, generated, records, drops = [(initial['profile']['airtime'], 0, initial)], 0, 0, 0, [], 0
+    pending, serial, expanded, generated, records, drops = [(initial['profile']['duration'], 0, initial)], 0, 0, 0, [], 0
     point = [(target['bounds'][a] + target['bounds'][a + 1]) / 2 for a in (0, 2)]
     termination = 'exhausted'
     while pending:
@@ -208,7 +208,7 @@ def iter_chain_programs(first, regions, solids, target, *, max_inputs=200, max_e
                 records.append({k: v for k, v in extension.items() if k != 'programs'})
                 for program in extension['programs']:
                     serial += 1
-                    heapq.heappush(pending, (program['profile']['airtime'], serial, program))
+                    heapq.heappush(pending, (program['profile']['duration'], serial, program))
                 if len(pending) > max_pending:
                     drops += len(pending) - max_pending
                     pending = heapq.nsmallest(max_pending, pending)
@@ -222,7 +222,7 @@ def iter_chain_programs(first, regions, solids, target, *, max_inputs=200, max_e
 def chain_programs(*args, **kwargs):
     report = {}
     results = list(iter_chain_programs(*args, **kwargs, report=report))
-    results.sort(key=lambda p: p['profile']['airtime'])
+    results.sort(key=lambda p: p['profile']['duration'])
     return dict(report, programs=results)
 
 
@@ -238,5 +238,5 @@ def transfer_programs(first, second_column, second_wall, target, *, max_inputs=6
         solids=solids, max_contact_variants=max_contact_variants, max_events=max_events,
         deadline=deadline, cancel_event=cancel_event)
     complete = [recompose(p, p['episodes'], target['top'], max_inputs) for p in result['programs']]
-    result['programs'] = sorted([p for p in complete if p is not None], key=lambda p: p['profile']['airtime'])
+    result['programs'] = sorted([p for p in complete if p is not None], key=lambda p: p['profile']['duration'])
     return result
