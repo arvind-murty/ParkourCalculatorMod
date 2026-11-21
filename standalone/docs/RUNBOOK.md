@@ -135,6 +135,15 @@ them for a saved report from `python -m parkour_solver`:
 "$PKC_IPOPT_PYTHON" -B -m tools.profiling.trace /path/to/report.json.gz --output /path/to/dir
 ```
 
+Compare two saved solves for C++ migration parity: outcome, ticks, objective and
+the transition sequence without timestamps. Exact by default. `--rel-tol`/`--abs-tol`
+accept floating-point differences and drop digest strings from transitions; both
+routes must still have passed their own validation. Exit status 1 means a difference:
+
+```sh
+"$PKC_IPOPT_PYTHON" -B -m tools.profiling.parity /path/to/python.json.gz /path/to/native.json.gz [--rel-tol 1e-9]
+```
+
 A report written from a bare solve report has no request numbers or IPOPT
 statuses, which only the profiler records. [Results and debugging](RESULTS_AND_DEBUGGING.md#solve-reports)
 explains every output. `runs/` is ignored by git; copy evidence worth keeping

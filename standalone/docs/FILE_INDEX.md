@@ -62,13 +62,13 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/ANCHOR_SEARCH_EXECUTION_REFERENCE.md](ANCHOR_SEARCH_EXECUTION_REFERENCE.md) | 34976 |
 | [docs/ARCHITECTURE.md](ARCHITECTURE.md) | 18098 |
 | [docs/CHECKPOINT_STORAGE.md](CHECKPOINT_STORAGE.md) | 7585 |
-| [docs/CODE_MAP.md](CODE_MAP.md) | 26155 |
+| [docs/CODE_MAP.md](CODE_MAP.md) | 26279 |
 | [docs/CURRENT_STATE.md](CURRENT_STATE.md) | 12796 |
 | [docs/DECISIONS_AND_PLANS.md](DECISIONS_AND_PLANS.md) | 16841 |
 | [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 29175 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11608 |
 | [docs/DOC_INDEX.md](DOC_INDEX.md) | 28188 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 215436 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 216007 |
 | [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 80741 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
@@ -78,7 +78,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/REAL11_EXTENDED_GEOMETRY.md](REAL11_EXTENDED_GEOMETRY.md) | 12332 |
 | [docs/REAL11_GUIDE.md](REAL11_GUIDE.md) | 20362 |
 | [docs/RESULTS_AND_DEBUGGING.md](RESULTS_AND_DEBUGGING.md) | 16517 |
-| [docs/RUNBOOK.md](RUNBOOK.md) | 13511 |
+| [docs/RUNBOOK.md](RUNBOOK.md) | 13971 |
 | [docs/TESTING.md](TESTING.md) | 19695 |
 | [docs/design/ANCHOR_POLICY_DECISIONS.md](design/ANCHOR_POLICY_DECISIONS.md) | 32499 |
 | [docs/design/AVOIDANCE_PASSAGES.md](design/AVOIDANCE_PASSAGES.md) | 20647 |
@@ -597,7 +597,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/contact-combinations/three-climbing-ladders.json](../research/contact-combinations/three-climbing-ladders.json) | 262701 |
 | [research/contact-combinations/two-ladders.json](../research/contact-combinations/two-ladders.json) | 141811 |
 | [research/cpp-pruning-pilot/LICENSE.cpython](../research/cpp-pruning-pilot/LICENSE.cpython) | 13936 |
-| [research/cpp-pruning-pilot/README.md](../research/cpp-pruning-pilot/README.md) | 10984 |
+| [research/cpp-pruning-pilot/README.md](../research/cpp-pruning-pilot/README.md) | 11493 |
 | [research/cpp-pruning-pilot/batch-results.json](../research/cpp-pruning-pilot/batch-results.json) | 6219 |
 | [research/cpp-pruning-pilot/pruning.cpp](../research/cpp-pruning-pilot/pruning.cpp) | 25862 |
 | [research/cpp-pruning-pilot/requirements.txt](../research/cpp-pruning-pilot/requirements.txt) | 16 |
@@ -1566,7 +1566,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/integration/test_movement_contacts.py](../tests/integration/test_movement_contacts.py) | 11490 |
 | [tests/integration/test_orchestrator_continuation.py](../tests/integration/test_orchestrator_continuation.py) | 19299 |
 | [tests/integration/test_package_layout.py](../tests/integration/test_package_layout.py) | 5683 |
-| [tests/integration/test_profiling.py](../tests/integration/test_profiling.py) | 27522 |
+| [tests/integration/test_profiling.py](../tests/integration/test_profiling.py) | 31244 |
 | [tests/integration/test_repair_resume.py](../tests/integration/test_repair_resume.py) | 27184 |
 | [tests/integration/test_shared_contacts.py](../tests/integration/test_shared_contacts.py) | 4080 |
 | [tests/research/__init__.py](../tests/research/__init__.py) | 0 |
@@ -1702,10 +1702,11 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tools/profiling/__init__.py](../tools/profiling/__init__.py) | 66 |
 | [tools/profiling/bookkeeping.py](../tools/profiling/bookkeeping.py) | 11994 |
 | [tools/profiling/calibrate.py](../tools/profiling/calibrate.py) | 3578 |
-| [tools/profiling/cpp_pruning.py](../tools/profiling/cpp_pruning.py) | 20632 |
+| [tools/profiling/cpp_pruning.py](../tools/profiling/cpp_pruning.py) | 19377 |
 | [tools/profiling/enumeration.py](../tools/profiling/enumeration.py) | 5326 |
 | [tools/profiling/enumeration_calibrate.py](../tools/profiling/enumeration_calibrate.py) | 4476 |
 | [tools/profiling/enumeration_compare.py](../tools/profiling/enumeration_compare.py) | 3565 |
+| [tools/profiling/parity.py](../tools/profiling/parity.py) | 9740 |
 | [tools/profiling/run.py](../tools/profiling/run.py) | 11737 |
 | [tools/profiling/runtime.py](../tools/profiling/runtime.py) | 9272 |
 | [tools/profiling/trace.py](../tools/profiling/trace.py) | 41019 |

@@ -57,7 +57,14 @@ The corpus is a local gzip/pickle artifact because interval bounds include
 infinities and preserved object aliases. It contains exact inputs and reference
 outputs; validation reruns an isolated copy of the real Python source, then checks
 the native results without rounding or tolerances. Model identity and signed zero
-are checked. The comparison oracle does not recursively call the C++ replacement.
+are checked. Equality is by value: the pilot stores bounds as doubles, so integer
+coordinates that Python keeps as `int` (for example envelope `states[0]`) return as
+equal floats. Canonical digests encode `1` and `1.0` differently, and envelope
+contents feed `interaction_context_key`, so native and Python digests of the same
+bounds differ. The shared comparator in
+[`tools/profiling/parity.py`](../../tools/profiling/parity.py) rejects that by
+default; the pilot opts out explicitly (65 of the 87 focused tests hit it).
+The comparison oracle does not recursively call the C++ replacement.
 Existing reachability, encounter, contact and policy tests run through checked
 native functions. Effectful numerical refinement is invoked once, preserving mock
 and production call counts.

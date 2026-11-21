@@ -416,5 +416,61 @@ class EnumerationProfileTests(unittest.TestCase):
             instrumented_option(self.source,EnumerationProfile())
 
 
+class ParityTests(unittest.TestCase):
+    @staticmethod
+    def result(objective, transitions, ticks=64, passed=True):
+        return dict(validation=[dict(passed=passed)],result=dict(status='feasible',termination='exhausted',
+            best=dict(plan=dict(ticks=ticks),candidate=dict(objective=objective)),
+            searchState=dict(kind='event_route_search',dfs=dict(transitions=transitions))))
+
+    def test_comparators_reject_defects_and_tolerance_only_relaxes_finite_floats(self):
+        from tools.profiling.parity import compare,self_test
+        self.assertEqual(self_test(rel_tol=1e-9,abs_tol=None)['rejected'],
+                         ['int_vs_float','large_float','missing_key','order','signed_zero','verdict'])
+        self.assertAlmostEqual(compare(dict(a=[1.,2.]),dict(a=[1.,2.+1e-12]),rel_tol=1e-9),1e-12,delta=1e-15)
+        for a,b in (([float('inf')],[1e308]),([True],[1]),(['x'],['y'])):
+            with self.assertRaises(AssertionError):
+                compare(a,b,rel_tol=1.)
+        self.assertEqual(compare([float('nan')],[float('nan')]),0.)
+        self.assertEqual(compare([1,0.],[1.,0.],numeric_types=False),0.)
+        for b in ([True],['1'],[-0.]):
+            with self.assertRaises(AssertionError):
+                compare([1 if b!=[-0.] else 0.],b,numeric_types=False)
+        with self.assertRaisesRegex(ValueError,'tolerance'):
+            self_test(rel_tol=None,abs_tol=None)
+
+    def test_route_comparison_ignores_timestamps_and_in_tolerant_mode_digests(self):
+        from tools.profiling.parity import compare_routes,transition_signature
+        d1,d2='a'*64,'b'*64
+        event=lambda digest,elapsed:dict(kind='expand',depth=1,candidate=digest,elapsedSeconds=elapsed)
+        python=self.result(-1093.2381026602418,[event(d1,0.5),event(d1,1.)])
+        native=self.result(-1093.2381026602418,[event(d1,0.7),event(d1,2.)])
+        self.assertEqual(transition_signature(python['result']),transition_signature(native['result']))
+        self.assertTrue(compare_routes(python,native)['matches'])
+        drifted=self.result(-1093.2381026602418*(1+1e-12),[event(d2,0.),event(d2,0.)])
+        exact=compare_routes(python,drifted)
+        self.assertEqual(([d['field'] for d in exact['differences']],exact['firstTransitionDifference']),
+                         (['objective','transitions'],0))
+        self.assertTrue(compare_routes(python,drifted,rel_tol=1e-9)['matches'])
+        diverged=self.result(-1093.2381026602418,[event(d1,0.),dict(kind='backtrack',depth=0,elapsedSeconds=0.)])
+        self.assertEqual(compare_routes(python,diverged,rel_tol=1e-9)['firstTransitionDifference'],1)
+        self.assertEqual([d['field'] for d in compare_routes(python,self.result(-1.,[],ticks=65))['differences']],
+                         ['ticks','objective','transitions'])
+        unvalidated=self.result(-1093.2381026602418,[event(d1,0.),event(d1,0.)],passed=False)
+        self.assertEqual([d['field'] for d in compare_routes(python,unvalidated,rel_tol=1e-9)['differences']],['validation'])
+
+    def test_replacements_cover_imported_aliases_and_restore_them(self):
+        from parkour_solver.reachability import intervals,service
+        from tools.profiling.parity import load_oracle,replacements
+        original=intervals.reachable_envelopes
+        oracle=load_oracle(intervals)
+        self.assertIsNot(oracle.reachable_envelopes,original)
+        replacement=lambda *a,**k:None
+        with replacements(dict(reachable_envelopes=original),dict(reachable_envelopes=replacement)):
+            self.assertIs(service.reachable_envelopes,replacement)
+            self.assertIs(intervals.reachable_envelopes,replacement)
+        self.assertIs(service.reachable_envelopes,original)
+
+
 if __name__ == '__main__':
     unittest.main()

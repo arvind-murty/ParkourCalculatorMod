@@ -1,11 +1,9 @@
 """Build, validate and time a research C++ port of the live pruning boundary."""
 import argparse
-from contextlib import contextmanager
 import copy
 from datetime import datetime
 import gzip
 import hashlib
-import importlib.util
 import json
 import math
 import os
@@ -22,6 +20,7 @@ import unittest
 from zoneinfo import ZoneInfo
 
 from tools.paths import STANDALONE_ROOT
+from tools.profiling.parity import compare, load_oracle, replacements as install, selected
 from parkour_solver.reachability import intervals
 from parkour_solver.io.provenance import source_hashes, source_revision
 
@@ -30,9 +29,7 @@ PILOT = ROOT / 'research/cpp-pruning-pilot'
 BUILD = ROOT / 'build/cpp-pruning-pilot'
 NAMES = ('reachable_envelopes', 'interaction_reachability', 'interaction_reachability_many')
 ORIGINAL = {name: getattr(intervals, name) for name in NAMES}
-spec = importlib.util.spec_from_file_location('_pruning_python_oracle', intervals.__file__)
-ORACLE = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(ORACLE)
+ORACLE = load_oracle(intervals, '_pruning_python_oracle')
 
 
 def stamp():
@@ -53,37 +50,13 @@ def native():
 
 
 def exact(a, b, path='result'):
-    if isinstance(a, dict):
-        if not isinstance(b, dict) or a.keys() != b.keys():
-            raise AssertionError(f'{path}: dictionary keys differ')
-        for key in a:
-            exact(a[key], b[key], f'{path}.{key}')
-    elif isinstance(a, (list, tuple)):
-        if type(a) is not type(b) or len(a) != len(b):
-            raise AssertionError(f'{path}: sequence shape differs')
-        for i, (left, right) in enumerate(zip(a, b)):
-            exact(left, right, f'{path}[{i}]')
-    elif isinstance(a, (int, float)) and not isinstance(a, bool):
-        if a != b or (a == 0 and math.copysign(1, a) != math.copysign(1, b)):
-            raise AssertionError(f'{path}: {a!r} != {b!r}')
-    elif type(a) is not type(b) or a != b:
-        raise AssertionError(f'{path}: {a!r} != {b!r}')
+    # The pilot stores bounds as doubles, so Python's integer coordinates come back
+    # as equal floats; that changes canonical digests (see the README's parity note).
+    return compare(a, b, path, numeric_types=False)
 
 
-@contextmanager
 def replacements(functions):
-    for name, replacement in functions.items():
-        original = ORIGINAL[name]
-        for module_name, module in list(sys.modules.items()):
-            if module_name.startswith('parkour_solver.') and getattr(module, name, None) is original:
-                setattr(module, name, replacement)
-    try:
-        yield
-    finally:
-        for name, replacement in functions.items():
-            for module_name, module in list(sys.modules.items()):
-                if module_name.startswith('parkour_solver.') and getattr(module, name, None) is replacement:
-                    setattr(module, name, ORIGINAL[name])
+    return install(ORIGINAL, functions)
 
 
 def build(output):
@@ -146,13 +119,13 @@ def run(args):
             def wrapped(*a, _name=name, _target=target, **kw):
                 ordinal = counts[_name]
                 counts[_name] += 1
-                selected = args.capture and (ordinal < (32 if _name.endswith('_many') else 128) or ordinal % 64 == 0) and len(captured[_name]) < (128 if _name.endswith('_many') else 1024)
-                inputs = copy.deepcopy((a,kw)) if selected else None
+                chosen = args.capture and selected(ordinal, first=32 if _name.endswith('_many') else 128, every=64) and len(captured[_name]) < (128 if _name.endswith('_many') else 1024)
+                inputs = copy.deepcopy((a,kw)) if chosen else None
                 result = _target(*a,**kw)
                 if args.verify:
                     exact(getattr(ORACLE,_name)(*a,**kw), result)
                     checks[_name] += 1
-                if selected:
+                if chosen:
                     captured[_name].append(dict(ordinal=ordinal,args=inputs[0],kwargs=inputs[1],expected=copy.deepcopy(result)))
                 return result
             functions[name] = wrapped
