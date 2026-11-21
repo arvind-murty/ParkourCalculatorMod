@@ -148,13 +148,20 @@ own validation. Exit status 1 means a difference:
 Build the native C++ core (`native/cpp/`, needs CMake and the pinned pybind11 from
 `research/cpp-pruning-pilot/requirements.txt`) into `build/native/cpp/`, or the
 undefined-behavior-sanitizer variant into `build/native/cpp-sanitize/`. Then check
-every `canonical.digest` call of a real solve against the native encoder:
+every `canonical.digest` call of a real solve against the native encoder, or round-trip
+every program and movement choice that `movement/program.py` builds through the typed
+native model. Either stops at the first difference and saves it as `mismatch.json`:
 
 ```sh
 "$PKC_IPOPT_PYTHON" -B -m tools.native_cpp build [--variant sanitize] [--output /path/to/provenance-dir]
 "$PKC_IPOPT_PYTHON" -B -m tools.native_cpp verify-digest --input cases/real11/physical-anchors.json \
   --seconds 60 --output /path/to/new-dir [--variant sanitize]
+"$PKC_IPOPT_PYTHON" -B -m tools.native_cpp verify-programs --input cases/real11/physical-anchors.json \
+  --seconds 60 --output /path/to/new-dir [--variant sanitize]
 ```
+
+A new program field fails the typed conversion by name, so add it to
+`native/cpp/include/pkc/program.hpp` in the same change.
 
 A report written from a bare solve report has no request numbers or IPOPT
 statuses, which only the profiler records. [Results and debugging](RESULTS_AND_DEBUGGING.md#solve-reports)

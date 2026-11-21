@@ -3,8 +3,11 @@
 #include <pybind11/pybind11.h>
 
 #include <stdexcept>
+#include <type_traits>
+#include <variant>
 
 #include "pkc/canonical.hpp"
+#include "pkc/program.hpp"
 
 namespace py = pybind11;
 
@@ -40,15 +43,41 @@ pkc::Value convert(py::handle object) {
                          " is not canonical JSON");
 }
 
+py::object to_python(const pkc::Value& value) {
+    return std::visit([](const auto& held) -> py::object {
+        using T = std::decay_t<decltype(held)>;
+        if constexpr (std::is_same_v<T, std::nullptr_t>) {
+            return py::none();
+        } else if constexpr (std::is_same_v<T, std::shared_ptr<const pkc::Array>>) {
+            py::list list;
+            for (const auto& item : *held) list.append(to_python(item));
+            return list;
+        } else if constexpr (std::is_same_v<T, std::shared_ptr<const pkc::Object>>) {
+            py::dict dict;
+            for (const auto& [key, item] : *held) dict[py::str(key)] = to_python(item);
+            return dict;
+        } else {
+            return py::cast(held);
+        }
+    }, value.data);
+}
+
 }  // namespace
 
 PYBIND11_MODULE(_pkc_native, m) {
-    m.doc() = "Native core for parkour_solver (canonical identity).";
-    py::register_exception<std::invalid_argument>(m, "CanonicalValueError", PyExc_ValueError);
+    m.doc() = "Native core for parkour_solver (canonical identity, typed programs).";
+    py::register_exception<std::invalid_argument>(m, "NativeValueError", PyExc_ValueError);
     m.def("canonical_json", [](py::handle value) { return py::bytes(pkc::canonical_json(convert(value))); },
           "json.dumps(value, sort_keys=True, allow_nan=False).encode()");
     m.def("digest", [](py::handle value) { return pkc::digest(convert(value)); },
           "parkour_solver.canonical.digest");
+    // Python -> typed struct -> Python, for parity checks of the program model.
+    m.def("round_trip_program", [](py::handle value) {
+        return to_python(pkc::to_value(pkc::program_from_value(convert(value))));
+    });
+    m.def("round_trip_choice", [](py::handle value) {
+        return to_python(pkc::to_value(pkc::choice_from_value(convert(value))));
+    });
     m.def("float_repr", &pkc::float_repr, "repr(float) for a finite float");
     m.def("sha256_hex", [](py::bytes data) {
         static const char* hex = "0123456789abcdef";

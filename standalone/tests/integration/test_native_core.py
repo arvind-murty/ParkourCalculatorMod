@@ -75,5 +75,71 @@ class CanonicalIdentityTests(unittest.TestCase):
                 self.native.digest(value)
 
 
+class ProgramModelTests(unittest.TestCase):
+    """Typed native programs must hold everything Python's program dicts hold, and reject what they don't know."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.native = native()
+
+    def assert_round_trips(self, convert, value):
+        # Opaque search data may hold tuples, so the JSON form is the contract, as for identity.
+        self.assertEqual(canonical(convert(value)), canonical(value))
+
+    def test_real11_programs_and_choices_round_trip(self):
+        from tests.support.block_table import compiler, generated, nodes, real11_inputs
+        from parkour_solver.reachability.service import InteractionGate
+        programs = choices = 0
+        with compiler() as java:
+            for scene, roots in real11_inputs():
+                gate = InteractionGate(scene, java, seconds=10)
+                for node in nodes(scene, roots, gate):
+                    self.assert_round_trips(self.native.round_trip_program, node)
+                    programs += 1
+                    for choice in (c for kind in generated(scene, node, gate, None) for c in kind):
+                        self.assert_round_trips(self.native.round_trip_choice, choice)
+                        choices += 1
+        self.assertTrue(programs and choices)
+
+    def test_ladder_programs_with_ceiling_effects_round_trip(self):
+        from tests.support.archived_events import current_events
+        from tests.support.paths import AUTONOMY_DATA
+        from parkour_solver.movement.ladder.generation import ladder_event_choice
+        from parkour_solver.movement.program import append_choice, empty_program
+        evidence = current_events(json.loads(
+            (AUTONOMY_DATA/'experiments/contact-combinations/appended-ladder-ceiling.json').read_text()))
+        program, cut = empty_program(evidence['route']['initial']), 0
+        for event in evidence['route']['ladderEvents']:
+            event = dict(event, schedule=dict(event['schedule'], contactEvents=[
+                c for c in evidence['route']['contactEvents'] if cut <= c['offset'] < event['schedule']['exitState']]))
+            choice = ladder_event_choice(event, start=cut)
+            self.assert_round_trips(self.native.round_trip_choice, choice)
+            program = append_choice(program, choice)
+            self.assert_round_trips(self.native.round_trip_program, program)
+            cut = program['profile']['airtime']
+        self.assertTrue(any(u.get('effects') for u in program['movementUnits']))
+
+    def test_number_kinds_absent_keys_and_annotations_survive(self):
+        from parkour_solver.movement.program import empty_program
+        program = empty_program(dict(position=[1, 64, 1], velocity=[0, 0., 0]), threshold=0)
+        program.update(decisionNode='n1', comparisonCacheToken=[3, 'x'])
+        self.assertEqual(type(program['threshold']), int)
+        self.assert_round_trips(self.native.round_trip_program, program)
+
+    def test_rejects_unknown_keys_and_wrong_types_by_path(self):
+        from parkour_solver.movement.program import empty_program
+        program = empty_program(dict(position=[1, 64, 1], velocity=[0, 0., 0]), threshold=0.)
+        cases = [(('profile', 'typo'), 1, 'program.profile: unknown key typo'),
+                 (('profile', 'airtime'), 1., 'program.profile.airtime: expected int'),
+                 (('initial', 'position'), '64', 'program.initial.position: expected number'),
+                 (('profile', 'velocity'), [2**60], r'program.profile.velocity\[0\]: int outside')]
+        for (record, key), value, message in cases:
+            with self.subTest(key=key):
+                broken = json.loads(json.dumps(program))
+                broken[record][key] = value
+                with self.assertRaisesRegex(ValueError, message):
+                    self.native.round_trip_program(broken)
+
+
 if __name__ == '__main__':
     unittest.main()

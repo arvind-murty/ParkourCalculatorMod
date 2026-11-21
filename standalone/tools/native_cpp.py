@@ -55,12 +55,27 @@ def build(args):
     print(json.dumps({k: record[k] for k in ('variant', 'binary', 'binarySHA256')}))
 
 
-def verify_digest(args):
-    """Run a real solve where every canonical.digest call is also computed natively and compared."""
-    from parkour_solver import canonical
+def checked_solve(args, originals, checked):
+    """Run the fixture's real solve with checked replacements installed; return the shared summary fields."""
     from parkour_solver.bridge.python_compiler import PythonCompiler
     from parkour_solver.io.provenance import source_hashes, source_revision
     from parkour_solver.search.application import run as solve_task
+    fixture = json.loads(args.input.read_text())
+    fixture['settings']['seconds'] = args.seconds
+    before = source_hashes()
+    with replacements(originals, checked), PythonCompiler() as compiler:
+        result, validation = solve_task(fixture, compiler, python_executable=sys.executable)
+    best = result.get('best')
+    return dict(sourceRevision=source_revision(), sourceUnchanged=before == source_hashes(), input=str(args.input),
+                seconds=args.seconds, variant=args.variant, status=result['status'],
+                termination=result['termination'], ticks=best['plan']['ticks'] if best else None,
+                objective=best['candidate']['objective'] if best else None,
+                validationPassed=[bool(v.get('passed')) for v in validation])
+
+
+def verify_digest(args):
+    """Run a real solve where every canonical.digest call is also computed natively and compared."""
+    from parkour_solver import canonical
     args.output.mkdir(parents=True, exist_ok=False)
     native = load(args.variant)
     original = canonical.digest
@@ -79,22 +94,46 @@ def verify_digest(args):
             raise AssertionError(f'native digest differs at call {calls["count"]}')
         return expected
 
-    fixture = json.loads(args.input.read_text())
-    fixture['settings']['seconds'] = args.seconds
-    before = source_hashes()
-    with replacements(dict(digest=original), dict(digest=checked)), PythonCompiler() as compiler:
-        result, validation = solve_task(fixture, compiler, python_executable=sys.executable)
-    best = result.get('best')
-    summary = dict(sourceRevision=source_revision(), sourceUnchanged=before == source_hashes(), input=str(args.input),
-                   seconds=args.seconds, variant=args.variant, digestCalls=calls['count'], mismatches=0,
-                   status=result['status'], termination=result['termination'],
-                   ticks=best['plan']['ticks'] if best else None,
-                   objective=best['candidate']['objective'] if best else None,
-                   validationPassed=[bool(v.get('passed')) for v in validation],
+    summary = checked_solve(args, dict(digest=original), dict(digest=checked))
+    summary.update(digestCalls=calls['count'], mismatches=0,
                    timing=dict(pythonDigestSeconds=calls['pythonSeconds'], nativeDigestSeconds=calls['nativeSeconds'],
                                note='Per-call wall time inside the checked wrapper; native includes Python-to-C++ conversion.'))
     save(args.output / 'summary.json', summary)
     print(json.dumps(summary))
+
+
+def verify_programs(args):
+    """Run a real solve where every program and movement choice movement/program.py builds round-trips natively."""
+    from parkour_solver.movement import program
+    args.output.mkdir(parents=True, exist_ok=False)
+    native = load(args.variant)
+    builders = dict(empty_program='program', append_choice='program', truncate_program='program',
+                    movement_choice='choice')
+    originals = {name: getattr(program, name) for name in builders}
+    counts = dict(program=0, choice=0)
+
+    def checked(name):
+        def call(*positional, **keywords):
+            value = originals[name](*positional, **keywords)
+            if value is not None:
+                kind = builders[name]
+                expected = canonical_bytes(value)
+                actual = canonical_bytes(getattr(native, 'round_trip_' + kind)(value))
+                counts[kind] += 1
+                if actual != expected:
+                    save(args.output / 'mismatch.json', dict(builder=name, value=value))
+                    raise AssertionError(f'native {kind} differs after {counts[kind]} round trips')
+            return value
+        return call
+
+    summary = checked_solve(args, originals, {name: checked(name) for name in builders})
+    summary.update(roundTrips=counts, mismatches=0)
+    save(args.output / 'summary.json', summary)
+    print(json.dumps(summary))
+
+
+def canonical_bytes(value):
+    return json.dumps(value, sort_keys=True, allow_nan=False)
 
 
 def main():
@@ -108,8 +147,13 @@ def main():
     p.add_argument('--seconds', type=float, required=True)
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--variant', choices=sorted(BUILDS), default='release')
+    p = commands.add_parser('verify-programs')
+    p.add_argument('--input', type=Path, required=True)
+    p.add_argument('--seconds', type=float, required=True)
+    p.add_argument('--output', type=Path, required=True)
+    p.add_argument('--variant', choices=sorted(BUILDS), default='release')
     args = parser.parse_args()
-    dict(build=build, verify_digest=verify_digest)[args.command.replace('-', '_')](args)
+    dict(build=build, verify_digest=verify_digest, verify_programs=verify_programs)[args.command.replace('-', '_')](args)
 
 
 if __name__ == '__main__':

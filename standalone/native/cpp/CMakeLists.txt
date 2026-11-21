@@ -19,7 +19,7 @@ if(PKC_SANITIZE)
   add_compile_options(-fsanitize=undefined -fsanitize-trap=undefined)
 endif()
 
-add_library(pkc_core STATIC src/canonical.cpp src/sha256.cpp)
+add_library(pkc_core STATIC src/canonical.cpp src/program.cpp src/sha256.cpp)
 target_include_directories(pkc_core PUBLIC include)
 
 find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
