@@ -1,4 +1,5 @@
 import collections
+import copy
 
 from parkour_solver.scene.geometry import expanded_box
 from parkour_solver.reachability.intervals import interaction_reachability, interaction_reachability_many, reachable_envelopes
@@ -109,6 +110,14 @@ def bounds_allowed_many(context, bounds, tick, *, label, jumping=False, phases=(
             gate.query_many(context, bounds, tick, label=label, jumping=jumping, phases=phases)])
 
 
+def walk_off_allowed(context, landing_boxes, *, label):
+    """A no-jump run-off from the ground must leave its launch support on its first input (`label` as above)."""
+    if 'interactionGate' not in context:
+        raise ValueError('Generation needs an interactionGate; set it to None to run without reachability')
+    gate = context['interactionGate']
+    return gate is None or gate.walk_off(context, landing_boxes, label=label)
+
+
 def candidate_blocks(context, kind='blocks'):
     blocks = context['scene']['blocks']
     owner = context.get('launchOwner')
@@ -189,6 +198,25 @@ def block_table(scene, owner, traces):
     solids = lambda names: frozenset(solid_of[n] for n in names)
     return dict(blocks=frozenset(kept), solids=solids(kept), ticks=ticks, landing=frozenset(landing),
                 stepping=frozenset(stepping), ceiling=frozenset(ceiling), ceilingSolids=solids(ceiling))
+
+
+def walk_off_tick(program):
+    """The program's last run-off walk-off tick (grounded, no jump, descending) without a carried
+    face selection, else None."""
+    p=program['profile']
+    carried={w['offset'] for w in program.get('walkOffs',[])}
+    cut=next((c for c in reversed(range(p['airtime'])) if p['grounded'][c] and not p['jump'][c]
+              and not p['ladderTicks'][c] and p['position'][c+1]<p['position'][c]),None)
+    return None if cut in carried else cut
+
+
+def landing_boxes(program, cut):
+    """The boxes a run-off from `cut` first lands on: its landing or step contact, or a flight case's
+    lower block; None when it lands on nothing modeled."""
+    p=program['profile']
+    events=[(e['offset'],e['boxes']) for e in p['contactEvents'] if e['offset']>=cut and e.get('role') in ('landing','step') and 'boxes' in e]
+    events+=[(e['input'],[e['lowerBox']]) for e in p['caseEvents'] if e['input']>=cut and 'lowerBox' in e]
+    return min(events,key=lambda e:e[0])[1] if events else None
 
 
 class InteractionGate:
@@ -294,6 +322,7 @@ class InteractionGate:
         return proof
 
     def check_program(self, program, objective=None):
+        """None or a rejection proof. A run-off's launch-support face selection is appended to program['walkOffs']."""
         # This guard is a distinct physical requirement, not an interval bound.
         p=program['profile']
         if p['airtime'] and p['position'][1]<self.scene['initial']['position'][1]-1e-7:
@@ -305,25 +334,51 @@ class InteractionGate:
         if analysis is None:return dict(reason='vertical_schedule')
         from parkour_solver.canonical import digest
         objective=self.scene['objective'] if objective is None else objective
-        key=('screen',analysis['key'],digest(objective))
+        cut=walk_off_tick(program)
+        key=('screen',analysis['key'],digest(objective),cut)
         undecided=False
-        def build():
+        def relax(rows):
             nonlocal undecided
-            proof=self.required(program)
-            if proof:return proof
-            if self.scene.get('maxWallHits',0):return None
             self.metrics['relaxationChecks']=self.metrics.get('relaxationChecks',0)+1
-            checked=self.relaxation(program,analysis,objective)
-            undecided=checked is not None and checked['outcome']=='undecided'
-            return checked['proof'] if checked is not None and checked['outcome']=='infeasible' else None
-        result=self._cached(key,build,'screen')
+            checked=self.relaxation(program,analysis,objective,rows)
+            undecided|=checked is not None and checked['outcome']=='undecided'
+            return checked
+        def build():
+            proof=self.required(program)
+            if proof:return proof,None
+            faces=None
+            if cut is not None:
+                from parkour_solver.constraints.contacts import walk_off_faces
+                faces=walk_off_faces(self.scene,program,cut,analysis['envelopes'],landing_boxes(program,cut))
+            if faces is None:
+                if self.scene.get('maxWallHits',0):return None,None
+                checked=relax([])
+                return (checked['proof'] if checked is not None and checked['outcome']=='infeasible' else None),None
+            if not faces['options']:
+                return dict(reason='launch_support_not_left',input=cut,solids=faces['solids']),None
+            selection=dict(offset=cut,solids=faces['solids'],options=[])
+            proof=None
+            for row in faces['options']:
+                checked=None if self.scene.get('maxWallHits',0) else relax([row])
+                if checked is not None and checked['outcome']=='infeasible':
+                    proof=checked['proof']
+                    continue
+                selection['options'].append(row)
+                # Without the relaxed screen (wall hits, or outside its class) every open reachable face goes to the
+                # node solve; restricting where the screen runs widens what reaches this fallback.
+                if checked is not None and not faces['diagonal']:
+                    break
+            return (None,selection) if selection['options'] else (proof,None)
+        proof,selection=self._cached(key,build,'screen')
         if undecided:
             self.cache.pop(key)
-        return result
+        if selection is not None:
+            program['walkOffs']=program.get('walkOffs',[])+[copy.deepcopy(selection)]
+        return proof
 
-    def relaxation(self, program, analysis, objective):
-        """The disk relaxation of the request a decision check's repair loop sends for this program without
-        avoidance rows (search.ordered_route.numerical_problem), optimizing `objective`: one Clarabel solve
+    def relaxation(self, program, analysis, objective, rows=()):
+        """The disk relaxation of the request a decision check's repair loop sends for this program with
+        avoidance `rows` (search.ordered_route.numerical_problem), optimizing `objective`: one Clarabel solve
         that the repair loop's identical request finds in the content cache. None outside the supported class."""
         import copy
         from parkour_solver.numerics.disk import screen
@@ -331,19 +386,19 @@ class InteractionGate:
         from parkour_solver.search.ordered_route import derive_footprints, numerical_problem
         prepared=self.prepare(program)
         route=dict(copy.deepcopy(prepared['route']),objective=dict(axis='X',sense='MAX'),guideObjective=objective)
+        route['constraints'].extend(copy.deepcopy(list(rows)))
         if hasattr(self.compiler,'derive_footprints'):
             derive_footprints(route,self.compiler,self.seconds)
         plan=schedule(route,[0])
         plan['vertical']=prepared['plan']['vertical']
         return screen(numerical_problem(route,plan,analysis['coefficient']))
 
-    def _approach(self, context, tick, jumping):
+    def approach(self, context, tick, *, jumping=False):
+        """The envelope of the prefix plus a free approach covering input `tick`: prefix inputs and free approach
+        inputs are known, the proposed interaction has not changed the height/ground state yet. None if unknown."""
         from parkour_solver.movement.program import append_choice, program_physics_key
         from parkour_solver.movement.normal import approaches, event_choice, first_descent
         from parkour_solver.canonical import digest
-        # Prefix inputs and free approach inputs are known; the proposed interaction
-        # has not changed the post-movement height/ground state yet. Use its horizontal
-        # envelope, keeping Y unconstrained for stepping and ceiling outcomes.
         prefix = context['program']
         if '_prefixKey' not in context:
             context['_prefixKey'] = (digest(program_physics_key(prefix)), context.get('threshold', .005))
@@ -379,8 +434,9 @@ class InteractionGate:
     def query_many(self, context, bounds, tick, *, label, jumping=False, phases=('Y', 'X', 'Z')):
         requests, prepared = [], []
         # Retain per-query cache/fallback accounting while sharing the native check.
+        # Use the approach's horizontal envelope, keeping Y unconstrained for stepping and ceiling outcomes.
         for box in bounds:
-            envelope = self._approach(context, tick, jumping)
+            envelope = self.approach(context, tick, jumping=jumping)
             box = list(box)
             box[1], box[4] = -float('inf'), float('inf')
             at = context['program']['profile']['airtime']+tick
@@ -405,6 +461,22 @@ class InteractionGate:
                 proofs.append(proof)
             index = end
         return proofs
+
+    def walk_off(self, context, landing_boxes, *, label):
+        """Whether a run-off from the context's ground state onto `landing_boxes` can leave its launch support
+        on its first input (constraints.contacts.walk_off_faces on the no-jump approach envelope)."""
+        from parkour_solver.constraints.contacts import walk_off_faces
+        envelope = self.approach(context, 0)
+        if envelope is None:
+            return True
+        cut = context['program']['profile']['airtime']
+        faces = walk_off_faces(context['scene'], context['program'], cut, envelope, landing_boxes)
+        self.checked += 1
+        if faces is None or faces['options']:
+            return True
+        self.exclusions.append(dict(label, frame=context.get('frameId'), horizontal=faces['region'], input=cut,
+                                    proof=dict(ruledOut=True, reason='launch_support_not_left', tick=cut, solids=faces['solids'])))
+        return False
 
     def required(self, program):
         envelope = self.envelopes(program)

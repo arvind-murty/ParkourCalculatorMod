@@ -339,6 +339,10 @@ class ExposureTests(unittest.TestCase):
             def query_many(self, context, bounds, tick, **kwargs):
                 return [self.query(context, box, tick, **kwargs) for box in bounds]
 
+            def walk_off(self, context, landing_boxes, *, label):
+                self.owners.append(label['owner'])
+                return True
+
         def run(name, block, reject):
             scene = prepare_scene(fixture(name)['request'])
             program = empty_program(scene['initial'], threshold=0.)
