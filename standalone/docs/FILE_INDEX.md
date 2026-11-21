@@ -64,11 +64,11 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/CHECKPOINT_STORAGE.md](CHECKPOINT_STORAGE.md) | 7821 |
 | [docs/CODE_MAP.md](CODE_MAP.md) | 25966 |
 | [docs/CURRENT_STATE.md](CURRENT_STATE.md) | 13024 |
-| [docs/DECISIONS_AND_PLANS.md](DECISIONS_AND_PLANS.md) | 19200 |
-| [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 35178 |
+| [docs/DECISIONS_AND_PLANS.md](DECISIONS_AND_PLANS.md) | 19456 |
+| [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 34067 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11608 |
 | [docs/DOC_INDEX.md](DOC_INDEX.md) | 28596 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 215734 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 216039 |
 | [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 81488 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
@@ -79,8 +79,8 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/REAL11_GUIDE.md](REAL11_GUIDE.md) | 20362 |
 | [docs/RESULTS_AND_DEBUGGING.md](RESULTS_AND_DEBUGGING.md) | 16517 |
 | [docs/RUNBOOK.md](RUNBOOK.md) | 13731 |
-| [docs/TESTING.md](TESTING.md) | 21418 |
-| [docs/design/ANCHOR_POLICY_DECISIONS.md](design/ANCHOR_POLICY_DECISIONS.md) | 35755 |
+| [docs/TESTING.md](TESTING.md) | 21616 |
+| [docs/design/ANCHOR_POLICY_DECISIONS.md](design/ANCHOR_POLICY_DECISIONS.md) | 36997 |
 | [docs/design/AVOIDANCE_PASSAGES.md](design/AVOIDANCE_PASSAGES.md) | 21065 |
 | [docs/design/BRANCH_SCHEDULING_INVESTIGATION.md](design/BRANCH_SCHEDULING_INVESTIGATION.md) | 34072 |
 | [docs/design/CONTACT_COMBINATIONS.md](design/CONTACT_COMBINATIONS.md) | 9705 |
@@ -99,7 +99,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/design/PRUNING_IMPROVEMENTS_BACKLOG.md](design/PRUNING_IMPROVEMENTS_BACKLOG.md) | 3528 |
 | [docs/design/REVISIT_DISCOVERY_DEFERRED_PLAN.md](design/REVISIT_DISCOVERY_DEFERRED_PLAN.md) | 10265 |
 | [docs/design/SEARCH_OBJECTIVE.md](design/SEARCH_OBJECTIVE.md) | 6702 |
-| [docs/design/STEPPING_CASES.md](design/STEPPING_CASES.md) | 11891 |
+| [docs/design/STEPPING_CASES.md](design/STEPPING_CASES.md) | 11988 |
 | [docs/design/TIME_PROGRESS_FRONTIER.md](design/TIME_PROGRESS_FRONTIER.md) | 18682 |
 | [docs/history/dependencies/autonomy-route_guidance-requirements-plot.txt](history/dependencies/autonomy-route_guidance-requirements-plot.txt) | 39 |
 | [docs/history/dependencies/autonomy-route_guidance-requirements.txt](history/dependencies/autonomy-route_guidance-requirements.txt) | 63 |
@@ -744,7 +744,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/early-passage-screen/evidence/2026-11-15/resume-requests.json](../research/early-passage-screen/evidence/2026-11-15/resume-requests.json) | 2 |
 | [research/early-passage-screen/evidence/2026-11-15/resume-summary.json](../research/early-passage-screen/evidence/2026-11-15/resume-summary.json) | 3840 |
 | [research/early-passage-screen/log_b6_options.py](../research/early-passage-screen/log_b6_options.py) | 20722 |
-| [research/encounter-groups/README.md](../research/encounter-groups/README.md) | 17811 |
+| [research/encounter-groups/README.md](../research/encounter-groups/README.md) | 19243 |
 | [research/encounter-groups/avoidance-ab/ab_calls.py](../research/encounter-groups/avoidance-ab/ab_calls.py) | 3985 |
 | [research/encounter-groups/avoidance-ab/analyze_ab.py](../research/encounter-groups/avoidance-ab/analyze_ab.py) | 2043 |
 | [research/encounter-groups/avoidance-ab/extended-ab-1-off-by-one-analysis.txt](../research/encounter-groups/avoidance-ab/extended-ab-1-off-by-one-analysis.txt) | 2657 |
@@ -753,6 +753,8 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/encounter-groups/avoidance-ab/physical-ab-2-analysis.txt](../research/encounter-groups/avoidance-ab/physical-ab-2-analysis.txt) | 473 |
 | [research/encounter-groups/avoidance-ab/physical-ab-2.jsonl](../research/encounter-groups/avoidance-ab/physical-ab-2.jsonl) | 30436 |
 | [research/encounter-groups/native-gate/report.json](../research/encounter-groups/native-gate/report.json) | 19214 |
+| [research/encounter-groups/native-gate-p16-bonk-landings/report.json](../research/encounter-groups/native-gate-p16-bonk-landings/report.json) | 19246 |
+| [research/encounter-groups/native-gate-p16-bonk-landings/tests.log](../research/encounter-groups/native-gate-p16-bonk-landings/tests.log) | 156427 |
 | [research/encounter-groups/native-gate-phase2/report.json](../research/encounter-groups/native-gate-phase2/report.json) | 19214 |
 | [research/encounter-groups/native-gate-phase4/report.json](../research/encounter-groups/native-gate-phase4/report.json) | 19246 |
 | [research/encounter-groups/native-gate-phase4/tests.log](../research/encounter-groups/native-gate-phase4/tests.log) | 153454 |
@@ -1523,7 +1525,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [src/parkour_solver/search/__init__.py](../src/parkour_solver/search/__init__.py) | 0 |
 | [src/parkour_solver/search/anchors/__init__.py](../src/parkour_solver/search/anchors/__init__.py) | 0 |
 | [src/parkour_solver/search/anchors/adapter.py](../src/parkour_solver/search/anchors/adapter.py) | 7453 |
-| [src/parkour_solver/search/anchors/policy.py](../src/parkour_solver/search/anchors/policy.py) | 18765 |
+| [src/parkour_solver/search/anchors/policy.py](../src/parkour_solver/search/anchors/policy.py) | 19154 |
 | [src/parkour_solver/search/application.py](../src/parkour_solver/search/application.py) | 1923 |
 | [src/parkour_solver/search/bounds/__init__.py](../src/parkour_solver/search/bounds/__init__.py) | 0 |
 | [src/parkour_solver/search/bounds/flight.py](../src/parkour_solver/search/bounds/flight.py) | 5267 |
@@ -1546,7 +1548,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [src/parkour_solver/search/events/adapter.py](../src/parkour_solver/search/events/adapter.py) | 10037 |
 | [src/parkour_solver/search/events/engine.py](../src/parkour_solver/search/events/engine.py) | 15968 |
 | [src/parkour_solver/search/feasibility.py](../src/parkour_solver/search/feasibility.py) | 4137 |
-| [src/parkour_solver/search/frontier.py](../src/parkour_solver/search/frontier.py) | 35396 |
+| [src/parkour_solver/search/frontier.py](../src/parkour_solver/search/frontier.py) | 39839 |
 | [src/parkour_solver/search/goals.py](../src/parkour_solver/search/goals.py) | 4458 |
 | [src/parkour_solver/search/identity.py](../src/parkour_solver/search/identity.py) | 4491 |
 | [src/parkour_solver/search/ladder_ranking.py](../src/parkour_solver/search/ladder_ranking.py) | 5290 |
@@ -1740,7 +1742,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/unit/search/__init__.py](../tests/unit/search/__init__.py) | 0 |
 | [tests/unit/search/test_anchor_dfs.py](../tests/unit/search/test_anchor_dfs.py) | 33553 |
 | [tests/unit/search/test_anchor_policy.py](../tests/unit/search/test_anchor_policy.py) | 29791 |
-| [tests/unit/search/test_anchor_search.py](../tests/unit/search/test_anchor_search.py) | 47839 |
+| [tests/unit/search/test_anchor_search.py](../tests/unit/search/test_anchor_search.py) | 53503 |
 | [tests/unit/search/test_anchor_time_bound.py](../tests/unit/search/test_anchor_time_bound.py) | 1919 |
 | [tests/unit/search/test_block_search.py](../tests/unit/search/test_block_search.py) | 16987 |
 | [tests/unit/search/test_candidate_comparison.py](../tests/unit/search/test_candidate_comparison.py) | 6042 |

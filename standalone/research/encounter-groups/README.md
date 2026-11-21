@@ -284,3 +284,25 @@ sets (2 restored), 12 widening, 1 scan. The generators dropped 4 run-offs onto B
 could not leave their launch block. The B7 run-off onto B11 is kept at 1, 3 and 5 run
 ticks. The search state is 29.5 MB. Ceiling-guess check: 5 kept, 4 expanded, all 4 later
 than the table, 1 reaching N.
+
+## Bonk landings in minimum-run timing, 2026-11-21
+
+Source `f7c41c13` (base) against `f7c41c13` plus the bonk-landing change (uncommitted at
+measurement): a ceiling hit's or grind's earliest screened landing on each block counts
+toward N, the run-off bound and the no-N scan, and every advantageous jump beats with its
+built landing ([O9](../../docs/design/ANCHOR_POLICY_DECISIONS.md#o9--minimum-run-ticks-for-advantageous-jumps)).
+Same inputs as the phase 4 controls, run back to back (new 13:34:46, base 13:40:18 PST;
+load average 5.2 to 7.7, so timings are not compared).
+
+| Run | Best T | Best objective | Search end | Requests | Expanded | Replays |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 4-anchor, base | 64 | -1093.2381026602418 | 5.6 s `exhausted` | 19 | 11 | 8/8 |
+| 4-anchor, new | 64 | -1093.2381026602418 | 5.9 s `exhausted` | 19 | 11 | 8/8 |
+| extended, base | none | - | 295.1 s `deadline` | 367 | 110 | 3/3 |
+| extended, new | none | - | 295.4 s `deadline` | 392 | 113 | 3/3 |
+
+On the extended run the minimum-run log kept 17 ceiling jumps (base 7) and 0 grinds (base
+2), and dominated 43 ceiling jumps (base 100). Run-offs from B11 onto B12 are now bounded
+by the grind under B8 landing on B12 after 5 inputs, against 13 for the unhit jump: they are
+kept only at a total of 4 (base: totals 4 to 7). The B7 run-off onto B11 is unchanged (B8
+stands beside B7, not over it), kept at 1, 3 and 5 run ticks.

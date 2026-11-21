@@ -2,13 +2,14 @@
 
 ## Current gate
 
-`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on the walk-off follow-ups
-(`d9e1ec9c` plus the change: tick-0 walk-off check, no-N scan airtime): **829 tests, no
-failures, errors or skips**, source unchanged during the run, at a load average of 5.3 to
-6.6 ([report](../research/encounter-groups/native-gate-walkoff-followups/report.json)).
+`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on the bonk landings
+(`f7c41c13` plus the change: a ceiling hit's or grind's built landing in minimum-run
+timing): **832 tests, no failures, errors or skips**, source unchanged during the run, at a
+load average of 2.9 to 3.5 ([report](../research/encounter-groups/native-gate-p16-bonk-landings/report.json)).
 Wall-time-bound tests can still fail under heavier load ([deferred P17](DEFERRED_WORK.md)).
-The gate fails on any skip, so it needs `PKC_RUN_TICKS_COMPILER` for the Java
-differential tests and the `research` extra for the route-guidance tests.
+The gate fails on any skip, so it needs `PKC_IPOPT_PYTHON` for the IPOPT tests,
+`PKC_RUN_TICKS_COMPILER` for the Java differential tests and the `research` extra for the
+route-guidance tests.
 A run of the switch-climb source (`55e3beef`) under a load average of 5.5 failed
 `test_prescribed_points_do_not_remove_remote_free_space` (its two 2 s arms
 enumerated 856 and 830 choices); it passed in isolation and on the rerun. Earlier,
@@ -26,6 +27,7 @@ persistence without the removed 32/128 limits.
 
 | Source | Tests | Evidence |
 | --- | ---: | --- |
+| `f7c41c13` + bonk landings in minimum-run timing | 832 | [report](../research/encounter-groups/native-gate-p16-bonk-landings/report.json) |
 | `d9e1ec9c` + walk-off follow-ups | 829 | [report](../research/encounter-groups/native-gate-walkoff-followups/report.json) |
 | `6b11a815` + the repair loop publishes progress only to a saver | 830 | [report](../research/checkpoint-cost/native-gate-repair-snapshots/report.json) |
 | `75a0f4c6` + program identity as a per-state chain, equal-priority programs in list order | 830 | [report](../research/parent-linked-programs/native-gate-phaseB/report.json) |

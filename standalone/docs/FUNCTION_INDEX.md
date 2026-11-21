@@ -789,12 +789,12 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `next_anchor` | [149](../src/parkour_solver/search/anchors/policy.py#L149) | function |
 | `advantageous_targets` | [158](../src/parkour_solver/search/anchors/policy.py#L158) | function |
 | `advantageous_candidates` | [181](../src/parkour_solver/search/anchors/policy.py#L181) | function |
-| `encounter_groups` | [265](../src/parkour_solver/search/anchors/policy.py#L265) | function |
-| `local_counts` | [314](../src/parkour_solver/search/anchors/policy.py#L314) | function |
-| `priority` | [319](../src/parkour_solver/search/anchors/policy.py#L319) | function |
-| `within_caps` | [323](../src/parkour_solver/search/anchors/policy.py#L323) | function |
-| `transfer_structure` | [337](../src/parkour_solver/search/anchors/policy.py#L337) | function |
-| `single_jump_structure` | [381](../src/parkour_solver/search/anchors/policy.py#L381) | function |
+| `encounter_groups` | [269](../src/parkour_solver/search/anchors/policy.py#L269) | function |
+| `local_counts` | [318](../src/parkour_solver/search/anchors/policy.py#L318) | function |
+| `priority` | [323](../src/parkour_solver/search/anchors/policy.py#L323) | function |
+| `within_caps` | [327](../src/parkour_solver/search/anchors/policy.py#L327) | function |
+| `transfer_structure` | [341](../src/parkour_solver/search/anchors/policy.py#L341) | function |
+| `single_jump_structure` | [385](../src/parkour_solver/search/anchors/policy.py#L385) | function |
 
 ## search/application.py
 

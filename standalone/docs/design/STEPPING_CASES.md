@@ -52,7 +52,7 @@ This differs from an ordinary ceiling hit: a ceiling hit can leave a positive ri
 
 ### Corner jump cancel
 
-This is an X-facing corner avoidance case. The obstacle is about 0.42-0.6 above the lower level. The position before J is in front of the obstacle's X face; J clears its Z edge. Upward velocity is cancelled as in a grind, with the usual subsequent gravity/carry. Use the successive-state timing of a Z-facing blockage: outside the first face before J and outside the Z edge on J, rather than requiring both clearances at the same state.
+This is an X-facing corner avoidance case. The obstacle is about 0.42-0.6 above the lower level. The position before J is in front of the obstacle's X face; J clears its Z edge. Upward velocity is cancelled as in a grind, with the usual subsequent gravity/carry; on a flat floor the following input lands, the same two-input airtime as a grind or stair boost. Use the successive-state timing of a Z-facing blockage: outside the first face before J and outside the Z edge on J, rather than requiring both clearances at the same state.
 
 It is an avoidance case, not a planned retained X wall hit. Preserve ordinary jump horizontal movement unless another actual contact says otherwise. X-facing describes the geometry, not a camera-facing pin. The Z-facing counterpart is an ordinary jump.
 

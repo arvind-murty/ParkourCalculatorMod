@@ -309,28 +309,42 @@ stepping generator's `normal_step`); ladder walk-ins and virtual-goal finishes a
 unchanged. `minimum_runs` (`search/frontier.py`) then adds run ticks, bounded by
 time (user, 2026-11-19/20):
 
+- **Airtime** counts the jump input and the air inputs after it through the
+  landing input: 12 for a flat jump, 3 for a jump under a ceiling 2 blocks above
+  the feet, 2 for a grind, slab boost or corner jump cancel. A run-off has no jump
+  input, so its airtime is its air inputs. (The comparison counts' A is different:
+  air inputs only, with the jump input counted in J.)
+- **Built landings.** A ceiling hit's built choice stops at the hit, and a grind's,
+  slab boost's or corner jump cancel's at its jump tick, so each lands in its own
+  child's choice. Its landing on each block is the earliest of those choices that
+  passes the screens (`landings_of`; these screens are not recorded, and the
+  child's own expansion repeats them). A ceiling hit's or grind's landings count
+  as jump-now landings below (user, 2026-11-21).
 - **N** is P's fastest jump-now landing: on the next anchor if any child lands
   there, else on any block other than P's own. "N is a heuristic for how many run
-  ticks we tolerate."
+  ticks we tolerate": it bounds run ticks only, and a built move that lands past it
+  is kept (user, 2026-11-21).
 - **Candidates** come from `advantageous_candidates` (`search/anchors/policy.py`)
   without building anything: the launch tables (`block_table`) give the blocks and
   undersides, vertical replays give each move's airtime A (A = 2 for slab boosts
-  and corner jump cancels; a ceiling or grind A is inferred to the first landing
-  top, since the built ceiling choice stops at the hit). There are three kinds
-  (user, 2026-11-20):
+  and corner jump cancels; a ceiling or grind A is the earliest descent through any
+  landing top of the launch table, a lower bound since it ignores where the player
+  can be after the hit). There are three kinds (user, 2026-11-20):
   1. **Advantageous jump**: k same-block run ticks then the jump, built while
      k + A < N, cheapest (total, A) first, at most
      `MAX_ADVANTAGEOUS_RUN_TICKS = FLAT_JUMP_TICKS − 1` = 11 run ticks (a flat jump
      lasts 12 ticks), on top of the request caps and the time bound. One beaten on
      both total and A by a kept one (advantageous jump-now children count) is not
-     built.
+     built. A kept one beats with its built landing (total and A), not the table's.
   2. **Run-off onto another block B**: R run ticks, the last walking off the edge
      (it moves as a run tick: a grounded input), then r airborne inputs (0 when it
      lands within the walk-off input). The fewest R, from 1 to 11, with R + r < J_B,
-     the airtime of a jump from P onto B (from the same vertical replay; it may
-     exceed N), offered only when a jump-now child lands on B, since a run-off
-     reaches only blocks close enough to jump onto. The run-off must leave its
-     launch block: see walk-off faces below.
+     the airtime of a jump from P onto B: the vertical replay of an unhit jump,
+     lowered to any jump-now landing on B, a ceiling hit's or grind's included, so
+     it is how long reaching B takes (user, 2026-11-21; it may exceed N). Offered
+     only when a jump-now child lands on B, since a run-off reaches only blocks
+     close enough to jump onto. The run-off must leave its launch block: see
+     walk-off faces below.
   3. **Walking step-up onto another block**: its step input is a run tick too, so 1
      run tick (the step on the first tick), else 2 (one run tick then the step);
      more run-up than that is a slab boost.
@@ -359,14 +373,15 @@ time (user, 2026-11-19/20):
   landing on N's block died, that block is a dead end for this decision and N
   widens to the next landing (the next anchor is never a dead end).
 - **Without N** (no jump-now landing on another block), run counts are scanned
-  until a jump or run-off lands on the next anchor, else on another block; that
-  sets N and its next count is reserved. A run-off's walk-off input counts as a
-  run tick here too, so its A is its airborne inputs.
+  until a jump (a ceiling hit or grind by its built landing) or run-off lands on
+  the next anchor, else on another block; that sets N and its next count is
+  reserved. A run-off's walk-off input counts as a run tick here too, so its A is
+  its airborne inputs.
 
 Every resolution is logged in the frontier's `minimumRunCandidates`. This mirrors
 minimum run ticks for hard jumps (`run_bound`, O7), which is unchanged.
 Turnaround decisions generate run ticks as before and still prefer them
-(`(T,-J,A)`). `searchPolicyVersion` 13 carries this and the decision objectives.
+(`(T,-J,A)`). `searchPolicyVersion` 14 carries this and the decision objectives.
 
 ## Settled versus remaining implementation choices
 

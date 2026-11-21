@@ -43,7 +43,7 @@ def settings(value, scene):
 
 def semantic_settings(policy):
     return dict({k:v for k,v in policy.items() if k!='observability'},
-                hardJumpPolicyVersion=HARD_JUMP_POLICY_VERSION,searchPolicyVersion=13,comparisonPolicyVersion=COMPARISON_POLICY_VERSION)
+                hardJumpPolicyVersion=HARD_JUMP_POLICY_VERSION,searchPolicyVersion=14,comparisonPolicyVersion=COMPARISON_POLICY_VERSION)
 
 
 def owner(scene, block):
@@ -183,12 +183,16 @@ def advantageous_candidates(scene, table, launch, top, next_owner, types, thresh
     (`table(owner)`, see reachability.service.block_table) and vertical replays only.
 
     Each entry is dict(key, A, via). A jump-now move (via None) has the key advantageous_targets
-    gives as a JSON list and its airtime A; ceiling and grind airtimes are inferred (the built choice stops
-    at the hit), the rest equal the generators' replays. A run-off onto another owner (via) is a
-    ["landing", owner] entry: A counts its airborne inputs only, since the walk-off input moves as a run
-    tick (0 when it lands within that input), and `limit` is the airtime of a jump from here onto that
-    owner, which its run ticks plus A compete with whatever follows it. A walking step-up onto another
-    owner is a ["step", owner] entry with A = 0: its step input is a run tick too.
+    gives as a JSON list and its airtime A: the jump input plus its air inputs through the landing (12 for a
+    flat jump, 3 under a ceiling 2 blocks above the feet, 2 for a grind, slab boost or corner jump cancel).
+    A ceiling or grind A is the earliest descent through any landing top of the launch table, a lower bound
+    (the built choice stops at the hit, and the table ignores where the player can be after it); the
+    frontier uses it only to bound run ticks and takes built landings for the rest. A run-off onto another
+    owner (via) is a ["landing", owner] entry: A counts its airborne inputs only, since the walk-off input
+    moves as a run tick (0 when it lands within that input), and `limit` is the airtime of an unhit jump
+    from here onto that owner (the frontier lowers it to a jump-now landing there), which its run ticks
+    plus A compete with. A walking step-up onto another owner is a ["step", owner] entry with A = 0: its
+    step input is a run tick too.
     """
     import json
     import math
