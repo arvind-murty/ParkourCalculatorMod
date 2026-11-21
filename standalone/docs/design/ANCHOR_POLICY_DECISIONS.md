@@ -318,8 +318,9 @@ time (user, 2026-11-19/20):
   slab boost's or corner jump cancel's at its jump tick, so each lands in its own
   child's choice. Its landing on each block is the earliest of those choices that
   passes the screens (`landings_of`; these screens are not recorded, and the
-  child's own expansion repeats them). A ceiling hit's or grind's landings count
-  as jump-now landings below (user, 2026-11-21).
+  child's own expansion repeats them). These count as jump-now landings below:
+  a grind, slab boost or corner jump cancel is a 2-tick jump, whose input after the
+  jump tick is always airborne (user, 2026-11-21).
 - **N** is P's fastest jump-now landing: on the next anchor if any child lands
   there, else on any block other than P's own. "N is a heuristic for how many run
   ticks we tolerate": it bounds run ticks only, and a built move that lands past it
@@ -340,7 +341,7 @@ time (user, 2026-11-19/20):
      (it moves as a run tick: a grounded input), then r airborne inputs (0 when it
      lands within the walk-off input). The fewest R, from 1 to 11, with R + r < J_B,
      the airtime of a jump from P onto B: the vertical replay of an unhit jump,
-     lowered to any jump-now landing on B, a ceiling hit's or grind's included, so
+     lowered to any jump-now landing on B (built landings included), so
      it is how long reaching B takes (user, 2026-11-21; it may exceed N). Offered
      only when a jump-now child lands on B, since a run-off reaches only blocks
      close enough to jump onto. The run-off must leave its launch block: see
@@ -373,7 +374,7 @@ time (user, 2026-11-19/20):
   landing on N's block died, that block is a dead end for this decision and N
   widens to the next landing (the next anchor is never a dead end).
 - **Without N** (no jump-now landing on another block), run counts are scanned
-  until a jump (a ceiling hit or grind by its built landing) or run-off lands on
+  until a jump (by its built landing) or run-off lands on
   the next anchor, else on another block; that sets N and its next count is
   reserved. A run-off's walk-off input counts as a run tick here too, so its A is
   its airborne inputs.

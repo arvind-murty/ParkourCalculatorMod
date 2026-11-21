@@ -306,3 +306,9 @@ On the extended run the minimum-run log kept 17 ceiling jumps (base 7) and 0 gri
 by the grind under B8 landing on B12 after 5 inputs, against 13 for the unhit jump: they are
 kept only at a total of 4 (base: totals 4 to 7). The B7 run-off onto B11 is unchanged (B8
 stands beside B7, not over it), kept at 1, 3 and 5 run ticks.
+
+With slab boosts and corner jump cancels counted like grinds (2-tick jumps whose landing
+counts toward N; `ea972fb8` plus that change, 13:58:34 PST, load average 2.6 to 3.2): the
+4-anchor control is unchanged (T64, -1093.2381026602418, 19 requests, 11 expanded, 5.1 s
+`exhausted`, 8/8 replays); the extended control ends at the deadline (295.1 s) with 401
+requests and 113 expanded, 3/3 replays, keeping 17 ceiling jumps, 1 grind and 13 run-offs.

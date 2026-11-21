@@ -321,6 +321,16 @@ def covered_scene(lid):
         blocks=blocks, movementSearch=dict(types=['normal','ceiling'], maxInputs=40)))
 
 
+def step_up_scene(goal=2):
+    # slab is half a block above start and flush with it: a walking step-up, or a slab boost.
+    from parkour_solver.scene.normalize import prepare_scene
+    return prepare_scene(dict(version=1, sceneModel='collision_boxes', geometryBounds=[-10,-5,-10,20,12,10],
+        initial=dict(position=[.5,1,.5], velocity=[.25,-.0784000015258789,0], yaw=-90),
+        startBlock='start', goalBlock='goal', maxWallHits=0, maxContactCombinations=0,
+        blocks=[dict(id='start', boxes=[[-2,0,-2,3,1,2]]), dict(id='slab', boxes=[[3,0,-2,4,1.5,2]]),
+                dict(id='goal', boxes=[[6,goal-1,-1,7,goal,1]])], movementSearch=dict(types=['normal','stepping'], maxInputs=40)))
+
+
 class MinimumRunTickTests(unittest.TestCase):
     def frontier(self, *, screen=None, ordinary=True, continuation=None, live=(), report=None, scene=None,
                  policy=True, keep_emitted=False):
@@ -501,13 +511,7 @@ class MinimumRunTickTests(unittest.TestCase):
         self.assertEqual((lands(state,True),lands(state,False),self.candidates(state,key=key)),([],[],[]))
 
     def test_run_step_is_one_branch_of_one_or_two_run_ticks(self):
-        from parkour_solver.scene.normalize import prepare_scene
-        # slab is half a block above start and flush with it: a walking step-up.
-        s=prepare_scene(dict(version=1, sceneModel='collision_boxes', geometryBounds=[-10,-5,-10,20,12,10],
-            initial=dict(position=[.5,1,.5], velocity=[.25,-.0784000015258789,0], yaw=-90),
-            startBlock='start', goalBlock='goal', maxWallHits=0, maxContactCombinations=0,
-            blocks=[dict(id='start', boxes=[[-2,0,-2,3,1,2]]), dict(id='slab', boxes=[[3,0,-2,4,1.5,2]]),
-                    dict(id='goal', boxes=[[6,1,-1,7,2,1]])], movementSearch=dict(types=['normal','stepping'], maxInputs=40)))
+        s=step_up_scene()
         key='["step", "slab"]'
         steps=lambda state:sorted({local_counts(p)['R'] for p in state['pending'] if p['terminalSupport']=='slab' and not local_counts(p)['J']})
         early=lambda minimum:lambda p:dict(reason='early') if (p['terminalSupport']=='slab' and not local_counts(p)['J']
@@ -537,6 +541,21 @@ class MinimumRunTickTests(unittest.TestCase):
             emitted,state=self.frontier(scene=s,continuation=self.without(state,hits))
         self.assertEqual(self.candidates(state,'kept',lid),[(lid,k,'kept') for k in range(1,N-A)])
         self.assertEqual([r for r in self.reserves(state) if r[1]==lid],[])
+
+    def test_a_slab_boost_lands_like_a_two_tick_jump_and_sets_n(self):
+        # The slab boost's choice stops at its jump tick; it lands on slab on the next input. goal is out of jump
+        # reach, so that landing is N.
+        s=step_up_scene(goal=3)
+        emitted,state=self.frontier(scene=s)
+        boost=next(p for p in state['pending'] if not p['profile']['grounded'][-1] and not local_counts(p)['R']
+                   and any(e['case']=='slab_boost' for e in p['profile']['caseEvents']))
+        self.assertEqual(self.landings(s,boost)['slab'],2)
+        (widen,)=[h['programs'][0]['minimumRunSearch'] for h in state['alternatives'].values()
+                  if h['programs'][0]['minimumRunSearch']['kind']=='widen']
+        self.assertEqual(widen['lower'],2)
+        self.assertIn(dict(ticks=2,owner='slab',node=boost['decisionNode']),widen['landings'])
+        # No run-up jump fits under N = 2; only the walking step-up is built.
+        self.assertEqual([(r['key'],r['outcome']) for r in state['minimumRunCandidates']],[('["step", "slab"]','kept')])
 
     def test_a_ceiling_jump_beats_with_its_built_landing_not_the_table(self):
         # The table puts a lid hit's landing on ledge, the highest top start reaches; with ledge screened out the
