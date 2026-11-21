@@ -17,6 +17,13 @@ import re
 import sys
 
 from parkour_solver.io.checkpoint_store import read_report
+from parkour_solver.search.comparison import TOLERANCE as OBJECTIVE_TOLERANCE
+
+# Migration tolerances for the tolerant mode. Kernels absorb operation-reordering
+# noise; whole solves compare objectives at the tolerance search itself uses to
+# compare them.
+KERNEL = dict(rel_tol=1e-12, abs_tol=1e-12)
+SOLVE = dict(abs_tol=OBJECTIVE_TOLERANCE)
 
 
 def load_oracle(module, name=None):
@@ -186,11 +193,10 @@ def main():
     parser = argparse.ArgumentParser(description='Compare two saved search reports for migration parity.')
     parser.add_argument('reference')
     parser.add_argument('candidate')
-    parser.add_argument('--rel-tol', type=float)
-    parser.add_argument('--abs-tol', type=float)
+    parser.add_argument('--tolerant', action='store_true', help=f'accept floating-point differences ({SOLVE})')
     args = parser.parse_args()
     verdict = compare_routes(*(read_report(path) for path in (args.reference, args.candidate)),
-                             rel_tol=args.rel_tol, abs_tol=args.abs_tol)
+                             **(SOLVE if args.tolerant else {}))
     print(json.dumps(verdict, indent=2, allow_nan=False))
     return int(not verdict['matches'])
 

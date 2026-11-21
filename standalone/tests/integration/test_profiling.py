@@ -101,7 +101,7 @@ class BookkeepingProfileTests(unittest.TestCase):
             self.assertEqual((row['calls'], row['hits'], row['misses']), (2,1,1))
 
     def test_digest_sampling_is_bounded_and_preserves_canonical_output(self):
-        from parkour_solver.search.identity import digest
+        from parkour_solver.canonical import digest
         profile = BookkeepingProfile(RuntimeProfile(), sample_every=2, sample_limit=3)
         wrapped = profile.digest(digest)
         value = dict(z=[-0., 1.1234567890123457], a={'owner': 'retained'})
@@ -424,7 +424,8 @@ class ParityTests(unittest.TestCase):
             searchState=dict(kind='event_route_search',dfs=dict(transitions=transitions))))
 
     def test_comparators_reject_defects_and_tolerance_only_relaxes_finite_floats(self):
-        from tools.profiling.parity import compare,self_test
+        from tools.profiling.parity import KERNEL,SOLVE,compare,self_test
+        self.assertEqual(self_test(**KERNEL)['rejected'],self_test(**{'rel_tol':None,**SOLVE})['rejected'])
         self.assertEqual(self_test(rel_tol=1e-9,abs_tol=None)['rejected'],
                          ['int_vs_float','large_float','missing_key','order','signed_zero','verdict'])
         self.assertAlmostEqual(compare(dict(a=[1.,2.]),dict(a=[1.,2.+1e-12]),rel_tol=1e-9),1e-12,delta=1e-15)

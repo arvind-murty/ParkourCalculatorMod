@@ -136,12 +136,24 @@ them for a saved report from `python -m parkour_solver`:
 ```
 
 Compare two saved solves for C++ migration parity: outcome, ticks, objective and
-the transition sequence without timestamps. Exact by default. `--rel-tol`/`--abs-tol`
-accept floating-point differences and drop digest strings from transitions; both
-routes must still have passed their own validation. Exit status 1 means a difference:
+the transition sequence without timestamps. Exact by default. `--tolerant` accepts
+objective differences within the search's own objective tolerance (`parity.SOLVE`)
+and drops digest strings from transitions; both routes must still have passed their
+own validation. Exit status 1 means a difference:
 
 ```sh
-"$PKC_IPOPT_PYTHON" -B -m tools.profiling.parity /path/to/python.json.gz /path/to/native.json.gz [--rel-tol 1e-9]
+"$PKC_IPOPT_PYTHON" -B -m tools.profiling.parity /path/to/python.json.gz /path/to/native.json.gz [--tolerant]
+```
+
+Build the native C++ core (`native/cpp/`, needs CMake and the pinned pybind11 from
+`research/cpp-pruning-pilot/requirements.txt`) into `build/native/cpp/`, or the
+undefined-behavior-sanitizer variant into `build/native/cpp-sanitize/`. Then check
+every `canonical.digest` call of a real solve against the native encoder:
+
+```sh
+"$PKC_IPOPT_PYTHON" -B -m tools.native_cpp build [--variant sanitize] [--output /path/to/provenance-dir]
+"$PKC_IPOPT_PYTHON" -B -m tools.native_cpp verify-digest --input cases/real11/physical-anchors.json \
+  --seconds 60 --output /path/to/new-dir [--variant sanitize]
 ```
 
 A report written from a bare solve report has no request numbers or IPOPT

@@ -47,6 +47,12 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `PythonCompiler.__enter__` | [59](../src/parkour_solver/bridge/python_compiler.py#L59) | function |
 | `PythonCompiler.__exit__` | [62](../src/parkour_solver/bridge/python_compiler.py#L62) | function |
 
+## canonical.py
+
+| Symbol | Line | Kind |
+| --- | ---: | --- |
+| `digest` | [11](../src/parkour_solver/canonical.py#L11) | function |
+
 ## cli/blocks.py
 
 | Symbol | Line | Kind |
@@ -909,11 +915,11 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `candidate_key` | [20](../src/parkour_solver/search/dfs.py#L20) | function |
-| `arrival_key` | [25](../src/parkour_solver/search/dfs.py#L25) | function |
-| `decision_family` | [29](../src/parkour_solver/search/dfs.py#L29) | function |
-| `commit_arrival` | [40](../src/parkour_solver/search/dfs.py#L40) | function |
-| `search_goals` | [65](../src/parkour_solver/search/dfs.py#L65) | function |
+| `candidate_key` | [21](../src/parkour_solver/search/dfs.py#L21) | function |
+| `arrival_key` | [26](../src/parkour_solver/search/dfs.py#L26) | function |
+| `decision_family` | [30](../src/parkour_solver/search/dfs.py#L30) | function |
+| `commit_arrival` | [41](../src/parkour_solver/search/dfs.py#L41) | function |
+| `search_goals` | [66](../src/parkour_solver/search/dfs.py#L66) | function |
 
 ## search/domain.py
 
@@ -992,9 +998,9 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `take_first` | [13](../src/parkour_solver/search/frontier.py#L13) | function |
-| `restore_alternatives` | [26](../src/parkour_solver/search/frontier.py#L26) | function |
-| `persistent_programs` | [58](../src/parkour_solver/search/frontier.py#L58) | function |
+| `take_first` | [14](../src/parkour_solver/search/frontier.py#L14) | function |
+| `restore_alternatives` | [27](../src/parkour_solver/search/frontier.py#L27) | function |
+| `persistent_programs` | [59](../src/parkour_solver/search/frontier.py#L59) | function |
 
 ## search/goals.py
 
@@ -1010,14 +1016,13 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `digest` | [9](../src/parkour_solver/search/identity.py#L9) | function |
-| `motion_record` | [13](../src/parkour_solver/search/identity.py#L13) | function |
-| `processing_key` | [22](../src/parkour_solver/search/identity.py#L22) | function |
-| `solve_scope` | [26](../src/parkour_solver/search/identity.py#L26) | function |
-| `solve_identity` | [52](../src/parkour_solver/search/identity.py#L52) | function |
-| `scoped_geometry` | [60](../src/parkour_solver/search/identity.py#L60) | function |
-| `full_witness` | [65](../src/parkour_solver/search/identity.py#L65) | function |
-| `validation_prefix` | [70](../src/parkour_solver/search/identity.py#L70) | function |
+| `motion_record` | [8](../src/parkour_solver/search/identity.py#L8) | function |
+| `processing_key` | [17](../src/parkour_solver/search/identity.py#L17) | function |
+| `solve_scope` | [21](../src/parkour_solver/search/identity.py#L21) | function |
+| `solve_identity` | [47](../src/parkour_solver/search/identity.py#L47) | function |
+| `scoped_geometry` | [55](../src/parkour_solver/search/identity.py#L55) | function |
+| `full_witness` | [60](../src/parkour_solver/search/identity.py#L60) | function |
+| `validation_prefix` | [65](../src/parkour_solver/search/identity.py#L65) | function |
 
 ## search/ladder_ranking.py
 
