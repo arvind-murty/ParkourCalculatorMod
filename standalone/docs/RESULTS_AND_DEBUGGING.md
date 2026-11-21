@@ -77,7 +77,7 @@ writes these files to its output directory:
 
 | File | Contents |
 | --- | --- |
-| `report.md` | The readable report: outcome, why the search stopped, the route tree, one section per partial route, and each frame's search tree. |
+| `report.md` | The readable report: outcome, why the search stopped, every block's collision boxes (X, Y and Z bounds), the route tree, one section per partial route, and each frame's search tree. |
 | `routes.json` | The same per-route trace as data. |
 | `nodes.json` | Each frame's search tree as data. |
 | `summary.json` | Best route, timings, work counters, replay verdicts and the `stop` report. |

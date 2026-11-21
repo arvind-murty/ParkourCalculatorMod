@@ -340,11 +340,14 @@ class BookkeepingProfileTests(unittest.TestCase):
                      generation=dict(generated=9, screenedPrefixes=1, policyRejections=2, totalExpandedPrefixes=2,
                                      continuation=continuation))
         state = dict(dfs=dict(stack=[frame]))
-        trees = node_trace(state, dict(blocks=[dict(id='b1', boxes=[low]), dict(id='b2', boxes=[high]), dict(id='b3', boxes=[lid])]))
+        scene = dict(blocks=[dict(id='b1', boxes=[low]), dict(id='b2', boxes=[high]), dict(id='b3', boxes=[lid])])
+        trees = node_trace(state, scene)
         requests = [dict(index=4, fingerprint='h1', status='feasible', workerStatus='Solved', backend='clarabel', seconds=.01)]
         report = dict(result=dict(best=None, termination='deadline', elapsedSeconds=1., work=dict(solverCalls=1, workerLaunches=0),
-                                  expandedPrefixes=2, searchState=state))
+                                  expandedPrefixes=2, searchState=state, effectiveRequest=scene))
         markdown = render(report, requests, [], stop_report(state, requests), trees)
+        self.assertIn('| Block | X | Y | Z |\n|---|---|---|---|\n| B1 | [0, 1] | [0, 1] | [0, 1] |\n'
+                      '| B2 | [2, 3] | [0, 1] | [0, 1] |', markdown)
         self.assertIn('Decision nodes solved: 3 (2 feasible, 1 no alternative survived (backtracks)). Prefixes generated: 9; '
                       'ruled out by the screens: 1; rejected by the search policy: 2 (1 when generated, 1 when taken from the '
                       'queue); expanded: 2; left unexpanded: 1.', markdown)

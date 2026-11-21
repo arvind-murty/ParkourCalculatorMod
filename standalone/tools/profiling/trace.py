@@ -743,6 +743,12 @@ def render(report, requests, routes, stop, trees):
         lines += [f'Disk-relaxation pre-checks: {screens.get("solved", 0)} solved ({screens.get("cacheHits", 0)} more from cache), '
                   f'{screens.get("infeasible", 0)} proved infeasible, {screens.get("undecided", 0)} undecided by Clarabel and '
                   f'counted as not ruled out.','']
+    blocks = (result.get('effectiveRequest') or {}).get('blocks',[])
+    if blocks:
+        lines += ['## Blocks','','Collision boxes in world coordinates, exact; a block of several boxes lists each.','']
+        lines += table(['Block','X','Y','Z'],
+                       [[block['id'].upper()]+[f'[{box[i]}, {box[i+3]}]' for i in range(3)]
+                        for block in blocks for box in block.get('boxes',[])])
     lines += ['## Route tree','','Each frame extends one parent route to the next anchor. Route `F.N` is route N of frame F.','']
     def tree(fid, depth):
         group = by_frame[fid]
