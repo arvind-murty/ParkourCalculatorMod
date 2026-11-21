@@ -172,7 +172,7 @@ Open measurement: solve cadence 1 versus 2 or 4 decision levels
 
 | File | What to look at without changing behavior |
 | --- | --- |
-| `search/identity.py` | `digest`, `motion_record`, `solve_scope`, `solve_identity`: repeated canonical serialization. |
+| `canonical.py`, `search/identity.py` | `digest` (owned by `canonical.py`; a replacement must keep its exact bytes, since search order breaks ties on it), `motion_record`, `solve_scope`, `solve_identity`: repeated canonical serialization. |
 | `movement/program.py` | `program_physics_key`, `program_search_key`, `compile_program`: repeated sorting and serialization of immutable content. |
 | `reachability/service.py` | `InteractionGate` key construction, which costs even on a cache hit. |
 | `search/engine.py` | `evaluate_program`: scope, coefficients, replay, solve identity, variants, validation. |

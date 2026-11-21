@@ -10,7 +10,7 @@ import math
 from parkour_solver.constraints.avoidance import blockage_counts, passage_kind, phase_states
 from parkour_solver.scene.geometry import expanded_box
 from parkour_solver.reachability.intervals import interaction_reachability, interaction_reachability_many
-from parkour_solver.search.identity import digest
+from parkour_solver.canonical import digest
 from parkour_solver.spatial.surfaces import intersects, nested
 
 

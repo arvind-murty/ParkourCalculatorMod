@@ -9,7 +9,7 @@ from parkour_solver.constraints.encounters import (
 from parkour_solver.reachability.service import interaction_context_key
 from parkour_solver.reachability.intervals import interaction_reachability
 from parkour_solver.reachability.screen import condition_envelopes
-from parkour_solver.search.identity import digest
+from parkour_solver.canonical import digest
 from parkour_solver.spatial.surfaces import scene_geometry
 
 

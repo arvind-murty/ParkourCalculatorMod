@@ -2,7 +2,7 @@
 import copy
 
 from parkour_solver.movement.program import empty_program, program_physics_key, truncate_program
-from parkour_solver.search.identity import digest
+from parkour_solver.canonical import digest
 from parkour_solver.search.comparison import comparison_label, priority_key, compare_candidates
 
 

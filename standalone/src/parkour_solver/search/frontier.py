@@ -6,7 +6,8 @@ from parkour_solver.movement.cases import entry_possible
 from parkour_solver.movement.program import append_choice, boundary_state, empty_program, program_physics_key, program_search_key, truncate_program
 from parkour_solver.movement.generation import generate_choices, propose_choices, assess_proposal
 from parkour_solver.movement.normal import MAX_ADVANTAGEOUS_RUN_TICKS
-from parkour_solver.search.identity import digest, processing_key
+from parkour_solver.canonical import digest
+from parkour_solver.search.identity import processing_key
 from parkour_solver.search.comparison import POLICY_VERSION as COMPARISON_POLICY_VERSION
 
 

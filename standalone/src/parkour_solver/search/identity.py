@@ -1,13 +1,8 @@
 import copy
-import hashlib
-import json
 
+from parkour_solver.canonical import digest
 from parkour_solver.movement.program import program_physics_key
 from parkour_solver.search.comparison import comparison_label, priority_key
-
-
-def digest(value):
-    return hashlib.sha256(json.dumps(value, sort_keys=True, allow_nan=False).encode()).hexdigest()
 
 
 def motion_record(program):

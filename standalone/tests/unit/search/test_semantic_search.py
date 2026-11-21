@@ -97,7 +97,7 @@ class SemanticStageTests(unittest.TestCase):
 
     def test_spatial_resume_keeps_each_running_variant_language_immutable(self):
         from parkour_solver.search.compat.corridor_queue import search_routes
-        from parkour_solver.search.identity import digest
+        from parkour_solver.canonical import digest
         def child(request,compiler,*,corridor,resume_state=None,**kwargs):
             context=digest(corridor.to_dict())
             if resume_state is not None:

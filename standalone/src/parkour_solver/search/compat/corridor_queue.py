@@ -9,7 +9,7 @@ from parkour_solver.constraints.variants import GENERATION_POLICY
 from parkour_solver.scene.normalize import prepare_scene
 from parkour_solver.movement.settings import movement_settings
 from parkour_solver.search.ranking import candidate_rank
-from parkour_solver.search.identity import digest
+from parkour_solver.canonical import digest
 from parkour_solver.search.goals import goal_spec
 from parkour_solver.spatial.cells import decompose
 from parkour_solver.spatial.regions import annotate_normal_proposals, build_route_graph

@@ -11,7 +11,7 @@ from parkour_solver.reachability.service import query_interaction
 from parkour_solver.movement.program import empty_program, append_choice
 from parkour_solver.movement.normal import event_choice
 from parkour_solver.scene.geometry import BODY_HEIGHT
-from parkour_solver.search.identity import digest
+from parkour_solver.canonical import digest
 
 
 POLICY_VERSION = 1

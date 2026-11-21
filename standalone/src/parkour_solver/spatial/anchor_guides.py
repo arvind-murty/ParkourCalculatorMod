@@ -2,7 +2,7 @@
 
 import math
 
-from parkour_solver.search.identity import digest
+from parkour_solver.canonical import digest
 from parkour_solver.spatial.checkpoints import Checkpoint
 
 

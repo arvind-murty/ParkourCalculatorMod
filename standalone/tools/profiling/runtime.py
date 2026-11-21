@@ -168,7 +168,8 @@ def instrument(profiler):
         replace(movement_frontier, 'generate_choices', profiler.generator('movement.choices', movement_frontier.generate_choices))
         # Capture imported references as well as the definition. Avoid wrapping
         # every recursive deepcopy or Python call, which distorts this workload.
-        original_digest = solve_spec.digest
+        from parkour_solver import canonical
+        original_digest = canonical.digest
         digest = profiler.function('identity.digest', original_digest)
         for name, module in list(sys.modules.items()):
             if name.startswith('parkour_solver.') and getattr(module, 'digest', None) is original_digest:

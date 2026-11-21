@@ -10,7 +10,7 @@ import statistics
 import time
 import tracemalloc
 
-from parkour_solver.search.identity import digest
+from parkour_solver.canonical import digest
 from tools.profiling.bookkeeping import BookkeepingProfile
 from tools.profiling.runtime import RuntimeProfile
 

@@ -10,7 +10,7 @@ PROOF_POLICY = 3
 def interaction_context_key(context):
     """Fingerprint all bounds/rows/probe uncertainty, including unknown Y."""
     import math
-    from parkour_solver.search.identity import digest
+    from parkour_solver.canonical import digest
     def finite(value):
         if isinstance(value, float) and not math.isfinite(value):
             return {'nonfiniteBound': str(value)}
@@ -29,7 +29,7 @@ def query_interaction(request, context, *, session=None, budget=None, context_ke
     may supply a precomputed key only for this exact immutable context.
     """
     import copy
-    from parkour_solver.search.identity import digest
+    from parkour_solver.canonical import digest
     role = request['role']
     if role not in ('required_contact', 'unwanted_contact', 'approach_prerequisite'):
         raise ValueError('Unknown interaction role')
@@ -231,7 +231,7 @@ class InteractionGate:
         from parkour_solver.movement.program import compile_program, program_physics_key
         from parkour_solver.scene.route import prepare_route, schedule
         from parkour_solver.validation.vertical import validate_vertical_schedule
-        from parkour_solver.search.identity import digest
+        from parkour_solver.canonical import digest
         scene=self.scene if scene is None else scene
         key=('prepared',digest(dict(scene={k:v for k,v in scene.items() if k!='movementSearch'},
             program=program_physics_key(program),complete=require_complete)))
@@ -246,7 +246,7 @@ class InteractionGate:
 
     def analyze_model(self, route, plan, vertical, *, open_terminal=False, scope=None, initial_intervals=None):
         from parkour_solver.bridge.compiler import coefficient_request
-        from parkour_solver.search.identity import digest
+        from parkour_solver.canonical import digest
         request=coefficient_request(route,plan)
         coefficient=self._cached(('coefficients',digest(request)),
             lambda:self.compiler.compile(route,plan,self.seconds),'coefficient')
@@ -303,7 +303,7 @@ class InteractionGate:
                 return dict(reason='unselected_initial_floor')
         analysis=self.analyze(program)
         if analysis is None:return dict(reason='vertical_schedule')
-        from parkour_solver.search.identity import digest
+        from parkour_solver.canonical import digest
         objective=self.scene['objective'] if objective is None else objective
         key=('screen',analysis['key'],digest(objective))
         undecided=False
@@ -340,7 +340,7 @@ class InteractionGate:
     def _approach(self, context, tick, jumping):
         from parkour_solver.movement.program import append_choice, program_physics_key
         from parkour_solver.movement.normal import approaches, event_choice, first_descent
-        from parkour_solver.search.identity import digest
+        from parkour_solver.canonical import digest
         # Prefix inputs and free approach inputs are known; the proposed interaction
         # has not changed the post-movement height/ground state yet. Use its horizontal
         # envelope, keeping Y unconstrained for stepping and ceiling outcomes.

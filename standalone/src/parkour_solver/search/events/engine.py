@@ -8,7 +8,7 @@ from parkour_solver.search.comparison import POLICY_VERSION as COMPARISON_POLICY
 
 from parkour_solver.scene.normalize import prepare_scene
 from parkour_solver.movement.settings import movement_settings
-from parkour_solver.search.identity import digest
+from parkour_solver.canonical import digest
 from parkour_solver.search.goals import goal_spec
 from parkour_solver.spatial.event_routes import RouteDomain, build_route_domain, build_event_graph
 from parkour_solver.search.events.adapter import EventGuideAdapter

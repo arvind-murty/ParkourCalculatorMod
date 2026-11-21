@@ -9,7 +9,7 @@ import statistics
 import time
 
 from parkour_solver.constraints.variants import ConstraintVariants
-from parkour_solver.search.identity import digest
+from parkour_solver.canonical import digest
 from tools.profiling.enumeration import EnumerationProfile, instrumented_option
 
 

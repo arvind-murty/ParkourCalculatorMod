@@ -2,7 +2,7 @@
 
 import copy
 
-from parkour_solver.search.identity import digest
+from parkour_solver.canonical import digest
 from parkour_solver.search.events.adapter import EventGuideAdapter, EventReference
 from parkour_solver.search.anchors.policy import audit, encounter_groups, owner, visit_state, visits, semantic_settings
 from parkour_solver.spatial.anchor_guides import build_guides, decision_objective, onward_objective

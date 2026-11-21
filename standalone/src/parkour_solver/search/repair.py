@@ -551,7 +551,7 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                         leg = max(i for i, e in enumerate(record['plan']['events']) if e['landed'] <= at//3)
                         passage['phaseReferences'].append(dict(leg=leg, offset=at//3-record['plan']['events'][leg]['jump'], phase=at%3))
                 source = branch_key(record['rows'], record['passages'], record['hits'])
-                from parkour_solver.search.identity import digest
+                from parkour_solver.canonical import digest
                 arrive(record['score']+variant['score']*1e-9, record['rows']+converted, record['passages'],
                        record['hits'], record['candidate']['yaw'], selected,
                        dict(family=digest([source, variant['family']]), switches=variant['switches'],
@@ -605,7 +605,7 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
         audit_cache, audit_errors = {}, []
 
         def audit(best):
-            from parkour_solver.search.identity import digest
+            from parkour_solver.canonical import digest
             # Equal facings with different relaxed accelerations are different trajectories.
             key = (tuple(best['allocation']), best['plan']['ticks'], tuple(best['candidate']['yaw']),
                    digest(best['candidate']['controls']) if 'controls' in best['candidate'] else None)

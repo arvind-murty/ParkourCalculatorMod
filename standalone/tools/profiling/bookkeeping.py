@@ -160,6 +160,7 @@ class CopyProxy:
 
 @contextmanager
 def instrument(profile):
+    from parkour_solver import canonical
     from parkour_solver.search import identity, engine, ordered_route
     from parkour_solver.reachability.service import InteractionGate
     from parkour_solver.movement import program
@@ -194,7 +195,7 @@ def instrument(profile):
             return solve
         replace(ordered_route, 'solve', recorded(ordered_route.solve))
         replace(RelaxedDispatch, 'solve', recorded(RelaxedDispatch.solve))
-        aliases(identity.digest, 'digest', profile.digest(identity.digest))
+        aliases(canonical.digest, 'digest', profile.digest(canonical.digest))
         for name in ('program_physics_key', 'program_search_key', 'compile_program'):
             original = getattr(program, name)
             aliases(original, name, profile.runtime.function('program.'+name, original))
