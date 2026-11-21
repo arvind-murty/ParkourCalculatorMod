@@ -137,6 +137,12 @@ time 6.4% on the durable call-capped input with identical reports. The solve CLI
 during a run only with `--save-progress`; on the call-capped input its wall time is 39.78 s and 39.65 s
 without the flag against 66.28 s and 66.53 s with it, with identical final reports.
 
+Children extend their parent instead of rebuilding it ([parent-linked programs](../research/parent-linked-programs/README.md)):
+an append without ladder involvement traces only its new ticks and shares the parent's content.
+`append_choice` fell from 6.276 s to 0.408 s on the call-capped input and search time 16.2%, with
+identical reports. Program keys, gate preparation and envelopes still cost time proportional to
+the whole program.
+
 Constraint enumeration after `86c06e39` runs 2.93x to 3.56x faster on captured
 B6/B7 catalogues, with 94.1% to 94.7% fewer iteration checks and identical
 ordered options. That is targeted enumeration work, not a whole-solver speedup.
@@ -192,8 +198,10 @@ Open measurement: solve cadence 1 versus 2 or 4 decision levels
 4. Reachability proofs are scoped to role, windows, phases, rows, contact context
    and named-probe uncertainty. A conditioned row set cannot poison the
    unconditioned analysis.
-5. Never cache mutable objects by `id()` across mutations or saves. A timeout during
-   construction commits no partial result and consumes no raw ordinal.
+5. Never cache mutable objects by `id()` across mutations or saves, unless the object is behind
+   a freeze boundary: a built program's content (profile, trace, movement units, ladder events
+   and their elements) never changes, so children share it. A timeout during construction
+   commits no partial result and consumes no raw ordinal.
 6. Caller mutations must not alter cached canonical values. Performance caches are
    disposable: rebuild them on external resume and never serialize them per node.
 7. Ordering and deferral verdicts are not physical facts; incumbent, latch and peer

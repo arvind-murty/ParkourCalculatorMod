@@ -46,16 +46,22 @@ def boundary_state(program, on_ladder=False):
 
 def profile_from_trace(trace, *, contacts=(), cases=(), constraints=(), units=None, landing_phase='post',
                        region_choices=()):
+    return _profile(trace, copy.deepcopy(list(contacts)), copy.deepcopy(list(cases)), copy.deepcopy(list(constraints)),
+                    copy.deepcopy(units) if units is not None else None, landing_phase,
+                    copy.deepcopy(list(region_choices)))
+
+
+def _profile(trace, contacts, cases, constraints, units, landing_phase, region_choices):
+    """Assemble a profile around lists the caller owns; their elements are not copied."""
     n = trace['ticks']
     profile = dict(airtime=n, position=trace['position'], velocity=trace['velocity'], grounded=trace['onGround'],
         jump=[v is not None for v in trace['vertical']['jumpVelocity']], sneak=trace['sneak'],
         ladderTicks=trace['ladderTicks'], contacts=trace['vertical']['contacts'],
-        contactEvents=copy.deepcopy(list(contacts)), caseEvents=copy.deepcopy(list(cases)),
-        positionConstraints=copy.deepcopy(list(constraints)), landingPhase=landing_phase,
+        contactEvents=contacts, caseEvents=cases, positionConstraints=constraints, landingPhase=landing_phase,
         composition='movement_program')
-    profile['generatedUnits'] = copy.deepcopy(units) if units is not None else profile_program(profile)
+    profile['generatedUnits'] = units if units is not None else profile_program(profile)
     if region_choices:
-        profile['regionChoices'] = copy.deepcopy(list(region_choices))
+        profile['regionChoices'] = region_choices
     if trace['vertical']['threshold'] != .005:
         profile['threshold'] = trace['vertical']['threshold']
     return profile
@@ -135,6 +141,86 @@ def append_choice(program, choice, *, max_inputs=200):
     expected = boundary_state(program, tail['ladderTicks'][0])
     if choice.get('initial') != expected:
         raise ValueError('Movement choice consumes a different scalar boundary state')
+    # Ladder appends still rebuild the whole program (deferred); so does the first append, which has no trace.
+    ladder = program['ladderEvents'] or choice.get('ladderEvents') or any(old['ladderTicks']) or any(tail['ladderTicks'])
+    built = _rebuild(program, choice) if ladder or program['trace'] is None else _extend(program, choice)
+    if built is None:
+        return None
+    profile, events, units, trace = built
+    profile['constraintOwners'] = old.get('constraintOwners', [0]*len(old['positionConstraints'])) + [
+        cut+owner if owner else 0 for owner in tail.get('constraintOwners', [0]*len(tail['positionConstraints']))]
+    # parentTicks: the reachability travel check pairs only states after the parent's with nearby ones.
+    result = dict(initial=copy.deepcopy(program['initial']), profile=profile, ladderEvents=events,
+                  movementUnits=units, terminal='open', terminalSupport=choice.get('terminalSupport'),
+                  interactions=program['interactions'] + int(choice.get('interaction', False)), trace=trace,
+                  parentTicks=cut)
+    for key in ('threshold', 'guideSeedYaw', 'repairState', 'solveScope', 'committedThrough', 'settledThrough', 'walkOffs'):
+        if key in program:
+            if key == 'repairState':
+                scope=program[key].get('context', {}).get('scope') or {}
+                if scope.get('solveIdentity') or (scope.get('scope') or {}).get('solveIdentity'):
+                    continue
+            result[key] = copy.deepcopy(program[key])
+    return result
+
+
+
+
+def _extend(program, choice):
+    """Trace only the new ticks from the parent's end state and share the parent's content: a built program's
+    content never changes, and appending never rewrites a parent state (tracing is Markov in Y, VY and ground)."""
+    old, tail, parent = program['profile'], choice['profile'], program['trace']
+    cut, size = old['airtime'], tail['airtime']
+    # New contact events land after the parent's last state, so only they need merging.
+    contacts = _contacts([dict(c, offset=cut + c['offset']) for c in tail['contactEvents']])
+    hit = [any(c['axis'] != 'Y' and c['offset'] == cut + t for c in contacts) for t in range(size)]
+    from parkour_solver.physics.vertical import f32
+    piece = trace_ladder_schedule(boundary_state(program), tail['ladderTicks'], tail['sneak'], hit,
+        jump=[f32(.42) if value else None for value in tail['jump']], contacts=tail['contacts'], stop_on_landing=False,
+        threshold=program.get('threshold', .005))
+    if piece['status'] == 'invalid' or piece['ticks'] != size:
+        return None
+    if piece['position'] != tail['position'] or piece['velocity'] != tail['velocity'] or piece['onGround'] != tail['grounded']:
+        return None
+    vertical = parent['vertical']
+    # A truncated parent keeps its trace status, so recompute whether the prefix landed.
+    landed = piece['status'] == 'landed' or any(
+        c['direction'] < 0 and not c.get('case') and parent['onGround'][c['state']] for c in vertical['contacts'])
+    trace = dict(status='landed' if landed else 'simulated', ticks=cut + size,
+        position=parent['position'] + piece['position'][1:], velocity=parent['velocity'][:cut] + piece['velocity'],
+        onGround=parent['onGround'] + piece['onGround'][1:], movement=parent['movement'] + piece['movement'],
+        climbRefreshed=parent['climbRefreshed'] + piece['climbRefreshed'], failures=[],
+        vertical=dict(vertical, jumpVelocity=vertical['jumpVelocity'] + piece['vertical']['jumpVelocity'],
+                      sneak=vertical['sneak'] + piece['vertical']['sneak'],
+                      contacts=vertical['contacts'] + [dict(c, state=cut + c['state']) for c in piece['vertical']['contacts']]),
+        ladderTicks=parent['ladderTicks'] + piece['ladderTicks'][1:], sneak=parent['sneak'] + piece['sneak'],
+        hit=parent['hit'] + piece['hit'], resume=piece['resume'])
+    cases = []
+    for event in tail['caseEvents']:
+        event = copy.deepcopy(event)
+        event['input'] += cut
+        event['anchors'] = {k: v + cut for k, v in event.get('anchors', {}).items()}
+        cases.append(event)
+    constraints = [dict(row, t1=cut + row['t1']) for row in tail['positionConstraints']]
+    region_choices = [dict(entry, offset=cut + entry['offset'], options=[[dict(row, offset=cut + row['offset']) for row in rows]
+                                                                  for rows in entry['options']])
+                      for entry in tail.get('regionChoices', [])]
+    from parkour_solver.movement.ladder.ceiling import own_ceiling_contacts
+    try:
+        contacts, units = own_ceiling_contacts(contacts, [shifted_unit(unit, cut) for unit in tail['generatedUnits']])
+    except ValueError:
+        return None
+    compile_units(size, tail['generatedUnits'])
+    units = old['generatedUnits'] + units
+    profile = _profile(trace, old['contactEvents'] + contacts, old['caseEvents'] + cases,
+                       old['positionConstraints'] + constraints, list(units), tail['landingPhase'],
+                       old.get('regionChoices', []) + region_choices)
+    return profile, [], units, trace
+
+
+def _rebuild(program, choice):
+    old, tail = program['profile'], choice['profile']
+    cut, size = old['airtime'], tail['airtime']
     jump = old['jump'] + tail['jump']
     sneak = old['sneak'] + tail['sneak']
     ladder = old['ladderTicks'][:-1] + [old['ladderTicks'][-1] or tail['ladderTicks'][0]] + tail['ladderTicks'][1:]
@@ -194,24 +280,10 @@ def append_choice(program, choice, *, max_inputs=200):
             and c.get('ownerRegion') == event['column']['id'] and max(0, s['entryState'] - 1) <= c['offset'] < s['exitState']]
     profile = profile_from_trace(trace, contacts=contacts, cases=cases, constraints=constraints,
                                  units=units, landing_phase=tail['landingPhase'], region_choices=region_choices)
-    profile['constraintOwners'] = old.get('constraintOwners', [0]*len(old['positionConstraints'])) + [
-        cut+owner if owner else 0 for owner in tail.get('constraintOwners', [0]*len(tail['positionConstraints']))]
     masks = compile_units(profile['airtime'], units)
     if events and masks['ladderTicks'] != ladder:
         raise ValueError('Movement units disagree with composed ladder membership')
-    # parentTicks: the reachability travel check pairs only states after the parent's with nearby ones.
-    result = dict(initial=copy.deepcopy(program['initial']), profile=profile, ladderEvents=events,
-                  movementUnits=units, terminal='open', terminalSupport=choice.get('terminalSupport'),
-                  interactions=program['interactions'] + int(choice.get('interaction', False)), trace=trace,
-                  parentTicks=cut)
-    for key in ('threshold', 'guideSeedYaw', 'repairState', 'solveScope', 'committedThrough', 'settledThrough', 'walkOffs'):
-        if key in program:
-            if key == 'repairState':
-                scope=program[key].get('context', {}).get('scope') or {}
-                if scope.get('solveIdentity') or (scope.get('scope') or {}).get('solveIdentity'):
-                    continue
-            result[key] = copy.deepcopy(program[key])
-    return result
+    return profile, events, units, trace
 
 
 def truncate_program(program, ticks):

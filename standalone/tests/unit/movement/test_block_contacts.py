@@ -464,5 +464,44 @@ class RunTickChoiceTests(unittest.TestCase):
         self.assertEqual((FLAT_JUMP_TICKS, MAX_ADVANTAGEOUS_RUN_TICKS), (12, 11))
 
 
+class ParentExtensionTests(unittest.TestCase):
+    def test_a_child_extending_its_parent_equals_the_whole_program_rebuilt(self):
+        import json
+        from unittest.mock import patch
+        from parkour_solver.movement import program as module
+        from parkour_solver.movement.normal import normal_choices
+        from parkour_solver.movement.stepping import open_stepping_choices
+        from parkour_solver.movement.program import append_choice, boundary_state, empty_program, truncate_program
+        request = dict(boxes_request([.5, 1, .5], [.25, -.0784000015258789, 0], -90, start=[-2, 0, -2, 1, 1, 2],
+                                     middle=[1, -1, -2, 2, 0, 2], slab=[2, -1, -2, 3, .5, 2], goal=[8, -1, -1, 9, 0, 1]),
+                       movementSearch=dict(types=['normal', 'stepping'], maxInputs=30))
+        scene = prepare_scene(request)
+        compared, kinds = 0, set()
+        def choices(program):
+            context = dict(mode='open', scene=scene, program=program, state=boundary_state(program), maxInputs=30,
+                           threshold=0., interactionGate=None)
+            return list(normal_choices(context))[::7]+list(open_stepping_choices(context))[:3]
+        level = [empty_program(scene['initial'], threshold=0.)]
+        for depth in range(3):
+            parents = level+[truncate_program(p, p['profile']['airtime']-1) for p in level if p['profile']['airtime'] > 1]
+            level = []
+            for parent in parents:
+                before = json.dumps(parent, sort_keys=True)
+                for choice in choices(parent):
+                    child = append_choice(parent, choice)
+                    if parent['trace'] is not None:
+                        # The rebuild path traces and copies the whole program from scratch.
+                        with patch.object(module, '_extend', module._rebuild):
+                            self.assertEqual(child, append_choice(parent, choice))
+                        compared += 1
+                        if child is not None:
+                            kinds |= {e.get('case', 'contact') for e in child['profile']['caseEvents']+child['profile']['contactEvents']}
+                    if child is not None and len(level) < 12:
+                        level.append(child)
+                self.assertEqual(json.dumps(parent, sort_keys=True), before)
+        self.assertGreater(compared, 40)
+        self.assertTrue(kinds)
+
+
 if __name__ == '__main__':
     unittest.main()

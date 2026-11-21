@@ -436,15 +436,18 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `empty_program` | [22](../src/parkour_solver/movement/program.py#L22) | function |
 | `boundary_state` | [37](../src/parkour_solver/movement/program.py#L37) | function |
 | `profile_from_trace` | [47](../src/parkour_solver/movement/program.py#L47) | function |
-| `movement_choice` | [64](../src/parkour_solver/movement/program.py#L64) | function |
-| `_contacts` | [81](../src/parkour_solver/movement/program.py#L81) | function |
-| `_shift_event` | [86](../src/parkour_solver/movement/program.py#L86) | function |
-| `_events` | [103](../src/parkour_solver/movement/program.py#L103) | function |
-| `append_choice` | [129](../src/parkour_solver/movement/program.py#L129) | function |
-| `truncate_program` | [217](../src/parkour_solver/movement/program.py#L217) | function |
-| `program_physics_key` | [271](../src/parkour_solver/movement/program.py#L271) | function |
-| `program_search_key` | [280](../src/parkour_solver/movement/program.py#L280) | function |
-| `compile_program` | [289](../src/parkour_solver/movement/program.py#L289) | function |
+| `_profile` | [54](../src/parkour_solver/movement/program.py#L54) | function |
+| `movement_choice` | [70](../src/parkour_solver/movement/program.py#L70) | function |
+| `_contacts` | [87](../src/parkour_solver/movement/program.py#L87) | function |
+| `_shift_event` | [92](../src/parkour_solver/movement/program.py#L92) | function |
+| `_events` | [109](../src/parkour_solver/movement/program.py#L109) | function |
+| `append_choice` | [135](../src/parkour_solver/movement/program.py#L135) | function |
+| `_extend` | [169](../src/parkour_solver/movement/program.py#L169) | function |
+| `_rebuild` | [221](../src/parkour_solver/movement/program.py#L221) | function |
+| `truncate_program` | [289](../src/parkour_solver/movement/program.py#L289) | function |
+| `program_physics_key` | [343](../src/parkour_solver/movement/program.py#L343) | function |
+| `program_search_key` | [352](../src/parkour_solver/movement/program.py#L352) | function |
+| `compile_program` | [361](../src/parkour_solver/movement/program.py#L361) | function |
 
 ## movement/settings.py
 
