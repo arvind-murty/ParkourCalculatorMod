@@ -37,6 +37,23 @@ production code.
 | `6b964cb0` + step 4 | legs optimize, switch-tick climb, close fallbacks | 64 | -1093.2381026602416 | 18 / 17 | 37 | 10/10 | [switch climb](../research/switch-climb/README.md) |
 | `4375cd96` | disk relaxation; one IPOPT finalization (stock `c9deef42` paired: 18 / 17, 7.54 s) | 64 | -1093.2381026602418 | 14 / 0 + 1 finalization | 37 | 10/10 | [disk relaxation](../research/disk-relaxation/README.md) |
 | `db7f8f61` + avoidance table | block table for generators and avoidance | 64 | -1093.2381026602416 | 18 / 17 | 37 | 10/10 | [block table](../research/block-table/README.md) |
+| `b4180095` + group frames | B4 → B7 searched as one encounter group | 64 | -1093.2381026602416 | 25 / 23 | 75 | 8/8 | [encounter groups](../research/encounter-groups/README.md) |
+| `533e3831` + side families | decision checks commit side families, siblings queued | 64 | -1093.2381026602416 | 26 / 24 | 75 | 8/8 | [encounter groups](../research/encounter-groups/README.md) |
+| `c2b2a3d2` (on PR 5) | confirmation walk, decision objectives, conflict-driven avoidance; 6.2 s | 64 | -1093.2381026602418 | 19 / 1 + 1 finalization | 11 | 8/8 | [encounter groups](../research/encounter-groups/README.md#phase-4-controls-2026-11-20) |
+| `fb50d8f8` + run-tick revision | time-bounded minimum run ticks; 5.8 s | 64 | -1093.2381026602418 | 19 / 1 + 1 finalization | 11 | 8/8 | [encounter groups](../research/encounter-groups/README.md#time-bounded-minimum-run-ticks-2026-11-20) |
+| `fb50d8f8` + run-tick rework, walk-off faces | run-offs vs the jump onto their block, walk-off faces; 6.1 s | 64 | -1093.2381026602418 | 19 / 1 + 1 finalization | 11 | 8/8 | [encounter groups](../research/encounter-groups/README.md#run-tick-rework-and-walk-off-faces-2026-11-20) |
+
+On the extended task (measurement only) side-family siblings multiply decision
+checks inside the B4 → B20 group: 234 checks in 300 s versus the base's 140, and
+the search does not leave that group ([evidence](../research/encounter-groups/README.md)).
+At `c2b2a3d2` it still ends in the B4 → B22 frame at the deadline. It makes 172
+requests, with 35 IPOPT confirmations instead of 85 before the confirmation walk,
+and expands 60 prefixes instead of 44. Time-bounded minimum run ticks cut the
+frontier's minimum-run step from 238.4 s to 157.7 s of the 295.0 s search; the freed
+time goes to decision checks (293 requests, 65 confirmations, 93 expanded), still in
+that frame. With run-offs compared with the jump onto their block and walk-off faces
+the run was measured only under other applications' load (199 requests,
+[evidence](../research/encounter-groups/README.md#run-tick-rework-and-walk-off-faces-2026-11-20)).
 
 The switch-climb run finds T64 at 6.1 s and stops at 10.0 s with
 `numerical_unknown`: the DFS ran out of runnable work while the B7 frame stayed
@@ -115,13 +132,15 @@ ordered options. That is targeted enumeration work, not a whole-solver speedup.
   process, with identical requests ([evidence](../research/jvm-free-bridge/README.md)).
 - IPOPT row reduction: final rows fall from 278 to 91 on the benchmark
   ([constraint reduction](IPOPT_CONSTRAINT_REDUCTION.md)).
-- Feasibility-only solves stop at the first validated point; only the anchor and
-  final solves optimize ([feasibility mode](IPOPT_FEASIBILITY_MODE.md)).
 - Content-addressed manifest plus SQLite checkpoints
   ([checkpoint storage](CHECKPOINT_STORAGE.md)).
 - Shared interaction screens before any solve: interval and disk-relaxation reachability
   ([obstacle relevance](design/OBSTACLE_RELEVANCE.md)), and accumulated passage
   rows screened before each extension ([avoidance passages](design/AVOIDANCE_PASSAGES.md)).
+- Frontier selection (`search/frontier.py` `take_first`) hashes a program's
+  identity, the last priority field, only for programs tied on every other field.
+  On a saved 762-program B4 -> B20 queue a full-key take cost 0.478 s against
+  0.004 s without identities ([encounter-groups evidence](../research/encounter-groups/README.md)).
 - Bounded accelerator caches: interaction gate 512 entries
   (`reachability/service.py`), variant preparation 256 and option keys 1,024
   (`constraints/variants.py`).
@@ -175,6 +194,9 @@ Open measurement: solve cadence 1 versus 2 or 4 decision levels
   deleting evidence or work.
 - Completed exact requests never rerun after resume; interrupted work stays
   recoverable; timeout, error and unknown are not infeasibility.
+- A solve cut off by cancellation resumes before any other work in its frame
+  (`dfs.py` `refine`), so a cancelled and continued search sends the same
+  requests as an uninterrupted one even when sibling branches are runnable.
 - Durable repair updates patch the frozen dispatch root, every active alias and
   cumulative calls. Store contents commit before root publication; manifest and
   SQLite companions stay paired.

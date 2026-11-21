@@ -16,7 +16,7 @@ from tests.support.checkpoint_guidance import flat_scene
 
 
 def source(n=3, *, y=None, position=(-1., 0.), walls=(), box=(0., 0., -.2, 1., 3., .2), boxes=None,
-           profile=None, magnitude=1., friction=.9, state=None):
+           profile=None, magnitude=1., friction=.9, state=None, settled=0, segment_solids=None, obstacles=None, walk_offs=()):
     y = y or [1.]*(n+1)
     boxes = boxes or [box]
     model = dict(ticks=n, position=list(position), velocity=[0., 0.], magnitude=[magnitude]*n,
@@ -24,7 +24,8 @@ def source(n=3, *, y=None, position=(-1., 0.), walls=(), box=(0., 0., -.2, 1., 3
     profile = dict(position=y, **(profile or {}))
     return ConstraintVariants(dict(supportClearance=0.), profile,
         dict(events=[dict(jump=0, runTicks=0)]), dict(solids=[list(b) for b in boxes]), reachable_envelopes(model, y),
-        dict(through=n, solidIndices=list(range(len(boxes)))), state=state)
+        dict(through=n, solidIndices=list(range(len(boxes)))), state=state, settled=settled, segment_solids=segment_solids,
+        obstacles=obstacles, walk_offs=walk_offs)
 
 
 def clear(boxes, y, positions):
@@ -47,6 +48,16 @@ def satisfies(rows, positions):
 
 
 class EncounterTests(unittest.TestCase):
+    def test_carried_walk_off_faces_are_one_item_over_their_options(self):
+        east = dict(leg=0, offset=1, mode='X', cmp='GE', rhs=-.5, name='walk_off:start')
+        north = dict(east, mode='Z', rhs=.5)
+        def variants(options, settled=0):
+            generator = source(obstacles=[], settled=settled, walk_offs=[dict(offset=1, solids=[0], options=options)])
+            return [(v['rows'], [c['kind'] for c in v['branchChoices']]) for v in generator]
+        self.assertEqual(variants([east, north]), [([east], ['walk_off']), ([north], ['walk_off'])])
+        self.assertEqual(variants([east]), [([east], ['walk_off'])])
+        self.assertEqual(variants([east, north], settled=2), [([], [])])
+
     def test_known_entry_comes_from_finite_support_not_post_contact_travel(self):
         box = [0., 0., 0., 1., 20., 1.]
         support = [0., 0., -1., 1., 1., 0.]
@@ -275,12 +286,71 @@ class EncounterTests(unittest.TestCase):
         self.assertEqual(len({json.dumps(p) for p in sides.values()}), len(sides))
         self.assertTrue(any(len({json.dumps(v['switches']) for v in variants if v['family'] == f}) > 1 for f in sides))
 
+    def test_a_stretch_builds_its_obstacle_from_reachable_members(self):
+        # Two touching solids form one cluster; a stretch that reaches only the first sees it alone.
+        boxes = [(0., 0., -.2, 1., 3., .2), (1., 0., -.2, 2., 3., .2)]
+        whole = source(3, boxes=boxes)
+        self.assertEqual([i['members'] for i in whole.items if 'clusterId' in i], [[0, 1]])
+        owner = source(3, boxes=boxes, segment_solids={0: [0]})
+        self.assertEqual([(i['members'], i['basis']) for i in owner.items if 'clusterId' in i], [([0], [0])])
+
+    def test_a_phase_builds_sides_around_members_it_can_reach(self):
+        # The second solid touches the first and reaches further in Z, but lies beyond two ticks of
+        # travel. Around both, the Z+ side would be a corner bounded by its X- face; around the
+        # reachable solid alone it is a plain Z+ side.
+        boxes = [(0., 0., -.2, 3., 3., .2), (3., 0., -.2, 4., 3., 2.)]
+        owner = source(2, boxes=boxes, magnitude=1., friction=0.)
+        item = next(i for i in owner.items if 'clusterId' in i)
+        self.assertEqual(item['members'], [0, 1])
+        owner.prepare_item(item)
+        offered = [item['sides'][int(i)] for p in item['phases'] for i in p['options']]
+        plain = [side['bounds'][0]['plane'] for side in offered
+                 if [(b['axis'], b['direction']) for b in side['bounds']] == [('Z', 1)]]
+        self.assertTrue(any(abs(plane-.5) < 1e-6 for plane in plain), plain)
+
+    def test_settled_stretches_get_no_item(self):
+        from parkour_solver.constraints.encounters import settled_through
+        airborne = dict(grounded=[False, False, True, False, False])
+        self.assertEqual(settled_through(airborne, 4), 2)
+        self.assertEqual(settled_through(dict(grounded=[False]*4+[True]), 4), 4)
+        def stretches(settled):
+            return {(i['begin'], i['end']) for i in source(4, profile=airborne, settled=settled).items if 'clusterId' in i}
+        self.assertEqual(stretches(0), {(0, 2), (2, 4)})
+        self.assertEqual(stretches(2), {(2, 4)})
+
+    def test_conflict_driven_generator_enumerates_only_hit_obstacles(self):
+        boxes = [(0., 0., -.2, 1., 3., .2), (0., 0., 4., 1., 3., 5.)]
+        owner = source(3, boxes=boxes, obstacles=[])
+        self.assertEqual([i for i in owner.items if 'clusterId' in i], [])
+        self.assertEqual(list(owner)[0]['rows'], [])
+        hit = owner.with_obstacles([owner.obstacle_key(1, 0)])
+        self.assertEqual([i['members'] for i in hit.items if 'clusterId' in i], [[1]])
+        self.assertEqual(hit.state['obstacles'], [[0, 1]])
+        # A saved state keeps its obstacle set.
+        resumed = source(3, boxes=boxes, obstacles=[], state=json.loads(json.dumps(hit.state)))
+        self.assertEqual(resumed.obstacles, [[0, 1]])
+
+    def test_a_hit_belongs_to_the_stretch_of_the_state_its_movement_ends_in(self):
+        # Landing at state 2: the movement from state 1 ends on the landing, the stretch from 2.
+        airborne = dict(grounded=[False, False, True, False, False])
+        owner = source(4, profile=airborne, obstacles=[])
+        self.assertEqual((owner.obstacle_key(0, 0), owner.obstacle_key(0, 1), owner.obstacle_key(0, 3)),
+                         ([0, 0], [2, 0], [2, 0]))
+        self.assertIsNone(source(4, profile=airborne, obstacles=[], settled=2).obstacle_key(0, 0))
+
+    def test_a_hit_obstacle_gets_the_passages_full_enumeration_gives_it(self):
+        whole = list(source(4, magnitude=1., friction=0.))
+        hit = list(source(4, magnitude=1., friction=0., obstacles=[[0, 0]]))
+        key = lambda v: json.dumps(sorted(json.dumps(r, sort_keys=True) for r in v['rows']))
+        self.assertTrue(hit)
+        self.assertEqual({key(v) for v in hit}, {key(v) for v in whole})
+
     def test_each_landing_rectangle_is_its_own_family(self):
         owner = source(4, magnitude=1., friction=0.)
         lo, hi = owner.envelopes['states'][4]['X']
         middle = (lo + hi) / 2
         rectangles = [[dict(leg=0, offset=4, mode='X', cmp='LE', rhs=middle)], [dict(leg=0, offset=4, mode='X', cmp='GE', rhs=middle)]]
-        owner.items.insert(0, dict(rows=rectangles, role='contact_region', surface='surface:test', owner='goal'))
+        owner.items.insert(0, dict(rows=rectangles, role='contact_region', surface='surface:test', owner='goal', offset=4))
         variants = list(owner)
         def implies(rows, r):
             return any(x['offset'] == 4 and x['mode'] == 'X' and x['cmp'] == r['cmp'] and
@@ -294,11 +364,12 @@ class EncounterTests(unittest.TestCase):
 
 
 class BlockTableEncounterTests(unittest.TestCase):
-    def assert_dropped_clusters_are_clear(self, scene, roots):
+    def assert_dropped_members_are_clear(self, scene, roots):
         from tests.support.block_table import compiler, nodes
-        from parkour_solver.constraints.encounters import prepare_encounter
-        from parkour_solver.reachability.service import InteractionGate
+        from parkour_solver.reachability.service import InteractionGate, block_interaction
         from parkour_solver.search.engine import segment_solids
+        from parkour_solver.spatial.surfaces import scene_geometry
+        boxes, solids = scene_geometry(scene['collisionScene']).boxes, scene['collisionScene']['solids']
         dropped = 0
         with compiler() as java:
             gate = InteractionGate(scene, java, seconds=10)
@@ -308,26 +379,32 @@ class BlockTableEncounterTests(unittest.TestCase):
                     continue
                 route, profile, plan = prepared['route'], prepared['profiles'][0], prepared['plan']
                 envelopes = gate.analyze_model(route, plan, prepared['vertical'])['envelopes']
-                scope = dict(through=plan['ticks'], solidIndices=list(range(len(scene['collisionScene']['solids']))))
+                scope = dict(through=plan['ticks'], solidIndices=list(range(len(solids))))
                 reachable = segment_solids(scene, node, profile, scope['through'], gate)
-                full = ConstraintVariants(route, profile, plan, scene['collisionScene'], envelopes, scope)
                 kept = ConstraintVariants(route, profile, plan, scene['collisionScene'], envelopes, scope,
                                           segment_solids=reachable)
-                removed = [item for item in full.items if 'clusterId' in item and item['begin'] in reachable
-                           and set(item['members']).isdisjoint(reachable[item['begin']])]
-                self.assertEqual(len(full.items)-len(kept.items), len(removed))
-                for item in removed:
-                    prepare_encounter(full, item, envelopes)
-                    self.assertEqual((item['possiblePhases'], item['uncertain']), ([], []),
-                                     (item['members'], item['begin'], item['end']))
-                dropped += len(removed)
+                for item in kept.items:
+                    if 'clusterId' in item and item['begin'] in reachable:
+                        self.assertLessEqual(set(item['members']), set(reachable[item['begin']]))
+                for begin, end in landing_segments(profile, scope['through']):
+                    if begin not in reachable:
+                        continue
+                    for member in set(scope['solidIndices'])-set(reachable[begin]):
+                        # No possible phase: wherever the member is Y-active, the envelope rules it out.
+                        for tick in range(begin, end):
+                            for phase in 'YXZ':
+                                lo, hi = envelopes['phases'][tick][phase]['Y']
+                                if boxes[member][1] < hi and lo < boxes[member][4]:
+                                    self.assertTrue(block_interaction(envelopes, solids[member], tick, (phase,),
+                                                                      interior=True)['ruledOut'], (member, begin, tick, phase))
+                        dropped += 1
         return dropped
 
-    def test_real11_clusters_the_table_drops_have_no_possible_phase(self):
+    def test_real11_members_the_table_drops_have_no_possible_phase(self):
         from tests.support.block_table import real11_inputs
-        self.assertGreater(sum(self.assert_dropped_clusters_are_clear(scene, roots) for scene, roots in real11_inputs()), 0)
+        self.assertGreater(sum(self.assert_dropped_members_are_clear(scene, roots) for scene, roots in real11_inputs()), 0)
 
-    def test_random_scene_clusters_the_table_drops_have_no_possible_phase(self):
+    def test_random_scene_members_the_table_drops_have_no_possible_phase(self):
         import random
         from tests.support.block_table import random_box_request
         from parkour_solver.movement.program import empty_program
@@ -336,7 +413,7 @@ class BlockTableEncounterTests(unittest.TestCase):
         for index in range(20):
             with self.subTest(scene=index):
                 scene = prepare_scene(random_box_request(rng))
-                dropped += self.assert_dropped_clusters_are_clear(scene, [empty_program(scene['initial'], threshold=0.)])
+                dropped += self.assert_dropped_members_are_clear(scene, [empty_program(scene['initial'], threshold=0.)])
         self.assertGreater(dropped, 0)
 
 

@@ -41,6 +41,26 @@ class ProposalAnalysisTests(unittest.TestCase):
         self.assertEqual(first['proof']['reason'],'interval_reach_contradiction')
         self.assertEqual(compiler.calls,1)
 
+    def test_the_creation_screen_solves_the_request_the_repair_loop_sends(self):
+        from parkour_solver.bridge.python_compiler import PythonCompiler
+        from parkour_solver.numerics import disk
+        from parkour_solver.search.ordered_route import find_route
+        scene=flat_scene();p=flight(scene,2);objective=dict(axis='X',sense='MAX',customYaw=30.)
+        contents=[];real=disk.solve
+        def recorded(content,**options):
+            contents.append(json.dumps(content,sort_keys=True))
+            return real(content,**options)
+        with PythonCompiler() as compiler,patch.object(disk,'solve',side_effect=recorded):
+            gate=InteractionGate(scene,compiler)
+            self.assertIsNone(gate.check_program(p,objective))
+            # A decision check's bare branch: the prepared route optimizing the decision objective.
+            route=dict(gate.prepare(p)['route'],objective=dict(axis='X',sense='MAX'),guideObjective=objective)
+            result=find_route(route,compiler,seconds=5,candidate_seconds=1,retries=0,stop_on_feasible=False,
+                              numerical=disk.RelaxedDispatch(gate=gate).solve)
+        self.assertEqual(result['status'],'feasible')
+        # The creation screen, find_route's pre-screen and the candidate solve share one content.
+        self.assertEqual((len(contents),len(set(contents))),(3,1))
+
 
 class ProposalOwnershipTests(unittest.TestCase):
     def test_resume_skips_composition_for_consumed_raw_ordinals(self):
@@ -98,7 +118,10 @@ class Real11JointPrerequisiteTests(unittest.TestCase):
             adapter=AnchorAdapter(data['domain'],data['graph'],data['policy'],motion=data['motion'],compiler=compiler)
             context=dict(mode='open',scene=scene,program=p,state=boundary_state(p),
                          maxInputs=200-p['profile']['airtime'],threshold=0.)
-            adapter.for_goal(saved['request'],saved['cursor']).context(context)
+            # The recorded cursor predates encounter groups; b3->b4 is a one-pair group.
+            cursor=dict(saved['cursor'],groupEnd=adapter.group_end(saved['cursor']['anchorIndex']))
+            self.assertEqual(cursor['groupEnd'],cursor['anchorIndex'])
+            adapter.for_goal(saved['request'],cursor).context(context)
             gate=InteractionGate(scene,compiler);gate.context(context)
             with patch('parkour_solver.movement.stepping.landing_wall_options',side_effect=AssertionError('late wall fanout')), \
                  patch('parkour_solver.movement.stepping.corner_rows',side_effect=AssertionError('late corner fanout')):

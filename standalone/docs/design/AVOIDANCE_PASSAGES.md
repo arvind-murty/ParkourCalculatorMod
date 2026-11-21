@@ -1,7 +1,8 @@
 # Geometry-driven avoidance passages
 
 The avoidance generator assigns meaningful collision-phase covers within selected
-landing segments. Upfront generation and collision repair use one implementation.
+landing segments. Anchor search generates them conflict-driven (below); legacy
+collision repair uses the same implementation over every obstacle.
 See [measurements and validation](../../research/geometry-passages/README.md) and the
 [discussion with concrete B6 examples](../../research/early-passage-screen/B6_QUESTIONS_AND_ANSWERS.md).
 
@@ -24,11 +25,15 @@ neighbour (B7's `X+` plane against B6 is not offered on its own). Free pieces
 narrower than 0.012 are numerical artifacts and are dropped (see
 [decisions](../DECISIONS_AND_PLANS.md)).
 
-A segment's encounters cover only clusters with a member in the block table of the
+A segment's obstacles are built only from the solids in the block table of the
 segment's launch block ([obstacle relevance](OBSTACLE_RELEVANCE.md)): one flight from
-that block cannot touch any other solid. `search.engine.segment_solids` gives each
-segment its table solids; a segment after a ladder tick, or longer than the table's
-flight (an open terminal or free fall past every top), keeps every cluster. Clusters
+that block cannot touch any other solid, so their space is free for that segment
+(user, 2026-11-19: the obstacle group is a subset of the encounter group). The
+segment's clusters are the touching groups of those solids (`basis` on the item),
+so dropping an unreachable member can split a cluster. `search.engine.segment_solids`
+gives each segment its table solids; a segment after a ladder tick, or longer than
+the table's flight (an open terminal or free fall past every top), uses every
+scope solid. Clusters
 are built with `SceneGeometry.near` candidates instead of all solid pairs.
 
 The domain uses one encounter per cluster per segment, with simple horizontal
@@ -66,9 +71,13 @@ produce more than the old three transitions; counts are descriptions, not resour
 | Z at input t | t+1 | t and t+1 |
 
 `constraints.encounters` asks existing `block_interaction` about each active
-member at potential phases, builds side requirements only there (one row per
-side bound and phase state), and preserves known vertical-clear windows, where
-no member is active. It does not build full-horizon face permutations or switch labels on
+member at potential phases and builds that phase's sides around the members it
+cannot rule out (the rest cannot be touched then, so their space is free at that
+phase); it builds side requirements only there (one row per side bound and phase
+state), and preserves known vertical-clear windows, where no member is active. A
+phase where every active member is ruled out is covered by the sides the full
+active set already satisfies. Entry and exit faces still use the full active set;
+`same` relates the nested regions of different member sets. It does not build full-horizon face permutations or switch labels on
 inactive ticks. A known entry remains geometry metadata when its inequalities
 are already entailed.
 
@@ -121,6 +130,40 @@ Each rectangle is its own family, so the switch climb never mixes them, and a
 rectangle is screened jointly with every later item. A repair source refines one
 solved branch and adds no region items.
 
+## Run-off walk-off items
+
+A run-off's creation screen chooses which face of its launch block it leaves by and
+carries that choice on the program (`walkOffs`, [obstacle relevance](OBSTACLE_RELEVANCE.md#run-off-walk-off-faces)).
+The node solve does not treat leaving the launch block as a generic floor check:
+`search/engine.py` drops the floor checks on the selection's solids at its tick, and
+`ConstraintVariants` adds one `walk_off` item per selection between `settled` and
+`through`, with one option per carried face. One face is a fixed row in effect; a
+diagonal tie's two faces branch. These items never join conflict-driven obstacles or
+the switch climb, and choose their exact rows (`kind='walk_off'`).
+
+## Conflict-driven obstacles in anchor search
+
+Anchor search (`search/engine.py`) gives `ConstraintVariants` an obstacle set,
+initially empty, so contact checks, contact regions and route guards are
+enumerated up front but obstacle clusters are not. A decision check or anchor leg
+first solves its program without avoidance rows. When an accepted point's scene
+replay hits a solid, the repair loop (`search/repair.py` `grow`) adds it to the set
+as `[stretch begin, solid]` and restarts the generator over the larger set. The
+stretch is the one holding the state the colliding movement ends in, so a movement
+into a landing belongs to the stretch that landing starts. That stretch's cluster
+around the solid then gets its passages, families and switch ticks. Families and the
+switch climb therefore stay joint over every obstacle hit so far. The old generator's
+unsolved branches are dropped, since the new one emits them refined, and accepted
+points stay. A hit on a settled stretch, or on an obstacle already in the set, has
+no repair. Obstacles no solve touches never get items: the optimum without them
+bounds every variant, so they can be ignored safely (user, 2026-11-20). Partial
+combinations are screened by intervals only, because every branch is solved and the
+solve is the relaxation check. The set and the emitted branches persist
+(`constraintGeneration.obstacles`, `generatedBranches`). A per-call A/B on the
+extended control took 22.6 s against 35.2 s for up-front enumeration, with 208
+Clarabel solves against 466 and equal best relaxed objectives
+([evidence](../../research/encounter-groups/README.md)).
+
 ## Unknown probes and shared collision repair
 
 Named step/grind phases come from both the profile and shared model metadata.
@@ -128,7 +171,8 @@ Their internal Y probes remain uncertain. Keep the selected prerequisites and
 let the existing named-case scene replay judge them; rejected uncertain repair
 work remains unresolved rather than acquiring an absence certificate.
 
-The automatic path generates avoidance before NLP. Legacy collision-driven repair
+Legacy collision-driven repair (callers without an initial generator, such as the
+finalization's re-solve of a fixed branch)
 uses `ConstraintVariants.for_plan` after an observed mismatch. It builds bounds
 with the real compiler and selected vertical schedule for that fixed allocation,
 then assigns every applicable box jointly. It uses the same phase builder and
@@ -165,16 +209,74 @@ collision-repair source is keyed with that source and climbs separately. Every
 family is climbed, the best accepted alternative by `candidate_rank` is kept, and
 up to `FALLBACK_LIMIT` (2) others with the same ticks and an objective within
 `FALLBACK_GAP` (0.3 blocks) are saved as `fallbackVariants` for the DFS to restore
-if a later leg fails. The family state and held variants persist in the repair
+if a later leg fails. On the relaxed backend these are relaxed points: the
+[confirmation walk](../ANCHOR_SEARCH_EXECUTION_REFERENCE.md#numerical-backend-and-finalization)
+confirms the kept candidates when the loop ends, and a point it rejected is never
+saved as a fallback. The family state and held variants persist in the repair
 snapshot (version 3), so a resumed climb solves nothing twice.
 
-Constraint generation uses policy13/state9 and repair avoidancePolicy13 with assembly13. The DFS context
+Constraint generation uses policy20/state11 and repair avoidancePolicy14 with assembly13. The DFS context
 fingerprints the new policy. Old raw generator cursors reject; reproduce an old
 run with its original source and inputs. Source-era scene fields
 `maxContactBranches`, `maxPassageCandidates`, `maxBlockagesPerObstacle`,
 `maxHorizontalBlockagesPerObstacle` and `maxVerticalBlockagesPerObstacle` are
 accepted for reading archived scenes and stripped during normalization. Maintained
 callers no longer pass deleted repair-limit keywords.
+
+## Side families in search branches
+
+Terms (user, 2026-11-19): a **commit** keeps a decision for the rest of the solve
+and is walked back only on infeasibility, through fallbacks (group-end arrivals,
+`dfs.commit_arrival`). An **intermediate choice** is a branch decision inside an
+[encounter group](ANCHOR_POLICY_DECISIONS.md#o8--encounter-groups) that sibling
+branches can still replace; decision checks make intermediate choices.
+
+Inside a group, movement and avoidance are decided together: a feasible decision
+check climbs every side family's switch timings at the node objective, keeps the
+best point as the branch's intermediate choice for the stretches it settled, and
+holds the other choices (user decisions, 2026-11-18 and 2026-11-19).
+`ConstraintVariants.branch_choice` defines what an accepted variant chooses:
+
+- an obstacle item whose landing segment is closed (it ends before `through`, or
+  at a grounded `through`) chooses its side family `dict(kind='cluster',
+  clusterId, begin, end, sides)` (the same side keys the climb's `family` uses);
+- a `contact_region` item chooses its exact rows (`kind='region'`, `surface`,
+  `offset`); a contact check chooses its exact rows (`kind='contact'`), and so does
+  a walk-off item (`kind='walk_off'`, `solids`, `offset`).
+
+Each variant carries `branchChoices` (those choices, canonically sorted) and
+`branchKey`. The decision check (`search/dfs.py` node evaluation) computes the
+program's settled tick (`encounters.settled_through`: `through` when the prefix
+ends grounded, else the start of its last landing segment) and keeps the
+witness's exact rows (avoidance, contact-region, contact-check and contact-repair
+rows) before it as retained position constraints; rows at or after it, which
+belong to the open stretch, are dropped, and so are `regionChoices` before it.
+The program records `settledThrough`; `append_choice` passes it to children and
+`truncate_program` clamps it. Group-end arrivals already keep every row up to the
+arrival and record `settledThrough` = the arrival tick. Every later solve builds
+`ConstraintVariants(settled=settledThrough)`, which creates no item for an
+obstacle stretch ending at or before the settled tick and no contact-check item
+before it, so a settled stretch is never re-decided; scene validation of every
+solve still covers it, and a collision there becomes a repair source as before.
+The other choices are held, not queued (`search/repair.py` `node_alternatives`):
+accepted variants are grouped by `branchKey` (open stretches are re-decided
+later, so families that differ only there are one choice), and each group keeps
+its best point plus up to `FALLBACK_LIMIT` (2) others with the same ticks and an
+objective within `FALLBACK_GAP` (0.3) of it, all ordered by `candidate_rank`
+without the winner. Each becomes a solved program built like the winner (its own
+settled rows) with its own `decisionNode` and the winner's `decisionParent`; one
+that equals an earlier program is dropped. The frontier keeps them per node in its
+continuation (`alternatives`, with `decisionParents`) and queues the next one only
+when the branch died: no live program (queued, in flight, expanding, or waiting
+in the frame for a group-end solve) descends from the node or from an alternative
+already restored for it (`frontier.restore_alternatives`, checked before every
+take, before the frontier reports exhaustion, and by the DFS once the frame's
+source is exhausted). A node with a validated group-end arrival below it
+(`succeededNodes`) restores nothing; group-end fallbacks recover from later
+failures there. Held alternatives are stored in the node cache entry, so a resume
+that re-evaluates the in-flight node does not lose them. A check interrupted mid-climb (cancelled, out of
+time or calls) has a best but has not decided the node: it is `suspended`, and the
+resume continues the same climb before the node's choice is used.
 
 ## Diagnostics and measurements
 
@@ -217,8 +319,7 @@ Current movement cadence1, anchor comparisons and inter-movement retention remai
 means solving coupled constraints together; this generator already does so for
 one fixed program.
 [Commitment](PRUNING_IMPROVEMENTS_BACKLOG.md#commitment-deferred) remains deferred.
-The supplied-window planner remains live compatibility code until its callers are
-migrated; it is not wired into this generator. The remembered authored two-tick
-clustering policy and its measured limitations remain in the
+Caller-supplied decision windows are removed. The authored two-tick clustering
+policy and its measured limitations remain in the
 [historical decision-window evidence](../../research/decision-windows/README.md).
 This replacement makes no global optimality or arbitrary-world completeness claim.

@@ -2,10 +2,14 @@
 
 ## Current gate
 
-`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on the disk relaxation in
-automatic discovery at `944bfe54`: **782 tests, no failures, errors or skips**, source
-unchanged during the run, layout validation passed
-([report](../research/disk-relaxation/2026-11-19/native-report-944bfe54.json)).
+`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on encounter groups with
+the run-tick rework and walk-off faces (`fb50d8f8` plus the change): **827 tests, 1
+failure, no errors or skips**, source unchanged during the run
+([report](../research/encounter-groups/native-gate-runticks/report.json)). The failure,
+`test_cell_experiment` `test_automatic_blockage_routes_are_repaired_and_physically_checked`,
+hit its time limit under other applications' load (load average 6 to 7); the three gate
+runs on this change's sources each failed a different wall-time-bound test, each passing
+in the other runs ([deferred P17](DEFERRED_WORK.md)).
 The gate fails on any skip, so it needs `PKC_RUN_TICKS_COMPILER` for the Java
 differential tests and the `research` extra for the route-guidance tests.
 A run of the switch-climb source (`55e3beef`) under a load average of 5.5 failed
@@ -25,6 +29,10 @@ persistence without the removed 32/128 limits.
 
 | Source | Tests | Evidence |
 | --- | ---: | --- |
+| `fb50d8f8` + run-tick rework, walk-off faces (1 load-sensitive failure, P17) | 827 | [report](../research/encounter-groups/native-gate-runticks/report.json) |
+| `c2b2a3d2` phase 4: confirmation walk, decision objectives, shared creation request, conflict-driven avoidance | 816 | [report](../research/encounter-groups/native-gate-phase4/report.json) |
+| `55bc1b10` + obstacle test on per-phase sides: settled rows, climbed node families, group growth, reachable members | 750 | [report](../research/encounter-groups/native-gate-phase2/report.json) |
+| `76dc45dc` + resume order: encounter groups, block-table kinds, side families | 742 | [report](../research/encounter-groups/native-gate/report.json) |
 | `ea33c191` + no lineage promotion (its test removed) | 778 | [report](../research/disk-relaxation/2026-11-19/native-report-ea33c191.json) |
 | `9ca57442` + relaxed scenario and cancel/resume tests, cancellation fix, import cleanup | 783 | [report](../research/disk-relaxation/2026-11-19/native-report-9ca57442.json) |
 | `61e59e29` + feasibility policy renamed to `numerical_oracle` | 783 | [report](../research/disk-relaxation/2026-11-19/native-report-61e59e29.json) |
@@ -85,7 +93,7 @@ Run the [new native driver and matched finite-task measurement](../research/anch
 | Schedule composition/full original state | `test_movement_composition`, `test_movement_units`, `test_movement_generation`, `test_generic_composition`, `test_shared_contacts` |
 | Reachability/scope/retention/persistent generation | `test_orchestrator_continuation`, `test_search_fixes`, `test_screen` |
 | Inner/terminal repair continuation | `test_repair_resume`, `test_search_fixes`, `test_failure_diagnostic` |
-| Timing, progress, goal comparisons/windows | `test_time_progress`, `test_comparison_goals`, `test_checkpoint_guidance`, `test_decision_windows`, `test_fixed_clock_goal` |
+| Timing, progress, goal comparisons/windows | `test_time_progress`, `test_comparison_goals`, `test_checkpoint_guidance`, `test_fixed_clock_goal` |
 | Landings/run-off/normal obstacles | `test_block_profiles`, `test_block_contacts`, `test_block_search`, `test_runoff`, `test_obstacles`, `test_block_route_witnesses` |
 | Stepping, ceilings, combinations | `test_stepping_cases`, `test_ceiling_contacts`, `test_hit_events`, `test_contact_combinations`, `test_contacts` |
 | Full acceptance | `test_acceptance`, `test_full_route_witness`, `test_integration` |

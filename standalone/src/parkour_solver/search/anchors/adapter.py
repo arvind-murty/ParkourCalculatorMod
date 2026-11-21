@@ -4,8 +4,8 @@ import copy
 
 from parkour_solver.search.identity import digest
 from parkour_solver.search.events.adapter import EventGuideAdapter, EventReference
-from parkour_solver.search.anchors.policy import audit, owner, visit_state, semantic_settings
-from parkour_solver.spatial.anchor_guides import build_guides, onward_objective
+from parkour_solver.search.anchors.policy import audit, encounter_groups, owner, visit_state, visits, semantic_settings
+from parkour_solver.spatial.anchor_guides import build_guides, decision_objective, onward_objective
 
 
 class AnchorAdapter(EventGuideAdapter):
@@ -13,6 +13,7 @@ class AnchorAdapter(EventGuideAdapter):
         super().__init__(data,graph,**kwargs)
         self.anchor_policy=policy
         self.guide_plan=build_guides(data,policy)
+        self.guide_plan['groups']=encounter_groups(self.scene,self.guide_plan['anchors'])
         self.node_query=False
 
     def initial_cursor(self, roots):
@@ -21,17 +22,21 @@ class AnchorAdapter(EventGuideAdapter):
         if any(not a['accepted'] for a in checks) or len({a['reached'] for a in checks})!=1:
             raise ValueError('Anchor roots violate ordered/no-return domain')
         index=checks[0]['reached']
-        cursor.update(anchorIndex=index,spanStart=checks[0]['ticks'][-1] if index else 0)
+        cursor.update(anchorIndex=index,groupEnd=self.group_end(index),spanStart=checks[0]['ticks'][-1] if index else 0)
         return cursor
+
+    def group_end(self, index):
+        """The last pair of the encounter group holding pair `index`; a frame searches the whole group."""
+        return next(g['last'] for g in self.guide_plan['groups'] if g['first']<=index<=g['last'])
 
     def next_goals(self, cursor, parents, continuation=None, *, budget=None):
         if continuation is not None and continuation['exhausted']:
             return [],continuation,dict(expansions=0,materializations=0)
         budget=budget or {}
         if budget.get('check'):budget['check']()
-        index=cursor['anchorIndex']; anchors=self.anchor_policy['anchors']
-        target=anchors[index] if index<len(anchors) else self.data['task']['block']
-        terminal=index==len(anchors)
+        end=cursor['groupEnd']; anchors=self.anchor_policy['anchors']
+        target=anchors[end] if end<len(anchors) else self.data['task']['block']
+        terminal=end==len(anchors)
         requests=[]
         for event in self.graph['events']:
             if event['terminal']!=terminal:
@@ -51,43 +56,70 @@ class AnchorAdapter(EventGuideAdapter):
     def for_goal(self, request, cursor):
         result=copy.copy(self)
         result.request=copy.deepcopy(request);result.cursor=copy.deepcopy(cursor)
-        span=cursor['anchorIndex']
+        span,end=cursor['anchorIndex'],cursor['groupEnd']
         points=self.guide_plan['points']
         result.guide=dict(version=1,id=self.guide_plan['id']+':'+str(span),
-                          points=points[span:span+2],target=points[span+1],hardConstraints=False)
-        result.objective=onward_objective(self.guide_plan,span,self.scene['objective'])
+                          points=points[span:end+2],target=points[end+1],hardConstraints=False)
+        result.objective=onward_objective(self.guide_plan,end,self.scene['objective'])
         result.score_context=digest(dict(request=request,guide=result.guide,objective=result.objective,
                                          policy=semantic_settings(self.anchor_policy)))
         result.corridor=EventReference(self.data['domainId'],request['id'],result.guide['id'])
         result.program=None
         return result
 
-    def for_node(self):
+    def for_node(self, program):
+        """A decision check optimizes its program's own decision objective."""
         result=copy.copy(self);result.node_query=True
+        result.objective=self.program_objective(program)
         return result
+
+    def decision_point(self, program):
+        """The block a program's last movement landed on or, ending airborne, took off from: its guide point
+        when it is the start, an anchor or the task, else its top-face centre."""
+        name=visits(self.scene,program)[-1][1]
+        names=self.guide_plan['anchors']
+        k=next((k for k,a in enumerate(names) if owner(self.scene,a)==name),None)
+        if k is not None:
+            return self.guide_plan['points'][k]
+        solids=[self.scene['collisionScene']['solids'][b['solidIndex']] for b in self.scene['blocks']
+                if owner(self.scene,b['id'])==name]
+        top=max(s[4] for s in solids)
+        tops=[s for s in solids if s[4]==top]
+        return [(min(s[0] for s in tops)+max(s[3] for s in tops))/2,top,(min(s[2] for s in tops)+max(s[5] for s in tops))/2]
+
+    def program_objective(self, program):
+        """A decision's objective: progress from where its program ends toward the next required anchor."""
+        reached=audit(self.scene,program,self.anchor_policy['anchors'])['reached']
+        return decision_objective(self.guide_plan,reached,self.decision_point(program),self.scene['objective'])
 
     def advance(self, cursor, child, observed, request):
         result=super().advance(cursor,child,observed,request)
-        result['anchorIndex']+=1
+        result['anchorIndex']=result['groupEnd']+1
+        result['groupEnd']=self.group_end(result['anchorIndex'])
         result['spanStart']=child['profile']['airtime']
         return result
 
     def context(self, context):
         state=visit_state(self.scene,context['program'])
-        index=self.cursor['anchorIndex']
-        forbidden={owner(self.scene,a) for a in self.anchor_policy['anchors'][index+1:]}
-        if index<len(self.anchor_policy['anchors']):
+        end=self.cursor['groupEnd']
+        forbidden={owner(self.scene,a) for a in self.anchor_policy['anchors'][end+1:]}
+        if end<len(self.anchor_policy['anchors']):
             forbidden.add(owner(self.scene,self.data['task']['block']))
         context['feetAllowed']=lambda block: (owner(self.scene,block['id']) not in state['departed'] and
                                              owner(self.scene,block['id']) not in forbidden)
 
     def program_allowed(self, program):
-        return audit(self.scene,program,self.anchor_policy['anchors'],
-                     reached=self.cursor['anchorIndex'])['accepted']
+        anchors=self.anchor_policy['anchors'];end=self.cursor['groupEnd']
+        target=anchors[end] if end<len(anchors) else self.data['task']['block']
+        landed=owner(self.scene,program.get('terminalSupport'))==owner(self.scene,target)
+        return audit(self.scene,program,anchors,
+                     reached=min(end+1,len(anchors)) if landed else self.cursor['anchorIndex'])['accepted']
 
     def candidate(self, plan, candidate, vertical, *, partial=False):
-        prior=audit(self.scene,self.program,self.anchor_policy['anchors'],
-                    reached=self.cursor['anchorIndex'])
+        anchors=self.anchor_policy['anchors']
+        # A group-end arrival must have visited every anchor inside the group.
+        required=self.cursor['anchorIndex'] if self.node_query else min(self.cursor['groupEnd']+1,len(anchors))
+        prior=audit(self.scene,self.program,anchors,reached=required)
         if not prior['accepted']:
             return dict(prior,alternatives=[])
         if self.node_query:
