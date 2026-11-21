@@ -205,6 +205,8 @@ class BuilderGateTests(unittest.TestCase):
             def query(self,*args,**kwargs):
                 self.calls+=1
                 return dict(ruledOut=True)
+            def query_many(self,context,bounds,tick,**kwargs):
+                return [self.query(context,box,tick,**kwargs) for box in bounds]
         for build,module in [(normal_choices,'open_movement'),(open_stepping_choices,'stepping_generation'),
                              (open_ceiling_choices,'ceiling_generation')]:
             gate=Gate()
