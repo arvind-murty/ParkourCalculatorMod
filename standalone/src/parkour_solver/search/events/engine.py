@@ -13,7 +13,7 @@ from parkour_solver.search.goals import goal_spec
 from parkour_solver.spatial.event_routes import RouteDomain, build_route_domain, build_event_graph
 from parkour_solver.search.events.adapter import EventGuideAdapter
 from parkour_solver.bridge.counting import CountingCompiler
-from parkour_solver.search.work import SearchWork
+from parkour_solver.work import SearchWork
 from parkour_solver.search.compat.corridor_queue import collision_request
 
 

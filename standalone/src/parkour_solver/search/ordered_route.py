@@ -2,12 +2,13 @@ import copy
 import math
 import time
 
-from parkour_solver.numerics import prepare, validate
+from parkour_solver.numerics import validate
 from parkour_solver.numerics import solve
 from parkour_solver.numerics.model import fingerprint
 from parkour_solver.validation.numerical import validate_controls
 from parkour_solver.schema import number
-from parkour_solver.scene.route import initial_guess, prepare_route, schedule, supports
+from parkour_solver.scene.route import derive_footprints, initial_guess, prepare_route, schedule, supports
+from parkour_solver.numerics.builders import numerical_problem
 from parkour_solver.reachability.screen import contradiction
 from parkour_solver.search.ranking import objective_seed, passage_seed
 
@@ -124,41 +125,6 @@ def search_allocations(route, evaluate, *, seconds=60, improve=False, rank_equal
                                 if any('centerBounds' in b for b in route['blocks']) else
                                 'continuous_horizontal_support_with_supplied_airtimes'),
             'gameReplay': 'not_run'}
-
-
-def derive_footprints(route, compiler, seconds):
-    """Set every block's compiler-derived support footprints, which a numerical request's support rows use."""
-    footprints = compiler.derive_footprints(route, seconds)
-    if len(footprints) != len(route['blocks']):
-        raise ValueError('The footprint compiler returned the wrong number of supports')
-    for block, footprint in zip(route['blocks'], footprints):
-        if not isinstance(footprint, list) or len(footprint) != 4:
-            raise ValueError('Invalid derived footprint')
-        for value in footprint:
-            number(value, 'derived footprint')
-        block['_derivedFootprint'] = footprint[:]
-    if any('standingBounds' in block for block in route['blocks']):
-        standing = compiler.derive_standing_footprints(route, seconds)
-        for block, footprint in zip(route['blocks'], standing):
-            block['_derivedStandingFootprint'] = footprint[:]
-
-
-def numerical_problem(route, plan, coefficients, parent=None):
-    """The numerical request for a scheduled plan of a footprint-derived route.
-
-    find_route sends it and the creation-time relaxation screen solves it
-    (reachability/service.py), so a child's screen and its repair loop's request
-    for the same rows are one Clarabel solve (numerics/disk.py caches by content).
-    """
-    problem = dict(coefficients, version=1, ticks=plan['ticks'],
-                   position=[route['initial']['position'][0], route['initial']['position'][2]],
-                   velocity=[route['initial']['velocity'][0], route['initial']['velocity'][2]],
-                   yaw=initial_guess(route, plan, parent), threshold=route.get('physicsThreshold', .005), walls=plan['walls'],
-                   contacts=plan.get('contacts', []),
-                   objective=dict(route.get('guideObjective', route['objective']), tick=plan['ticks']))
-    if 'ladderTicks' in plan:
-        problem['ladderTicks'] = plan['ladderTicks']
-    return prepare(problem)
 
 
 def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1, improve=False,

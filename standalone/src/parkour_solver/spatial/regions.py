@@ -6,6 +6,7 @@ occupancy of an incident volume alone cannot satisfy them.
 """
 
 import hashlib
+import math
 import json
 from dataclasses import asdict, dataclass, field
 
@@ -268,7 +269,7 @@ def _incidence_graph(scene, decomposition, supports, task_goal, transit, *, dead
     if not starts:
         starts = tuple(sorted(r.key for r in air_regions.values() if any(contains(b,start) for b in r.cover)))
     if task_goal is not None and task_goal.get('kind') == 'landing_height_region':
-        from parkour_solver.search.virtual_goals import prepare_goal
+        from parkour_solver.movement.virtual_goals import prepare_goal
         task_goal = prepare_goal(task_goal)
         terminal = 'terminal:' + geometry_key(task_goal)
         regions.append(RouteRegion(terminal, 'terminal_predicate', (), (), predicate=task_goal))
@@ -320,7 +321,6 @@ def annotate_normal_proposals(scene, graph, compiler, *, seconds):
     import math
     import time
     from parkour_solver.physics.vertical import REST_CARRY
-    from parkour_solver.search.support_profiles import minimum_distance
     from parkour_solver.movement.generation import generate_choices
     from parkour_solver.movement.settings import movement_settings
     from parkour_solver.movement.normal import approaches, first_descent
@@ -383,3 +383,9 @@ def annotate_normal_proposals(scene, graph, compiler, *, seconds):
     graph.flight_proposals=flight_proposals
     graph.context=geometry_key((graph.context,transfers,flight_proposals))
     return graph
+
+
+def minimum_distance(a, b):
+    dx = max(0.0, a[0] - b[1], b[0] - a[1])
+    dz = max(0.0, a[2] - b[3], b[2] - a[3])
+    return math.hypot(dx, dz)

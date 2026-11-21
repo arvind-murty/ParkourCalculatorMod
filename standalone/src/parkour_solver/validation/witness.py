@@ -3,7 +3,6 @@
 from parkour_solver.validation.vertical import validate_vertical_schedule
 from parkour_solver.validation.scene import check_geometry
 from parkour_solver.scene.route import prepare_route, schedule, supports
-from parkour_solver.search.identity import full_witness
 from parkour_solver.numerics import prepare, validate
 from parkour_solver.validation.numerical import validate_controls
 
@@ -55,3 +54,8 @@ def witnesses(result):
             spatial=candidate.get('spatial_probe',{})
             if spatial.get('best') is not None and full_witness(spatial['best']):yield spatial['best']
     for rescue in result.get('rescues',[]):yield from witnesses(rescue['result'])
+
+
+def full_witness(best):
+    scope = best.get('validationScope', {})
+    return scope.get('purpose', 'complete') == 'complete' and scope.get('through', best['plan']['ticks']) == best['plan']['ticks']

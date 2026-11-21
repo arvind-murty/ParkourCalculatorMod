@@ -17,7 +17,7 @@ from parkour_solver.reachability.intervals import motion_bound
 from parkour_solver.spatial.checkpoints import checkpoint, retain_prefix
 from parkour_solver.spatial.cells import decompose
 from parkour_solver.validation.scoped_scene import CorridorAdapter
-from parkour_solver.search.work import SearchWork
+from parkour_solver.work import SearchWork
 from parkour_solver.spatial.compat.corridors import corridor_for_points, landmarks
 from parkour_solver.io.reports import save
 

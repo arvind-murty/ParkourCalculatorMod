@@ -12,7 +12,7 @@ from parkour_solver.search.engine import _key
 from parkour_solver.movement.program import compile_program, program_physics_key
 from parkour_solver.search.movement import iter_movement_programs
 from parkour_solver.search.repair_state import compatible, context
-from parkour_solver.search.work import SearchWork
+from parkour_solver.work import SearchWork
 from tests.support.checkpoint_guidance import flat_scene, programs
 
 

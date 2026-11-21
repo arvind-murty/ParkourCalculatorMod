@@ -168,7 +168,7 @@ class EventGuideAdapter:
                 required=any(contains(box,[candidate['positions'][t][0],surface['height'],candidate['positions'][t][1]],1e-7)
                     for t in states for box in surface['cover'])
         else:
-            from parkour_solver.search.virtual_goals import satisfied
+            from parkour_solver.movement.virtual_goals import satisfied
             required=satisfied(self.program,candidate,goal,self.scene.get('supportClearance',1e-6))
         self.counts['requiredEventRejections']+=int(not required)
         return dict(accepted=required,reason=None if required else 'required_event_not_observed',

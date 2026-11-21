@@ -8,7 +8,7 @@ from parkour_solver.reachability.intervals import motion_bound
 from parkour_solver.search.goals import goal_spec
 from parkour_solver.spatial.cells import decompose
 from parkour_solver.validation.scoped_scene import CorridorAdapter
-from parkour_solver.search.work import SearchWork
+from parkour_solver.work import SearchWork
 from parkour_solver.spatial.compat.corridors import corridor_for_points, landmarks
 from parkour_solver.search.compat.time_progress import clock_result
 from research.legacy_cell_routes.window_diagnostic import controls

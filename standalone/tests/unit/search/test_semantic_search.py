@@ -209,7 +209,7 @@ class SemanticNumericalTests(unittest.TestCase):
     def test_free_virtual_finish_has_no_outstanding_physical_goal_contact(self):
         from parkour_solver.search.engine import find_checkpoint_route
         from research.legacy_cell_routes.checkpoint_experiment import replay_witness
-        from parkour_solver.search.virtual_goals import satisfied
+        from parkour_solver.movement.virtual_goals import satisfied
         scene=flat_scene();scene['movementSearch']['maxInputs']=20
         scene['objective']=dict(axis='X',sense='MAX')
         goal=dict(kind='landing_height_region',height=2.,rows=[dict(mode='X',cmp='GE',rhs=1.5),dict(mode='Z',cmp='GE',rhs=-2.)])

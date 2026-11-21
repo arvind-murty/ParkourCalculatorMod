@@ -8,7 +8,8 @@ import unittest
 
 from parkour_solver.constraints.contacts import floor_checks
 from parkour_solver.search.repair import solve_contact_branches; from parkour_solver.validation.vertical import validate_vertical_schedule
-from parkour_solver.search.support_profiles import build_transition_graph, compile_block_path, find_blocks
+from parkour_solver.search.support_profiles import build_transition_graph, find_blocks
+from parkour_solver.movement.profiles import compile_block_path
 from parkour_solver.scene.normalize import prepare_scene
 from parkour_solver.movement.cases import case_profile, corner_rows, entry_possible
 from parkour_solver.bridge.python_compiler import PythonCompiler

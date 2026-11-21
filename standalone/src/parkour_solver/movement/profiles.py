@@ -114,3 +114,69 @@ def compile_open_air_route(request, *, max_inputs=200):
                                  'suppliedAirtimes': False, 'solidSideFaces': False,
                                  'otherSupportContacts': False}
     return {'status': 'derived', 'route': prepare_route(route), 'profiles': profiles}
+
+
+def compile_block_path(scene, block_ids, transitions=None):
+    by_id = {b['id']: b for b in scene['blocks']}
+    if not isinstance(block_ids, (list, tuple)) or len(block_ids) < 2 or block_ids[0] != scene['startBlock']:
+        raise ValueError('A candidate path starts at the start support and contains at least one jump')
+    blocks = []
+    for index, block_id in enumerate(block_ids):
+        if block_id not in by_id:
+            raise ValueError('Unknown support in candidate path')
+        block = copy.deepcopy(by_id[block_id])
+        block = {key: block[key] for key in ('id', 'bounds', 'top')}
+        block['id'] = block_id + '@' + str(index)
+        blocks.append(block)
+    if transitions is not None:
+        if len(transitions) != len(block_ids) - 1:
+            raise ValueError('One transition is required per selected edge')
+        selected, entries, exits, kinds = [], [], [], []
+        for leg, transition in enumerate(transitions):
+            if transition['source'] != block_ids[leg] or transition['target'] != block_ids[leg + 1]:
+                raise ValueError('Selected transition does not match the support path')
+            profile = copy.deepcopy(transition['profile'])
+            if scene['sceneModel'] == 'collision_boxes' and transition['profileKind'] in ('stair', 'step') and not profile.get('caseEvents'):
+                from parkour_solver.movement.units import profile_program
+                profile['caseEvents'] = [dict(type='stepping', case='slab_boost' if transition['profileKind'] == 'stair' else 'normal_step',
+                    input=0, plane=blocks[leg + 1]['top'], boxes=[scene['collisionScene']['solids'][by_id[block_ids[leg + 1]]['solidIndex']]],
+                    anchors={'hit': 1})]
+                profile['generatedUnits'] = profile_program(profile)
+            profile.update(sourceBlock=blocks[leg]['id'], targetBlock=blocks[leg + 1]['id'],
+                           profileKind=transition['profileKind'])
+            selected.append(profile)
+            entries.append(dict(transition['entryFace'], outsideFrom=0, outsideThrough=0, enter=1)
+                           if transition['entryFace'] else None)
+            exits.append(transition.get('exitFace'))
+            kinds.append('movement' if transition['profileKind'] == 'movement' else 'walk_off' if transition['profileKind'] == 'run_off' else 'step' if transition['profileKind'] == 'step' else 'jump')
+        route = prepare_route({'version': 1, 'initial': scene['initial'], 'blocks': blocks,
+                               'inputs': scene['inputs'], 'objective': scene['objective'],
+                               'airtimes': [p['airtime'] for p in selected],
+                               'kinds': kinds, 'landingPhases': ['post' if k == 'step' else p.get('landingPhase', 'pre')
+                                                               for p, k in zip(selected, kinds)],
+                               'contactEntries': entries, 'walkOffExits': exits,
+                               'maxTotalRunTicks': scene['maxTotalRunTicks'],
+                               'runBounds': [[0, scene['maxRunTicksPerJump']] for _ in selected],
+                               'supportClearance': scene['supportClearance']})
+        route['profileDerivation'] = {'kind': 'selected_height_profiles', 'suppliedAirtimes': False,
+                                     'verticalModel': 'parkour_solver.physics.vertical', 'solidSideFaces': False}
+        if scene['sceneModel'] == 'collision_boxes':
+            route['sharedMovement'] = True
+            route['ceilingEvents'] = [dict(p['ceilingEvent'], leg=leg) for leg, p in enumerate(selected)
+                                      if 'ceilingEvent' in p]
+            route['ladderEvents'] = [dict(edge['ladderEvent'], leg=leg) for leg, edge in enumerate(transitions)
+                                     if 'ladderEvent' in edge]
+            route['ladderEvents'].extend(dict(event, leg=leg) for leg, edge in enumerate(transitions)
+                                          for event in edge.get('ladderEvents', []))
+            route['verticalProfiles'] = selected
+            route['contactEvents'] = [dict(event, leg=leg) for leg, profile in enumerate(selected)
+                                      for event in profile.get('contactEvents', [])]
+        return {'status': 'derived', 'route': route, 'profiles': selected}
+    compiled = compile_open_air_route({'version': 1, 'sceneModel': 'open_air_supports',
+                                      'initial': scene['initial'], 'blocks': blocks, 'inputs': scene['inputs'],
+                                      'objective': scene['objective'],
+                                      'maxTotalRunTicks': scene['maxTotalRunTicks'],
+                                      'runBounds': [[0, scene['maxRunTicksPerJump']] for _ in block_ids[1:]],
+                                      'supportClearance': scene['supportClearance']},
+                                     max_inputs=scene['maxFlightInputs'])
+    return compiled

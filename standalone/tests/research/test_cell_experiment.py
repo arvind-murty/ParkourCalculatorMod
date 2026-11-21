@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from parkour_solver.scene.normalize import prepare_scene
 from research.legacy_cell_routes.experiment import compact, run_arm, verify_witness
-from parkour_solver.search.work import SearchWork
+from parkour_solver.work import SearchWork
 from parkour_solver.bridge.python_compiler import PythonCompiler
 from parkour_solver.search.ordered_route import find_route
 from tests.support.ordered_route import route

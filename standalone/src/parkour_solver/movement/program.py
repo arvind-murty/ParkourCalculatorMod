@@ -284,7 +284,7 @@ def program_search_key(program):
 
 
 def compile_program(scene, program, *, require_complete=True):
-    from parkour_solver.search.support_profiles import compile_block_path
+    from parkour_solver.movement.profiles import compile_block_path
     if not program['profile']['airtime']:
         raise ValueError('An empty prefix is not a complete movement route')
     if require_complete and (not program['profile']['grounded'][-1] or program['terminalSupport'] != scene['goalBlock']):

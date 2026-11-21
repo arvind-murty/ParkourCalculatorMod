@@ -4,7 +4,8 @@ import random
 import threading
 import unittest
 
-from parkour_solver.search.support_profiles import build_transition_graph, compile_block_path, find_blocks, search_block_paths
+from parkour_solver.search.support_profiles import build_transition_graph, find_blocks, search_block_paths
+from parkour_solver.movement.profiles import compile_block_path
 from parkour_solver.scene.normalize import prepare_scene
 from parkour_solver.scene.route import HALF_WIDTH, schedule
 from parkour_solver.numerics import prepare, validate

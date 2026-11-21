@@ -8,7 +8,7 @@ from parkour_solver.search.ranking import candidate_rank
 from parkour_solver.schema import integer, number
 from parkour_solver.spatial.cells import decompose
 from parkour_solver.validation.scoped_scene import CorridorAdapter
-from parkour_solver.bridge.counting import CountingCompiler; from parkour_solver.search.work import SearchWork
+from parkour_solver.bridge.counting import CountingCompiler; from parkour_solver.work import SearchWork
 from parkour_solver.spatial.compat.corridors import corridor_for_points, landmarks
 from parkour_solver.search.completion import generation_exhausted
 

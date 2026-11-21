@@ -20,7 +20,7 @@ def generate_choices(kind, context, **options):
     if kind not in GENERATORS:
         raise ValueError('Unsupported movement generator: ' + str(kind))
     if kind=='normal' and context.get('mode')=='open' and context.get('terminalGoal') is not None:
-        from parkour_solver.search.virtual_goals import finish_choices
+        from parkour_solver.movement.virtual_goals import finish_choices
         yield from finish_choices(context)
     for choice in GENERATORS[kind].generate(context, **options):
         if choice['unit']['type'] != kind:

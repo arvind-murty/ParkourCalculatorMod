@@ -57,11 +57,6 @@ def scoped_geometry(geometry, scope):
     return dict(geometry, solids=[geometry['solids'][i] for i in indices]), indices
 
 
-def full_witness(best):
-    scope = best.get('validationScope', {})
-    return scope.get('purpose', 'complete') == 'complete' and scope.get('through', best['plan']['ticks']) == best['plan']['ticks']
-
-
 def validation_prefix(plan, candidate, vertical, through):
     if through == plan['ticks']:
         return plan, candidate, vertical

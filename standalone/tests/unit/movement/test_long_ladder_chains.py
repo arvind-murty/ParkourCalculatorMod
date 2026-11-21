@@ -7,7 +7,7 @@ import unittest
 from parkour_solver.constraints.contacts import floor_checks
 from parkour_solver.search.repair import solve_contact_branches
 from parkour_solver.scene.normalize import prepare_scene
-from parkour_solver.search.support_profiles import compile_block_path
+from parkour_solver.movement.profiles import compile_block_path
 from parkour_solver.bridge.python_compiler import PythonCompiler
 from parkour_solver.validation.scene import check_geometry
 from parkour_solver.numerics import prepare, validate

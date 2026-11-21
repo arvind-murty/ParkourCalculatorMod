@@ -3,7 +3,7 @@ import json
 import os
 import unittest
 
-from parkour_solver.search.virtual_goals import prepare_goal, height_clock, bind_goal, satisfied
+from parkour_solver.movement.virtual_goals import prepare_goal, height_clock, bind_goal, satisfied
 from parkour_solver.movement.program import empty_program, append_choice
 from parkour_solver.movement.normal import event_choice
 from tests.support.checkpoint_guidance import flat_scene

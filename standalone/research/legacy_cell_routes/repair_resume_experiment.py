@@ -16,7 +16,7 @@ from research.legacy_cell_routes.failure_diagnostic import read
 from research.legacy_cell_routes.generation_diagnostic import save
 from parkour_solver.spatial.cells import decompose
 from parkour_solver.validation.scoped_scene import CorridorAdapter
-from parkour_solver.search.work import SearchWork
+from parkour_solver.work import SearchWork
 from parkour_solver.spatial.compat.corridors import corridor_for_points, landmarks
 
 

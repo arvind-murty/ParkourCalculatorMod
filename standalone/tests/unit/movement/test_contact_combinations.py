@@ -252,7 +252,7 @@ class CombinationSceneTests(unittest.TestCase):
 class StepCombinationIntegrationTests(unittest.TestCase):
     def test_ipopt_step_and_two_wall_contacts_share_one_movement(self):
         from parkour_solver.scene.normalize import prepare_scene
-        from parkour_solver.search.support_profiles import compile_block_path
+        from parkour_solver.movement.profiles import compile_block_path
         from parkour_solver.constraints.contacts import floor_checks
         from parkour_solver.search.repair import solve_contact_branches
         floor, stair = [-2,0,-2,1,1,3], [1,0,-2,3,1.5,3]
@@ -280,7 +280,7 @@ class StepCombinationIntegrationTests(unittest.TestCase):
 
     def test_ipopt_ceiling_x_z_ladder_refresh_then_ceiling_stop_and_land(self):
         from parkour_solver.scene.normalize import prepare_scene
-        from parkour_solver.search.support_profiles import compile_block_path
+        from parkour_solver.movement.profiles import compile_block_path
         from parkour_solver.constraints.contacts import floor_checks
         from parkour_solver.search.repair import solve_contact_branches
         floor, goal = [-2,0,-2,.5,1,.85], [.5,0,-2,.85,1,.85]

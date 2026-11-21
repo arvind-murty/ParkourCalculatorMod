@@ -6,7 +6,8 @@ import unittest
 
 from parkour_solver.api import find_route, prepare_route, schedule
 from parkour_solver.movement.profiles import compile_open_air_route
-from parkour_solver.search.support_profiles import compile_block_path, find_blocks
+from parkour_solver.search.support_profiles import find_blocks
+from parkour_solver.movement.profiles import compile_block_path
 from parkour_solver.scene.normalize import prepare_scene
 from parkour_solver.bridge.python_compiler import PythonCompiler
 from parkour_solver.scene.route import initial_guess, supports

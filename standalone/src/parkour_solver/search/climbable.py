@@ -56,7 +56,7 @@ def run_allocations(legs, per_leg, total, limit):
 
 
 def _prefix(scene, graph, path, edges, target, allocation, compiler, seconds):
-    from parkour_solver.search.support_profiles import compile_block_path
+    from parkour_solver.movement.profiles import compile_block_path
     source = next(b for b in scene['blocks'] if b['id'] == path[-1])
     dummy = {'airtime': 2, 'contacts': [], 'position': [source['top']] * 3,
              'velocity': [-(.08) * f32(.98)] * 3, 'grounded': [True, False, True], 'jump': [True, False]}
@@ -143,7 +143,8 @@ def first_hit_bounds(scene, graph, source, prefix_edges, allocation, entries, co
 
 def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_seconds=8, candidate_seconds=2,
                          retries=1, improve=False, python_executable=None, cancel_event=None, on_attempt=None):
-    from parkour_solver.search.support_profiles import build_transition_graph, compile_block_path
+    from parkour_solver.search.support_profiles import build_transition_graph
+    from parkour_solver.movement.profiles import compile_block_path
     started, cfg = time.monotonic(), ladder_settings(scene)
     deadline = started + seconds
     base = normal_solver(scene, compiler, seconds=min(seconds * .2, route_seconds), route_seconds=route_seconds,

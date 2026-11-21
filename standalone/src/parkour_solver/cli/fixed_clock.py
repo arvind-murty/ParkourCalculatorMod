@@ -20,7 +20,7 @@ from parkour_solver.search.compat.support_order import SupportOrder
 from parkour_solver.validation.witness import witnesses
 from parkour_solver.io.checkpoint_store import CheckpointStore, read_report
 from parkour_solver.io.search_checkpoint import SearchCheckpoint
-from parkour_solver.search.identity import full_witness
+from parkour_solver.validation.witness import full_witness
 
 
 def run(fixture,compiler,*,on_window=None,python_executable=None,initial_programs=None,resume_state=None,on_progress=None,retry_unknown=False):
@@ -64,7 +64,7 @@ def run(fixture,compiler,*,on_window=None,python_executable=None,initial_program
     if result['best'] is not None:
         result['bestSupportAudit']=policy.audit(result['best']['movementProgram'])
     if virtual is not None and result['best'] is not None:
-        from parkour_solver.search.virtual_goals import satisfied
+        from parkour_solver.movement.virtual_goals import satisfied
         best=result['best'];program=best['movementProgram']
         if not satisfied(program,best['candidate'],virtual,scene.get('supportClearance',1e-6)) or policy.remaining(program):
             raise RuntimeError('Best result does not satisfy the virtual finish and required supports')

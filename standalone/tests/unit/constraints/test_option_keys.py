@@ -76,7 +76,7 @@ class GlobalBudgetTests(unittest.TestCase):
     def test_more_than_128_alternatives_run_and_resume_under_only_the_global_call_budget(self):
         from unittest.mock import patch
         from parkour_solver.search.repair import solve_contact_branches
-        from parkour_solver.search.work import SearchWork
+        from parkour_solver.work import SearchWork
         from tests.support.repair_resume import route
         generated = source(8)
         requests = []

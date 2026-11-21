@@ -9,7 +9,7 @@ from parkour_solver.spatial.checkpoints import checkpoint
 def goal_spec(scene, spec=None):
     spec=copy.deepcopy(spec or dict(kind='landing',block=scene['goalBlock']))
     if spec.get('kind')=='landing_height_region':
-        from parkour_solver.search.virtual_goals import prepare_goal
+        from parkour_solver.movement.virtual_goals import prepare_goal
         return prepare_goal(spec)
     if spec.get('kind')=='landing':
         if set(spec)-{'kind','block','blocks','surface'} or spec.get('block') not in {b['id'] for b in scene['blocks']}:

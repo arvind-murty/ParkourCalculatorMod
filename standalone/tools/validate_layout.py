@@ -13,10 +13,13 @@ def verify():
     checked=0
     for path in source.rglob('*.py'):
         tree=ast.parse(path.read_text(),filename=str(path))
+        top_layer=path.relative_to(source).parts[0] in ('search','observability','cli','api.py','__main__.py')
         for node in ast.walk(tree):
             names=[a.name for a in node.names] if isinstance(node,ast.Import) else [node.module or ''] if isinstance(node,ast.ImportFrom) else []
             for name in names:
                 assert name.split('.')[0] not in ('standalone','research','tools','tests'),(str(path),node.lineno,name)
+                # Search orchestrates everything below it; C++ units replace modules below this line.
+                assert top_layer or not name.startswith('parkour_solver.search'),(str(path),node.lineno,name)
         checked+=1
     manifest=json.loads((STANDALONE_ROOT/'tools/layout-migration.json').read_text())
     preserved=0

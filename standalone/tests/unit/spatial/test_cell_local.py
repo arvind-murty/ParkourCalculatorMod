@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from parkour_solver.spatial.cells import Cell, Decomposition, decompose
 from parkour_solver.validation.scoped_scene import CorridorAdapter
-from parkour_solver.search.work import SearchWork
+from parkour_solver.work import SearchWork
 from parkour_solver.spatial.compat.corridors import Corridor, corridor_for_points, landmarks
 from parkour_solver.movement.program import boundary_state, empty_program
 from parkour_solver.movement.generation import generate_choices

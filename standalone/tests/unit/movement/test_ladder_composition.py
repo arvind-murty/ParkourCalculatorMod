@@ -13,7 +13,8 @@ from parkour_solver.movement.ladder.contacts import ceiling_sequence, with_conta
 from parkour_solver.movement.ladder.schedules import generate_ladder_schedules, trace_ladder_schedule
 from parkour_solver.movement.ladder.episodes import compose_ladder_episodes
 from parkour_solver.scene.normalize import prepare_scene
-from parkour_solver.search.support_profiles import compile_block_path, find_blocks
+from parkour_solver.search.support_profiles import find_blocks
+from parkour_solver.movement.profiles import compile_block_path
 from parkour_solver.constraints.contacts import floor_checks
 from parkour_solver.search.repair import solve_contact_branches; from parkour_solver.validation.vertical import validate_vertical_schedule
 from parkour_solver.bridge.python_compiler import PythonCompiler

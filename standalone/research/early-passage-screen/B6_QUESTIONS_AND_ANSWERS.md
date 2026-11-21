@@ -1445,7 +1445,7 @@ without stopping the whole search. Old local repair/candidate caps still exist
 in the current code but are explicitly removed from the planned replacement.
 
 **Checked sources:**
-[global budgets](../../src/parkour_solver/search/work.py),
+[global budgets](../../src/parkour_solver/work.py),
 [generation budget/cancellation checks](../../src/parkour_solver/search/frontier.py),
 [repair work lifecycle](../../src/parkour_solver/search/repair.py), and
 [current variant deadline](../../src/parkour_solver/constraints/variants.py).

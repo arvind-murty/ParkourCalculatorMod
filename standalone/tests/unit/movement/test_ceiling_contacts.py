@@ -6,7 +6,8 @@ import unittest
 
 from parkour_solver.validation.vertical import validate_vertical_schedule
 from parkour_solver.movement.profiles import ordinary_jump_profile
-from parkour_solver.search.support_profiles import build_transition_graph, compile_block_path, find_blocks
+from parkour_solver.search.support_profiles import build_transition_graph, find_blocks
+from parkour_solver.movement.profiles import compile_block_path
 from parkour_solver.scene.normalize import prepare_scene
 from parkour_solver.movement.ceiling_contacts import ceiling_profile
 from parkour_solver.movement.ceiling_profiles import ceiling_options

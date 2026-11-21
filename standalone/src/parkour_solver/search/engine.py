@@ -14,7 +14,7 @@ from parkour_solver.schema import integer, number
 from parkour_solver.spatial.checkpoints import checkpoint
 from parkour_solver.spatial.cells import decompose
 from parkour_solver.validation.scoped_scene import CorridorAdapter
-from parkour_solver.bridge.counting import CountingCompiler; from parkour_solver.search.work import SearchWork
+from parkour_solver.bridge.counting import CountingCompiler; from parkour_solver.work import SearchWork
 from parkour_solver.spatial.compat.corridors import corridor_for_points, landmarks
 from parkour_solver.search.goals import goal_spec, landing_satisfied
 from parkour_solver.search.identity import solve_scope, solve_identity, validation_prefix
@@ -80,7 +80,7 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, c
     policy = policy_spec(solve_policy, first_witness=first_witness)
     virtual=program.get('terminalGoal')
     if virtual is not None:
-        from parkour_solver.search.virtual_goals import prepare_goal, height_clock
+        from parkour_solver.movement.virtual_goals import prepare_goal, height_clock
         virtual=prepare_goal(virtual)
         if not height_clock(program,virtual):
             raise ValueError('Virtual finish program does not reach its height clock')
@@ -111,7 +111,7 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, c
         p, c, v = validation_prefix(plan, candidate, vertical, scope['through'])
         verdict = scoped_adapter.candidate(p, c, v, partial=not complete or partial_corridor or scope['purpose'] == 'preliminary')
         if verdict['accepted'] and virtual is not None:
-            from parkour_solver.search.virtual_goals import satisfied
+            from parkour_solver.movement.virtual_goals import satisfied
             if not satisfied(program,candidate,virtual,scene.get('supportClearance',1e-6)):
                 return dict(verdict,accepted=False,reason='virtual_finish_not_satisfied')
         if verdict['accepted'] and required_landing is not None and not landing_satisfied(scene,required_landing,vertical):

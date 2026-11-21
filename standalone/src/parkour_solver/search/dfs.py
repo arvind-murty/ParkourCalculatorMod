@@ -11,7 +11,7 @@ from parkour_solver.canonical import digest
 from parkour_solver.search.identity import processing_key
 from parkour_solver.spatial.checkpoints import Checkpoint, retain_prefix
 from parkour_solver.search.goals import goal_spec, goal_key, region_arrival, _landing_prefixes
-from parkour_solver.search.virtual_goals import KIND, bind_goal, satisfied
+from parkour_solver.movement.virtual_goals import KIND, bind_goal, satisfied
 from parkour_solver.search.compat.minimum_runs import POLICY_VERSION, latest_jump, remember, exclusion
 from parkour_solver.search.anchors.policy import advantageous_candidates, advantageous_targets, launch, next_anchor, owner, semantic_settings
 from parkour_solver.constraints.variants import GENERATION_POLICY

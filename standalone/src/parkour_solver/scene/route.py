@@ -363,3 +363,20 @@ def initial_guess(route, plan, parent=None):
         prior = route['warmYaw']
         result[:min(len(prior), len(result))] = prior[:len(result)]
     return result
+
+
+def derive_footprints(route, compiler, seconds):
+    """Set every block's compiler-derived support footprints, which a numerical request's support rows use."""
+    footprints = compiler.derive_footprints(route, seconds)
+    if len(footprints) != len(route['blocks']):
+        raise ValueError('The footprint compiler returned the wrong number of supports')
+    for block, footprint in zip(route['blocks'], footprints):
+        if not isinstance(footprint, list) or len(footprint) != 4:
+            raise ValueError('Invalid derived footprint')
+        for value in footprint:
+            number(value, 'derived footprint')
+        block['_derivedFootprint'] = footprint[:]
+    if any('standingBounds' in block for block in route['blocks']):
+        standing = compiler.derive_standing_footprints(route, seconds)
+        for block, footprint in zip(route['blocks'], standing):
+            block['_derivedStandingFootprint'] = footprint[:]

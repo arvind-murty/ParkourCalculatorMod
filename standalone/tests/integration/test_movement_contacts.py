@@ -15,7 +15,7 @@ from tests.support.ladder_composition import airborne_case
 from parkour_solver.scene.geometry import BODY_HEIGHT
 from parkour_solver.validation.scene import check_geometry
 from parkour_solver.scene.normalize import prepare_scene
-from parkour_solver.search.support_profiles import compile_block_path
+from parkour_solver.movement.profiles import compile_block_path
 from parkour_solver.search.repair import solve_contact_branches
 from parkour_solver.constraints.contacts import floor_checks
 from parkour_solver.bridge.python_compiler import PythonCompiler

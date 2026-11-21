@@ -169,7 +169,7 @@ class SemanticCorridorAdapter(CorridorAdapter):
                   for owner in sorted(owners) if p < len(phases)]
         virtual = self.program.get('terminalGoal')
         if virtual is not None:
-            from parkour_solver.search.virtual_goals import satisfied
+            from parkour_solver.movement.virtual_goals import satisfied
             events.append(dict(kind='finish',phase=len(phases)-1,
                 validated=satisfied(self.program,candidate,virtual,self.scene.get('supportClearance',1e-6))))
         checked = advance(self.corridor,initial_cursor(self.corridor),phases,events,dict(complete=True))

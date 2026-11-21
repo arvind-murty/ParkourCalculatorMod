@@ -26,7 +26,7 @@ from parkour_solver.spatial.checkpoints import checkpoint, retain_prefix
 from research.legacy_cell_routes.generation_diagnostic import KeyAudit, QueueAudit, instrumented_generator, save
 from parkour_solver.spatial.cells import decompose
 from parkour_solver.validation.scoped_scene import CorridorAdapter
-from parkour_solver.bridge.counting import CountingCompiler; from parkour_solver.search.work import SearchWork
+from parkour_solver.bridge.counting import CountingCompiler; from parkour_solver.work import SearchWork
 from parkour_solver.spatial.compat.corridors import audit_candidate, corridor_for_points, landmarks
 
 

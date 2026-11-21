@@ -378,12 +378,13 @@ class InteractionGate:
 
     def relaxation(self, program, analysis, objective, rows=()):
         """The disk relaxation of the request a decision check's repair loop sends for this program with
-        avoidance `rows` (search.ordered_route.numerical_problem), optimizing `objective`: one Clarabel solve
+        avoidance `rows` (numerics.builders.numerical_problem), optimizing `objective`: one Clarabel solve
         that the repair loop's identical request finds in the content cache. None outside the supported class."""
         import copy
         from parkour_solver.numerics.disk import screen
         from parkour_solver.scene.route import schedule
-        from parkour_solver.search.ordered_route import derive_footprints, numerical_problem
+        from parkour_solver.scene.route import derive_footprints
+        from parkour_solver.numerics.builders import numerical_problem
         prepared=self.prepare(program)
         route=dict(copy.deepcopy(prepared['route']),objective=dict(axis='X',sense='MAX'),guideObjective=objective)
         route['constraints'].extend(copy.deepcopy(list(rows)))

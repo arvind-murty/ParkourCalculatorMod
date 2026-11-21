@@ -54,9 +54,12 @@ Use module or console entrypoints, rather than executing `src/.../*.py` by filen
 
 ## Boundary rules
 
-1. Schema, physics and scene primitives do not depend on search or research. Search
-   composes movement, spatial, constraint, reachability and numerical services; the
-   numerical worker does not import the DFS.
+1. Only `search/`, `observability/`, `cli/` and `api.py` import `search/`
+   (`tools.validate_layout` checks this). Search composes movement, spatial,
+   constraint, reachability and numerical services, which C++ units replace while
+   Python search orchestrates; the numerical worker does not import the DFS.
+   Shared modules sit below every domain package: `schema.py` and `canonical.py` import
+   nothing from the package, and `work.py` only `bridge.counting`.
 2. Ordinary import stays light: CasADi belongs to the numerical worker and plotting
    is optional. Clarabel, NumPy and SciPy (`reachability` extra) load only when a
    disk-relaxation screen or solve runs; search requires them.

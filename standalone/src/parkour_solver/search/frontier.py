@@ -150,7 +150,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
     def proposals(kind, context_data, start=0):
         bind=None
         if terminal_goal is not None:
-            from parkour_solver.search.virtual_goals import bind_goal
+            from parkour_solver.movement.virtual_goals import bind_goal
             bind=lambda p:bind_goal(p,terminal_goal,scene.get('supportClearance',1e-6))
         return iter(propose_choices(kind,context_data,source=generate_choices(kind,context_data),start=start,
             max_inputs=settings['maxInputs'],inherit_decisions=node_evaluator is not None,

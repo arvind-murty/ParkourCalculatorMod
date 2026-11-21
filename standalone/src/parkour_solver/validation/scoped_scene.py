@@ -1,4 +1,4 @@
-from parkour_solver.search.work import SearchWork
+from parkour_solver.work import SearchWork
 from parkour_solver.bridge.counting import CountingCompiler
 import collections
 import copy

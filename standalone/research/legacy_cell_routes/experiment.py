@@ -28,7 +28,7 @@ from parkour_solver.scene.route import prepare_route, supports
 from parkour_solver.spatial.cells import decompose, segment_intervals
 from tools.plotting.cells import diagnostic_svg
 from parkour_solver.validation.scoped_scene import CorridorAdapter
-from parkour_solver.bridge.counting import CountingCompiler; from parkour_solver.search.work import SearchWork
+from parkour_solver.bridge.counting import CountingCompiler; from parkour_solver.work import SearchWork
 from parkour_solver.spatial.compat.corridors import Corridor, corridor_for_points, enumerate_routes, horizontal_trace, landmarks, prescribed_projection, signature
 
 

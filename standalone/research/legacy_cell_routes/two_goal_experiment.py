@@ -12,7 +12,7 @@ from parkour_solver.bridge.compiler import JavaCompiler
 from research.legacy_cell_routes.comparison_audit import run_full_audit, source_entries
 from research.legacy_cell_routes.failure_diagnostic import read
 from research.legacy_cell_routes.generation_diagnostic import save
-from parkour_solver.search.identity import full_witness
+from parkour_solver.validation.witness import full_witness
 
 
 def competitive_followup(run,prior):
