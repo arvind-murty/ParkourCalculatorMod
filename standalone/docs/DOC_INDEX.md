@@ -81,6 +81,7 @@ control work; inclusion here is not authorization to implement a historical plan
 | [research/bookkeeping-measurement/README.md](../research/bookkeeping-measurement/README.md) | Frozen source-era evidence; use research guide for reproduction: Bookkeeping setup and measurement |
 | [research/cell-routes/IMPLEMENTATION_NOTES.md](../research/cell-routes/IMPLEMENTATION_NOTES.md) | Frozen source-era evidence; use research guide for reproduction: Cell-route experiment |
 | [research/cell-routes/README.md](../research/cell-routes/README.md) | Frozen source-era evidence; use research guide for reproduction: Cell-route experiment results |
+| [research/checkpoint-cost/README.md](../research/checkpoint-cost/README.md) | Frozen source-era evidence; use research guide for reproduction: Checkpoint cost and alias paths from the save walk |
 | [research/checkpoint-guidance/README.md](../research/checkpoint-guidance/README.md) | Frozen source-era evidence; use research guide for reproduction: Geometric checkpoint guidance |
 | [research/checkpoint-guidance/RESULTS.md](../research/checkpoint-guidance/RESULTS.md) | Frozen source-era evidence; use research guide for reproduction: Checkpoint guidance results |
 | [research/contact-combinations/README.md](../research/contact-combinations/README.md) | Frozen source-era evidence; use research guide for reproduction: Coupled contact and ladder evidence |

@@ -128,6 +128,13 @@ itself halves that run), with identical transitions. Replacing that reuse with a
 of new states against new and the last 10 parent states cut a further 1.9% on that input,
 again with identical transitions.
 
+With durable saves the extended run is checkpoint-bound: at `fb055163` checkpoint callbacks took
+183.27 s of 299.77 s, full saves 159.96 s of it, because each full save re-encodes the whole state
+(32.6 MB at the end, mostly the DFS stack) although little of it changes
+([checkpoint cost](../research/checkpoint-cost/README.md)). Full saves now find the active program's
+aliases in their own encoding walk instead of a second one (54.39 s in that run), which cut search
+time 6.4% on the durable call-capped input with identical reports.
+
 Constraint enumeration after `86c06e39` runs 2.93x to 3.56x faster on captured
 B6/B7 catalogues, with 94.1% to 94.7% fewer iteration checks and identical
 ordered options. That is targeted enumeration work, not a whole-solver speedup.
@@ -166,7 +173,7 @@ Open measurement: solve cadence 1 versus 2 or 4 decision levels
 | `constraints/variants.py` | Repeated canonical row sets and cursor records. |
 | `search/repair.py`, `search/repair_state.py` | `snapshot`, `publish`, `save_branch`: repeated copying of unchanged results. |
 | `spatial/checkpoints.py` | `retain_prefix` copies; sharing must not let siblings mutate each other. |
-| `io/search_checkpoint.py`, `io/checkpoint_store.py` | Root archival, repair patches, content addressing. |
+| `io/search_checkpoint.py`, `io/checkpoint_store.py` | Full saves re-encode and hash the whole state, including unchanged frames; repair patches; content addressing. |
 
 ## Cache and identity invariants
 

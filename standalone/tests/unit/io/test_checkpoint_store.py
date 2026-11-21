@@ -2,6 +2,7 @@ import copy
 import gzip
 import json
 import os
+import random
 from pathlib import Path
 import tempfile
 import unittest
@@ -77,7 +78,7 @@ class CheckpointStoreTests(StoreCase):
 
     def test_patch_and_compaction_keep_needed_roots(self):
         with CheckpointStore(self.path) as store:
-            base, _ = store.archive(dict(unchanged={'log':['x'*4000]},candidate=None))
+            base, _, _ = store.archive(dict(unchanged={'log':['x'*4000]},candidate=None))
             store.patch(base,[(['candidate'],dict(objective=1.))])
             store.compact()
             self.assertEqual(read_report(self.path)['candidate'],dict(objective=1.))
@@ -87,6 +88,43 @@ class CheckpointStoreTests(StoreCase):
             store.compact()
             self.assertEqual(read_report(self.path),dict(final=True))
             self.assertLess(len(store.known),5)
+
+    def test_archive_reports_every_alias_path_of_its_targets(self):
+        def walk(node, target):
+            # Independent reference: every key path at which `target` occurs, without descending into it.
+            if node is target:
+                return [()]
+            if not isinstance(node, (dict,list,tuple)):
+                return []
+            children = node.items() if isinstance(node,dict) else enumerate(node)
+            return [(key,)+tail for key,child in children for tail in walk(child,target)]
+
+        rng = random.Random(7)
+        def build(pool, depth):
+            kind = rng.random()
+            if depth == 0 or kind < .25:
+                return rng.choice([1,'x','y'*3000,None,.5]) if pool == [] or rng.random() < .6 else rng.choice(pool)
+            if kind < .5:
+                # Small scalar rows take the store's flat JSON path.
+                value = dict(status='s',repairState=None) if rng.random() < .5 else [1.,2.]
+            elif kind < .75:
+                value = {f'k{i}':build(pool,depth-1) for i in range(rng.randint(1,4))}
+            else:
+                value = [build(pool,depth-1) for _ in range(rng.randint(1,4))]
+                value = tuple(value) if rng.random() < .2 else value
+            pool.append(value)
+            return value
+
+        found = 0
+        with CheckpointStore(self.path) as store:
+            for _ in range(300):
+                pool = []
+                report = dict(root=build(pool,5),again=build(pool,4))
+                targets = [rng.choice(pool) for _ in range(3)] if pool else []
+                _, _, paths = store.archive(report,targets)
+                self.assertEqual(paths,[walk(report,t) for t in targets])
+                found += sum(len(p) > 1 for p in paths)
+        self.assertGreater(found,20)
 
 
 class SearchCheckpointTests(StoreCase):
