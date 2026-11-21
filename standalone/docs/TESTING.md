@@ -2,14 +2,12 @@
 
 ## Current gate
 
-`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on encounter groups with
-the run-tick rework and walk-off faces (`fb50d8f8` plus the change): **827 tests, 1
-failure, no errors or skips**, source unchanged during the run
-([report](../research/encounter-groups/native-gate-runticks/report.json)). The failure,
-`test_cell_experiment` `test_automatic_blockage_routes_are_repaired_and_physically_checked`,
-hit its time limit under other applications' load (load average 6 to 7); the three gate
-runs on this change's sources each failed a different wall-time-bound test, each passing
-in the other runs ([deferred P17](DEFERRED_WORK.md)).
+`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on main `d9e1ec9c`
+(encounter groups with the run-tick rework and walk-off faces) plus norm-check reuse and
+prepared analysis keys: **828 tests, no failures, errors or skips**, source unchanged during
+the run ([report](../research/prefix-reuse-keys/native-gate-main/report.json)). Wall-time-bound
+tests can fail under load: the three gate runs of the run-tick change each failed a different
+one, each passing in the other runs ([deferred P17](DEFERRED_WORK.md)).
 The gate fails on any skip, so it needs `PKC_RUN_TICKS_COMPILER` for the Java
 differential tests and the `research` extra for the route-guidance tests.
 A run of the switch-climb source (`55e3beef`) under a load average of 5.5 failed
@@ -29,7 +27,9 @@ persistence without the removed 32/128 limits.
 
 | Source | Tests | Evidence |
 | --- | ---: | --- |
+| `d9e1ec9c` + norm-check reuse across children, analyses keyed by their preparation | 828 | [report](../research/prefix-reuse-keys/native-gate-main/report.json) |
 | `fb50d8f8` + run-tick rework, walk-off faces (1 load-sensitive failure, P17) | 827 | [report](../research/encounter-groups/native-gate-runticks/report.json) |
+| `fb50d8f8` + norm-check reuse across children, analyses keyed by their preparation | 817 | [report](../research/prefix-reuse-keys/native-gate/report.json) |
 | `c2b2a3d2` phase 4: confirmation walk, decision objectives, shared creation request, conflict-driven avoidance | 816 | [report](../research/encounter-groups/native-gate-phase4/report.json) |
 | `55bc1b10` + obstacle test on per-phase sides: settled rows, climbed node families, group growth, reachable members | 750 | [report](../research/encounter-groups/native-gate-phase2/report.json) |
 | `76dc45dc` + resume order: encounter groups, block-table kinds, side families | 742 | [report](../research/encounter-groups/native-gate/report.json) |

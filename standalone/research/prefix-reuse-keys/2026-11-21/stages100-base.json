@@ -1,0 +1,130 @@
+{
+ "InteractionGate.sequence": {
+  "calls": 2338,
+  "seconds": 36.246
+ },
+ "InteractionGate.required": {
+  "calls": 2961,
+  "seconds": 35.102
+ },
+ "program.append_choice": {
+  "calls": 9848,
+  "seconds": 19.701
+ },
+ "InteractionGate.prepare": {
+  "calls": 4596,
+  "seconds": 18.857
+ },
+ "InteractionGate.analyze_model": {
+  "calls": 4222,
+  "seconds": 17.294
+ },
+ "service.interaction_context_key": {
+  "calls": 6407,
+  "seconds": 13.201
+ },
+ "InteractionGate.check_program": {
+  "calls": 627,
+  "seconds": 12.738
+ },
+ "intervals.reachable_envelopes": {
+  "calls": 3445,
+  "seconds": 12.213
+ },
+ "identity.digest": {
+  "calls": 551067,
+  "seconds": 10.97
+ },
+ "InteractionGate.query": {
+  "calls": 16011,
+  "seconds": 8.025
+ },
+ "program.profile_from_trace": {
+  "calls": 19696,
+  "seconds": 7.285
+ },
+ "route.prepare_route": {
+  "calls": 7133,
+  "seconds": 6.771
+ },
+ "contact_combinations.merge_contacts": {
+  "calls": 67173,
+  "seconds": 5.839
+ },
+ "InteractionGate.relaxation": {
+  "calls": 374,
+  "seconds": 3.845
+ },
+ "program.program_physics_key": {
+  "calls": 6606,
+  "seconds": 3.806
+ },
+ "vertical.validate_vertical_schedule": {
+  "calls": 3658,
+  "seconds": 3.662
+ },
+ "vertical_profiles.trace_ladder_schedule": {
+  "calls": 24784,
+  "seconds": 3.635
+ },
+ "ceiling.own_ceiling_contacts": {
+  "calls": 9848,
+  "seconds": 3.511
+ },
+ "program.compile_program": {
+  "calls": 3423,
+  "seconds": 3.103
+ },
+ "support_profiles.compile_block_path": {
+  "calls": 3423,
+  "seconds": 3.08
+ },
+ "disk.screen": {
+  "calls": 514,
+  "seconds": 3.004
+ },
+ "route.schedule": {
+  "calls": 3968,
+  "seconds": 2.977
+ },
+ "intervals.interaction_reachability": {
+  "calls": 240000,
+  "seconds": 1.486
+ },
+ "service.query_interaction": {
+  "calls": 56451,
+  "seconds": 1.261
+ },
+ "contact_combinations.validate_contact_events": {
+  "calls": 7133,
+  "seconds": 1.223
+ },
+ "units.shifted_unit": {
+  "calls": 123676,
+  "seconds": 1.081
+ },
+ "program.movement_choice": {
+  "calls": 9848,
+  "seconds": 0.499
+ },
+ "units.compile_units": {
+  "calls": 17069,
+  "seconds": 0.489
+ },
+ "PythonCompiler.compile": {
+  "calls": 2618,
+  "seconds": 0.481
+ },
+ "units.profile_program": {
+  "calls": 9848,
+  "seconds": 0.128
+ },
+ "program._events": {
+  "calls": 9848,
+  "seconds": 0.023
+ },
+ "compiler.coefficient_request": {
+  "calls": 6840,
+  "seconds": 0.014
+ }
+}
