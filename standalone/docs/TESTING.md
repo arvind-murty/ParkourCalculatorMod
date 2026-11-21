@@ -2,15 +2,11 @@
 
 ## Current gate
 
-`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on main `d9e1ec9c`
-(encounter groups with the run-tick rework and walk-off faces) plus prepared analysis keys,
-the parent-window travel check, alias paths from the full save's walk, opt-in progress saves,
-children extending their parent, per-state program identity with list-order ties and no repair
-snapshots without a saver: **830 tests, no failures, errors or skips**, source unchanged during
-the run ([report](../research/checkpoint-cost/native-gate-repair-snapshots/report.json); run on
-`6b11a815` with the snapshot sources uncommitted). Wall-time-bound
-tests can fail under load: the three gate runs of the run-tick change each failed a different
-one, each passing in the other runs ([deferred P17](DEFERRED_WORK.md)).
+`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on the walk-off follow-ups
+(`d9e1ec9c` plus the change: tick-0 walk-off check, no-N scan airtime): **829 tests, no
+failures, errors or skips**, source unchanged during the run, at a load average of 5.3 to
+6.6 ([report](../research/encounter-groups/native-gate-walkoff-followups/report.json)).
+Wall-time-bound tests can still fail under heavier load ([deferred P17](DEFERRED_WORK.md)).
 The gate fails on any skip, so it needs `PKC_RUN_TICKS_COMPILER` for the Java
 differential tests and the `research` extra for the route-guidance tests.
 A run of the switch-climb source (`55e3beef`) under a load average of 5.5 failed
@@ -30,6 +26,7 @@ persistence without the removed 32/128 limits.
 
 | Source | Tests | Evidence |
 | --- | ---: | --- |
+| `d9e1ec9c` + walk-off follow-ups | 829 | [report](../research/encounter-groups/native-gate-walkoff-followups/report.json) |
 | `6b11a815` + the repair loop publishes progress only to a saver | 830 | [report](../research/checkpoint-cost/native-gate-repair-snapshots/report.json) |
 | `75a0f4c6` + program identity as a per-state chain, equal-priority programs in list order | 830 | [report](../research/parent-linked-programs/native-gate-phaseB/report.json) |
 | `996c1a44` + children trace only their new ticks and share the parent's content | 830 | [report](../research/parent-linked-programs/native-gate/report.json) |

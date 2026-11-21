@@ -326,13 +326,6 @@ class InteractionGate:
 
     def check_program(self, program, objective=None):
         """None or a rejection proof. A run-off's launch-support face selection is appended to program['walkOffs']."""
-        # This guard is a distinct physical requirement, not an interval bound.
-        p=program['profile']
-        if p['airtime'] and p['position'][1]<self.scene['initial']['position'][1]-1e-7:
-            from parkour_solver.scene.route import supports
-            if any(abs(b['top']-self.scene['initial']['position'][1])<1e-7 and
-                   supports(b,*self.scene['initial']['position'][::2]) for b in self.scene['blocks']):
-                return dict(reason='unselected_initial_floor')
         analysis=self.analyze(program)
         if analysis is None:return dict(reason='vertical_schedule')
         from parkour_solver.search.identity import digest

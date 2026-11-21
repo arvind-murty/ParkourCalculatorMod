@@ -309,6 +309,29 @@ class WalkOffFaceTests(unittest.TestCase):
             self.assertEqual((selection['offset'], selection['solids'], row['mode'], row['cmp'], row['offset']),
                              (3, [start], 'X', 'GE', 3))
 
+    def test_input_zero_cannot_leave_an_initial_support_of_any_shape(self):
+        from parkour_solver.bridge.python_compiler import PythonCompiler
+        from parkour_solver.movement.normal import normal_choices
+        from parkour_solver.movement.program import append_choice, boundary_state, empty_program
+        from parkour_solver.reachability.service import InteractionGate
+        # Standing on start and ext, an L whose faces the selection cannot express; state 0 is still on it.
+        scene = prepare_scene(boxes_request([.5, 1, 1.9], [.25, -.0784000015258789, 0], -90, start=[-2, 0, -2, 1, 1, 2],
+                                            ext=[0, 0, 2, 1, 1, 3], middle=[1, -1, -2, 4, 0, 2], goal=[6, -1, -1, 7, 0, 1]))
+        standing = sorted(b['solidIndex'] for b in scene['blocks'] if b['id'] in ('start', 'ext'))
+        with PythonCompiler() as compiler:
+            gate = InteractionGate(scene, compiler)
+            program = empty_program(scene['initial'], threshold=0.)
+            def runoffs(g):
+                context = dict(mode='open', scene=scene, program=program, state=boundary_state(program), maxInputs=30,
+                               threshold=0., interactionGate=g)
+                return [append_choice(program, c) for c in normal_choices(context)
+                        if c.get('terminalSupport') == 'middle' and not c['profile']['jump'][0]]
+            self.assertEqual(runoffs(gate), [])
+            self.assertEqual([e['input'] for e in gate.exclusions if e['proof']['reason'] == 'launch_support_not_left'], [0])
+            ungated, = runoffs(None)
+            proof = gate.check_program(ungated)
+            self.assertEqual((proof['reason'], proof['input'], proof['solids']), ('launch_support_not_left', 0, standing))
+
     def test_stepping_flight_cases_from_a_run_off_wait_for_the_edge_too(self):
         from parkour_solver.bridge.python_compiler import PythonCompiler
         from parkour_solver.movement.normal import normal_choices

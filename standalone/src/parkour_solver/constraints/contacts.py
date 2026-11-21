@@ -74,7 +74,7 @@ def walk_off_faces(scene, program, cut, envelopes, landing_boxes):
     None leaves the generic floor checks alone: not grounded, a ladder tick, no reachable support, or L's
     regions and the solids beside them at the feet height not covering L's bounding box (leaving the box
     would be stronger than leaving every piece). Else dict(solids, region, options, diagonal); no options
-    means the support cannot be left.
+    means the support cannot be left, as on input 0 from an initial position standing on a feet-height block.
     """
     from parkour_solver.reachability.intervals import interaction_reachability
     from parkour_solver.reachability.service import block_interaction
@@ -100,12 +100,17 @@ def walk_off_faces(scene, program, cut, envelopes, landing_boxes):
     groups = {}
     for i in range(len(regions)):
         groups.setdefault(root(i), []).append(i)
+    bounding = lambda rs: [min(r[0] for r in rs), min(r[1] for r in rs), max(r[2] for r in rs), max(r[3] for r in rs)]
     if cut:
         launch = {i for e in profile['contactEvents'] if e['offset'] == cut-1 and e.get('role') in ('landing', 'step')
                   for i, box in enumerate(solids) if box in e.get('boxes', ())}
     else:
         x, _, z = scene['initial']['position']
         launch = {b['solidIndex'] for b in feet if supports(b, x, z)}
+        start = [r for b, r in regions if b['solidIndex'] in launch]
+        if start:
+            # State 0 is the initial position itself, on a launch block: input 0 cannot leave it, whatever L's shape.
+            return dict(solids=sorted(launch), region=bounding(start), diagonal=False, options=[])
     # An unidentified launch can only be the one reachable component; an unreachable one is already left.
     held = ([g for g in groups.values() if any(regions[i][0]['solidIndex'] in launch for i in g)] if launch
             else list(groups.values()))
@@ -113,7 +118,7 @@ def walk_off_faces(scene, program, cut, envelopes, landing_boxes):
         return None
     pieces = [regions[i][1] for i in held[0]]
     blocks = {regions[i][0]['id']: regions[i][0] for i in held[0]}
-    region = [min(r[0] for r in pieces), min(r[1] for r in pieces), max(r[2] for r in pieces), max(r[3] for r in pieces)]
+    region = bounding(pieces)
     geometry = scene_geometry(scene['collisionScene'])
     # Space solids fill at the feet height (a wall clipping the top) may lie in the box: no one stands there.
     filled = [geometry.boxes[i] for i in geometry.near(region) if geometry.boxes[i][1] < y0 < geometry.boxes[i][4]+1e-6]

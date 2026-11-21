@@ -360,12 +360,13 @@ time (user, 2026-11-19/20):
   widens to the next landing (the next anchor is never a dead end).
 - **Without N** (no jump-now landing on another block), run counts are scanned
   until a jump or run-off lands on the next anchor, else on another block; that
-  sets N and its next count is reserved.
+  sets N and its next count is reserved. A run-off's walk-off input counts as a
+  run tick here too, so its A is its airborne inputs.
 
 Every resolution is logged in the frontier's `minimumRunCandidates`. This mirrors
 minimum run ticks for hard jumps (`run_bound`, O7), which is unchanged.
 Turnaround decisions generate run ticks as before and still prefer them
-(`(T,-J,A)`). `searchPolicyVersion` 12 carries this and the decision objectives.
+(`(T,-J,A)`). `searchPolicyVersion` 13 carries this and the decision objectives.
 
 ## Settled versus remaining implementation choices
 

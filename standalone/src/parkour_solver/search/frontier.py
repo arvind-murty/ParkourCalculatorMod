@@ -440,10 +440,13 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             nodes=[child['decisionNode'] for _,child,_ in found]
             for item,child,reason in found:
                 enqueue(item,child,reason,landed)
-            N=min(ticks(child) for _,child,_ in found)
-            kept.extend(dict(key=json.dumps(['scan',lands(child)]),total=ticks(child),A=ticks(child)-k,
-                             nodes=[child['decisionNode']]) for _,child,_ in found)
-            record(dict(key=json.dumps(['scan',target]),A=N-k),k,N,N,lower,number,'kept',nodes)
+            # A no-jump lander's walk-off input is a run tick, not airtime.
+            scan_runs=lambda item:k if item[2]['choice']['profile']['jump'][0] else k+1
+            fastest,child,_=min(found,key=lambda f:ticks(f[1]))
+            N,R=ticks(child),scan_runs(fastest)
+            kept.extend(dict(key=json.dumps(['scan',lands(child)]),total=ticks(child),A=ticks(child)-scan_runs(item),
+                             nodes=[child['decisionNode']]) for item,child,_ in found)
+            record(dict(key=json.dumps(['scan',target]),A=N-R),R,N,N,lower,number,'kept',nodes)
             if k+1<=MAX_ADVANTAGEOUS_RUN_TICKS:
                 reached=sorted({lands(child) for _,child,_ in found})
                 reserve(nodes,kind='scan',target=target,dead=dead if target=='next' else sorted(set(dead)|set(reached)),

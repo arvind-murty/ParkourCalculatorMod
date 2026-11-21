@@ -391,6 +391,21 @@ class MinimumRunTickTests(unittest.TestCase):
         self.assertEqual(self.runs(again),[4])
         self.assertEqual(self.reserves(state),[('scan','next',5)])
 
+    def test_scan_counts_a_walk_off_input_as_a_run_tick(self):
+        from parkour_solver.scene.normalize import prepare_scene
+        # goal is flush with start and one lower; with every jump screened out there is no N and the scan keeps a run-off.
+        s=prepare_scene(dict(version=1, sceneModel='collision_boxes', geometryBounds=[-10,-6,-10,20,12,10],
+            initial=dict(position=[.5,1,.5], velocity=[.25,-.0784000015258789,0], yaw=-90),
+            startBlock='start', goalBlock='goal', maxWallHits=0, maxContactCombinations=0,
+            blocks=[dict(id='start', boxes=[[-2,0,-2,1,1,2]]), dict(id='goal', boxes=[[1,-1,-2,4,0,2]])],
+            movementSearch=dict(types=['normal'], maxInputs=30)))
+        emitted,state=self.frontier(scene=s,screen=lambda p:dict(reason='jump') if any(p['profile']['jump']) else None)
+        (scan,)=[r for r in state['minimumRunCandidates'] if r['key']=='["scan", "next"]']
+        (child,)=[p for p in emitted+state['pending'] if p.get('decisionNode')==scan['nodes'][0]]
+        self.assertEqual(local_counts(child)['J'],0)
+        self.assertEqual((scan['k'],scan['A'],scan['N']),
+                         (local_counts(child)['R'],local_counts(child)['A'],child['profile']['airtime']))
+
     def test_no_run_option_or_reserve_past_the_cap(self):
         from parkour_solver.movement.normal import MAX_ADVANTAGEOUS_RUN_TICKS
         emitted,state=self.frontier(screen=self.late(MAX_ADVANTAGEOUS_RUN_TICKS+1))
