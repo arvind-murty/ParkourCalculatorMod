@@ -114,12 +114,17 @@ work. Verify digest call counts and call sites before attributing cost; the cold
 profiler writes its shared store only after search, so durable checkpoint IO
 needs a separate control.
 
-On the Real11 extended control (300 s, deadline-bound) at `ea33c191` the relaxed
-backend leaves generation as the cost: `program.program_physics_key` 81.3 s over
-111,967 calls, `preparation.analyze_model` 45.4 s, `preparation.prepare` 37.4 s,
-`numerical.evaluate` 33.2 s, `reachability.screen` 20.6 s and `solver.invoke` 6.8 s
-([comparison with stock and encounter groups](../research/disk-relaxation/2026-11-19/extended-profile-compare.txt),
-[analysis](../research/disk-relaxation/README.md#extended-course-and-the-encounter-groups-requests)).
+The Real11 extended control (300 s, deadline-bound) is generation-bound. At `ea33c191`
+`program.program_physics_key` took 81.3 s over 111,967 calls
+([comparison with stock and encounter groups](../research/disk-relaxation/2026-11-19/extended-profile-compare.txt));
+encounter groups cut it to 11.6 s over 18,134 at `fb50d8f8`, which leaves 137.4 s of
+uninstrumented generation and DFS self time, `preparation.analyze_model` 56.1 s,
+`preparation.prepare` 43.1 s, `numerical.evaluate` 25.0 s and `solver.invoke` 2.5 s, with
+57.9 s of GC overlapping them; durable saves add 71.2 s of checkpoint callbacks
+([profiles](../research/prefix-reuse-keys/README.md)). Reusing norm-check pairs across
+children and keying analyses by their `prepare` key then cut search time 14.6% on equal
+work (call cap 100) over `fb50d8f8` and 12.6% over the run-tick rework (`8ccc9e49`, which
+itself halves that run), with identical transitions.
 
 Constraint enumeration after `86c06e39` runs 2.93x to 3.56x faster on captured
 B6/B7 catalogues, with 94.1% to 94.7% fewer iteration checks and identical
@@ -154,7 +159,7 @@ Open measurement: solve cadence 1 versus 2 or 4 decision levels
 | --- | --- |
 | `search/identity.py` | `digest`, `motion_record`, `solve_scope`, `solve_identity`: repeated canonical serialization. |
 | `movement/program.py` | `program_physics_key`, `program_search_key`, `compile_program`: repeated sorting and serialization of immutable content. |
-| `reachability/service.py` | `InteractionGate` key construction, which costs even on a cache hit. |
+| `reachability/service.py` | `InteractionGate.prepare` key construction (scene and program physics key), which costs even on a cache hit. |
 | `search/engine.py` | `evaluate_program`: scope, coefficients, replay, solve identity, variants, validation. |
 | `constraints/variants.py` | Repeated canonical row sets and cursor records. |
 | `search/repair.py`, `search/repair_state.py` | `snapshot`, `publish`, `save_branch`: repeated copying of unchanged results. |

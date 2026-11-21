@@ -20,7 +20,34 @@ def motion_bound(scene, compiler, seconds):
                 groundMagnitude=sample['magnitude'][0])
 
 
-def reachable_envelopes(problem, y=None):
+def norm_signature(states, radii):
+    return [(s['X'][0], s['X'][1], s['Z'][0], s['Z'][1], r) for s, r in zip(states, radii)]
+
+
+def _common_prefix(a, b):
+    lo, hi = 0, min(len(a), len(b))
+    while lo < hi:
+        mid = (lo+hi+1)//2
+        if a[:mid] == b[:mid]:
+            lo = mid
+        else:
+            hi = mid-1
+    return lo
+
+
+def norm_reference(envelope):
+    """(signature, last checked state) of an envelope without contradiction, for `verified`; else None."""
+    if envelope['contradiction'] is not None:
+        return None
+    problem, states = envelope['model'], envelope['states']
+    constrained = max([r['t1'] for r in problem.get('walls', []) if r['mode'] in ('X', 'Z') and r.get('t2') is None]
+                      + [c['state'] for c in problem.get('contacts', [])], default=0)
+    return norm_signature(states, envelope['radii']), min(constrained, len(states)-1)
+
+
+def reachable_envelopes(problem, y=None, *, verified=()):
+    """`verified`: `norm_reference` results of earlier envelopes. Pairs of states that equal a reference's
+    states and radii up to its last checked state passed the norm check there, so it starts after them."""
     bounds = {}
     for row in problem.get('walls', []):
         if row['mode'] not in ('X', 'Z') or row.get('t2') is not None:
@@ -116,7 +143,12 @@ def reachable_envelopes(problem, y=None):
     radii = travel_radii(speed, problem['magnitude'], problem['friction'], margin=1e-8)
     constrained = max([t for t, _ in bounds]+[c['state'] for c in problem.get('contacts', [])], default=0)
     if contradiction is None:
-        for j in range(1,min(constrained,len(states)-1)+1):
+        start = 1
+        if verified:
+            signature = norm_signature(states, radii)
+            for reference, through in verified:
+                start = max(start, min(_common_prefix(signature, reference)-1, through)+1)
+        for j in range(start,min(constrained,len(states)-1)+1):
             for i in range(j):
                 gap = math.hypot(*(max(0.,states[j][axis][0]-states[i][axis][1],states[i][axis][0]-states[j][axis][1])
                                    for axis in ('X','Z')))
