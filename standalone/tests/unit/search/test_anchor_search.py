@@ -117,6 +117,21 @@ class AnchorSearchTests(unittest.TestCase):
         self.assertTrue(all(local_counts(p)['J']>=1 for p in calls))
         self.assertTrue(all(p['decisionDepth']>=1 for p in calls))
 
+    def test_every_pruned_child_names_the_node_whose_expansion_generated_it(self):
+        expanded=[None];report={}
+        def evaluate(p,nodes,forced):
+            expanded.append(p['decisionNode'])
+            return dict(status='feasible',program=p)
+        source=self.frontier(evaluate,report=report,limit=30)
+        try:list(source)
+        finally:source.close()
+        state=report['continuation']
+        rejected=[x for x in state['exclusions'] if x['proof']['reason']=='search_policy']
+        # A fixed filter (at most two run ticks) rejects children only as they are generated; the root has no decision node.
+        self.assertEqual(len(rejected),state['policyRejections'])
+        self.assertTrue(rejected)
+        self.assertTrue({x['node'] for x in state['exclusions']}<=set(expanded))
+
     def test_rejected_child_preserves_parent_and_other_children(self):
         queried=[];report={}
         def evaluate(p,nodes,forced):
@@ -756,6 +771,10 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
             self.assertEqual(result['finalization']['stage'], 'complete')
             self.assertNotIn('model', best['candidate'])
             self.assertTrue(replay_witness(prepare_scene(result['effectiveRequest']), best, compiler)['passed'])
+            # The solve report reads a feasible node's alternatives from the repair it keeps beside its committed program.
+            dfs = result['searchState']['dfs']
+            nodes = [n for f in dfs['frames']+dfs['stack'] for n in f['generation'].get('continuation', {}).get('nodes', {}).values()]
+            self.assertTrue(all(n['repairState']['completed'] for n in nodes if n['status'] == 'feasible'))
         return best
 
     def boxes(self, types, **blocks):

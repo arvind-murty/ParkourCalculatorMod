@@ -250,6 +250,12 @@ an older checkpoint compatible. Old wrong-policy exact continuations reject;
 checkpoint storage format stays version1. Never redirect work to an old checkout
 because a source-era handoff contains its absolute path.
 
+The movement continuation also keeps what the [solve report](RESULTS_AND_DEBUGGING.md#solve-reports)
+needs for its search tree; no search decision reads it. Each exclusion (a screen's proof or a
+search-policy rejection of a generated child) names the decision node whose expansion
+generated it. A feasible node's saved entry keeps its repair state beside the committed
+program, which drops it; a later visit reuses the committed program.
+
 ## Real11 domain and work measured at `dd738c98`
 
 The [fixture](../research/anchor-feasibility/real11-anchors.json) declares

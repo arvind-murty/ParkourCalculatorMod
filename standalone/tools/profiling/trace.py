@@ -48,7 +48,8 @@ def stop_report(state, requests):
             deferredNodes=len(frame['generation'].get('continuation',{}).get('deferredNodes') or [])))
     rejected = [route(frame,record) for frame in frames(state) for record in frame['records']
                 if (record.get('nodeFeasibility') or {}).get('status') == 'oracle_rejected']
-    unknown = [dict(index=r['index'],workerStatus=r.get('workerStatus'),backend=r.get('backend'),owners=r.get('owners',[]))
+    unknown = [dict(index=r['index'],fingerprint=r['fingerprint'],workerStatus=r.get('workerStatus'),backend=r.get('backend'),
+                    owners=r.get('owners',[]))
                for r in requests if r.get('status') == 'unknown']
     return dict(suspendedFrames=suspended,oracleRejectedRoutes=rejected,unknownRequests=unknown)
 
@@ -149,12 +150,18 @@ def movement(profile, names):
         return dict(block=event.get('blockId') or '+'.join(members),
                     tick=event.get('offset'))
     events = profile.get('contactEvents',[])
+    def case(event):
+        tick = event.get('input',event.get('offset'))
+        # A case's `:outside` row names the side of the contacted box it ends on.
+        exits = [r['mode']+('+' if r['cmp'] == 'GE' else '-') for r in profile.get('positionConstraints',[])
+                 if r.get('name') == f'{event.get("case")}:outside' and r.get('t1') == tick]
+        return dict(case=event.get('case'),tick=tick,exits=exits,**({'block':where(event)['block']} if 'boxes' in event else {}))
     return dict(jumps=[t for t,jump in enumerate(profile.get('jump',[])) if jump],
                 landings=[where(e) for e in events if e.get('role') == 'landing'],
                 ceilings=[where(e) for e in events if e.get('role') == 'ceiling'],
                 walls=[dict(where(e),side=e['axis']+('+' if e['direction'] > 0 else '-'))
                        for e in events if e.get('role') == 'contact'],
-                cases=[dict(case=e.get('case'),tick=e.get('input',e.get('offset'))) for e in profile.get('caseEvents',[])])
+                cases=[case(e) for e in profile.get('caseEvents',[])])
 
 
 def side(face):
@@ -198,6 +205,83 @@ def route_trace(state, scene=None):
     return routes
 
 
+def steps(profile, start, names, sides=()):
+    """A node's own movement from input `start` in tick order: run ticks, jumps, walk-offs, obstacle faces, contacts
+    and landings. A landing input ends an airtime (a node can start on one, after a two-tick jump); the ground inputs
+    after it are run ticks. `sides` are kept obstacle choices with their faces named as [(blocks, side)]."""
+    m = movement(profile, names)
+    end, jumps = len(profile.get('jump',[])), set(m['jumps'])
+    ground = {l['tick']:l['block'] for l in m['landings'] if l['tick'] is not None and l['tick'] not in jumps}
+    out = [(t,f'jumps t{t}') for t in jumps if t >= start]
+    t = start
+    while t < end:
+        if t not in ground:
+            t += 1
+            continue
+        block, first = ground[t], t
+        while t+1 in ground and ground[t+1] == block:
+            t += 1
+        if first > 0 and first-1 not in ground:
+            out.append((first,f'lands on {block.upper()} t{first}'))
+            first += 1
+        if t >= first:
+            out.append((first,f'runs {plural(t-first+1,"tick")} on {block.upper()} ({ticks_text(list(range(first,t+1)))})'))
+        if t+1 < end and t+1 not in jumps:
+            out.append((t+1,f'walks off {block.upper()} after t{t}'))
+        t += 1
+    out += [(c['tick'],f'hits the ceiling of {c["block"].upper()} t{c["tick"]}') for c in m['ceilings'] if c['tick'] >= start]
+    out += [(w['tick'],f'touches {w["block"].upper()} {w["side"]} t{w["tick"]}') for w in m['walls'] if w['tick'] >= start]
+    out += [(c['tick'],('grinds under' if c['case'] == 'grind' else c['case'].replace('_',' ')+' onto')+
+             f' {c.get("block","?").upper()} t{c["tick"]}'+(f', leaving by its {"/".join(c["exits"])} side' if c['exits'] else ''))
+            for c in m['cases'] if c['tick'] is not None and c['tick'] >= start]
+    out += [(p['segment'][0],'passes '+' then '.join(f'the {face} face of {blocks}' for blocks,face in p['faces'])+
+             f' (t{p["segment"][0]}-{p["segment"][1]})') for p in sides if p['segment'][1] >= start]
+    return ', '.join(text for _,text in sorted(out,key=lambda o:o[0])) or 'no movement of its own'
+
+
+def node_trace(state, scene=None):
+    """Per frame, the decision nodes it solved (in solve order) and what each node's expansion generated."""
+    names = block_names(scene)
+    trees = {}
+    for frame in frames(state):
+        source = frame['generation'].get('continuation') or {}
+        if not source.get('nodes'):
+            continue
+        pruned, runs = {}, {}
+        for exclusion in source.get('exclusions',[]):
+            reasons = pruned.setdefault(exclusion.get('node'),Counter())
+            reasons[exclusion['proof'].get('reason')] += 1
+        for candidate in source.get('minimumRunCandidates',[]):
+            runs.setdefault(candidate['node'],[]).append(candidate)
+        ends = {key:node['program']['movementUnits'][-1]['end'] for key,node in source['nodes'].items()}
+        roots = [p.get('decisionNode') for p in frame.get('parents',[])]
+        nodes = []
+        for key, node in source['nodes'].items():
+            program = node['program']
+            repair = node.get('repairState') or program.get('repairState')
+            kept = (repair or {}).get('incumbent')
+            solids = {i:name for e in ((repair or {}).get('constraintGeneration') or {}).get('encounterLog',[])
+                      for i,name in zip(e['members'],e['names'])}
+            sides = [dict(segment=p['segment'],faces=[('+'.join(sorted({solids.get(o,'?').upper() for o in f['owners']})),side(f))
+                                                      for f in p['faces']])
+                     for p in (repair.get('interactionChoices',{}).get(branch_key(kept['rows'],kept['passages'],kept['hits']),[])
+                               if kept else [])]
+            start = ends.get(node['parent'],(frame.get('goalRequest') or {}).get('afterTick',0))
+            nodes.append(dict(node=key,parent=node['parent'],status=node['status'],depth=node['depth'],start=start,
+                              end=ends[key],steps=steps(program['profile'],start,names,sides),
+                              repair=repair_trace(repair) if repair else None,
+                              pruned=dict(pruned.get(key,{})),minimumRuns=runs.get(key,[])))
+        generation = frame['generation']
+        trees[frame['id']] = dict(goal=frame['goal'].get('block'),nodes=nodes,
+            rootPruned=dict(sum((pruned.get(r,Counter()) for r in roots),Counter())),
+            rootMinimumRuns=[c for r in roots for c in runs.get(r,[])],
+            generated=generation.get('generated'),screened=generation.get('screenedPrefixes'),
+            policyRejections=generation.get('policyRejections'),expanded=generation.get('totalExpandedPrefixes'),
+            generatedPolicyRejections=sum(r.get('search_policy',0) for r in pruned.values()),
+            unexpanded=len(source.get('pending',[])))
+    return trees
+
+
 TERMINATIONS = dict(
     deadline='used its whole time budget',
     exhausted='explored every runnable alternative',
@@ -215,7 +299,18 @@ CHECKS = dict(
     required_interaction_unreachable='required contact reachability',
     composition_rejected='composition',
     contact_reach_contradiction='contact reachability',
-    launch_support_not_left='leaving the launch support')
+    launch_support_not_left='leaving the launch support',
+    search_policy='search policy (time, hard-anchor latch or minimum-run bound)',
+    optimistic_remaining_time_exceeds_incumbent='time bound (cannot finish before the best route)',
+    elapsed_inputs_exceed_incumbent_finish='time bound (already past the best route\'s finish)',
+    global_single_jump_latch='hard-anchor latch',
+    higher_ticks_without_structural_advantage='slower than a peer at the anchor (no structural advantage)')
+OUTCOMES = dict(
+    feasible='feasible',
+    exhausted='no alternative survived (backtracks)',
+    oracle_rejected='every alternative infeasible (IPOPT local or a pre-solve proof)',
+    suspended='interrupted before its alternatives were decided',
+    untested='not solved')
 
 
 def generator_exclusions(result):
@@ -442,7 +537,140 @@ def alternative_text(rows, owners=()):
     return rows_text(rows,owners) if rows else 'no avoidance rows'
 
 
-def render(report, requests, routes, stop):
+def repair_lines(repair, goal, request_index):
+    """A repaired movement's obstacle checks, decisions, rejected options, solved alternatives and kept choice."""
+    lines = []
+    prepared = repair['preparedEncounters']
+    interacting = [e for e in prepared if e['possiblePhases']]
+    lines += [f'Obstacle checks: {len(prepared)}; {len(prepared)-len(interacting)} cannot touch the player anywhere in '
+              f'their segment. A check is repeated when the rows chosen so far change what is reachable.','']
+    lines += table(['Obstacle','Segment ticks','Possible phases','Already clear','Faces ruled out','Vertical clear','Uncertain'],
+        [[e['owner'],f'{e["segment"][0]}-{e["segment"][1]}',phases_text(e['possiblePhases']) or 'none',
+          len(e['coveredPhases']),
+          '; '.join(f'{f} at {phases_text([x["phase"] for x in e["excludedFaces"] if x["face"] == f])}'
+                    for f in sorted({x['face'] for x in e['excludedFaces']})) or 'none',
+          phases_text([x['phase'] for x in e['verticalClear']]) or 'none',
+          phases_text(e['uncertain']) or 'none'] for e in interacting])
+    decisions = sorted({(e['owner'],e['segment'][0],e['segment'][1]) for e in interacting})
+    contact_regions = repair.get('contactRegions',[])
+    if decisions or contact_regions:
+        lines += ['Decisions:','']+[f'- which sides of {o.upper()} to keep (segment t{a}-{b})' for o,a,b in decisions]+[
+            f'- which of {r["owner"].upper()}\'s {len(r["options"])} face rectangles to touch at '
+            f't{", t".join(map(str,r["ticks"]))}: '+' or '.join(region_text(o) for o in r['options'])
+            for r in contact_regions]+['']
+    rejected = repair['screenRejections']
+    lines += [f'Options rejected before solving: {len(rejected)}'+
+              (' ('+', '.join(f'{n} {CHECKS.get(k,k)}' for k,n in Counter(e['reason'] for e in rejected).most_common())+')' if rejected else '')+'.','']
+    lines += table(['#','Decision','Option','Check','Detail'],
+        [[i,(e['encounter'].upper() if e['encounter'].endswith(' region') else f'{e["encounter"].upper()} sides')+
+            (f' t{e["segment"][0]}' if e['segment'][0] == e['segment'][1] else f' t{e["segment"][0]}-{e["segment"][1]}')
+          if e.get('segment') else e.get('encounter','whole branch'),
+          (region_text(e['optionRows']) if e['encounter'].endswith('region') else rows_text(e['optionRows'],row_owners(repair,goal)))
+          if 'optionRows' in e else 'the rows already selected',
+          CHECKS.get(e['reason'],e['reason']),proof_text(e)] for i,e in enumerate(rejected,1)])
+    dropped = repair['droppedOptions']
+    if dropped:
+        lines += [f'Options dropped without solving: {len(dropped)} ('+
+                  ', '.join(f'{n} {k}' for k,n in Counter(d['reason'] for d in dropped).most_common())+').','']
+        lines += table(['#','Decision','Reason','Option'],
+            [[i,f'{(d["owner"] or "cluster "+str(d["clusterId"])).upper()} sides t{d["segment"][0]}-{d["segment"][1]}',
+              d['reason'],rows_text(d['rows'],row_owners(repair,goal))]
+             for i,d in enumerate(dropped,1)])
+    choice = interacting or any(a['rows'] for a in repair['alternatives'])
+    lines += [f'Alternatives solved: {len(repair["alternatives"])}. Each combines one surviving option per decision; '
+              'the best feasible one is kept.' if choice else
+              'No obstacle is in reach, so there is no avoidance choice: the movement was solved once as is.','']
+    lines += table(['#','Rows the alternative adds' if choice else 'Rows added','Outcome','Scene validation','Solves'],
+        [[i,alternative_text(a['rows'],row_owners(repair,goal)),alternative_outcome(a,request_index),a['validation'] or '-',
+          '; '.join(solve_text(s,request_index) for s in a['solves'])]
+         for i,a in enumerate(repair['alternatives'],1)])
+    timed = [request_index[h]['seconds'] for h in {s['problemHash'] for a in repair['alternatives'] for s in a['solves']}
+             if request_index.get(h,{}).get('seconds') is not None]
+    if timed:
+        lines += [f'Solver time for this movement: {sum(timed):.2f} s over {plural(len(timed),"request")}.','']
+    if repair['families']:
+        index = {a['branch']:i for i,a in enumerate(repair['alternatives'],1)}
+        lines += table(['Family','Switches solved','Best','Not solved'],
+            [[f['sides'],'; '.join(family_point(p,index) for p in f['points'] if p['status'] != 'held') or '-',
+              next((family_point(p,index) for p in sorted((p for p in f['points'] if p['rank'] is not None),
+                                                         key=lambda p:p['rank'])),'none feasible'),
+              sum(p['held'] for p in f['points'])] for f in repair['families']])
+        kept = f'Kept: alternative #{index[repair["kept"]]}' if repair['kept'] in index else 'Kept: none'
+        if repair['fallbacks'] is None:
+            lines += [kept+' (the last leg keeps no fallbacks).','']
+        else:
+            lines += [kept+'; fallbacks: '+(', '.join(f'alternative #{index[b]}' for b in repair['fallbacks'] if b in index)
+                                            or 'none')+'.','']
+    for label, branches in (('Unresolved',repair['unresolved']),('Pending',repair['pending'])):
+        if branches:
+            lines += [f'{label} alternatives (kept for an explicit retry):','']+[f'- {rows_text(b,row_owners(repair,goal))}' for b in branches]+['']
+    return lines
+
+
+RUN_CANDIDATES = dict(anchor='jump onto anchor', ceiling='ceiling jump under', grind='grind under',
+                      slab_boost='slab boost onto', corner_jump_cancel='corner jump cancel onto', landing='run-off onto',
+                      step='step-up onto', scan='run-tick scan')
+RUN_OUTCOMES = dict(dominated='beaten by a kept candidate', unreached='no run count below the bound passed the screens')
+
+
+def minimum_run_text(candidates, numbers):
+    """A decision's minimum-run candidates: each kept one with its run ticks and children, the others grouped."""
+    def label(c):
+        kind, *target = json.loads(c['key'])
+        target = [dict(next='to the next anchor',block='to another block').get(t,str(t).upper()) for t in target]
+        return ' '.join([RUN_CANDIDATES.get(kind,kind)]+target)
+    kept = [f'{label(c)} after {plural(c["k"],"run tick")}, landing after {c["total"] if c["total"] is not None else "-"} '
+            f'inputs (bound {c["N"] if c["N"] is not None else "-"}) → '+(', '.join(f'node {numbers[n]}' if n in numbers else 'unsolved'
+                                                                           for n in c['nodes']) or 'nothing')
+            for c in candidates if c['outcome'] == 'kept']
+    others = {}
+    for c in candidates:
+        if c['outcome'] != 'kept':
+            others.setdefault(c['outcome'],[]).append(label(c))
+    return '; '.join(kept+[f'{RUN_OUTCOMES.get(outcome,outcome)}: '+', '.join(labels) for outcome,labels in others.items()])
+
+
+def tree_lines(tree, request_index, numbers):
+    """A frame's decision nodes: an outline, then each node's movement, alternatives and expansion."""
+    nodes = tree['nodes']
+    local = {n['node'] for n in nodes}
+    goal = tree['goal'].upper()
+    def origin(parent):
+        return f'node {numbers[parent]}' if parent in local else 'the frame start'
+    lines = ['#### Search tree','',
+             f'Decision nodes solved: {len(nodes)} ('+', '.join(f'{n} {OUTCOMES.get(k,k)}' for k,n in
+                                                              Counter(n['status'] for n in nodes).most_common())+'). '
+             f'Prefixes generated: {tree["generated"]}; ruled out by the screens: {tree["screened"]}; rejected by the search '
+             f'policy: {tree["policyRejections"]} ({tree["generatedPolicyRejections"]} when generated, '
+             f'{tree["policyRejections"]-tree["generatedPolicyRejections"]} when taken from the queue); expanded: '
+             f'{tree["expanded"]}; left unexpanded: {tree["unexpanded"]}.','']
+    children = {}
+    for n in nodes:
+        children.setdefault(n['parent'] if n['parent'] in local else None,[]).append(n)
+    def outline(parent, depth):
+        for n in children.get(parent,[]):
+            lines.append('  '*depth+f'- node {numbers[n["node"]]} ({n["status"]}, t{n["start"]}-{n["end"]-1}): {n["steps"]}')
+            outline(n['node'],depth+1)
+    outline(None,0)
+    lines.append('')
+    def expansion(solved, pruned, runs):
+        return [f'Solved children: '+(', '.join(f'node {numbers[c["node"]]}' for c in solved) or 'none')+'.',
+                'Children pruned when generated: '+(', '.join(f'{n} {CHECKS.get(k,k)}' for k,n in
+                                                              Counter(pruned).most_common()) or 'none')+'.',
+                *([f'Minimum run ticks: {minimum_run_text(runs,numbers)}.'] if runs else []),'']
+    lines += ['The frame start\'s expansion:','']+expansion(children.get(None,[]),tree['rootPruned'],tree['rootMinimumRuns'])
+    for n in nodes:
+        lines += [f'##### Node {numbers[n["node"]]}: {n["steps"]}','',
+                  f'From {origin(n["parent"])}. Outcome: {OUTCOMES.get(n["status"],n["status"])}. '
+                  f'Inputs t{n["start"]}-{n["end"]-1}, decision depth {n["depth"]}.','']
+        if n['repair']:
+            lines += repair_lines(n['repair'],goal,request_index)
+        if n['status'] == 'feasible' or n['pruned'] or n['minimumRuns']:
+            lines += expansion(children.get(n['node'],[]),n['pruned'],n['minimumRuns'])
+    return lines
+
+
+def render(report, requests, routes, stop, trees):
     result = report.get('result',report)
     best, dfs = result.get('best'), result['searchState']['dfs']
     replays = report.get('independentReplays') or []
@@ -461,6 +689,13 @@ def render(report, requests, routes, stop):
         r = by_record[record]
         landed = r['movement']['landings']
         return f'route {numbers[record]} (lands '+(f'{landed[-1]["block"].upper()} t{landed[-1]["tick"]}' if landed else 'nowhere')+')'
+    node_numbers, node_requests = {}, {}
+    for fid, tree in trees.items():
+        for i, n in enumerate(tree['nodes'],1):
+            node_numbers[n['node']] = f'{fid}.{i}'
+            for a in (n['repair'] or {}).get('alternatives',[]):
+                for s in a['solves']:
+                    node_requests.setdefault(s['problemHash'],[]).append(f'node {fid}.{i}')
     children = {}
     for fid, group in by_frame.items():
         parent = group[0]['parent']
@@ -493,10 +728,11 @@ def render(report, requests, routes, stop):
         lines += ['No frame was left suspended.','']
     if stop['unknownRequests']:
         lines += ['Solver requests without a solution:','']
-        lines += table(['Request','Solver status','Counted as','Owning routes'],
+        lines += table(['Request','Solver status','Counted as','Owning routes or nodes'],
                        [[r['index'],f'{solver(r)} {r["workerStatus"]}' if r['workerStatus'] else None,
                          counted_as(r) or 'unknown',
-                         ', '.join(f'{name(o["record"])}, {o["node"]}' for o in r['owners']) or 'none kept']
+                         ', '.join([f'{name(o["record"])}, {o["node"]}' for o in r['owners']]+
+                                   sorted(set(node_requests.get(r['fingerprint'],[])))) or 'none kept']
                         for r in stop['unknownRequests']])
     if stop['oracleRejectedRoutes']:
         lines += ['Routes closed because every alternative is infeasible (IPOPT local or a pre-solve proof): '+
@@ -548,7 +784,12 @@ def render(report, requests, routes, stop):
               f'{FALLBACK_GAP} blocks of the best (same ticks), restored only if the route fails further on.',
               '- Request numbers index `requests.json`.','']
     excluded = generator_exclusions(result)
-    for fid in sorted(by_frame):
+    goals = {f['id']: f['goal'].get('block') for f in frames(result['searchState'])}
+    for fid in sorted(set(by_frame)|set(trees)|{f for f in excluded if f is not None}):
+        if fid not in by_frame:
+            lines += [f'### Frame {fid}: reach {(goals.get(fid) or "?").upper()}, no route','']+exclusion_lines(excluded.get(fid,[]))
+            lines += tree_lines(trees[fid],request_index,node_numbers) if fid in trees else []
+            continue
         group = by_frame[fid]
         first = group[0]
         lines += [f'### Frame {fid}: reach {first["goal"].upper()}'+
@@ -571,78 +812,14 @@ def render(report, requests, routes, stop):
                   number(r['objective']) if r['objective'] is not None else '-',
                   passages_text(r['passages']),
                   alternative_text(r['acceptedAlternative'],row_owners(repair,goal,r['passages']))] for r in members])
-            prepared = repair['preparedEncounters']
-            interacting = [e for e in prepared if e['possiblePhases']]
-            lines += [f'Obstacle checks: {len(prepared)}; {len(prepared)-len(interacting)} cannot touch the player anywhere in '
-                      f'their segment. A check is repeated when the rows chosen so far change what is reachable.','']
-            lines += table(['Obstacle','Segment ticks','Possible phases','Already clear','Faces ruled out','Vertical clear','Uncertain'],
-                [[e['owner'],f'{e["segment"][0]}-{e["segment"][1]}',phases_text(e['possiblePhases']) or 'none',
-                  len(e['coveredPhases']),
-                  '; '.join(f'{f} at {phases_text([x["phase"] for x in e["excludedFaces"] if x["face"] == f])}'
-                            for f in sorted({x['face'] for x in e['excludedFaces']})) or 'none',
-                  phases_text([x['phase'] for x in e['verticalClear']]) or 'none',
-                  phases_text(e['uncertain']) or 'none'] for e in interacting])
-            decisions = sorted({(e['owner'],e['segment'][0],e['segment'][1]) for e in interacting})
-            contact_regions = repair.get('contactRegions',[])
-            if decisions or contact_regions:
-                lines += ['Decisions:','']+[f'- which sides of {o.upper()} to keep (segment t{a}-{b})' for o,a,b in decisions]+[
-                    f'- which of {r["owner"].upper()}\'s {len(r["options"])} face rectangles to touch at '
-                    f't{", t".join(map(str,r["ticks"]))}: '+' or '.join(region_text(o) for o in r['options'])
-                    for r in contact_regions]+['']
-            rejected = repair['screenRejections']
-            lines += [f'Options rejected before solving: {len(rejected)}'+
-                      (' ('+', '.join(f'{n} {CHECKS.get(k,k)}' for k,n in Counter(e['reason'] for e in rejected).most_common())+')' if rejected else '')+'.','']
-            lines += table(['#','Decision','Option','Check','Detail'],
-                [[i,(e['encounter'].upper() if e['encounter'].endswith(' region') else f'{e["encounter"].upper()} sides')+
-                    (f' t{e["segment"][0]}' if e['segment'][0] == e['segment'][1] else f' t{e["segment"][0]}-{e["segment"][1]}')
-                  if e.get('segment') else e.get('encounter','whole branch'),
-                  (region_text(e['optionRows']) if e['encounter'].endswith('region') else rows_text(e['optionRows'],row_owners(repair,goal)))
-                  if 'optionRows' in e else 'the rows already selected',
-                  CHECKS.get(e['reason'],e['reason']),proof_text(e)] for i,e in enumerate(rejected,1)])
-            dropped = repair['droppedOptions']
-            if dropped:
-                lines += [f'Options dropped without solving: {len(dropped)} ('+
-                          ', '.join(f'{n} {k}' for k,n in Counter(d['reason'] for d in dropped).most_common())+').','']
-                lines += table(['#','Decision','Reason','Option'],
-                    [[i,f'{(d["owner"] or "cluster "+str(d["clusterId"])).upper()} sides t{d["segment"][0]}-{d["segment"][1]}',
-                      d['reason'],rows_text(d['rows'],row_owners(repair,goal))]
-                     for i,d in enumerate(dropped,1)])
-            choice = interacting or any(a['rows'] for a in repair['alternatives'])
-            lines += [f'Alternatives solved: {len(repair["alternatives"])}. Each combines one surviving option per decision; '
-                      'the best feasible one is kept.' if choice else
-                      'No obstacle is in reach, so there is no avoidance choice: the movement was solved once as is.','']
-            lines += table(['#','Rows the alternative adds' if choice else 'Rows added','Outcome','Scene validation','Solves'],
-                [[i,alternative_text(a['rows'],row_owners(repair,goal)),alternative_outcome(a,request_index),a['validation'] or '-',
-                  '; '.join(solve_text(s,request_index) for s in a['solves'])]
-                 for i,a in enumerate(repair['alternatives'],1)])
-            timed = [request_index[h]['seconds'] for h in {s['problemHash'] for a in repair['alternatives'] for s in a['solves']}
-                     if request_index.get(h,{}).get('seconds') is not None]
-            if timed:
-                lines += [f'Solver time for this movement: {sum(timed):.2f} s over {plural(len(timed),"request")}.','']
-            if repair['families']:
-                index = {a['branch']:i for i,a in enumerate(repair['alternatives'],1)}
-                lines += table(['Family','Switches solved','Best','Not solved'],
-                    [[f['sides'],'; '.join(family_point(p,index) for p in f['points'] if p['status'] != 'held') or '-',
-                      next((family_point(p,index) for p in sorted((p for p in f['points'] if p['rank'] is not None),
-                                                                 key=lambda p:p['rank'])),'none feasible'),
-                      sum(p['held'] for p in f['points'])] for f in repair['families']])
-                kept = f'Kept: alternative #{index[repair["kept"]]}' if repair['kept'] in index else 'Kept: none'
-                if repair['fallbacks'] is None:
-                    lines += [kept+' (the last leg keeps no fallbacks).','']
-                else:
-                    lines += [kept+'; fallbacks: '+(', '.join(f'alternative #{index[b]}' for b in repair['fallbacks'] if b in index)
-                                                    or 'none')+'.','']
-            for label, branches in (('Unresolved',repair['unresolved']),('Pending',repair['pending'])):
-                if branches:
-                    lines += [f'{label} alternatives (kept for an explicit retry):','']+[f'- {rows_text(b,row_owners(repair,goal))}' for b in branches]+['']
+            lines += repair_lines(repair,goal,request_index)
         follow = sorted(children.get(fid,[]))
         if follow:
             lines += ['Next partial solves built from this frame: '+
                       ', '.join(f'frame {c} from {name(by_frame[c][0]["parent"])}' for c in follow)+'.','']
-    goals = {f['id']: f['goal'].get('block') for f in frames(result['searchState'])}
-    for fid in sorted((f for f in excluded if f not in by_frame), key=lambda f: (f is None, f)):
-        lines += [f'### Frame {fid}: reach {(goals.get(fid) or "?").upper()}, no route' if fid is not None else
-                  '### Generator checks outside the frames','']+exclusion_lines(excluded[fid])
+        lines += tree_lines(trees[fid],request_index,node_numbers) if fid in trees else []
+    if None in excluded:
+        lines += ['### Generator checks outside the frames','']+exclusion_lines(excluded[None])
     return '\n'.join(lines)+'\n'
 
 
@@ -651,17 +828,20 @@ def write(directory, report, requests):
     owners = request_owners(state)
     for request in requests:
         request['owners'] = owners.get(request['fingerprint'],[])
-    routes = route_trace(state,report.get('result',report).get('effectiveRequest'))
+    scene = report.get('result',report).get('effectiveRequest')
+    routes = route_trace(state,scene)
+    trees = node_trace(state,scene)
     stop = stop_report(state,requests)
     save(Path(directory)/'routes.json',routes)
-    (Path(directory)/'report.md').write_text(render(report,requests,routes,stop))
+    save(Path(directory)/'nodes.json',trees)
+    (Path(directory)/'report.md').write_text(render(report,requests,routes,stop,trees))
     return stop
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Write routes.json and report.md for a finished solve.')
+    parser = argparse.ArgumentParser(description='Write routes.json, nodes.json and report.md for a finished solve.')
     parser.add_argument('source',type=Path,help='profiled run directory, or a saved solve report')
-    parser.add_argument('--output',type=Path,help='directory for routes.json and report.md (default: the run directory)')
+    parser.add_argument('--output',type=Path,help='directory for routes.json, nodes.json and report.md (default: the run directory)')
     args = parser.parse_args()
     run_dir = args.source if args.source.is_dir() else None
     report = read_report(run_dir/'report.json.gz' if run_dir else args.source)

@@ -159,8 +159,9 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                 ticks=child['profile']['duration'],proof=result['proof'],scope='owned_proposal'))
         return effects
 
-    def commit(effects):
-        state['exclusions'].extend(effects['exclusions'])
+    def commit(effects, node):
+        # Each exclusion names the decision node whose expansion generated it, for the solve report.
+        state['exclusions'].extend(dict(exclusion,node=node) for exclusion in effects['exclusions'])
         state['screened'] += effects['screened']
         state['policyRejections'] += effects['policyRejections']
 
@@ -173,6 +174,8 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             return None, 'rejected'
         if program_filter is not None and not program_filter(child):
             effects['policyRejections'] += 1
+            effects['exclusions'].append(dict(id=digest(program_search_key(child)), ticks=child['profile']['duration'],
+                                              proof=dict(reason='search_policy')))
             return None, 'rejected'
         if context_data.get('prefixFilter') is not None and not context_data['prefixFilter'](child):
             return None, 'rejected'
@@ -536,7 +539,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             else:
                 round_(dead,lower,found[0],kept,number,landed,landings)
         for found in effects:
-            commit(found)
+            commit(found,node)
         for parent,choice,child in queued:
             queue_child(parent,choice,child)
         state.setdefault('minimumRunCandidates',[]).extend(log)
@@ -658,7 +661,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                 result=assess_proposal(dict(program=child,fullProgram=e['fullProgram'],projected=e['projected']),screen,
                                        context_data.get('interactionGate'))
                 e['proposalChecked']=True
-                commit(proposal_effects(result,child,e['fullProgram']))
+                commit(proposal_effects(result,child,e['fullProgram']),e['program'].get('decisionNode'))
                 if result['proof'] is not None:
                     for field in ('choice','child','fullProgram','projected','proposalChecked'):e.pop(field,None)
                     update()
@@ -669,7 +672,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             landed={}
             if reason is None and 'reached' in e and (child['profile']['grounded'][-1] or lands_later(e['program'],child)):
                 landed={owner:duration-e['program']['profile']['duration'] for owner,duration in landings_of(child).items()}
-            commit(effects)
+            commit(effects,e['program'].get('decisionNode'))
             if reason is None:
                 queue_child(e['program'],e['choice'],child)
                 if 'reached' in e:

@@ -77,8 +77,9 @@ writes these files to its output directory:
 
 | File | Contents |
 | --- | --- |
-| `report.md` | The readable report: outcome, why the search stopped, the route tree, and one section per partial route. |
+| `report.md` | The readable report: outcome, why the search stopped, the route tree, one section per partial route, and each frame's search tree. |
 | `routes.json` | The same per-route trace as data. |
+| `nodes.json` | Each frame's search tree as data. |
 | `summary.json` | Best route, timings, work counters, replay verdicts and the `stop` report. |
 | `requests.json` | Every solver request with its fingerprint, status, IPOPT status, wall seconds and `owners`. |
 | `report.json.gz` | The full saved search state; read it with `read_report` (paired `.store.sqlite3`). |
@@ -118,10 +119,29 @@ Each partial route in `report.md` and `routes.json` has:
   were never solved); the kept alternative and its fallbacks (the last leg keeps
   none); and the unresolved or pending alternatives.
 
+Every frame whose frontier solved decision nodes, finished or not, also gets a search
+tree. Node `F.N` is the Nth node frame F solved. The tree opens with the frame's
+counts: nodes by outcome, prefixes generated, ruled out by the screens, rejected by
+the search policy (when generated or when taken from the queue), expanded and left
+unexpanded. An outline follows, nesting each node under its parent with its inputs and
+its own movement in words: run ticks on a block, jumps, walk-offs, the obstacle faces
+it passes (`passes the Z- face of B6+B7 then the X+ face of B6`), ceiling hits, grinds
+with the side of the box they leave by, step cases, and landings. A landing input ends
+an airtime, so the ground inputs after it are run ticks. A node can start on a
+landing input, after a two-tick jump. Each node then gets a section with its outcome,
+the same repair detail as a route (obstacle checks, rejected options, every
+alternative solved with its requests, families, kept choice) and what its expansion
+generated: the nodes it led to, its children pruned when generated, grouped by
+reason (the screens' reachability, disk-relaxation and bound proofs, and the search
+policy's rejections), and its minimum-run candidates (each kept one with its run
+ticks, built landing, bound and children; the others grouped as beaten by a kept
+candidate or not reached below the bound). The frame start's own expansion comes first.
+
 A request's `owners` are the routes whose repair log holds its problem hash; an
 empty list means no saved route kept that solve. The `stop` report lists suspended
 frames with their unresolved and pending alternatives, the routes closed because
-every alternative is infeasible, and the owners of every request without a solution.
+every alternative is infeasible, and the owners of every request without a solution
+(its routes, or the search-tree nodes whose alternatives sent it).
 The `Disk-relaxation pre-checks` line under it counts the run's disk-relaxation screens
 (`interactionGate.relaxation.screen`, also `summary.json` `relaxationChecks`, which also
 holds the `candidate` counts): solved, served from cache, proved infeasible, and undecided

@@ -529,7 +529,9 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
             f['recoveryFailure']=dict(reason='restored_internal_preparation_failed',candidate=identity,model=query.get('model'))
         nodes[identity]=dict(status=status,parent=program.get('decisionParent'),query=query,
             depth=depth,lastSolvedDepth=program.get('lastSolvedDepth',0),program=copy.deepcopy(program),
-            **(dict(alternatives=copy.deepcopy(alternatives)) if alternatives else {}))
+            **(dict(alternatives=copy.deepcopy(alternatives)) if alternatives else {}),
+            # The committed program drops its repair; the solve report reads the node's alternatives from it.
+            **(dict(repairState=repair) if status=='feasible' else {}))
         state['nodeResults'][identity]=dict(query,parent=program.get('decisionParent'),depth=depth)
         publish()
         from parkour_solver.search.feasibility import unresolved_only
