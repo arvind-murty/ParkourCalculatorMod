@@ -60,3 +60,67 @@ run on `fb055163` with this change uncommitted).
 PYTHONPATH="$PWD" "$PKC_IPOPT_PYTHON" -B research/checkpoint-cost/checkpoint_timers.py runs/<new>-timers.json \
   --input cases/real11/extended-anchors.json --output runs/<new> --seconds 300 --profile-mode none --durable
 ```
+
+## What a full save contains
+
+Final state of the durable 300 s run above (32.61 MB compact JSON;
+[generation breakdown](2026-11-21/final-state-generation.txt)):
+
+| Part | MB |
+| --- | ---: |
+| top frame's generation `continuation` | 29.37 |
+| - `nodes` (76 solved decision nodes: 61 feasible 3.12, 13 exhausted 5.23, 1 suspended 2.46, 1 oracle-rejected 0.11) | 10.93 |
+| - `pending` (162 queued child programs) | 6.70 |
+| - `seen` (238 serialized program search keys, about 25 KB each) | 6.12 |
+| - `alternatives` (held branch programs) | 2.78 |
+| - `nodeInFlight` (program under repair) | 2.46 |
+| `searchState.domain` | 1.15 |
+| lower stack frames | 0.87 |
+
+## What the search reads back
+
+From the code:
+
+- `continuation['nodes']` is read only by `evaluate_node` (`src/parkour_solver/search/dfs.py` at `saved=nodes.get(identity)`):
+  `status`, the stored program and alternatives of feasible nodes, and the suspended entry's `repairState`.
+  Exhausted and oracle-rejected nodes' programs (5.34 MB) are never read back.
+- The suspended node's `program` is a deep copy of `nodeInFlight` (2.46 MB).
+- `attemptLog` and `contactLog` only carry into records' `numericalAttempts` and `contactAttempts`: report audit.
+- `seen` is a set of full key strings; the backlog note in `dca14538` proposed digests (3.757 MB to about 17 KB in
+  its sample) with a checkpoint format version.
+
+Measured with [`copy_sites.py`](copy_sites.py) and a node-memo probe in a scratch copy of the source, on a durable
+300 s run of `05a1f9e9` ([summary](2026-11-21/copies-ext300-summary.json), [sites](2026-11-21/copies-ext300.json);
+the copy wrapper slows the run): `evaluate_node` read `nodes` 80 times and found nothing each time, so an
+uninterrupted run never uses its node results. Checkpoint callbacks took 150.14 s of 299.34 s, and the deep copies
+taken for repair progress snapshots (`search/repair.py` `snapshot` and `fallbacks`) 20.23 s.
+
+## What repeats between saves
+
+[`save_churn.py`](save_churn.py) classified every chunk-sized subtree at each of the 70 full saves of the durable
+fixed-work run ([result](2026-11-21/churn-ext100.json)). Excluding audit windows, which the store archives once,
+348.0 MB were re-encoded: 325.1 MB (93.4%) had been saved before and 22.9 MB (6.6%) were new; 282.0 MB (81.0%)
+were the same object with the same content as at the previous save.
+
+| Component | Re-encoded | Unchanged | Same object as previous save |
+| --- | ---: | ---: | ---: |
+| `domain` | 76.5 MB | 98.5% | 93.9% |
+| `nodes` | 73.9 MB | 96.3% | 94.5% |
+| lower stack frames and frame fields | 46.8 MB | 99.6% | 98.2% |
+| `seen` | 31.2 MB | 95.6% | 51.9% |
+| `pending` | 30.8 MB | 95.3% | 58.1% |
+| `alternatives` | 22.2 MB | 99.7% | 75.9% |
+| `nodeInFlight` | 18.9 MB | 31.2% | 1.3% |
+
+Within the final 300 s state ([`final_state.py`](final_state.py), [output](2026-11-21/final-state-duplication.txt)),
+22.32 MB (68%) are repeated copies of identical subtrees held by different objects, and 10.64 MB of the 10.95 MB
+of per-tick `profile`/`trace` arrays in 362 stored programs (97%) repeat an earlier array whole or as its prefix.
+
+## Progress saves behind a flag
+
+The solve CLI (`python -m parkour_solver`) saves progress during a run only with `--save-progress` (user decision,
+2026-11-21); the final report is always saved. Fixed-work input as above, CLI wall time, alternating, load average
+2.1 to 3.0 ([times](2026-11-21/save-flag/wall-times.txt)): 39.78 s and 39.65 s without the flag, 66.28 s and
+66.53 s with it. The final reports match exactly in both pairs (all 19 transitions), and resuming from a run
+saved without the flag continues exactly (`resume.exact`, session 2). The native gate passed 829 tests with no
+failures, errors or skips ([report](native-gate-save-flag/report.json); run on `05a1f9e9` with the flag uncommitted).

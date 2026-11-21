@@ -133,7 +133,9 @@ With durable saves the extended run is checkpoint-bound: at `fb055163` checkpoin
 (32.6 MB at the end, mostly the DFS stack) although little of it changes
 ([checkpoint cost](../research/checkpoint-cost/README.md)). Full saves now find the active program's
 aliases in their own encoding walk instead of a second one (54.39 s in that run), which cut search
-time 6.4% on the durable call-capped input with identical reports.
+time 6.4% on the durable call-capped input with identical reports. The solve CLI now saves progress
+during a run only with `--save-progress`; on the call-capped input its wall time is 39.78 s and 39.65 s
+without the flag against 66.28 s and 66.53 s with it, with identical final reports.
 
 Constraint enumeration after `86c06e39` runs 2.93x to 3.56x faster on captured
 B6/B7 catalogues, with 94.1% to 94.7% fewer iteration checks and identical

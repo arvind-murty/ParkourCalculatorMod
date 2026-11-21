@@ -31,6 +31,8 @@ def main():
     parser.add_argument('--compiler',type=Path,help='Java bridge descriptor (default: PKC_RUN_TICKS_COMPILER, else Python)')
     parser.add_argument('--python',default=sys.executable)
     parser.add_argument('--resume',type=Path)
+    # In-run saves cost about half of a long solve; the final report is always saved and resumable.
+    parser.add_argument('--save-progress',action='store_true',help='Also save resumable progress during the run')
     args=parser.parse_args()
     fixture=json.loads(args.input.read_text())
     previous=None
@@ -49,7 +51,7 @@ def main():
         report['bridge']=compiler.provenance()
         progress=SearchCheckpoint(store,report)
         result,validation=run(fixture,compiler,python_executable=args.python,resume_state=previous,
-                              on_progress=progress,cancel_event=cancel)
+                              on_progress=progress if args.save_progress else None,cancel_event=cancel)
         report.update(sourceHashesAfter=source_hashes(),
                   sourceUnchanged=report['sourceHashes']==source_hashes())
         progress.finish(result,validation)

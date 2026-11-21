@@ -1,0 +1,379 @@
+{
+ "nodeMemo": {
+  "None": 80
+ },
+ "deepcopy": {
+  "movement/contact_combinations.py:25:merge_contacts": {
+   "calls": 1623433,
+   "seconds": 8.522
+  },
+  "search/repair.py:258:snapshot": {
+   "calls": 1934,
+   "seconds": 7.499
+  },
+  "scene/route.py:13:prepare_route": {
+   "calls": 11035,
+   "seconds": 6.714
+  },
+  "spatial/checkpoints.py:92:retain_prefix": {
+   "calls": 125,
+   "seconds": 5.817
+  },
+  "search/repair.py:246:fallbacks": {
+   "calls": 1333,
+   "seconds": 5.418
+  },
+  "movement/ladder/ceiling.py:12:own_ceiling_contacts": {
+   "calls": 26100,
+   "seconds": 4.676
+  },
+  "search/support_profiles.py:224:compile_block_path": {
+   "calls": 5207,
+   "seconds": 3.998
+  },
+  "movement/program.py:54:profile_from_trace": {
+   "calls": 26100,
+   "seconds": 3.515
+  },
+  "search/repair.py:250:snapshot": {
+   "calls": 7721,
+   "seconds": 2.787
+  },
+  "movement/program.py:56:profile_from_trace": {
+   "calls": 13050,
+   "seconds": 2.508
+  },
+  "movement/program.py:53:profile_from_trace": {
+   "calls": 52200,
+   "seconds": 2.359
+  },
+  "search/repair.py:263:snapshot": {
+   "calls": 967,
+   "seconds": 2.324
+  },
+  "search/repair.py:265:snapshot": {
+   "calls": 967,
+   "seconds": 2.201
+  },
+  "movement/program.py:168:append_choice": {
+   "calls": 13050,
+   "seconds": 1.808
+  },
+  "numerics/model.py:16:prepare": {
+   "calls": 7080,
+   "seconds": 1.602
+  },
+  "movement/units.py:133:shifted_unit": {
+   "calls": 195197,
+   "seconds": 1.538
+  },
+  "reachability/service.py:391:relaxation": {
+   "calls": 879,
+   "seconds": 0.896
+  },
+  "search/repair.py:355:enrich_point": {
+   "calls": 292,
+   "seconds": 0.805
+  },
+  "movement/vertical_profiles.py:45:trace_ladder_schedule": {
+   "calls": 29247,
+   "seconds": 0.555
+  },
+  "search/ordered_route.py:42:probe": {
+   "calls": 307,
+   "seconds": 0.516
+  },
+  "search/ordered_route.py:280:publish": {
+   "calls": 386,
+   "seconds": 0.457
+  },
+  "search/repair.py:738:solve_contact_branches": {
+   "calls": 155,
+   "seconds": 0.408
+  },
+  "search/dfs.py:486:branch_program": {
+   "calls": 122,
+   "seconds": 0.366
+  },
+  "search/dfs.py:41:commit_arrival": {
+   "calls": 125,
+   "seconds": 0.36
+  },
+  "search/repair.py:313:build_branch": {
+   "calls": 307,
+   "seconds": 0.225
+  },
+  "movement/program.py:213:append_choice": {
+   "calls": 42859,
+   "seconds": 0.221
+  },
+  "search/dfs.py:529:evaluate_node": {
+   "calls": 80,
+   "seconds": 0.208
+  },
+  "search/repair.py:459:walk": {
+   "calls": 69,
+   "seconds": 0.199
+  },
+  "search/repair.py:261:snapshot": {
+   "calls": 1934,
+   "seconds": 0.192
+  },
+  "search/repair.py:262:snapshot": {
+   "calls": 967,
+   "seconds": 0.186
+  },
+  "search/ordered_route.py:299:evaluate": {
+   "calls": 249,
+   "seconds": 0.172
+  },
+  "search/repair.py:47:node_alternatives": {
+   "calls": 57,
+   "seconds": 0.171
+  },
+  "search/ordered_route.py:43:probe": {
+   "calls": 921,
+   "seconds": 0.169
+  },
+  "search/ordered_route.py:330:find_route": {
+   "calls": 235,
+   "seconds": 0.164
+  },
+  "movement/normal.py:68:named_choice": {
+   "calls": 10920,
+   "seconds": 0.108
+  },
+  "movement/program.py:159:append_choice": {
+   "calls": 10884,
+   "seconds": 0.096
+  },
+  "search/repair.py:76:solve_contact_branches": {
+   "calls": 83,
+   "seconds": 0.056
+  },
+  "movement/program.py:157:append_choice": {
+   "calls": 13050,
+   "seconds": 0.054
+  },
+  "search/repair.py:266:snapshot": {
+   "calls": 967,
+   "seconds": 0.052
+  },
+  "movement/units.py:15:movement_unit": {
+   "calls": 28984,
+   "seconds": 0.051
+  },
+  "search/support_profiles.py:213:compile_block_path": {
+   "calls": 10414,
+   "seconds": 0.05
+  },
+  "search/frontier.py:495:minimum_runs": {
+   "calls": 63,
+   "seconds": 0.05
+  },
+  "search/repair.py:260:snapshot": {
+   "calls": 1934,
+   "seconds": 0.039
+  },
+  "search/repair.py:236:save_branch": {
+   "calls": 855,
+   "seconds": 0.036
+  },
+  "movement/program.py:203:append_choice": {
+   "calls": 13050,
+   "seconds": 0.036
+  },
+  "search/repair.py:257:snapshot": {
+   "calls": 1934,
+   "seconds": 0.033
+  },
+  "search/dfs.py:1143:search_goals": {
+   "calls": 3,
+   "seconds": 0.032
+  },
+  "search/dfs.py:530:evaluate_node": {
+   "calls": 13,
+   "seconds": 0.029
+  },
+  "movement/generation.py:49:propose_choices": {
+   "calls": 37268,
+   "seconds": 0.025
+  },
+  "movement/program.py:105:_events": {
+   "calls": 13050,
+   "seconds": 0.015
+  },
+  "movement/program.py:77:movement_choice": {
+   "calls": 13050,
+   "seconds": 0.014
+  },
+  "search/dfs.py:789:score": {
+   "calls": 3,
+   "seconds": 0.011
+  },
+  "search/repair.py:356:enrich_point": {
+   "calls": 292,
+   "seconds": 0.009
+  },
+  "search/repair.py:368:enrich_point": {
+   "calls": 292,
+   "seconds": 0.008
+  },
+  "constraints/variants.py:131:__init__": {
+   "calls": 118,
+   "seconds": 0.008
+  },
+  "search/repair.py:117:offer": {
+   "calls": 255,
+   "seconds": 0.007
+  },
+  "search/repair.py:367:enrich_point": {
+   "calls": 292,
+   "seconds": 0.007
+  },
+  "search/repair.py:192:arrive": {
+   "calls": 181,
+   "seconds": 0.007
+  },
+  "search/repair.py:120:offer": {
+   "calls": 255,
+   "seconds": 0.006
+  },
+  "search/repair.py:126:offer": {
+   "calls": 510,
+   "seconds": 0.005
+  },
+  "search/repair.py:125:offer": {
+   "calls": 765,
+   "seconds": 0.005
+  },
+  "search/frontier.py:50:restore_alternatives": {
+   "calls": 6,
+   "seconds": 0.004
+  },
+  "search/repair.py:358:enrich_point": {
+   "calls": 292,
+   "seconds": 0.004
+  },
+  "reachability/service.py:392:relaxation": {
+   "calls": 879,
+   "seconds": 0.002
+  },
+  "search/repair.py:360:enrich_point": {
+   "calls": 292,
+   "seconds": 0.002
+  },
+  "search/repair.py:253:snapshot": {
+   "calls": 967,
+   "seconds": 0.002
+  },
+  "search/dfs.py:1146:search_goals": {
+   "calls": 3,
+   "seconds": 0.002
+  },
+  "constraints/variants.py:282:choose_item": {
+   "calls": 82,
+   "seconds": 0.001
+  },
+  "search/frontier.py:82:persistent_programs": {
+   "calls": 4,
+   "seconds": 0.001
+  },
+  "search/dfs.py:173:frame": {
+   "calls": 4,
+   "seconds": 0.001
+  },
+  "search/dfs.py:197:make_frame": {
+   "calls": 4,
+   "seconds": 0.001
+  },
+  "search/feasibility.py:56:outcome": {
+   "calls": 83,
+   "seconds": 0.001
+  },
+  "scene/normalize.py:10:prepare_scene": {
+   "calls": 4,
+   "seconds": 0.0
+  },
+  "search/engine.py:97:evaluate_program": {
+   "calls": 83,
+   "seconds": 0.0
+  },
+  "reachability/service.py:379:check_program": {
+   "calls": 35,
+   "seconds": 0.0
+  },
+  "search/ordered_route.py:122:search_allocations": {
+   "calls": 307,
+   "seconds": 0.0
+  },
+  "movement/program.py:58:profile_from_trace": {
+   "calls": 8,
+   "seconds": 0.0
+  },
+  "scene/geometry.py:71:normalize_geometry": {
+   "calls": 96,
+   "seconds": 0.0
+  },
+  "search/anchors/adapter.py:58:for_goal": {
+   "calls": 8,
+   "seconds": 0.0
+  },
+  "/Users/arvindmurty/CS/pkc-wt/real11-perf-profile-eg/standalone/tools/profiling/run.py:156:main": {
+   "calls": 1,
+   "seconds": 0.0
+  },
+  "search/identity.py:27:solve_scope": {
+   "calls": 83,
+   "seconds": 0.0
+  },
+  "constraints/contacts.py:42:<genexpr>": {
+   "calls": 12,
+   "seconds": 0.0
+  },
+  "observability/turns.py:60:summary": {
+   "calls": 1,
+   "seconds": 0.0
+  },
+  "search/dfs.py:219:expand_discovery": {
+   "calls": 4,
+   "seconds": 0.0
+  },
+  "/Users/arvindmurty/CS/pkc-wt/real11-perf-profile-eg/.venv-guidance/lib/python3.12/site-packages/scipy/_lib/_docscrape.py:145:__init__": {
+   "calls": 3,
+   "seconds": 0.0
+  },
+  "movement/cases.py:97:case_profile": {
+   "calls": 18,
+   "seconds": 0.0
+  },
+  "spatial/event_routes.py:299:advance_cursor": {
+   "calls": 3,
+   "seconds": 0.0
+  },
+  "/Users/arvindmurty/CS/pkc-wt/real11-perf-profile-eg/.venv-guidance/lib/python3.12/site-packages/numpy/f2py/capi_maps.py:136:<module>": {
+   "calls": 1,
+   "seconds": 0.0
+  },
+  "search/dfs.py:89:search_goals": {
+   "calls": 1,
+   "seconds": 0.0
+  },
+  "search/anchors/policy.py:17:settings": {
+   "calls": 1,
+   "seconds": 0.0
+  },
+  "search/application.py:12:task_settings": {
+   "calls": 1,
+   "seconds": 0.0
+  },
+  "search/events/engine.py:87:search_event_routes": {
+   "calls": 1,
+   "seconds": 0.0
+  },
+  "search/goals.py:10:goal_spec": {
+   "calls": 2,
+   "seconds": 0.0
+  }
+ }
+}

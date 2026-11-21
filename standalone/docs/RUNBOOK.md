@@ -162,7 +162,9 @@ without a first-jump whitelist; its origins and domain change are in
 ```
 
 Console `parkour-solve` is equivalent to `python -m parkour_solver`. The CLI accepts
-explicit `--compiler` (Java bridge) and `--python` paths as well. Reports record the
+explicit `--compiler` (Java bridge) and `--python` paths as well. It saves the final
+report, which `--resume` continues; add `--save-progress` to also save resumable
+progress during the run, at the cost of about half of a long solve's time. Reports record the
 selected bridge under `bridge`. Profile runs preserve cold
 settings, instrumentation/source/configuration hashes, work counters and
 independent retained-witness replay; inclusive timings overlap. Profiling overhead
@@ -213,8 +215,8 @@ metadata, strip stale node/repair/comparison state, and validate the root agains
 the new full scene. This is a seeded new task, not an exact old-task resume.
 
 The profiler or ordinary CLI commands above can consume that experiment fixture.
-The ordinary CLI saves durable progress and supports its usual matching-context
-resume. A different geometry/task/root requires a new search context.
+The ordinary CLI saves its final report (and in-run progress with `--save-progress`)
+and supports its usual matching-context resume. A different geometry/task/root requires a new search context.
 
 ## Fixed numerical problem and replay/export
 
