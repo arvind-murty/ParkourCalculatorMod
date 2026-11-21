@@ -4,7 +4,8 @@ import math
 import unittest
 from unittest.mock import patch
 
-from parkour_solver.reachability.intervals import interaction_reachability, reachable_envelopes, travel_radii
+from parkour_solver.reachability.intervals import (_common_prefix, interaction_reachability, norm_reference,
+                                                    norm_signature, reachable_envelopes, travel_radii)
 from parkour_solver.reachability.screen import contradiction
 from parkour_solver.numerics import disk, prepare, validate
 
@@ -50,6 +51,39 @@ class ScreenTests(unittest.TestCase):
             self.assertEqual(envelope['contradiction'], expected, p)
             fired += expected is not None
         self.assertGreater(fired, 20)
+
+    def test_verified_references_leave_envelopes_unchanged(self):
+        rng = random.Random(1121)
+        def rows(lo, hi, reach):
+            walls = []
+            for _ in range(rng.randint(0, 3)):
+                t = rng.randint(lo, hi)
+                a = rng.uniform(.5, .95)*reach[t]
+                walls += [dict(mode='X', t1=t, cmp='GE', rhs=a), dict(mode='Z', t1=t, cmp='GE', rhs=a)][:rng.randint(1, 2)]
+            return walls
+        references, skipped, fired = [], 0, 0
+        for _ in range(400):
+            # A child keeps its parent's ticks, coefficients and rows and adds a tail with its own rows.
+            n, extra = rng.randint(2, 30), rng.randint(1, 15)
+            magnitude = [rng.uniform(.05, .7) for _ in range(n+extra)]
+            friction = [rng.uniform(.5, .95) for _ in range(n+extra)]
+            reach = travel_radii(0., magnitude, friction)
+            parent = dict(ticks=n, position=[0., 0.], velocity=[0., 0.], magnitude=magnitude[:n],
+                          friction=friction[:n], walls=rows(1, n, reach), threshold=0.)
+            child = dict(parent, ticks=n+extra, magnitude=magnitude, friction=friction,
+                         walls=parent['walls']+rows(n, n+extra, reach))
+            reference = norm_reference(reachable_envelopes(parent))
+            if reference is not None:
+                references = references[-3:]+[reference]
+            expected = reachable_envelopes(child)
+            self.assertEqual(reachable_envelopes(child, verified=references), expected, child)
+            contradiction = expected['contradiction']
+            fired += contradiction is not None and contradiction['reason'] == 'norm_reach_contradiction'
+            if reference is not None and len(expected['radii']) == len(expected['states']):
+                common = _common_prefix(norm_signature(expected['states'], expected['radii']), reference[0])
+                skipped += min(common-1, reference[1]) > 0
+        self.assertGreater(skipped, 50)
+        self.assertGreater(fired, 10)
 
     def test_unreachable_wall_is_rejected(self):
         p = {'ticks': 1, 'position': [0, 0], 'velocity': [0, 0], 'magnitude': [.1],

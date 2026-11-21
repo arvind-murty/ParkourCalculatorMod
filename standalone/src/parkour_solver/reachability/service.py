@@ -2,10 +2,12 @@ import collections
 import copy
 
 from parkour_solver.scene.geometry import expanded_box
-from parkour_solver.reachability.intervals import interaction_reachability, reachable_envelopes
+from parkour_solver.reachability.intervals import interaction_reachability, norm_reference, reachable_envelopes
 
 
 PROOF_POLICY = 3
+# Recent norm-checked envelopes; a gate's siblings and approaches share their prefix states.
+NORM_REFERENCES = 8
 
 
 def interaction_context_key(context):
@@ -220,6 +222,7 @@ class InteractionGate:
         self.relaxation_start = {kind: collections.Counter(counts) for kind, counts in STATS.items()}
         self.block_table, self.jump_traces = {}, {}
         self.approaches = {}
+        self.norm_references = collections.deque(maxlen=NORM_REFERENCES)
 
     def reachable_blocks(self, owner):
         if owner in self.block_table:
@@ -275,7 +278,11 @@ class InteractionGate:
         if initial_intervals is not None:model['initialIntervals']=initial_intervals
         key=interaction_context_key(dict(model=model,y=vertical['y'],scope=scope))
         def build():
-            envelope=reachable_envelopes(model,vertical['y']);envelope['modelKey']=digest(coefficient)
+            envelope=reachable_envelopes(model,vertical['y'],verified=self.norm_references)
+            envelope['modelKey']=digest(coefficient)
+            reference=norm_reference(envelope)
+            if reference is not None:
+                self.norm_references.append(reference)
             return dict(key=key,model=model,envelopes=envelope,coefficient=coefficient,y=vertical['y'])
         return self._cached(('analysis',key),build,'analysis')
 

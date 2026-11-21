@@ -608,8 +608,11 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | --- | ---: | --- |
 | `travel_radii` | [6](../src/parkour_solver/reachability/intervals.py#L6) | function |
 | `motion_bound` | [15](../src/parkour_solver/reachability/intervals.py#L15) | function |
-| `reachable_envelopes` | [23](../src/parkour_solver/reachability/intervals.py#L23) | function |
-| `interaction_reachability` | [133](../src/parkour_solver/reachability/intervals.py#L133) | function |
+| `norm_signature` | [23](../src/parkour_solver/reachability/intervals.py#L23) | function |
+| `_common_prefix` | [27](../src/parkour_solver/reachability/intervals.py#L27) | function |
+| `norm_reference` | [38](../src/parkour_solver/reachability/intervals.py#L38) | function |
+| `reachable_envelopes` | [48](../src/parkour_solver/reachability/intervals.py#L48) | function |
+| `interaction_reachability` | [165](../src/parkour_solver/reachability/intervals.py#L165) | function |
 
 ## reachability/screen.py
 
@@ -622,36 +625,36 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `interaction_context_key` | [11](../src/parkour_solver/reachability/service.py#L11) | function |
-| `query_interaction` | [26](../src/parkour_solver/reachability/service.py#L26) | function |
-| `normalize_alternatives` | [68](../src/parkour_solver/reachability/service.py#L68) | function |
-| `block_interaction` | [85](../src/parkour_solver/reachability/service.py#L85) | function |
-| `interaction_allowed` | [90](../src/parkour_solver/reachability/service.py#L90) | function |
-| `bounds_allowed` | [94](../src/parkour_solver/reachability/service.py#L94) | function |
-| `walk_off_allowed` | [102](../src/parkour_solver/reachability/service.py#L102) | function |
-| `candidate_blocks` | [110](../src/parkour_solver/reachability/service.py#L110) | function |
-| `candidate_option` | [119](../src/parkour_solver/reachability/service.py#L119) | function |
-| `block_table` | [127](../src/parkour_solver/reachability/service.py#L127) | function |
-| `walk_off_tick` | [192](../src/parkour_solver/reachability/service.py#L192) | function |
-| `landing_boxes` | [202](../src/parkour_solver/reachability/service.py#L202) | function |
-| `InteractionGate` | [211](../src/parkour_solver/reachability/service.py#L211) | class |
-| `InteractionGate.__init__` | [213](../src/parkour_solver/reachability/service.py#L213) | function |
-| `InteractionGate.reachable_blocks` | [224](../src/parkour_solver/reachability/service.py#L224) | function |
-| `InteractionGate._cached` | [234](../src/parkour_solver/reachability/service.py#L234) | function |
-| `InteractionGate.prepare` | [247](../src/parkour_solver/reachability/service.py#L247) | function |
-| `InteractionGate.analyze_model` | [264](../src/parkour_solver/reachability/service.py#L264) | function |
-| `InteractionGate.analyze` | [282](../src/parkour_solver/reachability/service.py#L282) | function |
-| `InteractionGate.condition` | [288](../src/parkour_solver/reachability/service.py#L288) | function |
-| `InteractionGate.envelopes` | [296](../src/parkour_solver/reachability/service.py#L296) | function |
-| `InteractionGate.sequence` | [300](../src/parkour_solver/reachability/service.py#L300) | function |
-| `InteractionGate.check_program` | [313](../src/parkour_solver/reachability/service.py#L313) | function |
-| `InteractionGate.relaxation` | [368](../src/parkour_solver/reachability/service.py#L368) | function |
-| `InteractionGate.approach` | [385](../src/parkour_solver/reachability/service.py#L385) | function |
-| `InteractionGate.query` | [420](../src/parkour_solver/reachability/service.py#L420) | function |
-| `InteractionGate.walk_off` | [436](../src/parkour_solver/reachability/service.py#L436) | function |
-| `InteractionGate.required` | [452](../src/parkour_solver/reachability/service.py#L452) | function |
-| `InteractionGate.context` | [473](../src/parkour_solver/reachability/service.py#L473) | function |
-| `InteractionGate.summary` | [476](../src/parkour_solver/reachability/service.py#L476) | function |
+| `interaction_context_key` | [13](../src/parkour_solver/reachability/service.py#L13) | function |
+| `query_interaction` | [28](../src/parkour_solver/reachability/service.py#L28) | function |
+| `normalize_alternatives` | [70](../src/parkour_solver/reachability/service.py#L70) | function |
+| `block_interaction` | [87](../src/parkour_solver/reachability/service.py#L87) | function |
+| `interaction_allowed` | [92](../src/parkour_solver/reachability/service.py#L92) | function |
+| `bounds_allowed` | [96](../src/parkour_solver/reachability/service.py#L96) | function |
+| `walk_off_allowed` | [104](../src/parkour_solver/reachability/service.py#L104) | function |
+| `candidate_blocks` | [112](../src/parkour_solver/reachability/service.py#L112) | function |
+| `candidate_option` | [121](../src/parkour_solver/reachability/service.py#L121) | function |
+| `block_table` | [129](../src/parkour_solver/reachability/service.py#L129) | function |
+| `walk_off_tick` | [194](../src/parkour_solver/reachability/service.py#L194) | function |
+| `landing_boxes` | [204](../src/parkour_solver/reachability/service.py#L204) | function |
+| `InteractionGate` | [213](../src/parkour_solver/reachability/service.py#L213) | class |
+| `InteractionGate.__init__` | [215](../src/parkour_solver/reachability/service.py#L215) | function |
+| `InteractionGate.reachable_blocks` | [227](../src/parkour_solver/reachability/service.py#L227) | function |
+| `InteractionGate._cached` | [237](../src/parkour_solver/reachability/service.py#L237) | function |
+| `InteractionGate.prepare` | [250](../src/parkour_solver/reachability/service.py#L250) | function |
+| `InteractionGate.analyze_model` | [267](../src/parkour_solver/reachability/service.py#L267) | function |
+| `InteractionGate.analyze` | [289](../src/parkour_solver/reachability/service.py#L289) | function |
+| `InteractionGate.condition` | [295](../src/parkour_solver/reachability/service.py#L295) | function |
+| `InteractionGate.envelopes` | [303](../src/parkour_solver/reachability/service.py#L303) | function |
+| `InteractionGate.sequence` | [307](../src/parkour_solver/reachability/service.py#L307) | function |
+| `InteractionGate.check_program` | [320](../src/parkour_solver/reachability/service.py#L320) | function |
+| `InteractionGate.relaxation` | [375](../src/parkour_solver/reachability/service.py#L375) | function |
+| `InteractionGate.approach` | [392](../src/parkour_solver/reachability/service.py#L392) | function |
+| `InteractionGate.query` | [427](../src/parkour_solver/reachability/service.py#L427) | function |
+| `InteractionGate.walk_off` | [443](../src/parkour_solver/reachability/service.py#L443) | function |
+| `InteractionGate.required` | [459](../src/parkour_solver/reachability/service.py#L459) | function |
+| `InteractionGate.context` | [480](../src/parkour_solver/reachability/service.py#L480) | function |
+| `InteractionGate.summary` | [483](../src/parkour_solver/reachability/service.py#L483) | function |
 
 ## reachability/viability.py
 
