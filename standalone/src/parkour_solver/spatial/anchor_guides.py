@@ -88,6 +88,27 @@ def classify(guides, span, point):
                 isTurnaround=any(d['inside'] for d in distances),distances=distances)
 
 
+def decision_objective(guides, reached, point, fallback):
+    """Progress from `point` (where a decision's program ends) toward the next required guide point.
+
+    `point` is [x, y, z]; `reached` anchors are visited, so the next required one is guide index reached+1
+    (index 0 is the start, the last the task). From inside that anchor's turnaround the program aims at the
+    one after it.
+    """
+    i=reached+1
+    turn=next((t for t in guides['turns'] if t['index']==i),None)
+    inside=classify(guides,reached,[point[0],point[2]])['distances']
+    if turn is not None and any(d['boundary']==turn['id'] and d['inside'] for d in inside):
+        i+=1
+    if i>=len(guides['points']):
+        return dict(fallback)
+    target=guides['points'][i]
+    direction=unit(target[0]-point[0],target[2]-point[2])
+    if direction is None:
+        return dict(fallback)
+    return Checkpoint(1,-1,direction,tuple(point),tuple(target),()).objective
+
+
 def onward_objective(guides, span, fallback):
     # At E aim onward to N, rather than back toward E's landing point.
     i=span+1

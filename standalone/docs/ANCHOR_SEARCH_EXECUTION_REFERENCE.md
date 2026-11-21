@@ -48,7 +48,7 @@ service before wall/call/catalogue caps. IPOPT never chooses these discrete meth
 | Named stepping: normal step, slab boost, corner cancel, blip/up/corner variants | Existing case builders fix the contact outcome and corresponding physical rows; enabled cases depend on scene/generator settings. | Cheap height/owner checks, shared approach reachability, then the common joint outcome before side/corner fan-out where applicable. Unknown named probe heights retain coverage. | Surviving selected cases can reach numerical evaluation in generic/unlatched movement or permitted source preparation. Completed stepped transfers cannot establish/satisfy a hard latch. |
 | Lower/higher blip pair with 8 wall choices or 4 corner choices | First build one shared scalar outcome per case and test its jointly required contacts/rows. | If the conjunction is ruled out, build no side variants for that case. B3@28 rejects both common outcomes before the old8+4 fan-out. | No worker for a rejected common outcome. Surviving variants still require fixed-model screening/selection. |
 | Ceiling clip or launch grind | Existing ceiling family when enabled; fixed contact/case history. | Shared eligibility and scene checks. A possible/unknown shortening ceiling disables the ordinary-flight contribution for that transfer. | Eligible selected choices can reach a worker. The maintained Real11 case enables normal, stepping and ceiling movement. |
-| Go left/right around an obstacle; different phase timings | `constraints/encounters.py` prepares one phase cover per box encounter and landing segment; `ConstraintVariants` conditions later domains on earlier rows. Upfront generation and collision repair share this builder. | Scoped relevance removes absent unwanted contacts; canonicalization merges identical effective models; new rows get new reachability checks. | A surviving concrete variant may produce a numerical call. No discrete side/corner variable is left for IPOPT to select. |
+| Go left/right around an obstacle; different phase timings | `constraints/encounters.py` prepares one phase cover per box encounter and landing segment; `ConstraintVariants` conditions later domains on earlier rows. An obstacle gets items only once a solve hits it ([conflict-driven](design/AVOIDANCE_PASSAGES.md#conflict-driven-obstacles-in-anchor-search)); legacy collision repair uses the same builder. | Scoped relevance removes absent unwanted contacts; canonicalization merges identical effective models; new rows get new reachability checks. | A surviving concrete variant may produce a numerical call. No discrete side/corner variable is left for IPOPT to select. |
 | Compound choice arriving at E before an unused tail ends | Derive the actual owned E prefix, with only its committed rows/events and its own T/J/R/A. | Check owned prefix separately. Rejection of an unused extension is scoped to the extension. | Valid owned arrival remains eligible; an impossible tail does not force its rejection. Legacy fixed-checkpoint controls retain their full-first checks. |
 | `S → C → S`, or revisiting a departed owner | Not generated in the current physical-anchor domain. Same-owner patches are tracked by physical owner. | Departed-owner filter plus emitted-program audit. Repeated required anchors are also unsupported. | No. Current-owner `S→S` hops are different and remain legal. |
 | Arbitrary intentional wall-hit combinations | Deferred feature; named cases can still carry their required finite contact. | No new intentional-hit generator in this feature. | Not an additional search family. |
@@ -96,13 +96,24 @@ relaxation-infeasible request counts as oracle-rejected (`termination
 'disk_finished'`, Clarabel status in `workerStatus`). IPOPT answers, with stock
 semantics, requests outside the supported class (threshold, ladder, non-X/Z rows),
 requests the relaxation leaves undecided even after its zero-cost retry, and
-relaxed points the scalar validator rejects. An anchor or terminal optimization
-whose relaxed optimum leaves more than 10% of a jump tick's
-acceleration unused is confirmed by IPOPT before its score is used (`work`:
-`confirmations`, `confirmationIpoptCalls`, `materialGaps`); a gap affects only its
-own request, and descendants are solved relaxed and alarm on their own.
-Decision checks optimize the node's onward objective to compare side families, so
-they confirm alarms the same way. The anchor `feasibilityPolicy` has one value,
+relaxed points the scalar validator rejects. Every repair-loop solve of a
+decision check, anchor leg or finish stays relaxed, and the switch-tick climb
+compares relaxed objectives. When the loop ends, a confirmation walk
+(`search/repair.py` `walk`) takes each side family's best accepted point plus a
+second one with the same ticks within `FALLBACK_GAP` (0.3 blocks), and visits them
+best first by `candidate_rank`. A point whose relaxed optimum leaves more than 10%
+of a jump tick's acceleration unused (`alarmTicks`) is re-solved once by IPOPT on
+its own branch (`RelaxedDispatch.confirmed`), and that point must pass the same
+audit; any other point is accepted as is. An IPOPT timeout or unknown counts as
+infeasible. The walk stops when its best confirmed point ranks at least as well as
+the next relaxed one, which bounds its own branch, or after 3 examined candidates
+once one is confirmed. With none confirmed it keeps walking, and if nothing
+confirms the check has no point: a decision check is `oracle_rejected`, or
+`exhausted` when another branch failed differently, and both drop the branch.
+Walk-rejected points are never held as alternatives, and confirmed ones are held
+with their IPOPT point. A walk cut off by the budget leaves its candidate in
+flight, so a resume repeats only the walk (`work`: `confirmations`,
+`confirmationIpoptCalls`, `materialGaps`). The anchor `feasibilityPolicy` has one value,
 `numerical_oracle`: the numerical backend's infeasibility verdict (IPOPT
 `Infeasible_Problem_Detected` or a Clarabel infeasible status) rejects the node.
 
@@ -206,7 +217,7 @@ keys or adding a pose constraint. No mixed or uncertainty mode exists.
 | Restore slower unprotected work only on actual feasibility fallback | Extra preparations should remain reconstructable without consuming routine improvement search after success. | Lossless saved alternatives, one-at-a-time restoration, scoped bypass and failed-edge cause. |
 | One incumbent, lazy strict bound checks | Queue-wide rescans repeated unnecessary work and equality can improve Z. | Check new/selected candidates only; strict greater-than cutoff; no incumbent-triggered queue scan. |
 | Shared prerequisite/model preparation | Independent lower/higher tests allowed jointly impossible stepping cases to fan out; identical screens/compiles were repeated. | `InteractionGate` owns preparation/coefficients/analyses; common-case check precedes fan-out; model-changing rows retain separate keys. |
-| Feasibility never chooses | A first feasible alternative is an arbitrary choice; comparing alternatives needs their optimized objectives. | Anchor legs use `stopOnFeasible=False`, `rankEqualCost=True` with the switch-tick climb; decision checks use the same policy at the node objective, keep the best as an intermediate choice for the branch (the exact rows of every stretch settled at the node; the open stretch's rows go), and hold the other choices' best points and close timings, restored one at a time when the branch below the node dies. No constant-zero default or slack proxy. |
+| Feasibility never chooses | A first feasible alternative is an arbitrary choice; comparing alternatives needs their optimized objectives. | Anchor legs use `stopOnFeasible=False`, `rankEqualCost=True` with the switch-tick climb; decision checks use the same policy at their [decision objective](design/ANCHOR_POLICY_DECISIONS.md#o3--finite-extended-b7-backward-guides-and-onward-objectives), keep the best as an intermediate choice for the branch (the exact rows of every stretch settled at the node; the open stretch's rows go), and hold the other choices' best points and close timings, restored one at a time when the branch below the node dies. No constant-zero default or slack proxy. |
 | Normal exact-node queries at cadence1 | Reject a selected impossible action before extending it, with unambiguous ownership. | No raw-hold NLPs or separate ancestor tests. Cadence2/4 remains a future measured tradeoff. |
 | Binary spatial turnaround, observable | A single decision needs one clear priority; witness positions can change on later re-solves. | One110° edge+margin classification, frozen key, distances/query/replay-flip records. Preliminary heuristic, not a completeness theorem. |
 | No inter-block revisits yet | Cyclic histories enlarge the decision domain and need dedicated repeat-family design. | Departed-owner filter; same-owner hops remain. [Revisit plan](design/REVISIT_DISCOVERY_DEFERRED_PLAN.md) stays deferred. |

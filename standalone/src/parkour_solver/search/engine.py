@@ -164,6 +164,8 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, c
         segment_solids=segment_solids(scene, program, profiles[0], scope['through'], service), checks=checks, gates=scoped_adapter.gates, signature=signature,
         state=saved_repair.get('constraintGeneration') if saved_policy==policy else None, deadline=scoped.deadline, reference=reference,
         settled=program.get('settledThrough', 0),
+        # Conflict-driven: obstacles join the generator only once a solve hits them.
+        obstacles=[],
         owners=owners, budget=scoped.check, cancel_event=cancel_event,
         objective=route.get('guideObjective', route['objective']),
         route_guards=scoped_adapter.constraint_guards(program['profile'],envelopes,scope,scoped.deadline)
@@ -183,7 +185,8 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, c
         candidate_filter=candidate_filter, work=scoped, resume_state=program.get('repairState'),
         repair_scope=dict(solveIdentity=identity, scope=scope, solvePolicy=policy, assemblyVersion=13),
         validation_scope=scope, initial_variants=variants if final_route is None else None, on_progress=on_progress,
-        retry_unresolved=retry_unresolved, numerical=dispatch.solve if dispatch is not None else None)
+        retry_unresolved=retry_unresolved, numerical=dispatch.solve if dispatch is not None else None,
+        confirm=dispatch.confirmed if dispatch is not None else None)
     mark('physicalSearchAndValidation')
     diagnostics=[d for a in result.get('attempts',[]) for d in a.get('diagnostics',[])]
     parent_work=work
