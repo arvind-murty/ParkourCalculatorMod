@@ -148,15 +148,18 @@ own validation. Exit status 1 means a difference:
 Build the native C++ core (`native/cpp/`, needs CMake and the pinned pybind11 from
 `research/cpp-pruning-pilot/requirements.txt`) into `build/native/cpp/`, or the
 undefined-behavior-sanitizer variant into `build/native/cpp-sanitize/`. Then check
-every `canonical.digest` call of a real solve against the native encoder, or round-trip
+every `canonical.digest` call of a real solve against the native encoder, round-trip
 every program and movement choice that `movement/program.py` builds through the typed
-native model. Either stops at the first difference and saves it as `mismatch.json`:
+native model, or prepare every `InteractionGate.prepare` call natively as well. Each
+stops at the first difference and saves it as `mismatch.json`:
 
 ```sh
 "$PKC_IPOPT_PYTHON" -B -m tools.native_cpp build [--variant sanitize] [--output /path/to/provenance-dir]
 "$PKC_IPOPT_PYTHON" -B -m tools.native_cpp verify-digest --input cases/real11/physical-anchors.json \
   --seconds 60 --output /path/to/new-dir [--variant sanitize]
 "$PKC_IPOPT_PYTHON" -B -m tools.native_cpp verify-programs --input cases/real11/physical-anchors.json \
+  --seconds 60 --output /path/to/new-dir [--variant sanitize]
+"$PKC_IPOPT_PYTHON" -B -m tools.native_cpp verify-gate --input cases/real11/physical-anchors.json \
   --seconds 60 --output /path/to/new-dir [--variant sanitize]
 ```
 

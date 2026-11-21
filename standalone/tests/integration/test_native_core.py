@@ -141,5 +141,41 @@ class ProgramModelTests(unittest.TestCase):
                     self.native.round_trip_program(broken)
 
 
+class GatePreparationTests(unittest.TestCase):
+    """Native InteractionGate.prepare must return exactly what the Python gate prepares."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.native = native()
+
+    def test_real11_prefixes_prepare_like_the_python_gate(self):
+        from tests.support.block_table import compiler, nodes, real11_inputs
+        from parkour_solver.reachability.service import InteractionGate
+        checked = 0
+        with compiler() as java:
+            for scene, roots in real11_inputs():
+                gate = InteractionGate(scene, java, seconds=10)
+                for node in nodes(scene, roots, gate):
+                    if not node['profile']['airtime']:
+                        continue
+                    expected = gate.prepare(node)
+                    self.assertEqual(canonical(self.native.gate_prepare(scene, node, False)), canonical(expected))
+                    checked += 1
+        self.assertGreater(checked, 0)
+
+    def test_complete_routes_and_python_errors_carry_over(self):
+        from tests.support.block_table import real11_inputs
+        from parkour_solver.reachability.service import InteractionGate
+        scene, roots = real11_inputs()[1]
+        prefix = roots[0]
+        with self.assertRaisesRegex(ValueError, 'An open prefix is not a completed goal route'):
+            InteractionGate(scene, None).prepare(prefix, require_complete=True)
+        with self.assertRaisesRegex(ValueError, 'An open prefix is not a completed goal route'):
+            self.native.gate_prepare(scene, prefix, True)
+        empty = dict(prefix, profile=dict(prefix['profile'], airtime=0))
+        with self.assertRaisesRegex(ValueError, 'An empty prefix is not a complete movement route'):
+            self.native.gate_prepare(scene, empty, False)
+
+
 if __name__ == '__main__':
     unittest.main()

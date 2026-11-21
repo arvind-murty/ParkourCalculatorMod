@@ -7,65 +7,114 @@
 #include <variant>
 
 #include "pkc/canonical.hpp"
+#include "pkc/gate.hpp"
 #include "pkc/program.hpp"
 
 namespace py = pybind11;
 
 namespace {
 
-pkc::Value convert(py::handle object) {
-    if (object.is_none()) return {nullptr};
-    if (py::isinstance<py::bool_>(object)) return {object.cast<bool>()};
-    if (py::isinstance<py::int_>(object)) {
+// Raw CPython calls: this boundary converts every program a native unit sees,
+// and pybind11's generic isinstance/cast per node cost more than the unit.
+std::string utf8(PyObject* text) {
+    Py_ssize_t size = 0;
+    const char* data = PyUnicode_AsUTF8AndSize(text, &size);
+    if (!data) throw py::error_already_set();
+    return std::string(data, size);
+}
+
+pkc::Value convert(PyObject* object) {
+    if (object == Py_None) return {nullptr};
+    if (PyBool_Check(object)) return {object == Py_True};
+    if (PyLong_Check(object)) {
         int overflow = 0;
-        long long value = PyLong_AsLongLongAndOverflow(object.ptr(), &overflow);
+        long long value = PyLong_AsLongLongAndOverflow(object, &overflow);
         if (overflow) throw py::type_error("integer outside the 64-bit range");
         return {static_cast<std::int64_t>(value)};
     }
-    if (py::isinstance<py::float_>(object)) return {object.cast<double>()};
-    if (py::isinstance<py::str>(object)) return {object.cast<std::string>()};
-    if (py::isinstance<py::list>(object) || py::isinstance<py::tuple>(object)) {
+    if (PyFloat_Check(object)) return {PyFloat_AS_DOUBLE(object)};
+    if (PyUnicode_Check(object)) return {utf8(object)};
+    if (PyList_Check(object) || PyTuple_Check(object)) {
+        bool list = PyList_Check(object);
+        Py_ssize_t size = list ? PyList_GET_SIZE(object) : PyTuple_GET_SIZE(object);
         auto array = std::make_shared<pkc::Array>();
-        for (auto item : object) array->push_back(convert(item));
+        array->reserve(size);
+        for (Py_ssize_t i = 0; i < size; ++i)
+            array->push_back(convert(list ? PyList_GET_ITEM(object, i) : PyTuple_GET_ITEM(object, i)));
         return {std::shared_ptr<const pkc::Array>(std::move(array))};
     }
-    if (py::isinstance<py::dict>(object)) {
+    if (PyDict_Check(object)) {
         auto map = std::make_shared<pkc::Object>();
-        for (auto item : object.cast<py::dict>()) {
+        map->reserve(PyDict_GET_SIZE(object));
+        PyObject *key, *item;
+        Py_ssize_t position = 0;
+        while (PyDict_Next(object, &position, &key, &item)) {
             // json.dumps would stringify non-str keys after sorting them by their
             // own type; canonical identity only uses str keys, so reject the rest.
-            if (!py::isinstance<py::str>(item.first)) throw py::type_error("canonical keys must be str");
-            map->emplace_back(item.first.cast<std::string>(), convert(item.second));
+            if (!PyUnicode_Check(key)) throw py::type_error("canonical keys must be str");
+            map->emplace_back(utf8(key), convert(item));
         }
         return {std::shared_ptr<const pkc::Object>(std::move(map))};
     }
-    throw py::type_error("Object of type " + std::string(py::str(py::type::handle_of(object).attr("__name__"))) +
-                         " is not canonical JSON");
+    throw py::type_error(std::string("Object of type ") + Py_TYPE(object)->tp_name + " is not canonical JSON");
+}
+
+pkc::Value convert(py::handle object) { return convert(object.ptr()); }
+
+PyObject* new_reference(const pkc::Value& value) {
+    return std::visit([](const auto& held) -> PyObject* {
+        using T = std::decay_t<decltype(held)>;
+        if constexpr (std::is_same_v<T, std::nullptr_t>) {
+            Py_RETURN_NONE;
+        } else if constexpr (std::is_same_v<T, bool>) {
+            return PyBool_FromLong(held);
+        } else if constexpr (std::is_same_v<T, std::int64_t>) {
+            return PyLong_FromLongLong(held);
+        } else if constexpr (std::is_same_v<T, double>) {
+            return PyFloat_FromDouble(held);
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            return PyUnicode_FromStringAndSize(held.data(), held.size());
+        } else if constexpr (std::is_same_v<T, std::shared_ptr<const pkc::Array>>) {
+            PyObject* list = PyList_New(held->size());
+            if (!list) return nullptr;
+            for (std::size_t i = 0; i < held->size(); ++i) {
+                PyObject* item = new_reference((*held)[i]);
+                if (!item) {
+                    Py_DECREF(list);
+                    return nullptr;
+                }
+                PyList_SET_ITEM(list, i, item);
+            }
+            return list;
+        } else {
+            PyObject* dict = PyDict_New();
+            if (!dict) return nullptr;
+            for (const auto& [key, item] : *held) {
+                PyObject* name = PyUnicode_FromStringAndSize(key.data(), key.size());
+                PyObject* converted = name ? new_reference(item) : nullptr;
+                int failed = !converted || PyDict_SetItem(dict, name, converted) < 0;
+                Py_XDECREF(name);
+                Py_XDECREF(converted);
+                if (failed) {
+                    Py_DECREF(dict);
+                    return nullptr;
+                }
+            }
+            return dict;
+        }
+    }, value.data);
 }
 
 py::object to_python(const pkc::Value& value) {
-    return std::visit([](const auto& held) -> py::object {
-        using T = std::decay_t<decltype(held)>;
-        if constexpr (std::is_same_v<T, std::nullptr_t>) {
-            return py::none();
-        } else if constexpr (std::is_same_v<T, std::shared_ptr<const pkc::Array>>) {
-            py::list list;
-            for (const auto& item : *held) list.append(to_python(item));
-            return list;
-        } else if constexpr (std::is_same_v<T, std::shared_ptr<const pkc::Object>>) {
-            py::dict dict;
-            for (const auto& [key, item] : *held) dict[py::str(key)] = to_python(item);
-            return dict;
-        } else {
-            return py::cast(held);
-        }
-    }, value.data);
+    PyObject* result = new_reference(value);
+    if (!result) throw py::error_already_set();
+    return py::reinterpret_steal<py::object>(result);
 }
 
 }  // namespace
 
 PYBIND11_MODULE(_pkc_native, m) {
-    m.doc() = "Native core for parkour_solver (canonical identity, typed programs).";
+    m.doc() = "Native core for parkour_solver (canonical identity, typed programs, gate preparation).";
     py::register_exception<std::invalid_argument>(m, "NativeValueError", PyExc_ValueError);
     m.def("canonical_json", [](py::handle value) { return py::bytes(pkc::canonical_json(convert(value))); },
           "json.dumps(value, sort_keys=True, allow_nan=False).encode()");
@@ -78,6 +127,10 @@ PYBIND11_MODULE(_pkc_native, m) {
     m.def("round_trip_choice", [](py::handle value) {
         return to_python(pkc::to_value(pkc::choice_from_value(convert(value))));
     });
+    m.def("gate_prepare", [](py::handle scene, py::handle program, bool require_complete) -> py::object {
+        auto prepared = pkc::gate_prepare(convert(scene), pkc::program_from_value(convert(program)), require_complete);
+        return prepared ? to_python(*prepared) : py::none();
+    }, "InteractionGate.prepare's build: {route, profiles, plan, vertical} or None");
     m.def("float_repr", &pkc::float_repr, "repr(float) for a finite float");
     m.def("sha256_hex", [](py::bytes data) {
         static const char* hex = "0123456789abcdef";

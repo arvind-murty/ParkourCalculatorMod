@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <stdexcept>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 
@@ -11,12 +12,29 @@ namespace {
 // Largest magnitude where a double holds every integer exactly.
 constexpr std::int64_t kExactInteger = std::int64_t{1} << 53;
 
-[[noreturn]] void fail(const std::string& path, const std::string& problem) {
-    throw std::invalid_argument(path + ": " + problem);
+// Where a decode is in the input, rendered only when it fails: building the
+// string for every field cost more than the decode itself.
+struct Path {
+    const Path* parent = nullptr;
+    std::string_view key;
+    std::size_t index = 0;
+    bool is_index = false;
+
+    std::string str() const {
+        if (!parent) return std::string(key);
+        return parent->str() + (is_index ? "[" + std::to_string(index) + "]" : "." + std::string(key));
+    }
+};
+
+Path child(const Path& parent, std::string_view key) { return {&parent, key}; }
+Path element(const Path& parent, std::size_t index) { return {&parent, {}, index, true}; }
+
+[[noreturn]] void fail(const Path& path, const std::string& problem) {
+    throw std::invalid_argument(path.str() + ": " + problem);
 }
 
 template <class T>
-const T& as(const Value& value, const std::string& path, const char* expected) {
+const T& as(const Value& value, const Path& path, const char* expected) {
     if (auto* held = std::get_if<T>(&value.data)) return *held;
     fail(path, std::string("expected ") + expected);
 }
@@ -47,13 +65,13 @@ PKC_RECORD(MovementChoice);
 
 // Declared up front because records and containers nest in each other.
 template <class T>
-std::enable_if_t<IsRecord<T>::value> decode(const Value& value, T& out, const std::string& path);
+std::enable_if_t<IsRecord<T>::value> decode(const Value& value, T& out, const Path& path);
 template <class T>
-void decode(const Value& value, Nullable<T>& out, const std::string& path);
+void decode(const Value& value, Nullable<T>& out, const Path& path);
 template <class T>
-void decode(const Value& value, std::vector<T>& out, const std::string& path);
+void decode(const Value& value, std::vector<T>& out, const Path& path);
 template <class T, std::size_t N>
-void decode(const Value& value, std::array<T, N>& out, const std::string& path);
+void decode(const Value& value, std::array<T, N>& out, const Path& path);
 template <class T>
 std::enable_if_t<IsRecord<T>::value, Value> encode(const T& record);
 template <class T>
@@ -63,13 +81,13 @@ Value encode(const std::vector<T>& values);
 template <class T, std::size_t N>
 Value encode(const std::array<T, N>& values);
 
-void decode(const Value& value, bool& out, const std::string& path) { out = as<bool>(value, path, "bool"); }
+void decode(const Value& value, bool& out, const Path& path) { out = as<bool>(value, path, "bool"); }
 
-void decode(const Value& value, std::int64_t& out, const std::string& path) {
+void decode(const Value& value, std::int64_t& out, const Path& path) {
     out = as<std::int64_t>(value, path, "int");
 }
 
-void decode(const Value& value, Num& out, const std::string& path) {
+void decode(const Value& value, Num& out, const Path& path) {
     if (auto* integer = std::get_if<std::int64_t>(&value.data)) {
         if (*integer > kExactInteger || *integer < -kExactInteger) fail(path, "int outside the exact double range");
         out = {static_cast<double>(*integer), true};
@@ -78,19 +96,19 @@ void decode(const Value& value, Num& out, const std::string& path) {
     }
 }
 
-void decode(const Value& value, std::string& out, const std::string& path) {
+void decode(const Value& value, std::string& out, const Path& path) {
     out = as<std::string>(value, path, "str");
 }
 
-void decode(const Value& value, Value& out, const std::string&) { out = value; }
+void decode(const Value& value, Value& out, const Path&) { out = value; }
 
-void decode(const Value& value, Anchors& out, const std::string& path) {
+void decode(const Value& value, Anchors& out, const Path& path) {
     for (const auto& [key, item] : *as<std::shared_ptr<const Object>>(value, path, "object"))
-        out[key] = as<std::int64_t>(item, path + "." + key, "int");
+        out[key] = as<std::int64_t>(item, child(path, key), "int");
 }
 
 template <class T>
-void decode(const Value& value, Nullable<T>& out, const std::string& path) {
+void decode(const Value& value, Nullable<T>& out, const Path& path) {
     if (std::holds_alternative<std::nullptr_t>(value.data)) {
         out.value.reset();
     } else {
@@ -99,42 +117,42 @@ void decode(const Value& value, Nullable<T>& out, const std::string& path) {
 }
 
 template <class T>
-void decode(const Value& value, std::vector<T>& out, const std::string& path) {
+void decode(const Value& value, std::vector<T>& out, const Path& path) {
     const auto& items = *as<std::shared_ptr<const Array>>(value, path, "list");
     out.clear();
     out.reserve(items.size());
     for (std::size_t i = 0; i < items.size(); ++i) {
         T item{};
-        decode(items[i], item, path + "[" + std::to_string(i) + "]");
+        decode(items[i], item, element(path, i));
         out.push_back(std::move(item));
     }
 }
 
 template <class T, std::size_t N>
-void decode(const Value& value, std::array<T, N>& out, const std::string& path) {
+void decode(const Value& value, std::array<T, N>& out, const Path& path) {
     const auto& items = *as<std::shared_ptr<const Array>>(value, path, "list");
     if (items.size() != N) fail(path, "expected " + std::to_string(N) + " items");
-    for (std::size_t i = 0; i < N; ++i) decode(items[i], out[i], path + "[" + std::to_string(i) + "]");
+    for (std::size_t i = 0; i < N; ++i) decode(items[i], out[i], element(path, i));
 }
 
 class Reader {
 public:
-    Reader(const Value& value, std::string path)
+    Reader(const Value& value, const Path& path)
         : fields_(*as<std::shared_ptr<const Object>>(value, path, "object")),
-          path_(std::move(path)),
+          path_(path),
           used_(fields_.size()) {}
 
     template <class T>
     void req(const char* key, T& out) {
         const Value* value = find(key);
         if (!value) fail(path_, std::string("missing key ") + key);
-        decode(*value, out, path_ + "." + key);
+        decode(*value, out, child(path_, key));
     }
 
     template <class T>
     void opt(const char* key, std::optional<T>& out) {
         out.reset();
-        if (const Value* value = find(key)) decode(*value, out.emplace(), path_ + "." + key);
+        if (const Value* value = find(key)) decode(*value, out.emplace(), child(path_, key));
     }
 
     // Keys no field claimed: an error for typed records, annotations for Program.
@@ -162,7 +180,7 @@ private:
     }
 
     const Object& fields_;
-    std::string path_;
+    const Path& path_;
     std::vector<bool> used_;
 };
 
@@ -433,7 +451,7 @@ void describe(R& c, V& v, MovementChoice*) {
 }
 
 template <class T>
-std::enable_if_t<IsRecord<T>::value> decode(const Value& value, T& out, const std::string& path) {
+std::enable_if_t<IsRecord<T>::value> decode(const Value& value, T& out, const Path& path) {
     Reader reader(value, path);
     describe(out, reader, static_cast<T*>(nullptr));
     if constexpr (std::is_same_v<T, Program>) {
@@ -455,13 +473,13 @@ std::enable_if_t<IsRecord<T>::value, Value> encode(const T& record) {
 
 Program program_from_value(const Value& value) {
     Program program;
-    decode(value, program, "program");
+    decode(value, program, Path{nullptr, "program"});
     return program;
 }
 
 MovementChoice choice_from_value(const Value& value) {
     MovementChoice choice;
-    decode(value, choice, "choice");
+    decode(value, choice, Path{nullptr, "choice"});
     return choice;
 }
 

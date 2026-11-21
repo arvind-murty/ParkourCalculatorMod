@@ -132,6 +132,33 @@ def verify_programs(args):
     print(json.dumps(summary))
 
 
+def verify_gate(args):
+    """Run a real solve where every InteractionGate.prepare result is also prepared natively and compared."""
+    from parkour_solver.reachability.service import InteractionGate
+    args.output.mkdir(parents=True, exist_ok=False)
+    native = load(args.variant)
+    original = InteractionGate.prepare
+    calls = dict(count=0)
+
+    def checked(gate, program, *, scene=None, require_complete=False):
+        expected = original(gate, program, scene=scene, require_complete=require_complete)
+        actual = native.gate_prepare(gate.scene if scene is None else scene, program, require_complete)
+        calls['count'] += 1
+        if canonical_bytes(actual) != canonical_bytes(expected):
+            save(args.output / 'mismatch.json', dict(program=program, requireComplete=require_complete))
+            raise AssertionError(f'native gate preparation differs at call {calls["count"]}')
+        return expected
+
+    InteractionGate.prepare = checked
+    try:
+        summary = checked_solve(args, {}, {})
+    finally:
+        InteractionGate.prepare = original
+    summary.update(prepareCalls=calls['count'], mismatches=0)
+    save(args.output / 'summary.json', summary)
+    print(json.dumps(summary))
+
+
 def canonical_bytes(value):
     return json.dumps(value, sort_keys=True, allow_nan=False)
 
@@ -152,8 +179,13 @@ def main():
     p.add_argument('--seconds', type=float, required=True)
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--variant', choices=sorted(BUILDS), default='release')
+    p = commands.add_parser('verify-gate')
+    p.add_argument('--input', type=Path, required=True)
+    p.add_argument('--seconds', type=float, required=True)
+    p.add_argument('--output', type=Path, required=True)
+    p.add_argument('--variant', choices=sorted(BUILDS), default='release')
     args = parser.parse_args()
-    dict(build=build, verify_digest=verify_digest, verify_programs=verify_programs)[args.command.replace('-', '_')](args)
+    dict(build=build, verify_digest=verify_digest, verify_programs=verify_programs, verify_gate=verify_gate)[args.command.replace('-', '_')](args)
 
 
 if __name__ == '__main__':
