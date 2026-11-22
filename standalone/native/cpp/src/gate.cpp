@@ -24,7 +24,6 @@ namespace {
 // scene/route.py, scene/geometry.py, schema.py, spatial/surfaces.py
 const double kHalfWidth = f32(0.6) / 2;
 const double kBodyHeight = f32(1.8);
-constexpr int kTangentAxes[3][2] = {{1, 2}, {0, 2}, {0, 1}};
 
 struct Schedule {
     Object plan;

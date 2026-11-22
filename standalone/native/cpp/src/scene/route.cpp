@@ -43,10 +43,6 @@ Array listed(const Object& object, const char* key) {
     return value ? items(*value) : Array{};
 }
 
-Value number_list(const std::array<Num, 4>& values) {
-    return array({value(values[0]), value(values[1]), value(values[2]), value(values[3])});
-}
-
 }  // namespace
 
 bool supports(const Object& block, double x, double z, const std::string& kind) {
