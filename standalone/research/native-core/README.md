@@ -378,3 +378,22 @@ cache, which the native screens share. Generator queries (approach, box, walk-of
 - Two tests that stub Python's `disk._solve`/`disk.solve` run in Python mode only; the native cache's retry and caching
   are covered in native mode by `test_disk`'s IPOPT-oracle test.
 
+## Open generators on the native gate, 2026-11-22
+
+Source: `7b1ca207` plus: `movement/generation.generate_choices` runs the open normal, stepping and ceiling generators on
+the context gate's native core when the context scene shares the gate's geometry; the Python gate then reads face
+tables, its query log and checked count from the core. The first milestone found two inputs the fixed-work solve never
+produced (a `cases` list, and the face table of a program on no face, which the anchor policy asks for); both were
+fixed before commit.
+
+- Fixed work matches Python on all transitions ([parity](2026-11-22-generator-dispatch/parity-python-native.json));
+  alternating native runs with and without the dispatch took 24.5/24.8 s against 25.5/25.5 s
+  ([timing](2026-11-22-generator-dispatch/alternating-native-timing.json)).
+- The generator shadow over `test_stepping_cases`, `test_anchor_search`, `test_anchor_dfs` and `test_block_contacts`
+  compares 2,537 more calls and 8,201 choices, all equal
+  ([shadow](2026-11-22-generator-dispatch/generators-shadow-tests.json)).
+- Suites pass in both modes, 844 tests with 10 Java-bridge skips
+  ([Python](2026-11-22-generator-dispatch/suite-python-summary.txt),
+  [native](2026-11-22-generator-dispatch/suite-native-summary.txt)); live `verify-scene` finds no difference
+  ([summary](2026-11-22-generator-dispatch/live-scene-release-summary.json)).
+

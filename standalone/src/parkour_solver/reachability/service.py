@@ -275,6 +275,8 @@ class InteractionGate:
             cores = {} if cores is None else cores
             key = digest({k: v for k, v in scene.items() if k != 'movementSearch'})
             self.core = cores.get(key) or cores.setdefault(key, self.native.InteractionGate(scene))
+        # This gate's share of the core's query log: the core is shared across a search's gates.
+        self.core_start = (self.core.checked, self.core.excluded) if self.core is not None else (0, 0)
         from parkour_solver.numerics.disk import stats
         self.relaxation_start = {kind: collections.Counter(counts) for kind, counts in stats().items()}
         self.face_tables, self.jump_traces = {}, {}
@@ -283,6 +285,10 @@ class InteractionGate:
 
     def reachable_faces(self, name):
         if name in self.face_tables:
+            return self.face_tables[name]
+        if self.core is not None:
+            table = self.core.reachable_faces(name)
+            self.face_tables[name] = {k: frozenset(v) if isinstance(v, set) else v for k, v in table.items()}
             return self.face_tables[name]
         import time
         started = time.process_time()
@@ -626,8 +632,10 @@ class InteractionGate:
 
     def summary(self):
         from parkour_solver.numerics.disk import stats
-        metrics=collections.Counter(self.metrics)
+        metrics,checked,exclusions=collections.Counter(self.metrics),self.checked,self.exclusions
         if self.core is not None:
             metrics.update(self.core.metrics)
-        return dict(checked=self.checked,excluded=len(self.exclusions),exclusions=self.exclusions,metrics=dict(metrics),
+            checked+=self.core.checked-self.core_start[0]
+            exclusions=exclusions+self.core.exclusions_since(self.core_start[1])
+        return dict(checked=checked,excluded=len(exclusions),exclusions=exclusions,metrics=dict(metrics),
                     relaxation={kind: dict(counts-self.relaxation_start[kind]) for kind, counts in stats().items()})

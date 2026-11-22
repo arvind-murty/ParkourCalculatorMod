@@ -48,7 +48,7 @@ public:
     const std::vector<FaceOption>& top_faces() const { return top_faces_; }
     const SolidOwners& owners() const { return owners_; }
 
-    const FaceTable& reachable_faces(const std::string& name);
+    const FaceTable& reachable_faces(const std::optional<std::string>& name);  // nullopt: None, a face of no owners
     // _prepared / _analysis for the default scene; nullptr when the vertical schedule is infeasible.
     std::shared_ptr<const GatePrepared> prepared(const std::shared_ptr<const Program>& program,
                                                  bool require_complete = false);
@@ -89,7 +89,7 @@ private:
     std::vector<FaceOption> top_faces_;
     SolidOwners owners_;
     Object metrics_;
-    std::map<std::string, FaceTable> face_tables_;
+    std::map<std::optional<std::string>, FaceTable> face_tables_;
     std::map<double, Trace> jump_traces_;
     // _cached's dict: least recently used first, at most 512 entries of every kind together.
     std::list<std::pair<std::string, std::any>> cache_;

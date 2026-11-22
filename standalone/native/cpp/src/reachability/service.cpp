@@ -114,7 +114,7 @@ std::shared_ptr<const T> InteractionGate::cached(const std::string& key, const s
     return value;
 }
 
-const FaceTable& InteractionGate::reachable_faces(const std::string& name) {
+const FaceTable& InteractionGate::reachable_faces(const std::optional<std::string>& name) {
     if (auto found = face_tables_.find(name); found != face_tables_.end()) return found->second;
     const std::clock_t started = std::clock();
     const Array& blocks = items(at(fields(scene_), "blocks"));

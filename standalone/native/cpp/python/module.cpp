@@ -208,8 +208,10 @@ pkc::GenerationContext generation_context(py::dict context) {
     if (context.contains("runTickChoices")) out.run_tick_choices = context["runTickChoices"].cast<bool>();
     if (context.contains("launchFace") && !context["launchFace"].is_none())
         out.launch_face = context["launchFace"].cast<std::string>();
-    if (context.contains("cases") && !context["cases"].is_none())
-        out.cases = context["cases"].cast<std::set<std::string>>();
+    if (context.contains("cases") && !context["cases"].is_none()) {
+        out.cases.emplace();
+        for (py::handle c : context["cases"]) out.cases->insert(c.cast<std::string>());
+    }
     if (context.contains("forward") && !context["forward"].is_none()) {
         py::dict f = context["forward"];
         auto point = f["point"].cast<std::vector<double>>(), direction = f["direction"].cast<std::vector<double>>();
@@ -504,7 +506,7 @@ PYBIND11_MODULE(_pkc_native, m) {
     });
     py::class_<pkc::InteractionGate, std::shared_ptr<pkc::InteractionGate>>(m, "InteractionGate")
         .def(py::init([](py::handle scene) { return std::make_shared<pkc::InteractionGate>(convert(scene)); }))
-        .def("reachable_faces", [](pkc::InteractionGate& gate, const std::string& name) {
+        .def("reachable_faces", [](pkc::InteractionGate& gate, std::optional<std::string> name) {
             const auto& t = gate.reachable_faces(name);
             py::dict out;
             out["blocks"] = t.blocks;
@@ -566,6 +568,12 @@ PYBIND11_MODULE(_pkc_native, m) {
         .def_property_readonly("exclusions", [](pkc::InteractionGate& gate) {
             return to_python(pkc::Value{std::make_shared<const pkc::Array>(gate.exclusions)});
         })
+        .def_property_readonly("excluded", [](pkc::InteractionGate& gate) { return gate.exclusions.size(); })
+        .def("exclusions_since", [](pkc::InteractionGate& gate, std::size_t start) {
+            return to_python(pkc::Value{std::make_shared<const pkc::Array>(
+                gate.exclusions.begin() + static_cast<std::ptrdiff_t>(std::min(start, gate.exclusions.size())),
+                gate.exclusions.end())});
+        }, "The exclusion log from entry `start` on")
         .def_property_readonly("metrics", [](pkc::InteractionGate& gate) {
             return to_python(pkc::Value{std::make_shared<const pkc::Object>(gate.metrics())});
         });
