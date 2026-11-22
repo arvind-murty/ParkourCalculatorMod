@@ -723,9 +723,9 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `AnchorAdapter.program_objective` | [93](../src/parkour_solver/search/anchors/adapter.py#L93) | function |
 | `AnchorAdapter.advance` | [98](../src/parkour_solver/search/anchors/adapter.py#L98) | function |
 | `AnchorAdapter.context` | [105](../src/parkour_solver/search/anchors/adapter.py#L105) | function |
-| `AnchorAdapter.program_allowed` | [113](../src/parkour_solver/search/anchors/adapter.py#L113) | function |
-| `AnchorAdapter.candidate` | [120](../src/parkour_solver/search/anchors/adapter.py#L120) | function |
-| `AnchorAdapter.summary` | [132](../src/parkour_solver/search/anchors/adapter.py#L132) | function |
+| `AnchorAdapter.program_allowed` | [114](../src/parkour_solver/search/anchors/adapter.py#L114) | function |
+| `AnchorAdapter.candidate` | [121](../src/parkour_solver/search/anchors/adapter.py#L121) | function |
+| `AnchorAdapter.summary` | [133](../src/parkour_solver/search/anchors/adapter.py#L133) | function |
 
 ## search/anchors/policy.py
 

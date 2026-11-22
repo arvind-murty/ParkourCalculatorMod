@@ -1507,7 +1507,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [src/parkour_solver/schema.py](../src/parkour_solver/schema.py) | 502 |
 | [src/parkour_solver/search/__init__.py](../src/parkour_solver/search/__init__.py) | 0 |
 | [src/parkour_solver/search/anchors/__init__.py](../src/parkour_solver/search/anchors/__init__.py) | 0 |
-| [src/parkour_solver/search/anchors/adapter.py](../src/parkour_solver/search/anchors/adapter.py) | 7588 |
+| [src/parkour_solver/search/anchors/adapter.py](../src/parkour_solver/search/anchors/adapter.py) | 7659 |
 | [src/parkour_solver/search/anchors/policy.py](../src/parkour_solver/search/anchors/policy.py) | 23717 |
 | [src/parkour_solver/search/application.py](../src/parkour_solver/search/application.py) | 2305 |
 | [src/parkour_solver/search/bounds/__init__.py](../src/parkour_solver/search/bounds/__init__.py) | 0 |
@@ -1515,7 +1515,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [src/parkour_solver/search/bounds/remaining.py](../src/parkour_solver/search/bounds/remaining.py) | 4009 |
 | [src/parkour_solver/search/comparison.py](../src/parkour_solver/search/comparison.py) | 7998 |
 | [src/parkour_solver/search/deferrals.py](../src/parkour_solver/search/deferrals.py) | 1228 |
-| [src/parkour_solver/search/dfs.py](../src/parkour_solver/search/dfs.py) | 67946 |
+| [src/parkour_solver/search/dfs.py](../src/parkour_solver/search/dfs.py) | 68005 |
 | [src/parkour_solver/search/domain.py](../src/parkour_solver/search/domain.py) | 960 |
 | [src/parkour_solver/search/engine.py](../src/parkour_solver/search/engine.py) | 14173 |
 | [src/parkour_solver/search/events/__init__.py](../src/parkour_solver/search/events/__init__.py) | 0 |
