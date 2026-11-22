@@ -19,6 +19,10 @@ class PythonCompiler:
     # Coefficient replies equal the generated tables, so a native gate compiles them itself (InteractionGate).
     table_coefficients = True
 
+    def __init__(self):
+        from parkour_solver import native_core
+        self.native = native_core.from_environment()  # scene checks replay natively under PKC_NATIVE_CORE
+
     def compile(self, route, plan, seconds):
         return self._exchange(coefficient_request(route, plan), seconds)
 
@@ -39,7 +43,8 @@ class PythonCompiler:
         action = message.get('action')
         try:
             if action == 'sceneCheck':
-                result = check_scene(message, deadline)
+                result = (check_scene(message, deadline) if self.native is None else
+                          self.native.check_scene(message, deadline - time.monotonic()))
             elif action in ('footprints', 'standingFootprints'):
                 result = {'footprints': route_footprints(message['blocks'], action == 'standingFootprints'),
                           'geometryModel': 'ConstraintDeriver.deriveFootprint:legacy'}

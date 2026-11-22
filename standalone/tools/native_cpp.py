@@ -186,6 +186,29 @@ def verify_coefficients(args):
     print(json.dumps(summary))
 
 
+def verify_scene(args):
+    """Run a real solve where every scene check is also replayed natively and compared."""
+    from parkour_solver.scene import static_collision
+    args.output.mkdir(parents=True, exist_ok=False)
+    native = load(args.variant)
+    os.environ.pop('PKC_NATIVE_CORE', None)  # the bridge under check must replay with Python, the oracle
+    original = static_collision.check_scene
+    calls = dict(count=0)
+
+    def checked(request, deadline=None):
+        expected = original(request, deadline)
+        calls['count'] += 1
+        if canonical_bytes(native.check_scene(request)) != canonical_bytes(expected):
+            save(args.output / 'mismatch.json', dict(request=request))
+            raise AssertionError(f'native scene check differs at call {calls["count"]}')
+        return expected
+
+    summary = checked_solve(args, dict(check_scene=original), dict(check_scene=checked))
+    summary.update(sceneChecks=calls['count'], mismatches=0)
+    save(args.output / 'summary.json', summary)
+    print(json.dumps(summary))
+
+
 def verify_envelopes(args):
     """Run a real solve where every reachable_envelopes result is also built natively and compared."""
     from parkour_solver.reachability import intervals
@@ -310,6 +333,11 @@ def main():
     p.add_argument('--seconds', type=float, required=True)
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--variant', choices=sorted(BUILDS), default='release')
+    p = commands.add_parser('verify-scene')
+    p.add_argument('--input', type=Path, required=True)
+    p.add_argument('--seconds', type=float, required=True)
+    p.add_argument('--output', type=Path, required=True)
+    p.add_argument('--variant', choices=sorted(BUILDS), default='release')
     p = commands.add_parser('verify-coefficients')
     p.add_argument('--input', type=Path, required=True)
     p.add_argument('--seconds', type=float, required=True)
@@ -318,7 +346,7 @@ def main():
     args = parser.parse_args()
     dict(build=build, verify_digest=verify_digest, verify_programs=verify_programs, verify_gate=verify_gate,
          verify_coefficients=verify_coefficients, verify_envelopes=verify_envelopes,
-         verify_screen=verify_screen)[args.command.replace('-', '_')](args)
+         verify_screen=verify_screen, verify_scene=verify_scene)[args.command.replace('-', '_')](args)
 
 
 if __name__ == '__main__':

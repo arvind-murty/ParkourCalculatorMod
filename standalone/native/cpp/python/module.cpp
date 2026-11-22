@@ -15,6 +15,7 @@
 #include "pkc/envelopes.hpp"
 #include "pkc/gate.hpp"
 #include "pkc/program.hpp"
+#include "pkc/scene/static_collision.hpp"
 #include "pkc/screen.hpp"
 
 namespace py = pybind11;
@@ -175,6 +176,7 @@ PYBIND11_MODULE(_pkc_native, m) {
     m.doc() = "Native core for parkour_solver (canonical identity, typed programs, gate preparation).";
     py::register_exception<std::invalid_argument>(m, "NativeValueError", PyExc_ValueError);
     py::register_exception<pkc::Unsupported>(m, "NativeUnsupported", PyExc_NotImplementedError);
+    py::register_exception<pkc::Timeout>(m, "NativeTimeout", PyExc_TimeoutError);
     m.def("canonical_json", [](py::handle value) { return py::bytes(pkc::canonical_json(convert(value))); },
           "json.dumps(value, sort_keys=True, allow_nan=False).encode()");
     m.def("digest", [](py::handle value) { return pkc::digest(convert(value)); },
@@ -287,6 +289,12 @@ PYBIND11_MODULE(_pkc_native, m) {
         return py::cast(std::make_shared<NativePrepared>(
             NativePrepared{std::move(typed), std::move(*result), std::move(key), {}}));
     }, "InteractionGate.prepare kept native under the gate's preparation key, or None");
+    m.def("check_scene", [](py::handle request, py::handle seconds) {
+        std::optional<double> budget;
+        if (!seconds.is_none()) budget = seconds.cast<double>();
+        return to_python(pkc::check_scene(convert(request), budget));
+    }, py::arg("request"), py::arg("seconds") = py::none(),
+       "scene/static_collision.check_scene; `seconds` is the budget left (None: unlimited)");
     m.def("float_repr", &pkc::float_repr, "repr(float) for a finite float");
     m.def("sha256_hex", [](py::bytes data) {
         static const char* hex = "0123456789abcdef";

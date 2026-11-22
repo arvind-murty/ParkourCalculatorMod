@@ -30,7 +30,7 @@ prepares and analyzes collision-box routes without ladder events natively and an
 its required-contact screens there, building Python dicts only for readers that ask.
 Its sequence screens append the choice to a native copy of the context's program and
 screen that child without building it in Python; a program's first append and ladder
-appends still build in Python. It compiles their coefficients from the native tables, so the compiler's call counts
+appends still build in Python. The Python bridge replays scene checks natively. It compiles their coefficients from the native tables, so the compiler's call counts
 omit them; only bridges whose replies equal those tables allow that
 (`table_coefficients`), and any other compiler gets the Python analysis. Everything else, and every run without the
 variable, uses the Python implementation, which stays the parity oracle.
@@ -182,6 +182,8 @@ difference and saves it as `mismatch.json`:
   --seconds 60 --output /path/to/new-dir [--variant sanitize]
 "$PKC_IPOPT_PYTHON" -B -m tools.native_cpp verify-screen --input cases/real11/physical-anchors.json \
   --seconds 60 --output /path/to/new-dir [--variant sanitize]
+"$PKC_IPOPT_PYTHON" -B -m tools.native_cpp verify-scene --input cases/real11/physical-anchors.json \
+  --seconds 120 --output /path/to/new-dir [--variant sanitize]
 ```
 
 `verify-screen` solves on the native gate and repeats every `sequence`, `required` and

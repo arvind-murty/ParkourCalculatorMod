@@ -37,15 +37,16 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | Symbol | Line | Kind |
 | --- | ---: | --- |
 | `PythonCompiler` | [18](../src/parkour_solver/bridge/python_compiler.py#L18) | class |
-| `PythonCompiler.compile` | [22](../src/parkour_solver/bridge/python_compiler.py#L22) | function |
-| `PythonCompiler.derive_footprints` | [25](../src/parkour_solver/bridge/python_compiler.py#L25) | function |
-| `PythonCompiler.derive_standing_footprints` | [28](../src/parkour_solver/bridge/python_compiler.py#L28) | function |
-| `PythonCompiler.check_scene` | [31](../src/parkour_solver/bridge/python_compiler.py#L31) | function |
-| `PythonCompiler._exchange` | [37](../src/parkour_solver/bridge/python_compiler.py#L37) | function |
-| `PythonCompiler.provenance` | [55](../src/parkour_solver/bridge/python_compiler.py#L55) | function |
-| `PythonCompiler.close` | [59](../src/parkour_solver/bridge/python_compiler.py#L59) | function |
-| `PythonCompiler.__enter__` | [62](../src/parkour_solver/bridge/python_compiler.py#L62) | function |
-| `PythonCompiler.__exit__` | [65](../src/parkour_solver/bridge/python_compiler.py#L65) | function |
+| `PythonCompiler.__init__` | [22](../src/parkour_solver/bridge/python_compiler.py#L22) | function |
+| `PythonCompiler.compile` | [26](../src/parkour_solver/bridge/python_compiler.py#L26) | function |
+| `PythonCompiler.derive_footprints` | [29](../src/parkour_solver/bridge/python_compiler.py#L29) | function |
+| `PythonCompiler.derive_standing_footprints` | [32](../src/parkour_solver/bridge/python_compiler.py#L32) | function |
+| `PythonCompiler.check_scene` | [35](../src/parkour_solver/bridge/python_compiler.py#L35) | function |
+| `PythonCompiler._exchange` | [41](../src/parkour_solver/bridge/python_compiler.py#L41) | function |
+| `PythonCompiler.provenance` | [60](../src/parkour_solver/bridge/python_compiler.py#L60) | function |
+| `PythonCompiler.close` | [64](../src/parkour_solver/bridge/python_compiler.py#L64) | function |
+| `PythonCompiler.__enter__` | [67](../src/parkour_solver/bridge/python_compiler.py#L67) | function |
+| `PythonCompiler.__exit__` | [70](../src/parkour_solver/bridge/python_compiler.py#L70) | function |
 
 ## canonical.py
 
