@@ -45,7 +45,8 @@ class DepthFirstTests(DepthFirstHarness):
         self.assertTrue(second['resume']['exact'])
 
     def test_in_flight_state_and_identity_survive_a_mid_solve_stop(self):
-        self.calls=[];self.interrupt_once=(17,30)
+        # Mid-repair progress is published only to a saver; without one the repair turns a stop into its result.
+        self.calls=[];self.interrupt_once=(17,30);self.progress=lambda state:None
         first=self.run_search(10)
         f=first['searchState']['stack'][-1]
         identity=f['inFlight']['id']

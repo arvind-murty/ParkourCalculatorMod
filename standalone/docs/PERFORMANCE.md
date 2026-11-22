@@ -21,7 +21,9 @@ descriptor, the request ledger and independent retained-witness replays; the
 per-route report and the other outputs are described in
 [solve reports](RESULTS_AND_DEBUGGING.md#solve-reports).
 Self times subtract instrumented children; inclusive categories overlap; hook
-overhead is included. Keep profiler hooks in `tools/profiling/`, never in
+overhead is included. Without `--durable` the profiler still passes a progress callback, so
+repair progress snapshots run there but not in the solve CLI without `--save-progress`; time
+production behavior through the CLI. Keep profiler hooks in `tools/profiling/`, never in
 production code.
 
 ## Real11 cold 300 s controls
@@ -135,7 +137,9 @@ With durable saves the extended run is checkpoint-bound: at `fb055163` checkpoin
 aliases in their own encoding walk instead of a second one (54.39 s in that run), which cut search
 time 6.4% on the durable call-capped input with identical reports. The solve CLI now saves progress
 during a run only with `--save-progress`; on the call-capped input its wall time is 39.78 s and 39.65 s
-without the flag against 66.28 s and 66.53 s with it, with identical final reports.
+without the flag against 66.28 s and 66.53 s with it, with identical final reports. Without a
+saver the repair loop also takes no progress snapshots (it used to deep-copy its state on every
+publication): 39.84 s to 34.37 s mean CLI wall time on that input, identical results.
 
 Children extend their parent instead of rebuilding it ([parent-linked programs](../research/parent-linked-programs/README.md)):
 an append without ladder involvement traces only its new ticks and shares the parent's content.

@@ -5,10 +5,10 @@
 `tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on main `d9e1ec9c`
 (encounter groups with the run-tick rework and walk-off faces) plus prepared analysis keys,
 the parent-window travel check, alias paths from the full save's walk, opt-in progress saves,
-children extending their parent and per-state program identity with list-order ties:
-**830 tests, no failures, errors or skips**, source unchanged during the run
-([report](../research/parent-linked-programs/native-gate-phaseB/report.json); run on `75a0f4c6`
-with the identity sources uncommitted). Wall-time-bound
+children extending their parent, per-state program identity with list-order ties and no repair
+snapshots without a saver: **830 tests, no failures, errors or skips**, source unchanged during
+the run ([report](../research/checkpoint-cost/native-gate-repair-snapshots/report.json); run on
+`6b11a815` with the snapshot sources uncommitted). Wall-time-bound
 tests can fail under load: the three gate runs of the run-tick change each failed a different
 one, each passing in the other runs ([deferred P17](DEFERRED_WORK.md)).
 The gate fails on any skip, so it needs `PKC_RUN_TICKS_COMPILER` for the Java
@@ -30,6 +30,7 @@ persistence without the removed 32/128 limits.
 
 | Source | Tests | Evidence |
 | --- | ---: | --- |
+| `6b11a815` + the repair loop publishes progress only to a saver | 830 | [report](../research/checkpoint-cost/native-gate-repair-snapshots/report.json) |
 | `75a0f4c6` + program identity as a per-state chain, equal-priority programs in list order | 830 | [report](../research/parent-linked-programs/native-gate-phaseB/report.json) |
 | `996c1a44` + children trace only their new ticks and share the parent's content | 830 | [report](../research/parent-linked-programs/native-gate/report.json) |
 | `05a1f9e9` + solve CLI saves in-run progress only with `--save-progress` | 829 | [report](../research/checkpoint-cost/native-gate-save-flag/report.json) |

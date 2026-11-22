@@ -265,15 +265,15 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
             attemptLog=copy.deepcopy((resume_state.get('attemptLog', []) if exact_resume else [])+inner_attempts),
             contactLog=copy.deepcopy((resume_state.get('contactLog', []) if exact_resume else [])+attempts))
 
-    def publish():
+    def publish(state=None):
         if on_progress is not None:
-            on_progress(snapshot())
+            on_progress(snapshot() if state is None else state)
 
     def finish(result):
         nonlocal in_flight
         # An unfinished walk's next candidate stays in flight: the check is unfinished and a resume re-walks.
         in_flight = walking
-        result['repairState'] = snapshot()
+        result['repairState'] = state = snapshot()
         metrics = completed_source_metrics.copy()
         metrics.update(getattr(variant_source, 'state', {}).get('metrics', {}))
         for record in repair_sources:
@@ -282,7 +282,7 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
             heldUnsolved=sum(len(p['held']) for f in families.values() for p in f['points'].values()))
         result['repairResume'] = dict(requested=resume_state is not None, compatible=resuming,
                                      exact=exact_resume, resumedBranches=resumed_branches)
-        publish()
+        publish(state)
         return result
     attempts, inner_attempts = [], []
     best_result = copy.deepcopy(resume_state.get('acceptedResult')) if exact_resume else None

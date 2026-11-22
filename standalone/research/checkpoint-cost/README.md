@@ -124,3 +124,19 @@ The solve CLI (`python -m parkour_solver`) saves progress during a run only with
 66.53 s with it. The final reports match exactly in both pairs (all 19 transitions), and resuming from a run
 saved without the flag continues exactly (`resume.exact`, session 2). The native gate passed 829 tests with no
 failures, errors or skips ([report](native-gate-save-flag/report.json); run on `05a1f9e9` with the flag uncommitted).
+
+## Repair snapshots without a saver
+
+The repair loop deep-copied its whole state (`snapshot`) on every publication and twice at its end, even after
+in-run saves became opt-in, because the search always passed it a progress callback. The engine now passes no
+callback when nothing saves, the search then gives the repair loop none and takes the final repair state from
+its result, and `finish` publishes the snapshot it already took. Solve CLI on the fixed-work input, alternating
+old `6b11a815` and new, load average 6.6 to 7.6 ([times](2026-11-21/repair-snapshots/wall-times.txt)): 40.38 s
+and 39.30 s old, 33.42 s and 35.32 s new without `--save-progress`; short case 5.58 s and 4.55 s; with
+`--save-progress` 73.89 s and 72.91 s. Every pair has identical reports (parity harness, digests included) and work
+counters; the saved search states differ only in timing fields, the same 182 that differ between two old runs.
+The native gate passed 830 tests with no failures, errors or skips
+([report](native-gate-repair-snapshots/report.json); run on `6b11a815` with this change uncommitted).
+`test_depth_first`'s mid-solve stop test fakes an evaluation that publishes and then raises, which the repair loop
+never does (budget timeouts become results through `finish`); it now attaches a saver, the only case where
+mid-repair publications exist.

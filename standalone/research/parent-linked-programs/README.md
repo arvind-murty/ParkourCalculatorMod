@@ -92,3 +92,13 @@ The native gate passed 830 tests with no failures, errors or skips ([report](nat
 `75a0f4c6` with this change uncommitted). One fixture in `test_anchor_dfs` built an 11-tick program with 11 ground
 flags; the chain reads every state, so the fixture now supplies `airtime + 1` flags as every built program has.
 The excluded ladder modules again ran 99 tests with the same 14 failures and errors as before either phase.
+
+## Phase D: how far a child's new ticks tighten its parent's envelope
+
+Not implemented in Python: the C++ migration ports `reachable_envelopes` and decides there. On the fixed-work input,
+for each of 1,075 envelope builds of an appended program, the child's smoothed X/Z boxes for states `0..cut` were
+compared with the same two smoothing passes run on states `0..cut` alone (same movements; measured in a scratch copy
+of `reachability/intervals.py`, [per-build data](2026-11-21/envelope-smoothing-reach.json) as
+`[cut, ticks, changed states, contradiction]`). The new ticks changed no parent state in 610 builds; in the other
+465 the earliest changed state was a median 3 and at most 17 states before the cut, and 2,344 of 70,832 parent states
+changed. The parent's real model also has its own end-of-program support walls, which this comparison leaves out.

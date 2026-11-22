@@ -458,7 +458,10 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
             seconds=max(.001,min(score_seconds,deadline-time.monotonic())),candidate_seconds=candidate_seconds,
             solver_calls=score_calls,python_executable=python_executable,cancel_event=cancel_event,
             partial_corridor=True,guide_objective=node_view.objective,first_witness=True,
-            solve_policy=policy,climb_families=True,on_progress=progress,retry_unresolved=retry_unknown)
+            solve_policy=policy,climb_families=True,on_progress=progress if on_progress else None,retry_unresolved=retry_unknown)
+        if not on_progress and result.get('repairState') is not None:
+            # Nothing saves progress, so the repair published nothing: leave its final state where progress would.
+            program['repairState']=entry['repairState']=result['repairState']
         query=result.get('nodeFeasibility',dict(status='feasible' if result['best'] else 'suspended',model=identity))
         repair=result.get('repairState') or {}
         if query['status']=='feasible' and (repair.get('pending') or repair.get('inFlight') or repair.get('repairSources') or
@@ -764,7 +767,9 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
         result = evaluate_program(args.pop('scene'),program,compiler,args.pop('adapter'),work,motion,
             seconds=max(.001,min(score_seconds,deadline-time.monotonic())),candidate_seconds=candidate_seconds,
             python_executable=python_executable,cancel_event=cancel_event,
-            on_progress=progress,retry_unresolved=retry_unknown,**args)
+            on_progress=progress if on_progress else None,retry_unresolved=retry_unknown,**args)
+        if not on_progress and result.get('repairState') is not None:
+            f['inFlight']['program']['repairState'] = result['repairState']
         if anchor_route:
             from parkour_solver.observability.turns import record as observe, replay
             span,start=pair_of(program,f),span_info(f)[1]
