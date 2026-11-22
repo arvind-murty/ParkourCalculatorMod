@@ -48,6 +48,7 @@ def bind_goal(program, spec, clearance=1e-6):
     if program.get('terminalGoal')==spec:
         return program
     result=copy.deepcopy(program);p=result['profile'];n=p['airtime']
+    result.pop('prefixChain',None)
     p.setdefault('constraintOwners',[0]*len(p['positionConstraints']))
     rows=goal_rows(spec,n,clearance)
     p['positionConstraints'].extend(rows)

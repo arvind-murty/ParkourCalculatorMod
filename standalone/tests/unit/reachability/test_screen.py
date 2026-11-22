@@ -4,7 +4,8 @@ import math
 import unittest
 from unittest.mock import patch
 
-from parkour_solver.reachability.intervals import interaction_reachability, reachable_envelopes, travel_radii
+from parkour_solver.reachability.intervals import (PARENT_WINDOW, interaction_reachability, reachable_envelopes,
+                                                    travel_radii)
 from parkour_solver.reachability.screen import contradiction
 from parkour_solver.numerics import disk, prepare, validate
 
@@ -50,6 +51,45 @@ class ScreenTests(unittest.TestCase):
             self.assertEqual(envelope['contradiction'], expected, p)
             fired += expected is not None
         self.assertGreater(fired, 20)
+
+    def test_appended_programs_pair_new_states_with_new_and_recent_parent_states(self):
+        rng = random.Random(1121)
+        fired = skipped = 0
+        for _ in range(400):
+            n = rng.randint(2, 40)
+            magnitude, friction = [rng.uniform(.05, .7) for _ in range(n)], [rng.uniform(.5, .95) for _ in range(n)]
+            reach = travel_radii(0., magnitude, friction)
+            walls = []
+            for _ in range(rng.randint(1, 4)):
+                t = rng.randint(1, n)
+                a = rng.uniform(.5, .95)*reach[t]
+                walls += [dict(mode='X', t1=t, cmp='GE', rhs=a), dict(mode='Z', t1=t, cmp='GE', rhs=a)][:rng.randint(1, 2)]
+            p = dict(ticks=n, position=[0., 0.], velocity=[0., 0.], magnitude=magnitude, friction=friction,
+                     walls=walls, threshold=0.)
+            parent = rng.randint(0, n-1)
+            full, envelope = reachable_envelopes(p), reachable_envelopes(p, parent_ticks=parent)
+            self.assertEqual({k: v for k, v in envelope.items() if k != 'contradiction'},
+                             {k: v for k, v in full.items() if k != 'contradiction'})
+            if full['contradiction'] is not None and full['contradiction']['reason'] != 'norm_reach_contradiction':
+                self.assertEqual(envelope['contradiction'], full['contradiction'])
+                continue
+            # A pair after the last constrained state fires only if one at that state does, which is the parent's.
+            states, radii, expected = envelope['states'], envelope['radii'], None
+            for j in range(parent+1, min(max(r['t1'] for r in walls), len(states)-1)+1):
+                for i in range(max(0, parent+1-PARENT_WINDOW), j):
+                    gap = math.hypot(*(max(0., states[j][a][0]-states[i][a][1], states[i][a][0]-states[j][a][1])
+                                       for a in ('X', 'Z')))
+                    if gap > radii[j]-radii[i]+1e-7:
+                        expected = dict(state=j, previousState=i, reason='norm_reach_contradiction',
+                                        gap=gap, travelUpperBound=radii[j]-radii[i])
+                        break
+                if expected is not None:
+                    break
+            self.assertEqual(envelope['contradiction'], expected, (p, parent))
+            fired += expected is not None
+            skipped += expected is None and full['contradiction'] is not None
+        self.assertGreater(fired, 20)
+        self.assertGreater(skipped, 5)
 
     def test_unreachable_wall_is_rejected(self):
         p = {'ticks': 1, 'position': [0, 0], 'velocity': [0, 0], 'magnitude': [.1],

@@ -1,0 +1,3450 @@
+{
+ "perSave": [
+  {
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 1181508,
+   "total": 1181508
+  },
+  {
+   "unchanged": 1174803,
+   "identityStable": 1174803,
+   "changed": 28845,
+   "total": 1203648
+  },
+  {
+   "unchanged": 1196363,
+   "identityStable": 1196363,
+   "changed": 7687,
+   "total": 1204050
+  },
+  {
+   "unchanged": 1204050,
+   "identityStable": 1204050,
+   "changed": 0,
+   "total": 1204050
+  },
+  {
+   "unchanged": 1243683,
+   "identityStable": 0,
+   "changed": 189510,
+   "total": 1433193
+  },
+  {
+   "unchanged": 1333426,
+   "identityStable": 1333426,
+   "changed": 10544,
+   "total": 1343970
+  },
+  {
+   "unchanged": 1502807,
+   "identityStable": 1187758,
+   "changed": 31776,
+   "total": 1534583
+  },
+  {
+   "unchanged": 1543076,
+   "identityStable": 1524998,
+   "changed": 58870,
+   "total": 1601946
+  },
+  {
+   "unchanged": 1591881,
+   "identityStable": 1591881,
+   "changed": 10466,
+   "total": 1602347
+  },
+  {
+   "unchanged": 1602347,
+   "identityStable": 1602347,
+   "changed": 0,
+   "total": 1602347
+  },
+  {
+   "unchanged": 1696751,
+   "identityStable": 0,
+   "changed": 295804,
+   "total": 1992555
+  },
+  {
+   "unchanged": 1825705,
+   "identityStable": 1825705,
+   "changed": 11023,
+   "total": 1836728
+  },
+  {
+   "unchanged": 2138111,
+   "identityStable": 1400957,
+   "changed": 39418,
+   "total": 2177529
+  },
+  {
+   "unchanged": 2191066,
+   "identityStable": 2165976,
+   "changed": 75396,
+   "total": 2266462
+  },
+  {
+   "unchanged": 2254426,
+   "identityStable": 2254426,
+   "changed": 12436,
+   "total": 2266862
+  },
+  {
+   "unchanged": 2266862,
+   "identityStable": 2266862,
+   "changed": 0,
+   "total": 2266862
+  },
+  {
+   "unchanged": 2388781,
+   "identityStable": 0,
+   "changed": 383001,
+   "total": 2771782
+  },
+  {
+   "unchanged": 2555036,
+   "identityStable": 2555036,
+   "changed": 14198,
+   "total": 2569234
+  },
+  {
+   "unchanged": 2962931,
+   "identityStable": 1737056,
+   "changed": 47276,
+   "total": 3010207
+  },
+  {
+   "unchanged": 3031949,
+   "identityStable": 2999669,
+   "changed": 91587,
+   "total": 3123536
+  },
+  {
+   "unchanged": 3192350,
+   "identityStable": 3102722,
+   "changed": 270982,
+   "total": 3463332
+  },
+  {
+   "unchanged": 3125645,
+   "identityStable": 3051586,
+   "changed": 94163,
+   "total": 3219808
+  },
+  {
+   "unchanged": 3271665,
+   "identityStable": 3170922,
+   "changed": 212589,
+   "total": 3484254
+  },
+  {
+   "unchanged": 3292340,
+   "identityStable": 3061511,
+   "changed": 205713,
+   "total": 3498053
+  },
+  {
+   "unchanged": 3575342,
+   "identityStable": 3474180,
+   "changed": 216451,
+   "total": 3791793
+  },
+  {
+   "unchanged": 3511784,
+   "identityStable": 3248165,
+   "changed": 72963,
+   "total": 3584747
+  },
+  {
+   "unchanged": 3756393,
+   "identityStable": 3558221,
+   "changed": 437823,
+   "total": 4194216
+  },
+  {
+   "unchanged": 3583918,
+   "identityStable": 3256292,
+   "changed": 60187,
+   "total": 3644105
+  },
+  {
+   "unchanged": 3709932,
+   "identityStable": 3589155,
+   "changed": 311946,
+   "total": 4021878
+  },
+  {
+   "unchanged": 3637091,
+   "identityStable": 3276613,
+   "changed": 112600,
+   "total": 3749691
+  },
+  {
+   "unchanged": 3938603,
+   "identityStable": 3688259,
+   "changed": 801574,
+   "total": 4740177
+  },
+  {
+   "unchanged": 4246419,
+   "identityStable": 3873026,
+   "changed": 67640,
+   "total": 4314059
+  },
+  {
+   "unchanged": 4488935,
+   "identityStable": 4281787,
+   "changed": 447606,
+   "total": 4936541
+  },
+  {
+   "unchanged": 4313038,
+   "identityStable": 3869953,
+   "changed": 62525,
+   "total": 4375563
+  },
+  {
+   "unchanged": 4650139,
+   "identityStable": 4314527,
+   "changed": 1072949,
+   "total": 5723088
+  },
+  {
+   "unchanged": 4477631,
+   "identityStable": 3778067,
+   "changed": 258741,
+   "total": 4736372
+  },
+  {
+   "unchanged": 4861572,
+   "identityStable": 4669840,
+   "changed": 556780,
+   "total": 5418352
+  },
+  {
+   "unchanged": 4858167,
+   "identityStable": 3847228,
+   "changed": 457970,
+   "total": 5316137
+  },
+  {
+   "unchanged": 5730168,
+   "identityStable": 5242769,
+   "changed": 977507,
+   "total": 6707675
+  },
+  {
+   "unchanged": 5490207,
+   "identityStable": 3959047,
+   "changed": 270796,
+   "total": 5761003
+  },
+  {
+   "unchanged": 5766449,
+   "identityStable": 5688933,
+   "changed": 314298,
+   "total": 6080747
+  },
+  {
+   "unchanged": 5894902,
+   "identityStable": 5203066,
+   "changed": 11378,
+   "total": 5906280
+  },
+  {
+   "unchanged": 6029636,
+   "identityStable": 5832883,
+   "changed": 594157,
+   "total": 6623793
+  },
+  {
+   "unchanged": 5871112,
+   "identityStable": 4560575,
+   "changed": 92161,
+   "total": 5963273
+  },
+  {
+   "unchanged": 6207619,
+   "identityStable": 5881016,
+   "changed": 611102,
+   "total": 6818721
+  },
+  {
+   "unchanged": 5958810,
+   "identityStable": 4630746,
+   "changed": 71369,
+   "total": 6030179
+  },
+  {
+   "unchanged": 6569277,
+   "identityStable": 5951311,
+   "changed": 2375902,
+   "total": 8945179
+  },
+  {
+   "unchanged": 6487698,
+   "identityStable": 4492524,
+   "changed": 267088,
+   "total": 6754786
+  },
+  {
+   "unchanged": 6947868,
+   "identityStable": 6681257,
+   "changed": 601148,
+   "total": 7549016
+  },
+  {
+   "unchanged": 6712366,
+   "identityStable": 5158049,
+   "changed": 105575,
+   "total": 6817941
+  },
+  {
+   "unchanged": 7173263,
+   "identityStable": 6711136,
+   "changed": 1366003,
+   "total": 8539266
+  },
+  {
+   "unchanged": 7019371,
+   "identityStable": 4668403,
+   "changed": 278519,
+   "total": 7297890
+  },
+  {
+   "unchanged": 7975113,
+   "identityStable": 7182077,
+   "changed": 1800019,
+   "total": 9775132
+  },
+  {
+   "unchanged": 8527392,
+   "identityStable": 6848526,
+   "changed": 91584,
+   "total": 8618976
+  },
+  {
+   "unchanged": 8875492,
+   "identityStable": 8537581,
+   "changed": 602667,
+   "total": 9478159
+  },
+  {
+   "unchanged": 8611588,
+   "identityStable": 6814735,
+   "changed": 76339,
+   "total": 8687927
+  },
+  {
+   "unchanged": 8737782,
+   "identityStable": 8571376,
+   "changed": 282729,
+   "total": 9020511
+  },
+  {
+   "unchanged": 8839547,
+   "identityStable": 6009205,
+   "changed": 714288,
+   "total": 9553835
+  },
+  {
+   "unchanged": 9608791,
+   "identityStable": 9467471,
+   "changed": 293333,
+   "total": 9902124
+  },
+  {
+   "unchanged": 9499742,
+   "identityStable": 7004786,
+   "changed": 188692,
+   "total": 9688434
+  },
+  {
+   "unchanged": 9776930,
+   "identityStable": 9563389,
+   "changed": 260727,
+   "total": 10037657
+  },
+  {
+   "unchanged": 9678588,
+   "identityStable": 7104457,
+   "changed": 76511,
+   "total": 9755099
+  },
+  {
+   "unchanged": 10208071,
+   "identityStable": 9624483,
+   "changed": 1380492,
+   "total": 11588563
+  },
+  {
+   "unchanged": 10655032,
+   "identityStable": 8397429,
+   "changed": 99418,
+   "total": 10754450
+  },
+  {
+   "unchanged": 11013394,
+   "identityStable": 10659357,
+   "changed": 615914,
+   "total": 11629308
+  },
+  {
+   "unchanged": 10744565,
+   "identityStable": 8122062,
+   "changed": 80973,
+   "total": 10825538
+  },
+  {
+   "unchanged": 10798185,
+   "identityStable": 10695699,
+   "changed": 190187,
+   "total": 10988372
+  },
+  {
+   "unchanged": 10978322,
+   "identityStable": 10978322,
+   "changed": 10053,
+   "total": 10988375
+  },
+  {
+   "unchanged": 10985907,
+   "identityStable": 10985907,
+   "changed": 2582,
+   "total": 10988489
+  },
+  {
+   "unchanged": 10988489,
+   "identityStable": 10988489,
+   "changed": 0,
+   "total": 10988489
+  }
+ ],
+ "byPath": {
+  "domain": {
+   "bytes": 75339376,
+   "unchanged": 75338770,
+   "identityStable": 71861596,
+   "changed": 606
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>": {
+   "bytes": 69868835,
+   "unchanged": 69854056,
+   "identityStable": 69854056,
+   "changed": 14779
+  },
+  "dfs.stack.#": {
+   "bytes": 46797553,
+   "unchanged": 46608125,
+   "identityStable": 45969594,
+   "changed": 189428
+  },
+  "dfs.windows": {
+   "bytes": 43975175,
+   "unchanged": 43975163,
+   "identityStable": 43357061,
+   "changed": 12
+  },
+  "dfs.stack.#.generation.continuation.pending": {
+   "bytes": 17931678,
+   "unchanged": 17931263,
+   "identityStable": 17891981,
+   "changed": 415
+  },
+  "dfs.stack.#.generation.continuation.alternatives": {
+   "bytes": 16890034,
+   "unchanged": 16881370,
+   "identityStable": 16848571,
+   "changed": 8664
+  },
+  "dfs.stack.#.generation.continuation.seen": {
+   "bytes": 16266281,
+   "unchanged": 16263960,
+   "identityStable": 16211860,
+   "changed": 2321
+  },
+  "": {
+   "bytes": 16224750,
+   "unchanged": 16061748,
+   "identityStable": 16061748,
+   "changed": 163002
+  },
+  "dfs.stack.#.generation.continuation.seen.#": {
+   "bytes": 14977311,
+   "unchanged": 13597120,
+   "identityStable": 0,
+   "changed": 1380191
+  },
+  "dfs.stack.#.generation.continuation.pending.#": {
+   "bytes": 11150393,
+   "unchanged": 10992005,
+   "identityStable": 0,
+   "changed": 158388
+  },
+  "dfs": {
+   "bytes": 10092409,
+   "unchanged": 9811104,
+   "identityStable": 9811104,
+   "changed": 281305
+  },
+  "dfs.stack.#.generation.continuation": {
+   "bytes": 7946583,
+   "unchanged": 7898332,
+   "identityStable": 7898332,
+   "changed": 48251
+  },
+  "dfs.stack.#.generation.continuation.alternatives.<id>": {
+   "bytes": 4143052,
+   "unchanged": 4139284,
+   "identityStable": 0,
+   "changed": 3768
+  },
+  "dfs.discovery": {
+   "bytes": 3166846,
+   "unchanged": 3163276,
+   "identityStable": 3112700,
+   "changed": 3570
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.attemptLog.#.diagnostics.#.request.walls": {
+   "bytes": 1815428,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 1815428
+  },
+  "dfs.stack.#.generation.continuation.exclusions": {
+   "bytes": 1385036,
+   "unchanged": 1037572,
+   "identityStable": 1037572,
+   "changed": 347464
+  },
+  "dfs.stack.#.parents": {
+   "bytes": 1300871,
+   "unchanged": 1300862,
+   "identityStable": 1269304,
+   "changed": 9
+  },
+  "domain.geometry.transitions": {
+   "bytes": 1030690,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 1030690
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.plan.walls": {
+   "bytes": 949208,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 949208
+  },
+  "graph": {
+   "bytes": 853805,
+   "unchanged": 853515,
+   "identityStable": 814122,
+   "changed": 290
+  },
+  "dfs.stack.#.records": {
+   "bytes": 713005,
+   "unchanged": 712987,
+   "identityStable": 712987,
+   "changed": 18
+  },
+  "dfs.nodeResults": {
+   "bytes": 686106,
+   "unchanged": 466374,
+   "identityStable": 466374,
+   "changed": 219732
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.attemptLog.#.diagnostics.#.request": {
+   "bytes": 683417,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 683417
+  },
+  "dfs.observations": {
+   "bytes": 628959,
+   "unchanged": 628119,
+   "identityStable": 628119,
+   "changed": 840
+  },
+  "dfs.windows.#": {
+   "bytes": 619313,
+   "unchanged": 618095,
+   "identityStable": 0,
+   "changed": 1218
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight": {
+   "bytes": 614139,
+   "unchanged": 536925,
+   "identityStable": 0,
+   "changed": 77214
+  },
+  "dfs.stack.#.generation.continuation.alternatives.<id>.programs": {
+   "bytes": 599623,
+   "unchanged": 599569,
+   "identityStable": 0,
+   "changed": 54
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.profile": {
+   "bytes": 571555,
+   "unchanged": 528936,
+   "identityStable": 178430,
+   "changed": 42619
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.attemptLog.#.diagnostics.#.request.walls": {
+   "bytes": 492012,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 492012
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.route.verticalProfiles.#.positionConstraints": {
+   "bytes": 483972,
+   "unchanged": 483972,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.profiles.#.positionConstraints": {
+   "bytes": 483972,
+   "unchanged": 483972,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.observations.decisions": {
+   "bytes": 466969,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 466969
+  },
+  "dfs.stack.#.generation.continuation.minimumRunCandidates": {
+   "bytes": 466332,
+   "unchanged": 351262,
+   "identityStable": 351262,
+   "changed": 115070
+  },
+  "dfs.stack.#.generation.continuation.pending.#.profile.positionConstraints": {
+   "bytes": 462845,
+   "unchanged": 413669,
+   "identityStable": 0,
+   "changed": 49176
+  },
+  "dfs.stack.#.records.#.program": {
+   "bytes": 455590,
+   "unchanged": 449374,
+   "identityStable": 0,
+   "changed": 6216
+  },
+  "dfs.windows.#.candidates.#.program": {
+   "bytes": 449374,
+   "unchanged": 449374,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best": {
+   "bytes": 424519,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 424519
+  },
+  "dfs.stack.#.generation": {
+   "bytes": 418018,
+   "unchanged": 393484,
+   "identityStable": 393484,
+   "changed": 24534
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.attemptLog.#.diagnostics.#.request.vertical": {
+   "bytes": 416278,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 416278
+  },
+  "dfs.stack.#.generation.continuation.pending.#.trace": {
+   "bytes": 404205,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 404205
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.route.contactEvents": {
+   "bytes": 373097,
+   "unchanged": 373097,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.route.verticalProfiles.#.contactEvents": {
+   "bytes": 373097,
+   "unchanged": 373097,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.profiles.#.contactEvents": {
+   "bytes": 373097,
+   "unchanged": 373097,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.alternatives.<id>.programs.#.profile": {
+   "bytes": 366607,
+   "unchanged": 366607,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.candidate": {
+   "bytes": 365166,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 365166
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.route.verticalProfiles.#": {
+   "bytes": 361411,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 361411
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.profiles.#": {
+   "bytes": 361411,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 361411
+  },
+  "dfs.stack.#.generation.continuation.pending.#.profile": {
+   "bytes": 357479,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 357479
+  },
+  "dfs.stack.#.generation.continuation.pending.#.profile.contactEvents": {
+   "bytes": 337894,
+   "unchanged": 19239,
+   "identityStable": 0,
+   "changed": 318655
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.plan.walls": {
+   "bytes": 296316,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 296316
+  },
+  "dfs.stack.#.generation.continuation.decisionParents": {
+   "bytes": 277188,
+   "unchanged": 144358,
+   "identityStable": 144358,
+   "changed": 132830
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.plan.walls": {
+   "bytes": 253844,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 253844
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.profile": {
+   "bytes": 250837,
+   "unchanged": 143511,
+   "identityStable": 0,
+   "changed": 107326
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.plan.vertical": {
+   "bytes": 248944,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 248944
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.trace": {
+   "bytes": 235552,
+   "unchanged": 181154,
+   "identityStable": 58626,
+   "changed": 54398
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.plan.walls": {
+   "bytes": 231128,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 231128
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.plan.sceneContacts": {
+   "bytes": 228273,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 228273
+  },
+  "dfs.nodeResults.<id>": {
+   "bytes": 224610,
+   "unchanged": 224220,
+   "identityStable": 0,
+   "changed": 390
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.route": {
+   "bytes": 223850,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 223850
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.attemptLog.#.diagnostics.#.request.movement": {
+   "bytes": 223006,
+   "unchanged": 2510,
+   "identityStable": 0,
+   "changed": 220496
+  },
+  "dfs.transitions": {
+   "bytes": 216457,
+   "unchanged": 192521,
+   "identityStable": 192521,
+   "changed": 23936
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.plan.walls": {
+   "bytes": 214365,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 214365
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.context.profiles.#.positionConstraints": {
+   "bytes": 197842,
+   "unchanged": 69627,
+   "identityStable": 0,
+   "changed": 128215
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.interactionAlternatives": {
+   "bytes": 188142,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 188142
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.interactionChoices": {
+   "bytes": 187830,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 187830
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.trace": {
+   "bytes": 181154,
+   "unchanged": 181154,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.candidate.controls": {
+   "bytes": 180437,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 180437
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.plan": {
+   "bytes": 176114,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 176114
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.candidate.velocity": {
+   "bytes": 175902,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 175902
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.candidate.rawMovement": {
+   "bytes": 174492,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 174492
+  },
+  "guidePlan": {
+   "bytes": 172524,
+   "unchanged": 169910,
+   "identityStable": 162068,
+   "changed": 2614
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.attemptLog.#.diagnostics.#.request": {
+   "bytes": 166198,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 166198
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.candidate.positions": {
+   "bytes": 164143,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 164143
+  },
+  "dfs.stack.#.records.#.witness": {
+   "bytes": 159902,
+   "unchanged": 152626,
+   "identityStable": 0,
+   "changed": 7276
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.profile.positionConstraints": {
+   "bytes": 156800,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 156800
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.route.verticalProfiles.#.positionConstraints": {
+   "bytes": 152835,
+   "unchanged": 152835,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.profiles.#.positionConstraints": {
+   "bytes": 152835,
+   "unchanged": 152835,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.windows.#.candidates.#.witness": {
+   "bytes": 152626,
+   "unchanged": 152626,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.context.profiles.#.contactEvents": {
+   "bytes": 152446,
+   "unchanged": 6705,
+   "identityStable": 0,
+   "changed": 145741
+  },
+  "dfs.observations.decisions.<id>": {
+   "bytes": 151318,
+   "unchanged": 80766,
+   "identityStable": 0,
+   "changed": 70552
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.context.profiles.#": {
+   "bytes": 144063,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 144063
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.candidate.movement": {
+   "bytes": 132985,
+   "unchanged": 2510,
+   "identityStable": 0,
+   "changed": 130475
+  },
+  "dfs.windows.#.generation": {
+   "bytes": 131273,
+   "unchanged": 131273,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.constraintGeneration.screenExclusions.#": {
+   "bytes": 128903,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 128903
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.route.verticalProfiles.#.positionConstraints": {
+   "bytes": 128890,
+   "unchanged": 128890,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.profiles.#.positionConstraints": {
+   "bytes": 128890,
+   "unchanged": 128890,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best": {
+   "bytes": 128829,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 128829
+  },
+  "dfs.stack.#.generation.continuation.alternatives.<id>.programs.#.trace": {
+   "bytes": 121126,
+   "unchanged": 121126,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.route.verticalProfiles.#.positionConstraints": {
+   "bytes": 118668,
+   "unchanged": 118668,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.profiles.#.positionConstraints": {
+   "bytes": 118668,
+   "unchanged": 118668,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.route.contactEvents": {
+   "bytes": 118434,
+   "unchanged": 118434,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.route.verticalProfiles.#.contactEvents": {
+   "bytes": 118434,
+   "unchanged": 118434,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.profiles.#.contactEvents": {
+   "bytes": 118434,
+   "unchanged": 118434,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.candidate": {
+   "bytes": 118327,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 118327
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.alternatives.#.profile.positionConstraints": {
+   "bytes": 114262,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 114262
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.route.verticalProfiles.#": {
+   "bytes": 114204,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 114204
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.profiles.#": {
+   "bytes": 114204,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 114204
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.profile.contactEvents": {
+   "bytes": 111729,
+   "unchanged": 111729,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best": {
+   "bytes": 110582,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 110582
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.route.verticalProfiles.#.positionConstraints": {
+   "bytes": 110269,
+   "unchanged": 110269,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.profiles.#.positionConstraints": {
+   "bytes": 110269,
+   "unchanged": 110269,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState": {
+   "bytes": 104381,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 104381
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.attemptLog.#.diagnostics.#.request.vertical": {
+   "bytes": 103790,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 103790
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation": {
+   "bytes": 101113,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 101113
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.route.verticalProfiles.#": {
+   "bytes": 100176,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 100176
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.profiles.#": {
+   "bytes": 100176,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 100176
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.route.contactEvents": {
+   "bytes": 100055,
+   "unchanged": 100055,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.route.verticalProfiles.#.contactEvents": {
+   "bytes": 100055,
+   "unchanged": 100055,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.profiles.#.contactEvents": {
+   "bytes": 100055,
+   "unchanged": 100055,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.alternatives.#.trace": {
+   "bytes": 99956,
+   "unchanged": 99956,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.candidate": {
+   "bytes": 98957,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 98957
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.state": {
+   "bytes": 96681,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 96681
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.route.contactEvents": {
+   "bytes": 90984,
+   "unchanged": 90984,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.route.verticalProfiles.#.contactEvents": {
+   "bytes": 90984,
+   "unchanged": 90984,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.profiles.#.contactEvents": {
+   "bytes": 90984,
+   "unchanged": 90984,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.alternatives.#.profile": {
+   "bytes": 89974,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 89974
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.route.verticalProfiles.#": {
+   "bytes": 89930,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 89930
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.profiles.#": {
+   "bytes": 89930,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 89930
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.candidate": {
+   "bytes": 87441,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 87441
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best": {
+   "bytes": 87407,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 87407
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.route.contactEvents": {
+   "bytes": 83641,
+   "unchanged": 83641,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.route.verticalProfiles.#.contactEvents": {
+   "bytes": 83641,
+   "unchanged": 83641,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.profiles.#.contactEvents": {
+   "bytes": 83641,
+   "unchanged": 83641,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.plan.movementUnits": {
+   "bytes": 80533,
+   "unchanged": 80533,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.route.movementUnits.#": {
+   "bytes": 80533,
+   "unchanged": 80533,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.route.verticalProfiles.#.generatedUnits": {
+   "bytes": 80533,
+   "unchanged": 80533,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.profiles.#.generatedUnits": {
+   "bytes": 80533,
+   "unchanged": 80533,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.plan.vertical": {
+   "bytes": 79288,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 79288
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.candidate": {
+   "bytes": 77274,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 77274
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.alternatives.#.profile.contactEvents": {
+   "bytes": 76475,
+   "unchanged": 76475,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "domain.geometry.regions": {
+   "bytes": 76164,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 76164
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.plan.sceneContacts": {
+   "bytes": 72560,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 72560
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.contactLog": {
+   "bytes": 70706,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 70706
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.constraintGeneration.encounterLog.#.sides": {
+   "bytes": 69776,
+   "unchanged": 22389,
+   "identityStable": 0,
+   "changed": 47387
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.route.verticalProfiles.#": {
+   "bytes": 68946,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 68946
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.profiles.#": {
+   "bytes": 68946,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 68946
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.plan.vertical": {
+   "bytes": 67915,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 67915
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.constraintGeneration.reference": {
+   "bytes": 66777,
+   "unchanged": 3020,
+   "identityStable": 0,
+   "changed": 63757
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.profile.positionConstraints": {
+   "bytes": 66437,
+   "unchanged": 66437,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.route": {
+   "bytes": 65682,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 65682
+  },
+  "dfs.stack.#.generation.continuation.pending.#.profile.generatedUnits": {
+   "bytes": 64773,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 64773
+  },
+  "dfs.stack.#.generation.continuation.pending.#.movementUnits": {
+   "bytes": 64773,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 64773
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.route": {
+   "bytes": 63045,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 63045
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program": {
+   "bytes": 62919,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 62919
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.plan.sceneContacts": {
+   "bytes": 61185,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 61185
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#": {
+   "bytes": 61131,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 61131
+  },
+  "dfs.stack.#.generation.continuation.alternatives.<id>.programs.#": {
+   "bytes": 59831,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 59831
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.plan.vertical": {
+   "bytes": 58781,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 58781
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.completed": {
+   "bytes": 58532,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 58532
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.route": {
+   "bytes": 57523,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 57523
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.attemptLog.#.diagnostics.#.request.movement": {
+   "bytes": 56019,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 56019
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.candidate.velocity": {
+   "bytes": 55817,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 55817
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.plan.sceneContacts": {
+   "bytes": 55602,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 55602
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.candidate.rawMovement": {
+   "bytes": 55412,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 55412
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.plan": {
+   "bytes": 55119,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 55119
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.plan.vertical": {
+   "bytes": 54704,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 54704
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.context": {
+   "bytes": 54038,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 54038
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.attemptLog.#.diagnostics.#": {
+   "bytes": 53727,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 53727
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.movementUnits": {
+   "bytes": 52865,
+   "unchanged": 36217,
+   "identityStable": 16648,
+   "changed": 16648
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.profile.contactEvents": {
+   "bytes": 52726,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 52726
+  },
+  "dfs.discovery.<id>": {
+   "bytes": 52548,
+   "unchanged": 48264,
+   "identityStable": 0,
+   "changed": 4284
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.candidate.positions": {
+   "bytes": 52196,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 52196
+  },
+  "dfs.stack.#.inFlight.program": {
+   "bytes": 52171,
+   "unchanged": 45955,
+   "identityStable": 45955,
+   "changed": 6216
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.plan.sceneContacts": {
+   "bytes": 51147,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 51147
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.plan": {
+   "bytes": 49497,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 49497
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.candidate.velocity": {
+   "bytes": 48088,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 48088
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.candidate.rawMovement": {
+   "bytes": 47682,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 47682
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.alternatives.#": {
+   "bytes": 47580,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 47580
+  },
+  "dfs.stack.#.records.#.child.profile": {
+   "bytes": 46548,
+   "unchanged": 35834,
+   "identityStable": 0,
+   "changed": 10714
+  },
+  "dfs.stack.#.records.#.numericalAttempts": {
+   "bytes": 45968,
+   "unchanged": 45959,
+   "identityStable": 0,
+   "changed": 9
+  },
+  "dfs.windows.#.candidates.#.numericalAttempts": {
+   "bytes": 45959,
+   "unchanged": 45959,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.constraintGeneration.screenExclusions.#": {
+   "bytes": 45680,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 45680
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.plan": {
+   "bytes": 45634,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 45634
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.context.profiles.#.positionConstraints": {
+   "bytes": 45007,
+   "unchanged": 7509,
+   "identityStable": 0,
+   "changed": 37498
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.candidate.positions": {
+   "bytes": 44876,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 44876
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.generatedBranches": {
+   "bytes": 43695,
+   "unchanged": 2171,
+   "identityStable": 0,
+   "changed": 41524
+  },
+  "dfs.stack.#.generation.continuation.nodes": {
+   "bytes": 43540,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 43540
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.candidate.controls": {
+   "bytes": 43209,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 43209
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points": {
+   "bytes": 41904,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 41904
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.candidate.velocity": {
+   "bytes": 41828,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 41828
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.candidate.rawMovement": {
+   "bytes": 41512,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 41512
+  },
+  "dfs.stack.#.generation.continuation.pending.#.trace.vertical": {
+   "bytes": 40606,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 40606
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.candidate.movement": {
+   "bytes": 39777,
+   "unchanged": 2510,
+   "identityStable": 0,
+   "changed": 37267
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.candidate.positions": {
+   "bytes": 39011,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 39011
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.candidate.controls": {
+   "bytes": 38896,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 38896
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.route": {
+   "bytes": 38705,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 38705
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.candidate.velocity": {
+   "bytes": 38118,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 38118
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.candidate.rawMovement": {
+   "bytes": 37825,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 37825
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.candidate.movement": {
+   "bytes": 37434,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 37434
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.movementUnits": {
+   "bytes": 36217,
+   "unchanged": 36217,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.context.profiles.#.generatedUnits": {
+   "bytes": 36217,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 36217
+  },
+  "dfs.stack.#.parents.#.profile": {
+   "bytes": 35834,
+   "unchanged": 35834,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.windows.#.candidates.#.child.profile": {
+   "bytes": 35834,
+   "unchanged": 35834,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.discovery.<id>.parents.#.profile": {
+   "bytes": 35834,
+   "unchanged": 35834,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.candidate.positions": {
+   "bytes": 35419,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 35419
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.context.profiles.#.contactEvents": {
+   "bytes": 34012,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 34012
+  },
+  "domain.features": {
+   "bytes": 33884,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 33884
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.constraintGeneration": {
+   "bytes": 33742,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 33742
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.constraintGeneration.screenExclusions.#.passage": {
+   "bytes": 33334,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 33334
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.plan.movementUnits": {
+   "bytes": 32286,
+   "unchanged": 32286,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.route.movementUnits.#": {
+   "bytes": 32286,
+   "unchanged": 32286,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.route.verticalProfiles.#.generatedUnits": {
+   "bytes": 32286,
+   "unchanged": 32286,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.profiles.#.generatedUnits": {
+   "bytes": 32286,
+   "unchanged": 32286,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.seen": {
+   "bytes": 32063,
+   "unchanged": 2186,
+   "identityStable": 0,
+   "changed": 29877
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.vertical": {
+   "bytes": 31952,
+   "unchanged": 31952,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.candidate.movement": {
+   "bytes": 30764,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 30764
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.context.profiles.#": {
+   "bytes": 29859,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 29859
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.state": {
+   "bytes": 29715,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 29715
+  },
+  "dfs.stack.#.records.#.program.profile": {
+   "bytes": 29486,
+   "unchanged": 29486,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.inFlight.program.profile": {
+   "bytes": 29486,
+   "unchanged": 29486,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.plan": {
+   "bytes": 29420,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 29420
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.candidate.movement": {
+   "bytes": 29418,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 29418
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.confirmation.plan.walls": {
+   "bytes": 28533,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 28533
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.interactionAlternatives": {
+   "bytes": 28401,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 28401
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.interactionChoices": {
+   "bytes": 28350,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 28350
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedVariants.#.best.candidate": {
+   "bytes": 26255,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 26255
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedResult.best.candidate": {
+   "bytes": 26255,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 26255
+  },
+  "dfs.stack.#.records.#.witness.candidate": {
+   "bytes": 26255,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 26255
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedVariants.#.best.candidate": {
+   "bytes": 26255,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 26255
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedResult.best.candidate": {
+   "bytes": 26255,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 26255
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.plan.movementUnits": {
+   "bytes": 26191,
+   "unchanged": 26191,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.route.movementUnits.#": {
+   "bytes": 26191,
+   "unchanged": 26191,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.route.verticalProfiles.#.generatedUnits": {
+   "bytes": 26191,
+   "unchanged": 26191,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.profiles.#.generatedUnits": {
+   "bytes": 26191,
+   "unchanged": 26191,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.constraintGeneration.droppedOptions": {
+   "bytes": 25935,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 25935
+  },
+  "dfs.stack.#.records.#.program.repairState.attemptLog.#.diagnostics.#.request.walls": {
+   "bytes": 25394,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 25394
+  },
+  "dfs.stack.#.records.#.numericalAttempts.#.diagnostics.#.request.walls": {
+   "bytes": 25394,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 25394
+  },
+  "dfs.stack.#.inFlight.program.repairState.attemptLog.#.diagnostics.#.request.walls": {
+   "bytes": 25394,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 25394
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.profile.generatedUnits": {
+   "bytes": 23863,
+   "unchanged": 23863,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.candidate.controls": {
+   "bytes": 23814,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 23814
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.state": {
+   "bytes": 23391,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 23391
+  },
+  "dfs.stack.#.records.#": {
+   "bytes": 23311,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 23311
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedVariants.#.best.plan.walls": {
+   "bytes": 22130,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 22130
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedResult.best.plan.walls": {
+   "bytes": 22130,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 22130
+  },
+  "dfs.stack.#.records.#.witness.plan.walls": {
+   "bytes": 22130,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 22130
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedVariants.#.best.plan.walls": {
+   "bytes": 22130,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 22130
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedResult.best.plan.walls": {
+   "bytes": 22130,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 22130
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.query.rejectedAlternatives": {
+   "bytes": 22032,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 22032
+  },
+  "dfs.nodeResults.<id>.rejectedAlternatives": {
+   "bytes": 22032,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 22032
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.vertical": {
+   "bytes": 21420,
+   "unchanged": 21420,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.constraintGeneration.encounterLog.#": {
+   "bytes": 21227,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 21227
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.constraintGeneration.screenExclusions.#.passage": {
+   "bytes": 20826,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 20826
+  },
+  "dfs.stack.#.records.#.child.trace": {
+   "bytes": 20596,
+   "unchanged": 20596,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.plan.movementUnits": {
+   "bytes": 19653,
+   "unchanged": 19653,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.route.movementUnits.#": {
+   "bytes": 19653,
+   "unchanged": 19653,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.route.verticalProfiles.#.generatedUnits": {
+   "bytes": 19653,
+   "unchanged": 19653,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.profiles.#.generatedUnits": {
+   "bytes": 19653,
+   "unchanged": 19653,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#": {
+   "bytes": 19383,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 19383
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.constraintGeneration.encounterLog.#.sides": {
+   "bytes": 19049,
+   "unchanged": 3055,
+   "identityStable": 0,
+   "changed": 15994
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.confirmation": {
+   "bytes": 17361,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 17361
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.profile.generatedUnits": {
+   "bytes": 16648,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 16648
+  },
+  "dfs.stack.#.records.#.child": {
+   "bytes": 15975,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 15975
+  },
+  "dfs.stack.#.records.#.program.repairState.attemptLog.#.diagnostics.#.request": {
+   "bytes": 15955,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 15955
+  },
+  "dfs.stack.#.records.#.numericalAttempts.#.diagnostics.#.request": {
+   "bytes": 15955,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 15955
+  },
+  "dfs.stack.#.inFlight.program.repairState.attemptLog.#.diagnostics.#.request": {
+   "bytes": 15955,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 15955
+  },
+  "dfs.stack.#.generation.continuation.alternatives.<id>.programs.#.movementUnits": {
+   "bytes": 15909,
+   "unchanged": 15909,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.attemptLog.#": {
+   "bytes": 15415,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 15415
+  },
+  "dfs.stack.#.records.#.child.profile.positionConstraints": {
+   "bytes": 14658,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 14658
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.constraintGeneration.reference": {
+   "bytes": 14560,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 14560
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.confirmation.route.verticalProfiles.#.positionConstraints": {
+   "bytes": 14035,
+   "unchanged": 14035,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.confirmation.profiles.#.positionConstraints": {
+   "bytes": 14035,
+   "unchanged": 14035,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.confirmation.route.verticalProfiles.#": {
+   "bytes": 13955,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 13955
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.confirmation.profiles.#": {
+   "bytes": 13955,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 13955
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.attemptLog.#.diagnostics.#": {
+   "bytes": 12870,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 12870
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.contactLog": {
+   "bytes": 12868,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 12868
+  },
+  "graph.events": {
+   "bytes": 12841,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 12841
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.incumbent": {
+   "bytes": 12824,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 12824
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.plan.movementUnits": {
+   "bytes": 12723,
+   "unchanged": 12723,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.route.movementUnits.#": {
+   "bytes": 12723,
+   "unchanged": 12723,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.route.verticalProfiles.#.generatedUnits": {
+   "bytes": 12723,
+   "unchanged": 12723,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.profiles.#.generatedUnits": {
+   "bytes": 12723,
+   "unchanged": 12723,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.confirmation.candidate": {
+   "bytes": 12327,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 12327
+  },
+  "dfs.stack.#.records.#.program.repairState": {
+   "bytes": 12263,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 12263
+  },
+  "dfs.stack.#.inFlight.program.repairState": {
+   "bytes": 12263,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 12263
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedVariants.#.best.plan": {
+   "bytes": 11979,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 11979
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedResult.best.plan": {
+   "bytes": 11979,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 11979
+  },
+  "dfs.stack.#.records.#.witness.plan": {
+   "bytes": 11979,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 11979
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedVariants.#.best.plan": {
+   "bytes": 11979,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 11979
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedResult.best.plan": {
+   "bytes": 11979,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 11979
+  },
+  "dfs.windows.#.candidates.#": {
+   "bytes": 11654,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 11654
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.context": {
+   "bytes": 11250,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 11250
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState": {
+   "bytes": 10915,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 10915
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.confirmation.route.contactEvents": {
+   "bytes": 10776,
+   "unchanged": 10776,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.confirmation.route.verticalProfiles.#.contactEvents": {
+   "bytes": 10776,
+   "unchanged": 10776,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.confirmation.profiles.#.contactEvents": {
+   "bytes": 10776,
+   "unchanged": 10776,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.records.#.program.repairState.context.profiles.#": {
+   "bytes": 10765,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 10765
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedVariants.#.best.route.verticalProfiles.#": {
+   "bytes": 10765,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 10765
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedVariants.#.best.profiles.#": {
+   "bytes": 10765,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 10765
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedResult.best.route.verticalProfiles.#": {
+   "bytes": 10765,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 10765
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedResult.best.profiles.#": {
+   "bytes": 10765,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 10765
+  },
+  "dfs.stack.#.records.#.witness.route.verticalProfiles.#": {
+   "bytes": 10765,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 10765
+  },
+  "dfs.stack.#.records.#.witness.profiles.#": {
+   "bytes": 10765,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 10765
+  },
+  "dfs.stack.#.inFlight.program.repairState.context.profiles.#": {
+   "bytes": 10765,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 10765
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedVariants.#.best.route.verticalProfiles.#": {
+   "bytes": 10765,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 10765
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedVariants.#.best.profiles.#": {
+   "bytes": 10765,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 10765
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedResult.best.route.verticalProfiles.#": {
+   "bytes": 10765,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 10765
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedResult.best.profiles.#": {
+   "bytes": 10765,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 10765
+  },
+  "dfs.stack.#.ready.#.profile": {
+   "bytes": 10564,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 10564
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.confirmation.route": {
+   "bytes": 10490,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 10490
+  },
+  "dfs.stack.#.ready.#.profile.contactEvents": {
+   "bytes": 10462,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 10462
+  },
+  "dfs.stack.#.records.#.program.repairState.context.profiles.#.contactEvents": {
+   "bytes": 10462,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 10462
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedVariants.#.best.route.contactEvents": {
+   "bytes": 10462,
+   "unchanged": 10462,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedVariants.#.best.route.verticalProfiles.#.contactEvents": {
+   "bytes": 10462,
+   "unchanged": 10462,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedVariants.#.best.profiles.#.contactEvents": {
+   "bytes": 10462,
+   "unchanged": 10462,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedResult.best.route.contactEvents": {
+   "bytes": 10462,
+   "unchanged": 10462,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedResult.best.route.verticalProfiles.#.contactEvents": {
+   "bytes": 10462,
+   "unchanged": 10462,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedResult.best.profiles.#.contactEvents": {
+   "bytes": 10462,
+   "unchanged": 10462,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.records.#.witness.route.contactEvents": {
+   "bytes": 10462,
+   "unchanged": 10462,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.records.#.witness.route.verticalProfiles.#.contactEvents": {
+   "bytes": 10462,
+   "unchanged": 10462,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.records.#.witness.profiles.#.contactEvents": {
+   "bytes": 10462,
+   "unchanged": 10462,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.records.#.child.profile.contactEvents": {
+   "bytes": 10462,
+   "unchanged": 10462,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.inFlight.program.repairState.context.profiles.#.contactEvents": {
+   "bytes": 10462,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 10462
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedVariants.#.best.route.contactEvents": {
+   "bytes": 10462,
+   "unchanged": 10462,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedVariants.#.best.route.verticalProfiles.#.contactEvents": {
+   "bytes": 10462,
+   "unchanged": 10462,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedVariants.#.best.profiles.#.contactEvents": {
+   "bytes": 10462,
+   "unchanged": 10462,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedResult.best.route.contactEvents": {
+   "bytes": 10462,
+   "unchanged": 10462,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedResult.best.route.verticalProfiles.#.contactEvents": {
+   "bytes": 10462,
+   "unchanged": 10462,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedResult.best.profiles.#.contactEvents": {
+   "bytes": 10462,
+   "unchanged": 10462,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.ready.#.trace": {
+   "bytes": 10298,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 10298
+  },
+  "dfs.stack.#.records.#.program.trace": {
+   "bytes": 10298,
+   "unchanged": 10298,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.inFlight.program.trace": {
+   "bytes": 10298,
+   "unchanged": 10298,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.parents.#.trace": {
+   "bytes": 10298,
+   "unchanged": 10298,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.windows.#.candidates.#.child.trace": {
+   "bytes": 10298,
+   "unchanged": 10298,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.discovery.<id>.parents.#.trace": {
+   "bytes": 10298,
+   "unchanged": 10298,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.attemptLog": {
+   "bytes": 10067,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 10067
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.context.profiles.#.generatedUnits": {
+   "bytes": 10026,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 10026
+  },
+  "dfs.stack.#.parents.#": {
+   "bytes": 8745,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 8745
+  },
+  "dfs.windows.#.candidates.#.child": {
+   "bytes": 8745,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 8745
+  },
+  "dfs.discovery.<id>.parents.#": {
+   "bytes": 8745,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 8745
+  },
+  "dfs.stack.#.ready.#.profile.positionConstraints": {
+   "bytes": 8460,
+   "unchanged": 8460,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.records.#.program.repairState.context.profiles.#.positionConstraints": {
+   "bytes": 8460,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 8460
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedVariants.#.best.route.verticalProfiles.#.positionConstraints": {
+   "bytes": 8460,
+   "unchanged": 8460,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedVariants.#.best.profiles.#.positionConstraints": {
+   "bytes": 8460,
+   "unchanged": 8460,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedResult.best.route.verticalProfiles.#.positionConstraints": {
+   "bytes": 8460,
+   "unchanged": 8460,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedResult.best.profiles.#.positionConstraints": {
+   "bytes": 8460,
+   "unchanged": 8460,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.records.#.witness.route.verticalProfiles.#.positionConstraints": {
+   "bytes": 8460,
+   "unchanged": 8460,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.records.#.witness.profiles.#.positionConstraints": {
+   "bytes": 8460,
+   "unchanged": 8460,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.inFlight.program.repairState.context.profiles.#.positionConstraints": {
+   "bytes": 8460,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 8460
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedVariants.#.best.route.verticalProfiles.#.positionConstraints": {
+   "bytes": 8460,
+   "unchanged": 8460,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedVariants.#.best.profiles.#.positionConstraints": {
+   "bytes": 8460,
+   "unchanged": 8460,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedResult.best.route.verticalProfiles.#.positionConstraints": {
+   "bytes": 8460,
+   "unchanged": 8460,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedResult.best.profiles.#.positionConstraints": {
+   "bytes": 8460,
+   "unchanged": 8460,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.families.<id>.points.[68, 70].held.#": {
+   "bytes": 8374,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 8374
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[68, 70].held.#": {
+   "bytes": 8374,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 8374
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.confirmation.plan.vertical": {
+   "bytes": 8286,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 8286
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[61, 63].held.#": {
+   "bytes": 8110,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 8110
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.completed": {
+   "bytes": 8092,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 8092
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.families.<id>.points.[60, 62].held.#": {
+   "bytes": 8048,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 8048
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[60, 62].held.#": {
+   "bytes": 8048,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 8048
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.constraintGeneration.encounterLog": {
+   "bytes": 8024,
+   "unchanged": 7976,
+   "identityStable": 0,
+   "changed": 48
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedVariants.#.best.route": {
+   "bytes": 7719,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 7719
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedResult.best.route": {
+   "bytes": 7719,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 7719
+  },
+  "dfs.stack.#.records.#.witness.route": {
+   "bytes": 7719,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 7719
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedVariants.#.best.route": {
+   "bytes": 7719,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 7719
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedResult.best.route": {
+   "bytes": 7719,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 7719
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.constraintGeneration": {
+   "bytes": 7635,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 7635
+  },
+  "domain.surfaces": {
+   "bytes": 7568,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 7568
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.confirmation.plan": {
+   "bytes": 7560,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 7560
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families": {
+   "bytes": 7429,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 7429
+  },
+  "dfs.stack.#.records.#.program.repairState.context": {
+   "bytes": 6769,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 6769
+  },
+  "dfs.stack.#.inFlight.program.repairState.context": {
+   "bytes": 6769,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 6769
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.confirmation.plan.sceneContacts": {
+   "bytes": 6595,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 6595
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.generatedBranches": {
+   "bytes": 6513,
+   "unchanged": 2171,
+   "identityStable": 0,
+   "changed": 4342
+  },
+  "dfs.observations.decisions.<id>.replays": {
+   "bytes": 6391,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 6391
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.constraintGeneration.encounterLog.#": {
+   "bytes": 6380,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 6380
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedVariants.#.best": {
+   "bytes": 6340,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 6340
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedResult.best": {
+   "bytes": 6340,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 6340
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedVariants.#.best": {
+   "bytes": 6340,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 6340
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedResult.best": {
+   "bytes": 6340,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 6340
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.vertical": {
+   "bytes": 6304,
+   "unchanged": 6304,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.ready.#": {
+   "bytes": 6171,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 6171
+  },
+  "domain.geometry.supports": {
+   "bytes": 6135,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 6135
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.families.<id>.points": {
+   "bytes": 6126,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 6126
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.confirmation.candidate.velocity": {
+   "bytes": 6006,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 6006
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#": {
+   "bytes": 5998,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 5998
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.confirmation.candidate.rawMovement": {
+   "bytes": 5959,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 5959
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.confirmation.candidate.positions": {
+   "bytes": 5597,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 5597
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult": {
+   "bytes": 5313,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 5313
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[63, 64].held.#": {
+   "bytes": 4812,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 4812
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[64, 65].held.#": {
+   "bytes": 4812,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 4812
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[65, 66].held.#": {
+   "bytes": 4812,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 4812
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.alternatives.#.profile.generatedUnits": {
+   "bytes": 4806,
+   "unchanged": 4806,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.alternatives.#.movementUnits": {
+   "bytes": 4806,
+   "unchanged": 4806,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[67, 68].held.#": {
+   "bytes": 4803,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 4803
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedVariants.#.best.plan.sceneContacts": {
+   "bytes": 4798,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 4798
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedResult.best.plan.sceneContacts": {
+   "bytes": 4798,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 4798
+  },
+  "dfs.stack.#.records.#.witness.plan.sceneContacts": {
+   "bytes": 4798,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 4798
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedVariants.#.best.plan.sceneContacts": {
+   "bytes": 4798,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 4798
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedResult.best.plan.sceneContacts": {
+   "bytes": 4798,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 4798
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.confirmation.candidate.movement": {
+   "bytes": 4681,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 4681
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.trace.vertical": {
+   "bytes": 4228,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 4228
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.vertical": {
+   "bytes": 4228,
+   "unchanged": 4228,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.vertical": {
+   "bytes": 4228,
+   "unchanged": 4228,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.constraintGeneration.encounterLog": {
+   "bytes": 4023,
+   "unchanged": 4012,
+   "identityStable": 0,
+   "changed": 11
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[65].held.#": {
+   "bytes": 3957,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 3957
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[64].held.#": {
+   "bytes": 3956,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 3956
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[63].held.#": {
+   "bytes": 3955,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 3955
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.attemptLog.#": {
+   "bytes": 3651,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 3651
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.constraintGeneration.partialSeen": {
+   "bytes": 3285,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 3285
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.constraintGeneration.seen": {
+   "bytes": 3151,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 3151
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedVariants.#": {
+   "bytes": 2784,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 2784
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedVariants.#": {
+   "bytes": 2784,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 2784
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedVariants.#.best.plan.vertical": {
+   "bytes": 2615,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 2615
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedResult.best.plan.vertical": {
+   "bytes": 2615,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 2615
+  },
+  "dfs.stack.#.records.#.program.repairState.attemptLog.#.diagnostics.#.request.vertical": {
+   "bytes": 2615,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 2615
+  },
+  "dfs.stack.#.records.#.numericalAttempts.#.diagnostics.#.request.vertical": {
+   "bytes": 2615,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 2615
+  },
+  "dfs.stack.#.records.#.witness.plan.vertical": {
+   "bytes": 2615,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 2615
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedVariants.#.best.plan.vertical": {
+   "bytes": 2615,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 2615
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedResult.best.plan.vertical": {
+   "bytes": 2615,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 2615
+  },
+  "dfs.stack.#.inFlight.program.repairState.attemptLog.#.diagnostics.#.request.vertical": {
+   "bytes": 2615,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 2615
+  },
+  "dfs.stack.#.records.#.program.repairState.constraintGeneration": {
+   "bytes": 2235,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 2235
+  },
+  "dfs.stack.#.inFlight.program.repairState.constraintGeneration": {
+   "bytes": 2235,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 2235
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.seen": {
+   "bytes": 2186,
+   "unchanged": 2186,
+   "identityStable": 0,
+   "changed": 0
+  },
+  "domain.scene.blocks": {
+   "bytes": 2169,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 2169
+  },
+  "domain.scene": {
+   "bytes": 1504,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 1504
+  },
+  "dfs.stack.#.records.#.program.repairState.attemptLog.#.diagnostics.#": {
+   "bytes": 1500,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 1500
+  },
+  "dfs.stack.#.records.#.numericalAttempts.#.diagnostics.#": {
+   "bytes": 1500,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 1500
+  },
+  "dfs.stack.#.inFlight.program.repairState.attemptLog.#.diagnostics.#": {
+   "bytes": 1500,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 1500
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>": {
+   "bytes": 1148,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 1148
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.families.<id>.points.[60, 62]": {
+   "bytes": 822,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 822
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[60, 62]": {
+   "bytes": 822,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 822
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[61, 63]": {
+   "bytes": 822,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 822
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.families.<id>.points.[68, 70]": {
+   "bytes": 822,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 822
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[68, 70]": {
+   "bytes": 822,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 822
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[63, 64]": {
+   "bytes": 725,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 725
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[64, 65]": {
+   "bytes": 725,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 725
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[65, 66]": {
+   "bytes": 725,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 725
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[67, 68]": {
+   "bytes": 725,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 725
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.attemptLog": {
+   "bytes": 569,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 569
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[65]": {
+   "bytes": 545,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 545
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[64]": {
+   "bytes": 544,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 544
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[63]": {
+   "bytes": 543,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 543
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedResult": {
+   "bytes": 540,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 540
+  },
+  "dfs.stack.#.inFlight": {
+   "bytes": 510,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 510
+  },
+  "dfs.stack.#.records.#.program.repairState.attemptLog.#": {
+   "bytes": 477,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 477
+  },
+  "dfs.stack.#.records.#.numericalAttempts.#": {
+   "bytes": 477,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 477
+  },
+  "dfs.stack.#.inFlight.program.repairState.attemptLog.#": {
+   "bytes": 477,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 477
+  },
+  "dfs.stack": {
+   "bytes": 357,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 357
+  },
+  "domain.geometry": {
+   "bytes": 338,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 338
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.query": {
+   "bytes": 304,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 304
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.attemptLog.#.diagnostics": {
+   "bytes": 291,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 291
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedResult": {
+   "bytes": 279,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 279
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.families.<id>": {
+   "bytes": 246,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 246
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.families": {
+   "bytes": 210,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 210
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.route.verticalProfiles": {
+   "bytes": 174,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 174
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.profiles": {
+   "bytes": 174,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 174
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants": {
+   "bytes": 102,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 102
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.best.route.movementUnits": {
+   "bytes": 96,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 96
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.context.profiles": {
+   "bytes": 72,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 72
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.attemptLog.#.diagnostics": {
+   "bytes": 69,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 69
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.route.verticalProfiles": {
+   "bytes": 57,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 57
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.profiles": {
+   "bytes": 57,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 57
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.constraintGeneration.screenExclusions": {
+   "bytes": 56,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 56
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.route.verticalProfiles": {
+   "bytes": 48,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 48
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.profiles": {
+   "bytes": 48,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 48
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.route.verticalProfiles": {
+   "bytes": 42,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 42
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.profiles": {
+   "bytes": 42,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 42
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants": {
+   "bytes": 40,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 40
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.route.movementUnits": {
+   "bytes": 36,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 36
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.route.verticalProfiles": {
+   "bytes": 36,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 36
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.profiles": {
+   "bytes": 36,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 36
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedResult.best.route.movementUnits": {
+   "bytes": 33,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 33
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.best.route.movementUnits": {
+   "bytes": 24,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 24
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.alternatives": {
+   "bytes": 23,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 23
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.constraintGeneration.screenExclusions": {
+   "bytes": 22,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 22
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants": {
+   "bytes": 18,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 18
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.context.profiles": {
+   "bytes": 15,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 15
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.acceptedVariants.#.confirmation.route.movementUnits": {
+   "bytes": 15,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 15
+  },
+  "dfs.stack.#.ready": {
+   "bytes": 9,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 9
+  },
+  "dfs.stack.#.records.#.program.repairState.context.profiles": {
+   "bytes": 9,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 9
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedVariants.#.best.route.verticalProfiles": {
+   "bytes": 9,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 9
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedVariants.#.best.profiles": {
+   "bytes": 9,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 9
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedVariants": {
+   "bytes": 9,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 9
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedResult.best.route.verticalProfiles": {
+   "bytes": 9,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 9
+  },
+  "dfs.stack.#.records.#.program.repairState.acceptedResult.best.profiles": {
+   "bytes": 9,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 9
+  },
+  "dfs.stack.#.records.#.program.repairState.attemptLog.#.diagnostics": {
+   "bytes": 9,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 9
+  },
+  "dfs.stack.#.records.#.program.repairState.attemptLog": {
+   "bytes": 9,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 9
+  },
+  "dfs.stack.#.records.#.numericalAttempts.#.diagnostics": {
+   "bytes": 9,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 9
+  },
+  "dfs.stack.#.records.#.witness.route.verticalProfiles": {
+   "bytes": 9,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 9
+  },
+  "dfs.stack.#.records.#.witness.profiles": {
+   "bytes": 9,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 9
+  },
+  "dfs.stack.#.inFlight.program.repairState.context.profiles": {
+   "bytes": 9,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 9
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedVariants.#.best.route.verticalProfiles": {
+   "bytes": 9,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 9
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedVariants.#.best.profiles": {
+   "bytes": 9,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 9
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedVariants": {
+   "bytes": 9,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 9
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedResult.best.route.verticalProfiles": {
+   "bytes": 9,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 9
+  },
+  "dfs.stack.#.inFlight.program.repairState.acceptedResult.best.profiles": {
+   "bytes": 9,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 9
+  },
+  "dfs.stack.#.inFlight.program.repairState.attemptLog.#.diagnostics": {
+   "bytes": 9,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 9
+  },
+  "dfs.stack.#.inFlight.program.repairState.attemptLog": {
+   "bytes": 9,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 9
+  },
+  "dfs.windows.#.candidates": {
+   "bytes": 9,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 9
+  },
+  "dfs.discovery.<id>.parents": {
+   "bytes": 9,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 9
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.confirmation.route.verticalProfiles": {
+   "bytes": 6,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 6
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.fallbackVariants.#.confirmation.profiles": {
+   "bytes": 6,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 6
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.families.<id>.points.[60, 62].held": {
+   "bytes": 4,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 4
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[60, 62].held": {
+   "bytes": 4,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 4
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[61, 63].held": {
+   "bytes": 4,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 4
+  },
+  "dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.families.<id>.points.[68, 70].held": {
+   "bytes": 4,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 4
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[68, 70].held": {
+   "bytes": 4,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 4
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[63].held": {
+   "bytes": 3,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 3
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[64].held": {
+   "bytes": 3,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 3
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[65].held": {
+   "bytes": 3,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 3
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[63, 64].held": {
+   "bytes": 3,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 3
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[64, 65].held": {
+   "bytes": 3,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 3
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[65, 66].held": {
+   "bytes": 3,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 3
+  },
+  "dfs.stack.#.generation.continuation.nodeInFlight.repairState.families.<id>.points.[67, 68].held": {
+   "bytes": 3,
+   "unchanged": 0,
+   "identityStable": 0,
+   "changed": 3
+  }
+ }
+}

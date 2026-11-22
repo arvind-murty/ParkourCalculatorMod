@@ -2,14 +2,15 @@
 
 ## Current gate
 
-`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on encounter groups with
-the run-tick rework and walk-off faces (`fb50d8f8` plus the change): **827 tests, 1
-failure, no errors or skips**, source unchanged during the run
-([report](../research/encounter-groups/native-gate-runticks/report.json)). The failure,
-`test_cell_experiment` `test_automatic_blockage_routes_are_repaired_and_physically_checked`,
-hit its time limit under other applications' load (load average 6 to 7); the three gate
-runs on this change's sources each failed a different wall-time-bound test, each passing
-in the other runs ([deferred P17](DEFERRED_WORK.md)).
+`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on main `d9e1ec9c`
+(encounter groups with the run-tick rework and walk-off faces) plus prepared analysis keys,
+the parent-window travel check, alias paths from the full save's walk, opt-in progress saves,
+children extending their parent, per-state program identity with list-order ties and no repair
+snapshots without a saver: **830 tests, no failures, errors or skips**, source unchanged during
+the run ([report](../research/checkpoint-cost/native-gate-repair-snapshots/report.json); run on
+`6b11a815` with the snapshot sources uncommitted). Wall-time-bound
+tests can fail under load: the three gate runs of the run-tick change each failed a different
+one, each passing in the other runs ([deferred P17](DEFERRED_WORK.md)).
 The gate fails on any skip, so it needs `PKC_RUN_TICKS_COMPILER` for the Java
 differential tests and the `research` extra for the route-guidance tests.
 A run of the switch-climb source (`55e3beef`) under a load average of 5.5 failed
@@ -29,7 +30,15 @@ persistence without the removed 32/128 limits.
 
 | Source | Tests | Evidence |
 | --- | ---: | --- |
+| `6b11a815` + the repair loop publishes progress only to a saver | 830 | [report](../research/checkpoint-cost/native-gate-repair-snapshots/report.json) |
+| `75a0f4c6` + program identity as a per-state chain, equal-priority programs in list order | 830 | [report](../research/parent-linked-programs/native-gate-phaseB/report.json) |
+| `996c1a44` + children trace only their new ticks and share the parent's content | 830 | [report](../research/parent-linked-programs/native-gate/report.json) |
+| `05a1f9e9` + solve CLI saves in-run progress only with `--save-progress` | 829 | [report](../research/checkpoint-cost/native-gate-save-flag/report.json) |
+| `fb055163` + full saves collect alias paths in their encoding walk | 829 | [report](../research/checkpoint-cost/native-gate/report.json) |
+| `d9e1ec9c` + analyses keyed by their preparation, travel check of new states against new and the last 10 parent states | 828 | [report](../research/prefix-reuse-keys/native-gate-window/report.json) |
+| `d9e1ec9c` + norm-check reuse across children, analyses keyed by their preparation | 828 | [report](../research/prefix-reuse-keys/native-gate-main/report.json) |
 | `fb50d8f8` + run-tick rework, walk-off faces (1 load-sensitive failure, P17) | 827 | [report](../research/encounter-groups/native-gate-runticks/report.json) |
+| `fb50d8f8` + norm-check reuse across children, analyses keyed by their preparation | 817 | [report](../research/prefix-reuse-keys/native-gate/report.json) |
 | `c2b2a3d2` phase 4: confirmation walk, decision objectives, shared creation request, conflict-driven avoidance | 816 | [report](../research/encounter-groups/native-gate-phase4/report.json) |
 | `55bc1b10` + obstacle test on per-phase sides: settled rows, climbed node families, group growth, reachable members | 750 | [report](../research/encounter-groups/native-gate-phase2/report.json) |
 | `76dc45dc` + resume order: encounter groups, block-table kinds, side families | 742 | [report](../research/encounter-groups/native-gate/report.json) |

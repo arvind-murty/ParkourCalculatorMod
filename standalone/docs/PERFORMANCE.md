@@ -21,7 +21,9 @@ descriptor, the request ledger and independent retained-witness replays; the
 per-route report and the other outputs are described in
 [solve reports](RESULTS_AND_DEBUGGING.md#solve-reports).
 Self times subtract instrumented children; inclusive categories overlap; hook
-overhead is included. Keep profiler hooks in `tools/profiling/`, never in
+overhead is included. Without `--durable` the profiler still passes a progress callback, so
+repair progress snapshots run there but not in the solve CLI without `--save-progress`; time
+production behavior through the CLI. Keep profiler hooks in `tools/profiling/`, never in
 production code.
 
 ## Real11 cold 300 s controls
@@ -114,12 +116,37 @@ work. Verify digest call counts and call sites before attributing cost; the cold
 profiler writes its shared store only after search, so durable checkpoint IO
 needs a separate control.
 
-On the Real11 extended control (300 s, deadline-bound) at `ea33c191` the relaxed
-backend leaves generation as the cost: `program.program_physics_key` 81.3 s over
-111,967 calls, `preparation.analyze_model` 45.4 s, `preparation.prepare` 37.4 s,
-`numerical.evaluate` 33.2 s, `reachability.screen` 20.6 s and `solver.invoke` 6.8 s
-([comparison with stock and encounter groups](../research/disk-relaxation/2026-11-19/extended-profile-compare.txt),
-[analysis](../research/disk-relaxation/README.md#extended-course-and-the-encounter-groups-requests)).
+The Real11 extended control (300 s, deadline-bound) is generation-bound. At `ea33c191`
+`program.program_physics_key` took 81.3 s over 111,967 calls
+([comparison with stock and encounter groups](../research/disk-relaxation/2026-11-19/extended-profile-compare.txt));
+encounter groups cut it to 11.6 s over 18,134 at `fb50d8f8`, which leaves 137.4 s of
+uninstrumented generation and DFS self time, `preparation.analyze_model` 56.1 s,
+`preparation.prepare` 43.1 s, `numerical.evaluate` 25.0 s and `solver.invoke` 2.5 s, with
+57.9 s of GC overlapping them; durable saves add 71.2 s of checkpoint callbacks
+([profiles](../research/prefix-reuse-keys/README.md)). Reusing norm-check pairs across
+children and keying analyses by their `prepare` key then cut search time 14.6% on equal
+work (call cap 100) over `fb50d8f8` and 12.6% over the run-tick rework (`8ccc9e49`, which
+itself halves that run), with identical transitions. Replacing that reuse with a travel check
+of new states against new and the last 10 parent states cut a further 1.9% on that input,
+again with identical transitions.
+
+With durable saves the extended run is checkpoint-bound: at `fb055163` checkpoint callbacks took
+183.27 s of 299.77 s, full saves 159.96 s of it, because each full save re-encodes the whole state
+(32.6 MB at the end, mostly the DFS stack) although little of it changes
+([checkpoint cost](../research/checkpoint-cost/README.md)). Full saves now find the active program's
+aliases in their own encoding walk instead of a second one (54.39 s in that run), which cut search
+time 6.4% on the durable call-capped input with identical reports. The solve CLI now saves progress
+during a run only with `--save-progress`; on the call-capped input its wall time is 39.78 s and 39.65 s
+without the flag against 66.28 s and 66.53 s with it, with identical final reports. Without a
+saver the repair loop also takes no progress snapshots (it used to deep-copy its state on every
+publication): 39.84 s to 34.37 s mean CLI wall time on that input, identical results.
+
+Children extend their parent instead of rebuilding it ([parent-linked programs](../research/parent-linked-programs/README.md)):
+an append without ladder involvement traces only its new ticks and shares the parent's content.
+`append_choice` fell from 6.276 s to 0.408 s on the call-capped input and search time 16.2%, with
+identical reports. Program identity is a per-state chain that a child resumes from its parent,
+so `program_physics_key` fell from 2.043 s to 0.775 s there (search -2.1%). Gate preparation and
+envelopes still cost time proportional to the whole program.
 
 Constraint enumeration after `86c06e39` runs 2.93x to 3.56x faster on captured
 B6/B7 catalogues, with 94.1% to 94.7% fewer iteration checks and identical
@@ -137,10 +164,11 @@ ordered options. That is targeted enumeration work, not a whole-solver speedup.
 - Shared interaction screens before any solve: interval and disk-relaxation reachability
   ([obstacle relevance](design/OBSTACLE_RELEVANCE.md)), and accumulated passage
   rows screened before each extension ([avoidance passages](design/AVOIDANCE_PASSAGES.md)).
-- Frontier selection (`search/frontier.py` `take_first`) hashes a program's
-  identity, the last priority field, only for programs tied on every other field.
-  On a saved 762-program B4 -> B20 queue a full-key take cost 0.478 s against
-  0.004 s without identities ([encounter-groups evidence](../research/encounter-groups/README.md)).
+- Frontier selection (`search/frontier.py` `take_first`) pops the smallest priority key
+  and breaks ties by list order, so it hashes no program identity (user, 2026-11-21:
+  every tied program is expanded eventually). On a saved 762-program B4 -> B20 queue a
+  full-key take had cost 0.478 s against 0.004 s without identities
+  ([encounter-groups evidence](../research/encounter-groups/README.md)).
 - Bounded accelerator caches: interaction gate 512 entries
   (`reachability/service.py`), variant preparation 256 and option keys 1,024
   (`constraints/variants.py`).
@@ -153,13 +181,13 @@ Open measurement: solve cadence 1 versus 2 or 4 decision levels
 | File | What to look at without changing behavior |
 | --- | --- |
 | `search/identity.py` | `digest`, `motion_record`, `solve_scope`, `solve_identity`: repeated canonical serialization. |
-| `movement/program.py` | `program_physics_key`, `program_search_key`, `compile_program`: repeated sorting and serialization of immutable content. |
-| `reachability/service.py` | `InteractionGate` key construction, which costs even on a cache hit. |
+| `movement/program.py` | `program_search_key` (owners and repair hash), `compile_program`: repeated serialization of immutable content. `program_physics_key` resumes the parent's per-state chain. |
+| `reachability/service.py` | `InteractionGate.prepare` key construction (scene and program physics key), which costs even on a cache hit. |
 | `search/engine.py` | `evaluate_program`: scope, coefficients, replay, solve identity, variants, validation. |
 | `constraints/variants.py` | Repeated canonical row sets and cursor records. |
 | `search/repair.py`, `search/repair_state.py` | `snapshot`, `publish`, `save_branch`: repeated copying of unchanged results. |
 | `spatial/checkpoints.py` | `retain_prefix` copies; sharing must not let siblings mutate each other. |
-| `io/search_checkpoint.py`, `io/checkpoint_store.py` | Root archival, repair patches, content addressing. |
+| `io/search_checkpoint.py`, `io/checkpoint_store.py` | Full saves re-encode and hash the whole state, including unchanged frames; repair patches; content addressing. |
 
 ## Cache and identity invariants
 
@@ -176,8 +204,10 @@ Open measurement: solve cadence 1 versus 2 or 4 decision levels
 4. Reachability proofs are scoped to role, windows, phases, rows, contact context
    and named-probe uncertainty. A conditioned row set cannot poison the
    unconditioned analysis.
-5. Never cache mutable objects by `id()` across mutations or saves. A timeout during
-   construction commits no partial result and consumes no raw ordinal.
+5. Never cache mutable objects by `id()` across mutations or saves, unless the object is behind
+   a freeze boundary: a built program's content (profile, trace, movement units, ladder events
+   and their elements) never changes, so children share it. A timeout during construction
+   commits no partial result and consumes no raw ordinal.
 6. Caller mutations must not alter cached canonical values. Performance caches are
    disposable: rebuild them on external resume and never serialize them per node.
 7. Ordering and deferral verdicts are not physical facts; incumbent, latch and peer

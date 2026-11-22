@@ -3,7 +3,7 @@ import time
 
 from parkour_solver.numerics.disk import ipopt_seed
 from parkour_solver.reachability.service import InteractionGate
-from parkour_solver.movement.program import boundary_state, empty_program, program_physics_key, program_search_key, truncate_program
+from parkour_solver.movement.program import boundary_state, empty_program, program_search_key, truncate_program
 from parkour_solver.movement.generation import generate_choices, propose_choices
 from parkour_solver.search.movement import iter_movement_programs, screen_program
 from parkour_solver.reachability.viability import prefix_viability
@@ -458,7 +458,10 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
             seconds=max(.001,min(score_seconds,deadline-time.monotonic())),candidate_seconds=candidate_seconds,
             solver_calls=score_calls,python_executable=python_executable,cancel_event=cancel_event,
             partial_corridor=True,guide_objective=node_view.objective,first_witness=True,
-            solve_policy=policy,climb_families=True,on_progress=progress,retry_unresolved=retry_unknown)
+            solve_policy=policy,climb_families=True,on_progress=progress if on_progress else None,retry_unresolved=retry_unknown)
+        if not on_progress and result.get('repairState') is not None:
+            # Nothing saves progress, so the repair published nothing: leave its final state where progress would.
+            program['repairState']=entry['repairState']=result['repairState']
         query=result.get('nodeFeasibility',dict(status='feasible' if result['best'] else 'suspended',model=identity))
         repair=result.get('repairState') or {}
         if query['status']=='feasible' and (repair.get('pending') or repair.get('inFlight') or repair.get('repairSources') or
@@ -641,7 +644,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
                 targets=lambda base,child:advantageous_targets(scene,base,child,next_anchor(scene,base,anchors,task)),
                 candidates=candidates,next=lambda p:next_anchor(scene,p,anchors,task),owner=lambda block:owner(scene,block))
             node_options=dict(node_evaluator=lambda p,n,x:evaluate_node(p,n,x,f),
-                priority_key=lambda p,identity:priority(p,f,identity),identity_key=candidate_key,
+                priority_key=lambda p,identity:priority(p,f,identity),
                 live_programs=lambda:live_programs(f),run_policy=run_policy,
                 policy_context=dict(anchor=semantic_settings(adapter.anchor_policy),span=span,guide=adapter.guide_plan['id'],score=stage_adapter(f).score_context))
         else:node_options={}
@@ -671,7 +674,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
         finally:
             source.close()
             state['expanded'] += report.get('continuation',{}).get('expanded',0)-before
-        f['ready'].sort(key=lambda p:priority(p,f,digest(program_physics_key(p))))
+        f['ready'].sort(key=lambda p:priority(p,f))
         f['batches'] += 1
         if not f['ready'] and not f['sourceExhausted']:
             raise TimeoutError(report.get('termination','generation_suspended'))
@@ -764,7 +767,9 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
         result = evaluate_program(args.pop('scene'),program,compiler,args.pop('adapter'),work,motion,
             seconds=max(.001,min(score_seconds,deadline-time.monotonic())),candidate_seconds=candidate_seconds,
             python_executable=python_executable,cancel_event=cancel_event,
-            on_progress=progress,retry_unresolved=retry_unknown,**args)
+            on_progress=progress if on_progress else None,retry_unresolved=retry_unknown,**args)
+        if not on_progress and result.get('repairState') is not None:
+            f['inFlight']['program']['repairState'] = result['repairState']
         if anchor_route:
             from parkour_solver.observability.turns import record as observe, replay
             span,start=pair_of(program,f),span_info(f)[1]

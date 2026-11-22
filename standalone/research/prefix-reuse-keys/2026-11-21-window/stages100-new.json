@@ -1,0 +1,130 @@
+{
+ "InteractionGate.sequence": {
+  "calls": 1015,
+  "seconds": 6.85
+ },
+ "program.append_choice": {
+  "calls": 3951,
+  "seconds": 5.855
+ },
+ "InteractionGate.prepare": {
+  "calls": 2288,
+  "seconds": 5.741
+ },
+ "InteractionGate.required": {
+  "calls": 1417,
+  "seconds": 5.685
+ },
+ "InteractionGate.check_program": {
+  "calls": 411,
+  "seconds": 4.143
+ },
+ "InteractionGate.analyze_model": {
+  "calls": 2059,
+  "seconds": 2.474
+ },
+ "intervals.reachable_envelopes": {
+  "calls": 1723,
+  "seconds": 2.4
+ },
+ "route.prepare_route": {
+  "calls": 3105,
+  "seconds": 2.104
+ },
+ "program.profile_from_trace": {
+  "calls": 7902,
+  "seconds": 2.048
+ },
+ "contact_combinations.merge_contacts": {
+  "calls": 27353,
+  "seconds": 2.019
+ },
+ "InteractionGate.relaxation": {
+  "calls": 229,
+  "seconds": 1.86
+ },
+ "identity.digest": {
+  "calls": 212102,
+  "seconds": 1.856
+ },
+ "program.program_physics_key": {
+  "calls": 3670,
+  "seconds": 1.672
+ },
+ "disk.screen": {
+  "calls": 366,
+  "seconds": 1.647
+ },
+ "InteractionGate.query": {
+  "calls": 6465,
+  "seconds": 1.319
+ },
+ "ceiling.own_ceiling_contacts": {
+  "calls": 3951,
+  "seconds": 1.276
+ },
+ "program.compile_program": {
+  "calls": 1412,
+  "seconds": 1.102
+ },
+ "support_profiles.compile_block_path": {
+  "calls": 1412,
+  "seconds": 1.098
+ },
+ "vertical.validate_vertical_schedule": {
+  "calls": 1644,
+  "seconds": 1.05
+ },
+ "route.schedule": {
+  "calls": 1808,
+  "seconds": 1.013
+ },
+ "vertical_profiles.trace_ladder_schedule": {
+  "calls": 9280,
+  "seconds": 1.003
+ },
+ "intervals.interaction_reachability": {
+  "calls": 127570,
+  "seconds": 0.922
+ },
+ "contact_combinations.validate_contact_events": {
+  "calls": 3105,
+  "seconds": 0.474
+ },
+ "service.query_interaction": {
+  "calls": 22531,
+  "seconds": 0.412
+ },
+ "units.shifted_unit": {
+  "calls": 49184,
+  "seconds": 0.321
+ },
+ "program.movement_choice": {
+  "calls": 3951,
+  "seconds": 0.157
+ },
+ "PythonCompiler.compile": {
+  "calls": 1132,
+  "seconds": 0.156
+ },
+ "units.compile_units": {
+  "calls": 7144,
+  "seconds": 0.141
+ },
+ "service.interaction_context_key": {
+  "calls": 2103,
+  "seconds": 0.12
+ },
+ "units.profile_program": {
+  "calls": 3958,
+  "seconds": 0.039
+ },
+ "program._events": {
+  "calls": 3951,
+  "seconds": 0.006
+ },
+ "compiler.coefficient_request": {
+  "calls": 2558,
+  "seconds": 0.003
+ }
+}

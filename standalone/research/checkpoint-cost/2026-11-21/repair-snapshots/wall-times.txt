@@ -1,0 +1,8 @@
+off-base-1 real 40.38
+off-new-1 real 33.42
+off-base-2 real 39.30
+off-new-2 real 35.32
+short-base real 5.58
+short-new real 4.55
+save-base real 73.89
+save-new real 72.91

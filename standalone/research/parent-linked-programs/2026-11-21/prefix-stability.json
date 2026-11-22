@@ -1,0 +1,27 @@
+{
+ "same": {
+  "profile.position": 3951,
+  "profile.grounded": 3951,
+  "profile.jump": 3951,
+  "profile.sneak": 3951,
+  "profile.contacts": 3951,
+  "profile.contactEvents": 3951,
+  "profile.caseEvents": 3951,
+  "profile.positionConstraints": 3951,
+  "profile.generatedUnits": 3951,
+  "profile.velocity[:cut]": 3951,
+  "profile.ladderTicks[:cut]": 3951,
+  "movementUnits": 3951,
+  "profile.constraintOwners": 3946,
+  "trace.position": 3946,
+  "trace.onGround": 3946,
+  "trace.movement": 3946,
+  "trace.sneak": 3946,
+  "trace.hit": 3946,
+  "trace.climbRefreshed": 3946,
+  "trace.velocity[:cut]": 3946,
+  "trace.vertical": 3946
+ },
+ "changed": {},
+ "examples": {}
+}
