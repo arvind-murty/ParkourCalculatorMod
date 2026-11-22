@@ -112,8 +112,8 @@ class EventSearchTests(unittest.TestCase):
         with patch('parkour_solver.search.engine.motion_bound',return_value=dict(movementAfterSupportCheck=.5)), \
              patch('parkour_solver.search.dfs.iter_movement_programs',side_effect=generate), \
              patch('parkour_solver.search.engine.evaluate_program',side_effect=evaluate):
-            result=find_checkpoint_route(scene,object(),anchor_search=dict(anchors=['mid']),seconds=2,score_seconds=1,max_solver_calls=1,
-                                         score_call_limit=1,on_progress=progress)
+            result=find_checkpoint_route(scene,object(),anchor_search=dict(anchors=['mid']),seconds=2,max_solver_calls=1,
+on_progress=progress)
         self.assertEqual(dispatched,[('mid',10)])
         self.assertTrue(published)
         dfs=result['searchState']['dfs']
@@ -125,14 +125,5 @@ class EventSearchTests(unittest.TestCase):
         mid=[f for f in dfs['stack']+dfs['goalQueue'] if f['owner']==root['owner'] and f['goal']['block']=='mid']
         self.assertEqual(len(mid),1)
         json.dumps(result['searchState'],allow_nan=False)
-
-    def test_explicit_old_catalogue_settings_and_states_are_not_reinterpreted(self):
-        with self.assertRaisesRegex(ValueError,'Legacy spatialSettings'):
-            find_checkpoint_route(flat_scene(),None,spatial_settings=dict(max_routes=1))
-        with self.assertRaisesRegex(ValueError,'Incompatible automatic event'):
-            find_checkpoint_route(flat_scene(),None,resume_state=dict(version=1,kind='semantic_route_queue'))
-        with self.assertRaises(ValueError):discovery_settings(dict(maxGuideMaterializations=0))
-        with self.assertRaises(ValueError):discovery_settings(dict(max_visits=2))
-
 
 if __name__=='__main__':unittest.main()

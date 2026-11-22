@@ -1,6 +1,6 @@
 import copy
 
-from parkour_solver.physics.vertical import REST_CARRY, f32, vertical_move
+from parkour_solver.physics.vertical import REST_CARRY, f32
 from parkour_solver.movement.program import movement_choice, scalar_initial
 from parkour_solver.movement.vertical_profiles import trace_ladder_schedule
 
@@ -107,7 +107,3 @@ def normal_choices(context):
                     support=block['id'], landing_phase='pre', region_choices=region_choices(context, event, block['id']))
                 if choice:
                     yield choice
-        if context.get('normalGap', False):
-            choice = event_choice(context, 'normal', initial, context.get('normalGapInputs', 1), jumping=jumping)
-            if choice:
-                yield choice

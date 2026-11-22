@@ -9,8 +9,7 @@ are current. The measured source-era tables below retain their original settings
 Runtime described: `perf/early-passage-screen` at `7e4d85d4`; measured tables keep their source revisions. This is the current execution reference
 for physical required-anchor search. The [detailed implementation record](design/HARD_JUMP_TICK_PRUNING_AND_REACHABILITY_PLAN.md)
 contains the design/caller migration; [measured evidence](../research/hard-jump-comparisons/README.md)
-contains source hashes, fixtures and validation. Historical supplied-corridor,
-virtual-finish and common-clock experiments retain their own policies.
+contains source hashes, fixtures and validation.
 
 ## What constitutes a candidate
 
@@ -158,10 +157,7 @@ programs and physical variants stay in their owning records.
 | Grounded B3@38 with later hard spans bounded10+15+9 |Elapsed38, remaining≥34 | Finish≥72; exclude against validated67 even with more-J protection. |
 | Optimistic finish equals best full finish |Any valid counts | Keep for potentially better terminal Z. |
 
-The pure predicates live only in `search.comparison`. `minimum_runs` retains
-legacy matched-family normalization; `time_progress` retains legacy record APIs
-and delegates their common-clock safeguards. Those compatibility paths do not
-restore clock/progress pruning to active anchor search.
+The pure predicates live only in `search.comparison`.
 
 ## Flight bounds, guides and turn geometry
 

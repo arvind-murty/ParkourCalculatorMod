@@ -428,19 +428,6 @@ def free_rectangles(boxes):
     return result
 
 
-@dataclass(frozen=True)
-class Surface:
-    key: str
-    axis: int
-    sign: int
-    plane: float
-    tangent_axes: tuple
-    cover: tuple
-    contributions: tuple  # (solid index, cover) per member
-    members: tuple
-    cluster: int
-
-
 class SceneGeometry:
     """Player-space geometry of one collision scene, for any modeled subset of its solids."""
 
@@ -529,50 +516,6 @@ class SceneGeometry:
                 sides.append(Side(tuple(b for b, _ in bounds), tuple(o for _, o in bounds), region))
             self._sides[key] = tuple(sorted(sides, key=lambda s: s.bounds))
         return self._sides[key]
-
-    def player_surfaces(self, indices=None):
-        """Exposed expanded faces of the modeled solids, merged per plane into connected surfaces.
-
-        A face loses the tangent interior of every other modeled expanded box
-        whose open interior contains its plane, so an exact-height slot stays.
-        """
-        indices = tuple(range(len(self.solids))) if indices is None else tuple(sorted(indices))
-        if indices not in self._surfaces:
-            boxes, bounds, buckets = self.boxes, self.bounds, {}
-            for i in indices:
-                box = boxes[i]
-                for axis, (u, v) in enumerate(TANGENT_AXES):
-                    rect = box[u], box[v], box[u+3], box[v+3]
-                    if bounds is not None:
-                        rect = _overlap(rect, (bounds[u], bounds[v], bounds[u+3], bounds[v+3]))
-                        if rect is None:
-                            continue
-                    for sign in (-1, 1):
-                        plane = box[axis if sign < 0 else axis+3]
-                        if bounds is not None and not bounds[axis] <= plane <= bounds[axis+3]:
-                            continue
-                        pieces = [_embed(rect)]
-                        for j in indices:
-                            other = boxes[j]
-                            cut = other[u], other[v], other[u+3], other[v+3]
-                            if not other[axis] < plane < other[axis+3] or _overlap(rect, cut) is None:
-                                continue
-                            cutter = cut[0], -1.0, cut[1], cut[2], 1.0, cut[3]
-                            pieces = [b for piece in pieces for b in subtract_open(piece, cutter)
-                                      if b[0] < b[3] and b[2] < b[5]]
-                        buckets.setdefault((axis, sign, plane), []).extend(
-                            (i, r) for r in _cover(_project(b) for b in pieces))
-            clusters = self._cluster_map(indices)
-            owner = {i: c.id for c in clusters.values() for i in c.members}
-            result = []
-            for (axis, sign, plane), fragments in sorted(buckets.items()):
-                for cover, members in _components(fragments):
-                    result.append(Surface('surface:' + geometry_key([axis, sign, plane, cover]), axis, sign, plane,
-                        TANGENT_AXES[axis], cover, tuple((i, _cover(r)) for i, r in sorted(members.items())),
-                        tuple(sorted(members)), owner[min(members)]))
-            self._surfaces[indices] = tuple(result)
-        return self._surfaces[indices]
-
 
     def contact_options(self, axis, sign, *, clearance, members):
         """Finite contact domains on the faces of the member solids, one option per connected surface.

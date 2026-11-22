@@ -53,7 +53,7 @@ assert callable(api.find_checkpoint_route) and callable(api.solve)
 assert not any(m.split('.')[0] in ('research','tools','tests','standalone') for m in sys.modules)
 assert not any(m in sys.modules for m in ('casadi','numpy','scipy','matplotlib','clarabel'))
 names = {e.name for e in distribution('parkour-solver').entry_points}
-assert {'parkour-solve','parkour-blocks','parkour-route','parkour-ipopt','parkour-fixed-clock'} <= names
+assert {'parkour-solve','parkour-ipopt'} <= names
 '''
         with tempfile.TemporaryDirectory() as cwd:
             result = subprocess.run([sys.executable, '-I', '-c', script], cwd=cwd, capture_output=True, text=True)

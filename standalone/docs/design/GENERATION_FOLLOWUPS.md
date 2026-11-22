@@ -437,9 +437,8 @@ before the last; the last leg's best competes directly for the final route.
   record (or its own `recoveryFailure`) sets `parent['recoveryFailure']`.
   `search/dfs.py:949-975`: a leg with `recoveryFailure` and no validated finish
   restores one saved slower run-tick arrival.
-- Only the anchor search (`anchor_route`, `dfs.py:67`) is changed. The old
-  supplied-corridor path keeps its behaviour (register P9 removes it); node checks
-  keep `rankEqualCost=False`.
+- Only the anchor search was changed; the other searches were later removed
+  (2026-11-21). Node checks keep `rankEqualCost=False`.
 
 ### 7.1 Generator tags families (`constraints/variants.py`)
 
@@ -462,9 +461,8 @@ before the last; the last leg's best competes directly for the final route.
 Climbing runs only when the caller passes `climb_families=True` (new keyword of
 `solve_contact_branches` and `evaluate_program`; `dfs.py` `score` passes
 `anchor_route`) together with `rank_equal_cost`, and only for branches that carry a
-`family`. Other callers (`find_blocks` paths in `movement.py`, `climbable.py`,
-`support_profiles.py`, whose collision repairs also produce generator variants) and
-branches without a family (no generator, wall-hit offers) are offered as today.
+`family`. Branches without a family (no generator, wall-hit offers) are offered as
+today.
 
 - Branch metadata: `offer(..., meta=None)` stores `meta = dict(family, switches)` as
   a seventh queue-tuple element (`serial` keeps comparisons from reaching it) and in

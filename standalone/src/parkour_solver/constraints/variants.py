@@ -211,9 +211,6 @@ class ConstraintVariants:
         finally:
             self.state['timings']['conditionalAnalysisSeconds'] += time.monotonic()-started
 
-    def _screen(self, rows):
-        return self.analyze(rows)['proof']
-
     def excluded(self, rows, proof, item=None, option=None):
         entry = dict(rowsHash=digest(rows), proof=proof)
         if option is not None:
@@ -254,9 +251,6 @@ class ConstraintVariants:
             cursor['index'] = index+1
             return dict(rows=item['rows'][index])
         return encounter_option(self, item, cursor, self._active_envelopes or self.envelopes)
-
-    def entailed(self, selected, required):
-        return rows_entailed(self.envelopes, selected, required)
 
     def __iter__(self):
         return self

@@ -65,23 +65,6 @@ def query_interaction(request, context, *, session=None, budget=None, context_ke
     return proof
 
 
-def normalize_alternatives(alternatives, proofs):
-    """Remove absent unwanted items; absent prerequisites reject their owner."""
-    kept, audit = [], []
-    rejected = {item.get('owner') for item in alternatives if
-                proofs[item['requestId']]['status']=='absent' and
-                proofs[item['requestId']]['role']!='unwanted_contact'}
-    for item in alternatives:
-        proof = proofs[item['requestId']]
-        action = ('omit' if proof['role'] == 'unwanted_contact' else 'reject_owner') if proof['status'] == 'absent' else 'retain'
-        if item.get('owner') in rejected and action=='retain':
-            action='reject_owner'
-        audit.append(dict(requestId=item['requestId'], proof=proof['id'], action=action))
-        if action == 'retain':
-            kept.append(item)
-    return kept, audit
-
-
 def block_interaction(envelopes, box, tick, phases=('Y', 'X', 'Z'), *, interior=False):
     return interaction_reachability(envelopes, dict(alternatives=[dict(regions=[
         dict(tick=tick, phase=phase, bounds=expanded_box(box), interior=interior)]) for phase in phases]))

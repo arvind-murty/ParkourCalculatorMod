@@ -3,7 +3,7 @@ import json
 import time
 
 from parkour_solver.movement.cases import entry_possible
-from parkour_solver.movement.program import append_choice, boundary_state, empty_program, program_physics_key, program_search_key, truncate_program
+from parkour_solver.movement.program import boundary_state, empty_program, program_physics_key, program_search_key
 from parkour_solver.movement.generation import generate_choices, propose_choices, assess_proposal
 from parkour_solver.movement.normal import MAX_ADVANTAGEOUS_RUN_TICKS
 from parkour_solver.search.identity import digest, processing_key
@@ -53,8 +53,8 @@ def restore_alternatives(state, extra_live=()):
 
 
 def persistent_programs(scene, *, settings, report, continuation=None, deadline=None, cancel_event=None, work=None,
-                        initial_programs=None, checkpoint_tick=None, threshold=.005, screen=None,
-                        context_adapter=None, program_filter=None, stop_on_goal=True, terminal_goal=None, stop_supports=None,
+                        initial_programs=None, threshold=.005, screen=None,
+                        context_adapter=None, program_filter=None, stop_supports=None,
                         node_evaluator=None, priority_key=None, policy_context=None, live_programs=None,
                         run_policy=None, **kwargs):
     initial = empty_program(scene['initial'], threshold=threshold)
@@ -64,10 +64,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
     # settings below already owns the domain and deliberately excludes slices.
     context_value = dict(version=3, comparisonPolicy=COMPARISON_POLICY_VERSION, proposalPolicy=1, scene={k:v for k,v in scene.items() if k!='movementSearch'}, settings={k: v for k, v in settings.items() if k not in
         ('maxPrefixes', 'maxQueuedPrefixes', 'maxChoicesPerType', 'expansionsPerProposal')},
-        roots=[program_search_key(p) for p in seeds], checkpoint=checkpoint_tick, threshold=threshold,
-        stopOnGoal=stop_on_goal)
-    if terminal_goal is not None:
-        context_value['terminalGoal']=terminal_goal
+        roots=[program_search_key(p) for p in seeds], threshold=threshold)
     if stop_supports is not None:
         context_value['stopSupports']=stop_supports
     if policy_context is not None:
@@ -99,10 +96,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             raise TimeoutError('deadline')
 
     def complete(p):
-        if terminal_goal is not None:
-            return p.get('terminalGoal')==terminal_goal
-        return (checkpoint_tick is not None and p['profile']['duration'] == checkpoint_tick or
-            stop_on_goal and p['profile']['grounded'][-1] and p['terminalSupport'] in (stop_supports or [scene['goalBlock']])
+        return (p['profile']['grounded'][-1] and p['terminalSupport'] in (stop_supports or [scene['goalBlock']])
             and p['profile']['duration'] > 0)
 
     def key(p, identity):
@@ -127,14 +121,10 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
         # `decision` is the decision P whose expansion this is (a run-tick base or a peeked child extends it).
         context_data = dict(mode='open', scene=scene, program=p, decision=p if decision is None else decision, state=boundary_state(p),
             maxInputs=settings['maxInputs']-p['profile']['duration'], maxEntryInputs=settings['maxEntryInputs'],
-            checkBudget=budget, deadline=deadline, cancelEvent=cancel_event, normalGap=checkpoint_tick is not None,
+            checkBudget=budget, deadline=deadline, cancelEvent=cancel_event,
             generationRecords=[])
-        if terminal_goal is not None:
-            context_data['terminalGoal']=terminal_goal
         if threshold != .005:
             context_data['threshold'] = threshold
-        if checkpoint_tick is not None:
-            context_data['normalGapInputs'] = checkpoint_tick-p['profile']['duration']
         if not run_ticks:
             context_data['runTickChoices'] = False
         if context_adapter is not None:
@@ -142,13 +132,9 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
         return context_data
 
     def proposals(kind, context_data, start=0):
-        bind=None
-        if terminal_goal is not None:
-            from parkour_solver.search.virtual_goals import bind_goal
-            bind=lambda p:bind_goal(p,terminal_goal,scene.get('supportClearance',1e-6))
         return iter(propose_choices(kind,context_data,source=generate_choices(kind,context_data),start=start,
             max_inputs=settings['maxInputs'],inherit_decisions=node_evaluator is not None,
-            project=project_owned if node_evaluator is not None and stop_on_goal else None,bind=bind))
+            project=project_owned if node_evaluator is not None else None))
 
     def no_effects():
         return dict(exclusions=[], screened=0, policyRejections=0)
@@ -172,9 +158,6 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
 
     def accept(child, context_data, effects, queued=()):
         """(child, None) when accepted after the proposal screen, (child, 'seen') when already queued, else (None, why)."""
-        before_projection=child
-        if child is not None and checkpoint_tick is not None and child['profile']['duration'] > checkpoint_tick:
-            child = truncate_program(child, checkpoint_tick)
         if child is None or not entry_possible(child['profile'], initial_bounds):
             return None, 'rejected'
         if program_filter is not None and not program_filter(child):
@@ -187,12 +170,6 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
         identity = program_search_key(child)
         if identity in seen or identity in queued:
             return child, 'seen'
-        if screen is not None and child is not before_projection:
-            proof = screen(child)
-            if proof is not None:
-                effects['screened'] += 1
-                effects['exclusions'].append(dict(id=digest(identity), ticks=child['profile']['duration'], proof=proof))
-                return None, 'screened'
         return child, None
 
     def check_child(proposal, context_data, queued=()):
@@ -606,7 +583,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                     state['policyRejections'] += 1
                     continue
                 state['emitted'] += 1
-                program['terminal'] = 'open' if checkpoint_tick is not None else 'landed'
+                program['terminal'] = 'landed'
                 update()
                 yield program
                 continue

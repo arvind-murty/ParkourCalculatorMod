@@ -1,11 +1,7 @@
-import copy
-
 from parkour_solver.physics.vertical import f32
-from parkour_solver.movement.cases import case_profile, exposed_side, outside_row
-from parkour_solver.movement.ceiling_profiles import ceiling_profile, ceiling_sequence
+from parkour_solver.movement.cases import exposed_side, outside_row
 from parkour_solver.movement.contact_combinations import (bounding_region, contact_event, finite_rows, reachable_option,
                                                           region_choices, scene_contact_options)
-from parkour_solver.movement.units import profile_program, shifted_unit
 from parkour_solver.reachability.service import behind_decision, candidate_option, entry_backward
 
 
@@ -40,51 +36,9 @@ def grind_options(context, feet, allowed=None):
                         yield event, [outside_row(box, axis, sign, 0, 'grind:outside')] + under, regions
 
 
-def ceiling_profiles(context):
-    source, target, scene = context['source'], context['target'], context['scene']
-    names = {b['solidIndex']: b['sourceBlock'] for b in scene['blocks']}
-    for option in scene_contact_options(scene, 1, -1):
-        if context.get('checkBudget'):
-            context['checkBudget']()
-        ordinary = ceiling_profile(source['top'], target['top'], option, '+'.join(sorted({names[i] for i in option.members})),
-                                   max_inputs=context.get('maxInputs', 200))
-        if ordinary:
-            ordinary['generatedUnits'] = profile_program(ordinary)
-            yield 'ceiling', ordinary
-    for event, rows, _ in grind_options(context, source['top']):
-        profile = case_profile(source['top'], target['top'], event, max_inputs=context.get('maxInputs', 200), constraints=rows)
-        if profile:
-            yield 'grind', profile
-
-
 class CeilingGenerator:
     def generate(self, context, *, start=0, ends=None):
-        if context.get('mode') == 'open':
-            yield from open_ceiling_choices(context)
-            return
-        if context.get('mode') == 'timeline':
-            schedule = context['schedule']
-            for option in context['options']:
-                events = ceiling_sequence(schedule, option, start=start)
-                events = [e for e in events if not schedule['ladderTicks'][e['offset']]
-                          and not (schedule['ladderTicks'][e['offset'] + 1] and schedule['hit'][e['offset']])]
-                if events:
-                    event = events[0]
-                    unit = dict(type='ceiling', case='ceiling_hit', start=event['offset'], end=event['offset'] + 1,
-                                anchors={'hit': event['offset'] + 1})
-                    yield dict(unit=unit, contactEvents=events)
-            return
-        if context.get('mode') == 'profile':
-            options = [(context['profileKind'], copy.deepcopy(context['profile']))]
-        else:
-            options = ceiling_profiles(context)
-        for kind, profile in options:
-            units = profile_program(profile)
-            profile['generatedUnits'] = units
-            unit = next(u for u in units if u['type'] == 'ceiling')
-            yield dict(unit=shifted_unit(unit, start), units=[shifted_unit(u, start) for u in units],
-                       profile=profile, profileKind=kind, entryFace=None)
-
+        yield from open_ceiling_choices(context)
 
 def open_ceiling_choices(context):
     from parkour_solver.reachability.service import interaction_allowed

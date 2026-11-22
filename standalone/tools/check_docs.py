@@ -1,7 +1,6 @@
 """Check local links in maintained Markdown; frozen bundles retain source-era links."""
 import json
 import re
-from pathlib import Path
 from urllib.parse import unquote
 
 from tools.docs_index import files

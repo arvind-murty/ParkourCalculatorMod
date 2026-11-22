@@ -242,21 +242,15 @@ actual-world geometry validity.
 ## Saved-data audits and older strategies
 
 ```sh
-"$PKC_IPOPT_PYTHON" -m tools.audit_candidates \
-  --directory research/orchestrator-fixes/evidence --output /tmp/candidate-audit-new
 "$PKC_IPOPT_PYTHON" -m tools.witness_bound_audit \
   --reports /absolute/path/to/accepted/report.json.gz --output /tmp/bound-audit-new.json
 ```
 
-Candidate auditing makes no IPOPT calls; optional `--compiler` adds independent
-Java replay. Bounds auditing checks retained valid witnesses and is not a cold
-discovery seed. Read the [Real11 guide](REAL11_GUIDE.md) before interpreting counts.
+Bounds auditing checks retained valid witnesses and is not a cold discovery seed. The
+candidate audit of the old orchestrator's saved evidence was removed with its searches. Read the [Real11 guide](REAL11_GUIDE.md) before interpreting counts.
 
-Fixed-clock/virtual controls remain available as `parkour-fixed-clock` or
-`python -m parkour_solver.cli.fixed_clock`, for example with
-`research/virtual-finish/fixture.json`. Supplied-corridor library strategies live
-under `spatial/compat` and `search/compat`. Their virtual/state64/source-specific
-measurements are distinct from current finite-anchor evidence.
+The fixed-clock, virtual-goal, supplied-corridor and blocks searches were removed
+(2026-11-21); their evidence records `8266a38d` or earlier as its source revision.
 
 [research/README.md](../research/README.md) explains preserved bundles. Historical
 scripts and READMEs retain their original commands/imports; reproduce those against

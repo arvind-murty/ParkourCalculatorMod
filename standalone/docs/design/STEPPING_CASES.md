@@ -102,8 +102,8 @@ Owners: `movement/cases.py` builds named case constraints on `movement/vertical_
 `movement/stepping.py` proposes support and corner cases; `movement/ceiling_generation.py`
 proposes ceiling and grind cases (at an ordinary decision, none behind it or entered against its guide leg:
 [O10](ANCHOR_POLICY_DECISIONS.md#o10--no-backward-ceiling-hits-or-grinds-at-ordinary-decisions));
-`movement/ceiling_profiles.py` holds shared underside,
-profile and sequence helpers. `maxSteppingProfiles` defaults to 128 (`scene/normalize.py`).
+`movement/ceiling_profiles.py` holds shared underside and
+sequence helpers. `maxSteppingProfiles` defaults to 128 (`scene/normalize.py`).
 
 Case geometry follows the exposed scene surfaces (`movement/cases.py`): approach,
 outside and wall options exist only on a side face exposed at the feet height (a side

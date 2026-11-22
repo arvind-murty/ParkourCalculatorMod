@@ -11,7 +11,6 @@ from unittest.mock import patch
 from parkour_solver.constraints.contacts import floor_checks
 from parkour_solver.search.repair import solve_contact_branches
 from parkour_solver.scene.normalize import prepare_scene
-from parkour_solver.search.support_profiles import compile_block_path
 from parkour_solver.bridge.python_compiler import PythonCompiler
 from parkour_solver.movement.ladder.episodes import compose_ladder_episodes
 from parkour_solver.scene.ladders import ladder_regions, climb_walls, entry_channels, exit_faces
@@ -61,23 +60,6 @@ class MovementCompositionTests(unittest.TestCase):
                 self.assertFalse(s['trace']['climbRefreshed'][5])
                 self.assertNotEqual(s['trace']['velocity'][6], baseline['trace']['velocity'][6])
 
-    def test_units_retime_together_with_runs_hits_and_sneak(self):
-        scene, _, p = airborne_case()
-        edge = dict(source='start',target='b',profileKind='ladder',profile=p['profile'],
-                    ladderEvents=p['ladderEvents'],entryFace=None,exitFace=None)
-        route = compile_block_path(scene, ['start','b'], [edge])['route']
-        route.update(maxTotalRunTicks=2, runBounds=[[0,2]])
-        route = prepare_route(route)
-        a,b = schedule(route,[0]),schedule(route,[2])
-        self.assertEqual(b['movementUnits'][0], {'type':'normal','start':0,'end':2,'grounded':True})
-        for before,after in zip(a['movementUnits'],b['movementUnits'][1:]):
-            self.assertEqual(after['type'],before['type'])
-            self.assertEqual(after['start'],before['start']+2)
-            self.assertEqual(after['end'],before['end']+2)
-            for key in ('hitWindow','occupiedStates','hitInputs','stopInputs','sneakInputs'):
-                if key in before:
-                    self.assertEqual(after[key],[t+2 for t in before[key]])
-
     def test_actual_extra_wall_contact_cannot_restart_climbing(self):
         _,_,p = airborne_case()
         event = copy.deepcopy(p['ladderEvents'][1])
@@ -86,15 +68,6 @@ class MovementCompositionTests(unittest.TestCase):
         s['trace']['climbRefreshed'][14:18] = [False]*4
         with self.assertRaises(ValueError):
             movement_program(s['ticks'],[event])
-
-    def test_legacy_saved_route_without_units_reconstructs_the_same_program(self):
-        scene,_,p=airborne_case()
-        edge=dict(source='start',target='b',profileKind='ladder',profile=p['profile'],
-                  ladderEvents=p['ladderEvents'],entryFace=None,exitFace=None)
-        route=prepare_route(compile_block_path(scene,['start','b'],[edge])['route'])
-        expected=schedule(route,[0])['movementUnits']
-        del route['movementUnits']
-        self.assertEqual(schedule(route,[0])['movementUnits'],expected)
 
     def test_chain_cancellation_and_prefix_cap_are_explicit(self):
         _,episodes,p = airborne_case()
@@ -176,47 +149,6 @@ class MovementCompositionTests(unittest.TestCase):
         self.assertEqual(sum(prefix['profile']['jump']),1)
         self.assertFalse(any(prefix['profile']['grounded'][1:]))
         self.assertEqual([e['exitState'] for e in prefix['episodes']],[6,25,43,62,81])
-
-
-@unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'),
-                     'Set PKC_IPOPT_PYTHON')
-class MovementCompositionIntegrationTests(unittest.TestCase):
-    def test_five_airborne_ladders_and_bottom_exit_solve_from_episode_contracts(self):
-        with PythonCompiler() as compiler:
-            for name,count in [('five-airborne-ladders',5),('ladder-bottom-exit',1)]:
-                with self.subTest(name=name):
-                    e=json.loads((ROOT/'experiments/contact-combinations'/(name+'.json')).read_text())
-                    fixture=ROOT/e['fixture']
-                    self.assertEqual(hashlib.sha256(fixture.read_bytes()).hexdigest(),e['fixtureSha256'])
-                    scene=prepare_scene(json.loads(fixture.read_text()))
-                    p=compose_ladder_episodes(scene['initial']['position'][1],scene['blocks'][-1]['top'],
-                                              e['episodes'],max_inputs=100)
-                    edge=dict(source='start',target='goal',profileKind='ladder',profile=p['profile'],
-                              ladderEvents=p['ladderEvents'],entryFace=None,exitFace=None)
-                    c=compile_block_path(scene,['start','goal'],[edge])
-                    r=solve_contact_branches(c['route'],c['profiles'],floor_checks(scene,['start','goal'],c['profiles']),
-                        compiler,seconds=30,candidate_seconds=5,retries=1,geometry=scene['collisionScene'],
-                        motion_bound={'storedSpeedNorm':2,'movementAfterSupportCheck':2},
-                        python_executable=os.environ['PKC_IPOPT_PYTHON'])
-                    self.assertEqual(r['status'],'feasible',r)
-                    b=r['best']
-                    self.assertTrue(b['geometryCheck']['feasible'])
-                    self.assertEqual(len(b['route']['ladderEvents']),count)
-                    self.assertFalse(any(b['candidate']['onGround'][1:-1]))
-                    self.assertEqual(sum(b['plan']['jump']),1)
-                    if name=='ladder-bottom-exit':
-                        s=b['route']['ladderEvents'][0]['schedule']
-                        self.assertEqual(s['exitKind'],'bottom')
-                        self.assertGreaterEqual(b['candidate']['y'][s['exitState']-1],20)
-                        self.assertLess(b['candidate']['y'][s['exitState']],20)
-                    problem=prepare(e['problem'])
-                    candidate=validate(problem,e['candidate']['yaw'])
-                    self.assertTrue(candidate['feasible'])
-                    self.assertEqual(candidate['positions'],e['candidate']['positions'])
-                    self.assertEqual(candidate['velocity'],e['candidate']['velocity'])
-                    self.assertEqual(candidate['y'],e['candidate']['y'])
-                    vertical=dict(vertical=problem['vertical'],y=candidate['y'],vy=candidate['vy'],onGround=candidate['onGround'])
-                    self.assertTrue(check_geometry(e['geometry'],e['plan'],e['candidate'],vertical,compiler,5)['feasible'])
 
 
 if __name__ == '__main__':

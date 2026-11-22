@@ -8,7 +8,7 @@ from unittest.mock import patch
 from parkour_solver.movement.program import empty_program
 from parkour_solver.movement.settings import movement_settings
 from parkour_solver.search.frontier import persistent_programs
-from parkour_solver.search.anchors.policy import local_counts, single_jump_structure
+from parkour_solver.search.anchors.policy import local_counts, transfer_structure
 from parkour_solver.search.feasibility import meaningful_choice
 from parkour_solver.search.application import run
 from tests.support.checkpoint_guidance import flat_scene
@@ -23,7 +23,7 @@ class AnchorSearchTests(unittest.TestCase):
         return persistent_programs(s,settings=cfg,report=report if report is not None else {},
             continuation=continuation,threshold=0.,node_evaluator=evaluator,
             program_filter=lambda p:local_counts(p)['R']<=2 and (not latched or not latched() or
-                single_jump_structure(s,p,0,'start','goal',complete=p['terminalSupport']=='goal')),
+                transfer_structure(s,p,0,'start','goal',complete=p['terminalSupport']=='goal')['valid']),
             policy_context=dict(version=1,span=0),deadline=time.monotonic()+3,context_adapter=lambda c:c.update(interactionGate=None))
 
     def test_take_pops_the_smallest_key_with_list_order_breaking_ties(self):
@@ -720,7 +720,7 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
         scene = flat_scene()
         scene['movementSearch'].update(maxInputs=28, maxPrefixes=64)
         with PythonCompiler() as compiler:
-            settings = dict(anchor_search={}, seconds=12, score_seconds=4, max_solver_calls=40,
+            settings = dict(anchor_search={}, seconds=12, max_solver_calls=40,
                             program_filter=InitialJumpDomain([0], max_inputs=28),
                             python_executable=os.environ['PKC_IPOPT_PYTHON'])
             settings.update(options)
@@ -785,7 +785,7 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
         from parkour_solver.search.engine import find_checkpoint_route
         from parkour_solver.validation.witness import replay_witness
         with PythonCompiler() as compiler:
-            result = find_checkpoint_route(prepare_scene(request), compiler, anchor_search={}, seconds=20, score_seconds=4,
+            result = find_checkpoint_route(prepare_scene(request), compiler, anchor_search={}, seconds=20,
                                            max_solver_calls=40, python_executable=os.environ['PKC_IPOPT_PYTHON'])
             best = result['best']
             self.assertIsNotNone(best, result['termination'])

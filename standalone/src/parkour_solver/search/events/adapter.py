@@ -109,7 +109,7 @@ class EventGuideAdapter:
         if cursor['occurrences']:
             previous=next(e for e in self.graph['events'] if e['id']==cursor['occurrences'][-1]['event'])
             if previous['cover']:
-                from parkour_solver.spatial.compat.corridors import conditioned_anchor
+                from parkour_solver.spatial.guides import conditioned_anchor
                 entry=conditioned_anchor(previous['cover'],entry,task_reference(self.data,entry))
         result.guide=guide_for(self.data,self.graph,request,entry)
         result.objective=outgoing_objective(self.data,self.graph,request,result.guide)
@@ -153,23 +153,18 @@ class EventGuideAdapter:
         self.counts['eventAudits']+=1
         goal=self.request['goal']
         target_owners=[b.get('sourceBlock',b['id']) for b in self.scene['blocks']
-                       if goal['kind']=='landing' and b['id'] in goal.get('blocks',[goal['block']])]
+                       if b['id'] in goal.get('blocks',[goal['block']])]
         episodes=support_episodes(self.data,self.program['profile'],required_owners=target_owners)
-        required=True
-        if goal['kind']=='landing':
-            blocks=[b for b in self.scene['blocks'] if b['id'] in goal.get('blocks',[goal['block']])]
-            solids={b['solidIndex'] for b in blocks}
-            required=any(set(e['solids']).intersection(solids) and e['input'] >= self.request['afterTick']
-                         for e in episodes if e['kind'] in ('support_visit','named_contact'))
-            if required and 'surface' in goal:
-                surface=next(s for s in self.data['surfaces'] if s['id']==goal['surface'])
-                states={e['input']+(e['kind']=='named_contact') for e in episodes
-                        if set(e['solids']).intersection(solids) and e['input']>=self.request['afterTick']}
-                required=any(contains(box,[candidate['positions'][t][0],surface['height'],candidate['positions'][t][1]],1e-7)
-                    for t in states for box in surface['cover'])
-        else:
-            from parkour_solver.search.virtual_goals import satisfied
-            required=satisfied(self.program,candidate,goal,self.scene.get('supportClearance',1e-6))
+        blocks=[b for b in self.scene['blocks'] if b['id'] in goal.get('blocks',[goal['block']])]
+        solids={b['solidIndex'] for b in blocks}
+        required=any(set(e['solids']).intersection(solids) and e['input'] >= self.request['afterTick']
+                     for e in episodes if e['kind'] in ('support_visit','named_contact'))
+        if required and 'surface' in goal:
+            surface=next(s for s in self.data['surfaces'] if s['id']==goal['surface'])
+            states={e['input']+(e['kind']=='named_contact') for e in episodes
+                    if set(e['solids']).intersection(solids) and e['input']>=self.request['afterTick']}
+            required=any(contains(box,[candidate['positions'][t][0],surface['height'],candidate['positions'][t][1]],1e-7)
+                for t in states for box in surface['cover'])
         self.counts['requiredEventRejections']+=int(not required)
         return dict(accepted=required,reason=None if required else 'required_event_not_observed',
             requiredEventsSatisfied=required,taskSatisfied=required and self.request['terminal'],

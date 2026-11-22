@@ -1,15 +1,7 @@
-from parkour_solver.validation.numerical import validate
-from parkour_solver.physics.angles import wrap
 from parkour_solver.schema import number, integer
 import copy
 import hashlib
 import json
-import math
-
-from parkour_solver.physics.vertical import CAP, branch as cap_branch, clamp, vertical_carry, vertical_step
-
-
-from parkour_solver.schema import TOLERANCE
 
 
 def prepare(request):

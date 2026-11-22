@@ -15,7 +15,6 @@ from tests.support.ladder_composition import airborne_case
 from parkour_solver.scene.geometry import BODY_HEIGHT
 from parkour_solver.validation.scene import check_geometry
 from parkour_solver.scene.normalize import prepare_scene
-from parkour_solver.search.support_profiles import compile_block_path
 from parkour_solver.search.repair import solve_contact_branches
 from parkour_solver.constraints.contacts import floor_checks
 from parkour_solver.bridge.python_compiler import PythonCompiler
@@ -131,54 +130,6 @@ class MovementContactTests(unittest.TestCase):
         result=mixed_schedule_pool(request,[],max_variants=0)
         self.assertEqual(result['schedules'],[])
         self.assertEqual(request,saved)
-
-
-@unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'),
-                     'Set PKC_IPOPT_PYTHON')
-class GeneratedMixedContactIntegrationTests(unittest.TestCase):
-    def test_generated_contacts_on_approach_second_ladder_and_final_air_solve_jointly(self):
-        _,episodes,base=airborne_case()
-        with PythonCompiler() as compiler:
-            for name,offset,ticks in [('appended-air-ceiling',6,29),('appended-ladder-ceiling',20,29),('final-air-ceiling',25,27)]:
-                with self.subTest(name=name):
-                    evidence=json.loads((ROOT/'experiments/contact-combinations'/(name+'.json')).read_text())
-                    scene=prepare_scene(json.loads((ROOT/evidence['fixture']).read_text()))
-                    if name=='final-air-ceiling':
-                        prefix=recompose(base,episodes,None,48)
-                        candidates=list(finish_programs(prefix,3,scene['collisionScene']['solids'],
-                                                       max_inputs=48,max_contact_variants=16))
-                    else:
-                        generated=append_ladder_programs(open_program(base['ladderEvents'][0]),
-                            episodes[1]['column'],episodes[1]['wall'],toward=[1,2.5],max_inputs=48,max_entry=6,
-                            max_programs=128,solids=scene['collisionScene']['solids'],
-                            max_contact_variants=8 if name=='appended-air-ceiling' else 16)
-                        candidates=[recompose(p,p['episodes'],3,48) for p in generated['programs']
-                                    if p['episodes'][-1]['entryState']==11 and p['episodes'][-1]['exitKind']=='top']
-                    program=next((p for p in candidates if p is not None
-                        and [(e['offset'],e['axis']) for e in p['profile']['contactEvents']]==[(offset,'Y')]),None)
-                    self.assertIsNotNone(program,{'case':name,'candidates':len(candidates)})
-                    edge=dict(source='start',target='b',profileKind='ladder',profile=program['profile'],
-                              ladderEvents=program['ladderEvents'],entryFace=None,exitFace=None)
-                    compiled=compile_block_path(scene,['start','b'],[edge])
-                    result=solve_contact_branches(compiled['route'],compiled['profiles'],
-                        floor_checks(scene,['start','b'],compiled['profiles']),compiler,seconds=30,
-                        candidate_seconds=5,retries=1,geometry=scene['collisionScene'],
-                        motion_bound={'storedSpeedNorm':2,'movementAfterSupportCheck':2},
-                        python_executable=os.environ['PKC_IPOPT_PYTHON'])
-                    self.assertEqual(result['status'],'feasible',result)
-                    b=result['best']
-                    self.assertEqual(b['plan']['ticks'],ticks)
-                    self.assertTrue(b['geometryCheck']['feasible'])
-                    self.assertEqual(len(b['route']['ladderEvents']),2)
-                    self.assertEqual(sum(b['plan']['jump']),1)
-                    self.assertFalse(any(b['candidate']['onGround'][1:-1]))
-                    problem=prepare(evidence['problem'])
-                    accepted=validate(problem,evidence['candidate']['yaw'])
-                    self.assertTrue(accepted['feasible'])
-                    self.assertEqual(accepted['positions'],evidence['candidate']['positions'])
-                    vertical=dict(vertical=problem['vertical'],y=accepted['y'],vy=accepted['vy'],onGround=accepted['onGround'])
-                    self.assertTrue(check_geometry(evidence['geometry'],evidence['plan'],evidence['candidate'],
-                                                   vertical,compiler,5)['feasible'])
 
 
 if __name__=='__main__':

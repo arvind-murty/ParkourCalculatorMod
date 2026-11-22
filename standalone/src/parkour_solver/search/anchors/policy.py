@@ -405,6 +405,3 @@ def transfer_structure(scene, program, start, source, target, *, complete=False,
                 preparationJumps=preparation,transferJumps=transfer,arrival=arrival,
                 transferSteppingInputs=stepping,assumption='hard_transfer_without_stepping')
 
-
-def single_jump_structure(scene, program, start, source, target, *, complete=False):
-    return transfer_structure(scene,program,start,source,target,complete=complete)['valid']

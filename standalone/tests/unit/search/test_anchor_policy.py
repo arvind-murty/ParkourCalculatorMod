@@ -7,7 +7,7 @@ import unittest
 
 from parkour_solver.scene.normalize import prepare_scene
 from parkour_solver.search.anchors.policy import (SAME_FACE_FIT_FACTOR, audit, encounter_groups, local_counts, priority,
-    same_face_fit, settings, visit_state, within_caps, single_jump_structure, transfer_structure)
+    same_face_fit, settings, visit_state, within_caps, transfer_structure)
 from parkour_solver.spatial.anchor_guides import build_guides, classify, decision_objective, nearest, onward_objective
 from parkour_solver.search.anchors.adapter import AnchorAdapter
 from parkour_solver.spatial.event_routes import build_route_domain, build_event_graph
@@ -142,12 +142,12 @@ class AnchorPolicyTests(unittest.TestCase):
         json.dumps(guides,allow_nan=False)
 
     def test_decision_objective_aims_from_the_last_block_toward_the_next_required_anchor(self):
-        from parkour_solver.spatial.checkpoints import Checkpoint
+        from parkour_solver.spatial.checkpoints import direction_objective
         s=scene();data=build_route_domain(s,dict(kind='landing',block='goal')).to_dict()
         def view(anchors):
             return AnchorAdapter(data,build_event_graph(data),settings(dict(anchors=anchors),s))
         def aim(point,target):
-            return Checkpoint(1,-1,(target[0]-point[0],target[2]-point[2]),(),(),()).objective
+            return direction_objective((target[0]-point[0],target[2]-point[2]))
         adapter=view(['mid']);points=adapter.guide_plan['points']
         # The start's guide point is the initial position.
         self.assertEqual(adapter.program_objective(history(s,['start'])),aim(points[0],points[1]))
@@ -372,12 +372,12 @@ class AnchorPolicyTests(unittest.TestCase):
 
     def test_hard_structure_excludes_setup_hop_runoff_and_zero_jump_finish(self):
         s=scene();p=history(s,['mid'])
-        self.assertTrue(single_jump_structure(s,p,0,'start','mid',complete=True))
+        self.assertTrue(transfer_structure(s,p,0,'start','mid',complete=True)['valid'])
         p['profile']['jump']=[False]
-        self.assertTrue(single_jump_structure(s,p,0,'start','mid'))
-        self.assertFalse(single_jump_structure(s,p,0,'start','mid',complete=True))
+        self.assertTrue(transfer_structure(s,p,0,'start','mid')['valid'])
+        self.assertFalse(transfer_structure(s,p,0,'start','mid',complete=True)['valid'])
         p=history(s,['start','mid']);p['profile']['jump']=[True,False]
-        self.assertFalse(single_jump_structure(s,p,0,'start','mid',complete=True))
+        self.assertFalse(transfer_structure(s,p,0,'start','mid',complete=True)['valid'])
 
     def test_hard_transfer_keeps_arbitrary_source_setup_jumps_and_counts_them(self):
         s=scene()
@@ -388,19 +388,19 @@ class AnchorPolicyTests(unittest.TestCase):
             self.assertEqual(result['preparationJumps'],list(range(hops)))
             self.assertEqual(result['transferJumps'],[hops])
             self.assertEqual(local_counts(p)['J'],hops+1)
-            self.assertTrue(single_jump_structure(s,history(s,['start']*hops),0,'start','mid'))
+            self.assertTrue(transfer_structure(s,history(s,['start']*hops),0,'start','mid')['valid'])
             self.assertFalse(within_caps(dict(maxJumps=hops),p))
 
     def test_setup_does_not_admit_an_intermediate_block_or_two_transfer_impulses(self):
         s=scene()
-        self.assertFalse(single_jump_structure(s,history(s,['start','optional','mid']),0,'start','mid',complete=True))
+        self.assertFalse(transfer_structure(s,history(s,['start','optional','mid']),0,'start','mid',complete=True)['valid'])
         p=history(s,['start','start','mid'])
         p['profile']['contactEvents']=p['profile']['contactEvents'][:1]+p['profile']['contactEvents'][2:]
         result=transfer_structure(s,p,0,'start','mid',complete=True)
         self.assertFalse(result['valid'])
         self.assertEqual(result['reason'],'multiple_transfer_impulses')
-        self.assertFalse(single_jump_structure(s,history(s,['mid','start']),0,'start','mid'))
-        self.assertFalse(single_jump_structure(s,history(s,['mid','mid']),0,'start','mid',complete=True))
+        self.assertFalse(transfer_structure(s,history(s,['mid','start']),0,'start','mid')['valid'])
+        self.assertFalse(transfer_structure(s,history(s,['mid','mid']),0,'start','mid',complete=True)['valid'])
 
     def test_transfer_uses_current_anchor_boundary_and_physical_owner_aliases(self):
         s=scene();p=history(s,['mid','mid','goal'])
@@ -409,7 +409,7 @@ class AnchorPolicyTests(unittest.TestCase):
         self.assertEqual(result['preparationJumps'],[1])
         self.assertEqual(result['transferJumps'],[2])
         next(b for b in s['blocks'] if b['id']=='optional')['sourceBlock']='start'
-        self.assertTrue(single_jump_structure(s,history(s,['optional','mid']),0,'start','mid',complete=True))
+        self.assertTrue(transfer_structure(s,history(s,['optional','mid']),0,'start','mid',complete=True)['valid'])
 
     def test_source_contact_at_target_arrival_is_part_of_the_same_transfer(self):
         s=scene();p=history(s,['start','mid'])
@@ -431,7 +431,7 @@ class AnchorPolicyTests(unittest.TestCase):
         saved=current_events(json.loads(gzip.decompress((base/'virtual-finish/evidence/initial0-cold.json.gz').read_bytes())))
         program=saved['result']['best']['movementProgram']
         setup=truncate_program(program,12)
-        self.assertTrue(single_jump_structure(s,setup,0,'b1','b2'))
+        self.assertTrue(transfer_structure(s,setup,0,'b1','b2')['valid'])
         landing=truncate_program(program,21)
         result=transfer_structure(s,landing,0,'b1','b2',complete=True)
         self.assertTrue(result['valid'])

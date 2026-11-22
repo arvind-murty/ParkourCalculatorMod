@@ -5,7 +5,6 @@ import os
 import unittest
 
 from parkour_solver.movement.profiles import ordinary_jump_profile
-from parkour_solver.search.support_profiles import find_blocks
 from parkour_solver.bridge.python_compiler import PythonCompiler
 from parkour_solver.constraints.hit_events import wall_hit_options
 from parkour_solver.scene.route import prepare_route, schedule
@@ -45,44 +44,3 @@ class HitEventTests(unittest.TestCase):
         self.assertEqual(profile['duration'], 12)
         self.assertTrue(all(h['blockId'] == 'wall' for h in result['options']))
 
-
-@unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'),
-                     'Set PKC_IPOPT_PYTHON')
-class WallReversalIntegrationTests(unittest.TestCase):
-    def test_geometry_discovers_reversal_for_x_z_and_both_signs(self):
-        original = json.loads(FIXTURE.read_text())
-        original['maxContactCombinations'] = 0
-        with PythonCompiler() as compiler:
-            for axis, sign in [('X', 1), ('X', -1), ('Z', 1), ('Z', -1)]:
-                request = copy.deepcopy(original)
-                for key in ('position', 'velocity'):
-                    point = request['initial'][key]
-                    point[0] *= sign
-                    if axis == 'Z':
-                        point[0], point[2] = point[2], point[0]
-                for block in request['blocks']:
-                    box = block['boxes'][0]
-                    if sign < 0:
-                        box[0], box[3] = -box[3], -box[0]
-                    if axis == 'Z':
-                        box[0], box[2] = box[2], box[0]
-                        box[3], box[5] = box[5], box[3]
-                request['objective']['axis'] = 'X' if axis == 'Z' else 'Z'
-                result = find_blocks(request, compiler, seconds=25, route_seconds=22, candidate_seconds=.7,
-                                     retries=0, python_executable=os.environ['PKC_IPOPT_PYTHON'])
-                self.assertEqual(result['status'], 'feasible', (axis, sign, result))
-                best = result['best']
-                self.assertEqual(len(best['hitEvents']), 1)
-                hit = best['hitEvents'][0]
-                self.assertEqual((hit['axis'], hit['direction']), (axis, sign))
-                at = best['plan']['contacts'][0]['state']
-                a = 0 if axis == 'X' else 1
-                self.assertEqual(best['candidate']['velocity'][at][a], 0)
-                self.assertLess(sign * (best['candidate']['positions'][at + 1][a] - hit['plane']), 0)
-                self.assertTrue(best['geometryCheck']['feasible'])
-                self.assertFalse(best['candidate']['movement']['sprinting'][at])
-            control = copy.deepcopy(original)
-            control['maxWallHits'] = 0
-            result = find_blocks(control, compiler, seconds=10, route_seconds=8, candidate_seconds=.5,
-                                 retries=0, python_executable=os.environ['PKC_IPOPT_PYTHON'])
-            self.assertEqual(result['status'], 'unknown')

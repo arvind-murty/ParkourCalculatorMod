@@ -16,10 +16,7 @@ plot = ["matplotlib==3.11.2"]
 
 [project.scripts]
 parkour-solve = "parkour_solver.cli.solve:main"
-parkour-blocks = "parkour_solver.cli.blocks:main"
-parkour-route = "parkour_solver.cli.ordered_route:main"
 parkour-ipopt = "parkour_solver.cli.numerical:main"
-parkour-fixed-clock = "parkour_solver.cli.fixed_clock:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

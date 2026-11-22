@@ -3,36 +3,12 @@ import unittest
 from unittest.mock import patch
 
 from parkour_solver.search.repair import solve_contact_branches
-from parkour_solver.search.movement import iter_movement_programs
 from parkour_solver.movement.settings import movement_settings
 from parkour_solver.search.ranking import objective_seed
 from tests.support.checkpoint_guidance import flat_scene
 
 
 class SearchFixTests(unittest.TestCase):
-    def test_completed_profiles_survive_partial_queue_and_expansion_caps(self):
-        scene = flat_scene()
-        cfg = dict(movement_settings(scene), maxPrefixes=1, maxQueuedPrefixes=1, types=['normal'])
-        def child(program, choice, **kwargs):
-            result = copy.deepcopy(program)
-            t, goal = choice
-            result['profile'].update(duration=t, grounded=[False, True])
-            result['terminalSupport'] = scene['goalBlock'] if goal else scene['startBlock']
-            result['interactions'] = 1
-            result['marker'] = choice
-            return result
-        choices = [(1, False), (2, False), (11, True), (12, True), (3, False)]
-        report = {}
-        with patch('parkour_solver.search.movement.generate_choices', return_value=iter(choices)), \
-             patch('parkour_solver.movement.program.append_choice', side_effect=child), \
-             patch('parkour_solver.search.movement.entry_possible', return_value=True):
-            programs = list(iter_movement_programs(scene, settings=cfg, threshold=0, report=report))
-        self.assertEqual([p['marker'] for p in programs], [(11, True)])
-        self.assertEqual(report['expandedPrefixes'], 1)
-        self.assertEqual(report['completeQueueDrops'], 1)
-        self.assertGreater(report['queueDrops'], 0)
-        self.assertEqual(report['termination'], 'prefix_limit')
-
     def test_outer_incumbent_survives_invalid_polish_and_repair_continues(self):
         self.exercise_incumbent(repair=True)
 

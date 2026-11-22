@@ -4,6 +4,10 @@ import json
 from parkour_solver.search.comparison import compare_candidates, priority_key
 
 
+# Version of the minimum-run (preparation) deferral policy, in DFS continuation identity and reports.
+POLICY_VERSION = 3
+
+
 def remember_peer(peers, label):
     key=json.dumps([label.get(k) for k in ('comparisonContext','mode','landingPhase','J','tickCost')])
     old=peers.get(key)
