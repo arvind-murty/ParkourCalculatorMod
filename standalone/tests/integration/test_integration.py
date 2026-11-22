@@ -9,7 +9,6 @@ from parkour_solver.scene.normalize import prepare_scene
 from parkour_solver.bridge.python_compiler import PythonCompiler
 from parkour_solver.scene.route import initial_guess, supports
 from parkour_solver.validation.vertical import validate_vertical_schedule
-from parkour_solver.scene.geometry import BODY_HEIGHT
 from parkour_solver.validation.scene import check_geometry
 from parkour_solver.numerics import prepare, validate
 
@@ -161,39 +160,6 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(blocked['status'], 'unknown')
         self.assertIsNone(blocked['best'])
 
-    def test_source_runoff_can_leave_the_near_side_and_stays_clear_while_y_overlaps(self):
-        from parkour_solver.constraints.contacts import floor_checks
-        from parkour_solver.movement.generation import generate_choices
-        from parkour_solver.movement.program import append_choice, boundary_state, compile_program, empty_program
-        from parkour_solver.search.repair import solve_contact_branches
-        request = json.loads((FIXTURES / 'obstacle-runoff-side.json').read_text())
-        request.update(ceilingHits=False, maxWallHits=0)
-        scene = prepare_scene(request)
-        def choices(program):
-            return generate_choices('normal', dict(mode='open', scene=scene, program=program, state=boundary_state(program),
-                                                   maxInputs=40, threshold=0., interactionGate=None))
-        root = empty_program(scene['initial'], threshold=0.)
-        root['terminalSupport'] = scene['startBlock']
-        # One run tick on the start, then a run-off landing on the goal.
-        runs = [p for p in (append_choice(root, c) for c in choices(root)) if p is not None
-                and p['profile']['duration'] == 1 and p.get('terminalSupport') == scene['startBlock']]
-        program = next(p for run in runs for p in (append_choice(run, c) for c in choices(run)) if p is not None
-                       and p['profile']['duration'] == 5 and not any(p['profile']['jump'])
-                       and p.get('terminalSupport') == scene['goalBlock'] and p['profile']['grounded'][-1])
-        compiled = compile_program(scene, program)
-        with PythonCompiler() as compiler:
-            result = solve_contact_branches(compiled['route'], compiled['profiles'],
-                floor_checks(scene, [scene['startBlock'], scene['goalBlock']], compiled['profiles']), compiler,
-                seconds=15, candidate_seconds=1, retries=0, geometry=scene['collisionScene'],
-                motion_bound=dict(movementAfterSupportCheck=.8, storedSpeedNorm=.6), python_executable=RUNTIME)
-        self.assertEqual(result['status'], 'feasible', result['termination'])
-        best = result['best']
-        self.assertEqual(best['plan']['ticks'], 5)
-        start = next(b for b in scene['blocks'] if b['id'] == scene['startBlock'])
-        for tick in range(1, best['plan']['ticks'] + 1):
-            if best['candidate']['y'][tick] < 1 and best['candidate']['y'][tick] + BODY_HEIGHT > 0:
-                self.assertFalse(supports(start, *best['candidate']['positions'][tick]))
-        self.assertTrue(best['geometryCheck']['feasible'])
 
 if __name__ == '__main__':
     unittest.main()

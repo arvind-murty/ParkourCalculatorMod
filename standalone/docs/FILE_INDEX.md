@@ -65,7 +65,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 38494 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11512 |
 | [docs/DOC_INDEX.md](DOC_INDEX.md) | 28532 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 222888 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 223553 |
 | [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 63944 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
@@ -1585,7 +1585,6 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/fixtures/movement/obstacle-blocked.json](../tests/fixtures/movement/obstacle-blocked.json) | 539 |
 | [tests/fixtures/movement/obstacle-cross-neo.json](../tests/fixtures/movement/obstacle-cross-neo.json) | 580 |
 | [tests/fixtures/movement/obstacle-interleaved.json](../tests/fixtures/movement/obstacle-interleaved.json) | 607 |
-| [tests/fixtures/movement/obstacle-runoff-side.json](../tests/fixtures/movement/obstacle-runoff-side.json) | 494 |
 | [tests/fixtures/movement/obstacle-under-ceiling.json](../tests/fixtures/movement/obstacle-under-ceiling.json) | 553 |
 | [tests/fixtures/movement/obstacle-wide-neo.json](../tests/fixtures/movement/obstacle-wide-neo.json) | 544 |
 | [tests/fixtures/movement/one-required-run-tick.json](../tests/fixtures/movement/one-required-run-tick.json) | 311 |
@@ -1621,7 +1620,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/integration/test_full_route_witness.py](../tests/integration/test_full_route_witness.py) | 1854 |
 | [tests/integration/test_generic_composition.py](../tests/integration/test_generic_composition.py) | 18362 |
 | [tests/integration/test_geometry_bounds.py](../tests/integration/test_geometry_bounds.py) | 4077 |
-| [tests/integration/test_integration.py](../tests/integration/test_integration.py) | 12700 |
+| [tests/integration/test_integration.py](../tests/integration/test_integration.py) | 10053 |
 | [tests/integration/test_movement_contacts.py](../tests/integration/test_movement_contacts.py) | 11263 |
 | [tests/integration/test_orchestrator_continuation.py](../tests/integration/test_orchestrator_continuation.py) | 12673 |
 | [tests/integration/test_package_layout.py](../tests/integration/test_package_layout.py) | 5628 |
@@ -1721,7 +1720,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tools/generate_coefficient_tables.py](../tools/generate_coefficient_tables.py) | 8706 |
 | [tools/geometry_bounds.py](../tools/geometry_bounds.py) | 4749 |
 | [tools/layout-extractions.json](../tools/layout-extractions.json) | 6510 |
-| [tools/layout-migration.json](../tools/layout-migration.json) | 365412 |
+| [tools/layout-migration.json](../tools/layout-migration.json) | 365443 |
 | [tools/layout-test-support.json](../tools/layout-test-support.json) | 3356 |
 | [tools/native-suite.json](../tools/native-suite.json) | 2841 |
 | [tools/native_gate.py](../tools/native_gate.py) | 1679 |

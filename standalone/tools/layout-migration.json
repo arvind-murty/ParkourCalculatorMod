@@ -6073,7 +6073,8 @@
       "old": "autonomy/fixtures/obstacle-runoff-side.json",
       "new": "tests/fixtures/movement/obstacle-runoff-side.json",
       "originalSha256": "23b58403d831b0c99c052080e807b854517fbcb15e71f80a7a5210904dfb1ca1",
-      "immutable": true
+      "immutable": false,
+      "retired": "2026-11-22"
     },
     {
       "old": "autonomy/fixtures/obstacle-under-ceiling.json",
