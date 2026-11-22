@@ -64,7 +64,7 @@ objective, model) appears whenever the published route differs from it.
 `finalization` lists the attempts and stage. In `work`, `workerLaunches` and
 `feasibleSeedReturns` count interim IPOPT only; `conicCandidates`,
 `relaxedFallbacks` (and `relaxedFallback:<reason>`: `unsupported`,
-`relaxed_undecided`, `rejected_relaxed_point`) describe relaxed requests, and
+`rejected_relaxed_point`) describe relaxed requests, and
 `finalizationIpoptCalls` the finalization's worker launches. The solve report
 labels each request's status with its solver and adds a `Finalization` row.
 
@@ -149,8 +149,7 @@ every alternative is infeasible, and the owners of every request without a solut
 (its routes, or the search-tree nodes whose alternatives sent it).
 The `Disk-relaxation pre-checks` line under it counts the run's disk-relaxation screens
 (`interactionGate.relaxation.screen`, also `summary.json` `relaxationChecks`, which also
-holds the `candidate` counts): solved, served from cache, proved infeasible, and undecided
-by Clarabel (counted as not ruled out). The trace is a pure
+holds the `candidate` counts): solved, served from cache and infeasible. The trace is a pure
 function of the saved search state, so regenerating it never changes a run.
 
 ## Failure investigation workflow

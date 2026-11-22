@@ -176,17 +176,17 @@ retained position/velocity/acceleration states: exact dynamics, fixed or interva
 starts, contact resets with the `SOLVER_MARGIN` reach row, and X/Z walls. Equalities go in
 Clarabel's zero cone and each tick's disk in a 3-dimensional second-order cone.
 Settings are QDLDL, one thread, 200 iterations, a 0.1 s cap and `1e-9`
-feasibility/gap tolerances (`1e-8` infeasibility). Requests with an inertia
+feasibility/gap tolerances (`1e-8` infeasibility); a run that ends `MaxIterations`
+or `MaxTime` is solved once more with 500 iterations and a 0.5 s cap
+(`retried: true`). Requests with an inertia
 threshold, ladder ticks, an inertia pattern or non-X/Z rows have no spec.
 
-`Solved`/`AlmostSolved` give a relaxed point, `PrimalInfeasible`/
-`AlmostPrimalInfeasible` exclude the full request (the disk contains the circle),
-and any other status is undecided. An undecided spec with an objective is solved
-once more with zero cost (`retried: true` on a result it decides): infeasibility
-does not depend on the cost, and some infeasible requests end `NumericalError`
-only under their objective. A feasible retry is not the optimum, so the request
-stays undecided. Decided results are cached process-wide by the canonical spec
-(1024 entries). `validation.numerical.validate_controls`
+`Solved`/`AlmostSolved` with a finite point give a relaxed point;
+`PrimalInfeasible`/`AlmostPrimalInfeasible` exclude the full request (the disk
+contains the circle). Every other status (a non-finite point, `NumericalError`,
+`InsufficientProgress`, an exception, a limit hit on the retry too) is also
+infeasible, so Clarabel never leaves a request undecided (user, 2026-11-22).
+Results are cached process-wide by the canonical spec (1024 entries). `validation.numerical.validate_controls`
 replays the returned acceleration vectors through the same scalar checks as
 `validate` (which converts facings to full-strength vectors first) and also
 rejects a vector outside its disk by more than `REPLAY_TOLERANCE`. `deficits` reports each
@@ -199,8 +199,7 @@ that passes `validate_controls` returns `status: feasible` with the candidate
 clarabel`, `termination: disk_finished` and `workerLaunched: false`; an infeasible
 request returns `unknown` with the Clarabel status in `workerStatus`. IPOPT
 answers, with `backend: ipopt` and a `fallback` reason, requests with no spec
-(`unsupported`), requests the relaxation leaves undecided (`relaxed_undecided`)
-and relaxed points
+(`unsupported`) and relaxed points
 the validator rejects (`rejected_relaxed_point`). Every relaxed result lists its
 alarm ticks in `disk.alarmTicks`: jump ticks (`vertical.jumpVelocity`;
 `alarm_ticks`; a request without that schedule never alarms) with a relative

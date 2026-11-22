@@ -19,6 +19,9 @@ FIXTURES = pathlib.Path(__file__).resolve().parents[2]/'fixtures'/'numerics'
 RUNTIME = os.environ.get('PKC_IPOPT_PYTHON')
 
 
+PRIMAL_INFEASIBLE = ('PrimalInfeasible', 'AlmostPrimalInfeasible')
+
+
 def read(name):
     with gzip.open(FIXTURES/name, 'rt') as stream:
         return json.load(stream)
@@ -96,20 +99,22 @@ class ArchivedReal11Tests(unittest.TestCase):
             verdicts.append(result['outcome'])
             if row['stockObjective'] is None:
                 self.assertEqual(result['outcome'], 'infeasible', row['problemHash'])
-                self.assertIn(result['status'], disk.INFEASIBLE)
+                self.assertIn(result['status'], PRIMAL_INFEASIBLE)
                 continue
             self.assertTrue(candidate['feasible'], row['problemHash'])
             sense = 1 if p['objective']['sense'] == 'MAX' else -1
             self.assertGreaterEqual(sense*candidate['objective'], sense*row['stockObjective']-1e-6, row['problemHash'])
         self.assertEqual((verdicts.count('feasible'), verdicts.count('infeasible')), (14, 4))
 
-    def test_requests_undecided_under_their_objective_are_excluded_by_the_zero_cost_retry(self):
+    def test_requests_clarabel_never_solved_under_their_objective_are_infeasible(self):
+        # Captured requests that end without a verdict under their objective and are primal infeasible without it.
         for row in read('disk-undecided.json.gz')['rows']:
             content = disk.spec(prepare(row['request']), strict=True)
-            self.assertEqual(disk._solve(content, disk.CAP)['outcome'], 'undecided', row['capturedId'])
             result = disk.solve(content, seconds=disk.CAP)
-            self.assertEqual((result['outcome'], result['retried']), ('infeasible', True), row['capturedId'])
-            self.assertIn(result['status'], disk.INFEASIBLE)
+            self.assertNotIn(result['status'], disk.FEASIBLE+PRIMAL_INFEASIBLE, row['capturedId'])
+            self.assertEqual(result['outcome'], 'infeasible', row['capturedId'])
+            stripped = {k: v for k, v in content.items() if k != 'objective'}
+            self.assertIn(disk.solve(stripped, seconds=disk.CAP)['status'], PRIMAL_INFEASIBLE, row['capturedId'])
 
 
 @unittest.skipUnless(RUNTIME, 'Set PKC_IPOPT_PYTHON to compare the relaxation with IPOPT')
@@ -164,17 +169,19 @@ class StartAndStatusTests(unittest.TestCase):
     def test_unreachable_landing_box_is_primal_infeasible(self):
         result, candidate = relaxed(request(2, .1, walls=[dict(mode='X', t1=2, cmp='GE', rhs=5.)]))
         self.assertEqual((result['outcome'], candidate), ('infeasible', None))
-        self.assertIn(result['status'], disk.INFEASIBLE)
+        self.assertIn(result['status'], PRIMAL_INFEASIBLE)
 
-    def test_undecided_is_solved_again_and_decided_results_are_cached(self):
+    def test_a_limit_is_retried_once_with_higher_limits_and_a_second_limit_is_infeasible(self):
         content = disk.spec(request(4, .13, walls=[dict(mode='Z', t1=3, cmp='LE', rhs=.3)]), strict=True)
         with mock.patch.object(disk, 'MAX_ITER', 1):
             first = disk.solve(content, seconds=disk.CAP)
-            second = disk.solve(content, seconds=disk.CAP)
-        self.assertEqual((first['outcome'], first['cached'], second['cached']), ('undecided', False, False))
-        decided = disk.solve(content, seconds=disk.CAP)
-        self.assertEqual((decided['outcome'], decided['cached']), ('feasible', False))
+        self.assertEqual((first['outcome'], first['retried'], first['cached']), ('feasible', True, False))
         self.assertTrue(disk.solve(copy.deepcopy(content), seconds=disk.CAP)['cached'])
+        other = disk.spec(request(4, .13, walls=[dict(mode='Z', t1=3, cmp='LE', rhs=.29)]), strict=True)
+        with mock.patch.object(disk, 'MAX_ITER', 1), mock.patch.object(disk, 'RETRY_MAX_ITER', 1):
+            limited = disk.solve(other, seconds=disk.CAP)
+        self.assertEqual((limited['outcome'], limited['status'], limited['retried']), ('infeasible', 'MaxIterations', True))
+        self.assertTrue(disk.solve(copy.deepcopy(other), seconds=disk.CAP)['cached'])
 
     def test_unsupported_requests_have_no_spec(self):
         self.assertIsNone(disk.spec(request(2, .1, threshold=.005), strict=True))
@@ -219,15 +226,16 @@ class DispatchTests(unittest.TestCase):
         result, calls, _ = self.dispatch(request(2, .1, walls=[dict(mode='X', t1=2, cmp='GE', rhs=5.)]))
         self.assertEqual((result['status'], result['termination'], result['candidate'], calls),
                          ('unknown', 'disk_finished', None, []))
-        self.assertIn(result['workerStatus'], disk.INFEASIBLE)
+        self.assertIn(result['workerStatus'], PRIMAL_INFEASIBLE)
 
-    def test_ipopt_decides_unsupported_undecided_and_rejected_requests(self):
+    def test_ipopt_decides_only_unsupported_and_rejected_requests(self):
         result, calls, _ = self.dispatch(request(2, .1, threshold=.005))
         self.assertEqual((result['backend'], result['fallback'], calls), ('ipopt', 'unsupported', [False]))
-        with mock.patch.object(disk, 'MAX_ITER', 1):
+        with mock.patch.object(disk, 'MAX_ITER', 1), mock.patch.object(disk, 'RETRY_MAX_ITER', 1):
             result, calls, _ = self.dispatch(request(4, .17, walls=[dict(mode='X', t1=3, cmp='LE', rhs=.6)]),
                                              stop_on_feasible=True)
-        self.assertEqual((result['backend'], result['fallback'], calls), ('ipopt', 'relaxed_undecided', [True]))
+        self.assertEqual((result['status'], result['backend'], result['workerStatus'], calls),
+                         ('unknown', 'clarabel', 'MaxIterations', []))
         outside = dict(status='Solved', outcome='feasible', controls=[[.2, 0.], [0., 0.]], objective=0., iterations=1,
                        cached=False)
         with mock.patch.object(disk, 'solve', return_value=outside):

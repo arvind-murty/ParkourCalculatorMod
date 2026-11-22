@@ -115,7 +115,7 @@ Canonicalization includes remaining items and continuation capabilities. A row
 hash alone cannot merge unfinished face walks. Once an encounter is assigned,
 nominal switch counts do not create another branch. Completed stronger covers
 can be omitted only when a weaker cover entails them under the same capabilities.
-Guide preferences, timeouts and undecided relaxation results never establish exclusions.
+Guide preferences and timeouts never establish exclusions.
 
 ## Contact regions
 

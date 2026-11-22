@@ -363,13 +363,9 @@ class InteractionGate:
         objective=self.scene['objective'] if objective is None else objective
         cut=walk_off_tick(program)
         key=('screen',analysis['key'],digest(objective),cut)
-        undecided=False
         def relax(rows):
-            nonlocal undecided
             self.metrics['relaxationChecks']=self.metrics.get('relaxationChecks',0)+1
-            checked=self.relaxation(program,analysis,objective,rows)
-            undecided|=checked is not None and checked['outcome']=='undecided'
-            return checked
+            return self.relaxation(program,analysis,objective,rows)
         def build():
             proof=self.required(program)
             if proof:return proof,None
@@ -397,8 +393,6 @@ class InteractionGate:
                     break
             return (None,selection) if selection['options'] else (proof,None)
         proof,selection=self._cached(key,build,'screen')
-        if undecided:
-            self.cache.pop(key)
         if selection is not None:
             program['walkOffs']=program.get('walkOffs',[])+[copy.deepcopy(selection)]
         return proof

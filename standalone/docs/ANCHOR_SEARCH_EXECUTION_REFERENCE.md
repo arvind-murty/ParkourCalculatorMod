@@ -93,9 +93,9 @@ candidate tagged `model='relaxed_disk'` with its acceleration `controls` and is
 checked, repaired, ranked and adopted exactly like an IPOPT candidate; a
 relaxation-infeasible request counts as oracle-rejected (`termination
 'disk_finished'`, Clarabel status in `workerStatus`). IPOPT answers, with stock
-semantics, requests outside the supported class (threshold, ladder, non-X/Z rows),
-requests the relaxation leaves undecided even after its zero-cost retry, and
-relaxed points the scalar validator rejects. Every repair-loop solve of a
+semantics, requests outside the supported class (threshold, ladder, non-X/Z rows)
+and relaxed points the scalar validator rejects; every other Clarabel status is a
+verdict ([mapping](reference/NUMERICAL_SOLVER.md#disk-relaxation)). Every repair-loop solve of a
 decision check, anchor leg or finish stays relaxed, and the switch-tick climb
 compares relaxed objectives. When the loop ends, a confirmation walk
 (`search/repair.py` `walk`) takes each side family's best accepted point plus a

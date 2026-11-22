@@ -177,16 +177,16 @@ class DiskScreenTests(unittest.TestCase):
         self.assertFalse(interaction_reachability(envelopes,{})['ruledOut'])
         proof = interaction_reachability(envelopes,{},refine=True)
         self.assertEqual((proof['reason'],proof['relaxation']),('disk_control_relaxation_infeasible','acceleration_disk'))
-        self.assertIn(proof['status'],disk.INFEASIBLE)
+        self.assertIn(proof['status'],('PrimalInfeasible','AlmostPrimalInfeasible'))
         self.assertFalse(interaction_reachability(reachable_envelopes(self.model(1.85)),{},refine=True)['ruledOut'])
 
-    def test_undecided_results_are_solved_again_and_decided_ones_are_cached(self):
-        undecided = dict(status='MaxIterations',outcome='undecided',controls=None,objective=None,iterations=200)
-        with patch.object(disk,'_solve',side_effect=lambda *a:dict(undecided)) as solved:
+    def test_a_limit_hit_twice_rules_out_and_verdicts_are_cached(self):
+        limit = dict(status='MaxIterations',outcome='limit',controls=None,objective=None,iterations=200)
+        with patch.object(disk,'_solve',side_effect=lambda *a:dict(limit)) as solved:
             for _ in range(2):
                 checked = interaction_reachability(reachable_envelopes(self.model(1.25)),{},refine=True)
-                self.assertEqual((checked['ruledOut'],checked['reason']),(False,'relaxation_undecided'))
-        self.assertEqual(solved.call_count,2)
+                self.assertEqual((checked['ruledOut'],checked['reason']),(True,'disk_control_relaxation_infeasible'))
+        self.assertEqual([c.args[1:] for c in solved.call_args_list],[(disk.CAP,disk.MAX_ITER),(disk.RETRY_CAP,disk.RETRY_MAX_ITER)])
         self.assertTrue(interaction_reachability(reachable_envelopes(self.model(1.7)),{},refine=True)['ruledOut'])
         with patch.object(disk,'_solve',side_effect=AssertionError('cached')):
             self.assertEqual(disk.screen(self.model(1.7))['outcome'],'infeasible')

@@ -771,8 +771,7 @@ def render(report, requests, routes, stop, trees):
     if relaxation is not None:
         screens = relaxation.get('screen', {})
         lines += [f'Disk-relaxation pre-checks: {screens.get("solved", 0)} solved ({screens.get("cacheHits", 0)} more from cache), '
-                  f'{screens.get("infeasible", 0)} proved infeasible, {screens.get("undecided", 0)} undecided by Clarabel and '
-                  f'counted as not ruled out.','']
+                  f'{screens.get("infeasible", 0)} proved infeasible.','']
     blocks = (result.get('effectiveRequest') or {}).get('blocks',[])
     if blocks:
         lines += ['## Blocks','','Collision boxes in world coordinates, exact; a block of several boxes lists each.','']
