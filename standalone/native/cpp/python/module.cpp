@@ -15,12 +15,16 @@
 #include "pkc/coefficients.hpp"
 #include "pkc/envelopes.hpp"
 #include "pkc/gate.hpp"
+#include "pkc/numerics/builders.hpp"
+#include "pkc/numerics/constraints.hpp"
+#include "pkc/numerics/model.hpp"
 #include "pkc/program.hpp"
 #include "pkc/scene/geometry.hpp"
 #include "pkc/scene/normalize.hpp"
 #include "pkc/scene/route.hpp"
 #include "pkc/scene/static_collision.hpp"
 #include "pkc/screen.hpp"
+#include "pkc/validation/numerical.hpp"
 
 namespace py = pybind11;
 
@@ -316,14 +320,24 @@ PYBIND11_MODULE(_pkc_native, m) {
         pkc::Value parent_value = convert(parent);
         return to_python(pkc::initial_guess(convert(route), convert(plan), parent.is_none() ? nullptr : &parent_value));
     }, py::arg("route"), py::arg("plan"), py::arg("parent") = py::none(), "scene/route.initial_guess");
+    m.def("prepare_problem", [](py::handle request) { return to_python(pkc::prepare_problem(convert(request))); },
+          "numerics/model.prepare");
+    m.def("fingerprint", [](py::handle problem) { return pkc::fingerprint(convert(problem)); },
+          "numerics/model.fingerprint");
+    m.def("numerical_problem", [](py::handle route, py::handle plan, py::handle coefficients, py::handle parent) {
+        pkc::Value parent_value = convert(parent);
+        return to_python(pkc::numerical_problem(convert(route), convert(plan), convert(coefficients),
+                                                parent.is_none() ? nullptr : &parent_value));
+    }, py::arg("route"), py::arg("plan"), py::arg("coefficients"), py::arg("parent") = py::none(),
+       "numerics/builders.numerical_problem");
+    m.def("reduce_walls", [](py::handle walls) { return to_python(pkc::reduce_walls(convert(walls))); },
+          "numerics/constraints.reduce_walls");
+    m.def("validate", [](py::handle problem, py::handle yaw) {
+        return to_python(pkc::validate(convert(problem), convert(yaw)));
+    }, "validation/numerical.validate");
+    m.def("validate_controls", [](py::handle problem, py::handle controls) {
+        return to_python(pkc::validate_controls(convert(problem), convert(controls)));
+    }, "validation/numerical.validate_controls");
     m.def("float_repr", &pkc::float_repr, "repr(float) for a finite float");
-    m.def("sha256_hex", [](py::bytes data) {
-        static const char* hex = "0123456789abcdef";
-        std::string out;
-        for (auto byte : pkc::sha256(std::string(data))) {
-            out += hex[byte >> 4];
-            out += hex[byte & 0xF];
-        }
-        return out;
-    });
+    m.def("sha256_hex", [](py::bytes data) { return pkc::sha256_hex(std::string(data)); });
 }

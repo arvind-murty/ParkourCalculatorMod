@@ -103,6 +103,10 @@ def numerical_problem(route, plan, coefficients, parent=None):
     (reachability/service.py), so a child's screen and its repair loop's request
     for the same rows are one Clarabel solve (numerics/disk.py caches by content).
     """
+    from parkour_solver import native_core
+    native = native_core.from_environment()
+    if native is not None:
+        return native.numerical_problem(route, plan, coefficients, parent)
     problem = dict(coefficients, version=1, ticks=plan['ticks'],
                    position=[route['initial']['position'][0], route['initial']['position'][2]],
                    velocity=[route['initial']['velocity'][0], route['initial']['velocity'][2]],

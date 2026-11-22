@@ -5,7 +5,16 @@ from parkour_solver.physics.angles import wrap
 from parkour_solver.physics.vertical import CAP, branch as cap_branch, clamp, vertical_carry, vertical_step
 
 
+def _native():
+    """The native core under PKC_NATIVE_CORE, which replays candidates for every caller; None otherwise."""
+    from parkour_solver import native_core
+    return native_core.from_environment()
+
+
 def validate(problem, yaw):
+    native = _native()
+    if native is not None:
+        return native.validate(problem, yaw)
     n = problem['ticks']
     if not isinstance(yaw, list) or len(yaw) != n:
         raise ValueError('Wrong returned facing count')
@@ -20,6 +29,9 @@ def validate(problem, yaw):
 
 def validate_controls(problem, controls):
     """Replay acceleration vectors of a relaxed (|a| <= magnitude) candidate."""
+    native = _native()
+    if native is not None:
+        return native.validate_controls(problem, controls)
     n = problem['ticks']
     if not isinstance(controls, list) or len(controls) != n or any(
             not isinstance(c, list) or len(c) != 2 for c in controls):

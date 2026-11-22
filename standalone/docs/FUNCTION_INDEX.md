@@ -569,15 +569,16 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `prepare` | [15](../src/parkour_solver/numerics/model.py#L15) | function |
-| `fingerprint` | [195](../src/parkour_solver/numerics/model.py#L195) | function |
+| `_native` | [15](../src/parkour_solver/numerics/model.py#L15) | function |
+| `prepare` | [21](../src/parkour_solver/numerics/model.py#L21) | function |
+| `fingerprint` | [204](../src/parkour_solver/numerics/model.py#L204) | function |
 
 ## numerics/solver.py
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
 | `_command` | [18](../src/parkour_solver/numerics/solver.py#L18) | function |
-| `solve` | [22](../src/parkour_solver/numerics/solver.py#L22) | function |
+| `solve` | [26](../src/parkour_solver/numerics/solver.py#L26) | function |
 
 ## numerics/worker.py
 
@@ -1333,9 +1334,10 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `validate` | [8](../src/parkour_solver/validation/numerical.py#L8) | function |
-| `validate_controls` | [21](../src/parkour_solver/validation/numerical.py#L21) | function |
-| `_replay` | [43](../src/parkour_solver/validation/numerical.py#L43) | function |
+| `_native` | [8](../src/parkour_solver/validation/numerical.py#L8) | function |
+| `validate` | [14](../src/parkour_solver/validation/numerical.py#L14) | function |
+| `validate_controls` | [30](../src/parkour_solver/validation/numerical.py#L30) | function |
+| `_replay` | [55](../src/parkour_solver/validation/numerical.py#L55) | function |
 
 ## validation/scene.py
 

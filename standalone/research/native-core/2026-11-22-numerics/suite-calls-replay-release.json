@@ -1,0 +1,23 @@
+{
+ "parkour_solver.numerics.model:prepare": {
+  "cases": 4000,
+  "ok": 4000
+ },
+ "parkour_solver.numerics.model:fingerprint": {
+  "cases": 2028,
+  "ok": 2028
+ },
+ "parkour_solver.validation.numerical:validate": {
+  "cases": 4000,
+  "ok": 4000
+ },
+ "parkour_solver.validation.numerical:validate_controls": {
+  "cases": 97,
+  "ok": 96,
+  "ValueError": 1
+ },
+ "parkour_solver.numerics.constraints:reduce_walls": {
+  "cases": 34,
+  "ok": 34
+ }
+}

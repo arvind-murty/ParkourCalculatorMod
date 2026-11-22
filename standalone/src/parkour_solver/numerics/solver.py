@@ -16,6 +16,10 @@ else:
 
 
 def _command(python_executable):
+    from parkour_solver import native_core
+    native = native_core.from_environment()
+    if native is not None:  # under PKC_NATIVE_CORE the native worker, built beside the module, solves
+        return [str(pathlib.Path(native.__file__).parent / 'pkc_numerics_worker')]
     return [str(python_executable or sys.executable), '-u', '-m', 'parkour_solver.numerics.worker']
 
 

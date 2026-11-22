@@ -33,10 +33,12 @@ struct StepResult {
     bool failed;
 };
 
-// vertical_step for one tick; a jump input moves at kJumpVelocity.
-StepResult vertical_step(const std::vector<VerticalContactRow>& contacts, const std::vector<bool>& jumps,
+// vertical_step for one tick; jumps[t] is config['jumpVelocity'][t]. `failures`, when given, receives the
+// itemized failures the Python returns.
+StepResult vertical_step(const std::vector<VerticalContactRow>& contacts, const std::vector<std::optional<Num>>& jumps,
                          const std::vector<bool>& sneak, const Num& threshold, std::int64_t tick, const Num& position,
-                         const Num& velocity, bool on_ladder, bool grounded, double tolerance);
+                         const Num& velocity, bool on_ladder, bool grounded, double tolerance,
+                         Array* failures = nullptr);
 
 Num vertical_carry(const Num& movement, bool on_ladder, bool previous_horizontal_collision);
 

@@ -12,7 +12,16 @@ from parkour_solver.physics.vertical import CAP, branch as cap_branch, clamp, ve
 from parkour_solver.schema import TOLERANCE
 
 
+def _native():
+    """The native core under PKC_NATIVE_CORE, which checks requests for every caller; None otherwise."""
+    from parkour_solver import native_core
+    return native_core.from_environment()
+
+
 def prepare(request):
+    native = _native()
+    if native is not None:
+        return native.prepare_problem(request)
     problem = copy.deepcopy(request)
     if not isinstance(problem, dict) or type(problem.get('version')) is not int or problem['version'] != 1:
         raise ValueError('Expected a version 1 continuous problem')
@@ -193,5 +202,8 @@ def prepare(request):
 
 
 def fingerprint(problem):
+    native = _native()
+    if native is not None:
+        return native.fingerprint(problem)
     physical = {k: v for k, v in problem.items() if k not in ('seconds', 'yaw', 'fallbackYaw', 'stopOnFeasible', 'objectiveMode', 'source', 'maxIterations')}
     return hashlib.sha256(json.dumps(physical, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()

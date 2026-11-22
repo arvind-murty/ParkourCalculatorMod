@@ -118,3 +118,26 @@ The native gate builds its routes through the same code.
   [UBSan](2026-11-22-scene-routes/live-scene-sanitize-summary.json)).
 - Fixed work (extended, 100 solver calls): the Python and native solves match exactly on all 19 transitions
   ([parity](2026-11-22-scene-routes/parity-python-native.json)).
+
+## Numerics: request checks, validator and IPOPT worker, 2026-11-22
+
+Source: `f9c2a436` plus native `numerics/model` (`prepare`, `fingerprint`), `numerics/constraints` (`reduce_walls`),
+`numerics/builders.numerical_problem`, `numerics/continuation` and `numerics/worker` (the executable
+`pkc_numerics_worker`, built against the casadi and IPOPT the worker Python ships), with `validation/numerical`
+(`validate`, `validate_controls`), which numerics calls throughout. Under `PKC_NATIVE_CORE` the Python functions hand
+every caller to them and `numerics/solver.py` launches the native worker.
+
+- Live calls recorded on a 90 s extended solve (2,580 `prepare`, 197 `fingerprint`, 1,632 `validate`, 132
+  `validate_controls`) and on the unit/integration suite (4,000, 2,028, 4,000, 97 and 34 `reduce_walls`) replay
+  identically, key order included ([solve](2026-11-22-numerics/live-calls-replay-release.json),
+  [suite](2026-11-22-numerics/suite-calls-replay-release.json)); so do 1,152 recorded `numerical_problem` calls
+  ([replay](2026-11-22-numerics/numerical-problem-replay-release.json)).
+- Synthetic variants of 40 recorded requests (bad and edge values for every field, objectives, contacts, every wall
+  mode, inertia and ladder patterns, vertical and movement schedules) agree on 32,000 `prepare` calls (25,540 identical
+  errors), 32,300 `validate` and 38,760 `validate_controls` replays
+  ([synthetic](2026-11-22-numerics/synthetic-release.json)).
+- The 21 IPOPT requests of a 90 s extended solve, each as recorded, from zero and random facings, and with a 0.005
+  threshold (zero-event, fixed-pattern and polish phases), give identical worker message streams in all 84 runs (275
+  phases, 164 candidates; elapsed times aside) with a 60 s budget that no phase reached. Total worker time 19.6 s native
+  against 35.9 s Python ([parity](2026-11-22-numerics/worker-parity-release.json)).
+

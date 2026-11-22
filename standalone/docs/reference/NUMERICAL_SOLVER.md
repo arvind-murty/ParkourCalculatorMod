@@ -20,7 +20,7 @@ python3.12 -m venv ../.venv-guidance
 
 The copied real11 fixtures contain 200 and 400 ticks, every facing row in their selected spans, prescribed wall contacts, and per-axis inertia. Their acceleration coefficients use the captured Force 45 / Derive policies. The fixture source and SHA-256 are recorded inside each request.
 
-The parent process uses only the Python standard library. To run it from a different interpreter, supply `--python /absolute/path/to/the/worker/python` or set `PKC_IPOPT_PYTHON`. The worker needs CasADi and NumPy. Nothing installs or downloads automatically.
+The parent process uses only the Python standard library. To run it from a different interpreter, supply `--python /absolute/path/to/the/worker/python` or set `PKC_IPOPT_PYTHON`. The worker needs CasADi and NumPy. Nothing installs or downloads automatically. Under `PKC_NATIVE_CORE` the parent launches the native worker `pkc_numerics_worker` from that build instead; it speaks the same protocol, links the CasADi and IPOPT libraries of the Python environment it was built with, and needs no worker interpreter.
 
 ## Export a new captured TAS
 

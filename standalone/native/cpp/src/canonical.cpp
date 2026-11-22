@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <charconv>
 #include <cmath>
+#include <cstdlib>
+#include <memory>
 #include <stdexcept>
 #include <system_error>
 
@@ -52,7 +54,7 @@ void append_string(std::string& out, std::string_view text) {
     out += '"';
 }
 
-void append(std::string& out, const Value& value) {
+void append(std::string& out, const Value& value, bool sort_keys, bool compact) {
     std::visit([&](const auto& v) {
         using T = std::decay_t<decltype(v)>;
         if constexpr (std::is_same_v<T, std::nullptr_t>) {
@@ -68,8 +70,8 @@ void append(std::string& out, const Value& value) {
         } else if constexpr (std::is_same_v<T, std::shared_ptr<const Array>>) {
             out += '[';
             for (std::size_t i = 0; i < v->size(); ++i) {
-                if (i) out += ", ";
-                append(out, (*v)[i]);
+                if (i) out += compact ? "," : ", ";
+                append(out, (*v)[i], sort_keys, compact);
             }
             out += ']';
         } else {
@@ -77,23 +79,206 @@ void append(std::string& out, const Value& value) {
             std::vector<const std::pair<std::string, Value>*> items;
             items.reserve(v->size());
             for (const auto& item : *v) items.push_back(&item);
-            std::sort(items.begin(), items.end(), [](auto* a, auto* b) { return a->first < b->first; });
+            if (sort_keys)
+                std::sort(items.begin(), items.end(), [](auto* a, auto* b) { return a->first < b->first; });
             out += '{';
             for (std::size_t i = 0; i < items.size(); ++i) {
-                if (i) out += ", ";
+                if (i) out += compact ? "," : ", ";
                 append_string(out, items[i]->first);
-                out += ": ";
-                append(out, items[i]->second);
+                out += compact ? ":" : ": ";
+                append(out, items[i]->second, sort_keys, compact);
             }
             out += '}';
         }
     }, value.data);
 }
 
+
+// json.loads for the JSON json.dumps writes: insertion-ordered objects (a repeated
+// key keeps its first position and last value, like a dict), int literals as int.
+class Parser {
+public:
+    explicit Parser(std::string_view text) : text_(text) {}
+
+    Value document() {
+        Value result = parse();
+        space();
+        if (at_ != text_.size()) error("Extra data");
+        return result;
+    }
+
+private:
+    std::string_view text_;
+    std::size_t at_ = 0;
+
+    [[noreturn]] void error(const char* message) {
+        throw std::invalid_argument(std::string(message) + ": char " + std::to_string(at_));
+    }
+    void space() {
+        while (at_ < text_.size() && (text_[at_] == ' ' || text_[at_] == '\t' || text_[at_] == '\n' || text_[at_] == '\r'))
+            ++at_;
+    }
+    bool take(std::string_view word) {
+        if (text_.substr(at_, word.size()) != word) return false;
+        at_ += word.size();
+        return true;
+    }
+    Value parse() {
+        space();
+        if (at_ >= text_.size()) error("Expecting value");
+        char c = text_[at_];
+        if (c == '{') return parse_object();
+        if (c == '[') return parse_array();
+        if (c == '"') return {parse_string()};
+        if (take("null")) return {nullptr};
+        if (take("true")) return {true};
+        if (take("false")) return {false};
+        if (c == '-' || (c >= '0' && c <= '9')) return parse_number();
+        error("Expecting value");
+    }
+    Value parse_object() {
+        ++at_;
+        auto fields = std::make_shared<Object>();
+        space();
+        if (take("}")) return {std::shared_ptr<const Object>(std::move(fields))};
+        while (true) {
+            space();
+            if (at_ >= text_.size() || text_[at_] != '"') error("Expecting property name enclosed in double quotes");
+            std::string key = parse_string();
+            space();
+            if (!take(":")) error("Expecting ':' delimiter");
+            Value item = parse();
+            auto found = std::find_if(fields->begin(), fields->end(), [&](const auto& f) { return f.first == key; });
+            if (found != fields->end()) {
+                found->second = std::move(item);
+            } else {
+                fields->emplace_back(std::move(key), std::move(item));
+            }
+            space();
+            if (take("}")) break;
+            if (!take(",")) error("Expecting ',' delimiter");
+        }
+        return {std::shared_ptr<const Object>(std::move(fields))};
+    }
+    Value parse_array() {
+        ++at_;
+        auto values = std::make_shared<Array>();
+        space();
+        if (take("]")) return {std::shared_ptr<const Array>(std::move(values))};
+        while (true) {
+            values->push_back(parse());
+            space();
+            if (take("]")) break;
+            if (!take(",")) error("Expecting ',' delimiter");
+        }
+        return {std::shared_ptr<const Array>(std::move(values))};
+    }
+    unsigned hex4() {
+        if (at_ + 4 > text_.size()) error("Invalid \\uXXXX escape");
+        unsigned code = 0;
+        for (int k = 0; k < 4; ++k) {
+            char h = text_[at_++];
+            code <<= 4;
+            if (h >= '0' && h <= '9') code |= h - '0';
+            else if (h >= 'a' && h <= 'f') code |= h - 'a' + 10;
+            else if (h >= 'A' && h <= 'F') code |= h - 'A' + 10;
+            else error("Invalid \\uXXXX escape");
+        }
+        return code;
+    }
+    std::string parse_string() {
+        ++at_;
+        std::string out;
+        while (true) {
+            if (at_ >= text_.size()) error("Unterminated string starting at");
+            char c = text_[at_++];
+            if (c == '"') return out;
+            if (static_cast<unsigned char>(c) < 0x20) error("Invalid control character at");
+            if (c != '\\') {
+                out += c;
+                continue;
+            }
+            if (at_ >= text_.size()) error("Unterminated string starting at");
+            char e = text_[at_++];
+            switch (e) {
+                case '"': out += '"'; break;
+                case '\\': out += '\\'; break;
+                case '/': out += '/'; break;
+                case 'b': out += '\b'; break;
+                case 'f': out += '\f'; break;
+                case 'n': out += '\n'; break;
+                case 'r': out += '\r'; break;
+                case 't': out += '\t'; break;
+                case 'u': {
+                    unsigned code = hex4();
+                    if (code >= 0xD800 && code < 0xDC00 && text_.substr(at_, 2) == "\\u") {
+                        std::size_t mark = at_;
+                        at_ += 2;
+                        unsigned low = hex4();
+                        if (low >= 0xDC00 && low < 0xE000) {
+                            code = 0x10000 + ((code - 0xD800) << 10) + (low - 0xDC00);
+                        } else {
+                            at_ = mark;
+                        }
+                    }
+                    if (code < 0x80) {
+                        out += static_cast<char>(code);
+                    } else if (code < 0x800) {
+                        out += static_cast<char>(0xC0 | (code >> 6));
+                        out += static_cast<char>(0x80 | (code & 0x3F));
+                    } else if (code < 0x10000) {
+                        out += static_cast<char>(0xE0 | (code >> 12));
+                        out += static_cast<char>(0x80 | ((code >> 6) & 0x3F));
+                        out += static_cast<char>(0x80 | (code & 0x3F));
+                    } else {
+                        out += static_cast<char>(0xF0 | (code >> 18));
+                        out += static_cast<char>(0x80 | ((code >> 12) & 0x3F));
+                        out += static_cast<char>(0x80 | ((code >> 6) & 0x3F));
+                        out += static_cast<char>(0x80 | (code & 0x3F));
+                    }
+                    break;
+                }
+                default: error("Invalid \\escape");
+            }
+        }
+    }
+    Value parse_number() {
+        std::size_t start = at_;
+        bool real = false;
+        if (text_[at_] == '-') ++at_;
+        auto digits = [&] {
+            std::size_t first = at_;
+            while (at_ < text_.size() && text_[at_] >= '0' && text_[at_] <= '9') ++at_;
+            return at_ > first;
+        };
+        if (!digits()) error("Expecting value");
+        if (at_ < text_.size() && text_[at_] == '.') {
+            ++at_;
+            real = true;
+            if (!digits()) error("Expecting value");
+        }
+        if (at_ < text_.size() && (text_[at_] == 'e' || text_[at_] == 'E')) {
+            ++at_;
+            real = true;
+            if (at_ < text_.size() && (text_[at_] == '+' || text_[at_] == '-')) ++at_;
+            if (!digits()) error("Expecting value");
+        }
+        const char* first = text_.data() + start;
+        const char* last = text_.data() + at_;
+        if (real) return {std::strtod(std::string(first, last).c_str(), nullptr)};  // the grammar checked it; 1e999 is inf
+        std::int64_t value;
+        auto result = std::from_chars(first, last, value);
+        if (result.ec != std::errc() || result.ptr != last) throw std::invalid_argument("integer outside the 64-bit range");
+        return {value};
+    }
+};
+
 }  // namespace
 
 std::string float_repr(double value) {
-    if (!std::isfinite(value)) throw std::invalid_argument("Out of range float values are not JSON compliant");
+    if (!std::isfinite(value))
+        throw std::invalid_argument(std::string("Out of range float values are not JSON compliant: ") +
+                                    (std::isnan(value) ? "nan" : value > 0 ? "inf" : "-inf"));
     // Shortest round-trip digits, then CPython's repr layout: scientific when
     // the decimal point position is <= -4 or > 16, otherwise fixed with ".0".
     char buffer[32];
@@ -128,15 +313,19 @@ std::string float_repr(double value) {
     return out;
 }
 
-std::string canonical_json(const Value& value) {
+std::string dumps(const Value& value, bool sort_keys, bool compact) {
     std::string out;
-    append(out, value);
+    append(out, value, sort_keys, compact);
     return out;
 }
 
-std::string digest(const Value& value) {
+std::string canonical_json(const Value& value) { return dumps(value, true, false); }
+
+std::string digest(const Value& value) { return sha256_hex(canonical_json(value)); }
+
+std::string sha256_hex(std::string_view data) {
     static const char* hex = "0123456789abcdef";
-    auto hash = sha256(canonical_json(value));
+    auto hash = sha256(data);
     std::string out;
     out.reserve(64);
     for (auto byte : hash) {
@@ -145,5 +334,7 @@ std::string digest(const Value& value) {
     }
     return out;
 }
+
+Value loads(std::string_view text) { return Parser(text).document(); }
 
 }  // namespace pkc

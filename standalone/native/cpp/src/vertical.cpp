@@ -35,18 +35,25 @@ std::vector<VerticalContact> merge_vertical(const std::vector<VerticalContact>& 
 
 }  // namespace
 
-StepResult vertical_step(const std::vector<VerticalContactRow>& contacts, const std::vector<bool>& jumps,
+StepResult vertical_step(const std::vector<VerticalContactRow>& contacts, const std::vector<std::optional<Num>>& jumps,
                          const std::vector<bool>& sneak, const Num& threshold, std::int64_t tick, const Num& position,
-                         const Num& velocity, bool on_ladder, bool grounded, double tolerance) {
+                         const Num& velocity, bool on_ladder, bool grounded, double tolerance, Array* failures) {
+    auto failure = [&](std::int64_t state, const char* reason, Object extra = {}) {
+        if (!failures) return;
+        Object row{{"state", integer_value(state)}, {"reason", text(reason)}};
+        for (auto& field : extra) row.push_back(std::move(field));
+        failures->push_back(object(std::move(row)));
+    };
     Num movement = std::abs(velocity.value) < threshold.value ? flt(0.0) : velocity;
-    bool jumping = jumps[tick];
-    if (jumping) movement = flt(kJumpVelocity);
+    bool jumping = jumps[tick].has_value();
+    if (jumping) movement = *jumps[tick];
     if (on_ladder) {
         if (-0.15 > movement.value) movement = flt(-0.15);
         if (sneak[tick] && movement.value < 0) movement = flt(0.0);
     }
     Num proposed = add(position, movement), carry = movement;
     bool ground = false, failed = jumping && !grounded;
+    if (failed) failure(tick, "jump_requires_ground");
     for (const auto& contact : contacts) {
         if (contact.state != tick + 1) continue;
         const Num& plane = contact.plane;
@@ -84,6 +91,7 @@ StepResult vertical_step(const std::vector<VerticalContactRow>& contacts, const 
                 ground = kind == "normal_step" || kind == "blip" || kind == "blip_up" || kind == "corner_blip_up";
             } else {
                 failed = true;
+                failure(tick + 1, "invalid_movement_case", {{"case", text(kind)}});
             }
         } else if (contact.step) {
             double rise = sub(plane, position).value;
@@ -95,17 +103,20 @@ StepResult vertical_step(const std::vector<VerticalContactRow>& contacts, const 
                 ground = movement.value < 0;
             } else {
                 failed = true;
+                failure(tick + 1, "invalid_step");
             }
         } else {
-            double direction = static_cast<double>(contact.direction);
-            double approach = direction * sub(position, plane).value;
-            double reach = direction * sub(proposed, plane).value;
-            if (approach > tolerance || reach < 0) {
+            Num direction = whole(contact.direction);
+            Num approach = mul(direction, sub(position, plane));
+            Num reach = mul(direction, sub(proposed, plane));
+            if (approach.value > tolerance || reach.value < 0) {
                 failed = true;
+                Num short_by = py_max(py_max(approach, {-reach.value, reach.integral}), flt(0.0));
+                failure(tick + 1, "missed_vertical_contact", {{"shortBy", value(short_by)}});
             } else {
                 proposed = plane;
                 carry = flt(0.0);
-                ground = direction < 0 && movement.value < 0;
+                ground = contact.direction < 0 && movement.value < 0;
             }
         }
     }
@@ -133,6 +144,8 @@ Trace trace_ladder_schedule(const ScalarState& initial, const std::vector<bool>&
     }
     std::vector<VerticalContact> selected = merge_vertical(contacts);
     if (threshold.value < 0) fail("Velocity threshold must be nonnegative");
+    std::vector<std::optional<Num>> jumps;
+    for (bool j : jump) jumps.push_back(j ? std::optional<Num>(flt(kJumpVelocity)) : std::nullopt);
     std::vector<VerticalContactRow> rows;
     rows.reserve(selected.size());
     for (const auto& c : selected)
@@ -149,7 +162,7 @@ Trace trace_ladder_schedule(const ScalarState& initial, const std::vector<bool>&
     trace.velocity.push_back(vy);
     trace.on_ground.push_back(ground);
     for (std::int64_t t = 0; t < n; ++t) {
-        StepResult step = vertical_step(rows, jump, sneak, threshold, t, y, vy, ladder[t], ground, 0);
+        StepResult step = vertical_step(rows, jumps, sneak, threshold, t, y, vy, ladder[t], ground, 0);
         failed |= step.failed;
         y = step.proposed;
         ground = step.ground;

@@ -45,11 +45,12 @@ Object validate_vertical_schedule(const Object& route, const Object& profile, co
         contacts.insert(contacts.end(), items(*extra).begin(), items(*extra).end());
     Array merged = merge_contacts(contacts, false, 1);
     const auto& initial = fields(at(route, "initial"));
-    std::vector<bool> jumps;
+    std::vector<std::optional<Num>> jumps;
     Array jump_velocity;
     for (const auto& j : items(at(plan, "jump"))) {
-        jumps.push_back(std::get<bool>(j.data));
-        jump_velocity.push_back(jumps.back() ? real(kJumpVelocity) : kNull);
+        bool jumping = std::get<bool>(j.data);
+        jumps.push_back(jumping ? std::optional<Num>(flt(kJumpVelocity)) : std::nullopt);
+        jump_velocity.push_back(jumping ? real(kJumpVelocity) : kNull);
     }
     std::vector<bool> sneak(n, false);
     Array sneak_values;
