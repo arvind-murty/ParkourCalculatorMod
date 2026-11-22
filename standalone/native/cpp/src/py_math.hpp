@@ -4,6 +4,7 @@
 
 #include <cfloat>
 #include <cmath>
+#include <initializer_list>
 
 namespace pkc {
 
@@ -40,6 +41,31 @@ inline double python_hypot(double a, double b) {
     double correction = sum - 1. + (frac1 + frac2);
     h += correction / (2. * h);
     return h / scale;
+}
+
+// CPython 3.12 sum() over floats (started from the int 0): Neumaier-compensated, so it can differ from a
+// plain left-to-right addition in the last bit.
+inline double python_sum(std::initializer_list<double> values) {
+    double result = 0., c = 0.;
+    for (double x : values) {
+        const double t = result + x;
+        c += std::fabs(result) >= std::fabs(x) ? (result - t) + x : (x - t) + result;
+        result = t;
+    }
+    if (c != 0. && std::isfinite(c)) result += c;
+    return result;
+}
+
+template <class Range>
+double python_sum(const Range& values) {
+    double result = 0., c = 0.;
+    for (double x : values) {
+        const double t = result + x;
+        c += std::fabs(result) >= std::fabs(x) ? (result - t) + x : (x - t) + result;
+        result = t;
+    }
+    if (c != 0. && std::isfinite(c)) result += c;
+    return result;
 }
 
 }  // namespace pkc

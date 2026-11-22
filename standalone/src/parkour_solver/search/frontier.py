@@ -57,7 +57,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                         initial_programs=None, threshold=.005, screen=None,
                         context_adapter=None, program_filter=None, stop_supports=None,
                         node_evaluator=None, priority_key=None, policy_context=None, live_programs=None,
-                        run_policy=None, **kwargs):
+                        run_policy=None, native_node=None, **kwargs):
     initial = empty_program(scene['initial'], threshold=threshold)
     initial['terminalSupport'] = scene['startBlock']
     seeds = [initial] if initial_programs is None else initial_programs
@@ -645,6 +645,31 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                 hold_same_face(e)
                 state['expansion'] = None
                 iterator, iterator_key = None, None
+                continue
+            if native_node is not None and 'reached' not in e and 'choice' not in e:
+                # One native batch per movement type (search/node.hpp): it commits nothing when the budget stops it.
+                # Like the Python loop, it stops where a ready program is emitted (the cursor check above).
+                records, finished = native_node(e['program'], settings['types'][e['kind']], e['cursor'], seen=seen,
+                    stop_supports=stop_supports, initial_bounds=initial_bounds, max_inputs=settings['maxInputs'],
+                    choices_per_type=settings['maxChoicesPerType'], ready=bool(state['ready']), budget=budget)
+                node = e['program'].get('decisionNode')
+                for record in records:
+                    state['generated'] += 1
+                    e['cursor'] = record['ordinal']+1
+                    commit(dict(exclusions=record['exclusions'], screened=record['screened'],
+                                policyRejections=record['policyRejections']), node)
+                    if record['outcome'] == 'queued':
+                        child = record['child']
+                        if record['meaningful']:
+                            state['decisionParents'][child['decisionNode']] = child['decisionParent']
+                        seen.add(record['identity'])
+                        state['seen'].append(record['identity'])
+                        (state['ready'] if complete(child) else state['pending']).append(child)
+                        e.setdefault('queuedNodes', []).append(child.get('decisionNode'))
+                if finished:
+                    e.update(kind=e['kind']+1, cursor=0)
+                iterator, iterator_key = None, None
+                update()
                 continue
             ident = (digest(program_physics_key(e['program'])), e['kind'])
             if iterator_key != ident:

@@ -447,3 +447,27 @@ identity) and `viability.prefix_viability`. Nothing dispatches to them yet.
   ([solve](2026-11-22-node-helpers/objectives-fixedwork-shadow-release.json),
   [tests](2026-11-22-node-helpers/objectives-tests-shadow-release.json)).
 
+## The expansion batch for decisions that are not ordinary, 2026-11-22
+
+Source: `6efd46d6` plus `search/node.hpp`: the DFS frame's screen and eligibility (`time_bound`, `hard_bound`,
+`run_bound` with its comparison cache tokens, `eligible` with the caps and `InitialJumpDomain`, `screen`), configure,
+and the frontier's per-type loop (propose, inherit decision fields, project owned endpoints, assess, accept, link) as
+one native call per movement type. The DFS builds the frame snapshot and applies the batch's state changes in order;
+the frontier applies queued children and exclusions. Ordinary decisions (minimum-run bookkeeping) stay in Python.
+Two exactness findings: CPython 3.12's `sum()` over floats is Neumaier-compensated (`python_sum`, used by
+`remaining_bound`), and `run_bound`'s context reads the frame's `comparisonContextId` before `tick_label` first sets
+it, so a frame's first decision carries none.
+
+- Fixed work: 57 batches over 246 proposals (4,311 proposals of ordinary decisions stay in Python); the report equals
+  the unbatched native run's except provenance ([diff](2026-11-22-expansion-batch/fixedwork-report-vs-unbatched.json),
+  [counts](2026-11-22-expansion-batch/fixedwork-batch-counts.json)); all 19 transitions match Python
+  ([parity](2026-11-22-expansion-batch/parity-python-native.json)).
+- The native screen and eligibility shadow every Python call exactly: fixed work 906 and 364
+  ([shadow](2026-11-22-expansion-batch/screen-shadow-fixedwork.json)), the short Real11 control (finds T64; 56 and 63,
+  seven remaining-time proofs) ([shadow](2026-11-22-expansion-batch/screen-shadow-short-control.json)), and the anchor
+  and stepping tests (307 and 246, 82 incumbent proofs) on release and under AddressSanitizer
+  ([release](2026-11-22-expansion-batch/screen-shadow-tests.json), [ASan](2026-11-22-expansion-batch/screen-shadow-tests-asan.json)).
+- Suites pass in both modes (844 tests, 10 Java-bridge skips) and live `verify-scene` finds no difference
+  ([Python](2026-11-22-expansion-batch/suite-python-summary.txt), [native](2026-11-22-expansion-batch/suite-native-summary.txt),
+  [live](2026-11-22-expansion-batch/live-scene-release-summary.json)).
+

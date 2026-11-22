@@ -29,6 +29,7 @@
 #include "pkc/search/comparison.hpp"
 #include "pkc/search/feasibility.hpp"
 #include "pkc/search/goals.hpp"
+#include "pkc/search/node.hpp"
 #include "pkc/reachability/viability.hpp"
 #include "pkc/scene/geometry.hpp"
 #include "pkc/scene/ladders.hpp"
@@ -692,6 +693,99 @@ PYBIND11_MODULE(_pkc_native, m) {
     m.def("decision_objective", [](py::handle guides, std::int64_t reached, py::handle point, py::handle fallback) {
         return to_python(pkc::decision_objective(convert(guides), reached, convert(point), convert(fallback)));
     }, "spatial/anchor_guides.decision_objective");
+    py::class_<pkc::NodeSearch, std::shared_ptr<pkc::NodeSearch>>(m, "NodeSearch")
+        .def(py::init([](std::shared_ptr<pkc::InteractionGate> gate, std::shared_ptr<pkc::AnchorScene> anchors,
+                         py::dict frame) {
+            auto search = std::make_shared<pkc::NodeSearch>();
+            search->gate = gate.get();
+            search->anchors = anchors.get();
+            pkc::NodeFrame& f = search->frame;
+            auto value = [&](const char* key) { return convert(frame[key]); };
+            auto texts = [&](py::handle h) {
+                std::vector<std::string> out;
+                for (py::handle v : h) out.push_back(v.cast<std::string>());
+                return out;
+            };
+            f.scene = value("scene");
+            f.frame_id = value("frameId");
+            py::dict goal = frame["goal"];
+            f.goal_kind = goal["kind"].cast<std::string>();
+            f.goal_block = goal["block"].cast<std::string>();
+            f.goal_blocks = goal.contains("blocks") ? texts(goal["blocks"]) : std::vector<std::string>{f.goal_block};
+            py::dict cursor = frame["cursor"];
+            f.anchor_index = cursor["anchorIndex"].cast<std::int64_t>();
+            f.group_end = cursor["groupEnd"].cast<std::int64_t>();
+            f.span_start = cursor["spanStart"].cast<std::int64_t>();
+            f.comparison_context_id = value("comparisonContextId");
+            f.comparison_context_set = frame["comparisonContextSet"].cast<bool>();
+            f.tick_peers = value("tickPeers");
+            f.tick_peer_revision = frame["tickPeerRevision"].cast<std::int64_t>();
+            f.incumbent = value("incumbent");
+            f.hard_latches = value("hardLatches");
+            f.transfers = value("transfers");
+            f.latch_revision = frame["latchRevision"].cast<std::int64_t>();
+            f.minimum_run_pruning = frame["minimumRunPruning"].cast<bool>();
+            f.guide_plan = value("guidePlan");
+            f.motion = value("motion");
+            f.turnaround_margin = value("turnaroundMargin");
+            f.anchors = texts(frame["anchors"]);
+            f.task_block = frame["taskBlock"].cast<std::string>();
+            f.request = *std::get<std::shared_ptr<const pkc::Object>>(value("caps").data);
+            f.max_inputs = frame["maxInputs"].cast<std::int64_t>();
+            f.types = texts(frame["types"]);
+            f.policy_context = value("policyContext");
+            for (py::handle c : frame["excludedRuns"]) f.excluded_runs.insert(c.cast<std::string>());
+            return search;
+        }), py::keep_alive<1, 2>(), py::keep_alive<1, 3>())
+        .def("screen", [](pkc::NodeSearch& search, py::handle program) {
+            pkc::Program typed = *program_arg(program);
+            pkc::NodeEffects effects;
+            const pkc::Value proof = search.screen(typed, effects);
+            return py::make_tuple(to_python(proof), to_python(pkc::to_value(typed)), effects.time_bound_exclusions.size(),
+                                  effects.minimum_run_exclusions.size());
+        }, "dfs screen(program, f): (proof, the program after it, time-bound and minimum-run exclusions added)")
+        .def("eligible", [](pkc::NodeSearch& search, py::handle program) {
+            pkc::Program typed = *program_arg(program);
+            pkc::NodeEffects effects;
+            const bool ok = search.eligible(typed, effects);
+            return py::make_tuple(ok, to_python(pkc::to_value(typed)), effects.time_bound_exclusions.size(),
+                                  effects.minimum_run_exclusions.size());
+        }, "dfs eligible(program, f): (verdict, the program after it, exclusions added)")
+        .def("expand_type", [](pkc::NodeSearch& search, py::handle parent, const std::string& kind, std::int64_t cursor,
+                               std::vector<std::string> stop_supports, std::array<double, 4> initial_bounds,
+                               std::int64_t max_inputs, std::int64_t choices_per_type, bool ready, py::handle seen,
+                               py::object budget) {
+            std::set<std::string> keys;
+            for (py::handle k : seen) keys.insert(k.cast<std::string>());
+            const auto expansion = pkc::expand_type(search, *program_arg(parent), kind, cursor, stop_supports,
+                                                    initial_bounds, max_inputs, choices_per_type, ready, std::move(keys),
+                                                    [budget] { budget(); });
+            py::list out;
+            for (const auto& r : expansion.records) {
+                py::dict record;
+                record["ordinal"] = r.ordinal;
+                record["outcome"] = r.outcome;
+                record["child"] = r.child ? to_python(pkc::to_value(*r.child)) : py::object(py::none());
+                record["identity"] = r.child ? py::object(py::str(pkc::program_search_key(*r.child))) : py::object(py::none());
+                record["meaningful"] = r.meaningful;
+                record["exclusions"] = to_python(r.exclusions);
+                record["screened"] = r.screened;
+                record["policyRejections"] = r.policy_rejections;
+                py::dict effects;
+                effects["timeBoundExclusions"] = to_python(pkc::Value{std::make_shared<const pkc::Array>(r.effects.time_bound_exclusions)});
+                effects["comparisonDecisions"] = to_python(pkc::Value{std::make_shared<const pkc::Array>(r.effects.comparison_decisions)});
+                effects["minimumRunExclusions"] = to_python(pkc::Value{std::make_shared<const pkc::Array>(r.effects.minimum_run_exclusions)});
+                effects["assessments"] = r.effects.assessments;
+                effects["cacheHits"] = r.effects.cache_hits;
+                effects["peerChecks"] = r.effects.peer_checks;
+                effects["viabilityChecked"] = r.effects.viability_checked;
+                effects["viabilityExcluded"] = r.effects.viability_excluded;
+                effects["comparisonContextUsed"] = r.effects.comparison_context_used;
+                record["effects"] = effects;
+                out.append(record);
+            }
+            return py::make_tuple(out, expansion.finished);
+        }, "frontier's loop over one movement type's proposals: (records, finished) (see search/node.hpp)");
     m.def("disk_cached_solve", [](py::handle content, double seconds, const std::string& kind, double cap, unsigned max_iter) {
         return to_python(pkc::disk_cached_solve(convert(content), seconds, kind, cap, max_iter));
     }, "numerics/disk.solve on the native decided-result cache the native gate's screens share");

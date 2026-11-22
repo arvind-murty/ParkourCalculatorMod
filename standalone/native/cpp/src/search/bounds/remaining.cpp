@@ -69,7 +69,7 @@ Value remaining_bound(const Value& guides_value, std::int64_t span, const Progra
     if (!reached && (!p.grounded.back() || !supported_by(first))) first = target;
     Array segments;
     bool unknown = false;
-    Num gap = whole(0);
+    std::vector<double> distances;
     for (std::int64_t i = first; i < count - 1; ++i) {
         const std::string a = as_text(names[i]), b = as_text(names[i + 1]);
         const auto left = state_covers(guides_value, a, motion), right = state_covers(guides_value, b, motion);
@@ -78,9 +78,10 @@ Value remaining_bound(const Value& guides_value, std::int64_t span, const Progra
             continue;
         }
         const double distance = cover_distance(left, right);
-        gap = add(gap, flt(distance));
+        distances.push_back(distance);
         segments.push_back(object({{"source", text(a)}, {"target", text(b)}, {"distance", real(distance)}}));
     }
+    const Num gap = distances.empty() ? whole(0) : flt(python_sum(distances));  // sum(...), an int 0 when empty
     const Value* speed_value = get(fields(motion), "movementAfterSupportCheck");
     const Value speed = speed_value ? *speed_value : real(0.);
     const double s = n(speed);
@@ -142,12 +143,13 @@ Value remaining_bound(const Value& guides_value, std::int64_t span, const Progra
     Array proofs;
     for (const auto& t : terms)
         if (py_truthy(at(fields(t), "proof"))) proofs.push_back(at(fields(t), "proof"));
-    Num estimate = whole(0);
+    std::vector<double> legs;
     const Array& points = items(at(guides, "points"));
     for (std::int64_t i = first; i < count - 1; ++i) {
         const Array &a = items(points.at(i)), &b = items(points.at(i + 1));
-        estimate = add(estimate, flt(python_hypot(n(b[0]) - n(a[0]), n(b[2]) - n(a[2]))));
+        legs.push_back(python_hypot(n(b[0]) - n(a[0]), n(b[2]) - n(a[2])));
     }
+    const Num estimate = legs.empty() ? whole(0) : flt(python_sum(legs));
     return object({{"remainingTicks", integer_value(std::max(horizontal, vertical))},
                    {"horizontalTicks", integer_value(horizontal)},
                    {"verticalTicks", integer_value(vertical)},

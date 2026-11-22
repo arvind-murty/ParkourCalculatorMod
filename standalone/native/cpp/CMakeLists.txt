@@ -23,7 +23,7 @@ endif()
 
 add_library(pkc_core STATIC src/canonical.cpp src/coefficients.cpp src/envelopes.cpp src/gate.cpp src/program.cpp src/screen.cpp src/sha256.cpp src/vertical.cpp
             src/constraints/avoidance.cpp src/constraints/contacts.cpp src/constraints/hit_events.cpp
-            src/movement/contact_combinations.cpp src/movement/cases.cpp src/movement/generation.cpp src/movement/normal.cpp src/reachability/service.cpp src/search/anchors/policy.cpp src/search/bounds/remaining.cpp src/search/comparison.cpp src/search/feasibility.cpp src/search/goals.cpp src/reachability/viability.cpp src/movement/ladder/ceiling.cpp src/movement/ladder/events.cpp src/movement/ladder/settings.cpp src/movement/units.cpp src/movement/vertical_profiles.cpp
+            src/movement/contact_combinations.cpp src/movement/cases.cpp src/movement/generation.cpp src/movement/normal.cpp src/reachability/service.cpp src/search/anchors/policy.cpp src/search/bounds/remaining.cpp src/search/comparison.cpp src/search/feasibility.cpp src/search/goals.cpp src/search/node.cpp src/reachability/viability.cpp src/movement/ladder/ceiling.cpp src/movement/ladder/events.cpp src/movement/ladder/settings.cpp src/movement/units.cpp src/movement/vertical_profiles.cpp
             src/numerics/builders.cpp src/numerics/constraints.cpp src/numerics/disk.cpp src/numerics/continuation.cpp src/numerics/model.cpp
             src/scene/geometry.cpp src/scene/ladders.cpp src/scene/normalize.cpp src/scene/objectives.cpp src/scene/route.cpp src/scene/static_collision.cpp
             src/spatial/cells.cpp src/spatial/regions.cpp src/spatial/surfaces.cpp

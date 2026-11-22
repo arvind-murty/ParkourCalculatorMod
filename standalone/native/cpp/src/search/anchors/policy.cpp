@@ -362,7 +362,7 @@ Value classify(const Value& guides_value, std::int64_t span, double x, double z)
         for (const auto& s : items(at(turn, "spans"))) listed = listed || as_int(s) == span;
         if (!listed) continue;
         const Array& normal = items(at(turn, "normal"));
-        const double raw = 0 + num(normal[0]).value * x + num(normal[1]).value * z - num(at(turn, "offset")).value;
+        const double raw = python_sum({num(normal[0]).value * x, num(normal[1]).value * z}) - num(at(turn, "offset")).value;
         const double shifted = raw + num(at(turn, "margin")).value;
         turnaround = turnaround || shifted >= 0;
         distances.push_back(object({{"boundary", at(turn, "id")}, {"rawDistance", real(raw)},

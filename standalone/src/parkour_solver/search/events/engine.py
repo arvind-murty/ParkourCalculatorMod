@@ -103,6 +103,12 @@ def search_event_routes(request, compiler, *, task_goal=None, discovery=None, an
                 for name,field in (('maxTotalRunTicks','runs'),('maxJumps','jumps'))):
             return False
         return policy is None or policy(program)
+    # The native expansion batch (search/node.hpp) applies the declared caps and an initial jump domain itself; any
+    # other policy keeps the Python loop.
+    from parkour_solver.search.domain import InitialJumpDomain
+    accepted_program.caps = {k: request[k] for k in ('maxJumps', 'maxTotalRunTicks', 'maxRunTicksPerJump') if k in request}
+    accepted_program.caps['initialJumpInputs'] = getattr(policy, 'initial_jump_inputs', None)
+    accepted_program.native = policy is None or type(policy) is InitialJumpDomain
     def search(work, deadline, **extra):
         return search_goals(scene,counted,adapter,work,motion,
             cfg=dict(cfg,maxPrefixes=cfg['maxPrefixes']-expanded),
