@@ -857,6 +857,7 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
         self.assertGreater(max(best['candidate']['yaw'])-min(best['candidate']['yaw']), 30)
         self.assertGreater(best['candidate']['positions'][-1][1], 4.2)
 
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # records the Python generator's items; a native solve builds its own
     def test_relaxed_route_runs_off_the_start_and_jumps_from_the_lower_block(self):
         from parkour_solver.constraints.variants import ConstraintVariants
         built, original = [], ConstraintVariants.__init__

@@ -561,3 +561,23 @@ dispatches to it yet.
   [tests](2026-11-22-repair-loop/replay-tests-twins.txt), [coverage](2026-11-22-repair-loop/coverage.json)).
 - The fixed-work and test replays run clean under AddressSanitizer
   ([fixed work](2026-11-22-repair-loop/replay-fixed-twins-asan.txt), [tests](2026-11-22-repair-loop/replay-tests-twins-asan.txt)).
+
+## Repair dispatch, 2026-11-22
+
+Source: `b988b7c7` plus `search/engine.evaluate_program` building a native generator and calling the native repair
+loop under `PKC_NATIVE_CORE` (routes without route guards, passages, wall hits or ladder events; production routes
+have none). `constraints/variants.check_generation` is the one generator interruption both sides use.
+
+- Fixed work and the short Real11 control: reports equal the runs with the Python repair loop except provenance
+  ([fixed work](2026-11-22-repair-dispatch/fixed-report-vs-python-repair.json),
+  [short control](2026-11-22-repair-dispatch/short-report-vs-python-repair.json)); transitions match Python
+  ([fixed work](2026-11-22-repair-dispatch/fixed-parity-python-native.json),
+  [short control](2026-11-22-repair-dispatch/short-parity-python-native.json)).
+- Search seconds, one run each on an otherwise idle machine: fixed work 19.5 native against 23.3 with the Python
+  loop (Python mode 46.1); the short control 1.6 against 2.9 (Python mode 3.9)
+  ([times](2026-11-22-repair-dispatch/search-seconds.txt)).
+- Suites pass in both modes (843 tests, 10 Java-bridge skips; the generator-recording test runs in Python mode), live
+  `verify-scene` finds no difference, and the milestone's fixed-work rerun matches Python at 19.0 against 45.5 seconds
+  ([Python](2026-11-22-repair-dispatch/suite-python-summary.txt), [native](2026-11-22-repair-dispatch/suite-native-summary.txt),
+  [live](2026-11-22-repair-dispatch/live-scene-release-summary.json),
+  [parity](2026-11-22-repair-dispatch/milestone-parity-python-native.json)).

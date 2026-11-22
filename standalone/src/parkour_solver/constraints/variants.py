@@ -17,6 +17,16 @@ GENERATION_POLICY = 20
 STATE_VERSION = 11
 
 
+def check_generation(cancel_event, budget, deadline):
+    """Interrupt a generator: the cancel event, then the search budget, then the generation deadline."""
+    if cancel_event is not None and cancel_event.is_set():
+        raise TimeoutError('cancelled')
+    if budget is not None:
+        budget()
+    if deadline is not None and time.monotonic() >= deadline:
+        raise TimeoutError('constraint_generation_deadline')
+
+
 class ConstraintVariants:
     @classmethod
     def for_plan(cls, route, profiles, plan, geometry, compiler, vertical, candidate, *, seconds,
@@ -169,12 +179,7 @@ class ConstraintVariants:
         return sum(envelopes['states'][tick][axis])/2
 
     def check(self):
-        if self.cancel_event is not None and self.cancel_event.is_set():
-            raise TimeoutError('cancelled')
-        if self.budget is not None:
-            self.budget()
-        if self.deadline is not None and time.monotonic() >= self.deadline:
-            raise TimeoutError('constraint_generation_deadline')
+        check_generation(self.cancel_event, self.budget, self.deadline)
 
     def face_row(self, face, t):
         margin = face_clearance(self.route, 0, t, face, self.route['supportClearance'])
