@@ -2,10 +2,10 @@
 
 ## Current gate
 
-`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on jumps back onto the merged
-launch face (`4c9c6ba4` plus the change, O11):
-**839 tests, no failures, errors or skips**, source unchanged during the run, at a load
-average of 6.1 to 7.2 ([report](../research/encounter-groups/native-gate-same-face-fit/report.json)).
+`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on the walk-off follow-ups
+rebased onto main `1013e7ea` (#7), with the launch face found from the visited owner
+(`b58e2132`): **842 tests, no failures, errors or skips**, source unchanged during the run,
+at a load average of 5.6 to 8.2 ([report](../research/encounter-groups/native-gate-rebased-on-pr7/report.json)).
 Wall-time-bound tests can still fail under heavier load ([deferred P17](DEFERRED_WORK.md)).
 The gate fails on any skip, so it needs `PKC_IPOPT_PYTHON` for the IPOPT tests,
 `PKC_RUN_TICKS_COMPILER` for the Java differential tests and the `research` extra for the
@@ -27,6 +27,7 @@ persistence without the removed 32/128 limits.
 
 | Source | Tests | Evidence |
 | --- | ---: | --- |
+| `b58e2132` follow-ups rebased onto `1013e7ea`, launch face from the visited owner | 842 | [report](../research/encounter-groups/native-gate-rebased-on-pr7/report.json) |
 | `4c9c6ba4` + O11 on merged launch faces | 839 | [report](../research/encounter-groups/native-gate-same-face-fit/report.json) |
 | `c4e2f70a` + same-block jumps must fit their block (O11) | 838 | [report](../research/encounter-groups/native-gate-same-block-fit/report.json) |
 | `c4e2f70a` backward ceiling hits and grinds filtered (O10), B13a/B13b | 836 | [report](../research/encounter-groups/native-gate-backward-filter/report.json) |

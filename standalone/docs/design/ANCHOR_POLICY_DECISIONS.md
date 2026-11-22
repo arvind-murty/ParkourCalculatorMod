@@ -424,7 +424,7 @@ it is natural; on B4 the natural jump overshoots, and landing back needs braking
 the B4 hop waits while the 3-run-tick jump onto B5 lives.
 
 A program stands on the merged top faces, at its feet, of the owner it last visited
-(`launch`: landing contacts and case events, so a blip landing that sets no
+(`launch`: landing contacts and case events, so a blip-up or corner blip-up that sets no
 `terminalSupport` counts). P's launch face is the one of those nearest its validated
 position; with none (feet on no top of that owner, or a ladder tick) nothing is held.
 A child of P lands back on it when it jumps on its first input and every landing

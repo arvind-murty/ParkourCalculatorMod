@@ -79,8 +79,8 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/REAL11_GUIDE.md](REAL11_GUIDE.md) | 20362 |
 | [docs/RESULTS_AND_DEBUGGING.md](RESULTS_AND_DEBUGGING.md) | 19019 |
 | [docs/RUNBOOK.md](RUNBOOK.md) | 13745 |
-| [docs/TESTING.md](TESTING.md) | 22422 |
-| [docs/design/ANCHOR_POLICY_DECISIONS.md](design/ANCHOR_POLICY_DECISIONS.md) | 41971 |
+| [docs/TESTING.md](TESTING.md) | 22644 |
+| [docs/design/ANCHOR_POLICY_DECISIONS.md](design/ANCHOR_POLICY_DECISIONS.md) | 41984 |
 | [docs/design/AVOIDANCE_PASSAGES.md](design/AVOIDANCE_PASSAGES.md) | 21065 |
 | [docs/design/BRANCH_SCHEDULING_INVESTIGATION.md](design/BRANCH_SCHEDULING_INVESTIGATION.md) | 34072 |
 | [docs/design/CONTACT_COMBINATIONS.md](design/CONTACT_COMBINATIONS.md) | 9705 |
@@ -766,6 +766,8 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/encounter-groups/native-gate-phase4/tests.log](../research/encounter-groups/native-gate-phase4/tests.log) | 153454 |
 | [research/encounter-groups/native-gate-profile-duration/report.json](../research/encounter-groups/native-gate-profile-duration/report.json) | 19245 |
 | [research/encounter-groups/native-gate-profile-duration/tests.log](../research/encounter-groups/native-gate-profile-duration/tests.log) | 156605 |
+| [research/encounter-groups/native-gate-rebased-on-pr7/report.json](../research/encounter-groups/native-gate-rebased-on-pr7/report.json) | 19246 |
+| [research/encounter-groups/native-gate-rebased-on-pr7/tests.log](../research/encounter-groups/native-gate-rebased-on-pr7/tests.log) | 158580 |
 | [research/encounter-groups/native-gate-runticks/report.json](../research/encounter-groups/native-gate-runticks/report.json) | 19246 |
 | [research/encounter-groups/native-gate-runticks/tests.log](../research/encounter-groups/native-gate-runticks/tests.log) | 156643 |
 | [research/encounter-groups/native-gate-same-block-fit/report.json](../research/encounter-groups/native-gate-same-block-fit/report.json) | 19246 |
@@ -1552,7 +1554,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [src/parkour_solver/search/compat/time_progress.py](../src/parkour_solver/search/compat/time_progress.py) | 5140 |
 | [src/parkour_solver/search/completion.py](../src/parkour_solver/search/completion.py) | 436 |
 | [src/parkour_solver/search/deferrals.py](../src/parkour_solver/search/deferrals.py) | 1105 |
-| [src/parkour_solver/search/dfs.py](../src/parkour_solver/search/dfs.py) | 82077 |
+| [src/parkour_solver/search/dfs.py](../src/parkour_solver/search/dfs.py) | 82072 |
 | [src/parkour_solver/search/domain.py](../src/parkour_solver/search/domain.py) | 960 |
 | [src/parkour_solver/search/engine.py](../src/parkour_solver/search/engine.py) | 23050 |
 | [src/parkour_solver/search/entry.py](../src/parkour_solver/search/entry.py) | 10728 |
@@ -1752,7 +1754,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/unit/reachability/test_proposal_analysis.py](../tests/unit/reachability/test_proposal_analysis.py) | 8219 |
 | [tests/unit/reachability/test_screen.py](../tests/unit/reachability/test_screen.py) | 12687 |
 | [tests/unit/search/__init__.py](../tests/unit/search/__init__.py) | 0 |
-| [tests/unit/search/test_anchor_dfs.py](../tests/unit/search/test_anchor_dfs.py) | 36493 |
+| [tests/unit/search/test_anchor_dfs.py](../tests/unit/search/test_anchor_dfs.py) | 36488 |
 | [tests/unit/search/test_anchor_policy.py](../tests/unit/search/test_anchor_policy.py) | 32324 |
 | [tests/unit/search/test_anchor_search.py](../tests/unit/search/test_anchor_search.py) | 57819 |
 | [tests/unit/search/test_anchor_time_bound.py](../tests/unit/search/test_anchor_time_bound.py) | 1920 |

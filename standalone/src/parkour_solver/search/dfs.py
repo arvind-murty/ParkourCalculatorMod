@@ -302,7 +302,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
 
     def top_faces(program):
         """The merged top faces (ContactOption) a grounded program stands on at its feet: those of the owner it last
-        visited (landing contacts and case events, so a blip landing without a terminalSupport counts); one, unless
+        visited (landing contacts and case events, so a blip-up without a terminalSupport counts); one, unless
         solids through the owner's top cut it into pieces. None on a ladder tick."""
         from parkour_solver.movement.contact_combinations import scene_contact_options
         found = launch(scene, program)
