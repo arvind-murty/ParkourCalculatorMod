@@ -779,25 +779,25 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `settings` | [14](../src/parkour_solver/search/anchors/policy.py#L14) | function |
-| `semantic_settings` | [46](../src/parkour_solver/search/anchors/policy.py#L46) | function |
-| `owner` | [51](../src/parkour_solver/search/anchors/policy.py#L51) | function |
-| `box_owners` | [56](../src/parkour_solver/search/anchors/policy.py#L56) | function |
-| `visits` | [60](../src/parkour_solver/search/anchors/policy.py#L60) | function |
-| `launch` | [87](../src/parkour_solver/search/anchors/policy.py#L87) | function |
-| `feet_touches` | [96](../src/parkour_solver/search/anchors/policy.py#L96) | function |
-| `visit_state` | [107](../src/parkour_solver/search/anchors/policy.py#L107) | function |
-| `audit` | [130](../src/parkour_solver/search/anchors/policy.py#L130) | function |
-| `next_anchor` | [151](../src/parkour_solver/search/anchors/policy.py#L151) | function |
-| `advantageous_targets` | [160](../src/parkour_solver/search/anchors/policy.py#L160) | function |
-| `advantageous_candidates` | [183](../src/parkour_solver/search/anchors/policy.py#L183) | function |
-| `same_block_fit` | [271](../src/parkour_solver/search/anchors/policy.py#L271) | function |
-| `encounter_groups` | [292](../src/parkour_solver/search/anchors/policy.py#L292) | function |
-| `local_counts` | [341](../src/parkour_solver/search/anchors/policy.py#L341) | function |
-| `priority` | [346](../src/parkour_solver/search/anchors/policy.py#L346) | function |
-| `within_caps` | [350](../src/parkour_solver/search/anchors/policy.py#L350) | function |
-| `transfer_structure` | [364](../src/parkour_solver/search/anchors/policy.py#L364) | function |
-| `single_jump_structure` | [408](../src/parkour_solver/search/anchors/policy.py#L408) | function |
+| `settings` | [15](../src/parkour_solver/search/anchors/policy.py#L15) | function |
+| `semantic_settings` | [47](../src/parkour_solver/search/anchors/policy.py#L47) | function |
+| `owner` | [52](../src/parkour_solver/search/anchors/policy.py#L52) | function |
+| `box_owners` | [57](../src/parkour_solver/search/anchors/policy.py#L57) | function |
+| `visits` | [61](../src/parkour_solver/search/anchors/policy.py#L61) | function |
+| `launch` | [88](../src/parkour_solver/search/anchors/policy.py#L88) | function |
+| `feet_touches` | [97](../src/parkour_solver/search/anchors/policy.py#L97) | function |
+| `visit_state` | [108](../src/parkour_solver/search/anchors/policy.py#L108) | function |
+| `audit` | [131](../src/parkour_solver/search/anchors/policy.py#L131) | function |
+| `next_anchor` | [152](../src/parkour_solver/search/anchors/policy.py#L152) | function |
+| `advantageous_targets` | [161](../src/parkour_solver/search/anchors/policy.py#L161) | function |
+| `advantageous_candidates` | [184](../src/parkour_solver/search/anchors/policy.py#L184) | function |
+| `same_face_fit` | [272](../src/parkour_solver/search/anchors/policy.py#L272) | function |
+| `encounter_groups` | [293](../src/parkour_solver/search/anchors/policy.py#L293) | function |
+| `local_counts` | [342](../src/parkour_solver/search/anchors/policy.py#L342) | function |
+| `priority` | [347](../src/parkour_solver/search/anchors/policy.py#L347) | function |
+| `within_caps` | [351](../src/parkour_solver/search/anchors/policy.py#L351) | function |
+| `transfer_structure` | [365](../src/parkour_solver/search/anchors/policy.py#L365) | function |
+| `single_jump_structure` | [409](../src/parkour_solver/search/anchors/policy.py#L409) | function |
 
 ## search/application.py
 

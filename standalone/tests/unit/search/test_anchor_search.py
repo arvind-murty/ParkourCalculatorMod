@@ -348,7 +348,8 @@ def step_up_scene(goal=2):
 
 class MinimumRunTickTests(unittest.TestCase):
     def frontier(self, *, screen=None, ordinary=True, continuation=None, live=(), report=None, scene=None,
-                 policy=True, keep_emitted=False, fits=lambda decision,landing:None):
+                 policy=True, keep_emitted=False, fits=lambda decision,landing:None,
+                 back=lambda decision,landing:landing.get('terminalSupport')==decision.get('terminalSupport')):
         from parkour_solver.movement.program import boundary_state
         from parkour_solver.reachability.service import block_table
         from parkour_solver.search.anchors.policy import advantageous_candidates, advantageous_targets, next_anchor, owner
@@ -359,7 +360,7 @@ class MinimumRunTickTests(unittest.TestCase):
                         targets=lambda b,c:advantageous_targets(s,b,c,upcoming(b)),
                         candidates=lambda p:advantageous_candidates(s,lambda o:block_table(s,o,traces),owner(s,p['terminalSupport']),
                             p['profile']['position'][-1],upcoming(p),movement_settings(s)['types'],0.),
-                        next=upcoming,owner=lambda block:owner(s,block),fits=fits)
+                        next=upcoming,owner=lambda block:owner(s,block),back=back,fits=fits)
         report=report if report is not None else {}
         source=persistent_programs(s,settings=dict(movement_settings(s),maxPrefixes=1),report=report,
             continuation=continuation,threshold=0.,node_evaluator=lambda p,n,x:dict(status='feasible',program=p),
@@ -434,9 +435,10 @@ class MinimumRunTickTests(unittest.TestCase):
         emitted,state=self.frontier(policy=False)
         self.assertIn(1,self.runs(state['pending']))
 
-    def test_a_same_block_jump_that_does_not_fit_waits_for_every_other_branch_of_its_decision(self):
-        held=lambda decision,landing:dict(room=1.,jump=2.,fits=False)
-        key='["same_block", "start"]'
+    def test_a_jump_back_onto_its_face_that_does_not_fit_waits_for_every_other_branch_of_its_decision(self):
+        # The stand-in face test: a landing back on the decision's support block is on its face.
+        held=lambda decision,landing:dict(room=1.,jump=2.,fits=False,face='start')
+        key='["same_face", "start"]'
         hops=lambda programs:[p['decisionNode'] for p in programs if p.get('terminalSupport')=='start' and local_counts(p)['J']]
         self.assertTrue(hops(self.frontier()[1]['pending']))
         # While the arrival on goal is alive the hop back onto start is held, not queued.

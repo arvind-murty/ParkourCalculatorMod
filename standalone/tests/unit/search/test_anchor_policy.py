@@ -6,8 +6,8 @@ import math
 import unittest
 
 from parkour_solver.scene.normalize import prepare_scene
-from parkour_solver.search.anchors.policy import (SAME_BLOCK_FIT_FACTOR, audit, encounter_groups, local_counts, priority,
-    same_block_fit, settings, visit_state, within_caps, single_jump_structure, transfer_structure)
+from parkour_solver.search.anchors.policy import (SAME_FACE_FIT_FACTOR, audit, encounter_groups, local_counts, priority,
+    same_face_fit, settings, visit_state, within_caps, single_jump_structure, transfer_structure)
 from parkour_solver.spatial.anchor_guides import build_guides, classify, decision_objective, nearest, onward_objective
 from parkour_solver.search.anchors.adapter import AnchorAdapter
 from parkour_solver.spatial.event_routes import build_route_domain, build_event_graph
@@ -447,36 +447,39 @@ class AnchorPolicyTests(unittest.TestCase):
         p['restoredRun']=dict(frame=0,candidate='r')
         self.assertFalse(within_caps(dict(maxTotalRunTicks=10),p))
 
-    def test_a_same_block_jump_fits_when_the_room_ahead_exceeds_most_of_its_natural_jump(self):
+    def test_a_jump_back_onto_its_face_fits_when_the_room_ahead_exceeds_most_of_its_natural_jump(self):
         from parkour_solver.reachability.intervals import travel_radii
-        from parkour_solver.scene.geometry import expanded_box
         sprint=[.3274]+[.026]*11,[.546]+[.91]*11
-        def fit(point, velocity, leg, box, schedule=sprint):
-            return same_block_fit(point,velocity,leg,[box],*schedule)
-        long=[0,0,0,5,1,1]
-        # An 11 degree leg is along +X: the room runs to the widened +X face from the player's position.
+        def fit(point, velocity, leg, regions, schedule=sprint):
+            return same_face_fit(point,velocity,leg,regions,*schedule)
+        # Faces are player-centre regions [x0, z0, x1, z1]: a 5x1 top widened by the half-width.
+        long=[-.3,-.3,5.3,1.3]
+        # An 11 degree leg is along +X: the room runs to the face's +X edge from the player's position.
         leg=(math.cos(math.radians(11)),math.sin(math.radians(11)))
-        back=fit([.3,.5],[0,0],leg,long)
-        self.assertEqual((back['room'],back['jump']),(expanded_box(long)[3]-.3,travel_radii(0,*sprint)[-1]))
+        back=fit([.3,.5],[0,0],leg,[long])
+        self.assertEqual((back['room'],back['jump']),(long[2]-.3,travel_radii(0,*sprint)[-1]))
         self.assertTrue(back['fits'])
-        # The same block from near its forward edge: the natural jump overshoots it.
-        self.assertEqual(fit([4.,.5],[0,0],leg,long)['room'],expanded_box(long)[3]-4.)
-        self.assertFalse(fit([4.,.5],[0,0],leg,long)['fits'])
+        # The same face from near its forward edge: the natural jump overshoots it.
+        self.assertEqual(fit([4.,.5],[0,0],leg,[long])['room'],long[2]-4.)
+        self.assertFalse(fit([4.,.5],[0,0],leg,[long])['fits'])
+        # A merged face of two rectangles: the room reaches the farther one.
+        merged=[[-.3,-.3,1.3,1.3],[1.3,.2,4.3,.8]]
+        self.assertEqual(fit([.5,.5],[0,0],(1,0),merged)['room'],merged[1][2]-.5)
         # A 40 degree leg is diagonal: the room is the projection onto the quadrant's diagonal.
         leg=(math.cos(math.radians(40)),math.sin(math.radians(40)))
-        cube=[0,0,0,1,1,1]
-        diagonal=fit([.5,.5],[.25*leg[0],.25*leg[1]],leg,cube)
-        self.assertEqual(diagonal['room'],2*(expanded_box(cube)[3]-.5)*math.sqrt(.5))
+        cube=[-.3,-.3,1.3,1.3]
+        diagonal=fit([.5,.5],[.25*leg[0],.25*leg[1]],leg,[cube])
+        self.assertEqual(diagonal['room'],2*(cube[2]-.5)*math.sqrt(.5))
         self.assertEqual(diagonal['jump'],travel_radii(.25*leg[0]**2+.25*leg[1]**2,*sprint)[-1])
         self.assertFalse(diagonal['fits'])
         # Fitting is strict: room equal to the factor times the jump is held.
         exact=[.5,.25],[.5,.5]
-        edge=expanded_box(cube)[3]-SAME_BLOCK_FIT_FACTOR*travel_radii(0,*exact)[-1]
-        self.assertEqual(fit([edge,.5],[0,0],(1,0),cube,exact)['room'],SAME_BLOCK_FIT_FACTOR*travel_radii(0,*exact)[-1])
-        self.assertFalse(fit([edge,.5],[0,0],(1,0),cube,exact)['fits'])
-        self.assertTrue(fit([edge-.01,.5],[0,0],(1,0),cube,exact)['fits'])
-        # A two-tick jump (a grind's jump tick and one air tick) fits a 2-block footprint.
-        grind=fit([.5,.5],[.28,0],(1,0),[0,0,0,2,1,1],([.3274,.026],[.546,.91]))
+        edge=cube[2]-SAME_FACE_FIT_FACTOR*travel_radii(0,*exact)[-1]
+        self.assertEqual(fit([edge,.5],[0,0],(1,0),[cube],exact)['room'],SAME_FACE_FIT_FACTOR*travel_radii(0,*exact)[-1])
+        self.assertFalse(fit([edge,.5],[0,0],(1,0),[cube],exact)['fits'])
+        self.assertTrue(fit([edge-.01,.5],[0,0],(1,0),[cube],exact)['fits'])
+        # A two-tick jump (a grind's jump tick and one air tick) fits a 2-block face.
+        grind=fit([.5,.5],[.28,0],(1,0),[[-.3,-.3,2.3,1.3]],([.3274,.026],[.546,.91]))
         self.assertEqual(grind['jump'],travel_radii(.28,[.3274,.026],[.546,.91])[-1])
         self.assertTrue(grind['fits'])
 

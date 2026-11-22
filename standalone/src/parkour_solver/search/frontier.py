@@ -46,7 +46,7 @@ def restore_alternatives(state, extra_live=()):
         held['next'] += 1
         held['restored'].append(program['decisionNode'])
         state['pending'].append(program)
-        # Entries after this one see it alive: a held same-block jump waits for a run-tick reserve restored now.
+        # Entries after this one see it alive: a held launch-face jump waits for a run-tick reserve restored now.
         live(program)
         restored = True
     return restored
@@ -235,7 +235,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
         register(parent, choice, child)
         (state['ready'] if complete(child) else state['pending']).append(child)
         if state['expansion'] is not None:
-            # What a held same-block jump of this expansion waits for (hold_same_block).
+            # What a held jump back onto the launch face of this expansion waits for (hold_same_face).
             state['expansion'].setdefault('queuedNodes',[]).append(child.get('decisionNode'))
 
     def target_keys(base, child):
@@ -568,8 +568,8 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             state['alternatives'][key]=dict(programs=[held],restored=[],next=0,watch=watch)
             state['decisionParents'][key]=node
 
-    def hold_same_block(e):
-        """Queue each held same-block jump of an ordinary decision P (O11) at once when P queued or reserved nothing
+    def hold_same_face(e):
+        """Queue each held jump back onto the launch face of an ordinary decision P (O11) at once when P queued or reserved nothing
         else; otherwise reserve it until every other branch of P died: everything below P's node, and the nodes P
         queued and reserved (P's node is None at frame 0's initial program)."""
         program=e['program']
@@ -577,12 +577,12 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
         for held in e.pop('held',[]):
             child=held['program']
             if others:
-                state['alternatives'][digest([node,'sameBlock',child['decisionNode']])]=dict(
+                state['alternatives'][digest([node,'sameFace',child['decisionNode']])]=dict(
                     programs=[child],restored=[],next=0,watch=([node] if node else [])+others)
             else:
                 (state['ready'] if complete(child) else state['pending']).append(child)
             state.setdefault('minimumRunCandidates',[]).append(dict(
-                node=node,key=json.dumps(['same_block',run_policy['owner'](program['terminalSupport'])]),k=0,total=held['total'],A=None,N=None,lower=0,round=0,
+                node=node,key=json.dumps(['same_face',held['face']]),k=0,total=held['total'],A=None,N=None,lower=0,round=0,
                 outcome='held' if others else 'queued',nodes=[child['decisionNode']],room=held['room'],jump=held['jump']))
 
     def update(reason='running'):
@@ -664,7 +664,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             if e['kind'] == len(settings['types']):
                 if 'reached' in e or e['program'].get('minimumRunSearch'):
                     minimum_runs(e)
-                hold_same_block(e)
+                hold_same_face(e)
                 state['expansion'] = None
                 iterator, iterator_key = None, None
                 continue
@@ -703,14 +703,16 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             # Found before any frontier state changes, so a deadline inside it redoes this proposal.
             landed,fit={},None
             if reason is None and 'reached' in e and (child['profile']['grounded'][-1] or lands_later(e['program'],child)):
-                start,here=e['program']['profile']['duration'],run_policy['owner'](e['program']['terminalSupport'])
+                start=e['program']['profile']['duration']
                 landings=landings_of(child,e['program'])
                 landed={owner:landing['profile']['duration']-start for owner,landing in landings.items()}
-                if child['profile']['jump'][start] and set(landings)=={here}:
-                    # A jump landing back on its launch block waits unless it naturally fits there (O11).
-                    fit=run_policy['fits'](e['program'],landings[here])
+                if (child['profile']['jump'][start] and landings
+                        and all(run_policy['back'](e['program'],landing) for landing in landings.values())):
+                    # A jump landing back on its launch face waits unless it naturally fits there (O11).
+                    owner,landing=min(landings.items(),key=lambda item:item[1]['profile']['duration'])
+                    fit=run_policy['fits'](e['program'],landing)
                     if fit is not None:
-                        fit=dict(fit,total=landed[here])
+                        fit=dict(fit,total=landed[owner])
             commit(effects,e['program'].get('decisionNode'))
             if reason is None and fit is not None and not fit['fits']:
                 # Held, not live: it sets no N and beats no run-tick candidate.

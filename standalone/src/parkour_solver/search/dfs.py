@@ -300,18 +300,38 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
         k, points = pair_of(decision, f), adapter.guide_plan['points']
         return unit(points[k+1][0]-points[k][0], points[k+1][2]-points[k][2]) if k+1 < len(points) else None
 
-    def same_block_fit(decision, landing, f):
-        """same_block_fit for a jump from an ordinary decision landing back on its launch owner (O11); None when
-        there is no leg or no physics to measure it with."""
-        from parkour_solver.search.anchors.policy import same_block_fit as fit
+    def top_faces(program):
+        """The merged top faces (ContactOption) a grounded program's support solid belongs to at its feet: one, unless
+        solids through it cut its top into pieces."""
+        from parkour_solver.movement.contact_combinations import scene_contact_options
+        if program.get('terminalSupport') is None:
+            return []
+        solid = next(b['solidIndex'] for b in scene['blocks'] if b['id'] == program['terminalSupport'])
+        return [o for o in scene_contact_options(scene, 1, 1) if solid in o.members and o.plane == program['profile']['position'][-1]]
+
+    def launch_face(decision):
+        """The merged top face an ordinary decision stands on: of its support's, the nearest to its validated position."""
+        import math
+        x, z = decision['decisionPoint']
+        return min(top_faces(decision), key=lambda o: min(math.hypot(max(r[0]-x, 0, x-r[2]), max(r[1]-z, 0, z-r[3]))
+                                                          for r in o.regions))
+
+    def lands_on_launch_face(decision, landing):
+        """Whether a landing is on the decision's launch face; a support cut into several faces never counts."""
+        return [o.surface for o in top_faces(landing)] == [launch_face(decision).surface]
+
+    def same_face_fit(decision, landing, f):
+        """same_face_fit for a jump from an ordinary decision landing back on its launch face (O11), with the face's
+        owners as its name; None when there is no leg or no physics to measure it with."""
+        from parkour_solver.search.anchors.policy import same_face_fit as fit
         leg, analysis = guide_leg(decision, f), gate.analyze(landing)
         if leg is None or analysis is None:
             return None
-        here = owner(scene, decision['terminalSupport'])
-        boxes = [scene['collisionScene']['solids'][b['solidIndex']] for b in scene['blocks'] if owner(scene, b['id']) == here]
+        face = launch_face(decision)
         start, end, model = decision['profile']['duration'], landing['profile']['duration'], analysis['model']
-        return fit(decision['decisionPoint'], decision['decisionVelocity'], leg, boxes,
-                   model['magnitude'][start:end], model['friction'][start:end])
+        result = fit(decision['decisionPoint'], decision['decisionVelocity'], leg, face.regions,
+                     model['magnitude'][start:end], model['friction'][start:end])
+        return dict(result, face='+'.join(sorted({owner(scene, b['id']) for b in scene['blocks'] if b['solidIndex'] in face.members})))
 
     def configure(ctx, f):
         stage_adapter(f).context(ctx)
@@ -672,7 +692,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
             run_policy=dict(ordinary=lambda p:boundary_state(p)['onGround'] and not p.get('decisionTurnaround',False),
                 targets=lambda base,child:advantageous_targets(scene,base,child,next_anchor(scene,base,anchors,task)),
                 candidates=candidates,next=lambda p:next_anchor(scene,p,anchors,task),owner=lambda block:owner(scene,block),
-                fits=lambda decision,landing:same_block_fit(decision,landing,f))
+                back=lands_on_launch_face,fits=lambda decision,landing:same_face_fit(decision,landing,f))
             node_options=dict(node_evaluator=lambda p,n,x:evaluate_node(p,n,x,f),
                 priority_key=lambda p,identity:priority(p,f,identity),
                 live_programs=lambda:live_programs(f),run_policy=run_policy,

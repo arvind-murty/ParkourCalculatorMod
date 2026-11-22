@@ -126,17 +126,38 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertEqual(policy['targets'](root,extend(s,root,'goal',10)),set())
         self.assertEqual((policy['next'](root),policy['owner'](root['terminalSupport'])),('mid','start'))
         self.assertIn('["anchor", "mid"]',[e['key'] for e in policy['candidates'](root)])
-        # A jump back onto the 1x1 start from its centre, along the +X leg to mid, overshoots it.
+        # A jump back onto the 1x1 start from its centre, along the +X leg to mid, overshoots its top face.
         from parkour_solver.movement.generation import generate_choices
         from parkour_solver.movement.program import append_choice, boundary_state
-        from parkour_solver.scene.geometry import expanded_box
+        from parkour_solver.movement.contact_combinations import scene_contact_options
         self.assertEqual(root['decisionVelocity'],s['initial']['velocity'][::2])
         context=dict(mode='open',scene=s,program=root,state=boundary_state(root),interactionGate=None,threshold=0.,maxInputs=20,maxEntryInputs=20)
         hop=next(c for c in (append_choice(root,choice,max_inputs=20) for choice in generate_choices('normal',context))
                  if c is not None and c['profile']['grounded'][-1] and c.get('terminalSupport')=='start')
         fit=policy['fits'](root,hop)
-        self.assertEqual(fit['room'],expanded_box([0,0,0,1,1,1])[3]-root['decisionPoint'][0])
+        (top,)=[o for o in scene_contact_options(s,1,1) if o.plane==1]
+        self.assertTrue(policy['back'](root,hop))
+        self.assertEqual((fit['room'],fit['face']),(max(r[2] for r in top.regions)-root['decisionPoint'][0],'start'))
         self.assertFalse(fit['fits'])
+
+    def test_a_jump_onto_a_block_merged_into_the_launch_face_lands_back_on_that_face(self):
+        from parkour_solver.bridge.python_compiler import PythonCompiler
+        from parkour_solver.movement.contact_combinations import scene_contact_options
+        from parkour_solver.movement.generation import generate_choices
+        from parkour_solver.movement.program import append_choice, boundary_state
+        # goal's top is flush with start's and touches it: one merged face, two blocks long on X.
+        generated=[]
+        with PythonCompiler() as compiler:
+            self.run_tree(goal=(1,0,0,2,1,1),generated=generated,compiler=compiler)
+        (roots,options),*_=generated
+        policy=options['run_policy'];s=scene((1,0,0,2,1,1));root=roots[0]
+        context=dict(mode='open',scene=s,program=root,state=boundary_state(root),interactionGate=None,threshold=0.,maxInputs=20,maxEntryInputs=20)
+        hop=next(c for c in (append_choice(root,choice,max_inputs=20) for choice in generate_choices('normal',context))
+                 if c is not None and c['profile']['grounded'][-1] and c.get('terminalSupport')=='goal')
+        self.assertTrue(policy['back'](root,hop))
+        fit=policy['fits'](root,hop)
+        (top,)=[o for o in scene_contact_options(s,1,1) if o.plane==1]
+        self.assertEqual((fit['face'],fit['room']),('goal+start',max(r[2] for r in top.regions)-root['decisionPoint'][0]))
 
     def test_anchor_search_uses_run_budget_across_routes_and_constraint_requests(self):
         clock=[100.]

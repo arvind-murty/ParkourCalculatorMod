@@ -7,8 +7,9 @@ from parkour_solver.search.comparison import comparison_label, priority_key, POL
 
 
 HARD_JUMP_POLICY_VERSION = 4
-# A same-block jump fits when the room ahead exceeds this share of its natural jump (user, 2026-11-21; may change).
-SAME_BLOCK_FIT_FACTOR = .7
+# A jump back onto its launch face fits when the room ahead exceeds this share of its natural jump (user, 2026-11-21;
+# may change).
+SAME_FACE_FIT_FACTOR = .7
 
 
 def settings(value, scene):
@@ -45,7 +46,7 @@ def settings(value, scene):
 
 def semantic_settings(policy):
     return dict({k:v for k,v in policy.items() if k!='observability'},
-                hardJumpPolicyVersion=HARD_JUMP_POLICY_VERSION,searchPolicyVersion=16,comparisonPolicyVersion=COMPARISON_POLICY_VERSION)
+                hardJumpPolicyVersion=HARD_JUMP_POLICY_VERSION,searchPolicyVersion=17,comparisonPolicyVersion=COMPARISON_POLICY_VERSION)
 
 
 def owner(scene, block):
@@ -268,26 +269,26 @@ def advantageous_candidates(scene, table, launch, top, next_owner, types, thresh
     return sorted(entries.values(), key=lambda e: e['key'])
 
 
-def same_block_fit(point, velocity, leg, boxes, magnitudes, frictions):
-    """Whether a jump landing back on its launch block naturally fits there (O11).
+def same_face_fit(point, velocity, leg, regions, magnitudes, frictions):
+    """Whether a jump landing back on its launch face naturally fits there (O11).
 
-    The room is measured from the player's solved position `point` ([x, z]) to the farthest corner of the launch
-    boxes widened by the player's half-width, along the leg's direction class: its axis when the unit leg is within
-    22.5 degrees of one, else the diagonal of its quadrant. The natural jump accelerates fully along the leg from the
-    solved velocity with the landing schedule's movement magnitudes and frictions.
+    The room is measured from the player's solved position `point` ([x, z]) to the farthest corner of the face the
+    player stands on, given as its merged player-centre `regions` ([x0, z0, x1, z1]), along the leg's direction
+    class: its axis when the unit leg is within 22.5 degrees of one, else the diagonal of its quadrant. The natural
+    jump accelerates fully along the leg from the solved velocity with the landing schedule's movement magnitudes and
+    frictions.
     """
     import math
     from parkour_solver.reachability.intervals import travel_radii
-    from parkour_solver.scene.geometry import expanded_box
     dx, dz = leg
     if min(abs(dx), abs(dz)) <= math.tan(math.radians(22.5))*max(abs(dx), abs(dz)):
         u = (math.copysign(1., dx), 0.) if abs(dx) >= abs(dz) else (0., math.copysign(1., dz))
     else:
         u = (math.copysign(math.sqrt(.5), dx), math.copysign(math.sqrt(.5), dz))
-    room = max((x-point[0])*u[0]+(z-point[1])*u[1] for box in map(expanded_box, boxes)
-               for x in (box[0], box[3]) for z in (box[2], box[5]))
+    room = max((x-point[0])*u[0]+(z-point[1])*u[1] for region in regions
+               for x in (region[0], region[2]) for z in (region[1], region[3]))
     jump = travel_radii(velocity[0]*dx+velocity[1]*dz, magnitudes, frictions)[-1]
-    return dict(room=room, jump=jump, fits=room > SAME_BLOCK_FIT_FACTOR*jump)
+    return dict(room=room, jump=jump, fits=room > SAME_FACE_FIT_FACTOR*jump)
 
 def encounter_groups(scene, names):
     """Partition the pairs names[k] -> names[k+1] into groups searched as one frame.
