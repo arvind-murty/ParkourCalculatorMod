@@ -423,12 +423,15 @@ here, only faces (anchors stay blocks). On a long face (Real11's B1) a hop back 
 it is natural; on B4 the natural jump overshoots, and landing back needs braking, so
 the B4 hop waits while the 3-run-tick jump onto B5 lives.
 
-P's launch face is the merged face of its support at its feet, the one nearest its
-validated position. A child of P lands back on it when it jumps on its first input and
-every landing `landings_of` finds for it (its own, or a ceiling hit's, grind's, slab
-boost's or corner jump cancel's earliest landings) stands on that face: its support
-block's merged face at its feet is P's face. A support whose top solids cut into
-several faces is never counted, since an unsolved landing's piece is unknown.
+A program stands on the merged top faces, at its feet, of the owner it last visited
+(`launch`: landing contacts and case events, so a blip landing that sets no
+`terminalSupport` counts). P's launch face is the one of those nearest its validated
+position; with none (feet on no top of that owner, or a ladder tick) nothing is held.
+A child of P lands back on it when it jumps on its first input and every landing
+`landings_of` finds for it (its own, or a ceiling hit's, grind's, slab boost's or
+corner jump cancel's earliest landings) stands on exactly that face. A support whose
+top solids cut into several faces is never counted, since an unsolved landing's piece
+is unknown.
 Minimum-run candidates (O9) keep their own reserves and are not tested. The test
 (`same_face_fit`, `search/anchors/policy.py`):
 

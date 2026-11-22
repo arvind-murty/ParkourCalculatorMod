@@ -137,6 +137,8 @@ class AnchorDFSTests(unittest.TestCase):
         fit=policy['fits'](root,hop)
         (top,)=[o for o in scene_contact_options(s,1,1) if o.plane==1]
         self.assertTrue(policy['back'](root,hop))
+        # The face comes from the visited owner, not terminalSupport, which a blip landing does not set.
+        self.assertTrue(policy['back'](dict(root,terminalSupport=None),dict(hop,terminalSupport=None)))
         self.assertEqual((fit['room'],fit['face']),(max(r[2] for r in top.regions)-root['decisionPoint'][0],'start'))
         self.assertFalse(fit['fits'])
 

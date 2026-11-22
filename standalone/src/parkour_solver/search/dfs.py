@@ -301,24 +301,29 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
         return unit(points[k+1][0]-points[k][0], points[k+1][2]-points[k][2]) if k+1 < len(points) else None
 
     def top_faces(program):
-        """The merged top faces (ContactOption) a grounded program's support solid belongs to at its feet: one, unless
-        solids through it cut its top into pieces."""
+        """The merged top faces (ContactOption) a grounded program stands on at its feet: those of the owner it last
+        visited (landing contacts and case events, so a blip landing without a terminalSupport counts); one, unless
+        solids through the owner's top cut it into pieces. None on a ladder tick."""
         from parkour_solver.movement.contact_combinations import scene_contact_options
-        if program.get('terminalSupport') is None:
+        found = launch(scene, program)
+        if found is None:
             return []
-        solid = next(b['solidIndex'] for b in scene['blocks'] if b['id'] == program['terminalSupport'])
-        return [o for o in scene_contact_options(scene, 1, 1) if solid in o.members and o.plane == program['profile']['position'][-1]]
+        solids = {b['solidIndex'] for b in scene['blocks'] if owner(scene, b['id']) == found[1]}
+        return [o for o in scene_contact_options(scene, 1, 1)
+                if solids & set(o.members) and o.plane == program['profile']['position'][-1]]
 
     def launch_face(decision):
-        """The merged top face an ordinary decision stands on: of its support's, the nearest to its validated position."""
+        """The merged top face an ordinary decision stands on: of its own, the nearest to its validated position; None
+        when its feet are on none of them."""
         import math
         x, z = decision['decisionPoint']
-        return min(top_faces(decision), key=lambda o: min(math.hypot(max(r[0]-x, 0, x-r[2]), max(r[1]-z, 0, z-r[3]))
-                                                          for r in o.regions))
+        return min(top_faces(decision), default=None,
+                   key=lambda o: min(math.hypot(max(r[0]-x, 0, x-r[2]), max(r[1]-z, 0, z-r[3])) for r in o.regions))
 
     def lands_on_launch_face(decision, landing):
         """Whether a landing is on the decision's launch face; a support cut into several faces never counts."""
-        return [o.surface for o in top_faces(landing)] == [launch_face(decision).surface]
+        face = launch_face(decision)
+        return face is not None and [o.surface for o in top_faces(landing)] == [face.surface]
 
     def same_face_fit(decision, landing, f):
         """same_face_fit for a jump from an ordinary decision landing back on its launch face (O11), with the face's
