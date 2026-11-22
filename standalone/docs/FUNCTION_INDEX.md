@@ -575,7 +575,6 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | Symbol | Line | Kind |
 | --- | ---: | --- |
 | `condition_envelopes` | [6](../src/parkour_solver/reachability/screen.py#L6) | function |
-| `contradiction` | [42](../src/parkour_solver/reachability/screen.py#L42) | function |
 
 ## reachability/service.py
 

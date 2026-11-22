@@ -59,14 +59,14 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/ANCHOR_SEARCH_EXECUTION_REFERENCE.md](ANCHOR_SEARCH_EXECUTION_REFERENCE.md) | 35631 |
 | [docs/ARCHITECTURE.md](ARCHITECTURE.md) | 16418 |
 | [docs/CHECKPOINT_STORAGE.md](CHECKPOINT_STORAGE.md) | 7541 |
-| [docs/CODE_MAP.md](CODE_MAP.md) | 21386 |
+| [docs/CODE_MAP.md](CODE_MAP.md) | 21369 |
 | [docs/CURRENT_STATE.md](CURRENT_STATE.md) | 12858 |
 | [docs/DECISIONS_AND_PLANS.md](DECISIONS_AND_PLANS.md) | 22240 |
 | [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 35721 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11512 |
 | [docs/DOC_INDEX.md](DOC_INDEX.md) | 28532 |
 | [docs/FILE_INDEX.md](FILE_INDEX.md) | 224068 |
-| [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 64568 |
+| [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 64480 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
 | [docs/LAYOUT.md](LAYOUT.md) | 6304 |
@@ -89,7 +89,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/design/MIXED_MOVEMENT_CONTACTS.md](design/MIXED_MOVEMENT_CONTACTS.md) | 5966 |
 | [docs/design/MOVEMENT_UNITS.md](design/MOVEMENT_UNITS.md) | 13672 |
 | [docs/design/OBSTACLES_AND_BLOCKAGES.md](design/OBSTACLES_AND_BLOCKAGES.md) | 25624 |
-| [docs/design/OBSTACLE_RELEVANCE.md](design/OBSTACLE_RELEVANCE.md) | 22404 |
+| [docs/design/OBSTACLE_RELEVANCE.md](design/OBSTACLE_RELEVANCE.md) | 22445 |
 | [docs/design/OBSTACLE_SEARCH.md](design/OBSTACLE_SEARCH.md) | 11808 |
 | [docs/design/ORCHESTRATOR_CONTRACT.md](design/ORCHESTRATOR_CONTRACT.md) | 2449 |
 | [docs/design/PRUNING_IMPROVEMENTS_BACKLOG.md](design/PRUNING_IMPROVEMENTS_BACKLOG.md) | 3528 |
@@ -1498,7 +1498,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [src/parkour_solver/physics/vertical.py](../src/parkour_solver/physics/vertical.py) | 4084 |
 | [src/parkour_solver/reachability/__init__.py](../src/parkour_solver/reachability/__init__.py) | 0 |
 | [src/parkour_solver/reachability/intervals.py](../src/parkour_solver/reachability/intervals.py) | 11557 |
-| [src/parkour_solver/reachability/screen.py](../src/parkour_solver/reachability/screen.py) | 2297 |
+| [src/parkour_solver/reachability/screen.py](../src/parkour_solver/reachability/screen.py) | 1923 |
 | [src/parkour_solver/reachability/service.py](../src/parkour_solver/reachability/service.py) | 28576 |
 | [src/parkour_solver/reachability/viability.py](../src/parkour_solver/reachability/viability.py) | 2511 |
 | [src/parkour_solver/scene/__init__.py](../src/parkour_solver/scene/__init__.py) | 0 |
@@ -1695,7 +1695,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/unit/reachability/__init__.py](../tests/unit/reachability/__init__.py) | 0 |
 | [tests/unit/reachability/test_interaction_normalization.py](../tests/unit/reachability/test_interaction_normalization.py) | 5133 |
 | [tests/unit/reachability/test_proposal_analysis.py](../tests/unit/reachability/test_proposal_analysis.py) | 8219 |
-| [tests/unit/reachability/test_screen.py](../tests/unit/reachability/test_screen.py) | 12795 |
+| [tests/unit/reachability/test_screen.py](../tests/unit/reachability/test_screen.py) | 12486 |
 | [tests/unit/search/__init__.py](../tests/unit/search/__init__.py) | 0 |
 | [tests/unit/search/test_anchor_dfs.py](../tests/unit/search/test_anchor_dfs.py) | 36836 |
 | [tests/unit/search/test_anchor_policy.py](../tests/unit/search/test_anchor_policy.py) | 36866 |

@@ -1,25 +1,21 @@
 import random
-import copy
 import math
 import unittest
 from unittest.mock import patch
 
 from parkour_solver.reachability.intervals import (PARENT_WINDOW, interaction_reachability, reachable_envelopes,
                                                     travel_radii)
-from parkour_solver.reachability.screen import contradiction
+from parkour_solver.reachability.screen import condition_envelopes
 from parkour_solver.numerics import disk, prepare, validate
 
 
-class ScreenTests(unittest.TestCase):
-    def test_extra_prefix_rows_use_existing_model_without_mutating_it(self):
-        p=dict(ticks=1,position=[0.,0.],velocity=[0.,0.],magnitude=[1.],friction=[.9],walls=[])
-        before=copy.deepcopy(p)
-        rows=[dict(mode=axis,offset=1,cmp='GE',rhs=.8) for axis in ('X','Z')]
-        self.assertIsNone(contradiction(p,rows[:1]))
-        self.assertEqual(contradiction(p,rows)['reason'],'norm_reach_contradiction')
-        self.assertEqual(p,before)
-        self.assertNotIn('t1',rows[0])
+def ruled_out(problem):
+    """The envelope screen's proof for a fixed problem, or None."""
+    proof = condition_envelopes(reachable_envelopes(problem))['proof']
+    return proof if proof['ruledOut'] else None
 
+
+class ScreenTests(unittest.TestCase):
     def test_travel_pairs_after_the_last_constrained_state_never_fire(self):
         rng = random.Random(1118)
         fired = 0
@@ -94,7 +90,7 @@ class ScreenTests(unittest.TestCase):
     def test_unreachable_wall_is_rejected(self):
         p = {'ticks': 1, 'position': [0, 0], 'velocity': [0, 0], 'magnitude': [.1],
              'friction': [.91], 'walls': [{'mode': 'X', 't1': 1, 'cmp': 'GE', 'rhs': .2}]}
-        self.assertEqual(contradiction(p)['state'], 1)
+        self.assertEqual(ruled_out(p)['state'], 1)
 
     def test_per_axis_zeroing_and_turns_do_not_reject_a_known_witness(self):
         rng = random.Random(163)
@@ -112,15 +108,15 @@ class ScreenTests(unittest.TestCase):
                 for axis, coordinate in zip(('X', 'Z'), point):
                     p['walls'].extend([{'mode': axis, 't1': t, 'cmp': 'GE', 'rhs': coordinate - 1e-5},
                                        {'mode': axis, 't1': t, 'cmp': 'LE', 'rhs': coordinate + 1e-5}])
-            self.assertIsNone(contradiction(p))
+            self.assertIsNone(ruled_out(p))
 
     def test_ladder_cap_cannot_claim_reaching_a_further_contact(self):
         p = {'ticks': 1, 'position': [0, 0], 'velocity': [.8, 0], 'magnitude': [.03],
              'friction': [.91], 'walls': [], 'ladderTicks': [True, True],
              'contacts': [{'state': 1, 'axis': 0, 'plane': .2, 'direction': 1}]}
-        self.assertEqual(contradiction(p)['reason'], 'contact_reach_contradiction')
+        self.assertEqual(ruled_out(p)['reason'], 'contact_reach_contradiction')
         p['ladderTicks'][0] = False
-        self.assertIsNone(contradiction(p))
+        self.assertIsNone(ruled_out(p))
 
     def test_contact_cap_screen_keeps_random_valid_witnesses(self):
         rng = random.Random(75124)
@@ -146,7 +142,7 @@ class ScreenTests(unittest.TestCase):
                 for axis, value in zip(('X', 'Z'), point):
                     p['walls'].extend([{'mode': axis, 't1': t, 'cmp': 'GE', 'rhs': value - 1e-5},
                                        {'mode': axis, 't1': t, 'cmp': 'LE', 'rhs': value + 1e-5}])
-            self.assertIsNone(contradiction(p))
+            self.assertIsNone(ruled_out(p))
 
 
 

@@ -86,7 +86,7 @@ For longer prefixes, per-axis position/velocity intervals can be intersected wit
 ## Existing code to reuse
 
 - block_search.build_transition_graph compares support gaps against optimistic travel from compiled magnitude/friction arrays to reject unreachable block transitions.
-- screen.contradiction propagates position/velocity intervals, intersects supplied X/Z walls and accounts for selected horizontal contacts to reject inconsistent fixed problems.
+- screen.condition_envelopes over intervals.reachable_envelopes propagates position/velocity intervals, intersects supplied X/Z walls and accounts for selected horizontal contacts to reject inconsistent fixed problems.
 - blockages.passage_options already combines forward/backward travel envelopes with vertical face feasibility and reachable face chains.
 - The generic normal catalogue itself still visits candidate blocks, entry_possible checks the initial positional domain, and later screens/route filters remove choices. Do not claim all normal-block generation already has the desired per-obstacle/per-tick filter.
 
