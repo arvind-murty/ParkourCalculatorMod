@@ -42,6 +42,7 @@ class ProposalAnalysisTests(unittest.TestCase):
         self.assertEqual(first['proof']['reason'],'interval_reach_contradiction')
         self.assertEqual(compiler.calls,1)
 
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # records Python solves; a native gate screens natively
     def test_the_creation_screen_solves_the_request_the_repair_loop_sends(self):
         from parkour_solver.bridge.python_compiler import PythonCompiler
         from parkour_solver.numerics import disk

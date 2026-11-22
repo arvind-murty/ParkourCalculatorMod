@@ -1,0 +1,12 @@
+{
+ "input": "research/prefix-reuse-keys/2026-11-21/extended-fixedwork100.json",
+ "mode": "PKC_NATIVE_CORE set, same module build",
+ "base": "91fd8942 Python (gate without its native core)",
+ "new": "with the native core",
+ "searchSeconds": {
+  "base-1": 29.373691376298666,
+  "new-1": 26.26541291549802,
+  "base-2": 29.94073262438178,
+  "new-2": 26.068590331822634
+ }
+}

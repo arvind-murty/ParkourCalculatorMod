@@ -37,6 +37,7 @@ class EventGuideAdapter:
         self.counts = dict(eventAudits=0, requiredEventRejections=0)
         self.interaction_cache = {}
         self.interaction_metrics = {}
+        self.interaction_cores = {}
         self.compiler, self.candidate_seconds = compiler, candidate_seconds
         self.flight_cache = {}
 

@@ -186,7 +186,8 @@ once more with zero cost (`retried: true` on a result it decides): infeasibility
 does not depend on the cost, and some infeasible requests end `NumericalError`
 only under their objective. A feasible retry is not the optimum, so the request
 stays undecided. Decided results are cached process-wide by the canonical spec
-(1024 entries). `validation.numerical.validate_controls`
+(1024 entries); under `PKC_NATIVE_CORE` the cache and its counters are native, shared
+with the native gate's program screens. `validation.numerical.validate_controls`
 replays the returned acceleration vectors through the same scalar checks as
 `validate` (which converts facings to full-strength vectors first) and also
 rejects a vector outside its disk by more than `1e-7`. `deficits` reports each

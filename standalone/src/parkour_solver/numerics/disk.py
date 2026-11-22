@@ -30,10 +30,10 @@ _DECIDED = {}
 
 
 def _native():
-    """The native core under PKC_NATIVE_CORE, which solves the relaxation and seeds IPOPT; None otherwise.
+    """The native core under PKC_NATIVE_CORE, which solves the relaxation, keeps the decided-result cache and its
+    counters (shared with the native gate's screens) and seeds IPOPT; None otherwise.
 
-    The spec and the other small helpers stay here (converting a problem costs more than they do), and so do the
-    decided-result cache and STATS, with their readers."""
+    The spec and the other small helpers stay here: converting a problem costs more than they do."""
     from parkour_solver import native_core
     return native_core.from_environment()
 
@@ -67,8 +67,19 @@ def spec(problem, extra_rows=(), objective=None, *, strict):
     return result
 
 
+def stats():
+    """STATS, or under PKC_NATIVE_CORE the native decided cache's counters, which every solve then counts."""
+    native = _native()
+    if native is None:
+        return STATS
+    return {kind: collections.Counter(counts) for kind, counts in native.disk_stats().items()}
+
+
 def solve(content, *, seconds, kind='candidate'):
     """Solve a spec; decided results are cached process-wide by content."""
+    native = _native()
+    if native is not None:  # the native gate's screens share this cache; CAP and MAX_ITER are read here
+        return native.disk_cached_solve(content, seconds, kind, CAP, MAX_ITER)
     encoded = json.dumps(content, sort_keys=True)
     stats = STATS[kind]
     if encoded in _DECIDED:

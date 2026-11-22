@@ -361,3 +361,20 @@ exactly, including the exclusion entries each adds and the gate's approach and f
   ([gate](2026-11-22-gate-generators/gate-shadow-asan.json), [generators](2026-11-22-gate-generators/generators-shadow-asan.json));
   the repository's `--variant sanitize` build is UBSan only.
 
+## The Python gate on its native core, 2026-11-22
+
+Source: `91fd8942` plus: under `PKC_NATIVE_CORE` the Python `InteractionGate` keeps a native gate per search and scene
+(`cores`, shared through the search adapter like its cache and metrics) for preparation, analysis, required-contact
+proofs and `check_program`; `numerics/disk.solve` and the gate's relaxation counters use the native decided-result
+cache, which the native screens share. Generator queries (approach, box, walk-off and sequence) stay in Python.
+
+- Fixed work matches Python on all transitions ([parity](2026-11-22-native-gate-dispatch/parity-python-native.json),
+  [milestone](2026-11-22-native-gate-dispatch/parity-milestone.json)); alternating native runs with and without the core
+  took 26.3/26.1 s against 29.4/29.9 s ([timing](2026-11-22-native-gate-dispatch/alternating-native-timing.json)).
+- Suites: 844 tests pass in Python mode; in native mode 3 errors came from gates built on scenes without a
+  `sceneModel`, fixed before commit ([Python](2026-11-22-native-gate-dispatch/suite-python-summary.txt),
+  [native](2026-11-22-native-gate-dispatch/suite-native-summary.txt)); live `verify-scene` finds no difference
+  ([summary](2026-11-22-native-gate-dispatch/live-scene-release-summary.json)).
+- Two tests that stub Python's `disk._solve`/`disk.solve` run in Python mode only; the native cache's retry and caching
+  are covered in native mode by `test_disk`'s IPOPT-oracle test.
+

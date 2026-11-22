@@ -102,7 +102,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
     prior_calls, initial_expanded = state['cumulativeCalls'], state['expanded']
     if resume_state and not _owned_state and state['best'] is not None and not replay_witness(scene,state['best'],compiler)['passed']:
         raise ValueError('Saved DFS incumbent no longer passes independent replay')
-    gate = InteractionGate(scene, compiler, seconds=candidate_seconds)
+    gate = InteractionGate(scene, compiler, seconds=candidate_seconds, cores=adapter.interaction_cores)
     adapter.interaction_service=gate
     gate.cache = adapter.interaction_cache
     gate.metrics = adapter.interaction_metrics

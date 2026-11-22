@@ -255,17 +255,28 @@ def landing_boxes(program, cut):
 
 
 class InteractionGate:
-    """Session-shared preparation, coefficient and exact-model proof cache."""
-    def __init__(self, scene, compiler, *, seconds=1):
+    """Session-shared preparation, coefficient and exact-model proof cache.
+
+    Under PKC_NATIVE_CORE, for a collision-box scene and a compiler whose replies equal the native tables, a native
+    gate (`core`) keeps the scene's preparations, analyses and program screens in its own cache and metrics; `cores`
+    ({scene digest: core}) shares one across the gates of a search, as `cache` and `metrics` are shared."""
+    def __init__(self, scene, compiler, *, seconds=1, cores=None):
         from parkour_solver import native_core
+        from parkour_solver.canonical import digest
         self.scene, self.compiler, self.seconds = scene, compiler, seconds
         self.native = native_core.from_environment()
         self.cache = {}
         self.metrics = {}
         self.checked = 0
         self.exclusions = []
-        from parkour_solver.numerics.disk import STATS
-        self.relaxation_start = {kind: collections.Counter(counts) for kind, counts in STATS.items()}
+        self.core = None
+        if (self.native is not None and scene.get('sceneModel')=='collision_boxes'
+                and getattr(compiler,'table_coefficients',False)):
+            cores = {} if cores is None else cores
+            key = digest({k: v for k, v in scene.items() if k != 'movementSearch'})
+            self.core = cores.get(key) or cores.setdefault(key, self.native.InteractionGate(scene))
+        from parkour_solver.numerics.disk import stats
+        self.relaxation_start = {kind: collections.Counter(counts) for kind, counts in stats().items()}
         self.face_tables, self.jump_traces = {}, {}
         self.approaches = {}
         self.native_parents = {}  # id(program) -> (program, its native program); see _sequenced
@@ -306,6 +317,8 @@ class InteractionGate:
         from parkour_solver.scene.route import prepare_route, schedule
         from parkour_solver.validation.vertical import validate_vertical_schedule
         from parkour_solver.canonical import digest
+        if self.core is not None and scene is None:
+            return self.core.prepare(program,require_complete)
         scene=self.scene if scene is None else scene
         typed=not isinstance(program,dict)
         key=('prepared',digest(dict(scene={k:v for k,v in scene.items() if k!='movementSearch'},
@@ -360,6 +373,8 @@ class InteractionGate:
 
     def _analysis(self, program, *, scene=None, require_complete=False, open_terminal=True, scope=None):
         """analyze's cached result: a dict, or a native analysis when the preparation is native."""
+        if self.core is not None and scene is None and not require_complete and open_terminal and scope is None:
+            return self.core.analysis(program)
         prepared=self._prepared(program,scene=scene,require_complete=require_complete)
         if prepared is None:return None
         parent_ticks=program.get('parentTicks') if isinstance(program,dict) else program.parent_ticks
@@ -423,6 +438,11 @@ class InteractionGate:
 
     def check_program(self, program, objective=None):
         """None or a rejection proof. A run-off's launch-support face selection is appended to program['walkOffs']."""
+        if self.core is not None:
+            proof,selection=self.core.check_program(program,objective)
+            if selection is not None:
+                program['walkOffs']=program.get('walkOffs',[])+[selection]
+            return proof
         analysis=self._analysis(program)
         if analysis is None:return dict(reason='vertical_schedule')
         def materialized():  # Python readers need the analysis dict, built once for a native analysis
@@ -575,6 +595,8 @@ class InteractionGate:
         return False
 
     def required(self, program):
+        if self.core is not None:
+            return self.core.required(program)
         analysis = self._analysis(program)
         if analysis is None:
             return dict(reason='vertical_schedule')
@@ -603,6 +625,9 @@ class InteractionGate:
         context['interactionGate'] = self
 
     def summary(self):
-        from parkour_solver.numerics.disk import STATS
-        return dict(checked=self.checked,excluded=len(self.exclusions),exclusions=self.exclusions,metrics=dict(self.metrics),
-                    relaxation={kind: dict(counts-self.relaxation_start[kind]) for kind, counts in STATS.items()})
+        from parkour_solver.numerics.disk import stats
+        metrics=collections.Counter(self.metrics)
+        if self.core is not None:
+            metrics.update(self.core.metrics)
+        return dict(checked=self.checked,excluded=len(self.exclusions),exclusions=self.exclusions,metrics=dict(metrics),
+                    relaxation={kind: dict(counts-self.relaxation_start[kind]) for kind, counts in stats().items()})

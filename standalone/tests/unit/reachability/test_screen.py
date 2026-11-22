@@ -180,6 +180,7 @@ class DiskScreenTests(unittest.TestCase):
         self.assertIn(proof['status'],disk.INFEASIBLE)
         self.assertFalse(interaction_reachability(reachable_envelopes(self.model(1.85)),{},refine=True)['ruledOut'])
 
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # stubs the Python solve; the native cache has no such seam
     def test_undecided_results_are_solved_again_and_decided_ones_are_cached(self):
         undecided = dict(status='MaxIterations',outcome='undecided',controls=None,objective=None,iterations=200)
         with patch.object(disk,'_solve',side_effect=lambda *a:dict(undecided)) as solved:

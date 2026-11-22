@@ -177,6 +177,11 @@ struct NativeAnalysis {
 
 py::object to_python(const pkc::Value& value);
 
+std::shared_ptr<const pkc::Program> program_arg(py::handle program) {  // a NativeProgram handle or a program dict
+    if (py::isinstance<NativeProgram>(program)) return program.cast<std::shared_ptr<NativeProgram>>()->program;
+    return std::make_shared<const pkc::Program>(pkc::program_from_value(convert(program)));
+}
+
 py::object memoized(py::object& slot, const std::function<py::object()>& build) {
     if (!slot) slot = build();
     return slot;
@@ -512,8 +517,22 @@ PYBIND11_MODULE(_pkc_native, m) {
             return out;
         }, "InteractionGate.reachable_faces with sets for frozensets")
         .def("required", [](pkc::InteractionGate& gate, py::handle program) {
-            return to_python(gate.required(std::make_shared<const pkc::Program>(pkc::program_from_value(convert(program)))));
-        })
+            return to_python(gate.required(program_arg(program)));
+        }, "InteractionGate.required for a program dict or NativeProgram")
+        .def("prepare", [](pkc::InteractionGate& gate, py::handle program, bool require_complete) -> py::object {
+            auto prepared = gate.prepared(program_arg(program), require_complete);
+            if (!prepared) return py::none();
+            return py::cast(std::make_shared<NativePrepared>(NativePrepared{prepared->program, prepared->result, prepared->key, {}}));
+        }, py::arg("program"), py::arg("require_complete") = false, "InteractionGate._prepared on the session cache")
+        .def("analysis", [](pkc::InteractionGate& gate, py::handle program) -> py::object {
+            auto typed = program_arg(program);
+            auto analysis = gate.analysis(typed);
+            if (!analysis) return py::none();
+            auto prepared = gate.prepared(typed);
+            return py::cast(std::make_shared<NativeAnalysis>(NativeAnalysis{
+                std::make_shared<NativePrepared>(NativePrepared{prepared->program, prepared->result, prepared->key, {}}),
+                std::make_shared<NativeCoefficients>(NativeCoefficients{analysis->coefficient, {}}), *analysis, {}}));
+        }, "InteractionGate._analysis (open terminal, no scope) on the session cache")
         .def("approach", [](pkc::InteractionGate& gate, py::dict context, std::int64_t tick, bool jumping) {
             return to_python(gate.approach(generation_context(context), tick, jumping));
         }, "InteractionGate.approach's envelopes without their model alias")
@@ -533,8 +552,7 @@ PYBIND11_MODULE(_pkc_native, m) {
             return to_python(gate.sequence(generation_context(context), pkc::choice_from_value(convert(choice))));
         })
         .def("check_program", [](pkc::InteractionGate& gate, py::handle program, py::handle objective) {
-            auto [proof, selection] = gate.check_program(
-                std::make_shared<const pkc::Program>(pkc::program_from_value(convert(program))), convert(objective));
+            auto [proof, selection] = gate.check_program(program_arg(program), convert(objective));
             return py::make_tuple(to_python(proof), to_python(selection));
         }, "InteractionGate.check_program: (proof, walk-off selection to append to program['walkOffs'])")
         .def("generate_choices", [](std::shared_ptr<pkc::InteractionGate> gate, const std::string& kind, py::dict context) {
@@ -551,6 +569,9 @@ PYBIND11_MODULE(_pkc_native, m) {
         .def_property_readonly("metrics", [](pkc::InteractionGate& gate) {
             return to_python(pkc::Value{std::make_shared<const pkc::Object>(gate.metrics())});
         });
+    m.def("disk_cached_solve", [](py::handle content, double seconds, const std::string& kind, double cap, unsigned max_iter) {
+        return to_python(pkc::disk_cached_solve(convert(content), seconds, kind, cap, max_iter));
+    }, "numerics/disk.solve on the native decided-result cache the native gate's screens share");
     m.def("disk_stats", [] { return to_python(pkc::disk_stats()); }, "numerics/disk.STATS of the native decided cache");
     m.def("float_repr", &pkc::float_repr, "repr(float) for a finite float");
     m.def("sha256_hex", [](py::bytes data) { return pkc::sha256_hex(std::string(data)); });

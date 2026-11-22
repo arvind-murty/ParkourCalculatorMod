@@ -492,21 +492,22 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | --- | ---: | --- |
 | `_native` | [32](../src/parkour_solver/numerics/disk.py#L32) | function |
 | `spec` | [41](../src/parkour_solver/numerics/disk.py#L41) | function |
-| `solve` | [70](../src/parkour_solver/numerics/disk.py#L70) | function |
-| `screen` | [95](../src/parkour_solver/numerics/disk.py#L95) | function |
-| `deficits` | [110](../src/parkour_solver/numerics/disk.py#L110) | function |
-| `ipopt_seed` | [117](../src/parkour_solver/numerics/disk.py#L117) | function |
-| `alarm_ticks` | [132](../src/parkour_solver/numerics/disk.py#L132) | function |
-| `RelaxedDispatch` | [143](../src/parkour_solver/numerics/disk.py#L143) | class |
-| `RelaxedDispatch.__init__` | [155](../src/parkour_solver/numerics/disk.py#L155) | function |
-| `RelaxedDispatch.solve` | [158](../src/parkour_solver/numerics/disk.py#L158) | function |
-| `RelaxedDispatch.confirmed` | [161](../src/parkour_solver/numerics/disk.py#L161) | function |
-| `RelaxedDispatch._dispatch` | [164](../src/parkour_solver/numerics/disk.py#L164) | function |
-| `RelaxedDispatch.confirm` | [201](../src/parkour_solver/numerics/disk.py#L201) | function |
-| `_result` | [228](../src/parkour_solver/numerics/disk.py#L228) | function |
-| `_attempt` | [244](../src/parkour_solver/numerics/disk.py#L244) | function |
-| `_solve` | [252](../src/parkour_solver/numerics/disk.py#L252) | function |
-| `_cost` | [355](../src/parkour_solver/numerics/disk.py#L355) | function |
+| `stats` | [70](../src/parkour_solver/numerics/disk.py#L70) | function |
+| `solve` | [78](../src/parkour_solver/numerics/disk.py#L78) | function |
+| `screen` | [106](../src/parkour_solver/numerics/disk.py#L106) | function |
+| `deficits` | [121](../src/parkour_solver/numerics/disk.py#L121) | function |
+| `ipopt_seed` | [128](../src/parkour_solver/numerics/disk.py#L128) | function |
+| `alarm_ticks` | [143](../src/parkour_solver/numerics/disk.py#L143) | function |
+| `RelaxedDispatch` | [154](../src/parkour_solver/numerics/disk.py#L154) | class |
+| `RelaxedDispatch.__init__` | [166](../src/parkour_solver/numerics/disk.py#L166) | function |
+| `RelaxedDispatch.solve` | [169](../src/parkour_solver/numerics/disk.py#L169) | function |
+| `RelaxedDispatch.confirmed` | [172](../src/parkour_solver/numerics/disk.py#L172) | function |
+| `RelaxedDispatch._dispatch` | [175](../src/parkour_solver/numerics/disk.py#L175) | function |
+| `RelaxedDispatch.confirm` | [212](../src/parkour_solver/numerics/disk.py#L212) | function |
+| `_result` | [239](../src/parkour_solver/numerics/disk.py#L239) | function |
+| `_attempt` | [255](../src/parkour_solver/numerics/disk.py#L255) | function |
+| `_solve` | [263](../src/parkour_solver/numerics/disk.py#L263) | function |
+| `_cost` | [366](../src/parkour_solver/numerics/disk.py#L366) | function |
 
 ## numerics/model.py
 
@@ -616,27 +617,27 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `walk_off_tick` | [238](../src/parkour_solver/reachability/service.py#L238) | function |
 | `landing_boxes` | [248](../src/parkour_solver/reachability/service.py#L248) | function |
 | `InteractionGate` | [257](../src/parkour_solver/reachability/service.py#L257) | class |
-| `InteractionGate.__init__` | [259](../src/parkour_solver/reachability/service.py#L259) | function |
-| `InteractionGate.reachable_faces` | [273](../src/parkour_solver/reachability/service.py#L273) | function |
-| `InteractionGate._cached` | [284](../src/parkour_solver/reachability/service.py#L284) | function |
-| `InteractionGate.prepare` | [297](../src/parkour_solver/reachability/service.py#L297) | function |
-| `InteractionGate._prepared` | [301](../src/parkour_solver/reachability/service.py#L301) | function |
-| `InteractionGate.analyze_model` | [325](../src/parkour_solver/reachability/service.py#L325) | function |
-| `InteractionGate.analyze` | [356](../src/parkour_solver/reachability/service.py#L356) | function |
-| `InteractionGate._analysis` | [361](../src/parkour_solver/reachability/service.py#L361) | function |
-| `InteractionGate.condition` | [381](../src/parkour_solver/reachability/service.py#L381) | function |
-| `InteractionGate.envelopes` | [389](../src/parkour_solver/reachability/service.py#L389) | function |
-| `InteractionGate.sequence` | [393](../src/parkour_solver/reachability/service.py#L393) | function |
-| `InteractionGate._sequenced` | [405](../src/parkour_solver/reachability/service.py#L405) | function |
-| `InteractionGate.check_program` | [424](../src/parkour_solver/reachability/service.py#L424) | function |
-| `InteractionGate.relaxation` | [474](../src/parkour_solver/reachability/service.py#L474) | function |
-| `InteractionGate.approach` | [492](../src/parkour_solver/reachability/service.py#L492) | function |
-| `InteractionGate.query` | [527](../src/parkour_solver/reachability/service.py#L527) | function |
-| `InteractionGate.query_many` | [530](../src/parkour_solver/reachability/service.py#L530) | function |
-| `InteractionGate.walk_off` | [561](../src/parkour_solver/reachability/service.py#L561) | function |
-| `InteractionGate.required` | [577](../src/parkour_solver/reachability/service.py#L577) | function |
-| `InteractionGate.context` | [602](../src/parkour_solver/reachability/service.py#L602) | function |
-| `InteractionGate.summary` | [605](../src/parkour_solver/reachability/service.py#L605) | function |
+| `InteractionGate.__init__` | [263](../src/parkour_solver/reachability/service.py#L263) | function |
+| `InteractionGate.reachable_faces` | [284](../src/parkour_solver/reachability/service.py#L284) | function |
+| `InteractionGate._cached` | [295](../src/parkour_solver/reachability/service.py#L295) | function |
+| `InteractionGate.prepare` | [308](../src/parkour_solver/reachability/service.py#L308) | function |
+| `InteractionGate._prepared` | [312](../src/parkour_solver/reachability/service.py#L312) | function |
+| `InteractionGate.analyze_model` | [338](../src/parkour_solver/reachability/service.py#L338) | function |
+| `InteractionGate.analyze` | [369](../src/parkour_solver/reachability/service.py#L369) | function |
+| `InteractionGate._analysis` | [374](../src/parkour_solver/reachability/service.py#L374) | function |
+| `InteractionGate.condition` | [396](../src/parkour_solver/reachability/service.py#L396) | function |
+| `InteractionGate.envelopes` | [404](../src/parkour_solver/reachability/service.py#L404) | function |
+| `InteractionGate.sequence` | [408](../src/parkour_solver/reachability/service.py#L408) | function |
+| `InteractionGate._sequenced` | [420](../src/parkour_solver/reachability/service.py#L420) | function |
+| `InteractionGate.check_program` | [439](../src/parkour_solver/reachability/service.py#L439) | function |
+| `InteractionGate.relaxation` | [494](../src/parkour_solver/reachability/service.py#L494) | function |
+| `InteractionGate.approach` | [512](../src/parkour_solver/reachability/service.py#L512) | function |
+| `InteractionGate.query` | [547](../src/parkour_solver/reachability/service.py#L547) | function |
+| `InteractionGate.query_many` | [550](../src/parkour_solver/reachability/service.py#L550) | function |
+| `InteractionGate.walk_off` | [581](../src/parkour_solver/reachability/service.py#L581) | function |
+| `InteractionGate.required` | [597](../src/parkour_solver/reachability/service.py#L597) | function |
+| `InteractionGate.context` | [624](../src/parkour_solver/reachability/service.py#L624) | function |
+| `InteractionGate.summary` | [627](../src/parkour_solver/reachability/service.py#L627) | function |
 
 ## reachability/viability.py
 
@@ -864,16 +865,16 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `EventReference.to_dict` | [22](../src/parkour_solver/search/events/adapter.py#L22) | function |
 | `EventGuideAdapter` | [26](../src/parkour_solver/search/events/adapter.py#L26) | class |
 | `EventGuideAdapter.__init__` | [29](../src/parkour_solver/search/events/adapter.py#L29) | function |
-| `EventGuideAdapter.initial_cursor` | [43](../src/parkour_solver/search/events/adapter.py#L43) | function |
-| `EventGuideAdapter.next_goals` | [46](../src/parkour_solver/search/events/adapter.py#L46) | function |
-| `EventGuideAdapter.for_goal` | [105](../src/parkour_solver/search/events/adapter.py#L105) | function |
-| `EventGuideAdapter.advance` | [123](../src/parkour_solver/search/events/adapter.py#L123) | function |
-| `EventGuideAdapter.program_allowed` | [126](../src/parkour_solver/search/events/adapter.py#L126) | function |
-| `EventGuideAdapter.scoped` | [129](../src/parkour_solver/search/events/adapter.py#L129) | function |
-| `EventGuideAdapter.bind_program` | [133](../src/parkour_solver/search/events/adapter.py#L133) | function |
-| `EventGuideAdapter.eligible` | [137](../src/parkour_solver/search/events/adapter.py#L137) | function |
-| `EventGuideAdapter.candidate` | [140](../src/parkour_solver/search/events/adapter.py#L140) | function |
-| `EventGuideAdapter.summary` | [167](../src/parkour_solver/search/events/adapter.py#L167) | function |
+| `EventGuideAdapter.initial_cursor` | [44](../src/parkour_solver/search/events/adapter.py#L44) | function |
+| `EventGuideAdapter.next_goals` | [47](../src/parkour_solver/search/events/adapter.py#L47) | function |
+| `EventGuideAdapter.for_goal` | [106](../src/parkour_solver/search/events/adapter.py#L106) | function |
+| `EventGuideAdapter.advance` | [124](../src/parkour_solver/search/events/adapter.py#L124) | function |
+| `EventGuideAdapter.program_allowed` | [127](../src/parkour_solver/search/events/adapter.py#L127) | function |
+| `EventGuideAdapter.scoped` | [130](../src/parkour_solver/search/events/adapter.py#L130) | function |
+| `EventGuideAdapter.bind_program` | [134](../src/parkour_solver/search/events/adapter.py#L134) | function |
+| `EventGuideAdapter.eligible` | [138](../src/parkour_solver/search/events/adapter.py#L138) | function |
+| `EventGuideAdapter.candidate` | [141](../src/parkour_solver/search/events/adapter.py#L141) | function |
+| `EventGuideAdapter.summary` | [168](../src/parkour_solver/search/events/adapter.py#L168) | function |
 
 ## search/events/engine.py
 
