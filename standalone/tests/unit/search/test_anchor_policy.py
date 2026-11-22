@@ -39,9 +39,9 @@ class EncounterGroupTests(unittest.TestCase):
         groups=self.groups(self.case('extended-anchors.json'))
         self.assertEqual(sorted(groups),[(0,0),(1,1),(2,2),(3,6)])
         self.assertEqual(groups[(3,6)]['anchors'],['b5','b7','b20','b22'])
-        self.assertEqual(groups[(3,6)]['members'],['b10','b11','b12','b13#0','b13#1','b14','b15','b16','b17','b18','b19',
+        self.assertEqual(groups[(3,6)]['members'],['b10','b11','b12','b13a','b13b','b14','b15','b16','b17','b18','b19',
                                                    'b20','b22','b5','b6','b7','b8','b9a','b9b'])
-        self.assertEqual(groups[(3,6)]['landings'],['b10','b11','b12','b13#0','b13#1','b15','b16','b18','b19','b20','b22',
+        self.assertEqual(groups[(3,6)]['landings'],['b10','b11','b12','b13a','b13b','b15','b16','b18','b19','b20','b22',
                                                     'b5','b7','b8','b9a','b9b'])
 
     def test_hit_only_block_extends_the_chain(self):

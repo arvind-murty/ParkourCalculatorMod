@@ -399,11 +399,11 @@ class BlockTableTests(unittest.TestCase):
         scene = prepare_scene(request)
         table = InteractionGate(scene, None).reachable_blocks('b5')
         solid = {b['id']: b['solidIndex'] for b in scene['blocks']}
-        self.assertEqual(table['landing'], {'b5', 'b7', 'b11', 'b12', 'b13#0', 'b13#1', 'b18'})
+        self.assertEqual(table['landing'], {'b5', 'b7', 'b11', 'b12', 'b13a', 'b13b', 'b18'})
         self.assertEqual(table['stepping']-table['landing'], {'b19'})
         self.assertEqual(table['ceilingSolids'], {solid[n] for n in ('b8', 'b9a', 'b9b', 'b10', 'b22')})
-        self.assertEqual(table['blocks'], {'b4', 'b5', 'b6', 'b7', 'b8', 'b9a', 'b9b', 'b10', 'b11', 'b12', 'b13#0',
-                                           'b13#1', 'b14', 'b18', 'b19', 'b20', 'b22'})
+        self.assertEqual(table['blocks'], {'b4', 'b5', 'b6', 'b7', 'b8', 'b9a', 'b9b', 'b10', 'b11', 'b12', 'b13a',
+                                           'b13b', 'b14', 'b18', 'b19', 'b20', 'b22'})
 
     def assert_table_keeps_every_choice(self, scene, roots):
         from tests.support.block_table import compiler, generated, nodes

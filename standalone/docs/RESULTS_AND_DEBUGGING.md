@@ -127,9 +127,9 @@ the search policy (when generated or when taken from the queue), expanded and le
 unexpanded. An outline follows, nesting each node under its parent with its inputs and
 its own movement in words: run ticks on a block, jumps, walk-offs, the obstacle sides it
 keeps to (`keeps to the Z- side of B6+B7, then the X+ side of B6`; a side bounded on two
-axes names both faces, `the Z- side of B13#1 and the Z+ side of B6+B7`, the free space
+axes names both faces, `the Z- side of B13B and the Z+ side of B6+B7`, the free space
 between them), ceiling hits, grinds with the side of the box they enter from, step cases,
-and landings. A block of several boxes names each `id#index` (`B13#0`, `B13#1`), as the
+and landings. A block of several boxes names each `id#index` (`STAIR#0`, `STAIR#1`), as the
 solve's support ids do. A landing input ends an airtime, so the ground inputs after it
 are run ticks. A node can start on a landing input, after a two-tick jump. Each node then
 gets a section with its outcome, the same repair detail as a route (obstacle checks,
