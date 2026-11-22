@@ -357,9 +357,7 @@ def schedule(route, allocation, stage='jump'):
 
 
 def initial_guess(route, plan, parent=None):
-    native = _native()
-    if native is not None:
-        return native.initial_guess(route, plan, parent)
+    # Python callers keep this even under PKC_NATIVE_CORE: converting the route costs more than the guess.
     yaw = route['initial']['yaw']
     result = [yaw] * plan['ticks']
     if parent:
