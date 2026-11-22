@@ -125,9 +125,9 @@ The historical `walls` field contains all scalar constraints. Modes `X`, `Z` and
 
 The objective selects X or Z with `MAX`/`MIN`. Optional `customYaw` projects onto `(-sin(yaw), cos(yaw))`. `type: MOTION` requires a custom yaw and a positive tick; it projects that tick's displacement instead of position. `smoothLambda` must be zero. Optional `maxIterations` defaults to 10000. Optional `fallbackYaw` contains `n` facings for an alternative automatic-inertia initialization. Like `yaw`, it is excluded from the physical problem hash. Explicit inertia patterns and threshold-zero requests retain their single-phase solve.
 
-A contact is `{"state": 356, "axis": 0, "plane": 700.4250000119209, "direction": -1}`. Axes 0/1 mean X/Z; direction +1 approaches an upper plane, -1 a lower plane. The proposed move must reach the plane from the allowed side, after which normal position is anchored and stored normal velocity is zero. Tangential motion continues. The NLP uses a 1e-7 reach guard. Independent replay refuses to reset a component for any missed plane, including a shortfall below the positional tolerance. The optional exporter infers this schedule from recorded collisions and zero normal velocities, including history before the selected start. An unresolvable direction causes an export error.
+A contact is `{"state": 356, "axis": 0, "plane": 700.4250000119209, "direction": -1}`. Axes 0/1 mean X/Z; direction +1 approaches an upper plane, -1 a lower plane. The proposed move must reach the plane from the allowed side, after which normal position is anchored and stored normal velocity is zero. Tangential motion continues. The NLP requires the move to cross the plane by `SOLVER_MARGIN` (1e-4, `schema.py`), so rounding never leaves a planned contact short. Independent replay refuses to reset a component for any missed plane, including a shortfall below the positional tolerance. The optional exporter infers this schedule from recorded collisions and zero normal velocities, including history before the selected start. An unresolvable direction causes an export error.
 
-Optional `inertiaPattern` has two entries per input tick: `0` requires zeroing, `1` positive survival, `-1` negative survival, and `2` leaves the branch unrestricted. It requires a positive threshold. With no explicit pattern, the worker solves unrestricted carry, then inferred zero events, then complete fixed patterns, with bounded refresh attempts. Independent replay always applies the automatic threshold and checks any explicitly requested branches. Positional feasibility tolerance is 1e-7; branch mismatches and missed wall hits are rejected separately.
+Optional `inertiaPattern` has two entries per input tick: `0` requires zeroing, `1` positive survival, `-1` negative survival, and `2` leaves the branch unrestricted. It requires a positive threshold. With no explicit pattern, the worker solves unrestricted carry, then inferred zero events, then complete fixed patterns, with bounded refresh attempts. Independent replay always applies the automatic threshold and checks any explicitly requested branches. Positional feasibility tolerance is `REPLAY_TOLERANCE` (1e-4, `schema.py`); branch mismatches and missed wall hits are rejected separately.
 
 ## Prescribed ladders and vertical replay
 
@@ -153,7 +153,7 @@ Optional `vertical` uses the Minecraft 1.8.9 profile:
 
 `jumpVelocity` and `sneak` have one entry per input. A non-null jump impulse requires the prior grounded state. Vertical inertia has its own threshold, independent of horizontal `--threshold 0`. Replay applies the downward ladder cap, sneak holding, gravity 0.08 and float 0.98 drag. Climb carry is `(0.2 - 0.08) * (double) 0.98F`.
 
-Vertical contacts specify the player's feet Y at the resulting state. Direction `-1` is a floor and `1` a ceiling. A floor with `step: true` declares a step up to float 0.6 blocks, including a step during a grounded jump or an airborne landing. These are prescribed events, without supporting geometry checks. Optional `referencePosition` and `referenceVelocity` have `n+1` entries and become hard acceptance rows at the ordinary 1e-7 tolerance. Capture attachment supplies both.
+Vertical contacts specify the player's feet Y at the resulting state. Direction `-1` is a floor and `1` a ceiling. A floor with `step: true` declares a step up to float 0.6 blocks, including a step during a grounded jump or an airborne landing. These are prescribed events, without supporting geometry checks. Optional `referencePosition` and `referenceVelocity` have `n+1` entries and become hard acceptance rows at the replay tolerance. Capture attachment supplies both.
 
 Ladder ticks stay fixed when the path changes. Climb-proven cells infer a schedule for a captured route; they are not a complete world map. General geometry discovery and validation against ladder hitboxes remain future orchestration work.
 
@@ -173,7 +173,7 @@ These are local optimizations and prescribed-contact continuous trajectories. Th
 Clarabel (`reachability` extra): each tick's acceleration `|a[t]| == magnitude[t]`
 becomes `|a[t]| <= magnitude[t] + 1e-9`. Every other row is the worker's, with
 retained position/velocity/acceleration states: exact dynamics, fixed or interval
-starts, contact resets with the `1e-7` reach row, and X/Z walls. Equalities go in
+starts, contact resets with the `SOLVER_MARGIN` reach row, and X/Z walls. Equalities go in
 Clarabel's zero cone and each tick's disk in a 3-dimensional second-order cone.
 Settings are QDLDL, one thread, 200 iterations, a 0.1 s cap and `1e-9`
 feasibility/gap tolerances (`1e-8` infeasibility). Requests with an inertia
@@ -189,7 +189,7 @@ stays undecided. Decided results are cached process-wide by the canonical spec
 (1024 entries). `validation.numerical.validate_controls`
 replays the returned acceleration vectors through the same scalar checks as
 `validate` (which converts facings to full-strength vectors first) and also
-rejects a vector outside its disk by more than `1e-7`. `deficits` reports each
+rejects a vector outside its disk by more than `REPLAY_TOLERANCE`. `deficits` reports each
 tick's relative acceleration shortfall.
 
 `RelaxedDispatch(gate=...).solve` has `solve`'s signature and result

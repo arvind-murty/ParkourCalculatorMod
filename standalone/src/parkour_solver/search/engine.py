@@ -152,7 +152,7 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, s
         python_executable=python_executable, cancel_event=cancel_event, geometry=scene['collisionScene'],
         motion_bound=motion_bound, solid_blocks=owners, max_wall_hits=0,
         candidate_filter=candidate_filter, work=scoped, resume_state=program.get('repairState'),
-        repair_scope=dict(solveIdentity=identity, scope=scope, solvePolicy=policy, assemblyVersion=13),
+        repair_scope=dict(solveIdentity=identity, scope=scope, solvePolicy=policy, assemblyVersion=14),
         validation_scope=scope, initial_variants=variants if final_route is None else None, on_progress=on_progress,
         retry_unresolved=retry_unresolved, numerical=dispatch.solve if dispatch is not None else None,
         confirm=dispatch.confirmed if dispatch is not None else None)

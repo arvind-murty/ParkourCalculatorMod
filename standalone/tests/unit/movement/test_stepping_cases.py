@@ -293,9 +293,9 @@ class ExposureTests(unittest.TestCase):
         start, target, wall = [-2, 0, -2, 2, 1, 4], [2, 0, 0, 3, 1.5, 2], [2, 0, 2, 3, 1.5, 3]
         open_sides = self.sides([start, target], 'normal_step')
         flush = self.sides([start, target, wall], 'normal_step')
-        self.assertIn((('Z', 'GE', 2.300001),), open_sides)
+        self.assertIn((('Z', 'GE', 2.3001),), open_sides)
         # The merged face's sides once each: target's X sides stand for wall's too, and its Z+ side is wall's far one.
-        self.assertEqual(sorted(flush), sorted([s for s in open_sides if s != (('Z', 'GE', 2.300001),)]+[(('Z', 'GE', 3.300001),)]))
+        self.assertEqual(sorted(flush), sorted([s for s in open_sides if s != (('Z', 'GE', 2.3001),)]+[(('Z', 'GE', 3.3001),)]))
 
     def test_an_ordinary_decision_steps_and_corners_in_only_by_allowed_moves(self):
         from parkour_solver.spatial.anchor_guides import leg_class
@@ -307,14 +307,14 @@ class ExposureTests(unittest.TestCase):
             self.assertEqual(len(steps), 4, case)
             # +X: entering across the X+ side moves -X; the Z sides are sideways. +X+Z also drops the Z+ side.
             self.assertEqual(sorted(self.sides([start, target], case, forward=plus_x)),
-                             sorted(s for s in steps if s != (('X', 'GE', 3.300001),)), case)
+                             sorted(s for s in steps if s != (('X', 'GE', 3.3001),)), case)
             self.assertEqual(sorted(self.sides([start, target], case, forward=diagonal)),
-                             sorted(s for s in steps if s not in ((('X', 'GE', 3.300001),), (('Z', 'GE', 2.300001),))), case)
+                             sorted(s for s in steps if s not in ((('X', 'GE', 3.3001),), (('Z', 'GE', 2.3001),))), case)
             # The target's top ends at x 3.3, 1.7 behind a decision point at x 5.
             self.assertEqual(self.sides([start, target], case, forward=dict(plus_x, point=[5., 1.])), [], case)
         corners = self.sides([start, target], 'corner_jump_cancel', forward=plus_x)
         self.assertEqual(len(corners), 2)
-        self.assertTrue(all(('X', 'LE', 1.699999) in corner for corner in corners))
+        self.assertTrue(all(('X', 'LE', 1.6999) in corner for corner in corners))
 
     def test_an_ordinary_decision_approaches_no_wall_by_a_disallowed_move(self):
         from parkour_solver.movement.cases import landing_wall_options
@@ -383,16 +383,16 @@ class ExposureTests(unittest.TestCase):
         seam = self.sides([start, target, wall], 'corner_jump_cancel')
         rows = lambda found: {row for corner in found for row in corner}
         self.assertEqual((len(open_corners), len(seam)), (4, 4))
-        self.assertIn(('Z', 'GE', 2.300001), rows(open_corners))
-        self.assertNotIn(('Z', 'GE', 2.300001), rows(seam))
-        self.assertIn(('Z', 'GE', 3.300001), rows(seam))
+        self.assertIn(('Z', 'GE', 2.3001), rows(open_corners))
+        self.assertNotIn(('Z', 'GE', 2.3001), rows(seam))
+        self.assertIn(('Z', 'GE', 3.3001), rows(seam))
 
     def test_corner_rows_span_the_merged_side(self):
         # target and wall share their X- side; the Z tangent rows at target's -X-Z corner cover both, as one side.
         target, wall = [2, 0, 0, 3, 1.5, 2], [2, 0, 2, 3, 1.5, 3]
         tangent = lambda rows: sorted((r['cmp'], round(r['rhs'], 6)) for r in rows if r['name'] == 'case:finite' and r['mode'] == 'Z')
-        self.assertEqual(tangent(corner_rows(target, 0, 1, 1, -1)), [('GE', -0.299999), ('LE', 2.299999)])
-        self.assertEqual(tangent(corner_rows(target, 0, 1, 1, -1, [target, wall])), [('GE', -0.299999), ('LE', 3.299999)])
+        self.assertEqual(tangent(corner_rows(target, 0, 1, 1, -1)), [('GE', -0.2999), ('LE', 2.2999)])
+        self.assertEqual(tangent(corner_rows(target, 0, 1, 1, -1, [target, wall])), [('GE', -0.2999), ('LE', 3.2999)])
         self.assertEqual(corner_rows(target, 0, 1, 1, -1, [target]), corner_rows(target, 0, 1, 1, -1))
 
     def test_a_grind_under_a_merged_underside_enters_each_side_once(self):
@@ -403,4 +403,4 @@ class ExposureTests(unittest.TestCase):
                      for i, (name, b) in enumerate(zip(['floor', 'c1', 'c2'], solids))])
         rows = [(r['mode'], r['cmp'], round(r['rhs'], 6)) for _, constraints, _ in
                 grind_options(dict(scene=scene, interactionGate=None), 1.) for r in constraints if r['name'] == 'grind:outside']
-        self.assertEqual(sorted(rows), [('X', 'GE', 4.300001), ('X', 'LE', -0.300001), ('Z', 'GE', 2.300001), ('Z', 'LE', -2.300001)])
+        self.assertEqual(sorted(rows), [('X', 'GE', 4.3001), ('X', 'LE', -0.3001), ('Z', 'GE', 2.3001), ('Z', 'LE', -2.3001)])

@@ -418,7 +418,7 @@ class EnumerationProfileTests(unittest.TestCase):
         from parkour_solver.reachability.intervals import reachable_envelopes
         model=dict(ticks=4,position=[-1.,0.],velocity=[0.,0.],magnitude=[1.]*4,friction=[.9]*4,walls=[])
         return ConstraintVariants(dict(passageCaps=dict(horizontal=2,vertical=2,total=3),
-            supportClearance=0.,contactEvents=[]),dict(position=[1.]*5),
+            contactEvents=[]),dict(position=[1.]*5),
             dict(events=[dict(jump=0,runTicks=0)]),dict(solids=[[0.,0.,-.2,1.,3.,.2]]),
             reachable_envelopes(model,[1.]*5),dict(through=4,solidIndices=[0]),state=state)
 

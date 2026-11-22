@@ -13,7 +13,7 @@ from parkour_solver.search.identity import digest
 from parkour_solver.spatial.surfaces import scene_geometry
 
 
-GENERATION_POLICY = 21
+GENERATION_POLICY = 22
 STATE_VERSION = 11
 
 
@@ -177,7 +177,7 @@ class ConstraintVariants:
             raise TimeoutError('constraint_generation_deadline')
 
     def face_row(self, face, t):
-        margin = face_clearance(self.route, 0, t, face, self.route['supportClearance'])
+        margin = face_clearance(self.route, 0, t, face)
         return dict(leg=0, offset=t, mode=face['axis'], t1=t, cmp='GE' if face['direction'] > 0 else 'LE',
                     rhs=face['plane']+face['direction']*margin, name='avoidance')
 
@@ -232,7 +232,7 @@ class ConstraintVariants:
                     item['rows'] = [[]]
                 else:
                     point = self.reference[t] if self.reference is not None else [(r[0]+r[2])/2, (r[1]+r[3])/2]
-                    item['rows'] = [[row] for row in avoid_contact_rows(dict(check, position=point), self.route['supportClearance'])
+                    item['rows'] = [[row] for row in avoid_contact_rows(dict(check, position=point))
                                     if not interaction_reachability(envelopes, [row])['ruledOut']]
                 del item['contactCheck']
             if 'clusterId' in item:

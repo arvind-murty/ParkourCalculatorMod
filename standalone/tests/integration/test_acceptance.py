@@ -12,8 +12,7 @@ class AcceptanceTests(unittest.TestCase):
                  'initial': {'position': [.5, 1, .5], 'velocity': [0, 0, 0], 'yaw': 0},
                  'blocks': [{'bounds': [0, 1, 0, 1], 'top': 1},
                             {'bounds': [.5 + HALF_WIDTH + 5e-8, 2, 0, 1], 'top': 1}],
-                 'airtimes': [12], 'runBounds': [[0, 0]], 'maxTotalRunTicks': 0,
-                 'supportClearance': 0}
+                 'airtimes': [12], 'runBounds': [[0, 0]], 'maxTotalRunTicks': 0}
         with patch('parkour_solver.search.ordered_route.solve', return_value={
                 'status': 'feasible', 'feasible': True, 'candidate': {'yaw': [0.0] * 12}}):
             result = find_route(route, NoMovementCompiler(), retries=0)

@@ -1,7 +1,7 @@
 import math
 import time
 
-from parkour_solver.schema import integer, number
+from parkour_solver.schema import SOLVER_MARGIN, integer, number
 
 
 def candidate_rank(best, objective):
@@ -46,7 +46,7 @@ def passage_seed(problem, route, plan, seconds=.05):
             point = [(source[a] + source[a + 1]) / 2 * (1 - fraction) + (target[a] + target[a + 1]) / 2 * fraction for a in (0, 2)]
             for face in (first, second):
                 if face['axis'] != 'Y':
-                    point[0 if face['axis'] == 'X' else 1] = face['plane'] + face['direction'] * max(route['supportClearance'], 2e-7)
+                    point[0 if face['axis'] == 'X' else 1] = face['plane'] + face['direction'] * SOLVER_MARGIN
             if tick > 0:
                 waypoints.append((tick, point))
         waypoints.append((event['landing'] - 1, [(target[0] + target[1]) / 2, (target[2] + target[3]) / 2]))

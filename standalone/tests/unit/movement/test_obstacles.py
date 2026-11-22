@@ -82,7 +82,7 @@ class BlockageTests(unittest.TestCase):
                          for axis, sign in [(first, case['firstSign']), (second, case['secondSign'])]]
                 passage = {'leg': 0, 'solidIndex': 0, 'faces': chain, 'gates': [0]}
                 event = {'runTicks': 0, 'jump': 0, 'landing': 1}
-                rows, failures = compile_passages({'passages': [passage], 'supportClearance': 0}, [event])
+                rows, failures = compile_passages({'passages': [passage]}, [event])
                 positions = [case['start'], case['end']]
                 horizontal_ok = all((positions[r['t1']][0 if r['mode'] == 'X' else 2] >= r['rhs']
                                      if r['cmp'] == 'GE' else positions[r['t1']][0 if r['mode'] == 'X' else 2] <= r['rhs'])

@@ -215,7 +215,7 @@ confirms the kept candidates when the loop ends, and a point it rejected is neve
 saved as a fallback. The family state and held variants persist in the repair
 snapshot (version 3), so a resumed climb solves nothing twice.
 
-Constraint generation uses policy21/state11 and repair avoidancePolicy14 with assembly13. The DFS context
+Constraint generation uses policy22/state11 and repair avoidancePolicy14 with assembly14. The DFS context
 fingerprints the new policy. Old raw generator cursors reject; reproduce an old
 run with its original source and inputs. Source-era scene fields
 `maxContactBranches`, `maxPassageCandidates`, `maxBlockagesPerObstacle`,

@@ -22,7 +22,7 @@ def source(n=3, *, y=None, position=(-1., 0.), walls=(), box=(0., 0., -.2, 1., 3
     model = dict(ticks=n, position=list(position), velocity=[0., 0.], magnitude=[magnitude]*n,
                  friction=[friction]*n, walls=list(walls), threshold=0.)
     profile = dict(position=y, **(profile or {}))
-    return ConstraintVariants(dict(supportClearance=0.), profile,
+    return ConstraintVariants(dict(), profile,
         dict(events=[dict(jump=0, runTicks=0)]), dict(solids=[list(b) for b in boxes]), reachable_envelopes(model, y),
         dict(through=n, solidIndices=list(range(len(boxes)))), state=state, settled=settled, segment_solids=segment_solids,
         obstacles=obstacles, walk_offs=walk_offs)

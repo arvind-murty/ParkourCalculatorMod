@@ -1,3 +1,4 @@
+from parkour_solver.schema import SOLVER_MARGIN
 from parkour_solver.scene.ladders import schedule_constraints, region_rectangles
 from parkour_solver.movement.units import movement_program, compile_units, profile_program, overlay_program
 
@@ -73,7 +74,7 @@ def compile_ladder_events(route, events, ticks):
         ladder[offset:offset + s['ticks'] + 1] = [a or b for a, b in zip(ladder[offset:offset + s['ticks'] + 1], occupied)]
         sneak[offset:offset + s['ticks']] = s['sneak']
         walls, hits, scene_hits = schedule_constraints(s, selected['column'], selected['wall'],
-            selected['entryFace'], selected['exitFace'], start=offset, margin=max(route['supportClearance'], 2e-7))
+            selected['entryFace'], selected['exitFace'], start=offset)
         rows.extend(walls)
         contacts.extend(hits)
         scene_contacts.extend(scene_hits)
@@ -82,6 +83,6 @@ def compile_ladder_events(route, events, ticks):
                 ladder[state] = True
                 bounds = region_rectangles(selected['column'], s['trace']['position'][0])[0]
                 for axis, lo, hi in [('X', bounds[0], bounds[1]), ('Z', bounds[2], bounds[3])]:
-                    rows.extend([{'mode': axis, 't1': state, 'cmp': 'GE', 'rhs': lo + 1e-6, 'name': 'ladder:run_inside'},
-                                 {'mode': axis, 't1': state, 'cmp': 'LE', 'rhs': hi - 1e-6, 'name': 'ladder:run_inside'}])
+                    rows.extend([{'mode': axis, 't1': state, 'cmp': 'GE', 'rhs': lo + SOLVER_MARGIN, 'name': 'ladder:run_inside'},
+                                 {'mode': axis, 't1': state, 'cmp': 'LE', 'rhs': hi - SOLVER_MARGIN, 'name': 'ladder:run_inside'}])
     return rows, contacts, scene_contacts, ladder, sneak

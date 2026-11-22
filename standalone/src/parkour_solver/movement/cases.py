@@ -7,22 +7,23 @@ from parkour_solver.movement.contact_combinations import (bounding_region, conta
 from parkour_solver.scene.geometry import expanded_box
 from parkour_solver.spatial.surfaces import scene_geometry
 from parkour_solver.movement.units import profile_program
+from parkour_solver.schema import SOLVER_MARGIN
 from parkour_solver.scene.route import HALF_WIDTH
 
 
 CASES = {'normal_step','slab_boost','blip','blip_up','corner_jump_cancel','corner_blip_up','grind'}
 
 
-def outside_row(box, axis, sign, state, name='case:outside', margin=1e-6):
+def outside_row(box, axis, sign, state, name='case:outside'):
     a = 0 if axis == 'X' else 2
     return dict(mode=axis,t1=state,cmp='GE' if sign>0 else 'LE',
-                rhs=(box[a+3]+HALF_WIDTH+margin if sign>0 else box[a]-HALF_WIDTH-margin),name=name)
+                rhs=(box[a+3]+HALF_WIDTH+SOLVER_MARGIN if sign>0 else box[a]-HALF_WIDTH-SOLVER_MARGIN),name=name)
 
 
 def tangent_rows(box, axis, state):
     a = 0 if axis == 'X' else 2
     return [dict(mode=axis,t1=state,cmp=cmp,rhs=v,name='case:finite') for cmp,v in
-            [('GE',box[a]-HALF_WIDTH+1e-6),('LE',box[a+3]+HALF_WIDTH-1e-6)]]
+            [('GE',box[a]-HALF_WIDTH+SOLVER_MARGIN),('LE',box[a+3]+HALF_WIDTH-SOLVER_MARGIN)]]
 
 
 def _faces(scene, block, axis, sign):
@@ -89,8 +90,9 @@ def corner_rows(box, first, second, x_direction, z_escape, boxes=()):
     boxes = list(boxes) or [box]
     result = [outside_row(box,'X',-x_direction,first),outside_row(box,'Z',z_escape,second)]
     result += tangent_rows(side_run(box,boxes,'X',-x_direction,'Z'),'Z',first)
+    # Flipped from the outside side (face - margin) to the margin past the face.
     r = outside_row(box,'X',-x_direction,second)
-    r.update(cmp='GE' if x_direction>0 else 'LE', rhs=r['rhs']+x_direction*2e-6, name='case:cross_x')
+    r.update(cmp='GE' if x_direction>0 else 'LE', rhs=r['rhs']+x_direction*2*SOLVER_MARGIN, name='case:cross_x')
     return result+[r]+tangent_rows(side_run(box,boxes,'Z',z_escape,'X'),'X',second)
 
 

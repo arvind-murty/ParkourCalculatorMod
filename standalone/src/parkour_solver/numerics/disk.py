@@ -11,9 +11,10 @@ import json
 import math
 import time
 
+from parkour_solver.schema import SOLVER_MARGIN
+
 MODEL_VERSION = 1
 ALLOWANCE = 1e-9
-PENETRATION = 1e-7
 CAP = 0.1
 MAX_ITER = 200
 TOL = 1e-9
@@ -216,7 +217,7 @@ class RelaxedDispatch:
 def _result(problem, started, status, candidate, termination, solver_status, relaxed):
     """A `numerics.solver.solve`-shaped result for an answer Clarabel decided."""
     from parkour_solver.numerics.model import fingerprint
-    from parkour_solver.schema import TOLERANCE
+    from parkour_solver.schema import REPLAY_TOLERANCE
     return {'version': 1, 'status': status, 'feasible': candidate is not None, 'candidate': candidate,
             'objectiveMode': problem['objectiveMode'], 'problemHash': fingerprint(problem),
             'elapsedSeconds': time.monotonic()-started,
@@ -225,7 +226,7 @@ def _result(problem, started, status, candidate, termination, solver_status, rel
                         'contacts': len(problem['contacts']), 'threshold': problem['threshold'],
                         'objective': problem['objective'], 'source': problem.get('source')},
             'termination': termination, 'workerStatus': solver_status, 'workerLaunched': False, 'error': None,
-            'tolerance': TOLERANCE, 'phases': [], 'backend': 'clarabel', 'disk': relaxed,
+            'tolerance': REPLAY_TOLERANCE, 'phases': [], 'backend': 'clarabel', 'disk': relaxed,
             'diagnostics': {'rejectedCandidates': 0, 'lastRejection': None, 'stderr': []}}
 
 
@@ -280,7 +281,7 @@ def _solve(content, time_limit):
                 row(equalities, {pos(axis, t+1): 1.}, plane)
                 row(equalities, {vel(axis, t+1): 1.}, 0.)
                 row(inequalities, {pos(axis, t): d}, d*plane)
-                row(inequalities, {pos(axis, t): -d, vel(axis, t): -d, control(axis, t): -d}, -d*plane-PENETRATION)
+                row(inequalities, {pos(axis, t): -d, vel(axis, t): -d, control(axis, t): -d}, -d*plane-SOLVER_MARGIN)
     for mode, t, t2, op, cmp, rhs in content['rows']:
         axis = 0 if mode == 'X' else 1
         entries, offset = {pos(axis, t): 1.}, content['position'][axis]

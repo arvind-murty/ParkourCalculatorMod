@@ -11,6 +11,7 @@ from unittest import mock
 from parkour_solver.numerics import disk, prepare, solve, validate
 from parkour_solver.numerics.model import fingerprint
 from parkour_solver.physics.angles import wrap
+from parkour_solver.schema import REPLAY_TOLERANCE
 from parkour_solver.validation.numerical import validate_controls
 from tests.support.numerical_model import problem
 
@@ -77,7 +78,7 @@ class ValidatorParityTests(unittest.TestCase):
 
     def test_acceleration_outside_the_disk_is_infeasible(self):
         p = request(2, .1)
-        controls = [[.1+1e-6, 0.], [0., .05]]
+        controls = [[.1+2*REPLAY_TOLERANCE, 0.], [0., .05]]
         checked = validate_controls(p, controls)
         self.assertFalse(checked['feasible'])
         self.assertEqual(checked['worstConstraint'], 'acceleration_disk@0')

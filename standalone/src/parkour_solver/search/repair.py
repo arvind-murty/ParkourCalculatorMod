@@ -758,7 +758,7 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                 reference_yaw = result['best']['candidate']['yaw'][:]
             continue
         conflict = conflicts[0]
-        for row in avoid_contact_rows(conflict, max(route['supportClearance'], 2e-7)):
+        for row in avoid_contact_rows(conflict):
             new_rows = rows + [row]
             delta = abs(conflict['position'][0 if row['mode'] == 'X' else 1] - row['rhs'])
             offer(score + delta, new_rows, passages, hits, proposal_yaw, meta=meta)

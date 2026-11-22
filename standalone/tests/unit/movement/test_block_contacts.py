@@ -4,6 +4,7 @@ import unittest
 
 from parkour_solver.constraints.contacts import avoid_contact_rows, contact_conflicts, floor_checks
 from parkour_solver.movement.profiles import ordinary_jump_profile
+from parkour_solver.schema import SOLVER_MARGIN
 from parkour_solver.scene.normalize import prepare_scene
 from parkour_solver.scene.route import HALF_WIDTH, schedule
 from tests.support.checkpoint_guidance import landing_programs
@@ -92,7 +93,7 @@ def box_scene(solids, tops):
         conflicts = contact_conflicts(checks, plan, {'positions': positions})
         self.assertEqual(len(conflicts), 1)
         self.assertEqual(conflicts[0]['state'], 13)
-        rows = avoid_contact_rows(conflicts[0], 1e-6)
+        rows = avoid_contact_rows(conflicts[0])
         self.assertEqual({(r['mode'], r['cmp']) for r in rows}, {('X', 'LE'), ('X', 'GE'), ('Z', 'LE'), ('Z', 'GE')})
         self.assertTrue(all(r['leg'] == 0 and r['offset'] == 11 for r in rows))
         positions[13] = [2, .5]
@@ -253,11 +254,11 @@ class ExposedTopTests(unittest.TestCase):
         self.assertEqual(len(contact_conflicts(checks, plan, inside)), 1)
         self.assertEqual(contact_conflicts(checks, plan, notch), [])
         conflict, = contact_conflicts(checks, plan, inside)
-        rows = avoid_contact_rows(conflict, 1e-6)
+        rows = avoid_contact_rows(conflict)
         region = conflict['region']
         self.assertEqual({(r['mode'], r['cmp'], r['rhs']) for r in rows},
-                         {('X', 'LE', region[0] - 1e-6), ('X', 'GE', region[2] + 1e-6),
-                          ('Z', 'LE', region[1] - 1e-6), ('Z', 'GE', region[3] + 1e-6)})
+                         {('X', 'LE', region[0] - SOLVER_MARGIN), ('X', 'GE', region[2] + SOLVER_MARGIN),
+                          ('Z', 'LE', region[1] - SOLVER_MARGIN), ('Z', 'GE', region[3] + SOLVER_MARGIN)})
 
 
 def boxes_request(initial, velocity, yaw, **blocks):

@@ -1,3 +1,4 @@
+from parkour_solver.schema import SOLVER_MARGIN
 from parkour_solver.scene.geometry import BODY_HEIGHT
 from parkour_solver.scene.route import HALF_WIDTH
 
@@ -133,12 +134,12 @@ def entry_channels(column, wall):
     return result
 
 
-def outside_row(face, state, margin, name):
+def outside_row(face, state, name):
     return {'mode': face['axis'], 't1': state, 'cmp': 'GE' if face['direction'] > 0 else 'LE',
-            'rhs': face['plane'] + face['direction'] * margin, 'name': name}
+            'rhs': face['plane'] + face['direction'] * SOLVER_MARGIN, 'name': name}
 
 
-def schedule_constraints(schedule, column, wall, entry_face, exit_face, *, start=0, margin=1e-6):
+def schedule_constraints(schedule, column, wall, entry_face, exit_face, *, start=0):
     rows, contacts, scene_contacts = [], [], []
     ys = schedule['trace']['position']
     ladder = schedule['ladderTicks']
@@ -155,12 +156,12 @@ def schedule_constraints(schedule, column, wall, entry_face, exit_face, *, start
                 raise ValueError('Invalid exact ladder corridor choice')
             bounds = rectangles[choice]
             for axis, lo, hi in [('X', bounds[0], bounds[1]), ('Z', bounds[2], bounds[3])]:
-                rows.extend([{'mode': axis, 't1': at, 'cmp': 'GE', 'rhs': lo + margin, 'name': 'ladder:inside'},
-                             {'mode': axis, 't1': at, 'cmp': 'LE', 'rhs': hi - margin, 'name': 'ladder:inside'}])
+                rows.extend([{'mode': axis, 't1': at, 'cmp': 'GE', 'rhs': lo + SOLVER_MARGIN, 'name': 'ladder:inside'},
+                             {'mode': axis, 't1': at, 'cmp': 'LE', 'rhs': hi - SOLVER_MARGIN, 'name': 'ladder:inside'}])
         elif state < schedule['entryState']:
-            rows.append(outside_row(entry_face, at, margin, 'ladder:before_entry'))
+            rows.append(outside_row(entry_face, at, 'ladder:before_entry'))
         elif column['minY'] <= y < column['maxY'] and exit_face is not None:
-            rows.append(outside_row(exit_face, at, margin, 'ladder:after_exit'))
+            rows.append(outside_row(exit_face, at, 'ladder:after_exit'))
         if any(y < part['box'][4] and y + BODY_HEIGHT > part['box'][1] for part in wall['parts']):
             rows.append({'mode': wall['axis'], 't1': at, 'cmp': 'LE' if wall['direction'] > 0 else 'GE',
                          'rhs': wall['plane'], 'name': 'ladder:wall_avoid'})
@@ -187,9 +188,9 @@ def schedule_constraints(schedule, column, wall, entry_face, exit_face, *, start
             raise ValueError('Invalid finite wall corridor')
         lo, hi, boxes = corridors[choice]
         scene_contacts.append(dict(contacts[-1], axis=0 if axis == 0 else 2, boxes=boxes))
-        rows.extend([{'mode': tangent, 't1': start + stage, 'cmp': 'GE', 'rhs': lo + margin,
+        rows.extend([{'mode': tangent, 't1': start + stage, 'cmp': 'GE', 'rhs': lo + SOLVER_MARGIN,
                       'name': 'ladder:finite_face'},
-                     {'mode': tangent, 't1': start + stage, 'cmp': 'LE', 'rhs': hi - margin,
+                     {'mode': tangent, 't1': start + stage, 'cmp': 'LE', 'rhs': hi - SOLVER_MARGIN,
                       'name': 'ladder:finite_face'}])
     return rows, contacts, scene_contacts
 

@@ -56,7 +56,7 @@ class RunOffTests(unittest.TestCase):
         r['blocks'][1] = {'centerBounds': [2, 2.4, -.3, 1.3], 'top': .5}
         p = schedule(r, [0])
         row = next(w for w in p['walls'] if w['name'] == 'landing:1:X:lo')
-        self.assertAlmostEqual(row['rhs'], 2.000001)
+        self.assertAlmostEqual(row['rhs'], 2.0001)
 
     def test_diagonal_policy_only_changes_guesses_not_facing_constraints(self):
         r = runoff_route()

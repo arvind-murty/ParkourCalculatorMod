@@ -1,7 +1,7 @@
 import copy
 import math
 
-from parkour_solver.schema import integer, number
+from parkour_solver.schema import SOLVER_MARGIN, integer, number
 from parkour_solver.scene.route import HALF_WIDTH, center_bounds
 from parkour_solver.movement.contact_combinations import bounding_region, finite_rows
 
@@ -63,7 +63,6 @@ def validate_hits(route):
 
 def compile_hits(route, events):
     contacts, scene_contacts, rows = [], [], []
-    margin = max(route['supportClearance'], 2e-7)
     for hit in route.get('hitEvents', []):
         if hit['leg'] >= len(events):
             continue
@@ -88,12 +87,12 @@ def compile_hits(route, events):
         tangent = 'Z' if hit['axis'] == 'X' else 'X'
         index = 2 if tangent == 'Z' else 0
         at = tick if hit['axis'] == 'X' else tick + 1
-        rows.extend([{'mode': tangent, 't1': at, 'cmp': 'GE', 'rhs': hit['box'][index] - HALF_WIDTH + margin,
+        rows.extend([{'mode': tangent, 't1': at, 'cmp': 'GE', 'rhs': hit['box'][index] - HALF_WIDTH + SOLVER_MARGIN,
                       'name': name + ':finite_lo'},
-                     {'mode': tangent, 't1': at, 'cmp': 'LE', 'rhs': hit['box'][index + 3] + HALF_WIDTH - margin,
+                     {'mode': tangent, 't1': at, 'cmp': 'LE', 'rhs': hit['box'][index + 3] + HALF_WIDTH - SOLVER_MARGIN,
                       'name': name + ':finite_hi'},
                      {'mode': hit['axis'], 't1': tick + 2, 'cmp': 'LE' if hit['direction'] > 0 else 'GE',
-                      'rhs': hit['plane'] - hit['direction'] * margin, 'name': name + ':reverse'}])
+                      'rhs': hit['plane'] - hit['direction'] * SOLVER_MARGIN, 'name': name + ':reverse'}])
     for contact in route.get('ceilingEvents', []):
         if contact['leg'] >= len(events) or events[contact['leg']]['landing'] is None:
             continue

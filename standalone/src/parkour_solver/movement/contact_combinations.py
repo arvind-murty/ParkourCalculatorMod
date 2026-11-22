@@ -2,7 +2,7 @@ import copy
 import dataclasses
 import itertools
 
-from parkour_solver.schema import integer, number
+from parkour_solver.schema import SOLVER_MARGIN, integer, number
 from parkour_solver.scene.route import HALF_WIDTH
 from parkour_solver.scene.geometry import BODY_HEIGHT, expanded_box
 from parkour_solver.spatial.surfaces import TANGENT_AXES
@@ -40,8 +40,7 @@ def validate_contact_events(route):
         axis = 'XYZ'.index(event['axis'])
         if 'box' in event:
             box = event.pop('box')
-            event.update(boxes=[box], surface=None, regions=[expanded_face(box, axis, -event['direction'],
-                                                                           contact_clearance(route))])
+            event.update(boxes=[box], surface=None, regions=[expanded_face(box, axis, -event['direction'], SOLVER_MARGIN)])
         boxes = event.get('boxes')
         if not isinstance(boxes, list) or not boxes:
             raise ValueError('A contact needs its actual finite collision boxes')
@@ -83,10 +82,6 @@ def validate_contact_events(route):
     merge_contacts([dict(e, state=e['offset'] + 1, axis=(e['leg'], e['axis'])) for e in events])
 
 
-def contact_clearance(scene):
-    return max(scene.get('supportClearance', 1e-6), 2e-7)
-
-
 def expanded_face(box, axis, sign, clearance):
     """One box's expanded face as a tangent rectangle, shrunk by the clearance along horizontal tangents."""
     expanded, (u, v) = expanded_box(box), TANGENT_AXES[axis]
@@ -98,7 +93,7 @@ def scene_contact_options(scene, axis, sign, members=None):
     """Contact options on the faces of the scene's offered blocks (or the given solids)."""
     from parkour_solver.spatial.surfaces import scene_geometry
     return scene_geometry(scene['collisionScene']).contact_options(
-        axis, sign, clearance=contact_clearance(scene),
+        axis, sign, clearance=SOLVER_MARGIN,
         members=[b['solidIndex'] for b in scene['blocks']] if members is None else members)
 
 
@@ -182,7 +177,6 @@ def finite_rows(axis, region, **at):
 
 def compile_contact_events(route, events, ticks):
     rows, horizontal, scene, vertical = [], [], [], []
-    margin = max(route['supportClearance'], 2e-7)
     for event in route.get('contactEvents', []):
         leg = event['leg']
         if leg >= len(events) or events[leg].get('landing') is None and events[leg].get('end') is None:
@@ -207,7 +201,7 @@ def compile_contact_events(route, events, ticks):
             rows.append(dict(row, t1=events[leg]['jump'] + row['t1'], name='contact:avoidance'))
         if event['role'] == 'reversal' and tick + 2 <= ticks:
             rows.append({'mode': event['axis'], 't1': tick + 2, 'cmp': 'LE' if event['direction'] > 0 else 'GE',
-                         'rhs': event['plane'] - event['direction'] * margin, 'name': 'contact:reverse'})
+                         'rhs': event['plane'] - event['direction'] * SOLVER_MARGIN, 'name': 'contact:reverse'})
     return rows, horizontal, scene, vertical
 
 
