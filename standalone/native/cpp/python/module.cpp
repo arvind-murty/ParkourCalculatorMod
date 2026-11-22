@@ -27,6 +27,9 @@
 #include "pkc/search/anchors/policy.hpp"
 #include "pkc/search/bounds/remaining.hpp"
 #include "pkc/search/comparison.hpp"
+#include "pkc/search/feasibility.hpp"
+#include "pkc/search/goals.hpp"
+#include "pkc/reachability/viability.hpp"
 #include "pkc/scene/geometry.hpp"
 #include "pkc/scene/ladders.hpp"
 #include "pkc/scene/normalize.hpp"
@@ -623,6 +626,11 @@ PYBIND11_MODULE(_pkc_native, m) {
                 out.add(py::make_tuple(kind, optional_text(name)));
             return out;
         })
+        .def("transfer_structure", [](const pkc::AnchorScene& s, py::handle program, std::int64_t start,
+                                      const std::string& source, const std::string& target, bool complete,
+                                      bool until_arrival) {
+            return to_python(s.transfer_structure(*program_arg(program), start, source, target, complete, until_arrival));
+        })
         .def("owner", &pkc::AnchorScene::owner)
         .def("support_face", &pkc::AnchorScene::support_face);
     m.def("comparison_label", [](py::handle program, std::int64_t start, std::optional<std::int64_t> through,
@@ -647,6 +655,26 @@ PYBIND11_MODULE(_pkc_native, m) {
         return to_python(pkc::remaining_bound(convert(guides), span, *program_arg(program), convert(motion),
                                               convert(transfers), convert(hard_latches)));
     }, "search/bounds/remaining.remaining_bound");
+    m.def("program_search_key", [](py::handle program) { return pkc::program_search_key(*program_arg(program)); },
+          "movement/program.program_search_key");
+    m.def("truncate_program", [](py::handle program, std::int64_t ticks) {
+        return to_python(pkc::to_value(pkc::truncate_program(*program_arg(program), ticks)));
+    }, "movement/program.truncate_program");
+    m.def("node_identity", [](py::handle program, py::handle context) {
+        return pkc::node_identity(*program_arg(program), convert(context));
+    }, "search/feasibility.node_identity");
+    m.def("meaningful_choice", [](py::handle choice) { return pkc::meaningful_choice(pkc::choice_from_value(convert(choice))); },
+          "search/feasibility.meaningful_choice");
+    m.def("landing_prefixes", [](py::handle scene, py::handle program, const std::string& block, bool reuse_full) {
+        py::list out;
+        for (const auto& prefix : pkc::landing_prefixes(convert(scene), *program_arg(program), block, reuse_full))
+            out.append(py::make_tuple(to_python(pkc::to_value(prefix.program)), prefix.reused));
+        return out;
+    }, "search/goals._landing_prefixes: (program, reused) pairs");
+    m.def("prefix_viability", [](py::handle scene, py::handle program, std::vector<std::string> required,
+                                 std::int64_t terminal_tick, std::optional<std::vector<std::string>> types) {
+        return to_python(pkc::prefix_viability(convert(scene), *program_arg(program), required, terminal_tick, types));
+    }, "reachability/viability.prefix_viability");
     m.def("disk_cached_solve", [](py::handle content, double seconds, const std::string& kind, double cap, unsigned max_iter) {
         return to_python(pkc::disk_cached_solve(convert(content), seconds, kind, cap, max_iter));
     }, "numerics/disk.solve on the native decided-result cache the native gate's screens share");

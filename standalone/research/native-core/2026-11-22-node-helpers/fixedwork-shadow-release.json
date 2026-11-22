@@ -1,0 +1,13 @@
+{
+ "stats": {
+  "comparison_label": 4120,
+  "program_search_key": 1141,
+  "_landing_prefixes": 5705,
+  "prefix_viability": 1152,
+  "meaningful_choice": 789,
+  "node_identity": 238,
+  "compare_candidates": 6,
+  "assess": 3
+ },
+ "mismatches": []
+}

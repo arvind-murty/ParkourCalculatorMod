@@ -425,3 +425,20 @@ them yet.
   conversion rejects, were skipped ([release](2026-11-22-comparison-bounds/tests-shadow-release.json),
   [AddressSanitizer](2026-11-22-comparison-bounds/tests-shadow-asan.json)).
 
+## Node helpers for native callers, 2026-11-22
+
+Source: `5aae935c` plus native `program_search_key`, `truncate_program`, `feasibility.node_identity` and
+`meaningful_choice`, `goals._landing_prefixes` (with whether it handed back the program itself, which the Python does by
+identity) and `viability.prefix_viability`. Nothing dispatches to them yet.
+
+- Fixed-work shadow: 5,705 landing-prefix sets, 1,152 viability verdicts, 1,141 search keys, 789 choice
+  classifications and 238 node identities equal ([shadow](2026-11-22-node-helpers/fixedwork-shadow-release.json)).
+- Test shadow (comparison, bounds, anchor-search, stepping-case and minimum-run tests): 4,220 search keys, 2,921
+  landing-prefix sets, 1,455 choice classifications, 673 node identities, 245 viability verdicts and 2 direct
+  truncations equal ([shadow](2026-11-22-node-helpers/tests-shadow-release.json)).
+- `AnchorScene` gains `transfer_structure` (the hard-jump latch's per-pair check): 430 results over the anchor DFS, policy
+  and search tests equal, with the other policy readers ([shadow](2026-11-22-node-helpers/policy-tests-shadow-release.json));
+  46 calls on the tests' partial programs were skipped. The policy and fixed-work shadows are also clean under
+  AddressSanitizer ([policy](2026-11-22-node-helpers/policy-tests-shadow-asan.json),
+  [fixed work](2026-11-22-node-helpers/fixedwork-shadow-asan.json)).
+

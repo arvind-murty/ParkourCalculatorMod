@@ -1316,4 +1316,88 @@ std::optional<MovementChoice> movement_choice(const std::string& kind, const Sca
     return choice;
 }
 
+std::string program_search_key(const Program& program) {
+    Array owners;
+    for (auto o : program.profile.constraint_owners.value_or(std::vector<std::int64_t>{})) owners.push_back(integer_value(o));
+    std::string key = program_physics_key(program);
+    key += "|owners=" + dumps(array({array(std::move(owners)), integer_value(program.committed_through.value_or(0)),
+                                     integer_value(program.interactions), program.solve_scope.value_or(Value{nullptr}),
+                                     integer_value(program.settled_through.value_or(0))}),
+                              false, false);
+    if (program.repair_state && !is_null(*program.repair_state))
+        key += "|repair=" + sha256_hex(dumps(*program.repair_state, true, false));
+    return key;
+}
+
+Program truncate_program(const Program& program, std::int64_t ticks) {
+    const std::int64_t n = program.profile.duration;
+    if (ticks < 1 || ticks > n) pkc::fail("prefix ticks is out of range");
+    if (ticks == n) return program;
+    if (!program.ladder_events.empty() ||
+        std::find(program.profile.ladder_ticks.begin(), program.profile.ladder_ticks.end(), true) != program.profile.ladder_ticks.end())
+        pkc::fail("Checkpoint truncation currently supports non-ladder programs");
+    Program result = program;
+    result.parent_ticks.reset();
+    result.prefix_chain.reset();
+    Profile& profile = result.profile;
+    profile.duration = ticks;
+    profile.position.resize(ticks + 1);
+    profile.velocity.resize(ticks + 1);
+    profile.grounded.resize(ticks + 1);
+    profile.ladder_ticks.resize(ticks + 1);
+    profile.jump.resize(ticks);
+    profile.sneak.resize(ticks);
+    auto keep = [](auto& items, auto&& wanted) { items.erase(std::remove_if(items.begin(), items.end(), [&](const auto& i) { return !wanted(i); }), items.end()); };
+    keep(profile.contacts, [&](const VerticalContact& c) { return c.state <= ticks; });
+    keep(profile.contact_events, [&](const ContactEvent& c) { return c.offset < ticks; });
+    keep(profile.case_events, [&](const CaseEvent& c) { return c.input < ticks; });
+    if (profile.region_choices) {
+        keep(*profile.region_choices, [&](const RegionChoice& c) { return c.offset <= ticks; });
+        if (profile.region_choices->empty()) profile.region_choices.reset();
+    }
+    for (auto& event : profile.case_events)
+        for (auto a = event.anchors.begin(); a != event.anchors.end();) a = a->second <= ticks ? std::next(a) : event.anchors.erase(a);
+    const std::vector<std::int64_t> owners =
+        profile.constraint_owners.value_or(std::vector<std::int64_t>(profile.position_constraints.size(), 0));
+    std::vector<PositionConstraint> rows;
+    std::vector<std::int64_t> kept_owners;
+    for (std::size_t i = 0; i < profile.position_constraints.size(); ++i) {
+        const auto& r = profile.position_constraints[i];
+        const std::int64_t owner = owners.at(i);
+        if (r.t1 <= ticks && (!r.t2 || *r.t2 <= ticks) &&
+            (!owner || owner <= ticks || program.committed_through.value_or(0) >= owner)) {
+            rows.push_back(r);
+            kept_owners.push_back(owner);
+        }
+    }
+    profile.position_constraints = std::move(rows);
+    profile.constraint_owners = std::move(kept_owners);
+    profile.generated_units = profile_units(profile);
+    profile.landing_phase = "post";
+    result.movement_units = profile.generated_units;
+    result.terminal = "open";
+    result.terminal_support.value.reset();
+    result.interactions = std::count_if(profile.generated_units.begin(), profile.generated_units.end(),
+                                        [](const MovementUnit& u) { return u.type != "normal"; });
+    Trace& trace = *result.trace.value;
+    trace.position.resize(ticks + 1);
+    trace.velocity.resize(ticks + 1);
+    trace.on_ground.resize(ticks + 1);
+    trace.ladder_ticks.resize(ticks + 1);
+    trace.movement.resize(ticks);
+    trace.climb_refreshed.resize(ticks);
+    trace.sneak.resize(ticks);
+    trace.hit.resize(ticks);
+    trace.ticks = ticks;
+    trace.vertical.jump_velocity.resize(ticks);
+    trace.vertical.sneak.resize(ticks);
+    keep(trace.vertical.contacts, [&](const VerticalContact& c) { return c.state <= ticks; });
+    trace.resume = TraceResume{profile.grounded.back(), false, bool(trace.hit.back()), profile.position.back(),
+                               profile.velocity.back()};
+    if (result.guide_seed_yaw) result.guide_seed_yaw->resize(std::min<std::size_t>(result.guide_seed_yaw->size(), ticks));
+    if (result.settled_through) result.settled_through = std::min(*result.settled_through, ticks);
+    if (result.walk_offs) keep(*result.walk_offs, [&](const WalkOff& w) { return w.offset < ticks; });
+    return result;
+}
+
 }  // namespace pkc

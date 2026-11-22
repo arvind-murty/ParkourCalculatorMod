@@ -216,6 +216,10 @@ std::optional<Program> append_choice(const Program& program, const MovementChoic
 // movement/program.py program_physics_key (hex).
 std::string program_physics_key(const Program& program);
 
+// movement/program.py program_search_key and truncate_program (the prefix ending at state `ticks`).
+std::string program_search_key(const Program& program);
+Program truncate_program(const Program& program, std::int64_t ticks);
+
 // movement/program.py boundary_state.
 ScalarState boundary_state(const Program& program, bool on_ladder = false);
 

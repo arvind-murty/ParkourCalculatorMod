@@ -237,4 +237,69 @@ std::set<std::pair<std::string, std::optional<std::string>>> AnchorScene::advant
     return keys;
 }
 
+Value AnchorScene::transfer_structure(const Program& program, std::int64_t start, const std::string& source_block,
+                                      const std::string& target_block, bool complete, bool until_arrival) const {
+    const Profile& p = program.profile;
+    const std::int64_t n = p.duration;
+    std::vector<std::int64_t> launches;
+    for (std::int64_t t = start; t < n; ++t)
+        if (p.grounded[t] && p.jump[t]) launches.push_back(t);
+    const std::string source = owner(source_block), target = owner(target_block);
+    std::vector<Visit> contacts;
+    for (auto& v : visits(program))
+        if (start < v.first && v.first <= n) contacts.push_back(v);
+    std::optional<std::int64_t> arrival;
+    for (const auto& [t, name] : contacts)
+        if (name == target && (!arrival || t < *arrival)) arrival = t;
+    auto filtered = [](auto values, auto&& keep) {
+        values.erase(std::remove_if(values.begin(), values.end(), [&](const auto& v) { return !keep(v); }), values.end());
+        return values;
+    };
+    if (until_arrival && arrival) {
+        contacts = filtered(contacts, [&](const Visit& v) { return v.first <= *arrival; });
+        launches = filtered(launches, [&](std::int64_t t) { return t < *arrival; });
+    }
+    std::int64_t boundary = start;
+    for (const auto& [t, name] : contacts)
+        if (name == source && (!arrival || t < *arrival)) boundary = std::max(boundary, t);
+    const auto preparation = filtered(launches, [&](std::int64_t t) { return t < boundary; });
+    const auto transfer = filtered(launches, [&](std::int64_t t) { return t >= boundary && (!arrival || t < *arrival); });
+    std::vector<std::int64_t> stepping;
+    for (const auto& e : p.case_events)
+        if ((e.type == "stepping" || kFeetCases.count(e.movement_case)) && boundary <= e.input && (!arrival || e.input < *arrival))
+            stepping.push_back(e.input);
+    std::optional<std::string> reason;
+    if (std::any_of(contacts.begin(), contacts.end(), [&](const Visit& v) { return v.second != source && v.second != target; })) {
+        reason = "intermediate_support_between_anchors";
+    } else if (arrival && std::any_of(contacts.begin(), contacts.end(),
+                                      [&](const Visit& v) { return v.first > *arrival && v.second == source; })) {
+        reason = "return_after_target_arrival";
+    } else if (arrival && std::any_of(launches.begin(), launches.end(), [&](std::int64_t t) { return t >= *arrival; })) {
+        reason = "jump_after_target_arrival";
+    } else if (transfer.size() > 1) {
+        reason = "multiple_transfer_impulses";
+    } else if (arrival && !stepping.empty()) {
+        reason = "stepping_during_hard_transfer";
+    } else if (complete && (!arrival || transfer.size() != 1)) {
+        reason = "missing_transfer_jump";
+    }
+    auto ints = [](const std::vector<std::int64_t>& v) {
+        Array out;
+        for (auto x : v) out.push_back(integer_value(x));
+        return array(std::move(out));
+    };
+    return object({{"version", integer_value(kHardJumpPolicyVersion)},
+                   {"valid", boolean(!reason)},
+                   {"reason", reason ? text(*reason) : Value{nullptr}},
+                   {"source", text(source)},
+                   {"target", text(target)},
+                   {"spanStart", integer_value(start)},
+                   {"preparationThrough", integer_value(boundary)},
+                   {"preparationJumps", ints(preparation)},
+                   {"transferJumps", ints(transfer)},
+                   {"arrival", arrival ? integer_value(*arrival) : Value{nullptr}},
+                   {"transferSteppingInputs", ints(stepping)},
+                   {"assumption", text("hard_transfer_without_stepping")}});
+}
+
 }  // namespace pkc

@@ -17,6 +17,8 @@
 
 namespace pkc {
 
+inline constexpr std::int64_t kHardJumpPolicyVersion = 5;  // policy.HARD_JUMP_POLICY_VERSION
+
 using Visit = std::pair<std::int64_t, std::string>;  // (tick, face name)
 
 struct VisitState {
@@ -49,6 +51,9 @@ public:
                 std::optional<std::int64_t> reached = std::nullopt) const;
     std::string next_anchor(const Program& program, const std::vector<std::string>& anchors,
                             const std::string& task) const;
+    // transfer_structure(scene, program, start, source, target, complete=..., until_arrival=...)'s dict.
+    Value transfer_structure(const Program& program, std::int64_t start, const std::string& source,
+                             const std::string& target, bool complete, bool until_arrival) const;
     // advantageous_targets: (kind, name) keys; a slab boost or corner cancel on no face has no name.
     std::set<std::pair<std::string, std::optional<std::string>>> advantageous_targets(
         const Program& base, const Program& child, const std::string& next_owner) const;

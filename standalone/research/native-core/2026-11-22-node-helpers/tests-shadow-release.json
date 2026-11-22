@@ -1,0 +1,17 @@
+{
+ "stats": {
+  "compare_candidates": 756,
+  "comparison_label skipped partial input": 3,
+  "remaining_bound": 279,
+  "remaining_bound skipped partial input": 10,
+  "comparison_label": 4019,
+  "program_search_key": 4220,
+  "_landing_prefixes": 2921,
+  "prefix_viability": 245,
+  "meaningful_choice": 1455,
+  "node_identity": 673,
+  "assess": 41,
+  "truncate_program": 2
+ },
+ "mismatches": []
+}
