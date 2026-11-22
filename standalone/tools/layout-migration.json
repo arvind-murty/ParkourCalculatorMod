@@ -4963,7 +4963,7 @@
       "old": "autonomy/experiments/obstacle-avoidance/README.md",
       "new": "research/obstacle-avoidance/README.md",
       "originalSha256": "4431bdc09c42594fa5d4ea7dcfc45977a325a7bd392cc80be2ce4c41755cbb15",
-      "immutable": true
+      "immutable": false
     },
     {
       "old": "autonomy/experiments/obstacle-avoidance/blocked-result.json",
@@ -4987,19 +4987,21 @@
       "old": "autonomy/experiments/obstacle-avoidance/runoff-side-request.json",
       "new": "research/obstacle-avoidance/runoff-side-request.json",
       "originalSha256": "39cd88261baf5ba343f56c6a438a425906a7b12fa193adb59f5ffb55fef4ccd2",
-      "immutable": true
+      "immutable": false,
+      "retired": "2026-11-22"
     },
     {
       "old": "autonomy/experiments/obstacle-avoidance/runoff-side-result.json",
       "new": "research/obstacle-avoidance/runoff-side-result.json",
       "originalSha256": "f3a035a04991587b42eb7f1ac1487619aabb9ae92245868598f3480435987415",
-      "immutable": true
+      "immutable": false,
+      "retired": "2026-11-22"
     },
     {
       "old": "autonomy/experiments/obstacle-avoidance/summary.json",
       "new": "research/obstacle-avoidance/summary.json",
       "originalSha256": "31dd828f3deb76af37a1ee8bd22a79448a0b08a5fadbfe6386c7cc7a0aaa7021",
-      "immutable": true
+      "immutable": false
     },
     {
       "old": "autonomy/experiments/obstacle-avoidance/under-ceiling-request.json",

@@ -65,7 +65,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 38494 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11512 |
 | [docs/DOC_INDEX.md](DOC_INDEX.md) | 28532 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 223553 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 223192 |
 | [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 63944 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
@@ -1184,13 +1184,11 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/linkcraft11-opening/trajectory.png](../research/linkcraft11-opening/trajectory.png) | 127078 |
 | [research/linkcraft11-opening/trajectory.svg](../research/linkcraft11-opening/trajectory.svg) | 72191 |
 | [research/linkcraft11-opening/user-blocks-provisional.json](../research/linkcraft11-opening/user-blocks-provisional.json) | 2130 |
-| [research/obstacle-avoidance/README.md](../research/obstacle-avoidance/README.md) | 3674 |
+| [research/obstacle-avoidance/README.md](../research/obstacle-avoidance/README.md) | 3193 |
 | [research/obstacle-avoidance/blocked-result.json](../research/obstacle-avoidance/blocked-result.json) | 52110 |
 | [research/obstacle-avoidance/cross-neo-request.json](../research/obstacle-avoidance/cross-neo-request.json) | 5584 |
 | [research/obstacle-avoidance/cross-neo-result.json](../research/obstacle-avoidance/cross-neo-result.json) | 61475 |
-| [research/obstacle-avoidance/runoff-side-request.json](../research/obstacle-avoidance/runoff-side-request.json) | 3481 |
-| [research/obstacle-avoidance/runoff-side-result.json](../research/obstacle-avoidance/runoff-side-result.json) | 43341 |
-| [research/obstacle-avoidance/summary.json](../research/obstacle-avoidance/summary.json) | 9970 |
+| [research/obstacle-avoidance/summary.json](../research/obstacle-avoidance/summary.json) | 7567 |
 | [research/obstacle-avoidance/under-ceiling-request.json](../research/obstacle-avoidance/under-ceiling-request.json) | 3394 |
 | [research/obstacle-avoidance/under-ceiling-result.json](../research/obstacle-avoidance/under-ceiling-result.json) | 59561 |
 | [research/obstacle-avoidance/wide-neo-request.json](../research/obstacle-avoidance/wide-neo-request.json) | 5610 |
@@ -1720,7 +1718,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tools/generate_coefficient_tables.py](../tools/generate_coefficient_tables.py) | 8706 |
 | [tools/geometry_bounds.py](../tools/geometry_bounds.py) | 4749 |
 | [tools/layout-extractions.json](../tools/layout-extractions.json) | 6510 |
-| [tools/layout-migration.json](../tools/layout-migration.json) | 365443 |
+| [tools/layout-migration.json](../tools/layout-migration.json) | 365510 |
 | [tools/layout-test-support.json](../tools/layout-test-support.json) | 3356 |
 | [tools/native-suite.json](../tools/native-suite.json) | 2841 |
 | [tools/native_gate.py](../tools/native_gate.py) | 1679 |
