@@ -76,7 +76,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/REAL11_GUIDE.md](REAL11_GUIDE.md) | 20426 |
 | [docs/RESULTS_AND_DEBUGGING.md](RESULTS_AND_DEBUGGING.md) | 19019 |
 | [docs/RUNBOOK.md](RUNBOOK.md) | 12940 |
-| [docs/TESTING.md](TESTING.md) | 19314 |
+| [docs/TESTING.md](TESTING.md) | 19542 |
 | [docs/design/ANCHOR_POLICY_DECISIONS.md](design/ANCHOR_POLICY_DECISIONS.md) | 42229 |
 | [docs/design/AVOIDANCE_PASSAGES.md](design/AVOIDANCE_PASSAGES.md) | 21065 |
 | [docs/design/BRANCH_SCHEDULING_INVESTIGATION.md](design/BRANCH_SCHEDULING_INVESTIGATION.md) | 34072 |
@@ -1370,6 +1370,8 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/runoff-profiles/summary.json](../research/runoff-profiles/summary.json) | 1876 |
 | [research/stale-code-removal/native-gate/report.json](../research/stale-code-removal/native-gate/report.json) | 15606 |
 | [research/stale-code-removal/native-gate/tests.log](../research/stale-code-removal/native-gate/tests.log) | 108702 |
+| [research/stale-code-removal/native-gate-blip-fix/report.json](../research/stale-code-removal/native-gate-blip-fix/report.json) | 15606 |
+| [research/stale-code-removal/native-gate-blip-fix/tests.log](../research/stale-code-removal/native-gate-blip-fix/tests.log) | 108911 |
 | [research/stepping-mechanics/README.md](../research/stepping-mechanics/README.md) | 2894 |
 | [research/stepping-mechanics/StepMechanicsProbe.java](../research/stepping-mechanics/StepMechanicsProbe.java) | 1920 |
 | [research/stepping-mechanics/probe-results.txt](../research/stepping-mechanics/probe-results.txt) | 2353 |

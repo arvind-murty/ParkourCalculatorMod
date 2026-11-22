@@ -3,8 +3,9 @@
 ## Current gate
 
 `tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on the stale-code removal with its
-ported tests (`3e4f71d6`): **580 tests, no failures, errors or skips**, source unchanged during the run
-([report](../research/stale-code-removal/native-gate/report.json)). The count fell from 842 because the
+ported tests, the blip departed-owner fix and the run-off-side fixture removal (`23db5983`): **581 tests, no
+failures, errors or skips**, source unchanged during the run
+([report](../research/stale-code-removal/native-gate-blip-fix/report.json)). The count fell from 842 because the
 removed searches' tests went with them.
 Wall-time-bound tests can still fail under heavier load ([deferred P17](DEFERRED_WORK.md)).
 The gate fails on any skip, so it needs `PKC_IPOPT_PYTHON` for the IPOPT tests,
@@ -24,6 +25,7 @@ persistence without the removed 32/128 limits.
 | Source | Tests | Evidence |
 | --- | ---: | --- |
 | `3e4f71d6` stale-code removal: legacy searches, face catalog, ported tests | 580 | [report](../research/stale-code-removal/native-gate/report.json) |
+| `23db5983` + blip departed-owner fix, run-off-side fixture removed | 581 | [report](../research/stale-code-removal/native-gate-blip-fix/report.json) |
 | `b58e2132` follow-ups rebased onto `1013e7ea`, launch face from the visited owner | 842 | [report](../research/encounter-groups/native-gate-rebased-on-pr7/report.json) |
 | `4c9c6ba4` + O11 on merged launch faces | 839 | [report](../research/encounter-groups/native-gate-same-face-fit/report.json) |
 | `c4e2f70a` + same-block jumps must fit their block (O11) | 838 | [report](../research/encounter-groups/native-gate-same-block-fit/report.json) |
