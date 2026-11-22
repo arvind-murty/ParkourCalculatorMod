@@ -65,7 +65,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 38494 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11512 |
 | [docs/DOC_INDEX.md](DOC_INDEX.md) | 28532 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 223192 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 223469 |
 | [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 63944 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
@@ -1184,7 +1184,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/linkcraft11-opening/trajectory.png](../research/linkcraft11-opening/trajectory.png) | 127078 |
 | [research/linkcraft11-opening/trajectory.svg](../research/linkcraft11-opening/trajectory.svg) | 72191 |
 | [research/linkcraft11-opening/user-blocks-provisional.json](../research/linkcraft11-opening/user-blocks-provisional.json) | 2130 |
-| [research/obstacle-avoidance/README.md](../research/obstacle-avoidance/README.md) | 3193 |
+| [research/obstacle-avoidance/README.md](../research/obstacle-avoidance/README.md) | 3166 |
 | [research/obstacle-avoidance/blocked-result.json](../research/obstacle-avoidance/blocked-result.json) | 52110 |
 | [research/obstacle-avoidance/cross-neo-request.json](../research/obstacle-avoidance/cross-neo-request.json) | 5584 |
 | [research/obstacle-avoidance/cross-neo-result.json](../research/obstacle-avoidance/cross-neo-result.json) | 61475 |
