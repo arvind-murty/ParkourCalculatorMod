@@ -179,3 +179,65 @@ class GatePreparationTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class CoefficientCompilerTests(unittest.TestCase):
+    """Native compile_coefficients must reply exactly like the Python bridge's coefficient compile."""
+
+    @classmethod
+    def setUpClass(cls):
+        from parkour_solver.bridge.python_compiler import PythonCompiler
+        cls.native = native()
+        cls.python = PythonCompiler()
+
+    def assert_same_outcome(self, request):
+        try:
+            expected = canonical(self.python._exchange(request, 30))
+        except ValueError as error:
+            with self.assertRaises(ValueError) as raised:
+                self.native.compile_coefficients(request)
+            self.assertEqual(str(raised.exception), str(error))
+            return
+        self.assertEqual(canonical(self.native.compile_coefficients(request)), expected)
+
+    def test_random_shared_requests_reply_like_python(self):
+        from parkour_solver.bridge.compiler import coefficient_request
+        from tests.support.coefficient_requests import shared_request
+        rng = random.Random(7)
+        for trial in range(400):
+            n = rng.choice([1, 2, 3, 11, 12, 40, 601])
+            inputs = dict(sprint=rng.random() < .7, force45=rng.random() < .5)
+            if rng.random() < .8:
+                inputs['incomingSprint'] = rng.random() < .5
+            route = dict(sharedMovement=True, inputs=inputs)
+            with self.subTest(trial=trial, n=n):
+                self.assert_same_outcome(coefficient_request(route, shared_request(rng, n)))
+
+    def test_legacy_requests_reply_like_python_around_the_forward_tolerance(self):
+        from parkour_solver.physics.vertical import f32
+        rng = random.Random(3)
+        bits = struct.unpack('<I', struct.pack('<f', f32(.98)))[0]
+        forwards = [f32(.98) - 1e-7, f32(.98) + 1e-7, .98, 1, True, 'x', math.nan]
+        forwards += [struct.unpack('<f', struct.pack('<I', b))[0] for b in range(bits - 3, bits + 4)]
+        for forward in forwards:
+            for strafe in (0., -0., 0, False, .1):
+                n = rng.choice([1, 5, 30])
+                request = dict(grounded=[rng.random() < .5 for _ in range(n)], jump=[rng.random() < .4 for _ in range(n)],
+                               inputs=dict(forward=forward, strafe=strafe, sprint=rng.random() < .7,
+                                           incomingSprint=rng.random() < .5, force45=rng.random() < .5))
+                with self.subTest(forward=forward, strafe=strafe):
+                    self.assert_same_outcome(request)
+
+    def test_invalid_requests_raise_the_python_errors(self):
+        base = dict(sharedMovement=True, grounded=[True, False], jump=[True, False], inputs=dict(sprint=True),
+                    contacts=[], vertical=dict(profile='minecraft-1.8.9', onGround=True, previousHorizontalCollision=False))
+        changes = [dict(grounded=[], jump=[]), dict(jump=[True]), dict(grounded=None), dict(inputs=[]),
+                   dict(grounded=[1, 0]), dict(inputs=dict(sprint=1)), dict(inputs=dict(incomingSprint=None)),
+                   dict(contacts=[dict(axis=0, state=3)]), dict(contacts=[dict(axis=2, state=True)]),
+                   dict(contacts=[dict(axis=1.0, state=9)]), dict(contacts=None), dict(sneak=[True]),
+                   dict(sneak=[True, 'no']), dict(ladderTicks=[False]), dict(vertical=dict(base['vertical'], onGround=False)),
+                   dict(vertical=dict(base['vertical'], profile='other')), dict(vertical=dict(profile='minecraft-1.8.9')),
+                   dict(vertical=dict(base['vertical'], onGround=1)), dict(sharedMovement=0)]
+        for change in changes:
+            with self.subTest(change=change):
+                self.assert_same_outcome(dict(base, **change))

@@ -61,7 +61,9 @@ while another numerical job uses that classpath. Four bridge sources live under
 
 After changing a Java source listed in `SOURCES` of
 [the generated coefficient tables](../src/parkour_solver/physics/_coefficient_tables.py),
-regenerate them from `standalone/`; `--check` fails when the checked-in module differs:
+regenerate them from `standalone/`. The generator writes the Python module and its C++ twin
+`native/cpp/src/coefficient_tables.inc` from the same rows (rebuild the native core
+afterwards); `--check` fails when either checked-in file differs:
 
 ```sh
 "$PKC_IPOPT_PYTHON" -B -m tools.generate_coefficient_tables --compiler build/native/compiler.json
@@ -150,8 +152,9 @@ Build the native C++ core (`native/cpp/`, needs CMake and the pinned pybind11 fr
 undefined-behavior-sanitizer variant into `build/native/cpp-sanitize/`. Then check
 every `canonical.digest` call of a real solve against the native encoder, round-trip
 every program and movement choice that `movement/program.py` builds through the typed
-native model, or prepare every `InteractionGate.prepare` call natively as well. Each
-stops at the first difference and saves it as `mismatch.json`:
+native model, prepare every `InteractionGate.prepare` call natively as well, or compile
+every `PythonCompiler.compile` coefficient request natively as well. Each stops at the
+first difference and saves it as `mismatch.json`:
 
 ```sh
 "$PKC_IPOPT_PYTHON" -B -m tools.native_cpp build [--variant sanitize] [--output /path/to/provenance-dir]
@@ -160,6 +163,8 @@ stops at the first difference and saves it as `mismatch.json`:
 "$PKC_IPOPT_PYTHON" -B -m tools.native_cpp verify-programs --input cases/real11/physical-anchors.json \
   --seconds 60 --output /path/to/new-dir [--variant sanitize]
 "$PKC_IPOPT_PYTHON" -B -m tools.native_cpp verify-gate --input cases/real11/physical-anchors.json \
+  --seconds 60 --output /path/to/new-dir [--variant sanitize]
+"$PKC_IPOPT_PYTHON" -B -m tools.native_cpp verify-coefficients --input cases/real11/physical-anchors.json \
   --seconds 60 --output /path/to/new-dir [--variant sanitize]
 ```
 

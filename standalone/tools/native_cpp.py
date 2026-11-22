@@ -159,6 +159,34 @@ def verify_gate(args):
     print(json.dumps(summary))
 
 
+def verify_coefficients(args):
+    """Run a real solve where every PythonCompiler.compile reply is also compiled natively and compared."""
+    from parkour_solver.bridge.compiler import coefficient_request
+    from parkour_solver.bridge.python_compiler import PythonCompiler
+    args.output.mkdir(parents=True, exist_ok=False)
+    native = load(args.variant)
+    original = PythonCompiler.compile
+    calls = dict(count=0)
+
+    def checked(compiler, route, plan, seconds):
+        expected = original(compiler, route, plan, seconds)
+        request = coefficient_request(route, plan)
+        calls['count'] += 1
+        if canonical_bytes(native.compile_coefficients(request)) != canonical_bytes(expected):
+            save(args.output / 'mismatch.json', dict(request=request))
+            raise AssertionError(f'native coefficients differ at call {calls["count"]}')
+        return expected
+
+    PythonCompiler.compile = checked
+    try:
+        summary = checked_solve(args, {}, {})
+    finally:
+        PythonCompiler.compile = original
+    summary.update(compileCalls=calls['count'], mismatches=0)
+    save(args.output / 'summary.json', summary)
+    print(json.dumps(summary))
+
+
 def canonical_bytes(value):
     return json.dumps(value, sort_keys=True, allow_nan=False)
 
@@ -184,8 +212,14 @@ def main():
     p.add_argument('--seconds', type=float, required=True)
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--variant', choices=sorted(BUILDS), default='release')
+    p = commands.add_parser('verify-coefficients')
+    p.add_argument('--input', type=Path, required=True)
+    p.add_argument('--seconds', type=float, required=True)
+    p.add_argument('--output', type=Path, required=True)
+    p.add_argument('--variant', choices=sorted(BUILDS), default='release')
     args = parser.parse_args()
-    dict(build=build, verify_digest=verify_digest, verify_programs=verify_programs, verify_gate=verify_gate)[args.command.replace('-', '_')](args)
+    dict(build=build, verify_digest=verify_digest, verify_programs=verify_programs, verify_gate=verify_gate,
+         verify_coefficients=verify_coefficients)[args.command.replace('-', '_')](args)
 
 
 if __name__ == '__main__':

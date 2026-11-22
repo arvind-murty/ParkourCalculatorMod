@@ -8,6 +8,7 @@
 #include <variant>
 
 #include "pkc/canonical.hpp"
+#include "pkc/coefficients.hpp"
 #include "pkc/gate.hpp"
 #include "pkc/program.hpp"
 
@@ -147,6 +148,9 @@ PYBIND11_MODULE(_pkc_native, m) {
         auto prepared = pkc::gate_prepare(convert(scene), pkc::program_from_value(convert(program)), require_complete);
         return prepared ? to_python(*prepared) : py::none();
     }, "InteractionGate.prepare's build: {route, profiles, plan, vertical} or None");
+    m.def("compile_coefficients", [](py::handle request) {
+        return to_python(pkc::compile_coefficients(convert(request)));
+    }, "physics/coefficients.compile_request for one coefficient_request message");
     m.def("float_repr", &pkc::float_repr, "repr(float) for a finite float");
     m.def("sha256_hex", [](py::bytes data) {
         static const char* hex = "0123456789abcdef";

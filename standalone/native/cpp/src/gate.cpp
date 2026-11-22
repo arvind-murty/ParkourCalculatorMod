@@ -13,6 +13,8 @@
 #include <utility>
 #include <vector>
 
+#include "value_ops.hpp"
+
 namespace pkc {
 namespace {
 
@@ -29,125 +31,6 @@ const double kCap = f32(0.15);
 const double kJumpVelocity = f32(.42);
 constexpr double kTolerance = 1e-7;
 constexpr int kTangentAxes[3][2] = {{1, 2}, {0, 2}, {0, 1}};
-
-[[noreturn]] void fail(const std::string& message) { throw std::invalid_argument(message); }
-
-// ---- JSON-shaped values with Python dict/list semantics -------------------
-
-Value object(Object fields) { return {std::make_shared<const Object>(std::move(fields))}; }
-Value array(Array items) { return {std::make_shared<const Array>(std::move(items))}; }
-Value text(std::string value) { return {std::move(value)}; }
-Value integer_value(std::int64_t value) { return {value}; }
-Value real(double value) { return {value}; }
-Value boolean(bool value) { return {value}; }
-const Value kNull{nullptr};
-
-const Object& fields(const Value& value) {
-    auto* held = std::get_if<std::shared_ptr<const Object>>(&value.data);
-    if (!held) fail("expected an object");
-    return **held;
-}
-
-const Array& items(const Value& value) {
-    auto* held = std::get_if<std::shared_ptr<const Array>>(&value.data);
-    if (!held) fail("expected a list");
-    return **held;
-}
-
-bool is_list(const Value& value) { return std::holds_alternative<std::shared_ptr<const Array>>(value.data); }
-bool is_object(const Value& value) { return std::holds_alternative<std::shared_ptr<const Object>>(value.data); }
-bool is_null(const Value& value) { return std::holds_alternative<std::nullptr_t>(value.data); }
-
-const Value* get(const Object& object, std::string_view key) {
-    for (const auto& [name, value] : object)
-        if (name == key) return &value;
-    return nullptr;
-}
-
-// dict.get(key) where an absent key reads as None.
-const Value& get_or_null(const Object& object, std::string_view key) {
-    const Value* value = get(object, key);
-    return value ? *value : kNull;
-}
-
-const Value& at(const Object& object, std::string_view key) {
-    if (const Value* value = get(object, key)) return *value;
-    fail("KeyError: '" + std::string(key) + "'");
-}
-
-void put(Object& object, std::string_view key, Value value) {
-    for (auto& [name, held] : object) {
-        if (name == key) {
-            held = std::move(value);
-            return;
-        }
-    }
-    object.emplace_back(std::string(key), std::move(value));
-}
-
-const Value& setdefault(Object& object, std::string_view key, Value value) {
-    if (!get(object, key)) object.emplace_back(std::string(key), std::move(value));
-    return at(object, key);
-}
-
-void erase(Object& object, std::string_view key) {
-    object.erase(std::remove_if(object.begin(), object.end(), [&](const auto& field) { return field.first == key; }),
-                 object.end());
-}
-
-Object with(Object object, std::string_view key, Value value) {  // dict(row, key=value)
-    put(object, key, std::move(value));
-    return object;
-}
-
-const std::string& as_text(const Value& value) {
-    auto* held = std::get_if<std::string>(&value.data);
-    if (!held) fail("expected a str");
-    return *held;
-}
-
-bool numeric(const Value& value, double& out) {
-    if (auto* integer = std::get_if<std::int64_t>(&value.data)) {
-        out = static_cast<double>(*integer);
-    } else if (auto* real_value = std::get_if<double>(&value.data)) {
-        out = *real_value;
-    } else if (auto* flag = std::get_if<bool>(&value.data)) {
-        out = *flag;
-    } else {
-        return false;
-    }
-    return true;
-}
-
-// Python ==: numbers compare by value (1 == 1.0 == True), containers elementwise.
-bool py_equal(const Array& left, const Array& right);
-
-bool py_equal(const Value& a, const Value& b) {
-    double x, y;
-    if (numeric(a, x) && numeric(b, y)) return x == y;
-    if (a.data.index() != b.data.index()) return false;
-    if (is_null(a)) return true;
-    if (auto* s = std::get_if<std::string>(&a.data)) return *s == std::get<std::string>(b.data);
-    if (is_list(a)) return py_equal(items(a), items(b));
-    const auto &left = fields(a), &right = fields(b);
-    if (left.size() != right.size()) return false;
-    for (const auto& [key, value] : left) {
-        const Value* other = get(right, key);
-        if (!other || !py_equal(value, *other)) return false;
-    }
-    return true;
-}
-
-bool py_equal(const Array& left, const Array& right) {
-    if (left.size() != right.size()) return false;
-    for (std::size_t i = 0; i < left.size(); ++i)
-        if (!py_equal(left[i], right[i])) return false;
-    return true;
-}
-
-bool contains(const Array& values, const Value& value) {
-    return std::any_of(values.begin(), values.end(), [&](const Value& item) { return py_equal(item, value); });
-}
 
 // ---- numbers with Python int/float kinds ---------------------------------
 
