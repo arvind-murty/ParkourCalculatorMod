@@ -445,9 +445,13 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `_extend` | [169](../src/parkour_solver/movement/program.py#L169) | function |
 | `_rebuild` | [221](../src/parkour_solver/movement/program.py#L221) | function |
 | `truncate_program` | [289](../src/parkour_solver/movement/program.py#L289) | function |
-| `program_physics_key` | [343](../src/parkour_solver/movement/program.py#L343) | function |
-| `program_search_key` | [352](../src/parkour_solver/movement/program.py#L352) | function |
-| `compile_program` | [361](../src/parkour_solver/movement/program.py#L361) | function |
+| `_canonical` | [350](../src/parkour_solver/movement/program.py#L350) | function |
+| `_chain` | [354](../src/parkour_solver/movement/program.py#L354) | function |
+| `prefix_chain` | [390](../src/parkour_solver/movement/program.py#L390) | function |
+| `_remember` | [401](../src/parkour_solver/movement/program.py#L401) | function |
+| `program_physics_key` | [408](../src/parkour_solver/movement/program.py#L408) | function |
+| `program_search_key` | [419](../src/parkour_solver/movement/program.py#L419) | function |
+| `compile_program` | [428](../src/parkour_solver/movement/program.py#L428) | function |
 
 ## movement/settings.py
 
@@ -998,8 +1002,8 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | Symbol | Line | Kind |
 | --- | ---: | --- |
 | `take_first` | [13](../src/parkour_solver/search/frontier.py#L13) | function |
-| `restore_alternatives` | [26](../src/parkour_solver/search/frontier.py#L26) | function |
-| `persistent_programs` | [58](../src/parkour_solver/search/frontier.py#L58) | function |
+| `restore_alternatives` | [19](../src/parkour_solver/search/frontier.py#L19) | function |
+| `persistent_programs` | [51](../src/parkour_solver/search/frontier.py#L51) | function |
 
 ## search/goals.py
 
@@ -1095,8 +1099,8 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `height_clock` | [27](../src/parkour_solver/search/virtual_goals.py#L27) | function |
 | `goal_rows` | [39](../src/parkour_solver/search/virtual_goals.py#L39) | function |
 | `bind_goal` | [45](../src/parkour_solver/search/virtual_goals.py#L45) | function |
-| `satisfied` | [59](../src/parkour_solver/search/virtual_goals.py#L59) | function |
-| `finish_choices` | [69](../src/parkour_solver/search/virtual_goals.py#L69) | function |
+| `satisfied` | [60](../src/parkour_solver/search/virtual_goals.py#L60) | function |
+| `finish_choices` | [70](../src/parkour_solver/search/virtual_goals.py#L70) | function |
 
 ## search/work.py
 
@@ -1161,8 +1165,8 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `Checkpoint.stage` | [49](../src/parkour_solver/spatial/checkpoints.py#L49) | function |
 | `checkpoint` | [63](../src/parkour_solver/spatial/checkpoints.py#L63) | function |
 | `retain_prefix` | [91](../src/parkour_solver/spatial/checkpoints.py#L91) | function |
-| `retain_unresolved` | [110](../src/parkour_solver/spatial/checkpoints.py#L110) | function |
-| `retain_decisions` | [121](../src/parkour_solver/spatial/checkpoints.py#L121) | function |
+| `retain_unresolved` | [111](../src/parkour_solver/spatial/checkpoints.py#L111) | function |
+| `retain_decisions` | [122](../src/parkour_solver/spatial/checkpoints.py#L122) | function |
 
 ## spatial/compat/corridor_guards.py
 

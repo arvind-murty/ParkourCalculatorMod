@@ -1,0 +1,79 @@
+{
+  "ticks": null,
+  "objective": null,
+  "firstFullSolutionSeconds": null,
+  "searchSeconds": 295.0985880829394,
+  "work": {
+    "workerLaunches": 124,
+    "feasibleSeedReturns": 0,
+    "conicCandidates": 372,
+    "relaxedFallbacks": 5,
+    "confirmations": 119,
+    "confirmationIpoptCalls": 119,
+    "materialGaps": 67,
+    "finalizationIpoptCalls": 0,
+    "relaxedFallback:relaxed_undecided": 5,
+    "solverCalls": 496,
+    "maxSolverCalls": 1024
+  },
+  "expandedPrefixes": 174,
+  "termination": "deadline",
+  "stop": {
+    "suspendedFrames": [],
+    "oracleRejectedRoutes": [],
+    "unknownRequests": []
+  },
+  "runDeferrals": 0,
+  "runRestorations": 0,
+  "deferredNodes": 0,
+  "comparisonWork": {
+    "assessments": 3,
+    "cacheHits": 0,
+    "peerChecks": 3
+  },
+  "interactionMetrics": {
+    "blockTableBuilds": 10,
+    "blockTableSeconds": 0.0019399999999620832,
+    "approachBuilds": 801,
+    "preparationMisses": 11913,
+    "analysisMisses": 11933,
+    "coefficientMisses": 7198,
+    "screenMisses": 5190,
+    "preparationHits": 8529,
+    "analysisHits": 6217,
+    "relaxationChecks": 2292,
+    "coefficientHits": 4735,
+    "sequenceChecks": 6725,
+    "sequenceExclusions": 2892,
+    "screenHits": 49
+  },
+  "relaxationChecks": {
+    "screen": {
+      "solved": 2636,
+      "feasible": 1756,
+      "infeasible": 873,
+      "cacheHits": 283,
+      "retried": 14,
+      "undecided": 7
+    },
+    "candidate": {
+      "cacheHits": 491,
+      "solved": 5,
+      "retried": 5,
+      "undecided": 5
+    }
+  },
+  "transferTimeBounds": {},
+  "wrappers": null,
+  "workers": null,
+  "validatedWitnesses": 3,
+  "allReplaysPassed": true,
+  "sourceUnchanged": true,
+  "sessions": [],
+  "resume": {
+    "exact": false,
+    "session": 1
+  },
+  "profileMode": "none",
+  "durable": false
+}

@@ -465,13 +465,14 @@ class RunTickChoiceTests(unittest.TestCase):
 
 
 class ParentExtensionTests(unittest.TestCase):
-    def test_a_child_extending_its_parent_equals_the_whole_program_rebuilt(self):
+    def test_a_child_extending_its_parent_equals_the_whole_program_rebuilt_and_keeps_its_key(self):
         import json
         from unittest.mock import patch
         from parkour_solver.movement import program as module
         from parkour_solver.movement.normal import normal_choices
         from parkour_solver.movement.stepping import open_stepping_choices
-        from parkour_solver.movement.program import append_choice, boundary_state, empty_program, truncate_program
+        from parkour_solver.movement.program import (append_choice, boundary_state, empty_program, program_physics_key,
+                                                     truncate_program)
         request = dict(boxes_request([.5, 1, .5], [.25, -.0784000015258789, 0], -90, start=[-2, 0, -2, 1, 1, 2],
                                      middle=[1, -1, -2, 2, 0, 2], slab=[2, -1, -2, 3, .5, 2], goal=[8, -1, -1, 9, 0, 1]),
                        movementSearch=dict(types=['normal', 'stepping'], maxInputs=30))
@@ -489,6 +490,10 @@ class ParentExtensionTests(unittest.TestCase):
                 before = json.dumps(parent, sort_keys=True)
                 for choice in choices(parent):
                     child = append_choice(parent, choice)
+                    if child is not None:
+                        # A child resumes its parent's identity chain; folding from scratch gives the same key.
+                        self.assertEqual(program_physics_key(child),
+                                         program_physics_key({k: v for k, v in child.items() if k != 'prefixChain'}))
                     if parent['trace'] is not None:
                         # The rebuild path traces and copies the whole program from scratch.
                         with patch.object(module, '_extend', module._rebuild):

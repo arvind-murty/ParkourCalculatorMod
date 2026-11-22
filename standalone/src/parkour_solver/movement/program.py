@@ -161,9 +161,9 @@ def append_choice(program, choice, *, max_inputs=200):
                 if scope.get('solveIdentity') or (scope.get('scope') or {}).get('solveIdentity'):
                     continue
             result[key] = copy.deepcopy(program[key])
+    # The parent's states before its last are the child's too, so its key resumes there.
+    result['prefixChain'] = prefix_chain(program)
     return result
-
-
 
 
 def _extend(program, choice):
@@ -295,6 +295,7 @@ def truncate_program(program, ticks):
         raise ValueError('Checkpoint truncation currently supports non-ladder programs')
     result = copy.deepcopy(program)
     result.pop('parentTicks', None)
+    result.pop('prefixChain', None)
     profile = result['profile']
     profile['airtime'] = ticks
     for key in ('position', 'velocity', 'grounded', 'ladderTicks'):
@@ -340,13 +341,79 @@ def truncate_program(program, ticks):
     return result
 
 
+# Per-state fields: a program's identity folds them state by state, so a child resumes its parent's chain.
+_STATE_FIELDS = ('position', 'velocity', 'grounded', 'jump', 'sneak', 'ladderTicks', 'contacts', 'contactEvents',
+                 'caseEvents', 'positionConstraints', 'regionChoices')
+_CHAIN_SEED = hashlib.sha256(b'pkc-program-v1').digest()
+
+
+def _canonical(value):
+    return json.dumps(value, sort_keys=True, allow_nan=False).encode()
+
+
+def _chain(profile, through, anchor=None):
+    """sha256 chain over states 0..through, resumed from anchor = [state, hex] when given; returns the hashes at
+    through-1 and through. A state owns its position, velocity, ground and ladder flags, the input ending at it,
+    and the contacts, events, rows and region choices that act at it; anything past the last state counts at the
+    last state."""
+    start, h = (anchor[0]+1, bytes.fromhex(anchor[1])) if anchor else (0, _CHAIN_SEED)
+    n = profile['airtime']
+    owned = [dict(contacts=[], contactEvents=[], caseEvents=[], rows=[], regionChoices=[]) for _ in range(start, through+1)]
+    for field, items, key, shift in (('contacts', profile['contacts'], 'state', 0),
+                                     ('contactEvents', profile['contactEvents'], 'offset', 1),
+                                     ('caseEvents', profile['caseEvents'], 'input', 1),
+                                     ('regionChoices', profile.get('regionChoices', ()), 'offset', 1)):
+        for item in items:
+            t = min(item[key]+shift, n)
+            if start <= t <= through:
+                owned[t-start][field].append(item)
+    for row in profile['positionConstraints']:
+        t2 = row.get('t2')
+        t = min(row['t1'] if t2 is None or t2 < row['t1'] else t2, n)
+        if start <= t <= through:
+            owned[t-start]['rows'].append({k: v for k, v in row.items() if k != 'name'})
+    before = h
+    for t, record in enumerate(owned, start):
+        record['rows'].sort(key=_canonical)
+        record.update(t=t, position=profile['position'][t], velocity=profile['velocity'][t], grounded=profile['grounded'][t],
+                      ladder=profile['ladderTicks'][t], jump=profile['jump'][t-1] if t else None,
+                      sneak=profile['sneak'][t-1] if t else None)
+        before, h = h, hashlib.sha256(h+_canonical(record)).digest()
+    return before, h
+
+
+# id(program) -> (program, prefix chain). A built program never changes, and the entry keeps it alive, so its id
+# cannot be reused while cached. Every child of one parent shares the parent's prefix.
+_PREFIXES = {}
+
+
+def prefix_chain(program):
+    """[n-1, hex] over a program's states before its last, which a child never rewrites; None for an empty one."""
+    n = program['profile']['airtime']
+    if not n:
+        return None
+    cached = _PREFIXES.get(id(program))
+    if cached is None:
+        cached = _remember(program, _chain(program['profile'], n-1, program.get('prefixChain'))[1])
+    return cached[1]
+
+
+def _remember(program, before):
+    _PREFIXES[id(program)] = entry = program, [program['profile']['airtime']-1, before.hex()]
+    while len(_PREFIXES) > 1024:
+        _PREFIXES.pop(next(iter(_PREFIXES)))
+    return entry
+
+
 def program_physics_key(program):
-    profile = {k: v for k, v in program['profile'].items() if k not in ('generatedUnits', 'constraintOwners')}
-    profile['positionConstraints'] = sorted(
-        [{k: v for k, v in row.items() if k != 'name'} for row in profile['positionConstraints']],
-        key=lambda row: json.dumps(row, sort_keys=True))
-    return json.dumps([profile, program['terminalSupport'], program.get('threshold', .005),
-                       program['ladderEvents']], sort_keys=True)
+    profile = program['profile']
+    n = profile['airtime']
+    before, h = _chain(profile, n, program.get('prefixChain'))
+    if n and id(program) not in _PREFIXES:
+        _remember(program, before)
+    rest = {k: v for k, v in profile.items() if k not in _STATE_FIELDS+('generatedUnits', 'constraintOwners')}
+    return hashlib.sha256(h+_canonical([rest, program['terminalSupport'], program.get('threshold', .005),
+                                        program['ladderEvents']])).hexdigest()
 
 
 def program_search_key(program):

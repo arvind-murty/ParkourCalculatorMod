@@ -59,3 +59,36 @@ with this change uncommitted).
 
 The dedicated ladder, climbable, vine and movement-entry modules, which the gate excludes, ran 99 tests on old and new
 with the same 14 failures and errors on both ([list](2026-11-21/ladder-modules-failures.txt)), none from this change.
+
+## Phase B: identity as a per-state chain, ties in list order
+
+`program_physics_key` is a sha256 chain over states (definition in
+[generic composition](../../docs/design/GENERIC_COMPOSITION.md#boundary-and-composition)). `append_choice` stores the
+parent's chain over its states before the last as `prefixChain`, memoized per parent object, so a key hashes only
+the child's own states. Equal-priority programs are taken in list order (`take_first`, the ready sort) instead of by
+key digest (user decisions, 2026-11-21).
+
+[`key_parity.py`](key_parity.py) checked every key call of a real run against the previous commit's key and against
+a fold from scratch: no mismatch, and new keys are equal exactly when old keys are, over 3,663 calls (1,348 distinct
+keys) on the fixed-work run and 737 calls (207 keys) on the short case
+([extended](2026-11-21/key-parity-ext100.json), [short](2026-11-21/key-parity-short.json)).
+
+On the fixed-work input `program_physics_key` fell from 2.043 s to 0.775 s and `append_choice` stayed at 0.375 s
+([data](2026-11-21/append-key-scaling-phaseB.json); computing each child's own chain in `append_choice` instead cost
+1.48 s more there and was dropped). Equal work, old `75a0f4c6` and new alternating, load average 3.9 to 6.0:
+
+| Run | Search s | Expanded | Calls | Preparations | Sequence checks |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| old 1 | 34.75 | 28 | 100 | 1,412 | 1,015 |
+| new 1 | 33.96 | 28 | 100 | 1,412 | 1,015 |
+| old 2 | 35.34 | 28 | 100 | 1,412 | 1,015 |
+| new 2 | 34.68 | 28 | 100 | 1,412 | 1,015 |
+
+Mean search time falls 2.1%. Reports match apart from digests (parity harness without digests: all 19 transitions;
+short case T64, objective -1093.2381026602418, 62 transitions). On the 300 s extended run, where the old key digest
+decided 91 of 191 queue picks, the order now differs: 182 expanded prefixes and 531 solver calls against 174 and 496
+for `75a0f4c6`, both ending at the deadline without a route ([summaries](2026-11-21/)).
+The native gate passed 830 tests with no failures, errors or skips ([report](native-gate-phaseB/report.json); run on
+`75a0f4c6` with this change uncommitted). One fixture in `test_anchor_dfs` built an 11-tick program with 11 ground
+flags; the chain reads every state, so the fixture now supplies `airtime + 1` flags as every built program has.
+The excluded ladder modules again ran 99 tests with the same 14 failures and errors as before either phase.

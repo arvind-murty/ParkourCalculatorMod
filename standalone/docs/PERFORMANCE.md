@@ -140,8 +140,9 @@ without the flag against 66.28 s and 66.53 s with it, with identical final repor
 Children extend their parent instead of rebuilding it ([parent-linked programs](../research/parent-linked-programs/README.md)):
 an append without ladder involvement traces only its new ticks and shares the parent's content.
 `append_choice` fell from 6.276 s to 0.408 s on the call-capped input and search time 16.2%, with
-identical reports. Program keys, gate preparation and envelopes still cost time proportional to
-the whole program.
+identical reports. Program identity is a per-state chain that a child resumes from its parent,
+so `program_physics_key` fell from 2.043 s to 0.775 s there (search -2.1%). Gate preparation and
+envelopes still cost time proportional to the whole program.
 
 Constraint enumeration after `86c06e39` runs 2.93x to 3.56x faster on captured
 B6/B7 catalogues, with 94.1% to 94.7% fewer iteration checks and identical
@@ -159,10 +160,11 @@ ordered options. That is targeted enumeration work, not a whole-solver speedup.
 - Shared interaction screens before any solve: interval and disk-relaxation reachability
   ([obstacle relevance](design/OBSTACLE_RELEVANCE.md)), and accumulated passage
   rows screened before each extension ([avoidance passages](design/AVOIDANCE_PASSAGES.md)).
-- Frontier selection (`search/frontier.py` `take_first`) hashes a program's
-  identity, the last priority field, only for programs tied on every other field.
-  On a saved 762-program B4 -> B20 queue a full-key take cost 0.478 s against
-  0.004 s without identities ([encounter-groups evidence](../research/encounter-groups/README.md)).
+- Frontier selection (`search/frontier.py` `take_first`) pops the smallest priority key
+  and breaks ties by list order, so it hashes no program identity (user, 2026-11-21:
+  every tied program is expanded eventually). On a saved 762-program B4 -> B20 queue a
+  full-key take had cost 0.478 s against 0.004 s without identities
+  ([encounter-groups evidence](../research/encounter-groups/README.md)).
 - Bounded accelerator caches: interaction gate 512 entries
   (`reachability/service.py`), variant preparation 256 and option keys 1,024
   (`constraints/variants.py`).
@@ -175,7 +177,7 @@ Open measurement: solve cadence 1 versus 2 or 4 decision levels
 | File | What to look at without changing behavior |
 | --- | --- |
 | `search/identity.py` | `digest`, `motion_record`, `solve_scope`, `solve_identity`: repeated canonical serialization. |
-| `movement/program.py` | `program_physics_key`, `program_search_key`, `compile_program`: repeated sorting and serialization of immutable content. |
+| `movement/program.py` | `program_search_key` (owners and repair hash), `compile_program`: repeated serialization of immutable content. `program_physics_key` resumes the parent's per-state chain. |
 | `reachability/service.py` | `InteractionGate.prepare` key construction (scene and program physics key), which costs even on a cache hit. |
 | `search/engine.py` | `evaluate_program`: scope, coefficients, replay, solve identity, variants, validation. |
 | `constraints/variants.py` | Repeated canonical row sets and cursor records. |

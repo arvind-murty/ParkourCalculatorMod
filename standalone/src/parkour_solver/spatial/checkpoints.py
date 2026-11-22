@@ -91,6 +91,7 @@ def checkpoint(corridor, gates, spec):
 def retain_prefix(program, best):
     result = copy.deepcopy(program)
     result.pop('repairState', None)
+    result.pop('prefixChain', None)
     retained = result['profile']['positionConstraints']
     identities = {repr(sorted(r.items())) for r in retained}
     for row in best['plan']['walls']:
