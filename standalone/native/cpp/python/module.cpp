@@ -13,6 +13,7 @@
 
 #include "pkc/canonical.hpp"
 #include "pkc/coefficients.hpp"
+#include "pkc/constraints/variants.hpp"
 #include "pkc/envelopes.hpp"
 #include "pkc/gate.hpp"
 #include "pkc/movement/units.hpp"
@@ -277,10 +278,12 @@ PYBIND11_MODULE(_pkc_native, m) {
     m.def("compile_coefficients", [](py::handle request) {
         return to_python(pkc::compile_coefficients(convert(request)));
     }, "physics/coefficients.compile_request for one coefficient_request message");
-    m.def("interaction_reachability", [](py::handle envelopes, py::handle interaction, bool refine) {
-        return to_python(pkc::interaction_reachability(convert(envelopes), convert(interaction), refine));
-    }, py::arg("envelopes"), py::arg("interaction"), py::arg("refine") = false,
-       "reachability/intervals.interaction_reachability; raises NativeUnsupported for a refined screen with a model");
+    m.def("interaction_reachability", [](py::handle envelopes, py::handle interaction, bool refine, py::handle objective) {
+        const pkc::Value goal = convert(objective);
+        return to_python(pkc::interaction_reachability(convert(envelopes), convert(interaction), refine,
+                                                       objective.is_none() ? nullptr : &goal));
+    }, py::arg("envelopes"), py::arg("interaction"), py::arg("refine") = false, py::arg("objective") = py::none(),
+       "reachability/intervals.interaction_reachability");
     m.def("interaction_reachability_many", [](py::handle envelopes, py::handle interactions) {
         return to_python(pkc::interaction_reachability_many(convert(envelopes), convert(interactions)));
     }, "reachability/intervals.interaction_reachability_many");
@@ -524,6 +527,66 @@ PYBIND11_MODULE(_pkc_native, m) {
     m.def("exit_faces", [](py::handle column, py::handle target) {
         return to_python(pkc::exit_faces(convert(column), convert(target)));
     });
+    py::class_<pkc::ConstraintVariants>(m, "ConstraintVariants")
+        .def(py::init([](py::handle route, py::handle profile, py::handle geometry, py::handle envelopes, py::handle scope,
+                         py::handle checks, py::handle gates, py::handle signature, py::handle state, py::handle reference,
+                         py::handle owners, py::object check, py::handle segment_solids, py::handle objective,
+                         std::int64_t settled, py::handle obstacles, py::handle walk_offs) {
+                 if (py::len(signature)) throw std::invalid_argument("Gate signatures have no native producer");
+                 pkc::VariantInputs inputs;
+                 inputs.route = convert(route);
+                 inputs.profile = convert(profile);
+                 inputs.geometry = convert(geometry);
+                 inputs.envelopes = convert(envelopes);
+                 inputs.scope = convert(scope);
+                 auto listed_values = [](py::handle values) {
+                     return *std::get<std::shared_ptr<const pkc::Array>>(convert(py::list(py::reinterpret_borrow<py::object>(values))).data);
+                 };
+                 inputs.checks = listed_values(checks);
+                 inputs.gates = listed_values(gates);
+                 inputs.walk_offs = listed_values(walk_offs);
+                 inputs.reference = convert(reference);
+                 inputs.owners = convert(owners);
+                 inputs.objective = convert(objective);
+                 inputs.settled = settled;
+                 if (!segment_solids.is_none()) {
+                     inputs.segment_solids.emplace();
+                     for (auto item : py::reinterpret_borrow<py::dict>(segment_solids))
+                         inputs.segment_solids->emplace_back(item.first.cast<std::int64_t>(),
+                                                             item.second.cast<std::vector<std::int64_t>>());
+                     std::sort(inputs.segment_solids->begin(), inputs.segment_solids->end());
+                 }
+                 if (!check.is_none()) inputs.check = [check] { check(); };
+                 std::optional<pkc::Obstacles> listed;
+                 if (!obstacles.is_none()) listed = obstacles.cast<pkc::Obstacles>();
+                 return std::make_unique<pkc::ConstraintVariants>(std::move(inputs), std::move(listed), convert(state));
+             }),
+             py::arg("route"), py::arg("profile"), py::arg("geometry"), py::arg("envelopes"), py::arg("scope"),
+             py::arg("checks"), py::arg("gates"), py::arg("signature"), py::arg("state"), py::arg("reference"),
+             py::arg("owners"), py::arg("check"), py::arg("segment_solids"), py::arg("objective"), py::arg("settled"),
+             py::arg("obstacles"), py::arg("walk_offs"))
+        .def("__next__", [](pkc::ConstraintVariants& variants) {
+            auto variant = variants.next();
+            if (!variant) throw py::stop_iteration();
+            return to_python(*variant);
+        })
+        .def_property_readonly("state", [](const pkc::ConstraintVariants& variants) { return to_python(variants.state()); })
+        .def_property_readonly("conflict_driven", &pkc::ConstraintVariants::conflict_driven)
+        .def_property_readonly("obstacles", [](const pkc::ConstraintVariants& variants) -> py::object {
+            if (!variants.obstacles()) return py::none();
+            py::list out;
+            for (const auto& [begin, solid] : *variants.obstacles()) out.append(py::make_tuple(begin, solid));
+            return out;
+        })
+        .def("obstacle_key", [](const pkc::ConstraintVariants& variants, std::int64_t solid, std::int64_t tick) -> py::object {
+            auto key = variants.obstacle_key(solid, tick);
+            if (!key) return py::none();
+            return py::make_tuple((*key)[0], (*key)[1]);
+        })
+        .def("with_obstacles", [](const pkc::ConstraintVariants& variants, const pkc::Obstacles& obstacles) {
+            return variants.with_obstacles(obstacles);
+        })
+        .def_property_readonly("item_count", &pkc::ConstraintVariants::item_count);
     py::class_<pkc::InteractionGate, std::shared_ptr<pkc::InteractionGate>>(m, "InteractionGate")
         .def(py::init([](py::handle scene) { return std::make_shared<pkc::InteractionGate>(convert(scene)); }))
         .def("reachable_faces", [](pkc::InteractionGate& gate, std::optional<std::string> name) {

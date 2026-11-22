@@ -37,6 +37,8 @@ Array listed(const Object& route, const char* key) {
     return value ? items(*value) : Array{};
 }
 
+}  // namespace
+
 Num face_clearance(const Object& route, std::int64_t leg, std::int64_t offset, const Object& face,
                    const Num& clearance) {
     Array hits = listed(route, "hitEvents");
@@ -60,8 +62,6 @@ Num face_clearance(const Object& route, std::int64_t leg, std::int64_t offset, c
     }
     return clearance;
 }
-
-}  // namespace
 
 void validate_passages(Object& route) {
     erase(route, "passageCaps");

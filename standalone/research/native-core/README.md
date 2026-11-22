@@ -516,3 +516,24 @@ With it, every proposal of a node expansion is native.
   [native](2026-11-22-minimum-runs/suite-native-summary.txt), [live](2026-11-22-minimum-runs/live-scene-release-summary.json),
   [ASan](2026-11-22-minimum-runs/tests-asan-summary.txt)).
 
+
+## Constraint variants, 2026-11-22
+
+Source: `d24a47c2` plus `constraints/variants.hpp` (the encounter covers of `constraints/encounters.py` and the
+resumable variant frontier of `constraints/variants.py`, with a typed state that converts to and from the Python state
+dict), `reachability/screen.hpp` (`condition_envelopes`) and refined interaction screens through the native disk screen.
+It is the first piece of the node solve, for the native repair loop to come; nothing dispatches to it yet. Route guards
+and gate signatures, which have no producer, are left out; their context digest entries stay.
+
+- A native twin beside every Python generator compares each variant and the state after it (timings aside):
+  fixed work 65 generators, 103 variants, 18 obstacle restarts; the short Real11 control 15 and 46; the test modules
+  that build variants 376 generators (73 resumed from a saved state), 2,175 variants. No difference
+  ([fixed work](2026-11-22-constraint-variants/fixedwork-shadow.json),
+  [short control](2026-11-22-constraint-variants/short-control-shadow.json),
+  [tests](2026-11-22-constraint-variants/tests-shadow.json)). In the tests the twin restarts from the Python state after a
+  Python deadline (70) or a test's own edit (6), and skips 2 instances whose `option` a test patches, one built with a
+  gate signature and one whose test-made pending node lacks `choices`.
+- Replaying the 65 fixed-work generators to exhaustion matches, on release and under AddressSanitizer, and the test
+  shadow runs clean under AddressSanitizer with the same counts; its one failure is the known ladder baseline
+  ([release](2026-11-22-constraint-variants/fixedwork-replay.txt), [ASan](2026-11-22-constraint-variants/fixedwork-replay-asan.txt),
+  [tests ASan](2026-11-22-constraint-variants/tests-shadow-asan.json), [summary](2026-11-22-constraint-variants/tests-asan-summary.txt)).

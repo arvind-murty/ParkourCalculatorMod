@@ -1,0 +1,11 @@
+{
+ "stats": {
+  "constructed": 65,
+  "constructed with state": 0,
+  "next variant": 103,
+  "next stop": 46,
+  "obstacle_key": 23,
+  "with_obstacles": 18
+ },
+ "mismatches": []
+}

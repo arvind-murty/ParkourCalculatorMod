@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "py_math.hpp"
+#include "pkc/numerics/disk.hpp"
 #include "pkc/vertical.hpp"
 #include "value_ops.hpp"
 
@@ -257,7 +258,8 @@ Value reachable_envelopes(const Value& problem_value, const Value& y_value, std:
                    {"origin", initial ? kNull : at(problem, "position")}});
 }
 
-Value interaction_reachability(const Value& envelopes_value, const Value& interaction_value, bool refine) {
+Value interaction_reachability(const Value& envelopes_value, const Value& interaction_value, bool refine,
+                               const Value* objective) {
     const Object& envelopes = fields(envelopes_value);
     const Object interaction = is_list(interaction_value) ? Object{{"rows", interaction_value}} : fields(interaction_value);
     auto ruled_out = [](Object fields_after) {
@@ -271,7 +273,7 @@ Value interaction_reachability(const Value& envelopes_value, const Value& intera
     if (const Value* alternatives = get(interaction, "alternatives")) {
         Array results;
         for (const auto& item : items(*alternatives))
-            results.push_back(interaction_reachability(envelopes_value, item, refine));
+            results.push_back(interaction_reachability(envelopes_value, item, refine, objective));
         const bool all = std::all_of(results.begin(), results.end(),
                                      [](const Value& r) { return py_truthy(at(fields(r), "ruledOut")); });
         if (!results.empty() && all)
@@ -371,9 +373,16 @@ Value interaction_reachability(const Value& envelopes_value, const Value& intera
             }
         }
     }
-    if (refine) {
-        const Value* model = get(envelopes, "model");
-        if (model && !is_null(*model)) throw Unsupported("refined interaction screens run disk.screen in Python");
+    if (const Value* model = get(envelopes, "model"); refine && model && !is_null(*model)) {
+        const Value* rows = get(interaction, "rows");
+        const Value checked = disk_screen(*model, rows ? *rows : array({}), objective, kDiskCap, kDiskMaxIter);
+        if (!is_null(checked)) {
+            const Object& c = fields(checked);
+            if (as_text(at(c, "outcome")) == "infeasible") return ruled_out(fields(at(c, "proof")));
+            if (as_text(at(c, "outcome")) == "undecided")
+                return object({{"ruledOut", boolean(false)}, {"reason", text("relaxation_undecided")},
+                               {"status", at(c, "status")}, {"message", at(c, "message")}});
+        }
     }
     return not_ruled_out;
 }

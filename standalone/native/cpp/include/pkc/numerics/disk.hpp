@@ -1,6 +1,5 @@
-// The acceleration-disk relaxation: numerics/disk.py's model and Clarabel solve.
-// Its process-wide decided-result cache and STATS counters stay in Python
-// with their readers.
+// The acceleration-disk relaxation: numerics/disk.py's model and Clarabel solve,
+// with its process-wide decided-result cache and STATS counters.
 #pragma once
 
 #include <string>
