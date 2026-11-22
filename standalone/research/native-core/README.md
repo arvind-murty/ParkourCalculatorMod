@@ -491,4 +491,8 @@ gate binding's `analysis` counted a second preparation hit per Python `analyze`;
   [native](2026-11-22-expansion-batch-ordinary/suite-native-summary.txt),
   [live](2026-11-22-expansion-batch-ordinary/live-scene-release-summary.json),
   [ASan](2026-11-22-expansion-batch-ordinary/screen-shadow-tests-asan.json)).
+- `search/node.hpp` also has `advantageous_candidates` (the minimum-run search's table of advantageous moves, with
+  `case_profile`'s grind duration), for the native minimum-run search to come: 8 calls in the fixed-work solve and
+  100 over the anchor tests match Python ([fixed work](2026-11-22-expansion-batch-ordinary/candidates-shadow-fixedwork.json),
+  [tests](2026-11-22-expansion-batch-ordinary/candidates-shadow-tests.json)).
 

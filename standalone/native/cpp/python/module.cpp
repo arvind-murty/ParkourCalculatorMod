@@ -786,6 +786,13 @@ PYBIND11_MODULE(_pkc_native, m) {
             }
             return py::make_tuple(out, expansion.finished);
         }, "frontier's loop over one movement type's proposals: (records, finished) (see search/node.hpp)");
+    m.def("advantageous_candidates", [](std::shared_ptr<pkc::InteractionGate> gate, std::shared_ptr<pkc::AnchorScene> anchors,
+                                        std::optional<std::string> launch, py::handle top, const std::string& next_owner,
+                                        std::vector<std::string> types, py::handle threshold) {
+        auto number = [](py::handle h) { return pkc::Num{h.cast<double>(), py::isinstance<py::int_>(h)}; };
+        return to_python(pkc::Value{std::make_shared<const pkc::Array>(
+            pkc::advantageous_candidates(*gate, *anchors, launch, number(top), next_owner, types, number(threshold)))});
+    }, "anchors/policy.advantageous_candidates on the gate's face tables");
     m.def("disk_cached_solve", [](py::handle content, double seconds, const std::string& kind, double cap, unsigned max_iter) {
         return to_python(pkc::disk_cached_solve(convert(content), seconds, kind, cap, max_iter));
     }, "numerics/disk.solve on the native decided-result cache the native gate's screens share");

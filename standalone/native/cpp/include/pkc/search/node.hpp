@@ -65,6 +65,12 @@ struct NodeSearch {
     Value screen(Program& program, NodeEffects& effects) const;  // check_program may add a walk-off selection
 };
 
+// anchors/policy.advantageous_candidates(scene, gate.reachable_faces, launch, top, next_owner, types, threshold):
+// the entries {key, A, via[, limit]} sorted by key. A null launch is a program on no face.
+Array advantageous_candidates(InteractionGate& gate, const AnchorScene& anchors, const std::optional<std::string>& launch,
+                              const Num& top, const std::string& next_owner, const std::vector<std::string>& types,
+                              const Num& threshold);
+
 // One proposal's outcome, in ordinal order.
 struct ProposalRecord {
     std::int64_t ordinal = 0;

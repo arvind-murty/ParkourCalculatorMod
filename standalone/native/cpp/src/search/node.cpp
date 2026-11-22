@@ -14,6 +14,9 @@
 #include "pkc/search/comparison.hpp"
 #include "pkc/search/feasibility.hpp"
 #include "pkc/search/goals.hpp"
+#include "pkc/movement/normal.hpp"
+#include "pkc/movement/vertical_profiles.hpp"
+#include "pkc/vertical.hpp"
 
 namespace pkc {
 namespace {
@@ -579,6 +582,140 @@ Expansion expand_type(const NodeSearch& search, const Program& parent_program, c
     }
     expansion.finished = true;
     return expansion;
+}
+
+Array advantageous_candidates(InteractionGate& gate, const AnchorScene& anchors, const std::optional<std::string>& launch,
+                              const Num& top, const std::string& next_owner, const std::vector<std::string>& types,
+                              const Num& threshold) {
+    const Object& scene = fields(gate.scene());
+    auto enabled = [&](const char* type) { return std::find(types.begin(), types.end(), type) != types.end(); };
+    std::map<std::string, Num> tops;
+    for (const auto& b : items(at(scene, "blocks"))) tops.emplace(as_text(at(fields(b), "id")), num(at(fields(b), "top")));
+    std::map<std::vector<double>, std::string> by_box;  // box_owners: the last block on a box names it
+    const Array& solids = items(at(fields(at(scene, "collisionScene")), "solids"));
+    for (const auto& b : items(at(scene, "blocks"))) {
+        std::vector<double> key;
+        for (const auto& v : items(solids.at(as_int(at(fields(b), "solidIndex"))))) key.push_back(num(v).value);
+        by_box[key] = anchors.owner(as_text(at(fields(b), "id")));
+    }
+    const Value* hits = get(scene, "ceilingHits");
+    const std::vector<FaceOption> undersides = enabled("ceiling") && !(hits && !py_truthy(*hits))
+                                                   ? scene_contact_options(gate.scene(), gate.geometry(), 1, -1)
+                                                   : std::vector<FaceOption>{};
+    auto rest = [](const Num& y) { return ScalarState{true, y, false, Num{-kGravity * kYDrag, false}}; };
+    auto landing = [](const Trace& trace, const std::vector<double>& heights) {
+        std::optional<std::int64_t> best;
+        for (double u : heights)
+            if (auto t = first_descent(trace, u); t && (!best || *t + 1 < *best)) best = *t + 1;
+        return best;
+    };
+    auto heights_of = [&](const std::set<std::string>& names, const std::function<bool(const std::string&)>& keep) {
+        std::vector<double> out;
+        for (const auto& n : names)
+            if (keep(n)) out.push_back(tops.at(n).value);
+        return out;
+    };
+    // jumps(launch, top): (kind, name) -> A, in first-added order
+    std::vector<std::pair<std::pair<std::string, Value>, std::int64_t>> found;
+    auto add_jump = [&](std::string kind, Value name, std::optional<std::int64_t> airtime) {
+        if (!airtime) return;
+        for (auto& [key, a] : found)
+            if (key.first == kind && py_equal(key.second, name)) {
+                if (*airtime < a) a = *airtime;
+                return;
+            }
+        found.push_back({{std::move(kind), std::move(name)}, *airtime});
+    };
+    const FaceTable& kinds = gate.reachable_faces(launch);
+    const std::vector<double> landing_tops = heights_of(kinds.landing, [](const std::string&) { return true; });
+    const Trace trace = replay(rest(top), 200, true, {}, {}, threshold);
+    if (enabled("normal"))
+        add_jump("anchor", text(next_owner),
+                 landing(trace, heights_of(kinds.landing, [&](const std::string& b) { return anchors.owner(b) == next_owner; })));
+    for (const auto& option : undersides) {
+        if (std::none_of(option.members.begin(), option.members.end(), [&](std::int64_t i) { return kinds.ceiling_solids.count(i); }))
+            continue;
+        std::set<std::string> owners;
+        for (const auto& b : option.boxes) {
+            std::vector<double> key;
+            for (const auto& v : items(b)) key.push_back(num(v).value);
+            if (auto o = by_box.find(key); o != by_box.end()) owners.insert(o->second);
+        }
+        std::string names;
+        for (const auto& o : owners) names += (names.empty() ? "" : "+") + o;
+        const double plane = num(option.plane).value;
+        std::optional<std::int64_t> hit;
+        for (std::size_t h = 0; h < trace.movement.size(); ++h)
+            if (trace.movement[h].value > 0 && trace.position[h].value <= plane && plane < trace.position[h + 1].value) {
+                hit = static_cast<std::int64_t>(h);
+                break;
+            }
+        if (hit) {
+            VerticalContact contact;
+            contact.state = *hit + 1;
+            contact.plane = num(option.plane);
+            contact.direction = 1;
+            add_jump("ceiling", text(names), landing(replay(rest(top), 200, true, {contact}, {}, threshold), landing_tops));
+        }
+        const Num clearance = sub(num(option.plane), top);
+        if (0 <= clearance.value && clearance.value < f32(.42)) {
+            // case_profile(top, u, grind at input 0): the duration of a grind landing on each top
+            std::optional<std::int64_t> best;
+            for (const auto& [name, u] : tops) {
+                if (!kinds.landing.count(name)) continue;
+                Array jump(200, Value{nullptr});
+                jump[0] = real(kJumpVelocity);
+                const Value contact = object({{"case", text("grind")}, {"plane", value(top)}, {"clearance", value(clearance)},
+                                              {"state", integer_value(1)}, {"direction", integer_value(-1)}});
+                const Value t = trace_ladder_schedule(
+                    object({{"position", value(top)}, {"velocity", real(-kGravity * kYDrag)}, {"onGround", boolean(true)}}),
+                    array(Array(201, boolean(false))), array(Array(200, boolean(false))), array(Array(200, boolean(false))),
+                    array(std::move(jump)), value(u), integer_value(2), array({contact}), Value{nullptr}, true, value(threshold));
+                const Object& tr = fields(t);
+                if (as_text(at(tr, "status")) == "invalid" || !py_truthy(items(at(tr, "onGround")).back()) ||
+                    std::fabs(num(items(at(tr, "position")).back()).value - u.value) > 1e-8)
+                    continue;
+                const std::int64_t duration = as_int(at(tr, "ticks"));
+                if (!best || duration < *best) best = duration;
+            }
+            add_jump("grind", text(names), best);
+        }
+    }
+    if (enabled("stepping"))
+        for (const auto& b : kinds.stepping)
+            if (f32(.42) < tops.at(b).value - top.value && tops.at(b).value - top.value <= f32(.6)) {
+                add_jump("slab_boost", text(anchors.support_face(b)), 2);
+                add_jump("corner_jump_cancel", text(anchors.support_face(b)), 2);
+            }
+    std::map<std::string, Object> entries;  // sorted by key, as the Python returns them
+    auto add = [&](const Value& key_list, std::int64_t airtime, Value via, Object bound) {
+        const std::string key = dumps(key_list, false, false);
+        auto it = entries.find(key);
+        if (it != entries.end() && airtime >= as_int(at(it->second, "A"))) return;
+        Object entry{{"key", text(key)}, {"A", integer_value(airtime)}, {"via", std::move(via)}};
+        for (auto& f : bound) entry.push_back(std::move(f));
+        entries[key] = std::move(entry);
+    };
+    for (const auto& [key, airtime] : found) add(array({text(key.first), key.second}), airtime, Value{nullptr}, {});
+    const Trace fall = replay(rest(top), 200, false, {}, {}, threshold);
+    std::set<std::string> candidates(kinds.landing.begin(), kinds.landing.end());
+    candidates.insert(kinds.stepping.begin(), kinds.stepping.end());
+    for (const auto& b : candidates) {
+        const std::string name = anchors.support_face(b);
+        const double u = tops.at(b).value;
+        if (launch && name == *launch) continue;
+        if (enabled("normal") && kinds.landing.count(b) && (u < top.value || (u == top.value && name == next_owner))) {
+            const auto t = first_descent(fall, u);
+            const auto limit = landing(trace, heights_of(kinds.landing, [&](const std::string& c) { return anchors.support_face(c) == name; }));
+            if (!t || !limit) continue;
+            add(array({text("landing"), text(name)}), *t, text(name), {{"limit", integer_value(*limit)}});
+        } else if (enabled("stepping") && kinds.stepping.count(b) && 0 < u - top.value && u - top.value <= f32(.6)) {
+            add(array({text("step"), text(name)}), 0, text(name), {});
+        }
+    }
+    Array out;
+    for (auto& [_, entry] : entries) out.push_back(object(std::move(entry)));
+    return out;
 }
 
 }  // namespace pkc
