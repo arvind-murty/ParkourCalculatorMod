@@ -110,7 +110,7 @@ Run the [new native driver and matched finite-task measurement](../research/anch
 | Movement bridge: coefficients, scene checks, footprints, selection, cross-bridge resume | `test_python_compiler` (Java differential tests need `PKC_RUN_TICKS_COMPILER`), `test_package_layout` |
 | Historical relaxed route models | `test_route_guidance` |
 | Existing ladders | `test_ladder_*`, `test_climbable_search`, `test_hanging_vines`, `test_long_ladder_chains`, `test_movement_entry` |
-| C++ migration: native core, parity harness, pruning pilot | `test_native_core` (skips until `tools.native_cpp build`; outside the gate), `test_profiling`; pilot: `tools.profiling.cpp_pruning tests` |
+| C++ migration: native core, parity harness, pruning pilot | `test_native_core` (skips until `tools.native_cpp build`; outside the gate), `test_profiling`; rerun the gate modules with `PKC_NATIVE_CORE=build/native/cpp` to exercise the switched units; pilot: `tools.profiling.cpp_pruning tests` |
 
 `tests/unit/numerics/` separates `test_model` (scalar equations/constraints), `test_solver` (worker lifecycle, independent validation and failure handling), `test_continuation` (incumbents/inertia phases), `test_capture`, `test_ladder_model`, `test_movement` and real-worker `test_integration`. Reuse these instead of creating a second acceptance oracle.
 

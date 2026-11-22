@@ -22,14 +22,11 @@ def save(path, value):
 
 def load(variant='release'):
     """Import the built extension; raises ImportError naming the build command when it is missing."""
-    directory = str(BUILDS[variant])
-    if directory not in sys.path:
-        sys.path.insert(0, directory)
+    from parkour_solver import native_core
     try:
-        import _pkc_native
+        return native_core.load(BUILDS[variant])
     except ImportError as error:
         raise ImportError(f'Native core not built; run python -m tools.native_cpp build ({error})') from None
-    return _pkc_native
 
 
 def build(args):
@@ -137,14 +134,16 @@ def verify_gate(args):
     from parkour_solver.reachability.service import InteractionGate
     args.output.mkdir(parents=True, exist_ok=False)
     native = load(args.variant)
+    os.environ.pop('PKC_NATIVE_CORE', None)  # the gate under check must build with Python, the oracle
     original = InteractionGate.prepare
     calls = dict(count=0)
 
     def checked(gate, program, *, scene=None, require_complete=False):
         expected = original(gate, program, scene=scene, require_complete=require_complete)
         actual = native.gate_prepare(gate.scene if scene is None else scene, program, require_complete)
+        built = None if expected is None else {k: v for k, v in expected.items() if k != 'key'}  # key: the gate's
         calls['count'] += 1
-        if canonical_bytes(actual) != canonical_bytes(expected):
+        if canonical_bytes(actual) != canonical_bytes(built):
             save(args.output / 'mismatch.json', dict(program=program, requireComplete=require_complete))
             raise AssertionError(f'native gate preparation differs at call {calls["count"]}')
         return expected

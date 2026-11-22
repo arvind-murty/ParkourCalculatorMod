@@ -222,7 +222,9 @@ def landing_boxes(program, cut):
 class InteractionGate:
     """Session-shared preparation, coefficient and exact-model proof cache."""
     def __init__(self, scene, compiler, *, seconds=1):
+        from parkour_solver import native_core
         self.scene, self.compiler, self.seconds = scene, compiler, seconds
+        self.native = native_core.from_environment()
         self.cache = {}
         self.metrics = {}
         self.checked = 0
@@ -264,6 +266,10 @@ class InteractionGate:
         key=('prepared',digest(dict(scene={k:v for k,v in scene.items() if k!='movementSearch'},
             program=program_physics_key(program),complete=require_complete)))
         def build():
+            # The native unit covers production routes: collision-box scenes without ladder events.
+            if self.native is not None and scene['sceneModel']=='collision_boxes' and not program.get('ladderEvents'):
+                prepared=self.native.gate_prepare(scene,program,require_complete)
+                return None if prepared is None else dict(key=key[1],**prepared)
             compiled=compile_program(scene,program,require_complete=require_complete)
             route=prepare_route(compiled['route']);plan=schedule(route,[0])
             vertical=validate_vertical_schedule(route,compiled['profiles'],plan)

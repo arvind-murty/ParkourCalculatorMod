@@ -3,6 +3,7 @@ import json
 import math
 from pathlib import Path
 import random
+import re
 import struct
 import unittest
 
@@ -155,12 +156,35 @@ class GatePreparationTests(unittest.TestCase):
         with compiler() as java:
             for scene, roots in real11_inputs():
                 gate = InteractionGate(scene, java, seconds=10)
+                gate.native = None  # the Python oracle, whatever PKC_NATIVE_CORE says
                 for node in nodes(scene, roots, gate):
                     if not node['profile']['airtime']:
                         continue
-                    expected = gate.prepare(node)
+                    expected = {k: v for k, v in gate.prepare(node).items() if k != 'key'}
                     self.assertEqual(canonical(self.native.gate_prepare(scene, node, False)), canonical(expected))
                     checked += 1
+        self.assertGreater(checked, 0)
+
+    def test_gate_with_the_native_core_prepares_like_the_python_gate(self):
+        from tests.support.block_table import compiler, nodes, real11_inputs
+        from parkour_solver.reachability.service import InteractionGate
+        checked = 0
+        with compiler() as java:
+            for scene, roots in real11_inputs():
+                python, native = InteractionGate(scene, java, seconds=10), InteractionGate(scene, java, seconds=10)
+                python.native, native.native = None, self.native
+                for node in nodes(scene, roots, python):
+                    if not node['profile']['airtime']:
+                        continue
+                    for complete in (False, True):
+                        try:
+                            expected = canonical(python.prepare(node, require_complete=complete))
+                        except ValueError as error:
+                            with self.assertRaisesRegex(ValueError, re.escape(str(error))):
+                                native.prepare(node, require_complete=complete)
+                            continue
+                        self.assertEqual(canonical(native.prepare(node, require_complete=complete)), expected)
+                        checked += 1
         self.assertGreater(checked, 0)
 
     def test_complete_routes_and_python_errors_carry_over(self):

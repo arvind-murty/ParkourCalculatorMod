@@ -23,6 +23,13 @@ finite-scene contract. Commands use the Java bridge only when given an explicit
 identical replies, so request hashes match and checkpoints resume across them.
 Executable Minecraft replay and export remain Java tools.
 
+`PKC_NATIVE_CORE` opts a solve into the C++ core: set it to a built module
+directory (`build/native/cpp`, built as in
+[run a solve and report it](#run-a-solve-and-report-it)). The interaction gate then
+prepares collision-box routes without ladder events natively; everything else, and
+every run without the variable, uses the Python implementation, which stays the
+parity oracle.
+
 For a fresh environment, use Python3.12+ and the pinned extras:
 
 ```sh
