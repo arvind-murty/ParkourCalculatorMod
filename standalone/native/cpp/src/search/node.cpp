@@ -341,7 +341,7 @@ struct Checked {  // check_child: both screens and acceptance, without frontier 
 };
 
 Checked check(const NodeSearch& search, Composed& proposal, const std::array<double, 4>& initial_bounds,
-              const std::set<std::string>& seen, NodeEffects& effects) {
+              const std::set<std::string>& seen, const std::set<std::string>* queued, NodeEffects& effects) {
     Checked out;
     if (proposal.owned) {  // assess_proposal
         const Value proof = search.screen(*proposal.owned, effects);
@@ -365,7 +365,8 @@ Checked check(const NodeSearch& search, Composed& proposal, const std::array<dou
                                          {"proof", object({{"reason", text("search_policy")}})}}));
         out.outcome = "rejected";
     } else {
-        out.outcome = seen.count(program_search_key(*proposal.owned)) ? "seen" : "accepted";
+        const std::string key = program_search_key(*proposal.owned);
+        out.outcome = seen.count(key) || (queued && queued->count(key)) ? "seen" : "accepted";
     }
     return out;
 }
@@ -406,6 +407,59 @@ std::optional<FaceOption> launch_face(const NodeSearch& search, const Program& d
     return best;
 }
 
+// landings_of(child, decision): {face: program} of an accepted child's earliest landing on each face, in order found.
+// A grounded child's is its own; an airborne one's are its own proposals' (screened, effects into `effects`).
+std::vector<std::pair<std::optional<std::string>, Program>> landings_of(
+    const NodeSearch& search, const Program& child, const Program& decision, const std::vector<std::string>& supports,
+    std::int64_t settings_max_inputs, const std::array<double, 4>& initial_bounds, const std::set<std::string>& seen,
+    const std::set<std::string>* queued, NodeEffects& effects, const std::function<void()>& budget) {
+    std::vector<std::pair<std::optional<std::string>, Program>> landings;
+    if (child.profile.grounded.back()) {
+        landings.emplace_back(terminal_face(search, child), child);
+        return landings;
+    }
+    auto shared = std::make_shared<const Program>(child);
+    const GenerationContext inner = expansion_context(search, shared, decision, settings_max_inputs, true, budget);
+    std::vector<Composed> proposed;
+    for (const auto& type : search.frame.types)
+        for (const auto& choice : generate_choices(type, inner)) {
+            Composed c = compose(search, child, choice, supports, settings_max_inputs);
+            if (c.owned && c.owned->profile.grounded.back()) proposed.push_back(std::move(c));
+        }
+    std::stable_sort(proposed.begin(), proposed.end(), [](const Composed& a, const Composed& b) {
+        return a.owned->profile.duration < b.owned->profile.duration;
+    });
+    for (auto& c : proposed) {
+        const auto face = terminal_face(search, *c.owned);
+        if (std::any_of(landings.begin(), landings.end(), [&](const auto& l) { return l.first == face; })) continue;
+        const Checked landing = check(search, c, initial_bounds, seen, queued, effects);
+        if ((landing.outcome == "accepted" || landing.outcome == "seen") && c.owned->profile.grounded.back()) {
+            const auto landed_face = terminal_face(search, *c.owned);
+            if (std::none_of(landings.begin(), landings.end(), [&](const auto& l) { return l.first == landed_face; }))
+                landings.emplace_back(landed_face, std::move(*c.owned));
+        }
+    }
+    return landings;
+}
+
+// frontier.link: the child's decision fields (set only when absent).
+void link(const NodeSearch& search, const Program& parent, bool meaningful, Program& child, bool complete) {
+    auto inherited = [&](const char* key) {
+        const Value* v = get(parent.annotations, key);
+        return v ? as_int(*v) : 0;
+    };
+    if (!get(child.annotations, "decisionDepth"))
+        annotate(child, "decisionDepth", integer_value(inherited("decisionDepth") + (meaningful ? 1 : 0)));
+    if (!get(child.annotations, "lastSolvedDepth"))
+        annotate(child, "lastSolvedDepth", integer_value(inherited("lastSolvedDepth")));
+    if (!get(child.annotations, "decisionParent"))
+        annotate(child, "decisionParent", get_or_null(parent.annotations, meaningful ? "decisionNode" : "decisionParent"));
+    if (!get(child.annotations, "decisionNode"))
+        annotate(child, "decisionNode", meaningful ? text(node_identity(child, search.frame.policy_context))
+                                                   : get_or_null(parent.annotations, "decisionNode"));
+    if (meaningful && !complete) annotate(child, "needsNodeSolve", boolean(true));
+}
+
 }  // namespace
 
 Expansion expand_type(const NodeSearch& search, const Program& parent_program, const std::string& kind, std::int64_t cursor,
@@ -438,7 +492,7 @@ Expansion expand_type(const NodeSearch& search, const Program& parent_program, c
         ProposalRecord record;
         record.ordinal = static_cast<std::int64_t>(ordinal);
         Composed proposal = compose(search, *parent, choices[ordinal], supports, settings_max_inputs);
-        const Checked checked = check(search, proposal, initial_bounds, seen, record.effects);
+        const Checked checked = check(search, proposal, initial_bounds, seen, nullptr, record.effects);
         record.exclusions = array(checked.exclusions);
         record.screened = checked.screened;
         record.policy_rejections = checked.policy_rejections;
@@ -457,32 +511,8 @@ Expansion expand_type(const NodeSearch& search, const Program& parent_program, c
             }
             if (ordinary && lands) {
                 const std::int64_t start = parent->profile.duration;
-                std::vector<std::pair<std::optional<std::string>, Program>> landings;  // landings_of, by first face
-                if (grounded) {
-                    landings.emplace_back(terminal_face(search, child), child);
-                } else {
-                    auto shared = std::make_shared<const Program>(child);
-                    const GenerationContext inner = expansion_context(search, shared, *parent, settings_max_inputs, true, budget);
-                    std::vector<Composed> proposed;
-                    for (const auto& type : f.types)
-                        for (const auto& choice : generate_choices(type, inner)) {
-                            Composed c = compose(search, child, choice, supports, settings_max_inputs);
-                            if (c.owned && c.owned->profile.grounded.back()) proposed.push_back(std::move(c));
-                        }
-                    std::stable_sort(proposed.begin(), proposed.end(), [](const Composed& a, const Composed& b) {
-                        return a.owned->profile.duration < b.owned->profile.duration;
-                    });
-                    for (auto& c : proposed) {
-                        const auto face = terminal_face(search, *c.owned);
-                        if (std::any_of(landings.begin(), landings.end(), [&](const auto& l) { return l.first == face; })) continue;
-                        const Checked landing = check(search, c, initial_bounds, seen, record.effects);
-                        if ((landing.outcome == "accepted" || landing.outcome == "seen") && c.owned->profile.grounded.back()) {
-                            const auto landed_face = terminal_face(search, *c.owned);
-                            if (std::none_of(landings.begin(), landings.end(), [&](const auto& l) { return l.first == landed_face; }))
-                                landings.emplace_back(landed_face, std::move(*c.owned));
-                        }
-                    }
-                }
+                const auto landings = landings_of(search, child, *parent, supports, settings_max_inputs, initial_bounds,
+                                                  seen, nullptr, record.effects, budget);
                 for (const auto& [face, landing] : landings)
                     landed.push_back(array({face ? text(*face) : Value{nullptr}, integer_value(landing.profile.duration - start)}));
                 // A jump landing back on its launch face waits unless it naturally fits there (O11).
@@ -542,21 +572,7 @@ Expansion expand_type(const NodeSearch& search, const Program& parent_program, c
                 }
             }
             record.meaningful = meaningful_choice(choices[ordinal]);
-            auto inherited = [&](const char* key) {
-                const Value* v = get(parent->annotations, key);
-                return v ? as_int(*v) : 0;
-            };
-            if (!get(child.annotations, "decisionDepth"))
-                annotate(child, "decisionDepth", integer_value(inherited("decisionDepth") + (record.meaningful ? 1 : 0)));
-            if (!get(child.annotations, "lastSolvedDepth"))
-                annotate(child, "lastSolvedDepth", integer_value(inherited("lastSolvedDepth")));
-            if (!get(child.annotations, "decisionParent"))
-                annotate(child, "decisionParent",
-                         get_or_null(parent->annotations, record.meaningful ? "decisionNode" : "decisionParent"));
-            if (!get(child.annotations, "decisionNode"))
-                annotate(child, "decisionNode", record.meaningful ? text(node_identity(child, f.policy_context))
-                                                                  : get_or_null(parent->annotations, "decisionNode"));
-            if (record.meaningful && !complete(child)) annotate(child, "needsNodeSolve", boolean(true));
+            link(search, *parent, record.meaningful, child, complete(child));
             seen.insert(program_search_key(child));
             const bool held = !is_null(fit) && !py_truthy(at(fields(fit), "fits"));
             record.outcome = held ? "held" : "queued";
@@ -715,6 +731,490 @@ Array advantageous_candidates(InteractionGate& gate, const AnchorScene& anchors,
     }
     Array out;
     for (auto& [_, entry] : entries) out.push_back(object(std::move(entry)));
+    return out;
+}
+
+MinimumRuns minimum_runs(const NodeSearch& search, const Program& program, const Value& reached_value,
+                         const Value& landings_value, const std::vector<std::string>& stop_supports,
+                         const std::array<double, 4>& initial_bounds, std::int64_t settings_max_inputs,
+                         const std::set<std::string>& seen, const std::function<void()>& budget) {
+    const NodeFrame& f = search.frame;
+    const std::int64_t max_runs = flat_jump_ticks() - 1;  // MAX_ADVANTAGEOUS_RUN_TICKS
+    const std::vector<std::string> supports =
+        stop_supports.empty() ? std::vector<std::string>{as_text(at(fields(f.scene), "goalBlock"))} : stop_supports;
+    auto complete = [&](const Program& p) {
+        return p.profile.grounded.back() && supported_by(p, supports) && p.profile.duration > 0;
+    };
+    MinimumRuns out;
+    const Value* search_fields = get(program.annotations, "minimumRunSearch");
+    const bool held = search_fields && !is_null(*search_fields);
+    const Value node = held ? at(fields(*search_fields), "node") : get_or_null(program.annotations, "decisionNode");
+    const std::string upcoming = search.anchors->next_anchor(program, f.anchors, f.task_block);
+    const std::optional<std::string> here = terminal_face(search, program);
+    auto lands = [&](const Program& child) { return child.profile.grounded.back() ? terminal_face(search, child) : std::nullopt; };
+    auto text_or_null = [](const std::optional<std::string>& v) { return v ? text(*v) : Value{nullptr}; };
+    auto target_keys = [&](const Program& base, const Program& child) {
+        const std::string next = search.anchors->next_anchor(base, f.anchors, f.task_block);
+        std::set<std::string> keys;
+        for (const auto& [kind, name] : search.anchors->advantageous_targets(base, child, next))
+            keys.insert(dumps(array({text(kind), text_or_null(name)}), false, false));
+        return keys;
+    };
+    auto lands_later = [&](const Program& base, const Program& child) {
+        return !child.profile.grounded.back() && !target_keys(base, child).empty();
+    };
+    std::set<std::string> queued_ids;
+
+    struct Item {
+        std::shared_ptr<const Program> base;
+        MovementChoice choice;
+        Composed proposal;
+        bool checked = false, has_child = false;
+        std::string reason;  // "" is None
+        std::optional<std::set<std::string>> keys;
+    };
+    std::vector<std::vector<std::shared_ptr<const Program>>> bases{{std::make_shared<const Program>(program)}};
+    std::vector<std::shared_ptr<std::vector<Item>>> levels;
+
+    auto check_item = [&](Item& item) -> Item& {  // check(item)
+        if (!item.checked) {
+            const Checked c = check(search, item.proposal, initial_bounds, seen, &queued_ids, out.effects);
+            out.exclusions.push_back(object({{"exclusions", array(c.exclusions)}, {"screened", integer_value(c.screened)},
+                                             {"policyRejections", integer_value(c.policy_rejections)}}));
+            if (c.outcome == "accepted" || c.outcome == "seen") {
+                item.has_child = true;
+                link(search, *item.base, meaningful_choice(item.choice), *item.proposal.owned, complete(*item.proposal.owned));
+            }
+            item.reason = c.outcome == "accepted" ? "" : c.outcome;
+            item.checked = true;
+        }
+        return item;
+    };
+    std::function<std::vector<Item>&(std::size_t)> level = [&](std::size_t k) -> std::vector<Item>& {
+        while (levels.size() <= k) {
+            if (levels.size() == bases.size()) {
+                std::set<std::string> ids;
+                std::vector<std::shared_ptr<const Program>> found;
+                for (auto& item : *levels.back()) {
+                    const Program* child = item.proposal.owned ? &*item.proposal.owned : nullptr;
+                    if (item.choice.profile.jump.at(0) || meaningful_choice(item.choice) || (lands(*child) == upcoming))
+                        continue;
+                    check_item(item);
+                    if (item.has_child) {
+                        const std::string key = program_search_key(*item.proposal.owned);
+                        if (ids.insert(key).second) found.push_back(std::make_shared<const Program>(*item.proposal.owned));
+                    }
+                }
+                bases.push_back(std::move(found));
+            }
+            auto items = std::make_shared<std::vector<Item>>();
+            for (const auto& base : bases[levels.size()]) {
+                const GenerationContext context = expansion_context(search, base, program, settings_max_inputs, true, budget);
+                for (const auto& type : f.types)
+                    for (auto& choice : generate_choices(type, context)) {
+                        Composed c = compose(search, *base, choice, supports, settings_max_inputs);
+                        if (!c.owned) continue;
+                        Item item;
+                        item.base = base;
+                        item.choice = std::move(choice);
+                        item.proposal = std::move(c);
+                        items->push_back(std::move(item));
+                    }
+            }
+            levels.push_back(items);
+        }
+        return *levels[k];
+    };
+    std::map<std::string, std::vector<std::pair<std::optional<std::string>, std::int64_t>>> peeked;
+    auto landing = [&](const Program& child) -> const std::vector<std::pair<std::optional<std::string>, std::int64_t>>& {
+        const std::string key = program_search_key(child);
+        auto found = peeked.find(key);
+        if (found == peeked.end()) {
+            std::vector<std::pair<std::optional<std::string>, std::int64_t>> times;
+            for (auto& [owner, landed] : landings_of(search, child, program, supports, settings_max_inputs, initial_bounds,
+                                                     seen, nullptr, out.effects, budget))
+                times.emplace_back(owner, landed.profile.duration - program.profile.duration);
+            found = peeked.emplace(key, std::move(times)).first;
+        }
+        return found->second;
+    };
+    struct Found {
+        Item* item;
+    };
+    auto built = [&](std::int64_t k, const std::vector<Found>& found) -> std::pair<Value, Value> {
+        std::optional<std::int64_t> best;
+        for (const auto& f2 : found)
+            for (const auto& [_, t] : landing(*f2.item->proposal.owned))
+                if (!best || t < *best) best = t;
+        if (!best) return {Value{nullptr}, Value{nullptr}};
+        return {integer_value(*best), integer_value(*best - k)};
+    };
+    auto decision_node = [](const Item& item) { return get_or_null(item.proposal.owned->annotations, "decisionNode"); };
+    auto enqueue = [&](Item& item, const std::shared_ptr<Array>& landed) {
+        const Program& child = *item.proposal.owned;
+        const std::string key = program_search_key(child);
+        if (item.reason.empty() && !queued_ids.count(key)) {
+            out.queued.push_back({child, meaningful_choice(item.choice), key});
+            queued_ids.insert(key);
+        }
+        if (child.profile.grounded.back() || lands_later(*item.base, child))
+            for (const auto& [owner, _] : landing(child))
+                if (owner) landed->push_back(object({{"owner", text(*owner)}, {"node", decision_node(item)}}));
+    };
+    auto key_kind = [](const Value& entry) { return as_text(items(loads(as_text(at(fields(entry), "key"))))[0]); };
+    auto realize = [&](const Value& entry_value, std::int64_t k) {
+        const Object& entry = fields(entry_value);
+        std::vector<Found> found;
+        for (auto& item : level(k)) {
+            const Program& child = *item.proposal.owned;
+            const bool jump = item.choice.profile.jump.at(0);
+            bool wanted;
+            if (is_null(get_or_null(entry, "via"))) {
+                if (jump && !item.keys) item.keys = target_keys(*item.base, child);
+                wanted = jump && item.keys->count(as_text(at(entry, "key")));
+            } else {
+                const auto target = lands(child);
+                const std::string via = as_text(at(entry, "via"));
+                wanted = !jump && target == via && (via == upcoming || meaningful_choice(item.choice));
+            }
+            if (wanted && check_item(item).has_child) found.push_back({&item});
+        }
+        return found;
+    };
+    auto runs = [&](const Value& entry, std::int64_t k) {
+        const std::string kind = key_kind(entry);
+        return kind == "landing" || kind == "step" ? k + 1 : k;
+    };
+    auto nodes_of = [&](const std::vector<Found>& found) {
+        Array nodes;
+        for (const auto& f2 : found) nodes.push_back(decision_node(*f2.item));
+        return nodes;
+    };
+    auto record = [&](const Value& entry, Value k, Value total, Value N, std::int64_t lower, std::int64_t number,
+                      const char* outcome, Array nodes = {}, std::optional<Value> A = std::nullopt) {
+        out.log.push_back(object({{"node", node}, {"key", at(fields(entry), "key")}, {"k", std::move(k)},
+                                  {"total", std::move(total)}, {"A", A ? *A : get_or_null(fields(entry), "A")},
+                                  {"N", std::move(N)}, {"lower", integer_value(lower)}, {"round", integer_value(number)},
+                                  {"outcome", text(outcome)}, {"nodes", array(std::move(nodes))}}));
+    };
+    struct Reserve {
+        Object fields;
+        Array watch;
+        std::shared_ptr<Array> kept, landed;
+    };
+    std::vector<Reserve> reserves;
+    auto reserve = [&](Array watch, Object fields, std::shared_ptr<Array> kept = nullptr, std::shared_ptr<Array> landed = nullptr) {
+        Object all{{"node", node}};
+        for (auto& f2 : fields) all.push_back(std::move(f2));
+        reserves.push_back({std::move(all), std::move(watch), std::move(kept), std::move(landed)});
+    };
+    using Landings = Array;
+    auto source = [&](const Landings& landings, const std::set<std::string>& dead) -> std::optional<std::pair<std::int64_t, std::string>> {
+        for (int pass = 0; pass < 2; ++pass) {
+            std::optional<std::pair<std::int64_t, std::string>> best;
+            for (const auto& l : landings) {
+                const std::string owner = as_text(at(fields(l), "owner"));
+                if (pass == 0 ? owner != upcoming : dead.count(owner)) continue;
+                const std::pair<std::int64_t, std::string> t{as_int(at(fields(l), "ticks")), owner};
+                if (!best || t < *best) best = t;
+            }
+            if (best) return best;
+        }
+        return std::nullopt;
+    };
+    auto candidates = [&] {
+        return advantageous_candidates(*search.gate, *search.anchors, terminal_face(search, program),
+                                       program.profile.position.back(), upcoming, f.types, Num{0., false});
+    };
+    auto take_entry = [&](const Value& entry_value, std::int64_t start, std::int64_t N, std::int64_t number,
+                          const std::shared_ptr<Array>& landed) {
+        const std::int64_t A = as_int(at(fields(entry_value), "A"));
+        for (std::int64_t k = start; k <= max_runs; ++k) {
+            if (k + A >= N) break;
+            const auto found = realize(entry_value, k);
+            if (found.empty()) continue;
+            const Array nodes = nodes_of(found);
+            for (const auto& f2 : found) enqueue(*f2.item, landed);
+            const auto [total, built_A] = built(k, found);
+            record(entry_value, integer_value(k), total, integer_value(N), 0, number, "kept", nodes, built_A);
+            if (k + 1 <= max_runs && k + 1 + A < N)
+                reserve(nodes, {{"kind", text("next")}, {"entry", entry_value}, {"start", integer_value(k + 1)},
+                                {"N", integer_value(N)}, {"round", integer_value(number)}});
+            return;
+        }
+        record(entry_value, Value{nullptr}, Value{nullptr}, integer_value(N), 0, number, "unreached");
+    };
+    auto jumped = [&] {
+        std::set<std::optional<std::string>> faces;
+        for (auto& item : level(0))
+            if (item.choice.profile.jump.at(0)) faces.insert(lands(*item.proposal.owned));
+        return faces;
+    };
+    auto dead_value = [](const std::set<std::string>& dead) {
+        Array out2;
+        for (const auto& d : dead) out2.push_back(text(d));
+        return array(std::move(out2));
+    };
+    std::function<void(const std::set<std::string>&, std::int64_t, std::int64_t, const std::shared_ptr<Array>&, std::int64_t,
+                       const std::shared_ptr<Array>&, const Landings&, bool)>
+        round_ = [&](const std::set<std::string>& dead, std::int64_t lower, std::int64_t N, const std::shared_ptr<Array>& kept,
+                     std::int64_t number, const std::shared_ptr<Array>& landed, const Landings& landings, bool widen) {
+            struct Pair {
+                std::int64_t total, A;
+                std::string key;
+                std::int64_t k;
+                Value entry;
+            };
+            std::vector<Pair> pairs;
+            std::optional<std::set<std::optional<std::string>>> reachable;
+            for (const auto& entry_original : candidates()) {
+                Value entry = entry_original;
+                const Object& e = fields(entry);
+                const std::string kind = key_kind(entry);
+                const std::int64_t A = as_int(at(e, "A"));
+                std::vector<std::int64_t> counts;
+                if (is_null(get_or_null(e, "via"))) {
+                    for (std::int64_t k = 1; k <= max_runs; ++k)
+                        if (lower <= k + A && k + A < N) counts.push_back(k);
+                } else if (lower) {
+                    continue;  // run-offs and step-ups are offered once per decision, in its first round
+                } else if (kind == "step") {
+                    counts = {0, 1};
+                } else {
+                    std::int64_t limit = as_int(at(e, "limit"));
+                    for (const auto& l : landings)
+                        if (py_equal(at(fields(l), "owner"), at(e, "via"))) limit = std::min(limit, as_int(at(fields(l), "ticks")));
+                    entry = object(with(e, "limit", integer_value(limit)));
+                    if (!reachable) reachable = jumped();
+                    if (reachable->count(std::optional<std::string>(as_text(at(e, "via")))))
+                        for (std::int64_t k = 0; k < max_runs; ++k)
+                            if (k + 1 + A < limit) counts.push_back(k);
+                }
+                for (auto k : counts) pairs.push_back({runs(entry, k) + A, A, as_text(at(e, "key")), k, entry});
+            }
+            std::stable_sort(pairs.begin(), pairs.end(), [](const Pair& a, const Pair& b) {
+                return std::tie(a.total, a.A, a.key, a.k) < std::tie(b.total, b.A, b.key, b.k);
+            });
+            std::set<std::string> resolved;
+            std::vector<std::pair<std::vector<std::string>, Array>> beaten;
+            for (const auto& pair : pairs) {
+                if (resolved.count(pair.key)) continue;
+                const Object& e = fields(pair.entry);
+                const bool jump_entry = is_null(get_or_null(e, "via"));
+                std::set<std::string> beater_nodes;
+                bool beaten_here = false;
+                for (const auto& m : *kept) {
+                    const Object& mo = fields(m);
+                    const std::int64_t mt = as_int(at(mo, "total")), ma = as_int(at(mo, "A"));
+                    if (jump_entry && mt <= pair.total && ma <= pair.A && !(mt == pair.total && ma == pair.A)) {
+                        beaten_here = true;
+                        for (const auto& n2 : items(at(mo, "nodes"))) beater_nodes.insert(as_text(n2));
+                    }
+                }
+                if (beaten_here) {
+                    resolved.insert(pair.key);
+                    record(pair.entry, integer_value(runs(pair.entry, pair.k)), integer_value(pair.total), integer_value(N), lower,
+                           number, "dominated");
+                    std::vector<std::string> watch(beater_nodes.begin(), beater_nodes.end());
+                    auto it = std::find_if(beaten.begin(), beaten.end(), [&](const auto& b) { return b.first == watch; });
+                    if (it == beaten.end()) {
+                        beaten.push_back({watch, {}});
+                        it = std::prev(beaten.end());
+                    }
+                    it->second.push_back(object({{"entry", pair.entry}, {"start", integer_value(pair.k)}}));
+                    continue;
+                }
+                const auto found = realize(pair.entry, pair.k);
+                if (found.empty()) continue;
+                resolved.insert(pair.key);
+                const Array nodes = nodes_of(found);
+                for (const auto& f2 : found) enqueue(*f2.item, landed);
+                if (!jump_entry) {
+                    record(pair.entry, integer_value(runs(pair.entry, pair.k)), integer_value(pair.total), get_or_null(e, "limit"),
+                           lower, number, "kept", nodes);
+                    continue;
+                }
+                const auto [landed_total, landed_A] = built(pair.k, found);
+                record(pair.entry, integer_value(pair.k), landed_total, integer_value(N), lower, number, "kept", nodes, landed_A);
+                if (!is_null(landed_total))
+                    kept->push_back(object({{"key", text(pair.key)}, {"total", landed_total}, {"A", landed_A}, {"nodes", array(nodes)}}));
+                if (pair.k + 1 <= max_runs && pair.k + 1 + pair.A < N)
+                    reserve(nodes, {{"kind", text("next")}, {"entry", pair.entry}, {"start", integer_value(pair.k + 1)},
+                                    {"N", integer_value(N)}, {"round", integer_value(number)}});
+            }
+            for (const auto& pair : pairs)
+                if (resolved.insert(pair.key).second) {
+                    const Object& e = fields(pair.entry);
+                    const Value* limit = get(e, "limit");
+                    record(pair.entry, Value{nullptr}, Value{nullptr},
+                           limit ? *limit : is_null(get_or_null(e, "via")) ? integer_value(N) : Value{nullptr}, lower, number,
+                           "unreached");
+                }
+            for (const auto& [watch, entries] : beaten) {
+                Array w;
+                for (const auto& n2 : watch) w.push_back(text(n2));
+                reserve(w, {{"kind", text("dominated")}, {"entries", array(entries)}, {"N", integer_value(N)},
+                            {"round", integer_value(number)}});
+            }
+            if (widen) {
+                const std::string blocked = source(landings, dead)->second;
+                if (blocked != upcoming) {
+                    Array watch;
+                    for (const auto& l : landings)
+                        if (as_text(at(fields(l), "owner")) == blocked) watch.push_back(at(fields(l), "node"));
+                    for (const auto& l : *landed)
+                        if (as_text(at(fields(l), "owner")) == blocked) watch.push_back(at(fields(l), "node"));
+                    reserve(watch, {{"kind", text("widen")}, {"dead", dead_value(dead)}, {"landings", array(landings)},
+                                    {"lower", integer_value(N)}, {"kept", Value{nullptr}}, {"landed", Value{nullptr}},
+                                    {"round", integer_value(number + 1)}},
+                            kept, landed);
+                }
+            }
+        };
+    auto scan = [&](const std::set<std::string>& dead, std::int64_t start, std::int64_t lower, const std::shared_ptr<Array>& kept,
+                    std::int64_t number, const std::shared_ptr<Array>& landed, const Landings& landings) {
+        struct Lander {
+            Item* item;
+            std::string owner;
+            std::int64_t ticks;
+        };
+        auto landers = [&](std::int64_t k, const std::function<bool(const std::string&)>& wanted) {
+            std::vector<Lander> found;
+            for (auto& item : level(k)) {
+                const Program& child = *item.proposal.owned;
+                const bool jump = item.choice.profile.jump.at(0);
+                if (jump && k == 0) continue;
+                if (!child.profile.grounded.back()) {
+                    if (jump && lands_later(*item.base, child) && check_item(item).has_child) {
+                        std::optional<std::pair<std::int64_t, std::string>> best;
+                        for (const auto& [owner, t] : landing(*item.proposal.owned))
+                            if (owner && wanted(*owner) && (!best || std::make_pair(t, *owner) < *best)) best = std::make_pair(t, *owner);
+                        if (best) found.push_back({&item, best->second, best->first});
+                    }
+                    continue;
+                }
+                const auto target = lands(child);
+                if (!target || !wanted(*target) ||
+                    (!jump && (k == max_runs || (*target != upcoming && !meaningful_choice(item.choice)))))
+                    continue;
+                if (check_item(item).has_child)
+                    found.push_back({&item, *target, item.proposal.owned->profile.duration - program.profile.duration});
+            }
+            return found;
+        };
+        std::vector<Lander> found;
+        std::string target_name;
+        std::int64_t k = 0;
+        bool hit = false;
+        const std::vector<std::pair<std::string, std::function<bool(const std::string&)>>> targets{
+            {"next", [&](const std::string& o) { return o == upcoming; }},
+            {"block", [&](const std::string& o) { return !dead.count(o) && (!here || o != *here) && o != upcoming; }}};
+        for (const auto& [name, wanted] : targets) {
+            for (k = start; k <= max_runs; ++k) {
+                found = landers(k, wanted);
+                if (!found.empty()) break;
+            }
+            if (!found.empty()) {
+                target_name = name;
+                hit = true;
+                break;
+            }
+        }
+        if (!hit) {
+            record(object({{"key", text(dumps(array({text("scan")}), false, false))}, {"A", Value{nullptr}}}), Value{nullptr},
+                   Value{nullptr}, Value{nullptr}, lower, number, "unreached");
+            return;
+        }
+        Array nodes;
+        for (const auto& l : found) nodes.push_back(decision_node(*l.item));
+        for (const auto& l : found) enqueue(*l.item, landed);
+        auto scan_runs = [&](const Item& item) { return item.choice.profile.jump.at(0) ? k : k + 1; };
+        const Lander* fastest = &found.front();
+        for (const auto& l : found)
+            if (l.ticks < fastest->ticks) fastest = &l;
+        const std::int64_t N = fastest->ticks, R = scan_runs(*fastest->item);
+        for (const auto& l : found)
+            kept->push_back(object({{"key", text(dumps(array({text("scan"), text(l.owner)}), false, false))},
+                                    {"total", integer_value(l.ticks)}, {"A", integer_value(l.ticks - scan_runs(*l.item))},
+                                    {"nodes", array({decision_node(*l.item)})}}));
+        record(object({{"key", text(dumps(array({text("scan"), text(target_name)}), false, false))}, {"A", integer_value(N - R)}}),
+               integer_value(R), integer_value(N), integer_value(N), lower, number, "kept", nodes);
+        if (k + 1 <= max_runs) {
+            std::set<std::string> next_dead = dead;
+            if (target_name != "next")
+                for (const auto& l : found) next_dead.insert(l.owner);
+            reserve(nodes, {{"kind", text("scan")}, {"target", text(target_name)}, {"dead", dead_value(next_dead)},
+                            {"start", integer_value(k + 1)}, {"lower", integer_value(N)}, {"kept", Value{nullptr}},
+                            {"landed", Value{nullptr}}, {"round", integer_value(number + 1)}},
+                    kept, landed);
+        }
+        round_(dead, lower, N, kept, number, landed, landings, false);
+    };
+    auto texts = [](const Value& v) {
+        std::set<std::string> out2;
+        for (const auto& x : items(v)) out2.insert(as_text(x));
+        return out2;
+    };
+    auto shared_array = [](const Value& v) { return std::make_shared<Array>(items(v)); };
+    const std::string kind = held ? as_text(at(fields(*search_fields), "kind")) : "";
+    if (kind == "next") {
+        const Object& s2 = fields(*search_fields);
+        take_entry(at(s2, "entry"), as_int(at(s2, "start")), as_int(at(s2, "N")), as_int(at(s2, "round")), std::make_shared<Array>());
+    } else if (kind == "dominated") {
+        const Object& s2 = fields(*search_fields);
+        for (const auto& h2 : items(at(s2, "entries")))
+            take_entry(at(fields(h2), "entry"), as_int(at(fields(h2), "start")), as_int(at(s2, "N")), as_int(at(s2, "round")),
+                       std::make_shared<Array>());
+    } else if (kind == "scan") {
+        const Object& s2 = fields(*search_fields);
+        scan(texts(at(s2, "dead")), as_int(at(s2, "start")), as_int(at(s2, "lower")), shared_array(at(s2, "kept")),
+             as_int(at(s2, "round")), shared_array(at(s2, "landed")), Array{});
+    } else {
+        Landings landings;
+        std::int64_t lower = 0, number = 0;
+        std::shared_ptr<Array> kept, landed;
+        std::set<std::string> dead;
+        if (kind == "widen") {
+            const Object& s2 = fields(*search_fields);
+            landings = items(at(s2, "landings"));
+            lower = as_int(at(s2, "lower"));
+            kept = shared_array(at(s2, "kept"));
+            landed = shared_array(at(s2, "landed"));
+            number = as_int(at(s2, "round"));
+            dead = texts(at(s2, "dead"));
+            dead.insert(source(landings, dead)->second);
+        } else {
+            landings = items(landings_value);
+            landed = std::make_shared<Array>();
+            kept = std::make_shared<Array>();
+            std::set<std::string> entries;
+            for (const auto& entry : candidates())
+                if (is_null(get_or_null(fields(entry), "via"))) entries.insert(as_text(at(fields(entry), "key")));
+            for (const auto& [key, reached] : fields(reached_value)) {
+                if (!entries.count(key)) continue;
+                std::optional<std::int64_t> A;
+                Array nodes;
+                for (const auto& r : items(reached)) {
+                    nodes.push_back(items(r)[0]);
+                    if (!is_null(items(r)[1]) && (!A || as_int(items(r)[1]) < *A)) A = as_int(items(r)[1]);
+                }
+                if (A)
+                    kept->push_back(object({{"key", text(key)}, {"total", integer_value(*A)}, {"A", integer_value(*A)},
+                                            {"nodes", array(std::move(nodes))}}));
+            }
+        }
+        const auto found = source(landings, dead);
+        if (!found) {
+            scan(dead, 0, lower, kept, number, landed, landings);
+        } else {
+            round_(dead, lower, found->first, kept, number, landed, landings, true);
+        }
+    }
+    for (auto& r : reserves) {
+        if (r.kept) put(r.fields, "kept", array(*r.kept));
+        if (r.landed) put(r.fields, "landed", array(*r.landed));
+        out.reserves.push_back(array({object(std::move(r.fields)), array(std::move(r.watch))}));
+    }
     return out;
 }
 

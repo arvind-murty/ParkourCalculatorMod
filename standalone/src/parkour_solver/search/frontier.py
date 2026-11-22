@@ -533,6 +533,11 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             commit(found,node)
         for parent,choice,child in queued:
             queue_child(parent,choice,child)
+        hold_minimum_runs(e,node,log,reserves)
+
+    def hold_minimum_runs(e, node, log, reserves):
+        """Log a minimum-run search's candidates and hold each reserved run count as an alternative of the decision."""
+        program=e['program']
         state.setdefault('minimumRunCandidates',[]).extend(log)
         for fields,watch in reserves:
             key=digest([node,'minimumRunTicks',fields])
@@ -545,6 +550,25 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             held.update(minimumRunSearch=fields,decisionNode=key,decisionParent=node)
             state['alternatives'][key]=dict(programs=[held],restored=[],next=0,watch=watch)
             state['decisionParents'][key]=node
+
+    def native_minimum_runs(e):
+        """minimum_runs(e) through the native node search (search/node.hpp), applied in the same order."""
+        program=e['program']
+        search=program.get('minimumRunSearch')
+        node=search['node'] if search else program.get('decisionNode')
+        result=native_node.minimum_runs(program,e.get('reached'),e.get('landings'),seen=seen,stop_supports=stop_supports,
+                                        initial_bounds=initial_bounds,max_inputs=settings['maxInputs'],budget=budget)
+        for found in result['exclusions']:
+            commit(found,node)
+        for queued in result['queued']:
+            child=queued['child']
+            if queued['meaningful']:
+                state['decisionParents'][child['decisionNode']]=child['decisionParent']
+            seen.add(queued['identity'])
+            state['seen'].append(queued['identity'])
+            (state['ready'] if complete(child) else state['pending']).append(child)
+            e.setdefault('queuedNodes',[]).append(child.get('decisionNode'))
+        hold_minimum_runs(e,node,result['log'],[tuple(r) for r in result['reserves']])
 
     def hold_same_face(e):
         """Queue each held jump back onto the launch face of an ordinary decision P (O11) at once when P queued or reserved nothing
@@ -641,7 +665,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                 state['expanded'] += 1
             if e['kind'] == len(settings['types']):
                 if 'reached' in e or e['program'].get('minimumRunSearch'):
-                    minimum_runs(e)
+                    native_minimum_runs(e) if native_node is not None else minimum_runs(e)
                 hold_same_face(e)
                 state['expansion'] = None
                 iterator, iterator_key = None, None

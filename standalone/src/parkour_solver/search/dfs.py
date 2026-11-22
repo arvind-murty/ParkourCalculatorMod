@@ -641,22 +641,31 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
             records, finished = search.expand_type(program, kind, cursor, list(stop_supports or ()), list(initial_bounds),
                                                    max_inputs, choices_per_type, ready, ordinary, seen, budget)
             for record in records:  # the dfs state changes of each proposal's screen and eligibility, in order
-                effects = record['effects']
-                state['timeBoundExclusions'].extend(effects['timeBoundExclusions'])
-                if effects['comparisonContextUsed']:
-                    f.setdefault('comparisonContextId', context_id)
-                    counters = state.setdefault('comparisonWork', dict(assessments=0, cacheHits=0, peerChecks=0))
-                    for name in ('assessments', 'cacheHits', 'peerChecks'):
-                        counters[name] += effects[name]
-                for key, decision in effects['comparisonDecisions']:
-                    state.setdefault('comparisonDecisions', {})[key] = decision
-                for exclusion in effects['minimumRunExclusions']:
-                    excluded_runs.add((f['id'], exclusion['candidate']))
-                    state['minimumRunExclusions'].append(exclusion)
-                viability_counts['checked'] += effects['viabilityChecked']
-                viability_counts['excluded'] += effects['viabilityExcluded']
+                apply(record['effects'], context_id)
             return records, finished
+        def minimum_runs(program, reached, landings, *, seen, stop_supports, initial_bounds, max_inputs, budget):
+            search, context_id = node_search()
+            result = search.minimum_runs(program, reached, landings, list(stop_supports or ()), list(initial_bounds),
+                                         max_inputs, seen, budget)
+            apply(result['effects'], context_id)
+            return result
+        def apply(effects, context_id):
+            """The DFS state changes of the native screens and eligibility, in call order."""
+            state['timeBoundExclusions'].extend(effects['timeBoundExclusions'])
+            if effects['comparisonContextUsed']:
+                f.setdefault('comparisonContextId', context_id)
+                counters = state.setdefault('comparisonWork', dict(assessments=0, cacheHits=0, peerChecks=0))
+                for name in ('assessments', 'cacheHits', 'peerChecks'):
+                    counters[name] += effects[name]
+            for key, decision in effects['comparisonDecisions']:
+                state.setdefault('comparisonDecisions', {})[key] = decision
+            for exclusion in effects['minimumRunExclusions']:
+                excluded_runs.add((f['id'], exclusion['candidate']))
+                state['minimumRunExclusions'].append(exclusion)
+            viability_counts['checked'] += effects['viabilityChecked']
+            viability_counts['excluded'] += effects['viabilityExcluded']
         expand.node_search = node_search  # parity checks repeat the frame's screens natively
+        expand.minimum_runs = minimum_runs
         return expand
 
     def evaluation_args(f, program):

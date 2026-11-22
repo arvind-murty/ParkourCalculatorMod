@@ -65,6 +65,26 @@ struct NodeSearch {
     Value screen(Program& program, NodeEffects& effects) const;  // check_program may add a walk-off selection
 };
 
+// frontier.minimum_runs(e) without its frontier state changes: the frontier commits `exclusions` (one entry per
+// screened proposal, in order) and queues `queued` (search keys and whether each choice was meaningful), appends
+// `log` to minimumRunCandidates and holds each reserve [fields, watch]; `effects` are the DFS state changes.
+// `reached` (e['reached']) and `landings` (e['landings']) are null for a held minimum-run search.
+struct MinimumRuns {
+    Array exclusions;
+    NodeEffects effects;
+    struct Queued {
+        Program child;
+        bool meaningful = false;
+        std::string identity;
+    };
+    std::vector<Queued> queued;
+    Array log, reserves;
+};
+MinimumRuns minimum_runs(const NodeSearch& search, const Program& program, const Value& reached, const Value& landings,
+                         const std::vector<std::string>& stop_supports, const std::array<double, 4>& initial_bounds,
+                         std::int64_t settings_max_inputs, const std::set<std::string>& seen,
+                         const std::function<void()>& budget);
+
 // anchors/policy.advantageous_candidates(scene, gate.reachable_faces, launch, top, next_owner, types, threshold):
 // the entries {key, A, via[, limit]} sorted by key. A null launch is a program on no face.
 Array advantageous_candidates(InteractionGate& gate, const AnchorScene& anchors, const std::optional<std::string>& launch,

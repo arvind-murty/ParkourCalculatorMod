@@ -749,6 +749,39 @@ PYBIND11_MODULE(_pkc_native, m) {
             return py::make_tuple(ok, to_python(pkc::to_value(typed)), effects.time_bound_exclusions.size(),
                                   effects.minimum_run_exclusions.size());
         }, "dfs eligible(program, f): (verdict, the program after it, exclusions added)")
+        .def("minimum_runs", [](pkc::NodeSearch& search, py::handle program, py::handle reached, py::handle landings,
+                                std::vector<std::string> stop_supports, std::array<double, 4> initial_bounds,
+                                std::int64_t max_inputs, py::handle seen, py::object budget) {
+            std::set<std::string> keys;
+            for (py::handle k : seen) keys.insert(k.cast<std::string>());
+            const auto result = pkc::minimum_runs(search, *program_arg(program), convert(reached), convert(landings),
+                                                  stop_supports, initial_bounds, max_inputs, keys, [budget] { budget(); });
+            py::list queued;
+            for (const auto& q : result.queued) {
+                py::dict item;
+                item["child"] = to_python(pkc::to_value(q.child));
+                item["meaningful"] = q.meaningful;
+                item["identity"] = q.identity;
+                queued.append(item);
+            }
+            py::dict effects;
+            effects["timeBoundExclusions"] = to_python(pkc::Value{std::make_shared<const pkc::Array>(result.effects.time_bound_exclusions)});
+            effects["comparisonDecisions"] = to_python(pkc::Value{std::make_shared<const pkc::Array>(result.effects.comparison_decisions)});
+            effects["minimumRunExclusions"] = to_python(pkc::Value{std::make_shared<const pkc::Array>(result.effects.minimum_run_exclusions)});
+            effects["assessments"] = result.effects.assessments;
+            effects["cacheHits"] = result.effects.cache_hits;
+            effects["peerChecks"] = result.effects.peer_checks;
+            effects["viabilityChecked"] = result.effects.viability_checked;
+            effects["viabilityExcluded"] = result.effects.viability_excluded;
+            effects["comparisonContextUsed"] = result.effects.comparison_context_used;
+            py::dict out;
+            out["exclusions"] = to_python(pkc::Value{std::make_shared<const pkc::Array>(result.exclusions)});
+            out["effects"] = effects;
+            out["queued"] = queued;
+            out["log"] = to_python(pkc::Value{std::make_shared<const pkc::Array>(result.log)});
+            out["reserves"] = to_python(pkc::Value{std::make_shared<const pkc::Array>(result.reserves)});
+            return out;
+        }, "frontier.minimum_runs(e) without its frontier state changes (see search/node.hpp)")
         .def("expand_type", [](pkc::NodeSearch& search, py::handle parent, const std::string& kind, std::int64_t cursor,
                                std::vector<std::string> stop_supports, std::array<double, 4> initial_bounds,
                                std::int64_t max_inputs, std::int64_t choices_per_type, bool ready, bool ordinary,

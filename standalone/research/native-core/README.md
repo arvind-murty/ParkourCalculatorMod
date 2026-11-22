@@ -496,3 +496,23 @@ gate binding's `analysis` counted a second preparation hit per Python `analyze`;
   100 over the anchor tests match Python ([fixed work](2026-11-22-expansion-batch-ordinary/candidates-shadow-fixedwork.json),
   [tests](2026-11-22-expansion-batch-ordinary/candidates-shadow-tests.json)).
 
+## The minimum-run search, 2026-11-22
+
+Source: `b2160611` plus `frontier.minimum_runs` natively (`search/node.hpp` `minimum_runs`: lazy run-tick levels,
+memoized checks and landing peeks, realize/take-entry, beating, reserves, the scan without an N, and the held
+next/dominated/scan/widen restarts). Reserves hold the search's kept and landed lists by reference, as the Python's
+dicts do, so later additions reach them. The frontier shares the Python tail that logs candidates and holds reserves.
+With it, every proposal of a node expansion is native.
+
+- Fixed work: 102 batches and 21 native minimum-run searches, no Python proposals; the short Real11 control: 30 and 10.
+  Both reports equal the native runs with the Python minimum-run search except provenance
+  ([fixed work](2026-11-22-minimum-runs/fixedwork-report-vs-python-minimum-runs.json),
+  [short control](2026-11-22-minimum-runs/short-control-report-vs-python-minimum-runs.json),
+  [counts](2026-11-22-minimum-runs/fixedwork-counts.json)); fixed work exercised every outcome (kept, unreached,
+  dominated, held) and reserve kind (next, dominated, widen, scan). Transitions match Python on both
+  ([fixed work](2026-11-22-minimum-runs/parity-python-native.json), [short control](2026-11-22-minimum-runs/short-control-parity.json)).
+- Suites pass in both modes (844 tests, 10 Java-bridge skips), live `verify-scene` finds no difference, and the anchor,
+  stepping and minimum-run tests pass under AddressSanitizer ([Python](2026-11-22-minimum-runs/suite-python-summary.txt),
+  [native](2026-11-22-minimum-runs/suite-native-summary.txt), [live](2026-11-22-minimum-runs/live-scene-release-summary.json),
+  [ASan](2026-11-22-minimum-runs/tests-asan-summary.txt)).
+
