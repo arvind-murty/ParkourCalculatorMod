@@ -337,3 +337,27 @@ ladder events shifted and re-checked, units rebuilt around them and ceilings own
   ([summary](2026-11-22-ladder-appends/live-scene-release-summary.json)); fixed work matches on all 19 transitions,
   search 43.8 s Python and 26.7 s native ([parity](2026-11-22-ladder-appends/parity-python-native.json)).
 
+## Interaction gate and open generators for native callers, 2026-11-22
+
+Source: `8a51f1a3` (main with PR #9 merged in) plus a native `InteractionGate` (`reachability/service.hpp`: one
+session cache of preparations, coefficients, analyses and program screens; face tables; approach envelopes; box,
+walk-off and sequence queries; `check_program` with the disk relaxation and a native decided-result cache) and the
+three open generators (`normal`, `stepping`, `ceiling`) with `movement/cases` and `normal.py`'s traces. Nothing in
+Python dispatches to them yet: they are the first layer of the native DFS node unit.
+
+Both were checked by shadowing the fixed-work solve (`research/prefix-reuse-keys/2026-11-21/extended-fixedwork100.json`,
+Python mode): every outer Python gate call, and every open `generate_choices` call, was repeated natively and compared
+exactly, including the exclusion entries each adds and the gate's approach and face-table metrics.
+
+- Gate ([shadow](2026-11-22-gate-generators/gate-shadow-release.json)): 6,366 face tables, 7,631 box queries, 134
+  approach envelopes, 93 walk-off checks, 1,694 sequence screens and 1,152 `check_program` verdicts with their walk-off
+  face selections, all equal. Two native bugs found on the way: the analysis key lacked `interaction_context_key`'s
+  policy wrapper, and range-for loops over `items()` of a temporary `Value` read freed memory.
+- Generators ([shadow](2026-11-22-gate-generators/generators-shadow-release.json)): 165 calls of each type, 740 normal,
+  3,698 stepping and 119 ceiling choices, equal in order. The solve's other 2,904 normal-generator calls are route
+  preparation's filler units, not open generation.
+- Both shadows also ran against an AddressSanitizer build of the module (an ad-hoc-signed copy of the interpreter, so
+  macOS lets the ASan runtime load) with no sanitizer report and no difference
+  ([gate](2026-11-22-gate-generators/gate-shadow-asan.json), [generators](2026-11-22-gate-generators/generators-shadow-asan.json));
+  the repository's `--variant sanitize` build is UBSan only.
+

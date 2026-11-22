@@ -193,6 +193,12 @@ Value to_value(const Program& program);
 Value to_value(const MovementChoice& choice);
 Value to_value(const Profile& profile);
 
+// Typed records from their dict lists (strict, as program_from_value), for builders that assemble them as dicts.
+std::vector<PositionConstraint> position_constraints_from_value(const Value& value);
+std::vector<ContactEvent> contact_events_from_value(const Value& value);
+std::vector<CaseEvent> case_events_from_value(const Value& value);
+std::vector<RegionChoice> region_choices_from_value(const Value& value);
+
 // Thrown for inputs a native unit leaves to Python (a refined interaction screen
 // with a model, a ceiling a ladder climb owns outside a ladder append); the
 // caller runs the Python.
@@ -207,5 +213,19 @@ std::optional<Program> append_choice(const Program& program, const MovementChoic
 
 // movement/program.py program_physics_key (hex).
 std::string program_physics_key(const Program& program);
+
+// movement/program.py boundary_state.
+ScalarState boundary_state(const Program& program, bool on_ladder = false);
+
+// movement/units.profile_program on a typed profile.
+std::vector<MovementUnit> profile_units(const Profile& profile);
+
+// movement/program.py movement_choice without given units or ladder events (the open generators'
+// form): nullopt for an invalid trace.
+std::optional<MovementChoice> movement_choice(const std::string& kind, const ScalarState& initial, const Trace& trace,
+                                              std::vector<ContactEvent> contacts, std::vector<CaseEvent> cases,
+                                              std::vector<PositionConstraint> constraints,
+                                              std::optional<std::string> support, const std::string& landing_phase,
+                                              std::vector<RegionChoice> region_choices);
 
 }  // namespace pkc

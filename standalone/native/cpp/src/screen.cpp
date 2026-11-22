@@ -14,6 +14,7 @@
 #include "py_math.hpp"
 #include "pkc/canonical.hpp"
 #include "pkc/envelopes.hpp"
+#include "pkc/scene/geometry.hpp"
 #include "value_ops.hpp"
 
 namespace pkc {
@@ -21,12 +22,6 @@ namespace {
 
 const double kHalfWidth = static_cast<double>(static_cast<float>(0.6)) / 2;  // scene/route.HALF_WIDTH
 const double kBodyHeight = static_cast<double>(static_cast<float>(1.8));    // scene/geometry.BODY_HEIGHT
-constexpr std::int64_t kProofPolicy = 5;                                     // service.PROOF_POLICY
-
-std::array<Num, 6> expanded_box(const Box& box) {  // scene/geometry.expanded_box
-    return {sub(box[0], flt(kHalfWidth)), sub(box[1], flt(kBodyHeight)), sub(box[2], flt(kHalfWidth)),
-            add(box[3], flt(kHalfWidth)), box[4], add(box[5], flt(kHalfWidth))};
-}
 
 Value box_value(const Box& box) {
     Array out;

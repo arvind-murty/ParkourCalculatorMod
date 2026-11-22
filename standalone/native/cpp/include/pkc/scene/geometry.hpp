@@ -4,6 +4,7 @@
 #include <array>
 #include <utility>
 
+#include "pkc/program.hpp"
 #include "pkc/value.hpp"
 
 namespace pkc {
@@ -19,5 +20,8 @@ std::pair<double, double> support_center_interval(double lo, double hi);
 
 // route_footprints(blocks, standing): bridge footprints [minX, maxX, minZ, maxZ].
 Value route_footprints(const Value& blocks, bool standing);
+
+// expanded_box(box): a collision box as the player-feet region that touches it.
+std::array<Num, 6> expanded_box(const Box& box);
 
 }  // namespace pkc

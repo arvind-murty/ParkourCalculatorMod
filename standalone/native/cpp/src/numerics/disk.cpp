@@ -5,6 +5,8 @@
 #include "pkc/numerics/disk.hpp"
 
 #include <algorithm>
+#include <list>
+#include <unordered_map>
 #include <chrono>
 #include <cmath>
 #include <map>
@@ -402,6 +404,97 @@ Value alarm_ticks(const Value& problem, const Value& shortfall, double fraction)
         if (num(values[t]).value > fraction && known && !is_null(items(*jumps)[t]))
             out.push_back(integer_value(static_cast<std::int64_t>(t)));
     return array(std::move(out));
+}
+
+namespace {
+
+struct DecidedCache {
+    std::list<std::pair<std::string, Value>> order;  // insertion order, at most 1024
+    std::unordered_map<std::string, std::list<std::pair<std::string, Value>>::iterator> index;
+    std::map<std::string, Object> stats{{"screen", {}}, {"candidate", {}}};
+};
+
+DecidedCache& decided() {
+    static DecidedCache cache;
+    return cache;
+}
+
+void bump(Object& counter, const std::string& name) {  // collections.Counter()[name] += 1
+    for (auto& [k, v] : counter)
+        if (k == name) {
+            v = integer_value(as_int(v) + 1);
+            return;
+        }
+    counter.emplace_back(name, integer_value(1));
+}
+
+Value attempt(const Value& content, double time_limit, unsigned max_iter) {  // _attempt
+    try {
+        return disk_solve(content, time_limit, max_iter);
+    } catch (const std::exception& error) {
+        return object({{"status", text("exception")}, {"outcome", text("undecided")}, {"controls", Value{nullptr}},
+                       {"objective", Value{nullptr}}, {"iterations", integer_value(0)},
+                       {"message", text(std::string("ValueError('") + error.what() + "')")}});
+    }
+}
+
+}  // namespace
+
+Value disk_cached_solve(const Value& content, double seconds, const std::string& kind, double cap, unsigned max_iter) {
+    DecidedCache& cache = decided();
+    const std::string encoded = dumps(content, true, false);
+    Object& stats = cache.stats[kind];
+    if (auto hit = cache.index.find(encoded); hit != cache.index.end()) {
+        bump(stats, "cacheHits");
+        return object(with(fields(hit->second->second), "cached", boolean(true)));
+    }
+    bump(stats, "solved");
+    Value result = attempt(content, std::min(cap, seconds), max_iter);
+    if (as_text(at(fields(result), "outcome")) == "undecided" && get(fields(content), "objective")) {
+        // Infeasibility does not depend on the cost, and some infeasible requests end NumericalError only
+        // under their objective. A feasible retry is not the optimum, so only its infeasibility is kept.
+        bump(stats, "retried");
+        Object without = fields(content);
+        erase(without, "objective");
+        Value retry = attempt(object(std::move(without)), std::min(cap, seconds), max_iter);
+        if (as_text(at(fields(retry), "outcome")) == "infeasible")
+            result = object(with(fields(retry), "retried", boolean(true)));
+    }
+    const std::string outcome = as_text(at(fields(result), "outcome"));
+    bump(stats, outcome);
+    if (outcome != "undecided") {
+        cache.order.emplace_back(encoded, result);
+        cache.index[encoded] = std::prev(cache.order.end());
+        while (cache.order.size() > 1024) {
+            cache.index.erase(cache.order.front().first);
+            cache.order.pop_front();
+        }
+    }
+    return object(with(fields(result), "cached", boolean(false)));
+}
+
+Value disk_stats() {
+    Object out;
+    for (const auto& [kind, counter] : decided().stats) out.emplace_back(kind, object(counter));
+    return object(std::move(out));
+}
+
+Value disk_screen(const Value& model, const Value& extra_rows, const Value* objective, double cap, unsigned max_iter) {
+    const Value content = disk_spec(model, extra_rows, objective, false);
+    if (is_null(content) ||
+        (items(at(fields(content), "rows")).empty() && !py_truthy(get_or_null(fields(content), "contacts"))))
+        return Value{nullptr};
+    const Value result = disk_cached_solve(content, cap, "screen", cap, max_iter);
+    const Object& r = fields(result);
+    Object checked{{"outcome", at(r, "outcome")}, {"status", at(r, "status")}};
+    if (as_text(at(r, "outcome")) == "infeasible") {
+        checked.emplace_back("proof", object({{"reason", text("disk_control_relaxation_infeasible")},
+                                              {"relaxation", text("acceleration_disk")}, {"status", at(r, "status")}}));
+    } else if (as_text(at(r, "outcome")) == "undecided") {
+        const Value* message = get(r, "message");
+        checked.emplace_back("message", message ? *message : at(r, "status"));
+    }
+    return object(std::move(checked));
 }
 
 }  // namespace pkc

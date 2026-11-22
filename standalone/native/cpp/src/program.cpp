@@ -524,6 +524,23 @@ Value to_value(const Program& program) { return encode(program); }
 Value to_value(const MovementChoice& choice) { return encode(choice); }
 Value to_value(const Profile& profile) { return encode(profile); }
 
+template <class T>
+std::vector<T> records(const Value& value, const char* name) {
+    std::vector<T> out;
+    decode(value, out, Path{nullptr, name});
+    return out;
+}
+std::vector<PositionConstraint> position_constraints_from_value(const Value& value) {
+    return records<PositionConstraint>(value, "positionConstraints");
+}
+std::vector<ContactEvent> contact_events_from_value(const Value& value) {
+    return records<ContactEvent>(value, "contactEvents");
+}
+std::vector<CaseEvent> case_events_from_value(const Value& value) { return records<CaseEvent>(value, "caseEvents"); }
+std::vector<RegionChoice> region_choices_from_value(const Value& value) {
+    return records<RegionChoice>(value, "regionChoices");
+}
+
 // ---- movement/program.py: append_choice and the physics key ---------------
 
 namespace {
@@ -535,6 +552,8 @@ const Trace& trace_of(const Program& program) {
     return *program.trace.value;
 }
 
+}  // namespace
+
 // boundary_state(program, on_ladder)
 ScalarState boundary_state(const Program& program, bool on_ladder) {
     const Profile& p = program.profile;
@@ -544,6 +563,8 @@ ScalarState boundary_state(const Program& program, bool on_ladder) {
     return {p.grounded.back(), p.position.back(),
             p.duration ? bool(trace_of(program).hit.back()) : program.initial.previous_horizontal_collision, vy};
 }
+
+namespace {
 
 bool same_state(const ScalarState& a, const ScalarState& b) {
     return a.on_ground == b.on_ground && a.position.value == b.position.value &&
@@ -1252,6 +1273,45 @@ std::string program_physics_key(const Program& program) {
     Value tail = array({object(std::move(rest)), encode(program.terminal_support),
                         encode(program.threshold.value_or(kDefaultThreshold)), encode(program.ladder_events)});
     return hex(sha256(h + canonical_json(tail)));
+}
+
+// profile_program on a typed profile: units.cpp owns the rule, on the keys it reads.
+std::vector<MovementUnit> profile_units(const Profile& profile) {
+    Object fields_read{{"duration", integer_value(profile.duration)},
+                       {"caseEvents", encode(profile.case_events)},
+                       {"contactEvents", encode(profile.contact_events)},
+                       {"jump", encode(profile.jump)},
+                       {"grounded", encode(profile.grounded)},
+                       {"sneak", encode(profile.sneak)}};
+    std::vector<MovementUnit> units;
+    decode(array(profile_program(fields_read)), units, Path{nullptr, "generatedUnits"});
+    return units;
+}
+
+std::optional<MovementChoice> movement_choice(const std::string& kind, const ScalarState& initial, const Trace& trace,
+                                              std::vector<ContactEvent> contacts, std::vector<CaseEvent> cases,
+                                              std::vector<PositionConstraint> constraints,
+                                              std::optional<std::string> support, const std::string& landing_phase,
+                                              std::vector<RegionChoice> region_choices) {
+    if (trace.status == "invalid") return std::nullopt;
+    std::int64_t owner = 0;
+    for (const auto& c : contacts) owner = std::max(owner, c.offset + 1);
+    for (const auto& c : cases) owner = std::max(owner, c.input + 1);
+    const std::size_t rows = constraints.size();
+    MovementChoice choice;
+    choice.profile = assemble_profile(trace, std::move(contacts), std::move(cases), std::move(constraints), {},
+                                      landing_phase, std::move(region_choices));
+    choice.profile.generated_units = profile_units(choice.profile);
+    choice.profile.constraint_owners = std::vector<std::int64_t>(rows, owner);
+    auto unit = std::find_if(choice.profile.generated_units.begin(), choice.profile.generated_units.end(),
+                             [&](const MovementUnit& u) { return u.type == kind; });
+    if (unit == choice.profile.generated_units.end()) pkc::fail("A movement choice must contain its owning type");
+    choice.unit = *unit;
+    choice.units = choice.profile.generated_units;
+    choice.initial = initial;
+    if (support) choice.terminal_support.value = std::move(support);
+    choice.interaction = kind != "normal";
+    return choice;
 }
 
 }  // namespace pkc

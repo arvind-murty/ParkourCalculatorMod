@@ -258,4 +258,60 @@ CompiledContacts compile_contact_events(const Object& route, const Array& events
     return out;
 }
 
+std::vector<FaceOption> scene_contact_options(const Value& scene_value, const SceneGeometry& geometry, int axis,
+                                              std::int64_t sign, std::optional<std::vector<std::int64_t>> members) {
+    const Object& scene = fields(scene_value);
+    if (!members) {
+        members.emplace();
+        for (const auto& b : items(at(scene, "blocks"))) members->push_back(as_int(at(fields(b), "solidIndex")));
+    }
+    double clearance = 1e-6;  // contact_clearance(scene)
+    if (const Value* given = get(scene, "supportClearance")) clearance = num(*given).value;
+    clearance = std::max(clearance, 2e-7);
+    const Array& solids = items(at(fields(at(scene, "collisionScene")), "solids"));
+    std::vector<FaceOption> out;
+    const Value options = geometry.contact_options(axis, sign, real(clearance), *members);
+    for (const auto& row_value : items(options)) {
+        const Array& row = items(row_value);
+        FaceOption option{as_text(row[0]), row[1], {}, {}, items(row[3])};
+        for (const auto& m : items(row[2])) {
+            option.members.push_back(as_int(m));
+            option.boxes.push_back(solids.at(as_int(m)));
+        }
+        out.push_back(std::move(option));
+    }
+    return out;
+}
+
+SolidOwners solid_owners(const Value& scene) {
+    SolidOwners result;
+    for (const auto& b : items(at(fields(scene), "blocks"))) {
+        const Object& block = fields(b);
+        const Value* source = get(block, "sourceBlock");
+        result[as_int(at(block, "solidIndex"))].insert(as_text(source ? *source : at(block, "id")));
+    }
+    return result;
+}
+
+std::string face_name(const FaceOption& option, const SolidOwners& owners) {
+    std::set<std::string> names;  // byte order is code-point order for UTF-8, as Python's sorted()
+    for (auto member : option.members)
+        if (auto found = owners.find(member); found != owners.end()) names.insert(found->second.begin(), found->second.end());
+    std::string joined;
+    for (const auto& name : names) joined += (joined.empty() ? "" : "+") + name;
+    return joined;
+}
+
+std::set<std::string> face_owners(const std::vector<FaceOption>& top_faces, const SolidOwners& owners,
+                                  const std::optional<std::string>& name) {
+    if (!name) return {};
+    std::set<std::string> found;
+    for (const auto& option : top_faces)
+        if (face_name(option, owners) == *name)
+            for (auto member : option.members)
+                if (auto o = owners.find(member); o != owners.end()) found.insert(o->second.begin(), o->second.end());
+    if (found.empty()) found.insert(*name);
+    return found;
+}
+
 }  // namespace pkc

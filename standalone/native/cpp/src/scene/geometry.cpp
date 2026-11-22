@@ -236,4 +236,10 @@ Value route_footprints(const Value& blocks_value, bool standing) {
     return array(std::move(footprints));
 }
 
+std::array<Num, 6> expanded_box(const Box& box) {
+    const Num half_width = flt(kHalfWidth), body_height = flt(f32(1.8));  // BODY_HEIGHT
+    return {sub(box[0], half_width), sub(box[1], body_height), sub(box[2], half_width),
+            add(box[3], half_width), box[4], add(box[5], half_width)};
+}
+
 }  // namespace pkc

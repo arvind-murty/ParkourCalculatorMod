@@ -12,6 +12,8 @@
 
 namespace pkc {
 
+inline constexpr std::int64_t kProofPolicy = 5;  // service.PROOF_POLICY
+
 // bridge/compiler.coefficient_request for a gate_prepare result.
 Value coefficient_request(const Value& prepared);
 

@@ -399,4 +399,14 @@ Value SceneGeometry::contact_options(int axis, std::int64_t sign, const Value& c
     return array(std::move(result));
 }
 
+std::vector<std::int64_t> SceneGeometry::near(double x0, double z0, double x1, double z1) const {
+    std::vector<std::int64_t> found;  // the Python's grid only narrows this scan
+    for (std::size_t i = 0; i < boxes_.size(); ++i) {
+        const NumBox& b = boxes_[i];
+        if (b[0].value <= x1 && x0 <= b[3].value && b[2].value <= z1 && z0 <= b[5].value)
+            found.push_back(static_cast<std::int64_t>(i));
+    }
+    return found;
+}
+
 }  // namespace pkc

@@ -22,6 +22,8 @@
 #include "pkc/numerics/disk.hpp"
 #include "pkc/numerics/model.hpp"
 #include "pkc/program.hpp"
+#include "pkc/movement/generation.hpp"
+#include "pkc/reachability/service.hpp"
 #include "pkc/scene/geometry.hpp"
 #include "pkc/scene/ladders.hpp"
 #include "pkc/scene/normalize.hpp"
@@ -184,6 +186,43 @@ py::object to_python(const pkc::Value& value) {
     PyObject* result = new_reference(value);
     if (!result) throw py::error_already_set();
     return py::reinterpret_steal<py::object>(result);
+}
+
+// A generator context dict as the native gate and generators read it; its
+// feetAllowed and checkBudget callables are called back.
+pkc::GenerationContext generation_context(py::dict context) {
+    pkc::GenerationContext out;
+    py::object program = context["program"];
+    out.program = std::make_shared<const pkc::Program>(pkc::program_from_value(convert(program)));
+    out.state = pkc::boundary_state(*out.program);
+    if (context.contains("maxInputs")) out.max_inputs = context["maxInputs"].cast<std::int64_t>();
+    if (context.contains("threshold")) {
+        py::handle t = context["threshold"];
+        out.threshold = {t.cast<double>(), py::isinstance<py::int_>(t)};
+    }
+    if (context.contains("runTickChoices")) out.run_tick_choices = context["runTickChoices"].cast<bool>();
+    if (context.contains("launchFace") && !context["launchFace"].is_none())
+        out.launch_face = context["launchFace"].cast<std::string>();
+    if (context.contains("cases") && !context["cases"].is_none())
+        out.cases = context["cases"].cast<std::set<std::string>>();
+    if (context.contains("forward") && !context["forward"].is_none()) {
+        py::dict f = context["forward"];
+        auto point = f["point"].cast<std::vector<double>>(), direction = f["direction"].cast<std::vector<double>>();
+        py::handle margin = f["margin"];
+        out.forward = pkc::Forward{{point.at(0), point.at(1)}, {direction.at(0), direction.at(1)},
+                                   {margin.cast<double>(), py::isinstance<py::int_>(margin)}};
+    }
+    if (context.contains("frameId")) out.frame_id = convert(context["frameId"]);
+    if (context.contains("regionItems")) out.region_items = context["regionItems"].cast<bool>();
+    if (context.contains("feetAllowed") && !context["feetAllowed"].is_none()) {
+        py::object allowed = context["feetAllowed"];
+        out.feet_allowed_fn = [allowed](const std::string& name) { return allowed(name).cast<bool>(); };
+    }
+    if (context.contains("checkBudget") && !context["checkBudget"].is_none()) {
+        py::object budget = context["checkBudget"];
+        out.check_budget = [budget] { budget(); };
+    }
+    return out;
 }
 
 }  // namespace
@@ -458,6 +497,61 @@ PYBIND11_MODULE(_pkc_native, m) {
     m.def("exit_faces", [](py::handle column, py::handle target) {
         return to_python(pkc::exit_faces(convert(column), convert(target)));
     });
+    py::class_<pkc::InteractionGate, std::shared_ptr<pkc::InteractionGate>>(m, "InteractionGate")
+        .def(py::init([](py::handle scene) { return std::make_shared<pkc::InteractionGate>(convert(scene)); }))
+        .def("reachable_faces", [](pkc::InteractionGate& gate, const std::string& name) {
+            const auto& t = gate.reachable_faces(name);
+            py::dict out;
+            out["blocks"] = t.blocks;
+            out["solids"] = t.solids;
+            out["ticks"] = t.ticks ? py::object(py::int_(*t.ticks)) : py::object(py::none());
+            out["landing"] = t.landing;
+            out["stepping"] = t.stepping;
+            out["ceiling"] = t.ceiling;
+            out["ceilingSolids"] = t.ceiling_solids;
+            return out;
+        }, "InteractionGate.reachable_faces with sets for frozensets")
+        .def("required", [](pkc::InteractionGate& gate, py::handle program) {
+            return to_python(gate.required(std::make_shared<const pkc::Program>(pkc::program_from_value(convert(program)))));
+        })
+        .def("approach", [](pkc::InteractionGate& gate, py::dict context, std::int64_t tick, bool jumping) {
+            return to_python(gate.approach(generation_context(context), tick, jumping));
+        }, "InteractionGate.approach's envelopes without their model alias")
+        .def("query_many", [](pkc::InteractionGate& gate, py::dict context, py::list bounds, std::int64_t tick,
+                              py::dict label, bool jumping, std::vector<std::string> phases) {
+            std::vector<pkc::Array> boxes;
+            for (py::handle b : bounds) boxes.push_back(std::get<std::shared_ptr<const pkc::Array>>(convert(b).data) ? *std::get<std::shared_ptr<const pkc::Array>>(convert(b).data) : pkc::Array{});
+            return to_python(pkc::Value{std::make_shared<const pkc::Array>(
+                gate.query_many(generation_context(context), boxes, tick,
+                                *std::get<std::shared_ptr<const pkc::Object>>(convert(label).data), jumping, phases))});
+        })
+        .def("walk_off", [](pkc::InteractionGate& gate, py::dict context, py::handle landing_boxes, py::dict label) {
+            return gate.walk_off(generation_context(context), convert(landing_boxes),
+                                 *std::get<std::shared_ptr<const pkc::Object>>(convert(label).data));
+        })
+        .def("sequence", [](pkc::InteractionGate& gate, py::dict context, py::handle choice) {
+            return to_python(gate.sequence(generation_context(context), pkc::choice_from_value(convert(choice))));
+        })
+        .def("check_program", [](pkc::InteractionGate& gate, py::handle program, py::handle objective) {
+            auto [proof, selection] = gate.check_program(
+                std::make_shared<const pkc::Program>(pkc::program_from_value(convert(program))), convert(objective));
+            return py::make_tuple(to_python(proof), to_python(selection));
+        }, "InteractionGate.check_program: (proof, walk-off selection to append to program['walkOffs'])")
+        .def("generate_choices", [](std::shared_ptr<pkc::InteractionGate> gate, const std::string& kind, py::dict context) {
+            auto native = generation_context(context);
+            native.gate = gate.get();
+            py::list out;
+            for (const auto& choice : pkc::generate_choices(kind, native)) out.append(to_python(pkc::to_value(choice)));
+            return out;
+        }, "movement/generation.generate_choices for an open context, with this gate as its interactionGate")
+        .def_property_readonly("checked", [](pkc::InteractionGate& gate) { return gate.checked; })
+        .def_property_readonly("exclusions", [](pkc::InteractionGate& gate) {
+            return to_python(pkc::Value{std::make_shared<const pkc::Array>(gate.exclusions)});
+        })
+        .def_property_readonly("metrics", [](pkc::InteractionGate& gate) {
+            return to_python(pkc::Value{std::make_shared<const pkc::Object>(gate.metrics())});
+        });
+    m.def("disk_stats", [] { return to_python(pkc::disk_stats()); }, "numerics/disk.STATS of the native decided cache");
     m.def("float_repr", &pkc::float_repr, "repr(float) for a finite float");
     m.def("sha256_hex", [](py::bytes data) { return pkc::sha256_hex(std::string(data)); });
 }

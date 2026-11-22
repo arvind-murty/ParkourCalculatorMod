@@ -1,0 +1,12 @@
+{
+ "stats": {
+  "reachable_faces": 6089,
+  "query_many": 7220,
+  "check_program": 967,
+  "sequence": 1552,
+  "approach": 126,
+  "walk_off": 81,
+  "metrics compared": 3
+ },
+ "mismatches": []
+}
