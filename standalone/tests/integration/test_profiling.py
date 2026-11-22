@@ -331,8 +331,10 @@ class BookkeepingProfileTests(unittest.TestCase):
         ground = [land(0, low), land(1, low), land(2, low), land(5, high), land(6, high)]
         nodes = dict(a=node('root', 'feasible', 6, {3}, ground[:4], repair=repair),
                      b=node('a', 'feasible', 8, {3, 7}, ground, grind, outside),
-                     c=node('b', 'exhausted', 9, {3, 7}, ground+[land(8, high)], grind, outside))
-        continuation = dict(nodes=nodes, pending=[{}], exclusions=[
+                     c=node('reserve', 'exhausted', 9, {3, 7}, ground+[land(8, high)], grind, outside))
+        # A node built from a held reserve belongs to the node holding it, as does a child queued from the reserve.
+        continuation = dict(nodes=nodes, decisionParents=dict(reserve='b'),
+                            pending=[dict(needsNodeSolve=True, decisionParent='reserve')], exclusions=[
             dict(node='a', proof=dict(reason='search_policy')), dict(node='root', proof=dict(reason='disk_control_relaxation_infeasible'))],
             minimumRunCandidates=[dict(node='root', key='["ceiling", "b3"]', k=1, total=9, N=12, outcome='kept', nodes=['a']),
                                   dict(node='a', key='["step", "b2"]', k=None, total=None, N=None, outcome='unreached', nodes=[])])
@@ -340,7 +342,7 @@ class BookkeepingProfileTests(unittest.TestCase):
                      generation=dict(generated=9, screenedPrefixes=1, policyRejections=2, totalExpandedPrefixes=2,
                                      continuation=continuation))
         state = dict(dfs=dict(stack=[frame]))
-        scene = dict(blocks=[dict(id='b1', boxes=[low]), dict(id='b2', boxes=[high]), dict(id='b3', boxes=[lid])])
+        scene = dict(blocks=[dict(id='b1', boxes=[low]), dict(id='b2', boxes=[high]), dict(id='b3', boxes=[lid, [0, 4, 0, 1, 5, 1]])])
         trees = node_trace(state, scene)
         requests = [dict(index=4, fingerprint='h1', status='feasible', workerStatus='Solved', backend='clarabel', seconds=.01)]
         report = dict(result=dict(best=None, termination='deadline', elapsedSeconds=1., work=dict(solverCalls=1, workerLaunches=0),
@@ -353,12 +355,15 @@ class BookkeepingProfileTests(unittest.TestCase):
                       'queue); expanded: 2; left unexpanded: 1.', markdown)
         # t6 follows t5's landing input, so it is a run tick; node 3.3 starts on the grind's landing input.
         self.assertIn('- node 3.1 (feasible, t0-5): runs 3 ticks on B1 (t0-2), jumps t3, lands on B2 t5\n'
-                      '  - node 3.2 (feasible, t6-7): runs 1 tick on B2 (t6), jumps t7, grinds under B3 t7, leaving by its X- '
+                      '  - node 3.2 (feasible, t6-7): runs 1 tick on B2 (t6), jumps t7, grinds under B3#0 t7 from its X- '
                       'side\n    - node 3.3 (exhausted, t8-8): lands on B2 t8', markdown)
-        self.assertIn('Solved children: node 3.1.\nChildren pruned when generated: 1 disk control relaxation.\nMinimum run '
-                      'ticks: ceiling jump under B3 after 1 run tick, landing after 9 inputs (bound 12) → node 3.1.', markdown)
+        self.assertIn('Solved children: node 3.1.\nChildren queued but not yet solved: 0.\nChildren pruned when generated: 1 disk '
+                      'control relaxation.\nMinimum run ticks: ceiling jump under B3 after 1 run tick, landing after 9 inputs '
+                      '(bound 12) → node 3.1.', markdown)
+        self.assertIn('Solved children: node 3.3.\nChildren queued but not yet solved: 1.', markdown)
         self.assertIn('| 1 | no avoidance rows | feasible | accepted | request 4 feasible, Clarabel Solved, 0.01 s |', markdown)
-        self.assertIn('Solved children: node 3.2.\nChildren pruned when generated: 1 search policy (time, hard-anchor latch '
+        self.assertIn('Solved children: node 3.2.\nChildren queued but not yet solved: 0.\nChildren pruned when generated: 1 '
+                      'search policy (time, hard-anchor latch '
                       'or minimum-run bound).\nMinimum run ticks: no run count below the bound passed the screens: step-up '
                       'onto B2.', markdown)
 

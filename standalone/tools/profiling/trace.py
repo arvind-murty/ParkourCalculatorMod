@@ -140,7 +140,9 @@ def repair_trace(repair, final=False):
 
 
 def block_names(scene):
-    return {tuple(box):block['id'] for block in (scene or {}).get('blocks',[]) for box in block.get('boxes',[])}
+    """Box -> name; a block of several boxes names each `id#index`, as the solve's support ids do."""
+    return {tuple(box):block['id']+(f'#{i}' if len(block['boxes']) > 1 else '') for block in (scene or {}).get('blocks',[])
+            for i,box in enumerate(block.get('boxes',[]))}
 
 
 def movement(profile, names):
@@ -152,10 +154,10 @@ def movement(profile, names):
     events = profile.get('contactEvents',[])
     def case(event):
         tick = event.get('input',event.get('offset'))
-        # A case's `:outside` row names the side of the contacted box it ends on.
-        exits = [r['mode']+('+' if r['cmp'] == 'GE' else '-') for r in profile.get('positionConstraints',[])
-                 if r.get('name') == f'{event.get("case")}:outside' and r.get('t1') == tick]
-        return dict(case=event.get('case'),tick=tick,exits=exits,**({'block':where(event)['block']} if 'boxes' in event else {}))
+        # A case's `:outside` row puts the player beside the contacted box before the case: the side it enters from.
+        entries = [r['mode']+('+' if r['cmp'] == 'GE' else '-') for r in profile.get('positionConstraints',[])
+                   if r.get('name') == f'{event.get("case")}:outside' and r.get('t1') == tick]
+        return dict(case=event.get('case'),tick=tick,entries=entries,**({'block':where(event)['block']} if 'boxes' in event else {}))
     return dict(jumps=[t for t,jump in enumerate(profile.get('jump',[])) if jump],
                 landings=[where(e) for e in events if e.get('role') == 'landing'],
                 ceilings=[where(e) for e in events if e.get('role') == 'ceiling'],
@@ -208,7 +210,7 @@ def route_trace(state, scene=None):
 def steps(profile, start, names, sides=()):
     """A node's own movement from input `start` in tick order: run ticks, jumps, walk-offs, obstacle faces, contacts
     and landings. A landing input ends an airtime (a node can start on one, after a two-tick jump); the ground inputs
-    after it are run ticks. `sides` are kept obstacle choices with their faces named as [(blocks, side)]."""
+    after it are run ticks. `sides` are kept obstacle choices, each face a list of (blocks, side) bounds."""
     m = movement(profile, names)
     end, jumps = len(profile.get('jump',[])), set(m['jumps'])
     ground = {l['tick']:l['block'] for l in m['landings'] if l['tick'] is not None and l['tick'] not in jumps}
@@ -232,9 +234,10 @@ def steps(profile, start, names, sides=()):
     out += [(c['tick'],f'hits the ceiling of {c["block"].upper()} t{c["tick"]}') for c in m['ceilings'] if c['tick'] >= start]
     out += [(w['tick'],f'touches {w["block"].upper()} {w["side"]} t{w["tick"]}') for w in m['walls'] if w['tick'] >= start]
     out += [(c['tick'],('grinds under' if c['case'] == 'grind' else c['case'].replace('_',' ')+' onto')+
-             f' {c.get("block","?").upper()} t{c["tick"]}'+(f', leaving by its {"/".join(c["exits"])} side' if c['exits'] else ''))
+             f' {c.get("block","?").upper()} t{c["tick"]}'+(f' from its {"/".join(c["entries"])} side' if c['entries'] else ''))
             for c in m['cases'] if c['tick'] is not None and c['tick'] >= start]
-    out += [(p['segment'][0],'passes '+' then '.join(f'the {face} face of {blocks}' for blocks,face in p['faces'])+
+    out += [(p['segment'][0],'keeps to '+', then '.join(' and '.join(f'the {face} side of {blocks}' for blocks,face in bounds)
+                                                     for bounds in p['faces'])+
              f' (t{p["segment"][0]}-{p["segment"][1]})') for p in sides if p['segment'][1] >= start]
     return ', '.join(text for _,text in sorted(out,key=lambda o:o[0])) or 'no movement of its own'
 
@@ -247,34 +250,47 @@ def node_trace(state, scene=None):
         source = frame['generation'].get('continuation') or {}
         if not source.get('nodes'):
             continue
-        pruned, runs = {}, {}
+        roots = [p.get('decisionNode') for p in frame.get('parents',[])]
+        parents = source.get('decisionParents',{})
+        def solved(key):
+            # A held reserve or alternative is its own decision key; its owner is the nearest solved node above it.
+            while key is not None and key not in source['nodes'] and key not in roots:
+                key = parents.get(key)
+            return key
+        pruned, runs, queued = {}, {}, Counter()
         for exclusion in source.get('exclusions',[]):
-            reasons = pruned.setdefault(exclusion.get('node'),Counter())
+            reasons = pruned.setdefault(solved(exclusion.get('node')),Counter())
             reasons[exclusion['proof'].get('reason')] += 1
         for candidate in source.get('minimumRunCandidates',[]):
-            runs.setdefault(candidate['node'],[]).append(candidate)
+            runs.setdefault(solved(candidate['node']),[]).append(candidate)
+        for program in source.get('pending',[]):
+            queued[solved(program.get('decisionParent') if program.get('needsNodeSolve') else program.get('decisionNode'))] += 1
         ends = {key:node['program']['movementUnits'][-1]['end'] for key,node in source['nodes'].items()}
-        roots = [p.get('decisionNode') for p in frame.get('parents',[])]
         nodes = []
         for key, node in source['nodes'].items():
             program = node['program']
             repair = node.get('repairState') or program.get('repairState')
             kept = (repair or {}).get('incumbent')
-            solids = {i:name for e in ((repair or {}).get('constraintGeneration') or {}).get('encounterLog',[])
-                      for i,name in zip(e['members'],e['names'])}
-            sides = [dict(segment=p['segment'],faces=[('+'.join(sorted({solids.get(o,'?').upper() for o in f['owners']})),side(f))
-                                                      for f in p['faces']])
+            solids = {}
+            for e in ((repair or {}).get('constraintGeneration') or {}).get('encounterLog',[]):
+                for i,name in zip(e['members'],e['names']):
+                    # Members are in box order, so a block's repeated name is its next box.
+                    solids.setdefault(i,name if e['names'].count(name) == 1 else f'{name}#{e["names"][:e["members"].index(i)].count(name)}')
+            def owners(bound):
+                return '+'.join(sorted({solids.get(o,'?').upper() for o in bound['owners']}))
+            sides = [dict(segment=p['segment'],faces=[[(owners(b),side(b)) for b in f.get('bounds') or [f]] for f in p['faces']])
                      for p in (repair.get('interactionChoices',{}).get(branch_key(kept['rows'],kept['passages'],kept['hits']),[])
                                if kept else [])]
-            start = ends.get(node['parent'],(frame.get('goalRequest') or {}).get('afterTick',0))
-            nodes.append(dict(node=key,parent=node['parent'],status=node['status'],depth=node['depth'],start=start,
+            parent = solved(node['parent'])
+            start = ends.get(parent,(frame.get('goalRequest') or {}).get('afterTick',0))
+            nodes.append(dict(node=key,parent=parent,status=node['status'],depth=node['depth'],start=start,
                               end=ends[key],steps=steps(program['profile'],start,names,sides),
                               repair=repair_trace(repair) if repair else None,
-                              pruned=dict(pruned.get(key,{})),minimumRuns=runs.get(key,[])))
+                              pruned=dict(pruned.get(key,{})),minimumRuns=runs.get(key,[]),queued=queued[key]))
         generation = frame['generation']
         trees[frame['id']] = dict(goal=frame['goal'].get('block'),nodes=nodes,
             rootPruned=dict(sum((pruned.get(r,Counter()) for r in roots),Counter())),
-            rootMinimumRuns=[c for r in roots for c in runs.get(r,[])],
+            rootMinimumRuns=[c for r in roots for c in runs.get(r,[])],rootQueued=sum(queued[r] for r in roots),
             generated=generation.get('generated'),screened=generation.get('screenedPrefixes'),
             policyRejections=generation.get('policyRejections'),expanded=generation.get('totalExpandedPrefixes'),
             generatedPolicyRejections=sum(r.get('search_policy',0) for r in pruned.values()),
@@ -653,20 +669,22 @@ def tree_lines(tree, request_index, numbers):
             outline(n['node'],depth+1)
     outline(None,0)
     lines.append('')
-    def expansion(solved, pruned, runs):
+    def expansion(solved, pruned, runs, queued):
         return [f'Solved children: '+(', '.join(f'node {numbers[c["node"]]}' for c in solved) or 'none')+'.',
+                f'Children queued but not yet solved: {queued}.',
                 'Children pruned when generated: '+(', '.join(f'{n} {CHECKS.get(k,k)}' for k,n in
                                                               Counter(pruned).most_common()) or 'none')+'.',
                 *([f'Minimum run ticks: {minimum_run_text(runs,numbers)}.'] if runs else []),'']
-    lines += ['The frame start\'s expansion:','']+expansion(children.get(None,[]),tree['rootPruned'],tree['rootMinimumRuns'])
+    lines += ['The frame start\'s expansion:','']+expansion(children.get(None,[]),tree['rootPruned'],tree['rootMinimumRuns'],
+                                                                 tree['rootQueued'])
     for n in nodes:
         lines += [f'##### Node {numbers[n["node"]]}: {n["steps"]}','',
                   f'From {origin(n["parent"])}. Outcome: {OUTCOMES.get(n["status"],n["status"])}. '
                   f'Inputs t{n["start"]}-{n["end"]-1}, decision depth {n["depth"]}.','']
         if n['repair']:
             lines += repair_lines(n['repair'],goal,request_index)
-        if n['status'] == 'feasible' or n['pruned'] or n['minimumRuns']:
-            lines += expansion(children.get(n['node'],[]),n['pruned'],n['minimumRuns'])
+        if n['status'] == 'feasible' or n['pruned'] or n['minimumRuns'] or n['queued']:
+            lines += expansion(children.get(n['node'],[]),n['pruned'],n['minimumRuns'],n['queued'])
     return lines
 
 

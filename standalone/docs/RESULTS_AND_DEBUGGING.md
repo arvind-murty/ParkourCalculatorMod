@@ -120,22 +120,26 @@ Each partial route in `report.md` and `routes.json` has:
   none); and the unresolved or pending alternatives.
 
 Every frame whose frontier solved decision nodes, finished or not, also gets a search
-tree. Node `F.N` is the Nth node frame F solved. The tree opens with the frame's
+tree. Node `F.N` is the Nth node frame F solved; a node built from a held minimum-run
+reserve or alternative sits under the node that held it. The tree opens with the frame's
 counts: nodes by outcome, prefixes generated, ruled out by the screens, rejected by
 the search policy (when generated or when taken from the queue), expanded and left
 unexpanded. An outline follows, nesting each node under its parent with its inputs and
-its own movement in words: run ticks on a block, jumps, walk-offs, the obstacle faces
-it passes (`passes the Z- face of B6+B7 then the X+ face of B6`), ceiling hits, grinds
-with the side of the box they leave by, step cases, and landings. A landing input ends
-an airtime, so the ground inputs after it are run ticks. A node can start on a
-landing input, after a two-tick jump. Each node then gets a section with its outcome,
-the same repair detail as a route (obstacle checks, rejected options, every
-alternative solved with its requests, families, kept choice) and what its expansion
-generated: the nodes it led to, its children pruned when generated, grouped by
-reason (the screens' reachability, disk-relaxation and bound proofs, and the search
-policy's rejections), and its minimum-run candidates (each kept one with its run
-ticks, built landing, bound and children; the others grouped as beaten by a kept
-candidate or not reached below the bound). The frame start's own expansion comes first.
+its own movement in words: run ticks on a block, jumps, walk-offs, the obstacle sides it
+keeps to (`keeps to the Z- side of B6+B7, then the X+ side of B6`; a side bounded on two
+axes names both faces, `the Z- side of B13#1 and the Z+ side of B6+B7`, the free space
+between them), ceiling hits, grinds with the side of the box they enter from, step cases,
+and landings. A block of several boxes names each `id#index` (`B13#0`, `B13#1`), as the
+solve's support ids do. A landing input ends an airtime, so the ground inputs after it
+are run ticks. A node can start on a landing input, after a two-tick jump. Each node then
+gets a section with its outcome, the same repair detail as a route (obstacle checks,
+rejected options, every alternative solved with its requests, families, kept choice) and
+what its expansion generated: the nodes it led to, the children still queued unsolved, its
+children pruned when generated, grouped by reason (the screens' reachability,
+disk-relaxation and bound proofs, and the search policy's rejections), and its
+minimum-run candidates (each kept one with its run ticks, built landing, bound and
+children; the others grouped as beaten by a kept candidate or not reached below the
+bound). The frame start's own expansion comes first.
 
 A request's `owners` are the routes whose repair log holds its problem hash; an
 empty list means no saved route kept that solve. The `stop` report lists suspended
