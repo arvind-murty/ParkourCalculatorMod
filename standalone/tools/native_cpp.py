@@ -211,6 +211,49 @@ def verify_envelopes(args):
     print(json.dumps(summary))
 
 
+def verify_screen(args):
+    """Run a real solve on the native gate; every required() and check_program() is repeated on a shadow
+    Python gate (same scene and compiler) and the proofs compared."""
+    import copy
+    from parkour_solver.reachability.service import InteractionGate
+    args.output.mkdir(parents=True, exist_ok=False)
+    native = load(args.variant)
+    os.environ.pop('PKC_NATIVE_CORE', None)
+    init, required, check_program = InteractionGate.__init__, InteractionGate.required, InteractionGate.check_program
+    calls = dict(required=0, check_program=0)
+
+    def shadowed(gate, *positional, **keywords):
+        init(gate, *positional, **keywords)
+        gate.native = native
+        gate.shadow = InteractionGate.__new__(InteractionGate)
+        init(gate.shadow, *positional, **keywords)
+
+    def compared(name, original):
+        def call(gate, program, *positional, **keywords):
+            if getattr(gate, 'native', None) is None:  # the shadow itself
+                return original(gate, program, *positional, **keywords)
+            mirror = copy.deepcopy(program)
+            actual = original(gate, program, *positional, **keywords)
+            expected = original(gate.shadow, mirror, *positional, **keywords)
+            calls[name] += 1
+            if json.dumps([actual, program], sort_keys=True) != json.dumps([expected, mirror], sort_keys=True):
+                save_infinite(args.output / 'mismatch.json', dict(call=name, program=mirror))
+                raise AssertionError(f'native {name} differs at call {calls[name]}')
+            return actual
+        return call
+
+    InteractionGate.__init__ = shadowed
+    InteractionGate.required = compared('required', required)
+    InteractionGate.check_program = compared('check_program', check_program)
+    try:
+        summary = checked_solve(args, {}, {})
+    finally:
+        InteractionGate.__init__, InteractionGate.required, InteractionGate.check_program = init, required, check_program
+    summary.update(screenCalls=calls, mismatches=0)
+    save(args.output / 'summary.json', summary)
+    print(json.dumps(summary))
+
+
 def save_infinite(path, value):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, indent=2) + '\n')
@@ -246,6 +289,11 @@ def main():
     p.add_argument('--seconds', type=float, required=True)
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--variant', choices=sorted(BUILDS), default='release')
+    p = commands.add_parser('verify-screen')
+    p.add_argument('--input', type=Path, required=True)
+    p.add_argument('--seconds', type=float, required=True)
+    p.add_argument('--output', type=Path, required=True)
+    p.add_argument('--variant', choices=sorted(BUILDS), default='release')
     p = commands.add_parser('verify-coefficients')
     p.add_argument('--input', type=Path, required=True)
     p.add_argument('--seconds', type=float, required=True)
@@ -253,7 +301,8 @@ def main():
     p.add_argument('--variant', choices=sorted(BUILDS), default='release')
     args = parser.parse_args()
     dict(build=build, verify_digest=verify_digest, verify_programs=verify_programs, verify_gate=verify_gate,
-         verify_coefficients=verify_coefficients, verify_envelopes=verify_envelopes)[args.command.replace('-', '_')](args)
+         verify_coefficients=verify_coefficients, verify_envelopes=verify_envelopes,
+         verify_screen=verify_screen)[args.command.replace('-', '_')](args)
 
 
 if __name__ == '__main__':

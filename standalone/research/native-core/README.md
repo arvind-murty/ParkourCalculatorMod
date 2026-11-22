@@ -21,3 +21,22 @@ status, termination and all 19 transitions ([1](2026-11-21/parity-python-1-nativ
 [2](2026-11-21/parity-python-2-native-2.json)). `tools.native_cpp verify-gate` on the extended input for 90 s
 compared 5,794 (release) and 5,722 (UBSan) preparations with no difference
 ([release](2026-11-21/live-gate-release-summary.json), [UBSan](2026-11-21/live-gate-sanitize-summary.json)).
+
+## Gate screen kept native, 2026-11-21
+
+Source: `51b689fb` plus the native screen: preparation, coefficients, model, envelopes and `required` stay in C++;
+Python dicts are built only for readers that ask. Same fixed-work input and method as above, load average 4.9 to 5.4.
+
+| Run | Search s | Expanded | Calls | Preparation misses / hits | Analysis misses / hits | Coefficient misses | Sequence checks |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Python 1 | 32.60 | 28 | 100 | 1,412 / 876 | 1,426 / 633 | 991 | 1,015 |
+| native 1 | 27.28 | 28 | 100 | 1,412 / 876 | 1,426 / 633 | 991 | 1,015 |
+| Python 2 | 34.41 | 28 | 100 | 1,412 / 876 | 1,426 / 633 | 991 | 1,015 |
+| native 2 | 27.78 | 28 | 100 | 1,412 / 876 | 1,426 / 633 | 991 | 1,015 |
+
+Mean search time falls 17.8% (33.51 s to 27.53 s) with identical gate counters, and exact parity finds all 19
+transitions identical ([1](2026-11-21-screen/parity-python-1-native-1.json),
+[2](2026-11-21-screen/parity-python-2-native-2.json)). `tools.native_cpp verify-screen` on the extended input for
+90 s repeated 3,486 `required` and 1,264 `check_program` calls (release) and 3,563 / 1,294 (UBSan) on a shadow Python
+gate with no difference ([release](2026-11-21-screen/live-screen-release-summary.json),
+[UBSan](2026-11-21-screen/live-screen-sanitize-summary.json)).

@@ -24,38 +24,6 @@ constexpr std::int64_t kParentWindow = 10;                          // intervals
 using Interval = std::array<Num, 2>;
 using StateBox = std::array<Interval, 3>;  // X, Z, Y
 
-// CPython 3.12.2 math.hypot (vector_norm with compensated rounding) for two
-// coordinates; libm hypot can differ by one ULP and change a travel decision.
-// See native/cpp/LICENSE.cpython and Modules/mathmodule.c at v3.12.2.
-double hypot2(double a, double b) {
-    double values[2] = {std::fabs(a), std::fabs(b)};
-    double maximum = values[1] > values[0] ? values[1] : values[0];
-    if (std::isinf(values[0]) || std::isinf(values[1])) return kInf;
-    if (std::isnan(values[0]) || std::isnan(values[1])) return std::numeric_limits<double>::quiet_NaN();
-    if (maximum == 0.) return maximum;
-    int exponent;
-    std::frexp(maximum, &exponent);
-    if (exponent < -1023) return DBL_MIN * hypot2(values[0] / DBL_MIN, values[1] / DBL_MIN);
-    double scale = std::ldexp(1., -exponent), sum = 1., frac1 = 0., frac2 = 0.;
-    for (double value : values) {
-        double x = value * scale;
-        double product = x * x, product_error = std::fma(x, x, -product);
-        double combined = sum + product, error = (sum - combined) + product;
-        sum = combined;
-        frac1 += product_error;
-        frac2 += error;
-    }
-    double h = std::sqrt(sum - 1. + (frac1 + frac2));
-    double product = -h * h, product_error = std::fma(-h, h, -product);
-    double combined = sum + product, error = (sum - combined) + product;
-    sum = combined;
-    frac1 += product_error;
-    frac2 += error;
-    double correction = sum - 1. + (frac1 + frac2);
-    h += correction / (2. * h);
-    return h / scale;
-}
-
 Num num(const Value& value) {  // a Python int or float operand
     if (auto* integer = std::get_if<std::int64_t>(&value.data)) return whole(*integer);
     if (auto* real_value = std::get_if<double>(&value.data)) return flt(*real_value);
@@ -75,6 +43,38 @@ Value reason(std::int64_t state, int axis, const char* why) {
 }
 
 }  // namespace
+
+// CPython 3.12.2 math.hypot (vector_norm with compensated rounding) for two
+// coordinates; libm hypot can differ by one ULP and change a travel decision.
+// See native/cpp/LICENSE.cpython and Modules/mathmodule.c at v3.12.2.
+double python_hypot(double a, double b) {
+    double values[2] = {std::fabs(a), std::fabs(b)};
+    double maximum = values[1] > values[0] ? values[1] : values[0];
+    if (std::isinf(values[0]) || std::isinf(values[1])) return kInf;
+    if (std::isnan(values[0]) || std::isnan(values[1])) return std::numeric_limits<double>::quiet_NaN();
+    if (maximum == 0.) return maximum;
+    int exponent;
+    std::frexp(maximum, &exponent);
+    if (exponent < -1023) return DBL_MIN * python_hypot(values[0] / DBL_MIN, values[1] / DBL_MIN);
+    double scale = std::ldexp(1., -exponent), sum = 1., frac1 = 0., frac2 = 0.;
+    for (double value : values) {
+        double x = value * scale;
+        double product = x * x, product_error = std::fma(x, x, -product);
+        double combined = sum + product, error = (sum - combined) + product;
+        sum = combined;
+        frac1 += product_error;
+        frac2 += error;
+    }
+    double h = std::sqrt(sum - 1. + (frac1 + frac2));
+    double product = -h * h, product_error = std::fma(-h, h, -product);
+    double combined = sum + product, error = (sum - combined) + product;
+    sum = combined;
+    frac1 += product_error;
+    frac2 += error;
+    double correction = sum - 1. + (frac1 + frac2);
+    h += correction / (2. * h);
+    return h / scale;
+}
 
 Value reachable_envelopes(const Value& problem_value, const Value& y_value, std::optional<std::int64_t> parent_ticks) {
     const Object& problem = fields(problem_value);
@@ -228,9 +228,9 @@ Value reachable_envelopes(const Value& problem_value, const Value& y_value, std:
             Num a = num(lo.at(k)), b = num(hi.at(k));
             return py_max(flt(std::fabs(a.value)), flt(std::fabs(b.value))).value;
         };
-        speed = hypot2(widest(0), widest(1));
+        speed = python_hypot(widest(0), widest(1));
     } else {
-        speed = hypot2(num(velocity[0]).value, num(velocity[1]).value);
+        speed = python_hypot(num(velocity[0]).value, num(velocity[1]).value);
     }
     std::vector<double> radii = {0.};  // travel_radii(speed, magnitude, friction, margin=1e-8)
     for (std::size_t t = 0; t < std::min(magnitudes.size(), frictions.size()); ++t) {
@@ -251,7 +251,7 @@ Value reachable_envelopes(const Value& problem_value, const Value& y_value, std:
                 for (int axis = 0; axis < 2; ++axis)
                     gaps[axis] = std::max({0., states[j][axis][0].value - states[i][axis][1].value,
                                            states[i][axis][0].value - states[j][axis][1].value});
-                double gap = hypot2(gaps[0], gaps[1]);
+                double gap = python_hypot(gaps[0], gaps[1]);
                 if (gap > radii[j] - radii[i] + 1e-7) {
                     contradiction = object({{"state", integer_value(j)},
                                             {"previousState", integer_value(i)},

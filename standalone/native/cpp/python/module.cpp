@@ -2,6 +2,8 @@
 // this boundary; native units keep their state in C++ between calls.
 #include <pybind11/pybind11.h>
 
+#include <functional>
+#include <memory>
 #include <optional>
 #include <stdexcept>
 #include <type_traits>
@@ -13,6 +15,7 @@
 #include "pkc/envelopes.hpp"
 #include "pkc/gate.hpp"
 #include "pkc/program.hpp"
+#include "pkc/screen.hpp"
 
 namespace py = pybind11;
 
@@ -124,6 +127,35 @@ PyObject* new_reference(const pkc::Value& value) {
     }, value.data);
 }
 
+// Gate results kept native (InteractionGate under PKC_NATIVE_CORE). Each builds
+// its Python dict once, on the first request, so repeated reads return the same
+// object as the Python gate's cache does.
+struct NativeCoefficients {
+    pkc::Value value;
+    py::object dict;
+};
+
+struct NativePrepared {
+    pkc::Program program;
+    pkc::Value result;  // {route, profiles, plan, vertical}
+    std::string key;
+    py::object dict;
+};
+
+struct NativeAnalysis {
+    std::shared_ptr<NativePrepared> prepared;
+    std::shared_ptr<NativeCoefficients> coefficients;
+    pkc::GateAnalysis analysis;
+    py::object dict;
+};
+
+py::object to_python(const pkc::Value& value);
+
+py::object memoized(py::object& slot, const std::function<py::object()>& build) {
+    if (!slot) slot = build();
+    return slot;
+}
+
 py::object to_python(const pkc::Value& value) {
     PyObject* result = new_reference(value);
     if (!result) throw py::error_already_set();
@@ -159,6 +191,66 @@ PYBIND11_MODULE(_pkc_native, m) {
         return to_python(pkc::reachable_envelopes(convert(problem), convert(y), parent));
     }, py::arg("problem"), py::arg("y") = py::none(), py::arg("parent_ticks") = py::none(),
        "reachability/intervals.reachable_envelopes without the `model` entry");
+    py::class_<NativeCoefficients, std::shared_ptr<NativeCoefficients>>(m, "NativeCoefficients")
+        .def("to_python", [](NativeCoefficients& self) {
+            return memoized(self.dict, [&] { return to_python(self.value); });
+        });
+    m.def("coefficients", [](py::dict value) {
+        return std::make_shared<NativeCoefficients>(NativeCoefficients{convert(value), value});
+    }, "A coefficient reply the Python bridge compiled, for a native analysis");
+    py::class_<NativePrepared, std::shared_ptr<NativePrepared>>(m, "NativePrepared")
+        .def_property_readonly("key", [](NativePrepared& self) { return self.key; })
+        .def("to_python", [](NativePrepared& self) {
+            return memoized(self.dict, [&] {
+                py::dict out;
+                out["key"] = self.key;
+                for (const auto& [name, field] : *std::get<std::shared_ptr<const pkc::Object>>(self.result.data))
+                    out[py::str(name)] = to_python(field);
+                return py::object(out);
+            });
+        }, "InteractionGate.prepare's result dict")
+        .def("coefficient_digest", [](NativePrepared& self) {
+            return pkc::digest(pkc::coefficient_request(self.result));
+        }, "digest(coefficient_request(route, plan)), the gate's coefficient cache key")
+        .def("compile_coefficients", [](NativePrepared& self) {
+            return std::make_shared<NativeCoefficients>(
+                NativeCoefficients{pkc::compile_coefficients(pkc::coefficient_request(self.result)), {}});
+        })
+        .def("analyze", [](std::shared_ptr<NativePrepared> self, std::shared_ptr<NativeCoefficients> coefficients,
+                           bool open_terminal, py::handle parent_ticks, std::string key) {
+            std::optional<std::int64_t> parent;
+            if (!parent_ticks.is_none()) parent = parent_ticks.cast<std::int64_t>();
+            auto analysis = pkc::analyze_prepared(self->result, coefficients->value, open_terminal, parent, std::move(key));
+            return std::make_shared<NativeAnalysis>(NativeAnalysis{self, coefficients, std::move(analysis), {}});
+        }, "InteractionGate.analyze_model's build under the gate's analysis key");
+    py::class_<NativeAnalysis, std::shared_ptr<NativeAnalysis>>(m, "NativeAnalysis")
+        .def_property_readonly("key", [](NativeAnalysis& self) { return self.analysis.key; })
+        .def("required", [](NativeAnalysis& self) {
+            return to_python(pkc::required_proof(self.analysis, self.prepared->program));
+        }, "InteractionGate.required's proof, or None")
+        .def("to_python", [](NativeAnalysis& self) {
+            return memoized(self.dict, [&] {
+                py::object model = to_python(self.analysis.model);
+                py::dict envelopes = py::reinterpret_borrow<py::dict>(to_python(self.analysis.envelopes));
+                py::object model_key = envelopes.attr("pop")("modelKey");
+                envelopes["model"] = model;  // the Python result aliases its model
+                envelopes["modelKey"] = model_key;
+                py::dict out;
+                out["key"] = self.analysis.key;
+                out["model"] = model;
+                out["envelopes"] = envelopes;
+                out["coefficient"] = memoized(self.coefficients->dict, [&] { return to_python(self.coefficients->value); });
+                out["y"] = to_python(self.analysis.y);
+                return py::object(out);
+            });
+        }, "InteractionGate.analyze_model's result dict");
+    m.def("prepare", [](py::handle scene, py::handle program, bool require_complete, std::string key) -> py::object {
+        auto typed = pkc::program_from_value(convert(program));
+        auto result = pkc::gate_prepare(convert(scene), typed, require_complete);
+        if (!result) return py::none();
+        return py::cast(std::make_shared<NativePrepared>(
+            NativePrepared{std::move(typed), std::move(*result), std::move(key), {}}));
+    }, "InteractionGate.prepare kept native under the gate's preparation key, or None");
     m.def("float_repr", &pkc::float_repr, "repr(float) for a finite float");
     m.def("sha256_hex", [](py::bytes data) {
         static const char* hex = "0123456789abcdef";

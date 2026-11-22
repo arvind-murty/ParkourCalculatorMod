@@ -23,6 +23,12 @@ def interaction_context_key(context):
     return digest(dict(policy=PROOF_POLICY, context=finite(context)))
 
 
+def analysis_key(prepared_key, open_terminal, scope, initial_intervals, parent_ticks):
+    """An analysis named by the preparation it models (InteractionGate.analyze_model)."""
+    return interaction_context_key(dict(prepared=prepared_key, openTerminal=open_terminal, scope=scope,
+                                        initialIntervals=initial_intervals, parentTicks=parent_ticks))
+
+
 def query_interaction(request, context, *, session=None, budget=None, context_key=None):
     """Conservative role/window query shared by routing and fixed generation.
 
@@ -258,6 +264,12 @@ class InteractionGate:
         return value
 
     def prepare(self, program, *, scene=None, require_complete=False):
+        prepared=self._prepared(program,scene=scene,require_complete=require_complete)
+        return prepared if prepared is None or isinstance(prepared,dict) else prepared.to_python()
+
+    def _prepared(self, program, *, scene=None, require_complete=False):
+        """The cached preparation: a dict, or under PKC_NATIVE_CORE a native one for the routes it covers
+        (collision-box scenes without ladder events), whose dict is built only when Python reads it."""
         from parkour_solver.movement.program import compile_program, program_physics_key
         from parkour_solver.scene.route import prepare_route, schedule
         from parkour_solver.validation.vertical import validate_vertical_schedule
@@ -266,10 +278,8 @@ class InteractionGate:
         key=('prepared',digest(dict(scene={k:v for k,v in scene.items() if k!='movementSearch'},
             program=program_physics_key(program),complete=require_complete)))
         def build():
-            # The native unit covers production routes: collision-box scenes without ladder events.
             if self.native is not None and scene['sceneModel']=='collision_boxes' and not program.get('ladderEvents'):
-                prepared=self.native.gate_prepare(scene,program,require_complete)
-                return None if prepared is None else dict(key=key[1],**prepared)
+                return self.native.prepare(scene,program,require_complete,key[1])
             compiled=compile_program(scene,program,require_complete=require_complete)
             route=prepare_route(compiled['route']);plan=schedule(route,[0])
             vertical=validate_vertical_schedule(route,compiled['profiles'],plan)
@@ -288,6 +298,7 @@ class InteractionGate:
             request=coefficient_request(route,plan)
             coefficient=self._cached(('coefficients',digest(request)),
                 lambda:self.compiler.compile(route,plan,self.seconds),'coefficient')
+            if not isinstance(coefficient,dict):coefficient=coefficient.to_python()  # cached by a native analysis
             rows=[r for r in plan['walls'] if not open_terminal or not r.get('name','').startswith('landing:1:')]
             result=dict(coefficient,ticks=plan['ticks'],walls=rows,contacts=plan['contacts'],
                 position=route['initial']['position'][::2],velocity=route['initial']['velocity'][::2],
@@ -297,8 +308,7 @@ class InteractionGate:
             return result,coefficient
         built=None
         if prepared_key is not None:
-            key=interaction_context_key(dict(prepared=prepared_key,openTerminal=open_terminal,scope=scope,
-                                             initialIntervals=initial_intervals,parentTicks=parent_ticks))
+            key=analysis_key(prepared_key,open_terminal,scope,initial_intervals,parent_ticks)
         else:
             built=build_model()
             key=interaction_context_key(dict(model=built[0],y=vertical['y'],scope=scope,parentTicks=parent_ticks))
@@ -310,11 +320,29 @@ class InteractionGate:
         return self._cached(('analysis',key),build,'analysis')
 
     def analyze(self, program, *, scene=None, require_complete=False, open_terminal=True, scope=None):
-        prepared=self.prepare(program,scene=scene,require_complete=require_complete)
+        analysis=self._analysis(program,scene=scene,require_complete=require_complete,open_terminal=open_terminal,
+                                scope=scope)
+        return analysis if analysis is None or isinstance(analysis,dict) else analysis.to_python()
+
+    def _analysis(self, program, *, scene=None, require_complete=False, open_terminal=True, scope=None):
+        """analyze's cached result: a dict, or a native analysis when the preparation is native."""
+        prepared=self._prepared(program,scene=scene,require_complete=require_complete)
         if prepared is None:return None
-        return self.analyze_model(prepared['route'],prepared['plan'],prepared['vertical'],
-                                  open_terminal=open_terminal,scope=scope,prepared_key=prepared['key'],
-                                  parent_ticks=program.get('parentTicks'))
+        parent_ticks=program.get('parentTicks')
+        # A native analysis compiles coefficients from the native tables, so only for a compiler whose replies
+        # equal them; any other compiler (test doubles) gets the Python model of the same preparation.
+        if isinstance(prepared,dict) or not getattr(self.compiler,'table_coefficients',False):
+            if not isinstance(prepared,dict):prepared=prepared.to_python()
+            return self.analyze_model(prepared['route'],prepared['plan'],prepared['vertical'],
+                                      open_terminal=open_terminal,scope=scope,prepared_key=prepared['key'],
+                                      parent_ticks=parent_ticks)
+        key=analysis_key(prepared.key,open_terminal,scope,None,parent_ticks)
+        def build():
+            coefficient=self._cached(('coefficients',prepared.coefficient_digest()),prepared.compile_coefficients,
+                                     'coefficient')
+            if isinstance(coefficient,dict):coefficient=self.native.coefficients(coefficient)  # cached by Python
+            return prepared.analyze(coefficient,open_terminal,parent_ticks,key)
+        return self._cached(('analysis',key),build,'analysis')
 
     def condition(self, analysis, rows):
         """Add X/Z prerequisites and repropagate, retaining the compiled physics."""
@@ -350,17 +378,19 @@ class InteractionGate:
             if any(abs(b['top']-self.scene['initial']['position'][1])<1e-7 and
                    supports(b,*self.scene['initial']['position'][::2]) for b in self.scene['blocks']):
                 return dict(reason='unselected_initial_floor')
-        analysis=self.analyze(program)
+        analysis=self._analysis(program)
         if analysis is None:return dict(reason='vertical_schedule')
+        def materialized():  # Python readers need the analysis dict, built once for a native analysis
+            return analysis if isinstance(analysis,dict) else analysis.to_python()
         from parkour_solver.canonical import digest
         objective=self.scene['objective'] if objective is None else objective
         cut=walk_off_tick(program)
-        key=('screen',analysis['key'],digest(objective),cut)
+        key=('screen',analysis['key'] if isinstance(analysis,dict) else analysis.key,digest(objective),cut)
         undecided=False
         def relax(rows):
             nonlocal undecided
             self.metrics['relaxationChecks']=self.metrics.get('relaxationChecks',0)+1
-            checked=self.relaxation(program,analysis,objective,rows)
+            checked=self.relaxation(program,materialized(),objective,rows)
             undecided|=checked is not None and checked['outcome']=='undecided'
             return checked
         def build():
@@ -369,7 +399,7 @@ class InteractionGate:
             faces=None
             if cut is not None:
                 from parkour_solver.constraints.contacts import walk_off_faces
-                faces=walk_off_faces(self.scene,program,cut,analysis['envelopes'],landing_boxes(program,cut))
+                faces=walk_off_faces(self.scene,program,cut,materialized()['envelopes'],landing_boxes(program,cut))
             if faces is None:
                 if self.scene.get('maxWallHits',0):return None,None
                 checked=relax([])
@@ -500,9 +530,11 @@ class InteractionGate:
         return False
 
     def required(self, program):
-        analysis = self.analyze(program)
+        analysis = self._analysis(program)
         if analysis is None:
             return dict(reason='vertical_schedule')
+        if not isinstance(analysis, dict):
+            return analysis.required()
         envelope = analysis['envelopes']
         profile = program['profile']
         if envelope.get('contradiction'):

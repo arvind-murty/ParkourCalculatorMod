@@ -184,8 +184,9 @@ ordered options. That is targeted enumeration work, not a whole-solver speedup.
 - In-process movement bridge: on the extended B22 task at an equal 300 s budget,
   coefficient, scene and footprint calls took 0.72 s against 6.84 s through the Java
   process, with identical requests ([evidence](../research/jvm-free-bridge/README.md)).
-- Native gate preparation (opt-in, `PKC_NATIVE_CORE`): at equal work on the extended
-  case capped at 100 solver calls, search time fell 5.7% with identical transitions
+- Native gate screen (opt-in, `PKC_NATIVE_CORE`): preparation, analysis and the
+  required-contact screen stay in C++. At equal work on the extended case capped at
+  100 solver calls, search time fell 17.8% with identical transitions
   ([evidence](../research/native-core/README.md)).
 - IPOPT row reduction: final rows fall from 278 to 91 on the benchmark
   ([constraint reduction](IPOPT_CONSTRAINT_REDUCTION.md)).

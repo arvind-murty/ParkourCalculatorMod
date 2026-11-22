@@ -16,6 +16,9 @@ from parkour_solver.scene.static_collision import check_scene
 
 
 class PythonCompiler:
+    # Coefficient replies equal the generated tables, so a native gate compiles them itself (InteractionGate).
+    table_coefficients = True
+
     def compile(self, route, plan, seconds):
         return self._exchange(coefficient_request(route, plan), seconds)
 

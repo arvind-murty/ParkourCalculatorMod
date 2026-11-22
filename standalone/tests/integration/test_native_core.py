@@ -165,6 +165,33 @@ class GatePreparationTests(unittest.TestCase):
                     checked += 1
         self.assertGreater(checked, 0)
 
+    def test_gate_with_the_native_core_screens_like_the_python_gate(self):
+        import copy
+        from tests.support.block_table import compiler, nodes, real11_inputs
+        from parkour_solver.reachability.service import InteractionGate
+        same = lambda value: json.dumps(value, sort_keys=True)  # analyses hold infinities
+        checked, proofs = 0, set()
+        with compiler() as bridge:
+            for scene, roots in real11_inputs():
+                generator = InteractionGate(scene, bridge, seconds=10)
+                generator.native = None
+                python, native = InteractionGate(scene, bridge, seconds=10), InteractionGate(scene, bridge, seconds=10)
+                python.native, native.native = None, self.native
+                for node in nodes(scene, roots, generator):
+                    if not node['profile']['airtime']:
+                        continue
+                    expected = python.required(node)
+                    self.assertEqual(same(native.required(node)), same(expected))
+                    proofs.add((expected or {}).get('reason'))
+                    self.assertEqual(same(native.analyze(node)), same(python.analyze(node)))
+                    a, b = copy.deepcopy(node), copy.deepcopy(node)
+                    self.assertEqual(same(native.check_program(b)), same(python.check_program(a)))
+                    self.assertEqual(same(b), same(a))  # a run-off's face selection lands on the program
+                    checked += 1
+                self.assertEqual(native.metrics, python.metrics)
+        self.assertGreater(checked, 0)
+        self.assertIn(None, proofs)
+
     def test_gate_with_the_native_core_prepares_like_the_python_gate(self):
         from tests.support.block_table import compiler, nodes, real11_inputs
         from parkour_solver.reachability.service import InteractionGate

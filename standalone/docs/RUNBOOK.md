@@ -26,9 +26,12 @@ Executable Minecraft replay and export remain Java tools.
 `PKC_NATIVE_CORE` opts a solve into the C++ core: set it to a built module
 directory (`build/native/cpp`, built as in
 [run a solve and report it](#run-a-solve-and-report-it)). The interaction gate then
-prepares collision-box routes without ladder events natively; everything else, and
-every run without the variable, uses the Python implementation, which stays the
-parity oracle.
+prepares and analyzes collision-box routes without ladder events natively and answers
+its required-contact screens there, building Python dicts only for readers that ask.
+It compiles their coefficients from the native tables, so the compiler's call counts
+omit them; only bridges whose replies equal those tables allow that
+(`table_coefficients`), and any other compiler gets the Python analysis. Everything else, and every run without the
+variable, uses the Python implementation, which stays the parity oracle.
 
 For a fresh environment, use Python3.12+ and the pinned extras:
 
@@ -175,7 +178,12 @@ difference and saves it as `mismatch.json`:
   --seconds 60 --output /path/to/new-dir [--variant sanitize]
 "$PKC_IPOPT_PYTHON" -B -m tools.native_cpp verify-envelopes --input cases/real11/physical-anchors.json \
   --seconds 60 --output /path/to/new-dir [--variant sanitize]
+"$PKC_IPOPT_PYTHON" -B -m tools.native_cpp verify-screen --input cases/real11/physical-anchors.json \
+  --seconds 60 --output /path/to/new-dir [--variant sanitize]
 ```
+
+`verify-screen` solves on the native gate and repeats every `required` and
+`check_program` call on a shadow Python gate.
 
 A new program field fails the typed conversion by name, so add it to
 `native/cpp/include/pkc/program.hpp` in the same change.
