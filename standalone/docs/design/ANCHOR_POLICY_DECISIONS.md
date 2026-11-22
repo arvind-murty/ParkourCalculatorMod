@@ -383,7 +383,33 @@ time (user, 2026-11-19/20):
 Every resolution is logged in the frontier's `minimumRunCandidates`. This mirrors
 minimum run ticks for hard jumps (`run_bound`, O7), which is unchanged.
 Turnaround decisions generate run ticks as before and still prefer them
-(`(T,-J,A)`). `searchPolicyVersion` 14 carries this and the decision objectives.
+(`(T,-J,A)`). `searchPolicyVersion` 15 carries this, the decision objectives and O10.
+
+## O10 — No backward ceiling hits or grinds at ordinary decisions
+
+**Settled (user, 2026-11-21):** an ordinary decision (not a turnaround) generates no
+ceiling hit or grind that sends the player backwards along its guide leg; turnarounds
+are where backward moves belong (O5, O7). The DFS gives the generator context the
+decision's validated point, the unit direction of its current guide leg (the span's
+guide point to the next, horizontal) and the turnaround margin (0.3 blocks). A leg of
+zero horizontal length gives no direction and no filter. The ceiling generator
+(`open_ceiling_choices`, `movement/ceiling_generation.py`) then skips:
+
+- a **ceiling hit or grind behind the decision**: its contact's player-centre regions,
+  clipped to the reachable envelope at the contact input, end more than the margin
+  behind the decision point along the leg (`behind_decision`,
+  `reachability/service.py`). Real11's ceiling hit under B22 from B11 (the B7→B20 leg
+  runs +X+Z, B22 lies at the B11 landing's −Z edge) is one;
+- a **grind entered against the leg**: a grind starts outside one exposed face of the
+  low ceiling and enters under it on the jump tick, so entering from a face whose
+  outward axis points along the leg moves backwards on that axis (`entry_backward`).
+  With a leg running +X+Z, grinds entered from X+ or Z+ are skipped; along a leg that
+  is exactly axis-aligned, the two side faces are kept.
+
+Both skips are logged with the generators' reachability exclusions (reasons
+`behind_decision_point` and `entry_against_guide`), so the solve report lists them per
+frame. Run-tick bases and the peeked children of `landings_of` use their decision's
+point and leg, so minimum-run candidates are filtered the same way.
 
 ## Settled versus remaining implementation choices
 

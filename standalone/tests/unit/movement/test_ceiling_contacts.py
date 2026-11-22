@@ -50,6 +50,26 @@ class OpenCeilingTests(unittest.TestCase):
         return [c for c in open_ceiling_choices(dict(dict(scene=scene, state=state, maxInputs=20, threshold=0., interactionGate=None), **context))
                 if c['profile']['contactEvents']]
 
+    def test_an_ordinary_decision_offers_nothing_behind_it_and_no_grind_entered_against_its_leg(self):
+        from parkour_solver.movement.ceiling_generation import open_ceiling_choices
+        def offered(**context):
+            scene = dict(collisionScene=dict(solids=[[0, 3, 0, 1, 4, 1]]), ceilingHits=True, blocks=[dict(id='c0', solidIndex=0)])
+            state = dict(position=1., velocity=REST_CARRY, onGround=True, previousHorizontalCollision=False)
+            kinds = []
+            for c in open_ceiling_choices(dict(scene=scene, state=state, maxInputs=20, threshold=0., interactionGate=None,
+                                               program=dict(profile=dict(duration=0)), **context)):
+                entry = [r['mode']+('+' if r['cmp'] == 'GE' else '-') for r in c['profile']['positionConstraints']
+                         if r.get('name') == 'grind:outside']
+                kinds.append('grind '+entry[0] if entry else 'ceiling')
+            return sorted(kinds)
+        self.assertEqual(offered(), ['ceiling', 'grind X+', 'grind X-', 'grind Z+', 'grind Z-'])
+        # The leg runs +Z: a grind entered from Z+ moves backwards; X entries move sideways.
+        ahead = dict(point=[.5, .5], direction=(0., 1.), margin=.3)
+        self.assertEqual(offered(forward=ahead), ['ceiling', 'grind X+', 'grind X-', 'grind Z-'])
+        # The ceiling's player-centre region ends at z 1.3, 0.7 behind a decision point at z 2.
+        self.assertEqual(offered(forward=dict(ahead, point=[.5, 2.])), [])
+        self.assertEqual(offered(forward=dict(ahead, point=[.5, 1.5])), ['ceiling', 'grind X+', 'grind X-', 'grind Z-'])
+
     def test_touching_coplanar_ceilings_are_one_choice_with_both_members(self):
         boxes = [[0, 3, 0, 1, 4, 1], [1, 3, 0, 2, 4, 1]]
         choice, = self.choices(boxes)

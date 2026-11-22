@@ -300,6 +300,15 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
         ctx['launchOwner'] = (launch(scene, ctx['program']) or (None, None))[1]
         ctx['regionItems'] = True
         ctx['frameId'] = f['id']
+        decision = ctx.get('decision')
+        if anchor_route and decision is not None and not decision.get('decisionTurnaround', False):
+            # An ordinary decision generates no ceiling hit or grind behind it along its guide leg (O10).
+            from parkour_solver.spatial.anchor_guides import unit
+            k, points = pair_of(decision, f), adapter.guide_plan['points']
+            direction = unit(points[k+1][0]-points[k][0], points[k+1][2]-points[k][2]) if k+1 < len(points) else None
+            if direction is not None:
+                ctx['forward'] = dict(point=decision['decisionPoint'], direction=direction,
+                                      margin=adapter.anchor_policy['turnaround']['spatialMargin'])
 
     def time_bound(program,f=None):
         if state['best'] is None:return None

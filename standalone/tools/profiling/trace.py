@@ -320,7 +320,9 @@ CHECKS = dict(
     optimistic_remaining_time_exceeds_incumbent='time bound (cannot finish before the best route)',
     elapsed_inputs_exceed_incumbent_finish='time bound (already past the best route\'s finish)',
     global_single_jump_latch='hard-anchor latch',
-    higher_ticks_without_structural_advantage='slower than a peer at the anchor (no structural advantage)')
+    higher_ticks_without_structural_advantage='slower than a peer at the anchor (no structural advantage)',
+    behind_decision_point='behind the decision point along its guide leg',
+    entry_against_guide='entered against the decision\'s guide leg')
 OUTCOMES = dict(
     feasible='feasible',
     exhausted='no alternative survived (backtracks)',
@@ -492,6 +494,10 @@ def proof_text(entry):
                 f'reachable [{entry["reachable"][0]:.3f}, {entry["reachable"][1]:.3f}]')
     if reason == 'disk_control_relaxation_infeasible':
         return 'no input sequence satisfies the dynamics and these rows, even with acceleration relaxed to a disk'
+    if reason == 'behind_decision_point':
+        return f'reachable part at most {number(entry["ahead"])} blocks ahead, margin {number(entry["margin"])}'
+    if reason == 'entry_against_guide':
+        return f'enters from its {entry["side"]} side'
     if reason == 'interaction_distance_unreachable':
         return (f'at tick {entry["tick"]} the nearest point is {entry["gap"]:.3f} blocks away, '
                 f'travel at most {entry["travelUpperBound"]:.3f}')

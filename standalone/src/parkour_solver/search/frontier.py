@@ -119,8 +119,9 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
         owned['ownedEndpoint']=owned['profile']['duration']
         return owned
 
-    def expansion_context(p, run_ticks=True):
-        context_data = dict(mode='open', scene=scene, program=p, state=boundary_state(p),
+    def expansion_context(p, run_ticks=True, decision=None):
+        # `decision` is the decision P whose expansion this is (a run-tick base or a peeked child extends it).
+        context_data = dict(mode='open', scene=scene, program=p, decision=p if decision is None else decision, state=boundary_state(p),
             maxInputs=settings['maxInputs']-p['profile']['duration'], maxEntryInputs=settings['maxEntryInputs'],
             checkBudget=budget, deadline=deadline, cancelEvent=cancel_event, normalGap=checkpoint_tick is not None,
             generationRecords=[])
@@ -229,7 +230,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
     def target_keys(base, child):
         return {json.dumps(list(target)) for target in run_policy['targets'](base, child)}
 
-    def landings_of(child):
+    def landings_of(child, decision):
         """{owner: duration} of an accepted child's earliest landing on each block (owner None off any block).
 
         A grounded child's is its own. An airborne advantageous jump (its built choice stops at a ceiling hit, or at
@@ -241,7 +242,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
         p=child['profile']
         if p['grounded'][-1]:
             return {owner_of(child):p['duration']}
-        context_data=expansion_context(child)
+        context_data=expansion_context(child,decision=decision)
         proposed=[proposal for kind in settings['types'] for proposal in proposals(kind,context_data)
                   if proposal['program'] is not None and proposal['program']['profile']['grounded'][-1]]
         found={}
@@ -302,7 +303,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                     bases.append(found)
                 found=[]
                 for base in bases[len(levels)]:
-                    context_data=expansion_context(base)
+                    context_data=expansion_context(base,decision=program)
                     found.extend((base,context_data,proposal) for kind in settings['types']
                                  for proposal in proposals(kind,context_data) if proposal['program'] is not None)
                 levels.append(found)
@@ -325,7 +326,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             """landings_of(child) in ticks after P."""
             key=program_search_key(child)
             if key not in peeked:
-                peeked[key]={owner:duration-program['profile']['duration'] for owner,duration in landings_of(child).items()}
+                peeked[key]={owner:duration-program['profile']['duration'] for owner,duration in landings_of(child,program).items()}
             return peeked[key]
 
         def built(k, found):
@@ -671,7 +672,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             # Found before any frontier state changes, so a deadline inside it redoes this proposal.
             landed={}
             if reason is None and 'reached' in e and (child['profile']['grounded'][-1] or lands_later(e['program'],child)):
-                landed={owner:duration-e['program']['profile']['duration'] for owner,duration in landings_of(child).items()}
+                landed={owner:duration-e['program']['profile']['duration'] for owner,duration in landings_of(child,e['program']).items()}
             commit(effects,e['program'].get('decisionNode'))
             if reason is None:
                 queue_child(e['program'],e['choice'],child)
