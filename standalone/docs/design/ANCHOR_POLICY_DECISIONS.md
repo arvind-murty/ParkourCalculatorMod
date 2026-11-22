@@ -244,7 +244,7 @@ A → B → C → B      not generated now: inter-block return
 
 Use stable physical support-owner provenance. Ignore transient air; compress consecutive same-owner occurrences only for eligibility. Keep every jump event, input count, physical patch/case and actual program in the solver model. Moving among decomposed patches belonging to the same block is not automatically a different block visit.
 
-Track departed owners: the current owner remains eligible for repeated local jumps; after another owner is visited, the departed owner is ineligible for every interaction at the feet (landings, lower landings and the blocks a stepping case steps onto, over or around), while ceiling hits, grinds and wall contacts with it stay allowed. Apply this before expensive contact generation (the `feetAllowed` context predicate) and audit emitted programs as well. Initialize from the original support and reconstruct the same state on resume; supplied roots violating this selected domain must be identified explicitly. Do not use a visited set that rejects the second landing on the **current** owner.
+Track departed owners: the current owner remains eligible for repeated local jumps; after another owner is visited, the departed owner is ineligible for every interaction at the feet (landings, lower landings and the blocks a stepping case steps onto, over or around), while ceiling hits, grinds and wall contacts with it stay allowed. Apply this before expensive contact generation (the `feetAllowed` context predicate) and audit emitted programs as well. Initialize from the original support and reconstruct the same state on resume; supplied roots violating this selected domain must be identified explicitly. Do not use a visited set that rejects the second landing on the **current** owner. A feet touch that is itself a visit at that tick is that arrival, not a return: a blip that lands on a lower owner and steps onto another in one input visits both.
 
 A required-anchor cursor advances only on its next actual required contact, never from a same-block setup hop. Optional supports are not globally disabled. Required order remains enforced; do not enter a later required anchor prematurely if that would require a currently unsupported return to fulfill the required sequence.
 
@@ -383,7 +383,8 @@ time (user, 2026-11-19/20):
 Every resolution is logged in the frontier's `minimumRunCandidates`. This mirrors
 minimum run ticks for hard jumps (`run_bound`, O7), which is unchanged.
 Turnaround decisions generate run ticks as before and still prefer them
-(`(T,-J,A)`). `searchPolicyVersion` 17 carries this, the decision objectives, O10 and O11.
+(`(T,-J,A)`). `searchPolicyVersion` 17 carried this, the decision objectives, O10 and O11; 18 adds the
+same-tick arrival exemption of the departed-owner audit (O6, above).
 
 ## O10 — No backward ceiling hits or grinds at ordinary decisions
 

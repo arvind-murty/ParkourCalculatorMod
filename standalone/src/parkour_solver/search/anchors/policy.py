@@ -46,7 +46,7 @@ def settings(value, scene):
 
 def semantic_settings(policy):
     return dict({k:v for k,v in policy.items() if k!='observability'},
-                hardJumpPolicyVersion=HARD_JUMP_POLICY_VERSION,searchPolicyVersion=17,comparisonPolicyVersion=COMPARISON_POLICY_VERSION)
+                hardJumpPolicyVersion=HARD_JUMP_POLICY_VERSION,searchPolicyVersion=18,comparisonPolicyVersion=COMPARISON_POLICY_VERSION)
 
 
 def owner(scene, block):
@@ -110,12 +110,16 @@ def visit_state(scene, program):
     departed = set()
     valid = True
     touches = feet_touches(scene,program)
+    arrivals = visits(scene,program)
+    # A touch that is itself a visit at that tick (a blip's lower landing) is not a return to that owner.
+    visited = set(arrivals)
     def touch_until(tick):
         nonlocal valid
         while touches and (tick is None or touches[0][0] < tick):
-            if touches.pop(0)[1] in departed:
+            touch = touches.pop(0)
+            if touch[1] in departed and touch not in visited:
                 valid = False
-    for tick, name in visits(scene,program):
+    for tick, name in arrivals:
         touch_until(tick)
         if name == current:
             continue

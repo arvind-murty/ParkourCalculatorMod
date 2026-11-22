@@ -7,7 +7,7 @@ import unittest
 
 from parkour_solver.scene.normalize import prepare_scene
 from parkour_solver.search.anchors.policy import (SAME_FACE_FIT_FACTOR, audit, encounter_groups, local_counts, priority,
-    same_face_fit, settings, visit_state, within_caps, transfer_structure)
+    same_face_fit, settings, visit_state, visits, within_caps, transfer_structure)
 from parkour_solver.spatial.anchor_guides import build_guides, classify, decision_objective, nearest, onward_objective
 from parkour_solver.search.anchors.adapter import AnchorAdapter
 from parkour_solver.spatial.event_routes import build_route_domain, build_event_graph
@@ -286,6 +286,16 @@ class AnchorPolicyTests(unittest.TestCase):
         p['profile']['caseEvents']=[dict(input=1,type='ceiling',case='ceiling_hit',boxes=[solid('start')])]
         state=visit_state(s,p)
         self.assertEqual((state['valid'],state['current'],state['departed']),(True,'mid',['start']))
+        self.assertTrue(audit(s,p,['mid'])['accepted'])
+
+    def test_a_blip_landing_on_one_owner_and_stepping_onto_another_is_not_a_return(self):
+        s=scene();p=history(s,['start','start'])
+        solid=lambda name:s['collisionScene']['solids'][next(b['solidIndex'] for b in s['blocks'] if b['id']==name)]
+        p['profile']['contactEvents']=p['profile']['contactEvents'][:1]
+        p['profile']['position'][2]=2.
+        p['profile']['caseEvents']=[dict(input=1,type='stepping',case='blip',boxes=[solid('mid')],lowerBox=solid('optional'))]
+        p['terminalSupport']='mid'
+        self.assertEqual([v for v in visits(s,p) if v[0]==2],[(2,'optional'),(2,'mid'),(2,'mid')])
         self.assertTrue(audit(s,p,['mid'])['accepted'])
 
     def test_next_anchor_follows_the_required_order_then_the_task_block(self):

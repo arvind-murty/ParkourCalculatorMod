@@ -735,16 +735,16 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `launch` | [88](../src/parkour_solver/search/anchors/policy.py#L88) | function |
 | `feet_touches` | [97](../src/parkour_solver/search/anchors/policy.py#L97) | function |
 | `visit_state` | [108](../src/parkour_solver/search/anchors/policy.py#L108) | function |
-| `audit` | [131](../src/parkour_solver/search/anchors/policy.py#L131) | function |
-| `next_anchor` | [152](../src/parkour_solver/search/anchors/policy.py#L152) | function |
-| `advantageous_targets` | [161](../src/parkour_solver/search/anchors/policy.py#L161) | function |
-| `advantageous_candidates` | [184](../src/parkour_solver/search/anchors/policy.py#L184) | function |
-| `same_face_fit` | [272](../src/parkour_solver/search/anchors/policy.py#L272) | function |
-| `encounter_groups` | [293](../src/parkour_solver/search/anchors/policy.py#L293) | function |
-| `local_counts` | [342](../src/parkour_solver/search/anchors/policy.py#L342) | function |
-| `priority` | [347](../src/parkour_solver/search/anchors/policy.py#L347) | function |
-| `within_caps` | [351](../src/parkour_solver/search/anchors/policy.py#L351) | function |
-| `transfer_structure` | [365](../src/parkour_solver/search/anchors/policy.py#L365) | function |
+| `audit` | [135](../src/parkour_solver/search/anchors/policy.py#L135) | function |
+| `next_anchor` | [156](../src/parkour_solver/search/anchors/policy.py#L156) | function |
+| `advantageous_targets` | [165](../src/parkour_solver/search/anchors/policy.py#L165) | function |
+| `advantageous_candidates` | [188](../src/parkour_solver/search/anchors/policy.py#L188) | function |
+| `same_face_fit` | [276](../src/parkour_solver/search/anchors/policy.py#L276) | function |
+| `encounter_groups` | [297](../src/parkour_solver/search/anchors/policy.py#L297) | function |
+| `local_counts` | [346](../src/parkour_solver/search/anchors/policy.py#L346) | function |
+| `priority` | [351](../src/parkour_solver/search/anchors/policy.py#L351) | function |
+| `within_caps` | [355](../src/parkour_solver/search/anchors/policy.py#L355) | function |
+| `transfer_structure` | [369](../src/parkour_solver/search/anchors/policy.py#L369) | function |
 
 ## search/application.py
 

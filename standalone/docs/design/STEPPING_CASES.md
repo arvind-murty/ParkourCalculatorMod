@@ -125,6 +125,7 @@ In the anchor search no stepping case touches a block whose owner the route has 
 left: the target, higher, corner and lower blocks of the six stepping cases all go through
 the context's `feetAllowed` predicate before any reachability query, and the emitted-program
 audit rejects a case event whose `boxes` or `lowerBox` belong to a departed owner. These
-touches never count as visits. Grind and ceiling hits are not at the feet and may touch a
+touches never count as visits, and a touch that matches a visit at the same tick is not a return:
+a blip landing on a lower owner and stepping onto another in one input visits both. Grind and ceiling hits are not at the feet and may touch a
 departed block.
 

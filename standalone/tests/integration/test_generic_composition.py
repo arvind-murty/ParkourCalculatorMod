@@ -233,6 +233,15 @@ class GenericNumericalTests(unittest.TestCase):
         self.assertFalse(any(best['candidate']['onGround'][1:-1]))
         self.assertEqual(best['plan']['jump'], [True, False, False, False, False])
 
+    def test_anchor_search_finds_the_grind_then_blip_onto_the_raised_floor(self):
+        from parkour_solver.search.engine import find_checkpoint_route
+        request = json.loads((ROOT / 'fixtures/generic-grind-blip.json').read_text())
+        result = find_checkpoint_route(request, self.compiler, anchor_search={}, seconds=60,
+                                       python_executable=os.environ['PKC_IPOPT_PYTHON'])
+        self.assertEqual(result['termination'], 'exhausted')
+        self.assertEqual(result['best']['plan']['ticks'], 5)
+        self.assertEqual(result['best']['plan']['jump'], [True, False, False, False, False])
+
     def test_repeated_ceiling_type_with_blip_and_ground_movement_between(self):
         scene = prepare_scene(json.loads((ROOT / 'fixtures/generic-repeat-ceiling.json').read_text()))
         program = empty_program(scene['initial'])
