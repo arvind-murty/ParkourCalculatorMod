@@ -76,7 +76,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/REAL11_GUIDE.md](REAL11_GUIDE.md) | 20426 |
 | [docs/RESULTS_AND_DEBUGGING.md](RESULTS_AND_DEBUGGING.md) | 19019 |
 | [docs/RUNBOOK.md](RUNBOOK.md) | 12940 |
-| [docs/TESTING.md](TESTING.md) | 19542 |
+| [docs/TESTING.md](TESTING.md) | 19731 |
 | [docs/design/ANCHOR_POLICY_DECISIONS.md](design/ANCHOR_POLICY_DECISIONS.md) | 43911 |
 | [docs/design/AVOIDANCE_PASSAGES.md](design/AVOIDANCE_PASSAGES.md) | 21065 |
 | [docs/design/BRANCH_SCHEDULING_INVESTIGATION.md](design/BRANCH_SCHEDULING_INVESTIGATION.md) | 34072 |
@@ -752,6 +752,8 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/encounter-groups/native-gate/report.json](../research/encounter-groups/native-gate/report.json) | 19214 |
 | [research/encounter-groups/native-gate-backward-filter/report.json](../research/encounter-groups/native-gate-backward-filter/report.json) | 19246 |
 | [research/encounter-groups/native-gate-backward-filter/tests.log](../research/encounter-groups/native-gate-backward-filter/tests.log) | 157259 |
+| [research/encounter-groups/native-gate-no-backward-moves/report.json](../research/encounter-groups/native-gate-no-backward-moves/report.json) | 15606 |
+| [research/encounter-groups/native-gate-no-backward-moves/tests.log](../research/encounter-groups/native-gate-no-backward-moves/tests.log) | 111208 |
 | [research/encounter-groups/native-gate-node-report/report.json](../research/encounter-groups/native-gate-node-report/report.json) | 19246 |
 | [research/encounter-groups/native-gate-node-report/tests.log](../research/encounter-groups/native-gate-node-report/tests.log) | 157015 |
 | [research/encounter-groups/native-gate-p16-bonk-landings/report.json](../research/encounter-groups/native-gate-p16-bonk-landings/report.json) | 19246 |
@@ -1372,6 +1374,8 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/stale-code-removal/native-gate/tests.log](../research/stale-code-removal/native-gate/tests.log) | 108702 |
 | [research/stale-code-removal/native-gate-blip-fix/report.json](../research/stale-code-removal/native-gate-blip-fix/report.json) | 15606 |
 | [research/stale-code-removal/native-gate-blip-fix/tests.log](../research/stale-code-removal/native-gate-blip-fix/tests.log) | 108911 |
+| [research/stale-code-removal/native-gate-merged-faces/report.json](../research/stale-code-removal/native-gate-merged-faces/report.json) | 15606 |
+| [research/stale-code-removal/native-gate-merged-faces/tests.log](../research/stale-code-removal/native-gate-merged-faces/tests.log) | 110355 |
 | [research/stepping-mechanics/README.md](../research/stepping-mechanics/README.md) | 2894 |
 | [research/stepping-mechanics/StepMechanicsProbe.java](../research/stepping-mechanics/StepMechanicsProbe.java) | 1920 |
 | [research/stepping-mechanics/probe-results.txt](../research/stepping-mechanics/probe-results.txt) | 2353 |
