@@ -139,19 +139,9 @@ def reachable_envelopes(problem, y=None, *, parent_ticks=None):
                 radii=radii, origin=list(problem['position']) if 'initialIntervals' not in problem else None, model=problem)
 
 
-def _native():
-    """The native core under PKC_NATIVE_CORE, which screens interactions for every caller; None otherwise."""
-    from parkour_solver import native_core
-    return native_core.from_environment()
-
-
 def interaction_reachability(envelopes, interaction, *, refine=False, objective=None):
-    native = _native()
-    if native is not None:
-        try:
-            return native.interaction_reachability(envelopes, interaction, refine)
-        except native.NativeUnsupported:  # a refined screen with a model runs disk.screen here
-            pass
+    # Python callers keep this screen even under PKC_NATIVE_CORE: converting the envelopes for the native one costs
+    # about twenty times the check. The native screen serves native callers (the gate's required-contact screen).
     if isinstance(interaction, list):
         interaction = dict(rows=interaction)
     if envelopes.get('contradiction'):
@@ -213,7 +203,4 @@ def interaction_reachability(envelopes, interaction, *, refine=False, objective=
 
 def interaction_reachability_many(envelopes, interactions):
     """Screen independent queries against one unchanged envelope, preserving order."""
-    native = _native()
-    if native is not None:
-        return native.interaction_reachability_many(envelopes, interactions)
     return [interaction_reachability(envelopes, query) for query in interactions]
