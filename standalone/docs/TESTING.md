@@ -112,7 +112,7 @@ Run the [new native driver and matched finite-task measurement](../research/anch
 | Stepping, ceilings, combinations | `test_stepping_cases`, `test_ceiling_contacts`, `test_hit_events`, `test_contact_combinations`, `test_contacts` |
 | Full acceptance | `test_acceptance`, `test_full_route_witness`, `test_integration` |
 | Movement bridge: coefficients, scene checks, footprints, selection, cross-bridge resume | `test_python_compiler` (Java differential tests need `PKC_RUN_TICKS_COMPILER`), `test_package_layout` |
-| Existing ladders | `test_ladder_*` |
+| Existing ladders (movement level; the search-level tests wait for M6) | `test_ladder_*`, `test_climbable_search`, `test_hanging_vines`, `test_long_ladder_chains` |
 
 `tests/unit/numerics/` separates `test_model` (scalar equations/constraints), `test_solver` (worker lifecycle, independent validation and failure handling), `test_continuation` (incumbents/inertia phases), `test_capture`, `test_ladder_model`, `test_movement` and real-worker `test_integration`. Reuse these instead of creating a second acceptance oracle.
 

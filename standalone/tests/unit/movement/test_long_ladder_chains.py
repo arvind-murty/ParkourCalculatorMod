@@ -1,0 +1,70 @@
+from tests.support.paths import AUTONOMY_DATA
+import hashlib
+import json
+import os
+import unittest
+
+from parkour_solver.constraints.contacts import floor_checks
+from parkour_solver.search.repair import solve_contact_branches
+from parkour_solver.scene.normalize import prepare_scene
+from parkour_solver.bridge.python_compiler import PythonCompiler
+from parkour_solver.validation.scene import check_geometry
+from parkour_solver.numerics import prepare, validate
+from tests.support.ladder_composition import ladder_route
+
+
+ROOT=AUTONOMY_DATA
+
+
+@unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'),
+                     'Set PKC_IPOPT_PYTHON')
+class LongLadderChainTests(unittest.TestCase):
+    def test_saved_cold_three_and_prescribed_five_climbs_revalidate_full_scene(self):
+        with PythonCompiler() as compiler:
+            for name,count,ticks in [('three-climbing-ladders',3,50),('five-climbing-ladders',5,99)]:
+                with self.subTest(name=name):
+                    e=json.loads((ROOT/'experiments/contact-combinations'/(name+'.json')).read_text())
+                    self.assertEqual(hashlib.sha256((ROOT/e['fixture']).read_bytes()).hexdigest(),e['fixtureSha256'])
+                    p=prepare(e['problem'])
+                    c=validate(p,e['candidate']['yaw'])
+                    self.assertTrue(c['feasible'])
+                    self.assertEqual(c['positions'],e['candidate']['positions'])
+                    self.assertEqual(c['velocity'],e['candidate']['velocity'])
+                    self.assertEqual(c['y'],e['candidate']['y'])
+                    self.assertEqual(e['plan']['ticks'],ticks)
+                    self.assertEqual(len(e['route']['ladderEvents']),count)
+                    self.assertTrue(all(sum(v['schedule']['hit'])>=2 for v in e['route']['ladderEvents']))
+                    self.assertFalse(any(c['onGround'][1:-1]))
+                    self.assertEqual(sum(e['plan']['jump']),1)
+                    vertical=dict(vertical=p['vertical'],y=c['y'],vy=c['vy'],onGround=c['onGround'])
+                    self.assertTrue(check_geometry(e['geometry'],e['plan'],e['candidate'],vertical,compiler,5)['feasible'])
+
+    def test_fresh_solves_start_inside_first_ladder_without_turning_back_to_its_centre(self):
+        with PythonCompiler() as compiler:
+            for name,count,ticks in [('three-climbing-ladders',3,50),('five-climbing-ladders',5,99)]:
+                with self.subTest(name=name):
+                    e=json.loads((ROOT/'experiments/contact-combinations'/(name+'.json')).read_text())
+                    request=json.loads((ROOT/e['fixture']).read_text())
+                    scene=prepare_scene(request)
+                    self.assertGreater(scene['initial']['position'][2],.5)
+                    self.assertEqual(e['route']['ladderEvents'][0]['schedule']['entryState'],0)
+                    path=['start',scene['goalBlock']]
+                    # Evidence saved before the profile rename names the input count `airtime`.
+                    profile={('duration' if k=='airtime' else k):v for k,v in e['profiles'][0].items()}
+                    compiled=ladder_route(scene,dict(profile=profile,ladderEvents=e['route']['ladderEvents']),
+                                          scene['goalBlock'])
+                    r=solve_contact_branches(compiled['route'],compiled['profiles'],floor_checks(scene,path,compiled['profiles']),
+                        compiler,seconds=45,candidate_seconds=10,retries=1,geometry=scene['collisionScene'],
+                        motion_bound={'storedSpeedNorm':2,'movementAfterSupportCheck':2},
+                        python_executable=os.environ['PKC_IPOPT_PYTHON'])
+                    self.assertEqual(r['status'],'feasible',r)
+                    b=r['best']
+                    self.assertEqual(b['plan']['ticks'],ticks)
+                    self.assertEqual(len(b['route']['ladderEvents']),count)
+                    self.assertTrue(b['geometryCheck']['feasible'])
+                    self.assertGreater(b['candidate']['positions'][1][1],scene['initial']['position'][2])
+                    self.assertEqual(sum(b['plan']['jump']),1)
+                    self.assertFalse(any(b['candidate']['onGround'][1:-1]))
+
+if __name__=='__main__':
+    unittest.main()
