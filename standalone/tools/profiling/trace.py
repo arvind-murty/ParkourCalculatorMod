@@ -31,7 +31,10 @@ def request_owners(state):
     owners = {}
     for frame in frames(state):
         for record in frame['records']:
+            # Blocked attempts (passage timing, vertical schedule) build no numerical problem and carry no hash.
             for attempt in record['program'].get('repairState',{}).get('attemptLog',[]):
+                if 'problemHash' not in attempt:
+                    continue
                 rows = owners.setdefault(attempt['problemHash'],[])
                 owner = route(frame,record)
                 if owner not in rows:
@@ -102,7 +105,7 @@ def family_point(point, index):
 def repair_trace(repair, final=False):
     generation = repair.get('constraintGeneration') or {}
     attempts = {a['problemHash']:dict(status=a['status'],reason=(a.get('certificate') or {}).get('reason'))
-                for a in repair.get('attemptLog',[])}
+                for a in repair.get('attemptLog',[]) if 'problemHash' in a}
     items = generation.get('items',[])
     return dict(
         encounters=[dict(owner=i['owner'],members=i['members'],begin=i['begin'],end=i['end'])
