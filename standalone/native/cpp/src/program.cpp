@@ -341,7 +341,7 @@ void describe(R& e, V& v, CaseEvent*) {
     v.req("plane", e.plane);
     v.req("anchors", e.anchors);
     v.req("boxes", e.boxes);
-    v.opt("lowerBox", e.lower_box);
+    v.opt("lowerBoxes", e.lower_boxes);
     v.opt("clearance", e.clearance);
     v.opt("lowerHeight", e.lower_height);
     v.opt("higherHeight", e.higher_height);

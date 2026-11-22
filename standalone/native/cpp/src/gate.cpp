@@ -18,8 +18,6 @@ std::optional<Value> gate_prepare(const Value& scene_value, const Program& progr
                              *program.terminal_support.value != goal))
         fail("An open prefix is not a completed goal route");
     if (!program.ladder_events.empty()) fail("native gate preparation does not support ladder events");
-    if (as_text(at(scene, "sceneModel")) != "collision_boxes")
-        fail("native gate preparation supports collision_boxes scenes only");
     // movement/program.compile_program's one-leg route from the start support to the goal support
     const std::string& start_id = as_text(at(scene, "startBlock"));
     Array blocks;
@@ -28,7 +26,7 @@ std::optional<Value> gate_prepare(const Value& scene_value, const Program& progr
         const Object* found = nullptr;  // {b['id']: b} keeps the last block with an id
         for (const auto& block : items(at(scene, "blocks")))
             if (py_equal(at(fields(block), "id"), text(*id))) found = &fields(block);
-        if (!found) fail("Unknown support in candidate path");
+        if (!found) fail("KeyError: '" + *id + "'");
         blocks.push_back(object({{"id", text(*id + "@" + std::to_string(index++))},
                                  {"bounds", at(*found, "bounds")},
                                  {"top", at(*found, "top")}}));
@@ -56,8 +54,8 @@ std::optional<Value> gate_prepare(const Value& scene_value, const Program& progr
                 {"verticalModel", text("parkour_solver.physics.vertical")}, {"solidSideFaces", boolean(false)}}));
     put(route, "sharedMovement", boolean(true));
     put(route, "ceilingEvents", array({}));
-    put(route, "ladderEvents", array({}));
     put(route, "verticalProfiles", array({object(profile)}));
+    put(route, "ladderEvents", array({}));
     Array contact_events;
     for (const auto& event : items(at(profile, "contactEvents")))
         contact_events.push_back(object(with(fields(event), "leg", integer_value(0))));

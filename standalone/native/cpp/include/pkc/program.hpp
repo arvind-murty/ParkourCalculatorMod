@@ -81,7 +81,7 @@ struct CaseEvent {  // profile.caseEvents
     Num plane;
     Anchors anchors;
     std::vector<Box> boxes;
-    std::optional<Box> lower_box;
+    std::optional<std::vector<Box>> lower_boxes;  // the lower face's boxes
     std::optional<Num> clearance, lower_height, higher_height;
 };
 
