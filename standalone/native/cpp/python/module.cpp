@@ -25,6 +25,8 @@
 #include "pkc/movement/generation.hpp"
 #include "pkc/reachability/service.hpp"
 #include "pkc/search/anchors/policy.hpp"
+#include "pkc/search/bounds/remaining.hpp"
+#include "pkc/search/comparison.hpp"
 #include "pkc/scene/geometry.hpp"
 #include "pkc/scene/ladders.hpp"
 #include "pkc/scene/normalize.hpp"
@@ -623,6 +625,28 @@ PYBIND11_MODULE(_pkc_native, m) {
         })
         .def("owner", &pkc::AnchorScene::owner)
         .def("support_face", &pkc::AnchorScene::support_face);
+    m.def("comparison_label", [](py::handle program, std::int64_t start, std::optional<std::int64_t> through,
+                                 const std::string& identity, py::handle mode, py::handle context, py::handle evidence) {
+        const std::string m = py::isinstance<py::bool_>(mode) ? (mode.cast<bool>() ? "turnaround" : "ordinary")
+                                                              : mode.cast<std::string>();
+        auto object_of = [](py::handle h) {
+            return h.is_none() ? pkc::Object{} : *std::get<std::shared_ptr<const pkc::Object>>(convert(h).data);
+        };
+        return to_python(pkc::comparison_label(*program_arg(program), start, through, identity, m, object_of(context),
+                                               object_of(evidence)));
+    }, "search/comparison.comparison_label");
+    m.def("compare_candidates", [](py::handle candidate, py::handle peer, py::handle context, py::handle incumbent) {
+        const pkc::Object ctx = context.is_none() ? pkc::Object{} : *std::get<std::shared_ptr<const pkc::Object>>(convert(context).data);
+        return to_python(pkc::compare_candidates(convert(candidate), convert(peer), ctx, convert(incumbent)));
+    }, "search/comparison.compare_candidates for the anchor-search purposes");
+    m.def("assess", [](py::handle label, py::handle peers, py::handle context) {
+        return to_python(pkc::assess(convert(label), convert(peers), *std::get<std::shared_ptr<const pkc::Object>>(convert(context).data)));
+    }, "search/deferrals.assess");
+    m.def("remaining_bound", [](py::handle guides, std::int64_t span, py::handle program, py::handle motion,
+                                py::handle transfers, py::handle hard_latches) {
+        return to_python(pkc::remaining_bound(convert(guides), span, *program_arg(program), convert(motion),
+                                              convert(transfers), convert(hard_latches)));
+    }, "search/bounds/remaining.remaining_bound");
     m.def("disk_cached_solve", [](py::handle content, double seconds, const std::string& kind, double cap, unsigned max_iter) {
         return to_python(pkc::disk_cached_solve(convert(content), seconds, kind, cap, max_iter));
     }, "numerics/disk.solve on the native decided-result cache the native gate's screens share");

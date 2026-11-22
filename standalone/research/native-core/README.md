@@ -411,3 +411,17 @@ scene's face and owner tables built once.
   [timing](2026-11-22-anchor-policy/dispatch-timing.json)): each call converts a whole program, which costs more than the
   Python reader. Python keeps them; the native DFS node, whose children stay native, calls `AnchorScene`.
 
+## Comparison, deferrals and the remaining-time bound for native callers, 2026-11-22
+
+Source: `7513d7d3` plus native `comparison_label`, `priority_key`, `compare_candidates` (the incumbent bound and the
+hard-anchor deferral; the clock comparison has no production caller and is not ported), `deferrals.assess` and
+`bounds/remaining.remaining_bound` (`search/comparison.hpp`, `search/bounds/remaining.hpp`). Nothing dispatches to
+them yet.
+
+- The fixed-work solve has no incumbent, so it exercises only labels (4,120 equal) and six comparisons
+  ([shadow](2026-11-22-comparison-bounds/fixedwork-shadow-release.json)).
+- Shadowing the comparison, transfer-bound, time-bound, anchor-search and minimum-run tests: 4,019 labels, 756
+  comparisons, 279 remaining bounds and 41 assessments equal; 13 calls on the tests' partial programs, which the typed
+  conversion rejects, were skipped ([release](2026-11-22-comparison-bounds/tests-shadow-release.json),
+  [AddressSanitizer](2026-11-22-comparison-bounds/tests-shadow-asan.json)).
+

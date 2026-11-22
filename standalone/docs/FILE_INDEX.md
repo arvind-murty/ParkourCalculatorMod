@@ -59,17 +59,17 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/ANCHOR_SEARCH_EXECUTION_REFERENCE.md](ANCHOR_SEARCH_EXECUTION_REFERENCE.md) | 35604 |
 | [docs/ARCHITECTURE.md](ARCHITECTURE.md) | 16418 |
 | [docs/CHECKPOINT_STORAGE.md](CHECKPOINT_STORAGE.md) | 7541 |
-| [docs/CODE_MAP.md](CODE_MAP.md) | 34262 |
+| [docs/CODE_MAP.md](CODE_MAP.md) | 34870 |
 | [docs/CURRENT_STATE.md](CURRENT_STATE.md) | 12858 |
 | [docs/DECISIONS_AND_PLANS.md](DECISIONS_AND_PLANS.md) | 20981 |
 | [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 36593 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11512 |
 | [docs/DOC_INDEX.md](DOC_INDEX.md) | 28873 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 252477 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 253160 |
 | [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 66311 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
-| [docs/LAYOUT.md](LAYOUT.md) | 9902 |
+| [docs/LAYOUT.md](LAYOUT.md) | 10054 |
 | [docs/MOD_REFERENCES.md](MOD_REFERENCES.md) | 5299 |
 | [docs/PERFORMANCE.md](PERFORMANCE.md) | 20029 |
 | [docs/REAL11_EXTENDED_GEOMETRY.md](REAL11_EXTENDED_GEOMETRY.md) | 12104 |
@@ -138,7 +138,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 
 | File | Bytes |
 | --- | ---: |
-| [native/cpp/CMakeLists.txt](../native/cpp/CMakeLists.txt) | 4746 |
+| [native/cpp/CMakeLists.txt](../native/cpp/CMakeLists.txt) | 4804 |
 | [native/cpp/LICENSE.cpython](../native/cpp/LICENSE.cpython) | 13936 |
 | [native/cpp/include/pkc/canonical.hpp](../native/cpp/include/pkc/canonical.hpp) | 977 |
 | [native/cpp/include/pkc/coefficients.hpp](../native/cpp/include/pkc/coefficients.hpp) | 355 |
@@ -171,6 +171,8 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/include/pkc/scene/static_collision.hpp](../native/cpp/include/pkc/scene/static_collision.hpp) | 603 |
 | [native/cpp/include/pkc/screen.hpp](../native/cpp/include/pkc/screen.hpp) | 1222 |
 | [native/cpp/include/pkc/search/anchors/policy.hpp](../native/cpp/include/pkc/search/anchors/policy.hpp) | 2767 |
+| [native/cpp/include/pkc/search/bounds/remaining.hpp](../native/cpp/include/pkc/search/bounds/remaining.hpp) | 595 |
+| [native/cpp/include/pkc/search/comparison.hpp](../native/cpp/include/pkc/search/comparison.hpp) | 1227 |
 | [native/cpp/include/pkc/spatial/cells.hpp](../native/cpp/include/pkc/spatial/cells.hpp) | 1232 |
 | [native/cpp/include/pkc/spatial/regions.hpp](../native/cpp/include/pkc/spatial/regions.hpp) | 1143 |
 | [native/cpp/include/pkc/spatial/surfaces.hpp](../native/cpp/include/pkc/spatial/surfaces.hpp) | 1807 |
@@ -178,7 +180,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/include/pkc/validation/vertical.hpp](../native/cpp/include/pkc/validation/vertical.hpp) | 353 |
 | [native/cpp/include/pkc/value.hpp](../native/cpp/include/pkc/value.hpp) | 698 |
 | [native/cpp/include/pkc/vertical.hpp](../native/cpp/include/pkc/vertical.hpp) | 2342 |
-| [native/cpp/python/module.cpp](../native/cpp/python/module.cpp) | 39336 |
+| [native/cpp/python/module.cpp](../native/cpp/python/module.cpp) | 41397 |
 | [native/cpp/src/canonical.cpp](../native/cpp/src/canonical.cpp) | 13203 |
 | [native/cpp/src/coefficient_tables.inc](../native/cpp/src/coefficient_tables.inc) | 23532 |
 | [native/cpp/src/coefficients.cpp](../native/cpp/src/coefficients.cpp) | 9450 |
@@ -214,6 +216,8 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/src/schema.hpp](../native/cpp/src/schema.hpp) | 1191 |
 | [native/cpp/src/screen.cpp](../native/cpp/src/screen.cpp) | 8247 |
 | [native/cpp/src/search/anchors/policy.cpp](../native/cpp/src/search/anchors/policy.cpp) | 10625 |
+| [native/cpp/src/search/bounds/remaining.cpp](../native/cpp/src/search/bounds/remaining.cpp) | 7868 |
+| [native/cpp/src/search/comparison.cpp](../native/cpp/src/search/comparison.cpp) | 8134 |
 | [native/cpp/src/sha256.cpp](../native/cpp/src/sha256.cpp) | 3234 |
 | [native/cpp/src/spatial/cells.cpp](../native/cpp/src/spatial/cells.cpp) | 18689 |
 | [native/cpp/src/spatial/py_order.hpp](../native/cpp/src/spatial/py_order.hpp) | 1566 |
@@ -1312,6 +1316,9 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/native-core/2026-11-22-cells/cells-release.json](../research/native-core/2026-11-22-cells/cells-release.json) | 232 |
 | [research/native-core/2026-11-22-cells/cells-sanitize.json](../research/native-core/2026-11-22-cells/cells-sanitize.json) | 233 |
 | [research/native-core/2026-11-22-cells/parity-python-native.json](../research/native-core/2026-11-22-cells/parity-python-native.json) | 176 |
+| [research/native-core/2026-11-22-comparison-bounds/fixedwork-shadow-release.json](../research/native-core/2026-11-22-comparison-bounds/fixedwork-shadow-release.json) | 106 |
+| [research/native-core/2026-11-22-comparison-bounds/tests-shadow-asan.json](../research/native-core/2026-11-22-comparison-bounds/tests-shadow-asan.json) | 229 |
+| [research/native-core/2026-11-22-comparison-bounds/tests-shadow-release.json](../research/native-core/2026-11-22-comparison-bounds/tests-shadow-release.json) | 229 |
 | [research/native-core/2026-11-22-dispatch/parity-python-native.json](../research/native-core/2026-11-22-dispatch/parity-python-native.json) | 176 |
 | [research/native-core/2026-11-22-first-appends/corpus-replay-release.json](../research/native-core/2026-11-22-first-appends/corpus-replay-release.json) | 803 |
 | [research/native-core/2026-11-22-first-appends/corpus-replay-sanitize.json](../research/native-core/2026-11-22-first-appends/corpus-replay-sanitize.json) | 803 |
@@ -1408,7 +1415,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/native-core/2026-11-22-validation/replay-sanitize.json](../research/native-core/2026-11-22-validation/replay-sanitize.json) | 105 |
 | [research/native-core/2026-11-22-validation/synthetic-intervals-release.json](../research/native-core/2026-11-22-validation/synthetic-intervals-release.json) | 34 |
 | [research/native-core/2026-11-22-validation/synthetic-intervals-sanitize.json](../research/native-core/2026-11-22-validation/synthetic-intervals-sanitize.json) | 32 |
-| [research/native-core/README.md](../research/native-core/README.md) | 32269 |
+| [research/native-core/README.md](../research/native-core/README.md) | 33296 |
 | [research/obstacle-avoidance/README.md](../research/obstacle-avoidance/README.md) | 3166 |
 | [research/obstacle-avoidance/blocked-result.json](../research/obstacle-avoidance/blocked-result.json) | 52110 |
 | [research/obstacle-avoidance/cross-neo-request.json](../research/obstacle-avoidance/cross-neo-request.json) | 5584 |
