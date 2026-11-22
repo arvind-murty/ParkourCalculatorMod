@@ -187,35 +187,43 @@ def verify_coefficients(args):
 
 
 def verify_scene(args):
-    """Run a real solve where every scene check, footprint derivation and geometry normalization is also run natively
-    and compared."""
+    """Run a real solve where every scene/ call (scene checks, footprints, geometry and scene normalization, routes,
+    schedules and initial yaw guesses) is also run natively and compared. Inputs native code leaves to Python (ladder
+    events, climbable cells) are counted, not compared."""
     import copy
-    from parkour_solver.scene import geometry, static_collision
+    from parkour_solver.scene import geometry, normalize, route, static_collision
     args.output.mkdir(parents=True, exist_ok=False)
     native = load(args.variant)
     os.environ.pop('PKC_NATIVE_CORE', None)  # the solve under check must run Python, the oracle
     originals = dict(check_scene=static_collision.check_scene, route_footprints=geometry.route_footprints,
-                     normalize_geometry=geometry.normalize_geometry)
+                     normalize_geometry=geometry.normalize_geometry, prepare_scene=normalize.prepare_scene,
+                     prepare_route=route.prepare_route, schedule=route.schedule, initial_guess=route.initial_guess)
     calls = {name: 0 for name in originals}
+    calls['unsupported'] = 0
 
-    def compared(name, expected, actual, request):
-        calls[name] += 1
-        # Plain JSON keeps dict order, which the normalized scene must keep too.
-        if json.dumps(actual) != json.dumps(expected):
-            save_infinite(args.output / 'mismatch.json', dict(call=name, request=request))
-            raise AssertionError(f'native {name} differs at call {calls[name]}')
-        return expected
+    def checked(name, native_call):
+        def call(*positional, **keywords):
+            before = copy.deepcopy((positional, keywords))
+            expected = originals[name](*positional, **keywords)
+            try:
+                actual = native_call(*before[0], **before[1])
+            except native.NativeUnsupported:
+                calls['unsupported'] += 1
+                return expected
+            calls[name] += 1
+            # Plain JSON keeps dict order, which native results must keep too.
+            if json.dumps(actual) != json.dumps(expected):
+                save_infinite(args.output / 'mismatch.json', dict(call=name, arguments=before))
+                raise AssertionError(f'native {name} differs at call {calls[name]}')
+            return expected
+        return call
 
-    checked = dict(
-        check_scene=lambda request, deadline=None: compared(
-            'check_scene', originals['check_scene'](request, deadline), native.check_scene(request), request),
-        route_footprints=lambda blocks, standing=False: compared(
-            'route_footprints', originals['route_footprints'](blocks, standing), native.route_footprints(blocks, standing),
-            blocks),
-        normalize_geometry=lambda scene: (lambda before: compared(
-            'normalize_geometry', originals['normalize_geometry'](scene), native.normalize_geometry(before), before))(
-            copy.deepcopy(scene)))
-    summary = checked_solve(args, originals, checked)
+    native_calls = dict(check_scene=lambda request, deadline=None: native.check_scene(request),
+                        route_footprints=native.route_footprints, normalize_geometry=native.normalize_geometry,
+                        prepare_scene=native.prepare_scene, prepare_route=native.prepare_route,
+                        schedule=lambda r, allocation, stage='jump': native.schedule(r, list(allocation), stage),
+                        initial_guess=native.initial_guess)
+    summary = checked_solve(args, originals, {name: checked(name, native_calls[name]) for name in originals})
     summary.update(calls=calls, mismatches=0)
     save(args.output / 'summary.json', summary)
     print(json.dumps(summary))

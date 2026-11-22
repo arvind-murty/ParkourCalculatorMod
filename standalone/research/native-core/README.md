@@ -92,3 +92,29 @@ doubles: identical on release and UBSan ([release](2026-11-21-scene/geometry-rel
 21 scene checks, 89 footprint derivations and 4 normalizations on the 120 s Real11 solve, and 135 / 1,122 / 3 on the
 extended input for 90 s, with no difference ([short](2026-11-21-scene/live-geometry-short-summary.json),
 [extended](2026-11-21-scene/live-geometry-extended-summary.json)).
+
+## Scene package: routes, schedules and scenes, 2026-11-22
+
+Source: `0b1c6442` plus native `scene/route` (`prepare_route`, `schedule`, `initial_guess`), `scene/normalize`
+(`prepare_scene`) and `scene/objectives`, with the route parts of `constraints/` (passages, wall hits and ceilings) and
+`movement/` (contact events, movement units, ladder-event validation). Under `PKC_NATIVE_CORE`, `scene/route.py` and
+`scene/normalize.py` hand every caller to them; scenes with climbable cells and routes with ladder events stay in Python.
+The native gate builds its routes through the same code.
+
+- The 1,216 recorded gate preparations are unchanged.
+- Live calls recorded on the 120 s Real11 and extended solves (4,339 `prepare_route`, 4,255 `schedule`, 1,252
+  `initial_guess`) replay identically, key order included, on release and UBSan
+  ([release](2026-11-22-scene-routes/live-calls-replay-release.json),
+  [UBSan](2026-11-22-scene-routes/live-calls-replay-sanitize.json)).
+- Synthetic multi-leg routes for what production never builds (run allocations, the run stage, run-off exits,
+  contact entries, route constraints, passages, wall hits, ceilings, reversal contacts with avoidance rows, centre and
+  standing bounds) and 21 invalid fields agree ([release](2026-11-22-scene-routes/synthetic-release.json),
+  [UBSan](2026-11-22-scene-routes/synthetic-sanitize.json)).
+- `prepare_scene` agrees on all 123 scene requests in the repository with 18 variants each: 565 normalized scenes, 1,669
+  identical errors, 102 left to Python for climbable cells ([release](2026-11-22-scene-routes/scenes-release.json),
+  [UBSan](2026-11-22-scene-routes/scenes-sanitize.json)).
+- `verify-scene` on the extended input for 90 s compared every `scene/` call (7,495 routes, 4,444 schedules, 816 yaw
+  guesses) with no difference on either build ([release](2026-11-22-scene-routes/live-scene-release-summary.json),
+  [UBSan](2026-11-22-scene-routes/live-scene-sanitize-summary.json)).
+- Fixed work (extended, 100 solver calls): the Python and native solves match exactly on all 19 transitions
+  ([parity](2026-11-22-scene-routes/parity-python-native.json)).

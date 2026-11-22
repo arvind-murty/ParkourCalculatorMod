@@ -1,0 +1,14 @@
+{
+ "parkour_solver.scene.route:prepare_route": {
+  "cases": 4339,
+  "ok": 4339
+ },
+ "parkour_solver.scene.route:schedule": {
+  "cases": 4255,
+  "ok": 4255
+ },
+ "parkour_solver.scene.route:initial_guess": {
+  "cases": 1252,
+  "ok": 1252
+ }
+}

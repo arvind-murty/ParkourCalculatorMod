@@ -7,6 +7,13 @@ from parkour_solver.scene.objectives import objective_spec
 
 
 def prepare_scene(request):
+    from parkour_solver import native_core
+    native = native_core.from_environment()
+    if native is not None:
+        try:
+            return native.prepare_scene(request)
+        except native.NativeUnsupported:  # climbable cells: ladder settings are derived here
+            pass
     scene = copy.deepcopy(request)
     if not isinstance(scene, dict):
         raise ValueError('Expected a block scene')

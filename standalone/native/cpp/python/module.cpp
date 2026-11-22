@@ -1,6 +1,7 @@
 // Python bindings for the native core. Conversion happens once per call at
 // this boundary; native units keep their state in C++ between calls.
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 #include <functional>
 #include <memory>
@@ -16,6 +17,8 @@
 #include "pkc/gate.hpp"
 #include "pkc/program.hpp"
 #include "pkc/scene/geometry.hpp"
+#include "pkc/scene/normalize.hpp"
+#include "pkc/scene/route.hpp"
 #include "pkc/scene/static_collision.hpp"
 #include "pkc/screen.hpp"
 
@@ -302,6 +305,17 @@ PYBIND11_MODULE(_pkc_native, m) {
         return to_python(pkc::route_footprints(convert(blocks), standing));
     }, py::arg("blocks"), py::arg("standing") = false, "scene/geometry.route_footprints");
     m.def("support_center_interval", &pkc::support_center_interval, "scene/geometry.support_center_interval");
+    m.def("prepare_scene", [](py::handle request) { return to_python(pkc::prepare_scene(convert(request))); },
+          "scene/normalize.prepare_scene; raises NativeUnsupported for scenes with climbable cells");
+    m.def("prepare_route", [](py::handle request) { return to_python(pkc::prepare_route(convert(request))); },
+          "scene/route.prepare_route; raises NativeUnsupported for routes with ladder events");
+    m.def("schedule", [](py::handle route, std::vector<std::int64_t> allocation, std::string stage) {
+        return to_python(pkc::schedule(convert(route), allocation, stage));
+    }, py::arg("route"), py::arg("allocation"), py::arg("stage") = "jump", "scene/route.schedule");
+    m.def("initial_guess", [](py::handle route, py::handle plan, py::handle parent) {
+        pkc::Value parent_value = convert(parent);
+        return to_python(pkc::initial_guess(convert(route), convert(plan), parent.is_none() ? nullptr : &parent_value));
+    }, py::arg("route"), py::arg("plan"), py::arg("parent") = py::none(), "scene/route.initial_guess");
     m.def("float_repr", &pkc::float_repr, "repr(float) for a finite float");
     m.def("sha256_hex", [](py::bytes data) {
         static const char* hex = "0123456789abcdef";

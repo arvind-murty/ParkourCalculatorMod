@@ -20,7 +20,9 @@ if(PKC_SANITIZE)
 endif()
 
 add_library(pkc_core STATIC src/canonical.cpp src/coefficients.cpp src/envelopes.cpp src/gate.cpp src/program.cpp src/screen.cpp src/sha256.cpp src/vertical.cpp
-            src/scene/geometry.cpp src/scene/static_collision.cpp)
+            src/constraints/avoidance.cpp src/constraints/hit_events.cpp
+            src/movement/contact_combinations.cpp src/movement/ladder/events.cpp src/movement/units.cpp
+            src/scene/geometry.cpp src/scene/normalize.cpp src/scene/objectives.cpp src/scene/route.cpp src/scene/static_collision.cpp)
 target_include_directories(pkc_core PUBLIC include)
 
 find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)

@@ -9,7 +9,19 @@ from parkour_solver.scene.objectives import objective_spec
 HALF_WIDTH = f32(0.6) / 2
 
 
+def _native():
+    """The native core under PKC_NATIVE_CORE, which builds routes and schedules for every caller; None otherwise."""
+    from parkour_solver import native_core
+    return native_core.from_environment()
+
+
 def prepare_route(request):
+    native = _native()
+    if native is not None:
+        try:
+            return native.prepare_route(request)
+        except native.NativeUnsupported:  # ladder events are prepared here
+            pass
     route = copy.deepcopy(request)
     if not isinstance(route, dict) or type(route.get('version')) is not int or route['version'] != 1:
         raise ValueError('Expected a version 1 block route')
@@ -176,6 +188,13 @@ def row_tick(event, row):
 
 
 def schedule(route, allocation, stage='jump'):
+    native = _native()
+    if native is not None and not route.get('ladderEvents'):
+        plan = native.schedule(route, list(allocation), stage)
+        # The native core has no tuples; the checks below are tuples here.
+        plan['supportChecks'] = [tuple(check) for check in plan['supportChecks']]
+        plan['exitChecks'] = [tuple(check) for check in plan['exitChecks']]
+        return plan
     if stage not in ('jump', 'run') or not allocation or len(allocation) > len(route['airtimes']):
         raise ValueError('Invalid allocation or stage')
     grounded, jump, events, supports_at, exit_checks = [], [], [], [], []
@@ -338,6 +357,9 @@ def schedule(route, allocation, stage='jump'):
 
 
 def initial_guess(route, plan, parent=None):
+    native = _native()
+    if native is not None:
+        return native.initial_guess(route, plan, parent)
     yaw = route['initial']['yaw']
     result = [yaw] * plan['ticks']
     if parent:

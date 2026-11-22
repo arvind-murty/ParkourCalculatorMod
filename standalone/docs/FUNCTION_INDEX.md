@@ -748,13 +748,14 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `prepare_route` | [12](../src/parkour_solver/scene/route.py#L12) | function |
-| `supports` | [149](../src/parkour_solver/scene/route.py#L149) | function |
-| `center_bounds` | [160](../src/parkour_solver/scene/route.py#L160) | function |
-| `row_tick` | [174](../src/parkour_solver/scene/route.py#L174) | function |
-| `schedule` | [178](../src/parkour_solver/scene/route.py#L178) | function |
-| `initial_guess` | [340](../src/parkour_solver/scene/route.py#L340) | function |
-| `derive_footprints` | [368](../src/parkour_solver/scene/route.py#L368) | function |
+| `_native` | [12](../src/parkour_solver/scene/route.py#L12) | function |
+| `prepare_route` | [18](../src/parkour_solver/scene/route.py#L18) | function |
+| `supports` | [161](../src/parkour_solver/scene/route.py#L161) | function |
+| `center_bounds` | [172](../src/parkour_solver/scene/route.py#L172) | function |
+| `row_tick` | [186](../src/parkour_solver/scene/route.py#L186) | function |
+| `schedule` | [190](../src/parkour_solver/scene/route.py#L190) | function |
+| `initial_guess` | [359](../src/parkour_solver/scene/route.py#L359) | function |
+| `derive_footprints` | [390](../src/parkour_solver/scene/route.py#L390) | function |
 
 ## scene/static_collision.py
 

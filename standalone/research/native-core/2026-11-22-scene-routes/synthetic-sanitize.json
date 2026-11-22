@@ -1,0 +1,6 @@
+{
+ "initial_guess:ok": 56,
+ "prepare_route:ValueError": 42,
+ "prepare_route:ok": 30,
+ "schedule:ok": 28
+}
