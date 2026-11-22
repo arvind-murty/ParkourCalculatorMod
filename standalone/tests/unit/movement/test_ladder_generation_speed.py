@@ -10,6 +10,7 @@ from parkour_solver.physics.vertical import CLIMB_CARRY, REST_CARRY
 
 
 class LadderGenerationSpeedTests(unittest.TestCase):
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # counts the Python trace's own predictions
     def test_open_trace_skips_the_extra_floor_prediction(self):
         original=vertical.vertical_move
         with patch.object(vertical,'vertical_move',wraps=original) as prediction:
@@ -18,6 +19,7 @@ class LadderGenerationSpeedTests(unittest.TestCase):
         self.assertEqual(result['ticks'],10)
         self.assertEqual(prediction.call_count,0)
 
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # counts the Python trace's own predictions
     def test_landing_keeps_exact_downward_clip_prediction(self):
         original=vertical.vertical_move
         with patch.object(vertical,'vertical_move',wraps=original) as prediction:
