@@ -349,7 +349,7 @@ class BookkeepingProfileTests(unittest.TestCase):
                                   expandedPrefixes=2, searchState=state, effectiveRequest=scene))
         markdown = render(report, requests, [], stop_report(state, requests), trees)
         self.assertIn('| Block | X | Y | Z |\n|---|---|---|---|\n| B1 | [0, 1] | [0, 1] | [0, 1] |\n'
-                      '| B2 | [2, 3] | [0, 1] | [0, 1] |', markdown)
+                      '| B2 | [2, 3] | [0, 1] | [0, 1] |\n| B3#0 | [0, 1] | [3, 4] | [0, 1] |\n| B3#1 | [0, 1] | [4, 5] | [0, 1] |', markdown)
         self.assertIn('Decision nodes solved: 3 (2 feasible, 1 no alternative survived (backtracks)). Prefixes generated: 9; '
                       'ruled out by the screens: 1; rejected by the search policy: 2 (1 when generated, 1 when taken from the '
                       'queue); expanded: 2; left unexpanded: 1.', markdown)
