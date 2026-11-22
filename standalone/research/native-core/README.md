@@ -161,3 +161,14 @@ Python module, so its settings stay the ones in force.
   starts) agree on 10,296 specs and 998 solves except the score of 30 motion-objective solves, which differs by at most
   3.6e-15: numpy's `cost @ x` groups the four terms of a motion score differently from the native sum
   ([release](2026-11-22-numerics/disk-synthetic-release.json), [UBSan](2026-11-22-numerics/disk-synthetic-sanitize.json)).
+
+## Worker cap guess follows the phase pattern, 2026-11-22
+
+`numerics/worker.phase` inferred each phase's starting ladder-cap pattern from `forward` with the run's inertia pattern
+still a Python list, where numpy compares a row whole (`[0, 2] == 0` is False), so the guess carried every velocity; the
+IPOPT model itself always applied the pattern. Both workers now pass an array. Only threshold > 0 requests with ladder
+ticks change (production requests have threshold 0 and no ladder ticks): from zero facings, 8 of 39 such suite
+requests take a different path, two of them ending `Solve_Succeeded` instead of `Infeasible_Problem_Detected`. After the
+fix the Python and native workers agree on 121 runs of 40 suite ladder requests (664 phases)
+([parity](2026-11-22-numerics/worker-ladder-parity-release.json)).
+

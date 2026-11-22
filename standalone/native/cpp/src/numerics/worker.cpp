@@ -404,13 +404,10 @@ std::pair<Value, std::string> phase(const Problem& problem, const Value& yaw, co
                                     const std::string& kind, const std::string& seed_name) {
     const double end = monotonic() + seconds;
     const Rows pattern = rows_of(pattern_value);
-    // forward here gets the run's pattern as a Python list, which numpy compares
-    // whole (`[0, 2] == 0` is False), so it carries every velocity.
-    const Rows carried(problem.n, {2, 2});
     const Value* explicit_caps = get(fields(problem.value), "ladderPattern");
     const bool searching = problem.has_ladders && !explicit_caps;
     const Rows caps = explicit_caps ? rows_of(*explicit_caps)
-                                    : forward(problem, doubles(yaw), problem.threshold, &carried, nullptr).caps;
+                                    : forward(problem, doubles(yaw), problem.threshold, &pattern, nullptr).caps;
     std::deque<std::pair<Value, Rows>> queue{{yaw, caps}};
     std::set<Rows> seen;
     Value best = yaw;
@@ -436,7 +433,7 @@ std::pair<Value, std::string> phase(const Problem& problem, const Value& yaw, co
             best_status = result.status;
         }
         if (explicit_caps || !problem.has_ladders || result.status == "User_Requested_Stop") break;
-        const Replay replay = forward(problem, doubles(result.yaw), problem.threshold, &carried, &chosen_caps);
+        const Replay replay = forward(problem, doubles(result.yaw), problem.threshold, &pattern, &chosen_caps);
         if (replay.caps != chosen_caps) queue.emplace_back(result.yaw, replay.caps);
         Rows adjacent = chosen_caps;
         bool changed = false;

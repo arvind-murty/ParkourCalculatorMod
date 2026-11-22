@@ -240,6 +240,8 @@ def fixed_phase(problem, yaw, pattern, seconds, stop, on_candidate, kind, seed_n
 
 def phase(problem, yaw, pattern, seconds, stop, on_candidate, kind, seed_name):
     end = time.monotonic() + seconds
+    # forward compares rows elementwise only on an array; a list row never equals 0.
+    pattern = np.array(pattern, dtype=int)
     has_ladders = any(problem.get('ladderTicks', []))
     explicit = problem.get('ladderPattern')
     caps = explicit if explicit is not None else forward(problem, yaw, problem['threshold'], pattern,
