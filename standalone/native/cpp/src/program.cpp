@@ -223,12 +223,31 @@ Value encode(const std::vector<bool>& values) {
 template <class T, std::size_t N>
 Value encode(const std::array<T, N>& values) {
     auto array = std::make_shared<Array>();
+    array->reserve(N);
     for (const auto& value : values) array->push_back(encode(value));
     return {std::shared_ptr<const Array>(std::move(array))};
 }
 
+// Counts the fields a record writes so Writer allocates its object once.
+class FieldCount {
+public:
+    template <class T>
+    void req(const char*, const T&) {
+        ++count;
+    }
+
+    template <class T>
+    void opt(const char*, const std::optional<T>& value) {
+        count += value.has_value();
+    }
+
+    std::size_t count = 0;
+};
+
 class Writer {
 public:
+    explicit Writer(std::size_t capacity) { fields_->reserve(capacity); }
+
     template <class T>
     void req(const char* key, const T& value) {
         fields_->emplace_back(key, encode(value));
@@ -463,7 +482,10 @@ std::enable_if_t<IsRecord<T>::value> decode(const Value& value, T& out, const Pa
 
 template <class T>
 std::enable_if_t<IsRecord<T>::value, Value> encode(const T& record) {
-    Writer writer;
+    FieldCount fields;
+    describe(record, fields, static_cast<T*>(nullptr));
+    if constexpr (std::is_same_v<T, Program>) fields.count += record.annotations.size();
+    Writer writer(fields.count);
     describe(record, writer, static_cast<T*>(nullptr));
     if constexpr (std::is_same_v<T, Program>) writer.extend(record.annotations);
     return writer.done();
@@ -485,5 +507,6 @@ MovementChoice choice_from_value(const Value& value) {
 
 Value to_value(const Program& program) { return encode(program); }
 Value to_value(const MovementChoice& choice) { return encode(choice); }
+Value to_value(const Profile& profile) { return encode(profile); }
 
 }  // namespace pkc

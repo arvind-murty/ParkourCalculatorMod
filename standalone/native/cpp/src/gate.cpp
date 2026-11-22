@@ -120,25 +120,28 @@ bool numeric(const Value& value, double& out) {
 }
 
 // Python ==: numbers compare by value (1 == 1.0 == True), containers elementwise.
+bool py_equal(const Array& left, const Array& right);
+
 bool py_equal(const Value& a, const Value& b) {
     double x, y;
     if (numeric(a, x) && numeric(b, y)) return x == y;
     if (a.data.index() != b.data.index()) return false;
     if (is_null(a)) return true;
     if (auto* s = std::get_if<std::string>(&a.data)) return *s == std::get<std::string>(b.data);
-    if (is_list(a)) {
-        const auto &left = items(a), &right = items(b);
-        if (left.size() != right.size()) return false;
-        for (std::size_t i = 0; i < left.size(); ++i)
-            if (!py_equal(left[i], right[i])) return false;
-        return true;
-    }
+    if (is_list(a)) return py_equal(items(a), items(b));
     const auto &left = fields(a), &right = fields(b);
     if (left.size() != right.size()) return false;
     for (const auto& [key, value] : left) {
         const Value* other = get(right, key);
         if (!other || !py_equal(value, *other)) return false;
     }
+    return true;
+}
+
+bool py_equal(const Array& left, const Array& right) {
+    if (left.size() != right.size()) return false;
+    for (std::size_t i = 0; i < left.size(); ++i)
+        if (!py_equal(left[i], right[i])) return false;
     return true;
 }
 
@@ -268,10 +271,15 @@ void check_units(std::int64_t ticks, const Array& units, const Object* profile) 
                 const Value* inputs = get(unit, field);
                 const Value* flags = get(*profile, mask);
                 if (!inputs || !flags) continue;
-                Array expected;
-                for (std::int64_t t = start; t < end; ++t)
-                    if (std::get<bool>(items(*flags).at(t).data)) expected.push_back(integer_value(t));
-                if (!py_equal(array(expected), *inputs)) fail("Movement unit controls disagree with scalar profile");
+                const Array& listed = items(*inputs);
+                std::size_t next = 0;
+                bool same = true;
+                for (std::int64_t t = start; t < end; ++t) {
+                    if (!std::get<bool>(items(*flags).at(t).data)) continue;
+                    same = same && next < listed.size() && py_equal(listed[next], integer_value(t));
+                    ++next;
+                }
+                if (!same || next != listed.size()) fail("Movement unit controls disagree with scalar profile");
             }
         }
     }
@@ -279,37 +287,44 @@ void check_units(std::int64_t ticks, const Array& units, const Object* profile) 
         fail("Movement units disagree with ladder occupancy");
 }
 
-// movement/contact_combinations.merge_contacts on (state, axis) keys.
-Array merge_contacts(const Array& contacts, bool scene) {
+// movement/contact_combinations.merge_contacts on (state, axis) keys. A given
+// axis stands in for every contact's own (validate_vertical_schedule merges
+// dict(c, axis=1)). Values are immutable, so a contact nothing merges into is
+// shared rather than deep-copied.
+Array merge_contacts(const Array& contacts, bool scene, std::optional<std::int64_t> axis = std::nullopt) {
     static const char* kKeys[] = {"plane", "direction", "step", "case", "lowerHeight",
                                   "higherHeight", "clearance", "movementCase"};
-    std::map<std::pair<std::int64_t, std::int64_t>, Object> merged;
+    struct Entry {
+        Value first;
+        std::optional<Object> merged;  // first's fields once a scene union extends them
+    };
+    std::map<std::pair<std::int64_t, std::int64_t>, Entry> merged;
     for (const auto& contact_value : contacts) {
         const auto& contact = fields(contact_value);
         std::pair<std::int64_t, std::int64_t> key{std::get<std::int64_t>(at(contact, "state").data),
-                                                  std::get<std::int64_t>(at(contact, "axis").data)};
-        auto found = merged.find(key);
-        if (found == merged.end()) {
-            merged.emplace(key, contact);
-            continue;
-        }
-        Object& previous = found->second;
+                                                  axis ? *axis : std::get<std::int64_t>(at(contact, "axis").data)};
+        auto [found, inserted] = merged.try_emplace(key, Entry{contact_value, std::nullopt});
+        if (inserted) continue;
+        Entry& entry = found->second;
+        const Object& previous = entry.merged ? *entry.merged : fields(entry.first);
         bool conflict = false;
         for (const char* k : kKeys) conflict |= !py_equal(get_or_null(previous, k), get_or_null(contact, k));
         if (!scene) conflict |= !py_equal(get_or_null(previous, "surface"), get_or_null(contact, "surface"));
         if (conflict) fail("Conflicting contacts on one input axis");
         if (scene) {
+            if (!entry.merged) entry.merged = fields(entry.first);
             for (const char* field : {"boxes", "regions"}) {
-                Array union_values = items(setdefault(previous, field, array({})));
+                Array union_values = items(setdefault(*entry.merged, field, array({})));
                 if (const Value* extra = get(contact, field))
                     for (const auto& v : items(*extra))
                         if (!contains(union_values, v)) union_values.push_back(v);
-                put(previous, field, array(std::move(union_values)));
+                put(*entry.merged, field, array(std::move(union_values)));
             }
         }
     }
     Array result;
-    for (auto& [key, contact] : merged) result.push_back(object(std::move(contact)));
+    result.reserve(merged.size());
+    for (auto& [key, entry] : merged) result.push_back(entry.merged ? object(std::move(*entry.merged)) : entry.first);
     return result;
 }
 
@@ -337,29 +352,39 @@ int axis_index(const std::string& axis) { return axis == "X" ? 0 : axis == "Y" ?
 void validate_contact_events(Object& route) {
     Array events = items(setdefault(route, "contactEvents", array({})));
     const auto& airtimes = items(at(route, "airtimes"));
-    std::vector<std::tuple<std::int64_t, std::int64_t, std::string, Object>> keyed;
+    std::vector<std::tuple<std::int64_t, std::int64_t, std::string>> keyed;  // per event, in order
     for (auto& event_value : events) {
-        Object event = fields(event_value);
-        const auto* axis_text = std::get_if<std::string>(&get_or_null(event, "axis").data);
+        // Python edits the event in place; copy it only when a key changes.
+        const Object* event = &fields(event_value);
+        std::optional<Object> edited;
+        auto edit = [&]() -> Object& {
+            if (!edited) event = &edited.emplace(*event);
+            return *edited;
+        };
+        const auto* axis_text = std::get_if<std::string>(&get_or_null(*event, "axis").data);
         if (!axis_text || (*axis_text != "X" && *axis_text != "Y" && *axis_text != "Z"))
             fail("A contact event requires an X/Y/Z face");
-        std::int64_t leg = integer(get_or_null(event, "leg"), "contact leg", 0, airtimes.size() - 1);
-        std::int64_t offset = integer(get_or_null(event, "offset"), "contact input", 0,
+        std::string axis_name = *axis_text;
+        std::int64_t leg = integer(get_or_null(*event, "leg"), "contact leg", 0, airtimes.size() - 1);
+        std::int64_t offset = integer(get_or_null(*event, "offset"), "contact input", 0,
                                       std::get<std::int64_t>(airtimes[leg].data) - 1);
-        const auto* direction = std::get_if<std::int64_t>(&get_or_null(event, "direction").data);
-        if (!direction || (*direction != -1 && *direction != 1)) fail("Contact direction must be -1 or 1");
-        int axis = axis_index(*axis_text);
-        if (const Value* box = get(event, "box")) {
+        const auto* direction_value = std::get_if<std::int64_t>(&get_or_null(*event, "direction").data);
+        if (!direction_value || (*direction_value != -1 && *direction_value != 1))
+            fail("Contact direction must be -1 or 1");
+        std::int64_t direction = *direction_value;
+        int axis = axis_index(axis_name);
+        if (const Value* box = get(*event, "box")) {
             Value held = *box;
-            erase(event, "box");
+            Object& changed = edit();
+            erase(changed, "box");
             Num clearance = py_max(number(get(route, "supportClearance") ? at(route, "supportClearance")
                                                                           : real(1e-6), "supportClearance"),
                                    flt(2e-7));
-            put(event, "boxes", array({held}));
-            put(event, "surface", kNull);
-            put(event, "regions", array({expanded_face(box_of(held, "contact box"), axis, clearance)}));
+            put(changed, "boxes", array({held}));
+            put(changed, "surface", kNull);
+            put(changed, "regions", array({expanded_face(box_of(held, "contact box"), axis, clearance)}));
         }
-        const Value* boxes = get(event, "boxes");
+        const Value* boxes = get(*event, "boxes");
         if (!boxes || !is_list(*boxes) || items(*boxes).empty())
             fail("A contact needs its actual finite collision boxes");
         double width = axis == 1 ? kBodyHeight : kHalfWidth;
@@ -368,12 +393,12 @@ void validate_contact_events(Object& route) {
             auto box = box_of(box_value, "contact box");
             for (int a = 0; a < 3; ++a)
                 if (box[a].value >= box[a + 3].value) fail("Contact box must have positive volume");
-            Num plane = *direction > 0 ? sub(box[axis], flt(width))
-                                       : add(box[axis + 3], axis == 1 ? whole(0) : flt(width));
-            if (!py_equal(get_or_null(event, "plane"), value(plane)))
+            Num plane = direction > 0 ? sub(box[axis], flt(width))
+                                      : add(box[axis + 3], axis == 1 ? whole(0) : flt(width));
+            if (!py_equal(get_or_null(*event, "plane"), value(plane)))
                 fail("Contact plane must match its actual finite face");
         }
-        const Value* regions = get(event, "regions");
+        const Value* regions = get(*event, "regions");
         if (!regions || !is_list(*regions) || items(*regions).empty())
             fail("A contact needs at least one finite region");
         for (const auto& region_value : items(*regions)) {
@@ -384,17 +409,18 @@ void validate_contact_events(Object& route) {
             for (int i = 0; i < 4; ++i) r[i] = number(region[i], "contact region").value;
             if (r[0] > r[2] || r[1] > r[3]) fail("A contact region must be a finite tangent rectangle");
         }
-        const std::string role = as_text(setdefault(event, "role", text("contact")));
+        if (!get(*event, "role")) put(edit(), "role", text("contact"));
+        const std::string& role = as_text(at(*event, "role"));
         if (role != "contact" && role != "reversal" && role != "climb" && role != "ceiling" && role != "landing" &&
             role != "step")
             fail("Unsupported contact role");
         if (((role == "reversal" || role == "climb") && axis == 1) ||
             ((role == "ceiling" || role == "landing" || role == "step") && axis != 1))
             fail("Contact role does not match its axis");
-        if ((role == "ceiling" && *direction != 1) || ((role == "landing" || role == "step") && *direction != -1))
+        if ((role == "ceiling" && direction != 1) || ((role == "landing" || role == "step") && direction != -1))
             fail("Contact role does not match its direction");
-        keyed.emplace_back(offset + 1, leg, *axis_text, event);
-        event_value = object(std::move(event));
+        keyed.emplace_back(offset + 1, leg, std::move(axis_name));
+        if (edited) event_value = object(std::move(*edited));
     }
     if (!events.empty() && !get(route, "sharedMovement"))
         fail("Contact combinations require shared movement compilation");
@@ -403,10 +429,9 @@ void validate_contact_events(Object& route) {
                                   "higherHeight", "clearance", "movementCase", "surface"};
     for (std::size_t i = 0; i < keyed.size(); ++i)
         for (std::size_t j = 0; j < i; ++j)
-            if (std::get<0>(keyed[i]) == std::get<0>(keyed[j]) && std::get<1>(keyed[i]) == std::get<1>(keyed[j]) &&
-                std::get<2>(keyed[i]) == std::get<2>(keyed[j])) {
+            if (keyed[i] == keyed[j]) {
                 for (const char* k : kKeys)
-                    if (!py_equal(get_or_null(std::get<3>(keyed[j]), k), get_or_null(std::get<3>(keyed[i]), k)))
+                    if (!py_equal(get_or_null(fields(events[j]), k), get_or_null(fields(events[i]), k)))
                         fail("Conflicting contacts on one input axis");
                 break;  // the first event with this key is the one merged into
             }
@@ -529,7 +554,6 @@ void finite_rows(Array& rows, int axis, const Array& regions, std::int64_t t1) {
 struct Schedule {
     Object plan;
     std::vector<bool> ladder;  // plan.get('ladderTicks', [False]*(n+1))
-    bool has_vertical_contacts = false;
 };
 
 // scene/route.schedule(route, [0]) for the prepared route.
@@ -578,8 +602,9 @@ Schedule schedule(const Object& route) {
     std::vector<bool> ladder;
     std::vector<bool> sneak;
     const auto& route_events = items(at(route, "contactEvents"));
-    for (const auto& row : items(at(profile, "positionConstraints")))
-        walls.push_back(object(with(fields(row), "t1", integer_value(std::get<std::int64_t>(at(fields(row), "t1").data)))));
+    // dict(row, t1=offset + row['t1']) with offset 0 and an int t1 equals the row itself.
+    const auto& position_rows = items(at(profile, "positionConstraints"));
+    walls.insert(walls.end(), position_rows.begin(), position_rows.end());
     for (const auto& case_value : items(at(profile, "caseEvents"))) {
         const auto& c = fields(case_value);
         const std::string& kind = as_text(at(c, "case"));
@@ -627,18 +652,19 @@ Schedule schedule(const Object& route) {
         int axis = axis_index(axis_text);
         std::int64_t direction = std::get<std::int64_t>(at(e, "direction").data);
         bool step = as_text(at(e, "role")) == "step";
-        Object contact = {{"state", integer_value(tick + 1)}, {"axis", integer_value(axis)},
-                          {"plane", at(e, "plane")}, {"direction", integer_value(direction)}};
-        Object scene_contact = with(with(contact, "boxes", at(e, "boxes")), "regions", at(e, "regions"));
-        if (step) put(scene_contact, "step", boolean(true));
+        Object scene_contact = {{"state", integer_value(tick + 1)}, {"axis", integer_value(axis)},
+                                {"plane", at(e, "plane")},          {"direction", integer_value(direction)},
+                                {"boxes", at(e, "boxes")},          {"regions", at(e, "regions")}};
+        if (step) scene_contact.emplace_back("step", boolean(true));
         scene_contacts.push_back(object(std::move(scene_contact)));
-        if (axis == 1) {
+        if (axis == 1) {  // tagged axis=1 for verticalContacts below
             Object v = {{"state", integer_value(tick + 1)}, {"plane", at(e, "plane")},
-                        {"direction", integer_value(direction)}};
-            if (step) put(v, "step", boolean(true));
+                        {"direction", integer_value(direction)}, {"axis", integer_value(1)}};
+            if (step) v.emplace_back("step", boolean(true));
             vertical.push_back(object(std::move(v)));
         } else {
-            horizontal.push_back(object(with(contact, "axis", integer_value(axis / 2))));
+            horizontal.push_back(object({{"state", integer_value(tick + 1)}, {"axis", integer_value(axis / 2)},
+                                         {"plane", at(e, "plane")}, {"direction", integer_value(direction)}}));
         }
         std::int64_t region_offset = offset + (axis_text == "Z" || (axis_text == "Y" && step));
         finite_rows(walls, axis, items(at(e, "regions")), region_offset);
@@ -676,15 +702,8 @@ Schedule schedule(const Object& route) {
     } else {
         result.ladder.assign(state + 1, false);
     }
-    if (!vertical.empty()) {
-        Array tagged;
-        for (const auto& v : vertical) tagged.push_back(object(with(fields(v), "axis", integer_value(1))));
-        put(plan, "verticalContacts", array(merge_contacts(tagged, false)));
-        result.has_vertical_contacts = true;
-    }
-    Array units;  // shifted_unit(unit, 0) copies of route['movementUnits'][0]
-    for (const auto& unit : items(items(at(route, "movementUnits"))[0])) units.push_back(unit);
-    put(plan, "movementUnits", array(std::move(units)));
+    if (!vertical.empty()) put(plan, "verticalContacts", array(merge_contacts(vertical, false)));
+    put(plan, "movementUnits", items(at(route, "movementUnits"))[0]);  // shifted_unit(unit, 0) leaves units equal
     put(plan, "movementComposition", boolean(true));
     return result;
 }
@@ -793,12 +812,10 @@ std::optional<Num> optional_number(const Object& object, std::string_view key, c
 Object validate_vertical_schedule(const Object& route, const Object& profile, const Schedule& schedule) {
     const Object& plan = schedule.plan;
     std::int64_t n = std::get<std::int64_t>(at(plan, "ticks").data);
-    Array contacts;
-    for (const auto& c : items(at(profile, "contacts")))  // event jump is 0, so states are unchanged
-        contacts.push_back(object(with(fields(c), "axis", integer_value(1))));
+    Array contacts = items(at(profile, "contacts"));  // event jump is 0, so states are unchanged
     if (const Value* extra = get(plan, "verticalContacts"))
-        for (const auto& c : items(*extra)) contacts.push_back(c);
-    Array merged = merge_contacts(contacts, false);
+        contacts.insert(contacts.end(), items(*extra).begin(), items(*extra).end());
+    Array merged = merge_contacts(contacts, false, 1);
     const auto& initial = fields(at(route, "initial"));
     std::vector<bool> jumps;
     Array jump_velocity;
@@ -820,8 +837,7 @@ Object validate_vertical_schedule(const Object& route, const Object& profile, co
     static const char* kCases[] = {"normal_step", "slab_boost", "blip", "blip_up",
                                    "corner_jump_cancel", "corner_blip_up", "grind"};
     for (const auto& c_value : merged) {
-        Object c = fields(c_value);
-        erase(c, "axis");
+        const Object& c = fields(c_value);
         // numerics.prepare's vertical contact checks
         std::int64_t state = integer(get_or_null(c, "state"), "vertical contact state", 1, n);
         Num plane = number(get_or_null(c, "plane"), "vertical contact plane");
@@ -849,7 +865,13 @@ Object validate_vertical_schedule(const Object& route, const Object& profile, co
         }
         seen_states.push_back(state);
         rows.push_back(row);
-        vertical_contacts.push_back(object(std::move(c)));
+        if (get(c, "axis")) {  // the plan's verticalContacts carry axis; the vertical problem drops it
+            Object untagged = c;
+            erase(untagged, "axis");
+            vertical_contacts.push_back(object(std::move(untagged)));
+        } else {
+            vertical_contacts.push_back(c_value);
+        }
     }
     const Value& threshold_value = get(route, "physicsThreshold") ? at(route, "physicsThreshold") : real(.005);
     Num threshold = number(threshold_value, "vertical.threshold");
@@ -920,11 +942,14 @@ Object validate_vertical_schedule(const Object& route, const Object& profile, co
     for (const auto& v : y) y_values.push_back(value(v));
     for (const auto& v : vy) vy_values.push_back(value(v));
     for (bool g : grounded) ground_values.push_back(boolean(g));
-    bool matched = py_equal(array(y_values), at(profile, "position")) &&
-                   py_equal(array(vy_values), at(profile, "velocity"));
-    Array expected_ground = items(at(plan, "grounded"));
-    expected_ground.push_back(boolean(terminal_ground));
-    bool feasible = matched && checked_feasible && py_equal(array(ground_values), array(expected_ground));
+    bool matched = py_equal(y_values, items(at(profile, "position"))) &&
+                   py_equal(vy_values, items(at(profile, "velocity")));
+    const auto& plan_grounded = items(at(plan, "grounded"));  // expected: plan grounded + [terminal]
+    bool ground_matched = ground_values.size() == plan_grounded.size() + 1 &&
+                          py_equal(ground_values.back(), boolean(terminal_ground));
+    for (std::size_t t = 0; ground_matched && t < plan_grounded.size(); ++t)
+        ground_matched = py_equal(ground_values[t], plan_grounded[t]);
+    bool feasible = matched && checked_feasible && ground_matched;
     return {{"feasible", boolean(feasible)},
             {"vertical", object(std::move(vertical))},
             {"y", array(std::move(y_values))},
@@ -958,7 +983,7 @@ std::optional<Value> gate_prepare(const Value& scene_value, const Program& progr
                                  {"bounds", at(*found, "bounds")},
                                  {"top", at(*found, "top")}}));
     }
-    Object profile = fields(at(fields(to_value(program)), "profile"));
+    Object profile = fields(to_value(program.profile));
     put(profile, "sourceBlock", at(fields(blocks[0]), "id"));
     put(profile, "targetBlock", at(fields(blocks[1]), "id"));
     put(profile, "profileKind", text("movement"));

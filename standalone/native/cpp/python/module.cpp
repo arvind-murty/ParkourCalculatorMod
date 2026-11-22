@@ -4,6 +4,7 @@
 
 #include <stdexcept>
 #include <type_traits>
+#include <unordered_map>
 #include <variant>
 
 #include "pkc/canonical.hpp"
@@ -61,6 +62,21 @@ pkc::Value convert(PyObject* object) {
 
 pkc::Value convert(py::handle object) { return convert(object.ptr()); }
 
+// Output keys come from the schema (a gate result repeats about 115 keys some
+// 2,600 times), so each is created and interned once and its hash is cached.
+PyObject* key_reference(const std::string& key) {
+    static std::unordered_map<std::string, PyObject*> keys;  // holds one reference each; GIL-guarded
+    auto found = keys.find(key);
+    if (found == keys.end()) {
+        PyObject* name = PyUnicode_FromStringAndSize(key.data(), key.size());
+        if (!name) return nullptr;
+        PyUnicode_InternInPlace(&name);
+        found = keys.emplace(key, name).first;
+    }
+    Py_INCREF(found->second);
+    return found->second;
+}
+
 PyObject* new_reference(const pkc::Value& value) {
     return std::visit([](const auto& held) -> PyObject* {
         using T = std::decay_t<decltype(held)>;
@@ -90,7 +106,7 @@ PyObject* new_reference(const pkc::Value& value) {
             PyObject* dict = PyDict_New();
             if (!dict) return nullptr;
             for (const auto& [key, item] : *held) {
-                PyObject* name = PyUnicode_FromStringAndSize(key.data(), key.size());
+                PyObject* name = key_reference(key);
                 PyObject* converted = name ? new_reference(item) : nullptr;
                 int failed = !converted || PyDict_SetItem(dict, name, converted) < 0;
                 Py_XDECREF(name);

@@ -187,5 +187,6 @@ Program program_from_value(const Value& value);
 MovementChoice choice_from_value(const Value& value);
 Value to_value(const Program& program);
 Value to_value(const MovementChoice& choice);
+Value to_value(const Profile& profile);
 
 }  // namespace pkc
