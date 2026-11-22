@@ -30,9 +30,10 @@ _DECIDED = {}
 
 
 def _native():
-    """The native core under PKC_NATIVE_CORE, which builds and solves the relaxation; None otherwise.
+    """The native core under PKC_NATIVE_CORE, which solves the relaxation and seeds IPOPT; None otherwise.
 
-    The decided-result cache and STATS stay here with their readers."""
+    The spec and the other small helpers stay here (converting a problem costs more than they do), and so do the
+    decided-result cache and STATS, with their readers."""
     from parkour_solver import native_core
     return native_core.from_environment()
 
@@ -43,9 +44,6 @@ def spec(problem, extra_rows=(), objective=None, *, strict):
     Screens (strict=False) drop rows the relaxation cannot express, which keeps
     them a relaxation; candidates (strict=True) must keep every row.
     """
-    native = _native()
-    if native is not None:
-        return native.disk_spec(problem, list(extra_rows), objective, strict)
     if problem.get('threshold', 0.) != 0 or any(problem.get('ladderTicks', [])) or 'inertiaPattern' in problem:
         return None
     n = problem['ticks']
@@ -111,9 +109,6 @@ def screen(model, extra_rows=(), objective=None):
 
 def deficits(problem, controls):
     """Per-tick relative acceleration shortfall: (peak, values, tick of peak)."""
-    native = _native()
-    if native is not None:
-        return tuple(native.disk_deficits(problem, controls))
     values = [max(0., m-math.hypot(*c))/m if m > 0 else 0. for m, c in zip(problem['magnitude'], controls)]
     peak = max(values, default=0.)
     return peak, values, values.index(peak) if values else None
@@ -141,9 +136,6 @@ def alarm_ticks(problem, shortfall):
     impossible at full strength; every full-model infeasibility measured had a jump tick at least 28% short
     (research/disk-relaxation/README.md). Jumps come from the program's vertical schedule.
     """
-    native = _native()
-    if native is not None:
-        return native.alarm_ticks(problem, shortfall, ALARM_FRACTION)
     jumps = (problem.get('vertical') or {}).get('jumpVelocity') or [None]*problem['ticks']
     return [t for t, s in enumerate(shortfall) if s > ALARM_FRACTION and jumps[t] is not None]
 

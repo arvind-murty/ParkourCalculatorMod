@@ -8,6 +8,7 @@
 #include <chrono>
 #include <cmath>
 #include <map>
+#include <set>
 #include <optional>
 #include <string_view>
 #include <string>
@@ -296,7 +297,17 @@ Value disk_spec(const Value& problem_value, const Value& extra_rows, const Value
     if (get(problem, "inertiaPattern")) return {nullptr};
     const std::int64_t n = as_int(at(problem, "ticks"));
     auto in_range = [&](const Value& t) { return is_int(t) && as_int(t) >= 0 && as_int(t) <= n; };
-    std::vector<Array> rows;
+    std::vector<std::pair<std::string, Array>> rows;  // (str(row), row)
+    std::set<std::string> seen;  // value identities: set(rows) drops a row equal to an earlier one (1 == 1.0)
+    auto identity = [](const Array& row) {
+        std::string out;
+        for (const auto& v : row) {
+            double number;
+            out += numeric(v, number) && !std::holds_alternative<bool>(v.data) ? float_repr(number + 0.0) : py_repr(v);
+            out += '\x1f';
+        }
+        return out;
+    };
     auto collect = [&](const Value& source) -> bool {
         for (const auto& r_value : items(source)) {
             const Object& r = fields(r_value);
@@ -308,9 +319,7 @@ Value disk_spec(const Value& problem_value, const Value& extra_rows, const Value
                 if (in_range(t) && (is_null(t2) || in_range(t2))) {
                     const Value* op = get(r, "op");
                     Array row{mode, t, t2, op ? *op : text("PLUS"), at(r, "cmp"), at(r, "rhs")};
-                    // set(rows): a row equal to an earlier one (1 == 1.0) is dropped.
-                    if (std::none_of(rows.begin(), rows.end(), [&](const Array& seen) { return py_equal(seen, row); }))
-                        rows.push_back(std::move(row));
+                    if (seen.insert(identity(row)).second) rows.emplace_back(row_key(row), std::move(row));
                     continue;
                 }
             }
@@ -320,9 +329,9 @@ Value disk_spec(const Value& problem_value, const Value& extra_rows, const Value
     };
     const Value* walls = get(problem, "walls");
     if ((walls && !collect(*walls)) || !collect(extra_rows)) return {nullptr};
-    std::stable_sort(rows.begin(), rows.end(), [](const Array& a, const Array& b) { return row_key(a) < row_key(b); });
+    std::stable_sort(rows.begin(), rows.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
     Array sorted;
-    for (auto& row : rows) sorted.push_back(array(std::move(row)));
+    for (auto& row : rows) sorted.push_back(array(std::move(row.second)));
     Object result;
     for (const char* key : {"ticks", "position", "velocity", "magnitude", "friction"})
         result.emplace_back(key, at(problem, key));

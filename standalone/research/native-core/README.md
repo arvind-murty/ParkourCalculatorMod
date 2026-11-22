@@ -274,3 +274,13 @@ dataclasses from the native rows. The last sampled profile spent 1.4 s of a 34.8
 - Fixed work: exact on all 19 transitions; search 43.1 s Python, 26.7 s native
   ([parity](2026-11-22-cells/parity-python-native.json)).
 
+## Python dispatch only where it measures faster, 2026-11-22
+
+Source: `21cea955`. Per call on recorded calls of a 90 s extended solve, Python against native with conversion:
+`disk.spec` 154 against 286 us (750 before precomputing its row keys and set), `fingerprint` 409 against 510,
+`deficits` 16 against 82, `alarm_ticks` 3 against 71: their Python callers keep the Python body. Kept native:
+`prepare` 385 against 122, `validate` 169 against 79, `validate_controls` 297 against 192, `numerical_problem` 1,163
+against 582, the Clarabel solve 5,585 against 4,279, `validate_vertical_schedule` 480 against 404, `ipopt_seed` 3.5
+against 2.2. Fixed work: exact on all 19 transitions; search 42.9 s Python, 26.2 s native
+([parity](2026-11-22-dispatch/parity-python-native.json)).
+

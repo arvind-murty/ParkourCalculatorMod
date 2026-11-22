@@ -194,8 +194,6 @@ def prepare(request):
 
 
 def fingerprint(problem):
-    native = _native()
-    if native is not None:
-        return native.fingerprint(problem)
+    # Python callers keep this even under PKC_NATIVE_CORE: json.dumps beats converting the problem.
     physical = {k: v for k, v in problem.items() if k not in ('seconds', 'yaw', 'fallbackYaw', 'stopOnFeasible', 'objectiveMode', 'source', 'maxIterations')}
     return hashlib.sha256(json.dumps(physical, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
