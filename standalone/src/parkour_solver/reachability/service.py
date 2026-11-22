@@ -105,7 +105,6 @@ def bounds_allowed(context, bounds, tick, *, label, jumping=False, phases=('Y', 
     return gate is None or not gate.query(context, bounds, tick, label=label, jumping=jumping, phases=phases)['ruledOut']
 
 
-
 def bounds_allowed_many(context, bounds, tick, *, label, jumping=False, phases=('Y', 'X', 'Z')):
     if not bounds:
         return []
@@ -114,6 +113,47 @@ def bounds_allowed_many(context, bounds, tick, *, label, jumping=False, phases=(
     gate = context['interactionGate']
     return ([True]*len(bounds) if gate is None else [not proof['ruledOut'] for proof in
             gate.query_many(context, bounds, tick, label=label, jumping=jumping, phases=phases)])
+
+
+def behind_decision(context, regions, tick, *, jumping, label):
+    """At an ordinary decision (`context['forward']`), whether the reachable part of these player-centre regions
+    ([x0, z0, x1, z1]) at input `tick` lies behind the decision point along its guide leg by more than the margin."""
+    forward = context.get('forward')
+    if forward is None:
+        return False
+    gate = context['interactionGate']
+    at = context['program']['profile']['duration']+tick
+    envelope = gate.approach(context, tick, jumping=jumping) if gate is not None else None
+    reach = envelope['states'][at] if envelope is not None and at < len(envelope['states']) else None
+    (px, pz), (dx, dz) = forward['point'], forward['direction']
+    ahead = -float('inf')
+    for x0, z0, x1, z1 in regions:
+        if reach is not None:
+            x0, x1, z0, z1 = max(x0, reach['X'][0]), min(x1, reach['X'][1]), max(z0, reach['Z'][0]), min(z1, reach['Z'][1])
+            if x0 > x1 or z0 > z1:
+                continue
+        ahead = max(ahead, max(dx*(x0-px), dx*(x1-px))+max(dz*(z0-pz), dz*(z1-pz)))
+    if ahead >= -forward['margin']:
+        return False
+    if gate is not None:
+        gate.exclusions.append(dict(label, frame=context.get('frameId'), horizontal=[min(r[0] for r in regions),
+            min(r[1] for r in regions), max(r[2] for r in regions), max(r[3] for r in regions)], input=at,
+            proof=dict(reason='behind_decision_point', ahead=ahead, margin=forward['margin'])))
+    return True
+
+
+def entry_backward(context, axis, sign, region, *, label):
+    """At an ordinary decision, whether entering a box from its `axis` `sign` side ([x0, z0, x1, z1] its player-centre
+    region) moves against the decision's guide leg."""
+    forward = context.get('forward')
+    if forward is None or sign*forward['direction'][0 if axis == 'X' else 1] <= 0:
+        return False
+    gate = context['interactionGate']
+    if gate is not None:
+        gate.exclusions.append(dict(label, frame=context.get('frameId'), horizontal=list(region),
+            input=context['program']['profile']['duration'],
+            proof=dict(reason='entry_against_guide', side=axis+('+' if sign > 0 else '-'))))
+    return True
 
 
 def walk_off_allowed(context, landing_boxes, *, label):
@@ -211,7 +251,7 @@ def walk_off_tick(program):
     face selection, else None."""
     p=program['profile']
     carried={w['offset'] for w in program.get('walkOffs',[])}
-    cut=next((c for c in reversed(range(p['airtime'])) if p['grounded'][c] and not p['jump'][c]
+    cut=next((c for c in reversed(range(p['duration'])) if p['grounded'][c] and not p['jump'][c]
               and not p['ladderTicks'][c] and p['position'][c+1]<p['position'][c]),None)
     return None if cut in carried else cut
 
@@ -366,18 +406,11 @@ class InteractionGate:
         if proof:
             self.metrics['sequenceExclusions']=self.metrics.get('sequenceExclusions',0)+1
             self.exclusions.append(dict(reason='joint_prerequisites_unreachable',proof=proof,frame=context.get('frameId'),
-                input=context['program']['profile']['airtime'],cases=choice['profile'].get('caseEvents',[])))
+                input=context['program']['profile']['duration'],cases=choice['profile'].get('caseEvents',[])))
         return proof
 
     def check_program(self, program, objective=None):
         """None or a rejection proof. A run-off's launch-support face selection is appended to program['walkOffs']."""
-        # This guard is a distinct physical requirement, not an interval bound.
-        p=program['profile']
-        if p['airtime'] and p['position'][1]<self.scene['initial']['position'][1]-1e-7:
-            from parkour_solver.scene.route import supports
-            if any(abs(b['top']-self.scene['initial']['position'][1])<1e-7 and
-                   supports(b,*self.scene['initial']['position'][::2]) for b in self.scene['blocks']):
-                return dict(reason='unselected_initial_floor')
         analysis=self._analysis(program)
         if analysis is None:return dict(reason='vertical_schedule')
         def materialized():  # Python readers need the analysis dict, built once for a native analysis
@@ -490,7 +523,7 @@ class InteractionGate:
             envelope = self.approach(context, tick, jumping=jumping)
             box = list(box)
             box[1], box[4] = -float('inf'), float('inf')
-            at = context['program']['profile']['airtime']+tick
+            at = context['program']['profile']['duration']+tick
             prepared.append((envelope, box, at))
             requests.append(dict(alternatives=[dict(regions=[dict(tick=at, phase=phase, bounds=box)])
                                                 for phase in phases]))
@@ -520,7 +553,7 @@ class InteractionGate:
         envelope = self.approach(context, 0)
         if envelope is None:
             return True
-        cut = context['program']['profile']['airtime']
+        cut = context['program']['profile']['duration']
         faces = walk_off_faces(context['scene'], context['program'], cut, envelope, landing_boxes)
         self.checked += 1
         if faces is None or faces['options']:

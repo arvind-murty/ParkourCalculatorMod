@@ -371,7 +371,7 @@ def annotate_normal_proposals(scene, graph, compiler, *, seconds):
             profile=choice['profile']
             block=next(b for b in scene['blocks'] if b['id']==choice['terminalSupport'])
             targets=by_solid.get(block['solidIndex'],[])
-            n=profile['airtime']
+            n=profile['duration']
             radius=radius_for(profile['grounded'][:-1],profile['jump'])
             for target in targets:
                 gap=min(minimum_distance(a,b) for a in bounds[source.key] for b in bounds[target.key])

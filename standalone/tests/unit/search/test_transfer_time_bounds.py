@@ -40,7 +40,7 @@ class TransferTimeBoundTests(unittest.TestCase):
 
     def test_sum_remaining_flights_combines_with_horizontal_using_max_and_requires_latches(self):
         s,g,table,c=self.real11();m=self.data['motion']
-        p=dict(terminalSupport='b3',profile=dict(airtime=38,grounded=[True],position=[7.],velocity=[REST_CARRY]))
+        p=dict(terminalSupport='b3',profile=dict(duration=38,grounded=[True],position=[7.],velocity=[REST_CARRY]))
         b=remaining_bound(g,2,p,m,transfers=table,hard_latches=table)
         self.assertEqual(b['verticalTicks'],34)
         self.assertEqual(b['remainingTicks'],34)
@@ -56,7 +56,7 @@ class TransferTimeBoundTests(unittest.TestCase):
         flight=event_choice(ctx,'normal',boundary_state(parent),3,jumping=True)
         p=append_choice(parent,flight)
         b=remaining_bound(g,2,p,self.data['motion'],transfers=table,hard_latches=table)
-        self.assertEqual(p['profile']['airtime'],31)
+        self.assertEqual(p['profile']['duration'],31)
         self.assertEqual(b['verticalTicks'],31)  # 7 paid-flight residual + 15 + 9.
         p['profile']['caseEvents'].append(dict(input=28,type='ceiling',case='grind'))
         self.assertEqual(remaining_bound(g,2,p,self.data['motion'],transfers=table,hard_latches=table)['verticalTicks'],24)

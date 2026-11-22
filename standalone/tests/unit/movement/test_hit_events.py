@@ -42,7 +42,7 @@ class HitEventTests(unittest.TestCase):
                                   {'storedSpeedNorm': 1, 'groundMagnitude': .3}, 2)
         self.assertEqual(len(result['options']), 2)
         self.assertGreater(result['candidateDrops'], 0)
-        self.assertEqual(profile['airtime'], 12)
+        self.assertEqual(profile['duration'], 12)
         self.assertTrue(all(h['blockId'] == 'wall' for h in result['options']))
 
 

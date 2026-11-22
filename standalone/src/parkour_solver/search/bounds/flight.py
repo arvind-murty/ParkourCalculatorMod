@@ -37,7 +37,7 @@ def transfer_bound(scene, guides, source, target, motion, service, *, threshold=
                 assumption=ASSUMPTION,ticks=0,status='unknown',proofIds=[],ceilings=[])
     profile=ordinary_jump_profile(a['top'],b['top'],threshold=threshold)
     if profile is None:return dict(record,reason='no_ordinary_profile')
-    duration=profile['airtime'];record['ordinaryTicks']=duration
+    duration=profile['duration'];record['ordinaryTicks']=duration
     # All relevant first ceiling changes must happen before the ordinary arrival.
     possible=[]
     for i,box in enumerate(scene['collisionScene']['solids']):

@@ -198,7 +198,7 @@ class LadderCeilingTests(unittest.TestCase):
             self.assertIsNotNone(program)
             global_events = program['ladderEvents'][-1]['schedule']['ladderCeilingEvents']
             self.assertEqual([e['offset'] + cut for e in local_events], [e['offset'] for e in global_events])
-            cut = program['profile']['airtime']
+            cut = program['profile']['duration']
         owned = [c for c in program['profile']['contactEvents'] if c.get('effect') == 'ladder_ceiling']
         self.assertEqual([c['offset'] for c in owned], [20])
         effects = [e for u in program['movementUnits'] for e in u.get('effects', []) if e['type'] == 'ladder_ceiling']

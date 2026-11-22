@@ -156,7 +156,7 @@ def compile_passages(route, events):
 
 
 def passage_y_valid(passage, event, profile):
-    ranges = intervals(passage['faces'], passage['gates'], -event['runTicks'], profile['airtime'])
+    ranges = intervals(passage['faces'], passage['gates'], -event['runTicks'], profile['duration'])
     if ranges is None:
         return False
     for face, (begin, end) in zip(passage['faces'], ranges):

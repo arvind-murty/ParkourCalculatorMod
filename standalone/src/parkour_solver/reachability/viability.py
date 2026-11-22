@@ -9,7 +9,7 @@ def prefix_viability(scene, program, *, required_contacts, terminal_tick, enable
     if not required_contacts:
         return dict(dead=False, reason='no_outstanding_contact_requirement')
     state = boundary_state(program)
-    remaining = terminal_tick-program['profile']['airtime']
+    remaining = terminal_tick-program['profile']['duration']
     if remaining <= 0:
         return dict(dead=True, reason='mandatory_contacts_after_horizon', remaining=list(required_contacts))
     kinds = set(enabled_types or ('normal', 'stepping', 'ceiling'))

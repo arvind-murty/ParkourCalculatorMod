@@ -86,7 +86,7 @@ class CheckpointTests(unittest.TestCase):
 
     def test_open_program_has_no_fabricated_terminal_goal_constraint(self):
         scene = flat_scene()
-        p = next(p for p in programs(scene, 4) if p['profile']['airtime']==4 and p['profile']['jump'][0])
+        p = next(p for p in programs(scene, 4) if p['profile']['duration']==4 and p['profile']['jump'][0])
         compiled = compile_program(scene, p, require_complete=False)
         r = prepare_route(compiled['route'])
         plan = schedule(r, [0])
@@ -98,16 +98,16 @@ class CheckpointTests(unittest.TestCase):
 
     def test_different_method_lengths_are_cut_at_the_same_absolute_tick(self):
         scene = flat_scene()
-        prefixes = [p for p in programs(scene, 4) if p['profile']['airtime']==4]
+        prefixes = [p for p in programs(scene, 4) if p['profile']['duration']==4]
         self.assertGreater(len(prefixes), 1)
-        self.assertEqual({p['profile']['airtime'] for p in prefixes}, {4})
+        self.assertEqual({p['profile']['duration'] for p in prefixes}, {4})
         self.assertGreater(len({tuple(p['profile']['jump']) for p in prefixes}), 1)
         self.assertTrue(all(p['threshold']==0 for p in prefixes))
         self.assertGreater(len({p['profile']['position'][-1] for p in prefixes}), 1)
 
     def test_truncating_preserves_past_contact_and_drops_future_contact(self):
         scene = flat_scene()
-        p = next(p for p in programs(scene, 6) if p['profile']['airtime']==6 and p['profile']['jump'][0])
+        p = next(p for p in programs(scene, 6) if p['profile']['duration']==6 and p['profile']['jump'][0])
         p['profile']['positionConstraints'].append(dict(mode='X',t1=5,cmp='GE',rhs=1))
         cut = truncate_program(p, 4)
         self.assertEqual(cut['profile']['position'], p['profile']['position'][:5])
@@ -207,7 +207,7 @@ class CheckpointNumericalTests(unittest.TestCase):
         r = corridor_for_points(d, [[.5,1,.5],[5.5,1,.5]], gates)
         adapter = CorridorAdapter(scene, r, gates, decomposition=d)
         cp = checkpoint(r, gates, dict(tick=2))
-        options = [p for p in programs(scene, 2) if p['profile']['airtime']==2]
+        options = [p for p in programs(scene, 2) if p['profile']['duration']==2]
         chosen = [next(p for p in options if p['profile']['jump'][0]),
                   next(p for p in options if not any(p['profile']['jump']) and p['profile']['grounded'][-1])]
         work = SearchWork(12, deadline=time.monotonic()+10)
@@ -256,13 +256,13 @@ class CheckpointNumericalTests(unittest.TestCase):
         adapter = CorridorAdapter(scene,r,gates,decomposition=d)
         motion = motion_bound(scene,self.compiler,2)
         work = SearchWork(12,deadline=time.monotonic()+10)
-        first_program = next(p for p in programs(scene,2) if p['profile']['airtime']==2 and p['profile']['jump'][0])
+        first_program = next(p for p in programs(scene,2) if p['profile']['duration']==2 and p['profile']['jump'][0])
         first = evaluate_program(scene,first_program,self.compiler,adapter,work,motion,
             checkpoint=checkpoint(r,gates,dict(tick=2)),seconds=2,solver_calls=4,
             python_executable=os.environ['PKC_IPOPT_PYTHON'])
         self.assertEqual(first['status'],'feasible')
         retained = retain_prefix(first_program,first['best'])
-        second_program = next(p for p in programs(scene,4) if p['profile']['airtime']==4 and p['profile']['jump'][0])
+        second_program = next(p for p in programs(scene,4) if p['profile']['duration']==4 and p['profile']['jump'][0])
         second_program['profile']['positionConstraints'] = copy.deepcopy(retained['profile']['positionConstraints'])
         second_program['profile']['positionConstraints'].append(dict(mode='Z',t1=2,cmp='GE',rhs=.95,name='later_turn'))
         second_program['guideSeedYaw'] = retained['guideSeedYaw']

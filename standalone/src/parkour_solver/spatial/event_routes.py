@@ -156,7 +156,7 @@ def support_episodes(domain, profile, *, required_owners=()):
         owners = sorted({b.get('sourceBlock', b['id']) for b in blocks})
         solids = sorted({b['solidIndex'] for b in blocks})
         surfaces = sorted(s['id'] for s in groups if any(b['solidIndex'] in s['solids'] for b in blocks)
-                          and abs(s['height']-profile['position'][min(tick+1, profile['airtime'])]) <= 1e-7)
+                          and abs(s['height']-profile['position'][min(tick+1, profile['duration'])]) <= 1e-7)
         if named:
             result.append(dict(kind='named_contact', input=tick, case=event.get('case'),
                 owners=owners, solids=solids, surfaces=surfaces, event=event, classification='observed_program'))
@@ -164,7 +164,7 @@ def support_episodes(domain, profile, *, required_owners=()):
                   current.intersection(surfaces) and not set(owners).intersection(required_owners)):
             result.append(dict(kind='support_visit', input=tick, tick=tick+1, owners=owners,
                 solids=solids, surfaces=surfaces, classification='observed_program' if surfaces else 'unknown'))
-        if surfaces and profile['grounded'][min(tick+1, profile['airtime'])]:
+        if surfaces and profile['grounded'][min(tick+1, profile['duration'])]:
             current = set(surfaces)
     return result
 
@@ -201,7 +201,7 @@ def build_event_graph(domain):
 def initial_cursor(domain, roots=None):
     data = domain.to_dict() if isinstance(domain, RouteDomain) else domain
     attachments=data['geometry']['starts']
-    if roots and any(p['profile']['airtime'] for p in roots):
+    if roots and any(p['profile']['duration'] for p in roots):
         attachments=set()
         for program in roots:
             if not program['profile']['grounded'][-1]:
@@ -324,7 +324,7 @@ def observed_route(data, profile, witness, *, after=0):
                 features.append(matches)
             variant.append(dict(kind='passage',features=features,gates=passage['gates'],
                 resources=passage['blockageCounts'],classification='selected_model',
-                window=[0,profile['airtime']]))
+                window=[0,profile['duration']]))
         passages.append(variant)
     return dict(events=episodes,passageAlternatives=passages,optionalGuide='uncommitted',
         validation='fixed_model_evidence',after=after)

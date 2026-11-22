@@ -25,7 +25,7 @@ def solve_scope(scene, program, supplied=None):
     purpose = value.get('purpose', 'complete')
     if purpose not in ('preliminary', 'complete'):
         raise ValueError('Solve purpose must be preliminary or complete')
-    n = program['profile']['airtime']
+    n = program['profile']['duration']
     through = value.get('through', n)
     if type(through) is not int or not 0 < through <= n:
         raise ValueError('Solve scope must cover a nonempty prefix of the program')

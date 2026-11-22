@@ -54,7 +54,7 @@ class LadderRegionTests(unittest.TestCase):
         scene, episodes, program = airborne_case()
         self.assertIsNotNone(program)
         p = program['profile']
-        self.assertEqual(p['airtime'], 28)
+        self.assertEqual(p['duration'], 28)
         self.assertEqual(sum(p['jump']), 1)
         self.assertFalse(any(p['grounded'][1:-1]))
         self.assertEqual(p['velocity'][6], (CLIMB_CARRY - .08) * f32(.98))

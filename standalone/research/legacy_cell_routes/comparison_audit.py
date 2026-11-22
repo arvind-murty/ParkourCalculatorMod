@@ -115,7 +115,7 @@ def run_full_audit(request,result,compiler,*,seconds_per_candidate=4,candidate_s
                     and contact.get('constraintCount')==0 and contact.get('passageCount')==0
                     and first.get('certificate',{}).get('reason') in ('interval_reach_contradiction',
                         'contact_reach_contradiction','vertical_schedule','passage_timing'))
-                trial=dict(ticks=p['profile']['airtime'],result=evaluated,provenFixedProgramImpossible=proof)
+                trial=dict(ticks=p['profile']['duration'],result=evaluated,provenFixedProgramImpossible=proof)
                 if evaluated['best'] is not None:
                     from research.legacy_cell_routes.checkpoint_experiment import replay_witness
                     trial['independentReplay']=replay_witness(scene,evaluated['best'],counted)

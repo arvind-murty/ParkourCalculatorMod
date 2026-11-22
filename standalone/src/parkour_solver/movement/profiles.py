@@ -47,7 +47,7 @@ def _flight_profile(source_top, target_top, jumping, max_inputs, threshold=.005)
         velocities.append(vy)
         grounded.append(ground)
         if ground:
-            return {'airtime': tick + 1, 'landingPhase': 'pre', 'position': positions,
+            return {'duration': tick + 1, 'landingPhase': 'pre', 'position': positions,
                     'velocity': velocities, 'grounded': grounded, 'contacts': config['contacts'],
                     'jump': [jumping] + [False] * tick}
     return None
@@ -71,7 +71,7 @@ def stair_jump_profile(source_top, target_top):
         positions.append(y)
         velocities.append(vy)
         grounded.append(ground)
-    return {'airtime': 2, 'landingPhase': 'pre', 'position': positions, 'velocity': velocities,
+    return {'duration': 2, 'landingPhase': 'pre', 'position': positions, 'velocity': velocities,
             'grounded': grounded, 'contacts': config['contacts'], 'jump': [True, False]}
 
 
@@ -108,7 +108,7 @@ def compile_open_air_route(request, *, max_inputs=200):
                     'maxInputs': max_inputs, 'profiles': profiles}
         profile.update(sourceBlock=source['id'], targetBlock=target['id'])
         profiles.append(profile)
-    route['airtimes'] = [profile['airtime'] for profile in profiles]
+    route['airtimes'] = [profile['duration'] for profile in profiles]
     route['profileDerivation'] = {'kind': 'ordinary_open_air', 'sceneModel': request['sceneModel'],
                                  'verticalModel': 'parkour_solver.physics.vertical',
                                  'suppliedAirtimes': False, 'solidSideFaces': False,
@@ -151,7 +151,7 @@ def compile_block_path(scene, block_ids, transitions=None):
             kinds.append('movement' if transition['profileKind'] == 'movement' else 'walk_off' if transition['profileKind'] == 'run_off' else 'step' if transition['profileKind'] == 'step' else 'jump')
         route = prepare_route({'version': 1, 'initial': scene['initial'], 'blocks': blocks,
                                'inputs': scene['inputs'], 'objective': scene['objective'],
-                               'airtimes': [p['airtime'] for p in selected],
+                               'airtimes': [p['duration'] for p in selected],
                                'kinds': kinds, 'landingPhases': ['post' if k == 'step' else p.get('landingPhase', 'pre')
                                                                for p, k in zip(selected, kinds)],
                                'contactEntries': entries, 'walkOffExits': exits,

@@ -39,7 +39,7 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
     seeds = [initial] if initial_programs is None else list(initial_programs)
     if any(p['initial'] != initial['initial'] or p.get('threshold', .005) != threshold for p in seeds):
         raise ValueError('Checkpoint seeds must preserve the original vertical state and physics threshold')
-    pending = [(p['profile']['airtime'], i, p) for i, p in enumerate(seeds)]
+    pending = [(p['profile']['duration'], i, p) for i, p in enumerate(seeds)]
     if checkpoint_tick is not None and any(t >= checkpoint_tick for t, _, _ in pending):
         raise ValueError('Checkpoint seeds must end before the comparison tick')
     heapq.heapify(pending)
@@ -48,7 +48,7 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
     ready, since_proposal, cursor, complete_drops, proposals = [], 0, -1, 0, 0
 
     def complete(program):
-        ticks = program['profile']['airtime']
+        ticks = program['profile']['duration']
         return checkpoint_tick is not None and ticks == checkpoint_tick or (
             stop_on_goal and ticks and program['terminalSupport'] in (stop_supports or [scene['goalBlock']]) and program['profile']['grounded'][-1]
             and (not scene.get('ladderSearch', {}).get('requireLadder') or program['ladderEvents']))
@@ -155,13 +155,13 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
                     if child is not None and screen is not None and assess_proposal(proposal,screen)['proof'] is not None:
                         screened += 1
                         continue
-                    if child is not None and checkpoint_tick is not None and child['profile']['airtime'] > checkpoint_tick:
+                    if child is not None and checkpoint_tick is not None and child['profile']['duration'] > checkpoint_tick:
                         child = truncate_program(child, checkpoint_tick)
                     if child is not None and checkpoint_tick is not None and child['profile']['grounded'][-1]:
                         goal = next(b for b in scene['blocks'] if b['id'] == scene['goalBlock'])
                         if abs(child['profile']['position'][-1]-goal['top']) < 1e-7:
                             box = scene['collisionScene']['solids'][goal['solidIndex']]
-                            at = child['profile']['airtime']-1
+                            at = child['profile']['duration']-1
                             events = child['profile']['contactEvents']+child['profile']['caseEvents']
                             if any(e.get('offset', e.get('input')) == at and box in e.get('boxes', ()) for e in events):
                                 child['terminalSupport'] = scene['goalBlock']
@@ -182,7 +182,7 @@ def iter_movement_programs(scene, *, settings=None, deadline=None, cancel_event=
                         screened += 1
                         continue
                     serial += 1
-                    item = (child['profile']['airtime'], serial, child)
+                    item = (child['profile']['duration'], serial, child)
                     if queue_policy == 'balanced' and complete(child):
                         heapq.heappush(ready, item)
                         if len(ready) > cfg['maxQueuedPrefixes']:
@@ -256,7 +256,7 @@ def find_movement_blocks(request, compiler, *, seconds=60, candidate_seconds=2, 
             motion_bound=motion,
             solid_blocks=[owners[i] for i in range(len(owners))], max_wall_hits=scene['maxWallHits'],
             max_wall_candidates=scene['maxWallHitCandidates'], candidate_filter=candidate_filter, work=work)
-        attempt = dict(ticks=program['profile']['airtime'], status=result['status'], termination=result['termination'],
+        attempt = dict(ticks=program['profile']['duration'], status=result['status'], termination=result['termination'],
                        units=[u['type'] for u in program['movementUnits']])
         if result.get('error'):
             attempt['error'] = result['error']

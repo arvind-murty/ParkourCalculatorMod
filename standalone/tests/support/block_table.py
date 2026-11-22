@@ -39,14 +39,14 @@ def nodes(scene, roots, gate):
     result = []
     for root in roots:
         result.append(root)
-        start = root['profile']['airtime']
+        start = root['profile']['duration']
         for kind in generated(scene, root, gate, None):
             for choice in kind[:3]:
                 child = append_choice(root, choice)
                 if child is None:
                     continue
                 result.append(child)
-                ticks = child['profile']['airtime']
+                ticks = child['profile']['duration']
                 if ticks >= start+4:
                     result.append(truncate_program(child, start+(ticks-start)//2))
     return result

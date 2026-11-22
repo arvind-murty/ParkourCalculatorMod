@@ -73,7 +73,7 @@ def build_family(request, compiler, *, seconds=10):
             raise ValueError('Supply distinct passage gate choices')
         group = []
         for gate in choices:
-            integer(gate, 'gate offset', 0, profiles[leg]['airtime'] - int(consecutive(*faces)))
+            integer(gate, 'gate offset', 0, profiles[leg]['duration'] - int(consecutive(*faces)))
             index = len(options)
             options.append(dict(id=name, leg=leg, gate=gate, faces=copy.deepcopy(faces)))
             group.append(index)
@@ -121,7 +121,7 @@ def build_family(request, compiler, *, seconds=10):
                 if runs >= lo:
                     moves.append(('jump', (t+1, leg, 1, 0)))
             else:
-                moves.append(('air', (t+1, leg+1, 0, 0) if age+1 == profiles[leg]['airtime']
+                moves.append(('air', (t+1, leg+1, 0, 0) if age+1 == profiles[leg]['duration']
                               else (t+1, leg, age+1, 0)))
             for kind, target in moves:
                 guards = _support_rows(route['blocks'][leg], 'run') if kind == 'run' else []
@@ -130,7 +130,7 @@ def build_family(request, compiler, *, seconds=10):
                 for k, option in enumerate(options):
                     if option['leg'] != leg:
                         continue
-                    ranges = intervals(option['faces'], [option['gate']], 0, profiles[leg]['airtime'])
+                    ranges = intervals(option['faces'], [option['gate']], 0, profiles[leg]['duration'])
                     for where, at in [('in', age), ('out', age+1)]:
                         if kind == 'run':
                             at = 0

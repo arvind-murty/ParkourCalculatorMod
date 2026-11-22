@@ -114,7 +114,7 @@ struct WalkOff {
 };
 
 struct Profile {
-    std::int64_t airtime = 0;
+    std::int64_t duration = 0;
     std::vector<Num> position, velocity;
     std::vector<bool> grounded, jump, sneak, ladder_ticks;
     std::vector<VerticalContact> contacts;

@@ -374,7 +374,7 @@ class BlockTableEncounterTests(unittest.TestCase):
         with compiler() as java:
             gate = InteractionGate(scene, java, seconds=10)
             for node in nodes(scene, roots, gate):
-                prepared = gate.prepare(node) if node['profile']['airtime'] else None
+                prepared = gate.prepare(node) if node['profile']['duration'] else None
                 if prepared is None:
                     continue
                 route, profile, plan = prepared['route'], prepared['profiles'][0], prepared['plan']

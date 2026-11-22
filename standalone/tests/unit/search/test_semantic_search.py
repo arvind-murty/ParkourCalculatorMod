@@ -31,7 +31,7 @@ class SemanticStageTests(unittest.TestCase):
             p=program(scene,21,17);p['terminalSupport']='wall'
             yield p
         def evaluate(s,p,compiler,adapter,work,motion,**kwargs):
-            work.before_solve({});scored.append(p['profile']['airtime']);n=p['profile']['airtime']
+            work.before_solve({});scored.append(p['profile']['duration']);n=p['profile']['duration']
             best=dict(candidate=dict(yaw=[0.]*n,positions=[[.5,0.]]*(n+1),velocity=[[.2,0.]]*(n+1),objective=0.),
                 plan=dict(ticks=n,walls=[]),profiles=[p['profile']],allocation=[0],cost=0)
             work.deadline=0.
@@ -73,7 +73,7 @@ class SemanticStageTests(unittest.TestCase):
                 p=program(scene,n,17);p['terminalSupport']='wall'
                 yield p
         def evaluate(s,p,compiler,adapter,work,motion,**kwargs):
-            work.before_solve({});n=p['profile']['airtime']
+            work.before_solve({});n=p['profile']['duration']
             best=dict(candidate=dict(yaw=[0.]*n,positions=[[.5,0.]]*(n+1),velocity=[[.2,0.]]*(n+1),objective=0.),
                 plan=dict(ticks=n,walls=[]),profiles=[p['profile']],allocation=[0],cost=0)
             work.deadline=0.
@@ -146,9 +146,9 @@ class SemanticStageTests(unittest.TestCase):
         domain=InitialJumpDomain([0,8],max_inputs=30)
         self.assertTrue(domain(p))
         self.assertTrue(InitialJumpDomain([9,10,11],max_inputs=30)(dict(profile=dict(
-            airtime=12,jump=[False]*10+[True,False],grounded=[True]*13))))
+            duration=12,jump=[False]*10+[True,False],grounded=[True]*13))))
         self.assertFalse(hasattr(domain,'remaining'))
-        p['profile'].update(airtime=12,jump=[False]*9+[True]+[False]*2,grounded=[True]*13)
+        p['profile'].update(duration=12,jump=[False]*9+[True]+[False]*2,grounded=[True]*13)
         self.assertFalse(domain(p))
         self.assertTrue(InitialJumpDomain(None,max_inputs=30)(p))
         p['profile']['jump'][9]=False;p['profile']['jump'][8]=True

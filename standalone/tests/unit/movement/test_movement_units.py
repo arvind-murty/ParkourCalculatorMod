@@ -77,7 +77,7 @@ class MovementUnitTests(unittest.TestCase):
         _, episodes, complete = airborne_case()
         prefix = compose_ladder_episodes(1, None, episodes[:1], max_inputs=60)
         self.assertEqual(prefix['terminal'], 'airborne')
-        self.assertEqual(prefix['profile']['airtime'], 6)
+        self.assertEqual(prefix['profile']['duration'], 6)
         self.assertEqual(prefix['trace']['position'], complete['trace']['position'][:7])
         self.assertEqual(prefix['trace']['velocity'], complete['trace']['velocity'][:7])
         self.assertFalse(prefix['trace']['onGround'][-1])
@@ -112,7 +112,7 @@ class MovementUnitTests(unittest.TestCase):
         _, _, program = airborne_case()
         units = program['movementUnits']
         self.assertEqual([u['type'] for u in units], ['ladder_climb', 'normal', 'ladder_climb', 'normal'])
-        masks = compile_units(program['profile']['airtime'], units)
+        masks = compile_units(program['profile']['duration'], units)
         self.assertEqual(masks['ladderTicks'], program['profile']['ladderTicks'])
         self.assertEqual(masks['hit'], program['trace']['hit'])
         self.assertNotEqual(program['trace']['velocity'][11], REST_CARRY)

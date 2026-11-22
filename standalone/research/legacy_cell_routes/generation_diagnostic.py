@@ -14,7 +14,7 @@ def physical_key(program):
 
 def execution_key(program):
     p = program['profile']
-    return json.dumps({k:p[k] for k in ('airtime','position','velocity','grounded','jump','sneak','ladderTicks',
+    return json.dumps({k:p[k] for k in ('duration','position','velocity','grounded','jump','sneak','ladderTicks',
                                        'contacts','contactEvents','caseEvents')},sort_keys=True)
 
 

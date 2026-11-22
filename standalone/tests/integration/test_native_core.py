@@ -117,7 +117,7 @@ class ProgramModelTests(unittest.TestCase):
             self.assert_round_trips(self.native.round_trip_choice, choice)
             program = append_choice(program, choice)
             self.assert_round_trips(self.native.round_trip_program, program)
-            cut = program['profile']['airtime']
+            cut = program['profile']['duration']
         self.assertTrue(any(u.get('effects') for u in program['movementUnits']))
 
     def test_number_kinds_absent_keys_and_annotations_survive(self):
@@ -131,7 +131,7 @@ class ProgramModelTests(unittest.TestCase):
         from parkour_solver.movement.program import empty_program
         program = empty_program(dict(position=[1, 64, 1], velocity=[0, 0., 0]), threshold=0.)
         cases = [(('profile', 'typo'), 1, 'program.profile: unknown key typo'),
-                 (('profile', 'airtime'), 1., 'program.profile.airtime: expected int'),
+                 (('profile', 'duration'), 1., 'program.profile.duration: expected int'),
                  (('initial', 'position'), '64', 'program.initial.position: expected number'),
                  (('profile', 'velocity'), [2**60], r'program.profile.velocity\[0\]: int outside')]
         for (record, key), value, message in cases:
@@ -158,7 +158,7 @@ class GatePreparationTests(unittest.TestCase):
                 gate = InteractionGate(scene, java, seconds=10)
                 gate.native = None  # the Python oracle, whatever PKC_NATIVE_CORE says
                 for node in nodes(scene, roots, gate):
-                    if not node['profile']['airtime']:
+                    if not node['profile']['duration']:
                         continue
                     expected = {k: v for k, v in gate.prepare(node).items() if k != 'key'}
                     self.assertEqual(canonical(self.native.gate_prepare(scene, node, False)), canonical(expected))
@@ -178,7 +178,7 @@ class GatePreparationTests(unittest.TestCase):
                 python, native = InteractionGate(scene, bridge, seconds=10), InteractionGate(scene, bridge, seconds=10)
                 python.native, native.native = None, self.native
                 for node in nodes(scene, roots, generator):
-                    if not node['profile']['airtime']:
+                    if not node['profile']['duration']:
                         continue
                     expected = python.required(node)
                     self.assertEqual(same(native.required(node)), same(expected))
@@ -201,7 +201,7 @@ class GatePreparationTests(unittest.TestCase):
                 python, native = InteractionGate(scene, java, seconds=10), InteractionGate(scene, java, seconds=10)
                 python.native, native.native = None, self.native
                 for node in nodes(scene, roots, python):
-                    if not node['profile']['airtime']:
+                    if not node['profile']['duration']:
                         continue
                     for complete in (False, True):
                         try:
@@ -223,7 +223,7 @@ class GatePreparationTests(unittest.TestCase):
             InteractionGate(scene, None).prepare(prefix, require_complete=True)
         with self.assertRaisesRegex(ValueError, 'An open prefix is not a completed goal route'):
             self.native.gate_prepare(scene, prefix, True)
-        empty = dict(prefix, profile=dict(prefix['profile'], airtime=0))
+        empty = dict(prefix, profile=dict(prefix['profile'], duration=0))
         with self.assertRaisesRegex(ValueError, 'An empty prefix is not a complete movement route'):
             self.native.gate_prepare(scene, empty, False)
 
@@ -317,7 +317,7 @@ class EnvelopeTests(unittest.TestCase):
                 gate = InteractionGate(scene, bridge, seconds=10)
                 gate.native = None
                 for node in nodes(scene, roots, gate):
-                    analysis = gate.analyze(node) if node['profile']['airtime'] else None
+                    analysis = gate.analyze(node) if node['profile']['duration'] else None
                     if analysis is None:
                         continue
                     model, y, ticks = analysis['model'], analysis['y'], analysis['model']['ticks']

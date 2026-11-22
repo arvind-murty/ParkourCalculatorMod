@@ -6,7 +6,7 @@ from parkour_solver.movement.ceiling_profiles import ceiling_profile, ceiling_se
 from parkour_solver.movement.contact_combinations import (bounding_region, contact_event, finite_rows, reachable_option,
                                                           region_choices, scene_contact_options)
 from parkour_solver.movement.units import profile_program, shifted_unit
-from parkour_solver.reachability.service import candidate_option
+from parkour_solver.reachability.service import behind_decision, candidate_option, entry_backward
 
 
 def grind_options(context, feet, allowed=None):
@@ -23,7 +23,7 @@ def grind_options(context, feet, allowed=None):
         if not 0 <= clearance < f32(.42) or allowed is not None and not any(allowed(list(box), owner) for box in option.boxes):
             continue
         option = reachable_option(context, option, 1, jumping=True, label=dict(owner=owner, role='grind'))
-        if option is None:
+        if option is None or behind_decision(context, option.regions, 1, jumping=True, label=dict(owner=owner, role='grind')):
             continue
         under = [dict(r, name='case:finite') for r in finite_rows(1, bounding_region(option.regions), t1=1)]
         regions = [dict(offset=1, surface=option.surface, owner=owner,
@@ -33,7 +33,8 @@ def grind_options(context, feet, allowed=None):
             box = scene['collisionScene']['solids'][index]
             for axis in ('X', 'Z'):
                 for sign in (-1, 1):
-                    if exposed_side(scene, blocks[index], axis, sign, option.plane):
+                    if exposed_side(scene, blocks[index], axis, sign, option.plane) and not entry_backward(
+                            context, axis, sign, bounding_region(option.regions), label=dict(owner=owner, role='grind')):
                         event = dict(case='grind', input=0, plane=feet, clearance=clearance,
                                      boxes=[list(b) for b in option.boxes], anchors={'beforeJump': 0, 'jump': 1})
                         yield event, [outside_row(box, axis, sign, 0, 'grind:outside')] + under, regions
@@ -106,7 +107,8 @@ def open_ceiling_choices(context):
             if hit is None:
                 continue
             reached = reachable_option(context, option, hit, jumping=jumping, label=dict(owner=owner, role='ceiling'))
-            if reached is None:
+            if reached is None or behind_decision(context, reached.regions, hit, jumping=jumping,
+                                                  label=dict(owner=owner, role='ceiling')):
                 continue
             event = contact_event(reached, 'Y', 1, hit, 'ceiling', blockId=owner)
             choice = event_choice(context, 'ceiling', state, hit + 1, jumping=jumping, finite=[event],

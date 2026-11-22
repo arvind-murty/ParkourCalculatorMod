@@ -23,7 +23,7 @@ def empty_program(initial, *, threshold=.005):
     if number(threshold, 'program threshold') < 0:
         raise ValueError('Program threshold must be nonnegative')
     initial = scalar_initial(initial)
-    profile = dict(airtime=0, position=[initial['position']], velocity=[initial['velocity']],
+    profile = dict(duration=0, position=[initial['position']], velocity=[initial['velocity']],
         grounded=[initial['onGround']], jump=[], sneak=[], ladderTicks=[False], contacts=[],
         contactEvents=[], caseEvents=[], positionConstraints=[], generatedUnits=[],
         composition='movement_program', landingPhase='post')
@@ -37,10 +37,10 @@ def empty_program(initial, *, threshold=.005):
 def boundary_state(program, on_ladder=False):
     profile = program['profile']
     vy = profile['velocity'][-1]
-    if profile['airtime'] and on_ladder != profile['ladderTicks'][-1]:
+    if profile['duration'] and on_ladder != profile['ladderTicks'][-1]:
         vy = vertical_carry(program['trace']['movement'][-1], on_ladder, program['trace']['hit'][-1])
     return dict(position=profile['position'][-1], velocity=vy, onGround=profile['grounded'][-1],
-                previousHorizontalCollision=(program['trace']['hit'][-1] if profile['airtime'] else
+                previousHorizontalCollision=(program['trace']['hit'][-1] if profile['duration'] else
                                              program['initial']['previousHorizontalCollision']))
 
 
@@ -54,7 +54,7 @@ def profile_from_trace(trace, *, contacts=(), cases=(), constraints=(), units=No
 def _profile(trace, contacts, cases, constraints, units, landing_phase, region_choices):
     """Assemble a profile around lists the caller owns; their elements are not copied."""
     n = trace['ticks']
-    profile = dict(airtime=n, position=trace['position'], velocity=trace['velocity'], grounded=trace['onGround'],
+    profile = dict(duration=n, position=trace['position'], velocity=trace['velocity'], grounded=trace['onGround'],
         jump=[v is not None for v in trace['vertical']['jumpVelocity']], sneak=trace['sneak'],
         ladderTicks=trace['ladderTicks'], contacts=trace['vertical']['contacts'],
         contactEvents=contacts, caseEvents=cases, positionConstraints=constraints, landingPhase=landing_phase,
@@ -134,7 +134,7 @@ def _events(events, trace):
 
 def append_choice(program, choice, *, max_inputs=200):
     old, tail = program['profile'], choice['profile']
-    cut, size = old['airtime'], tail['airtime']
+    cut, size = old['duration'], tail['duration']
     integer(size, 'movement choice duration', 1, 200)
     if cut + size > min(max_inputs, 200):
         return None
@@ -170,7 +170,7 @@ def _extend(program, choice):
     """Trace only the new ticks from the parent's end state and share the parent's content: a built program's
     content never changes, and appending never rewrites a parent state (tracing is Markov in Y, VY and ground)."""
     old, tail, parent = program['profile'], choice['profile'], program['trace']
-    cut, size = old['airtime'], tail['airtime']
+    cut, size = old['duration'], tail['duration']
     # New contact events land after the parent's last state, so only they need merging.
     contacts = _contacts([dict(c, offset=cut + c['offset']) for c in tail['contactEvents']])
     hit = [any(c['axis'] != 'Y' and c['offset'] == cut + t for c in contacts) for t in range(size)]
@@ -220,7 +220,7 @@ def _extend(program, choice):
 
 def _rebuild(program, choice):
     old, tail = program['profile'], choice['profile']
-    cut, size = old['airtime'], tail['airtime']
+    cut, size = old['duration'], tail['duration']
     jump = old['jump'] + tail['jump']
     sneak = old['sneak'] + tail['sneak']
     ladder = old['ladderTicks'][:-1] + [old['ladderTicks'][-1] or tail['ladderTicks'][0]] + tail['ladderTicks'][1:]
@@ -280,14 +280,14 @@ def _rebuild(program, choice):
             and c.get('ownerRegion') == event['column']['id'] and max(0, s['entryState'] - 1) <= c['offset'] < s['exitState']]
     profile = profile_from_trace(trace, contacts=contacts, cases=cases, constraints=constraints,
                                  units=units, landing_phase=tail['landingPhase'], region_choices=region_choices)
-    masks = compile_units(profile['airtime'], units)
+    masks = compile_units(profile['duration'], units)
     if events and masks['ladderTicks'] != ladder:
         raise ValueError('Movement units disagree with composed ladder membership')
     return profile, events, units, trace
 
 
 def truncate_program(program, ticks):
-    n = program['profile']['airtime']
+    n = program['profile']['duration']
     integer(ticks, 'prefix ticks', 1, n)
     if ticks == n:
         return copy.deepcopy(program)
@@ -297,7 +297,7 @@ def truncate_program(program, ticks):
     result.pop('parentTicks', None)
     result.pop('prefixChain', None)
     profile = result['profile']
-    profile['airtime'] = ticks
+    profile['duration'] = ticks
     for key in ('position', 'velocity', 'grounded', 'ladderTicks'):
         profile[key] = profile[key][:ticks+1]
     for key in ('jump', 'sneak'):
@@ -357,7 +357,7 @@ def _chain(profile, through, anchor=None):
     and the contacts, events, rows and region choices that act at it; anything past the last state counts at the
     last state."""
     start, h = (anchor[0]+1, bytes.fromhex(anchor[1])) if anchor else (0, _CHAIN_SEED)
-    n = profile['airtime']
+    n = profile['duration']
     owned = [dict(contacts=[], contactEvents=[], caseEvents=[], rows=[], regionChoices=[]) for _ in range(start, through+1)]
     for field, items, key, shift in (('contacts', profile['contacts'], 'state', 0),
                                      ('contactEvents', profile['contactEvents'], 'offset', 1),
@@ -389,7 +389,7 @@ _PREFIXES = {}
 
 def prefix_chain(program):
     """[n-1, hex] over a program's states before its last, which a child never rewrites; None for an empty one."""
-    n = program['profile']['airtime']
+    n = program['profile']['duration']
     if not n:
         return None
     cached = _PREFIXES.get(id(program))
@@ -399,7 +399,7 @@ def prefix_chain(program):
 
 
 def _remember(program, before):
-    _PREFIXES[id(program)] = entry = program, [program['profile']['airtime']-1, before.hex()]
+    _PREFIXES[id(program)] = entry = program, [program['profile']['duration']-1, before.hex()]
     while len(_PREFIXES) > 1024:
         _PREFIXES.pop(next(iter(_PREFIXES)))
     return entry
@@ -407,7 +407,7 @@ def _remember(program, before):
 
 def program_physics_key(program):
     profile = program['profile']
-    n = profile['airtime']
+    n = profile['duration']
     before, h = _chain(profile, n, program.get('prefixChain'))
     if n and id(program) not in _PREFIXES:
         _remember(program, before)
@@ -427,7 +427,7 @@ def program_search_key(program):
 
 def compile_program(scene, program, *, require_complete=True):
     from parkour_solver.movement.profiles import compile_block_path
-    if not program['profile']['airtime']:
+    if not program['profile']['duration']:
         raise ValueError('An empty prefix is not a complete movement route')
     if require_complete and (not program['profile']['grounded'][-1] or program['terminalSupport'] != scene['goalBlock']):
         raise ValueError('An open prefix is not a completed goal route')

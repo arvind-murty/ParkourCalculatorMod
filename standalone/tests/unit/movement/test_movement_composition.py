@@ -133,7 +133,7 @@ class MovementCompositionTests(unittest.TestCase):
             r=chain_programs(first,columns,[],{'top':8,'bounds':[-1,1,9,15]},max_inputs=100,max_interactions=5)
         self.assertTrue(any(len(p['episodes'])==5 for p in r['programs']))
         final=next(p for p in r['programs'] if len(p['episodes'])==5)
-        self.assertEqual(final['profile']['airtime'],58)
+        self.assertEqual(final['profile']['duration'],58)
         self.assertEqual(sum(final['profile']['jump']),1)
         self.assertFalse(any(final['profile']['grounded'][1:-1]))
         self.assertEqual(r['expandedPrefixes'],5)
@@ -163,11 +163,11 @@ class MovementCompositionTests(unittest.TestCase):
             wall['parts']=[{'solidIndex':i,'box':[1,0,2*i,2,i+2,2*i+1]}]
             result=append_ladder_programs(prefix,column,wall,toward=[.7,9],
                 max_inputs=110,max_entry=6,max_programs=64)
-            options=[p for p in result['programs'] if p['episodes'][-1]['entryState']==prefix['profile']['airtime']+5
+            options=[p for p in result['programs'] if p['episodes'][-1]['entryState']==prefix['profile']['duration']+5
                      and p['episodes'][-1]['exitKind']=='top']
             self.assertTrue(options,{'count':i+1,'generation':result.get('generation')})
             next_prefix=options[0]
-            cut=prefix['profile']['airtime']
+            cut=prefix['profile']['duration']
             self.assertEqual(next_prefix['trace']['position'][:cut+1],prefix['trace']['position'])
             self.assertEqual(next_prefix['trace']['velocity'][:cut+1],prefix['trace']['velocity'])
             prefix=next_prefix

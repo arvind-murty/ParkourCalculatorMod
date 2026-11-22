@@ -101,7 +101,7 @@ def build_transition_graph(scene, compiler, *, seconds=5):
                 if combination_key not in profile_cache:
                     from parkour_solver.movement.contact_combinations import wall_heights
                     from parkour_solver.movement.contact_profiles import contact_opportunities, generate_contact_profiles
-                    horizon = max((p['airtime'] for _, p, _ in profile_cache[key]), default=0)
+                    horizon = max((p['duration'] for _, p, _ in profile_cache[key]), default=0)
                     opportunities = [e for e in contact_opportunities(scene['collisionScene']['solids'], horizon,
                         block_ids=[solid_owners[i] for i in range(len(solid_owners))], ceilings=scene['ceilingHits'],
                         horizontal=scene['maxWallHits'] > 0)
@@ -125,7 +125,7 @@ def build_transition_graph(scene, compiler, *, seconds=5):
                 from parkour_solver.movement.cases import entry_possible
                 if not entry_possible(profile, bounds[source['id']]):
                     continue
-                n = profile['airtime']
+                n = profile['duration']
                 classic = profile['grounded'][0] and not any(profile['grounded'][1:-1]) and not any(profile['jump'][1:])
                 motion_key = (('jump:' if profile['jump'][0] else 'run_off:') + str(n) if classic else
                               ''.join('J' if j else 'G' if g else 'A'
@@ -150,7 +150,7 @@ def build_transition_graph(scene, compiler, *, seconds=5):
                 if gap > radius:
                     rejected.append({'source': source['id'], 'target': target['id'],
                                      'reason': 'optimistic_horizontal_reach', 'gap': gap,
-                                     'radius': radius, 'airtime': n, 'profileKind': kind})
+                                     'radius': radius, 'duration': n, 'profileKind': kind})
                     continue
                 if target['id'] not in edge_options[source['id']]:
                     adjacency[source['id']].append(target['id'])
@@ -179,7 +179,7 @@ def build_transition_graph(scene, compiler, *, seconds=5):
         if cost != flight_to_goal[target]:
             continue
         for source in reverse[target]:
-            next_cost = cost + min(transitions[e]['profile']['airtime'] for e in edge_options[source][target])
+            next_cost = cost + min(transitions[e]['profile']['duration'] for e in edge_options[source][target])
             if next_cost < flight_to_goal.get(source, math.inf):
                 flight_to_goal[source] = next_cost
                 heapq.heappush(pending, (next_cost, source))
@@ -222,8 +222,8 @@ def search_block_paths(scene, graph, evaluate, *, seconds=60, improve=False, can
             horizon_prunes += 1
             return
         serial += 1
-        prefix_inputs = (sum(graph['transitions'][e]['profile']['airtime'] for e in selected) if selected else
-                         sum(graph.get('profiles', {}).get(a, {}).get(b, {'airtime': 12})['airtime']
+        prefix_inputs = (sum(graph['transitions'][e]['profile']['duration'] for e in selected) if selected else
+                         sum(graph.get('profiles', {}).get(a, {}).get(b, {'duration': 12})['duration']
                              for a, b in zip(path, path[1:])))
         lower_inputs = prefix_inputs + graph.get('flightInputsToGoal', {}).get(current, 12 * distances[current])
         if best is not None and lower_inputs > best['plan']['ticks']:

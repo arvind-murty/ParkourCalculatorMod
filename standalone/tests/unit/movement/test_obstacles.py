@@ -160,7 +160,7 @@ class BlockageTests(unittest.TestCase):
                 horizontal_ok = all((positions[r['t1']][0 if r['mode'] == 'X' else 2] >= r['rhs']
                                      if r['cmp'] == 'GE' else positions[r['t1']][0 if r['mode'] == 'X' else 2] <= r['rhs'])
                                     for r in rows)
-                profile = {'airtime': 1, 'position': [p[1] for p in positions]}
+                profile = {'duration': 1, 'position': [p[1] for p in positions]}
                 self.assertEqual(not failures and horizontal_ok and passage_y_valid(passage, event, profile),
                                  case['directClippedAxis'] == 'none')
 

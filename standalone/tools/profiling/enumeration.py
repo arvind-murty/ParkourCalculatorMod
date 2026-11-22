@@ -89,7 +89,7 @@ def instrument(profile, parent):
         def evaluate(scene, program, *args, **kwargs):
             row = dict(index=len(profile.evaluations)+1,
                 blocks={b['solidIndex']: b['sourceBlock'] for b in scene['blocks']},
-                ticks=program['profile']['airtime'], jumpInputs=[i for i, j in enumerate(program['profile']['jump']) if j])
+                ticks=program['profile']['duration'], jumpInputs=[i for i, j in enumerate(program['profile']['jump']) if j])
             profile.evaluations.append(row)
             previous, profile.active = profile.active, row
             try:

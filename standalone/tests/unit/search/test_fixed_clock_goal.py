@@ -25,8 +25,8 @@ class FixedClockTests(unittest.TestCase):
             try:return next(g)
             finally:g.close()
         ordinary,ranked=first(None),first(policy.priority)
-        self.assertEqual(ordinary['profile']['airtime'],16)
-        self.assertEqual(ranked['profile']['airtime'],16)
+        self.assertEqual(ordinary['profile']['duration'],16)
+        self.assertEqual(ranked['profile']['duration'],16)
         self.assertEqual(policy.audit(ordinary)['progress'],0)
         self.assertEqual(policy.audit(ranked)['progress'],1)
 
@@ -59,8 +59,8 @@ class FixedClockTests(unittest.TestCase):
             checkpoint_tick=2,deadline=time.monotonic()+2,context_adapter=lambda c:c.update(interactionGate=None)),1))
         new=list(itertools.islice(iter_movement_programs(scene,initial_programs=[seed],threshold=0.,
             checkpoint_tick=2,deadline=time.monotonic()+2,stop_on_goal=False,context_adapter=lambda c:c.update(interactionGate=None)),1))
-        self.assertEqual(old[0]['profile']['airtime'],1)
-        self.assertEqual(new[0]['profile']['airtime'],2)
+        self.assertEqual(old[0]['profile']['duration'],1)
+        self.assertEqual(new[0]['profile']['duration'],2)
 
 
 @unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'),
@@ -137,7 +137,7 @@ class SupportOrderTests(unittest.TestCase):
         scene=flat_scene()
         policy=SupportOrder(scene,['goal'],8)
         goal=scene['collisionScene']['solids'][1]
-        program=dict(profile=dict(airtime=8,contactEvents=[dict(offset=4,axis='Y',direction=-1,boxes=[goal])]))
+        program=dict(profile=dict(duration=8,contactEvents=[dict(offset=4,axis='Y',direction=-1,boxes=[goal])]))
         self.assertTrue(policy(program))
 
         self.assertEqual(policy.audit(program)['observed'],[dict(tick=5,block='goal')])
@@ -145,7 +145,7 @@ class SupportOrderTests(unittest.TestCase):
         self.assertTrue(policy(program))
         program['profile']['contactEvents']=[]
         self.assertFalse(policy(program))
-        program['profile']['airtime']=4
+        program['profile']['duration']=4
         self.assertTrue(policy(program))
 
 

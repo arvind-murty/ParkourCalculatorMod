@@ -114,7 +114,7 @@ class PersistentGenerationTests(unittest.TestCase):
     def test_route_side_still_allows_clearing_an_obstacle_vertically(self):
         from parkour_solver.constraints.variants import ConstraintVariants
         route=dict(passageCaps=dict(horizontal=2,vertical=2,total=3),supportClearance=1e-6)
-        profile=dict(airtime=3,position=[1.,2.5,2.5,1.])
+        profile=dict(duration=3,position=[1.,2.5,2.5,1.])
         positions=[[-.5,.5],[.5,-.5],[1.5,-.5],[2.5,-.5]]
         box=[0.,0.,0.,1.,2.,1.]
         envelope=reachable_envelopes(dict(ticks=3,position=positions[0],velocity=[0.,0.],
@@ -135,7 +135,7 @@ class PersistentGenerationTests(unittest.TestCase):
         scene=dict(scene,movementSearch=cfg.copy())
         root=empty_program(scene['initial'],threshold=0.)
         def child(program, choice, **kwargs):
-            p=copy.deepcopy(root);q=p['profile'];q.update(airtime=1,position=[1.,1.],velocity=[0.,0.],grounded=[True,True],
+            p=copy.deepcopy(root);q=p['profile'];q.update(duration=1,position=[1.,1.],velocity=[0.,0.],grounded=[True,True],
                 jump=[False],sneak=[False],ladderTicks=[False,False],positionConstraints=[dict(mode='X',t1=1,cmp='GE',rhs=float(choice))])
             p['marker']=choice
             return p
@@ -177,7 +177,7 @@ class PersistentGenerationTests(unittest.TestCase):
     def test_constraint_generation_cursor_survives_a_new_facing_guess(self):
         from parkour_solver.constraints.variants import ConstraintVariants
         route=dict(passageCaps=dict(horizontal=2,vertical=2,total=3),supportClearance=1e-6)
-        profile=dict(airtime=4,position=[1.]*5)
+        profile=dict(duration=4,position=[1.]*5)
         plan=dict(events=[dict(jump=0,landing=4,runTicks=0)])
         geometry=dict(solids=[[0.,0.,-.2,1.,5.,.2]])
         envelope=reachable_envelopes(dict(ticks=4,position=[-2.,0.],velocity=[1.,0.],magnitude=[.3]*4,friction=[.9]*4,walls=[]),[1.]*5)
@@ -216,7 +216,7 @@ class StateProtectionTests(unittest.TestCase):
         self.assertEqual(len(retain_two_goals([a,b],cap=10)[0]),2)
 
     def test_queue_key_counts_effective_grounded_inputs(self):
-        p=dict(profile=dict(airtime=4,grounded=[True,True,False,False,False],jump=[False,True,True,False]))
+        p=dict(profile=dict(duration=4,grounded=[True,True,False,False,False],jump=[False,True,True,False]))
         self.assertEqual(processing_key(p,'x'),(4,-1,1,'x'))
 
 

@@ -42,7 +42,7 @@ class SteppingCaseTests(unittest.TestCase):
         profile.pop('generatedUnits')
         compiled = compile_block_path(scene, ['start', 'goal'], [edge])
         self.assertEqual(compiled['route']['landingPhases'], ['pre'])
-        self.assertIn((profile['airtime'] - 1, 1, 'landing'), schedule(compiled['route'], [0])['supportChecks'])
+        self.assertIn((profile['duration'] - 1, 1, 'landing'), schedule(compiled['route'], [0])['supportChecks'])
 
     def test_legacy_boost_profile_is_adapted_to_its_registered_owner(self):
         from parkour_solver.movement.profiles import stair_jump_profile

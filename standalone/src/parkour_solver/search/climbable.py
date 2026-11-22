@@ -31,7 +31,7 @@ def ordinary_paths(graph, start, hops, limit, goal=None):
         for target in graph['adjacency'].get(path[-1], []):
             for edge in graph['edgeOptions'][path[-1]][target]:
                 serial += 1
-                heapq.heappush(pending, (cost + graph['transitions'][edge]['profile']['airtime'],
+                heapq.heappush(pending, (cost + graph['transitions'][edge]['profile']['duration'],
                                         contact_count + len(graph['transitions'][edge]['profile'].get('contactEvents', [])), serial,
                                         path + (target,), edges + (edge,)))
     return result
@@ -58,7 +58,7 @@ def run_allocations(legs, per_leg, total, limit):
 def _prefix(scene, graph, path, edges, target, allocation, compiler, seconds):
     from parkour_solver.movement.profiles import compile_block_path
     source = next(b for b in scene['blocks'] if b['id'] == path[-1])
-    dummy = {'airtime': 2, 'contacts': [], 'position': [source['top']] * 3,
+    dummy = {'duration': 2, 'contacts': [], 'position': [source['top']] * 3,
              'velocity': [-(.08) * f32(.98)] * 3, 'grounded': [True, False, True], 'jump': [True, False]}
     selected = selected_edges(graph, edges) + [
         {'source': path[-1], 'target': target, 'profileKind': 'ordinary', 'profile': dummy, 'entryFace': None, 'exitFace': None}]
@@ -159,7 +159,7 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
     prefixes = ordinary_paths(graph, scene['startBlock'], scene['maxJumps'] - 1, cfg['maxOrdinaryPaths'])
     pending, prefix_serial, seen_prefixes, prefix_drops = [], 0, set(), 0
     for path, edges in prefixes:
-        cost = sum(e['profile']['airtime'] for e in selected_edges(graph, edges))
+        cost = sum(e['profile']['duration'] for e in selected_edges(graph, edges))
         heapq.heappush(pending, (cost, prefix_serial, path, edges, None))
         prefix_serial += 1
     termination = 'search_exhausted'
@@ -292,7 +292,7 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
                             context_deadline = min(deadline, time.monotonic() + route_seconds)
                             for ranked in (ranking['ranked'] + ranking['backups'])[:cfg['maxNumericalSchedules']]:
                                 s = ranked['schedule']
-                                prefix_cost = sum(e['profile']['airtime'] for e in selected_edges(graph, prefix_edges + suffix_edges)) + sum(allocation)
+                                prefix_cost = sum(e['profile']['duration'] for e in selected_edges(graph, prefix_edges + suffix_edges)) + sum(allocation)
                                 minimum_duration = s['exitState'] + 1 if cfg['maxTransferPrograms'] and len(used_columns) + 2 <= cfg['maxInteractions'] else s['ticks']
                                 if best is not None and minimum_duration + prefix_cost > best['plan']['ticks']:
                                     continue
@@ -311,7 +311,7 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
                                 for face in faces:
                                     if time.monotonic() >= context_deadline:
                                         break
-                                    profile = {'airtime': s['ticks'], 'landingPhase': 'pre', 'position': s['trace']['position'],
+                                    profile = {'duration': s['ticks'], 'landingPhase': 'pre', 'position': s['trace']['position'],
                                         'velocity': s['trace']['velocity'], 'grounded': s['trace']['onGround'],
                                         'contacts': s['trace']['vertical']['contacts'], 'jump': [v is not None for v in s['trace']['vertical']['jumpVelocity']],
                                         'sneak': s['sneak'], 'ladderTicks': s['ladderTicks'],
@@ -388,7 +388,7 @@ def find_climbable_blocks(scene, compiler, normal_solver, *, seconds=60, route_s
                                                     next_path = tuple(full_path) + ordinary_path[1:]
                                                     next_edges = tuple(edges) + ordinary_edges
                                                     runs = list(allocation) + [0] * len(ordinary_edges)
-                                                    cost = sum(e['profile']['airtime'] for e in selected_edges(graph, next_edges)) + sum(runs)
+                                                    cost = sum(e['profile']['duration'] for e in selected_edges(graph, next_edges)) + sum(runs)
                                                     heapq.heappush(pending, (cost, prefix_serial, next_path, next_edges, runs))
                                                     prefix_serial += 1
                                                 record['prefixOffers'] = record.get('prefixOffers', 0) + 1

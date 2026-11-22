@@ -91,15 +91,15 @@ class EventSearchTests(unittest.TestCase):
         def generate(s,*,report,initial_programs,**kwargs):
             report['continuation']=dict(expanded=1,exhausted=True)
             parent=initial_programs[0]
-            n=parent['profile']['airtime']+10
+            n=parent['profile']['duration']+10
             p=program(s,n,n);p['terminalSupport']=s['goalBlock']
             target=next(b for b in s['blocks'] if b['id']==s['goalBlock'])
             p['profile']['position'][-1]=target['top']
             p['profile']['contactEvents']=[dict(offset=n-1,axis='Y',direction=-1,boxes=[s['collisionScene']['solids'][target['solidIndex']]])]
             yield p
         def evaluate(s,p,compiler,adapter,work,motion,**kwargs):
-            work.before_solve({});dispatched.append((p['terminalSupport'],p['profile']['airtime']))
-            n=p['profile']['airtime']
+            work.before_solve({});dispatched.append((p['terminalSupport'],p['profile']['duration']))
+            n=p['profile']['duration']
             best=dict(candidate=dict(yaw=[0.]*n,positions=[[.5,0.]]*(n+1),velocity=[[0.,0.]]*(n+1),objective=0.),
                 plan=dict(ticks=n,walls=[]),profiles=[p['profile']],allocation=[0],cost=0)
             return dict(status='feasible',termination='done',best=best,work=dict(solverCalls=1),fullSceneValidated=True)
@@ -120,7 +120,7 @@ class EventSearchTests(unittest.TestCase):
         self.assertEqual(dfs['version'],8)
         child_owner=dfs['discovery'][dfs['pendingGoalOwner']]
         self.assertEqual(child_owner['index'],1)
-        self.assertEqual(child_owner['parents'][0]['profile']['airtime'],10)
+        self.assertEqual(child_owner['parents'][0]['profile']['duration'],10)
         root=next(d for d in dfs['discovery'].values() if d['parent'] is None)
         mid=[f for f in dfs['stack']+dfs['goalQueue'] if f['owner']==root['owner'] and f['goal']['block']=='mid']
         self.assertEqual(len(mid),1)

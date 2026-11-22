@@ -46,7 +46,7 @@ class AnchorAdapter(EventGuideAdapter):
                 continue
             request=dict(schema=1,id='anchor-request:'+digest([cursor,event['id'],target]),
                 event=event['id'],goal=dict(goal,block=target,blocks=[target]),terminal=terminal,
-                commitments=[],semanticPrefix=[],afterTick=min(p['profile']['airtime'] for p in parents),
+                commitments=[],semanticPrefix=[],afterTick=min(p['profile']['duration'] for p in parents),
                 connector=dict(entry=cursor['attachments'],exit=event['attachments']))
             requests.append(request)
         if not requests:
@@ -96,7 +96,7 @@ class AnchorAdapter(EventGuideAdapter):
         result=super().advance(cursor,child,observed,request)
         result['anchorIndex']=result['groupEnd']+1
         result['groupEnd']=self.group_end(result['anchorIndex'])
-        result['spanStart']=child['profile']['airtime']
+        result['spanStart']=child['profile']['duration']
         return result
 
     def context(self, context):

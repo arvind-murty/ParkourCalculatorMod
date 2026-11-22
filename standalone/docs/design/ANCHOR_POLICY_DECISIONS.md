@@ -248,7 +248,7 @@ Track departed owners: the current owner remains eligible for repeated local jum
 
 A required-anchor cursor advances only on its next actual required contact, never from a same-block setup hop. Optional supports are not globally disabled. Required order remains enforced; do not enter a later required anchor prematurely if that would require a currently unsupported return to fulfill the required sequence.
 
-Global hard latches intentionally restrict the transfer to one jump. Same-block setup preparation remains available on the departure anchor in both latched and unlatched spans, including recovery. Do not accidentally remove all same-block hops from the generator while enforcing no inter-block returns.
+Global hard latches intentionally restrict the transfer to one jump. Same-block setup preparation remains available on the departure anchor in both latched and unlatched spans, including recovery. Do not accidentally remove all same-block hops from the generator while enforcing no inter-block returns. At an ordinary decision, a setup jump that does not naturally fit its merged launch face is held as a reserve, not dropped ([O11](#o11--jumps-back-onto-the-launch-face-must-fit-it)).
 
 Current tests must assert both sides: several legal same-block jumps are generated/validated, while A→C→A is excluded as deferred feature scope. Logical DFS backtracking is allowed and is not a physical revisit. No revisit-pair source/family cursor is implemented now; positive-duration horizon and ordinary source limits still bound local chains.
 
@@ -309,28 +309,44 @@ stepping generator's `normal_step`); ladder walk-ins and virtual-goal finishes a
 unchanged. `minimum_runs` (`search/frontier.py`) then adds run ticks, bounded by
 time (user, 2026-11-19/20):
 
+- **Airtime** counts the jump input and the air inputs after it through the
+  landing input: 12 for a flat jump, 3 for a jump under a ceiling 2 blocks above
+  the feet, 2 for a grind, slab boost or corner jump cancel. A run-off has no jump
+  input, so its airtime is its air inputs. (The comparison counts' A is different:
+  air inputs only, with the jump input counted in J; a profile's `duration` counts
+  all of its inputs, run ticks included.)
+- **Built landings.** A ceiling hit's built choice stops at the hit, and a grind's,
+  slab boost's or corner jump cancel's at its jump tick, so each lands in its own
+  child's choice. Its landing on each block is the earliest of those choices that
+  passes the screens (`landings_of`; these screens are not recorded, and the
+  child's own expansion repeats them). These count as jump-now landings below:
+  a grind, slab boost or corner jump cancel is a 2-tick jump, whose input after the
+  jump tick is always airborne (user, 2026-11-21).
 - **N** is P's fastest jump-now landing: on the next anchor if any child lands
   there, else on any block other than P's own. "N is a heuristic for how many run
-  ticks we tolerate."
+  ticks we tolerate": it bounds run ticks only, and a built move that lands past it
+  is kept (user, 2026-11-21).
 - **Candidates** come from `advantageous_candidates` (`search/anchors/policy.py`)
   without building anything: the launch tables (`block_table`) give the blocks and
   undersides, vertical replays give each move's airtime A (A = 2 for slab boosts
-  and corner jump cancels; a ceiling or grind A is inferred to the first landing
-  top, since the built ceiling choice stops at the hit). There are three kinds
-  (user, 2026-11-20):
+  and corner jump cancels; a ceiling or grind A is the earliest descent through any
+  landing top of the launch table, a lower bound since it ignores where the player
+  can be after the hit). There are three kinds (user, 2026-11-20):
   1. **Advantageous jump**: k same-block run ticks then the jump, built while
      k + A < N, cheapest (total, A) first, at most
      `MAX_ADVANTAGEOUS_RUN_TICKS = FLAT_JUMP_TICKS − 1` = 11 run ticks (a flat jump
      lasts 12 ticks), on top of the request caps and the time bound. One beaten on
      both total and A by a kept one (advantageous jump-now children count) is not
-     built.
+     built. A kept one beats with its built landing (total and A), not the table's.
   2. **Run-off onto another block B**: R run ticks, the last walking off the edge
      (it moves as a run tick: a grounded input), then r airborne inputs (0 when it
      lands within the walk-off input). The fewest R, from 1 to 11, with R + r < J_B,
-     the airtime of a jump from P onto B (from the same vertical replay; it may
-     exceed N), offered only when a jump-now child lands on B, since a run-off
-     reaches only blocks close enough to jump onto. The run-off must leave its
-     launch block: see walk-off faces below.
+     the airtime of a jump from P onto B: the vertical replay of an unhit jump,
+     lowered to any jump-now landing on B (built landings included), so
+     it is how long reaching B takes (user, 2026-11-21; it may exceed N). Offered
+     only when a jump-now child lands on B, since a run-off reaches only blocks
+     close enough to jump onto. The run-off must leave its launch block: see
+     walk-off faces below.
   3. **Walking step-up onto another block**: its step input is a run tick too, so 1
      run tick (the step on the first tick), else 2 (one run tick then the step);
      more run-up than that is a slab boost.
@@ -359,13 +375,85 @@ time (user, 2026-11-19/20):
   landing on N's block died, that block is a dead end for this decision and N
   widens to the next landing (the next anchor is never a dead end).
 - **Without N** (no jump-now landing on another block), run counts are scanned
-  until a jump or run-off lands on the next anchor, else on another block; that
-  sets N and its next count is reserved.
+  until a jump (by its built landing) or run-off lands on
+  the next anchor, else on another block; that sets N and its next count is
+  reserved. A run-off's walk-off input counts as a run tick here too, so its A is
+  its airborne inputs.
 
 Every resolution is logged in the frontier's `minimumRunCandidates`. This mirrors
 minimum run ticks for hard jumps (`run_bound`, O7), which is unchanged.
 Turnaround decisions generate run ticks as before and still prefer them
-(`(T,-J,A)`). `searchPolicyVersion` 12 carries this and the decision objectives.
+(`(T,-J,A)`). `searchPolicyVersion` 17 carries this, the decision objectives, O10 and O11.
+
+## O10 — No backward ceiling hits or grinds at ordinary decisions
+
+**Settled (user, 2026-11-21):** an ordinary decision (not a turnaround) generates no
+ceiling hit or grind that sends the player backwards along its guide leg; turnarounds
+are where backward moves belong (O5, O7). The DFS gives the generator context the
+decision's validated point, the unit direction of its current guide leg (the span's
+guide point to the next, horizontal) and the turnaround margin (0.3 blocks). A leg of
+zero horizontal length gives no direction and no filter. The ceiling generator
+(`open_ceiling_choices`, `movement/ceiling_generation.py`) then skips:
+
+- a **ceiling hit or grind behind the decision**: its contact's player-centre regions,
+  clipped to the reachable envelope at the contact input, end more than the margin
+  behind the decision point along the leg (`behind_decision`,
+  `reachability/service.py`). Real11's ceiling hit under B22 from B11 (the B7→B20 leg
+  runs +X+Z, B22 lies at the B11 landing's −Z edge) is one;
+- a **grind entered against the leg**: a grind starts outside one exposed face of the
+  low ceiling and enters under it on the jump tick, so entering from a face whose
+  outward axis points along the leg moves backwards on that axis (`entry_backward`).
+  With a leg running +X+Z, grinds entered from X+ or Z+ are skipped; along a leg that
+  is exactly axis-aligned, the two side faces are kept.
+
+Both skips are logged with the generators' reachability exclusions (reasons
+`behind_decision_point` and `entry_against_guide`), so the solve report lists them per
+frame. Run-tick bases and the peeked children of `landings_of` use their decision's
+point and leg, so minimum-run candidates are filtered the same way.
+
+## O11 — Jumps back onto the launch face must fit it
+
+**Settled (user, 2026-11-21):** at an ordinary decision P, a jump that lands back on
+the face P stands on is generated only when it naturally fits on that face. Otherwise
+it is held as a reserve in case P's run-tick moves fail. Faces are the merged top
+faces landings see (`scene_contact_options` on Y, +1): coplanar touching tops merge
+into one face across blocks, every solid through the plane clips it, and it is widened
+by the player's half-width. After merging, the individual blocks no longer matter
+here, only faces (anchors stay blocks). On a long face (Real11's B1) a hop back onto
+it is natural; on B4 the natural jump overshoots, and landing back needs braking, so
+the B4 hop waits while the 3-run-tick jump onto B5 lives.
+
+A program stands on the merged top faces, at its feet, of the owner it last visited
+(`launch`: landing contacts and case events, so a blip-up or corner blip-up that sets no
+`terminalSupport` counts). P's launch face is the one of those nearest its validated
+position; with none (feet on no top of that owner, or a ladder tick) nothing is held.
+A child of P lands back on it when it jumps on its first input and every landing
+`landings_of` finds for it (its own, or a ceiling hit's, grind's, slab boost's or
+corner jump cancel's earliest landings) stands on exactly that face. A support whose
+top solids cut into several faces is never counted, since an unsolved landing's piece
+is unknown.
+Minimum-run candidates (O9) keep their own reserves and are not tested. The test
+(`same_face_fit`, `search/anchors/policy.py`):
+
+- **Direction:** the unit horizontal direction d of P's current guide leg (the leg O10
+  uses). Within 22.5° of an axis it is that axis; otherwise it is the diagonal of its
+  quadrant. A leg of zero length gives no test.
+- **Room R:** from P's validated position to the face's farthest corner along that
+  direction. In Real11, B12's face is only 0.4 deep (z −1091.7 to −1091.3) because the
+  higher B11 and B13A wall it in.
+- **Natural jump D:** full acceleration along d from P's validated velocity, through
+  the landing's movement magnitudes and frictions (`travel_radii`).
+- **Fits** when R > 0.7·D (`SAME_FACE_FIT_FACTOR`; the factor may change).
+
+A held jump is not queued, sets no N and beats no run-tick candidate. When P queued
+or reserved nothing else it is queued at once; otherwise it is reserved
+(`state['alternatives']`) and restored once nothing below P lives and every node P
+queued or reserved has died, never after a validated group-end arrival below them.
+A run-tick reserve restored in the same pass counts as alive, so it goes first.
+Each held jump is logged in `minimumRunCandidates` (key `["same_face", <face's
+owners>]`) with outcome `held` (or `queued`), its room and its jump. Restoring it
+earlier, once the run ticks spent below P reach its airtime, is deferred
+([S9](../DEFERRED_WORK.md)).
 
 ## Settled versus remaining implementation choices
 

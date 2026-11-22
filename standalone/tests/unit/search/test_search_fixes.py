@@ -16,7 +16,7 @@ class SearchFixTests(unittest.TestCase):
         def child(program, choice, **kwargs):
             result = copy.deepcopy(program)
             t, goal = choice
-            result['profile'].update(airtime=t, grounded=[False, True])
+            result['profile'].update(duration=t, grounded=[False, True])
             result['terminalSupport'] = scene['goalBlock'] if goal else scene['startBlock']
             result['interactions'] = 1
             result['marker'] = choice

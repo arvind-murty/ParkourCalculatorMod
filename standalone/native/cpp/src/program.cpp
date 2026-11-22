@@ -381,7 +381,7 @@ void describe(R& w, V& v, WalkOff*) {
 
 template <class R, class V>
 void describe(R& p, V& v, Profile*) {
-    v.req("airtime", p.airtime);
+    v.req("duration", p.duration);
     v.req("position", p.position);
     v.req("velocity", p.velocity);
     v.req("grounded", p.grounded);

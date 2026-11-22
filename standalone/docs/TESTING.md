@@ -2,17 +2,14 @@
 
 ## Current gate
 
-`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on main `d9e1ec9c`
-(encounter groups with the run-tick rework and walk-off faces) plus prepared analysis keys,
-the parent-window travel check, alias paths from the full save's walk, opt-in progress saves,
-children extending their parent, per-state program identity with list-order ties and no repair
-snapshots without a saver: **830 tests, no failures, errors or skips**, source unchanged during
-the run ([report](../research/checkpoint-cost/native-gate-repair-snapshots/report.json); run on
-`6b11a815` with the snapshot sources uncommitted). Wall-time-bound
-tests can fail under load: the three gate runs of the run-tick change each failed a different
-one, each passing in the other runs ([deferred P17](DEFERRED_WORK.md)).
-The gate fails on any skip, so it needs `PKC_RUN_TICKS_COMPILER` for the Java
-differential tests and the `research` extra for the route-guidance tests.
+`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on the walk-off follow-ups
+rebased onto main `1013e7ea` (#7), with the launch face found from the visited owner
+(`b58e2132`): **842 tests, no failures, errors or skips**, source unchanged during the run,
+at a load average of 5.6 to 8.2 ([report](../research/encounter-groups/native-gate-rebased-on-pr7/report.json)).
+Wall-time-bound tests can still fail under heavier load ([deferred P17](DEFERRED_WORK.md)).
+The gate fails on any skip, so it needs `PKC_IPOPT_PYTHON` for the IPOPT tests,
+`PKC_RUN_TICKS_COMPILER` for the Java differential tests and the `research` extra for the
+route-guidance tests.
 A run of the switch-climb source (`55e3beef`) under a load average of 5.5 failed
 `test_prescribed_points_do_not_remove_remote_free_space` (its two 2 s arms
 enumerated 856 and 830 choices); it passed in isolation and on the rerun. Earlier,
@@ -30,6 +27,15 @@ persistence without the removed 32/128 limits.
 
 | Source | Tests | Evidence |
 | --- | ---: | --- |
+| `b58e2132` follow-ups rebased onto `1013e7ea`, launch face from the visited owner | 842 | [report](../research/encounter-groups/native-gate-rebased-on-pr7/report.json) |
+| `4c9c6ba4` + O11 on merged launch faces | 839 | [report](../research/encounter-groups/native-gate-same-face-fit/report.json) |
+| `c4e2f70a` + same-block jumps must fit their block (O11) | 838 | [report](../research/encounter-groups/native-gate-same-block-fit/report.json) |
+| `c4e2f70a` backward ceiling hits and grinds filtered (O10), B13a/B13b | 836 | [report](../research/encounter-groups/native-gate-backward-filter/report.json) |
+| `002b2a4e` + search tree in the solve report | 835 | [report](../research/encounter-groups/native-gate-node-report/report.json) |
+| `9ab3ec9c` + profile `airtime` renamed `duration` | 833 | [report](../research/encounter-groups/native-gate-profile-duration/report.json) |
+| `ea972fb8` + two-tick jumps count toward N | 833 | [report](../research/encounter-groups/native-gate-p16-two-tick-jumps/report.json) |
+| `f7c41c13` + bonk landings in minimum-run timing | 832 | [report](../research/encounter-groups/native-gate-p16-bonk-landings/report.json) |
+| `d9e1ec9c` + walk-off follow-ups | 829 | [report](../research/encounter-groups/native-gate-walkoff-followups/report.json) |
 | `6b11a815` + the repair loop publishes progress only to a saver | 830 | [report](../research/checkpoint-cost/native-gate-repair-snapshots/report.json) |
 | `75a0f4c6` + program identity as a per-state chain, equal-priority programs in list order | 830 | [report](../research/parent-linked-programs/native-gate-phaseB/report.json) |
 | `996c1a44` + children trace only their new ticks and share the parent's content | 830 | [report](../research/parent-linked-programs/native-gate/report.json) |

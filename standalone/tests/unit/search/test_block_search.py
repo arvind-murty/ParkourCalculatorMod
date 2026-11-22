@@ -110,7 +110,7 @@ class TransitionGraphTests(unittest.TestCase):
         request = prepare_scene(request)
         topology = build_transition_graph(request, Coefficients())
         edges = [topology['transitions'][e] for e in topology['edgeOptions']['start']['goal']]
-        self.assertEqual(sorted(e['profile']['airtime'] for e in edges), [2, 2, 2, 2, 10])
+        self.assertEqual(sorted(e['profile']['duration'] for e in edges), [2, 2, 2, 2, 10])
         stair = next(e for e in edges if e['profileKind'] == 'stair')
         compiled = compile_block_path(request, ['start', 'goal'], transitions=[stair])
         plan = schedule(compiled['route'], [2])
@@ -177,8 +177,8 @@ class BlockPathSearchTests(unittest.TestCase):
         topology = graph({'start': ['goal'], 'goal': []}, {'start': 1, 'goal': 0})
         topology.update(edgeOptions={'start': {'goal': ['bad', 'good', 'ordinary']}},
                         flightInputsToGoal={'start': 2, 'goal': 0},
-                        transitions={'bad': {'profile': {'airtime': 2}}, 'good': {'profile': {'airtime': 2}},
-                                     'ordinary': {'profile': {'airtime': 10}}})
+                        transitions={'bad': {'profile': {'duration': 2}}, 'good': {'profile': {'duration': 2}},
+                                     'ordinary': {'profile': {'duration': 10}}})
         calls = []
 
         def evaluate(path, remaining, transition_ids, max_ticks=None):
@@ -259,8 +259,8 @@ class BlockPathSearchTests(unittest.TestCase):
     def test_fewer_total_ticks_beat_a_zero_run_route(self):
         topology = graph({'start': ['goal', 'b'], 'b': ['goal'], 'goal': []},
                          {'start': 1, 'b': 1, 'goal': 0})
-        topology.update(profiles={'start': {'goal': {'airtime': 12}, 'b': {'airtime': 2}},
-                                  'b': {'goal': {'airtime': 2}}},
+        topology.update(profiles={'start': {'goal': {'duration': 12}, 'b': {'duration': 2}},
+                                  'b': {'goal': {'duration': 2}}},
                         flightInputsToGoal={'start': 4, 'b': 2, 'goal': 0})
         calls = []
 
@@ -277,8 +277,8 @@ class BlockPathSearchTests(unittest.TestCase):
     def test_equal_total_ticks_compare_objective_even_when_run_counts_differ(self):
         topology = graph({'start': ['b', 'c'], 'b': ['goal'], 'c': ['goal'], 'goal': []},
                          {'start': 2, 'b': 1, 'c': 1, 'goal': 0})
-        topology.update(profiles={'start': {'b': {'airtime': 2}, 'c': {'airtime': 3}},
-                                  'b': {'goal': {'airtime': 2}}, 'c': {'goal': {'airtime': 3}}},
+        topology.update(profiles={'start': {'b': {'duration': 2}, 'c': {'duration': 3}},
+                                  'b': {'goal': {'duration': 2}}, 'c': {'goal': {'duration': 3}}},
                         flightInputsToGoal={'start': 4, 'b': 2, 'c': 3, 'goal': 0})
         calls = []
 
@@ -299,8 +299,8 @@ class BlockPathSearchTests(unittest.TestCase):
     def test_unknown_shorter_route_prevents_a_minimum_tick_claim(self):
         topology = graph({'start': ['goal', 'b'], 'b': ['goal'], 'goal': []},
                          {'start': 1, 'b': 1, 'goal': 0})
-        topology.update(profiles={'start': {'goal': {'airtime': 4}, 'b': {'airtime': 3}},
-                                  'b': {'goal': {'airtime': 3}}},
+        topology.update(profiles={'start': {'goal': {'duration': 4}, 'b': {'duration': 3}},
+                                  'b': {'goal': {'duration': 3}}},
                         flightInputsToGoal={'start': 4, 'b': 3, 'goal': 0})
         result = search_block_paths(scene(), topology,
                                     lambda path, _: {'status': 'unknown'} if path == ['start', 'goal'] else accepted(ticks=6))

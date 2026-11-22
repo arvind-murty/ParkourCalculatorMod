@@ -831,7 +831,7 @@ Object validate_vertical_schedule(const Object& route, const Object& profile, co
 std::optional<Value> gate_prepare(const Value& scene_value, const Program& program, bool require_complete) {
     const Object& scene = fields(scene_value);
     // movement/program.compile_program
-    if (!program.profile.airtime) fail("An empty prefix is not a complete movement route");
+    if (!program.profile.duration) fail("An empty prefix is not a complete movement route");
     const std::string& goal = as_text(at(scene, "goalBlock"));
     if (require_complete && (!program.profile.grounded.back() || !program.terminal_support.value ||
                              *program.terminal_support.value != goal))
@@ -861,7 +861,7 @@ std::optional<Value> gate_prepare(const Value& scene_value, const Program& progr
                     {"blocks", array(blocks)},
                     {"inputs", at(scene, "inputs")},
                     {"objective", at(scene, "objective")},
-                    {"airtimes", array({integer_value(program.profile.airtime)})},
+                    {"airtimes", array({integer_value(program.profile.duration)})},
                     {"kinds", array({text("movement")})},
                     {"landingPhases", array({text(program.profile.landing_phase)})},
                     {"contactEntries", array({kNull})},

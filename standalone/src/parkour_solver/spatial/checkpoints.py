@@ -127,5 +127,5 @@ def retain_decisions(program, result, *, facing_guess=None):
     if best is not None:
         facing_guess = best['candidate']['yaw']
     if facing_guess is not None:
-        retained['guideSeedYaw'] = facing_guess[:retained['profile']['airtime']]
+        retained['guideSeedYaw'] = facing_guess[:retained['profile']['duration']]
     return retained

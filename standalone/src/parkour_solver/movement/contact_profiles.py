@@ -41,7 +41,7 @@ def contact_profile(source_top, target_top, events, *, max_inputs=200, ladder=No
             event['regions'] = [r for r in event['regions'] if wall_heights(r, event['axis'])[0] < y < wall_heights(r, event['axis'])[1]]
             if not event['regions']:
                 return None
-    return {'airtime': trace['ticks'], 'landingPhase': 'pre', 'position': trace['position'],
+    return {'duration': trace['ticks'], 'landingPhase': 'pre', 'position': trace['position'],
             'velocity': trace['velocity'], 'grounded': trace['onGround'], 'contacts': trace['vertical']['contacts'],
             'jump': [v is not None for v in trace['vertical']['jumpVelocity']],
             'sneak': trace['sneak'], 'ladderTicks': trace['ladderTicks'],

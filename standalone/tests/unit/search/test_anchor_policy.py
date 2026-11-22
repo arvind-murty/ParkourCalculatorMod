@@ -6,7 +6,8 @@ import math
 import unittest
 
 from parkour_solver.scene.normalize import prepare_scene
-from parkour_solver.search.anchors.policy import audit, encounter_groups, local_counts, priority, settings, visit_state, within_caps, single_jump_structure, transfer_structure
+from parkour_solver.search.anchors.policy import (SAME_FACE_FIT_FACTOR, audit, encounter_groups, local_counts, priority,
+    same_face_fit, settings, visit_state, within_caps, single_jump_structure, transfer_structure)
 from parkour_solver.spatial.anchor_guides import build_guides, classify, decision_objective, nearest, onward_objective
 from parkour_solver.search.anchors.adapter import AnchorAdapter
 from parkour_solver.spatial.event_routes import build_route_domain, build_event_graph
@@ -39,9 +40,9 @@ class EncounterGroupTests(unittest.TestCase):
         groups=self.groups(self.case('extended-anchors.json'))
         self.assertEqual(sorted(groups),[(0,0),(1,1),(2,2),(3,6)])
         self.assertEqual(groups[(3,6)]['anchors'],['b5','b7','b20','b22'])
-        self.assertEqual(groups[(3,6)]['members'],['b10','b11','b12','b13#0','b13#1','b14','b15','b16','b17','b18','b19',
+        self.assertEqual(groups[(3,6)]['members'],['b10','b11','b12','b13a','b13b','b14','b15','b16','b17','b18','b19',
                                                    'b20','b22','b5','b6','b7','b8','b9a','b9b'])
-        self.assertEqual(groups[(3,6)]['landings'],['b10','b11','b12','b13#0','b13#1','b15','b16','b18','b19','b20','b22',
+        self.assertEqual(groups[(3,6)]['landings'],['b10','b11','b12','b13a','b13b','b15','b16','b18','b19','b20','b22',
                                                     'b5','b7','b8','b9a','b9b'])
 
     def test_hit_only_block_extends_the_chain(self):
@@ -346,9 +347,9 @@ class AnchorPolicyTests(unittest.TestCase):
             moves=[child for c,child in children(base) if c['profile']['jump'][0] and
                    tuple(key) in advantageous_targets(s,base,child,'goal')]
             ends=[c for m in moves for c in ([m] if landed(m) else [c for _,c in children(m) if landed(c)])]
-            return min(c['profile']['airtime'] for c in ends)-base['profile']['airtime']
+            return min(c['profile']['duration'] for c in ends)-base['profile']['duration']
         def fastest(owner, jump):
-            return min(child['profile']['airtime'] for c,child in children(root)
+            return min(child['profile']['duration'] for c,child in children(root)
                        if c['profile']['jump'][0]==jump and landed(child) and child.get('terminalSupport')==owner)
         table=lambda owner:block_table(s,owner,{})
         entries={e['key']:e for e in advantageous_candidates(s,table,'start',2.,'goal',types,0.)}
@@ -445,6 +446,42 @@ class AnchorPolicyTests(unittest.TestCase):
         self.assertFalse(within_caps(dict(maxRunTicksPerJump=10),p))
         p['restoredRun']=dict(frame=0,candidate='r')
         self.assertFalse(within_caps(dict(maxTotalRunTicks=10),p))
+
+    def test_a_jump_back_onto_its_face_fits_when_the_room_ahead_exceeds_most_of_its_natural_jump(self):
+        from parkour_solver.reachability.intervals import travel_radii
+        sprint=[.3274]+[.026]*11,[.546]+[.91]*11
+        def fit(point, velocity, leg, regions, schedule=sprint):
+            return same_face_fit(point,velocity,leg,regions,*schedule)
+        # Faces are player-centre regions [x0, z0, x1, z1]: a 5x1 top widened by the half-width.
+        long=[-.3,-.3,5.3,1.3]
+        # An 11 degree leg is along +X: the room runs to the face's +X edge from the player's position.
+        leg=(math.cos(math.radians(11)),math.sin(math.radians(11)))
+        back=fit([.3,.5],[0,0],leg,[long])
+        self.assertEqual((back['room'],back['jump']),(long[2]-.3,travel_radii(0,*sprint)[-1]))
+        self.assertTrue(back['fits'])
+        # The same face from near its forward edge: the natural jump overshoots it.
+        self.assertEqual(fit([4.,.5],[0,0],leg,[long])['room'],long[2]-4.)
+        self.assertFalse(fit([4.,.5],[0,0],leg,[long])['fits'])
+        # A merged face of two rectangles: the room reaches the farther one.
+        merged=[[-.3,-.3,1.3,1.3],[1.3,.2,4.3,.8]]
+        self.assertEqual(fit([.5,.5],[0,0],(1,0),merged)['room'],merged[1][2]-.5)
+        # A 40 degree leg is diagonal: the room is the projection onto the quadrant's diagonal.
+        leg=(math.cos(math.radians(40)),math.sin(math.radians(40)))
+        cube=[-.3,-.3,1.3,1.3]
+        diagonal=fit([.5,.5],[.25*leg[0],.25*leg[1]],leg,[cube])
+        self.assertEqual(diagonal['room'],2*(cube[2]-.5)*math.sqrt(.5))
+        self.assertEqual(diagonal['jump'],travel_radii(.25*leg[0]**2+.25*leg[1]**2,*sprint)[-1])
+        self.assertFalse(diagonal['fits'])
+        # Fitting is strict: room equal to the factor times the jump is held.
+        exact=[.5,.25],[.5,.5]
+        edge=cube[2]-SAME_FACE_FIT_FACTOR*travel_radii(0,*exact)[-1]
+        self.assertEqual(fit([edge,.5],[0,0],(1,0),[cube],exact)['room'],SAME_FACE_FIT_FACTOR*travel_radii(0,*exact)[-1])
+        self.assertFalse(fit([edge,.5],[0,0],(1,0),[cube],exact)['fits'])
+        self.assertTrue(fit([edge-.01,.5],[0,0],(1,0),[cube],exact)['fits'])
+        # A two-tick jump (a grind's jump tick and one air tick) fits a 2-block face.
+        grind=fit([.5,.5],[.28,0],(1,0),[[-.3,-.3,2.3,1.3]],([.3274,.026],[.546,.91]))
+        self.assertEqual(grind['jump'],travel_radii(.28,[.3274,.026],[.546,.91])[-1])
+        self.assertTrue(grind['fits'])
 
     def test_repair_exhaustion_backtracks_without_oracle_or_ancestor_rejection(self):
         result=dict(status='unknown',best=None,repairState=dict(completed=[

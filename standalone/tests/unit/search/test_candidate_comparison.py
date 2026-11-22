@@ -74,7 +74,7 @@ class CandidateComparisonTests(unittest.TestCase):
         self.assertEqual(self.compare(candidate,dict(label(20,1,8),validated=False))['action'], 'keep_incomparable')
 
     def test_interval_counts_cancelled_ground_impulses_and_ignored_air_presses(self):
-        program=dict(profile=dict(airtime=5,grounded=[True,True,False,False,True,True],
+        program=dict(profile=dict(duration=5,grounded=[True,True,False,False,True,True],
                                   jump=[False,True,True,False,True]))
         c=comparison_label(program,start=1,mode='turnaround')
         self.assertEqual({k:c[k] for k in ('T','J','R','A','start')}, dict(T=5,J=2,R=0,A=2,start=1))
@@ -83,7 +83,7 @@ class CandidateComparisonTests(unittest.TestCase):
         self.assertEqual({k:c[k] for k in ('T','J','R','A')}, dict(T=4,J=1,R=0,A=2))
 
     def test_missing_count_metadata_is_not_zero_for_peer_pruning(self):
-        missing=comparison_label(dict(profile=dict(airtime=21)))
+        missing=comparison_label(dict(profile=dict(duration=21)))
         self.assertIsNone(missing['J'])
         self.assertEqual(self.compare(missing,label(17,1,8))['action'], 'keep_incomparable')
         self.assertEqual(self.compare(missing,incumbent=dict(T=20))['action'], 'exclude_bound')

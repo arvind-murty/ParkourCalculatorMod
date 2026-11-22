@@ -139,7 +139,7 @@ writes `report.md` (the readable per-route report) next to its JSON outputs:
   --seconds 300 --profile-mode bookkeeping
 ```
 
-Regenerate `report.md` and `routes.json` for a finished profiled run, or write
+Regenerate `report.md`, `routes.json` and `nodes.json` for a finished profiled run, or write
 them for a saved report from `python -m parkour_solver`:
 
 ```sh

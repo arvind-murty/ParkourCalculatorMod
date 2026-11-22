@@ -12,4 +12,4 @@ class InitialJumpDomain:
             return True
         p=program['profile']
         jumps=[t for t,j in enumerate(p['jump']) if j and p['grounded'][t]]
-        return jumps[0] in self.initial_jump_inputs if jumps else p['airtime']<=max(self.initial_jump_inputs)
+        return jumps[0] in self.initial_jump_inputs if jumps else p['duration']<=max(self.initial_jump_inputs)

@@ -75,7 +75,7 @@ def run_generation(compiler, policy, canonical, *, expansions=512, queue_cap=384
         generator = generate(scene,settings=cfg,deadline=started+30,report=report,screen=screen,
             context_adapter=adapter.context if adapter else None,threshold=0.)
         for program in generator:
-            completed.append(dict(ticks=program['profile']['airtime'],expandedAtYield=report['expandedPrefixes'],
+            completed.append(dict(ticks=program['profile']['duration'],expandedAtYield=report['expandedPrefixes'],
                 methods=[u.get('case',u['type']) for u in program['movementUnits']],program=program))
             if len(completed)>=proposals:
                 break
@@ -93,7 +93,7 @@ def run_generation(compiler, policy, canonical, *, expansions=512, queue_cap=384
             same = coefficients[0]==coefficients[1] and sorted(rows[0],key=repr)==sorted(rows[1],key=repr)
             same &= all(plans[0].get(k)==plans[1].get(k) for k in ('contacts','sceneContacts','supportChecks','exitChecks'))
             same &= vertical[0]==vertical[1]
-            equivalence.append(dict(passed=same,ticks=a['profile']['airtime']))
+            equivalence.append(dict(passed=same,ticks=a['profile']['duration']))
         results.append(dict(name=name,policy=policy,canonical=canonical,config=cfg,
             request=copy.deepcopy(request),spatialPoints=points,
             context='prescribed_corridor' if adapter else 'unconditioned_scene',

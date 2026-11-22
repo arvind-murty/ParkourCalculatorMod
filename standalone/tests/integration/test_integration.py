@@ -259,7 +259,7 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(result['best']['route']['airtimes'], [9, 9])
         self.assertEqual(result['best']['plan']['ticks'], 18)
         self.assertNotIn('goal', result['graph']['adjacency']['start'])
-        self.assertEqual(result['graph']['profiles']['raised']['start']['airtime'], 14)
+        self.assertEqual(result['graph']['profiles']['raised']['start']['duration'], 14)
 
     def test_lower_target_cannot_be_accepted_through_an_earlier_floor(self):
         request = {'version': 1, 'sceneModel': 'support_planes',

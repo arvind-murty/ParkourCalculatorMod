@@ -7,6 +7,9 @@ from parkour_solver.search.comparison import comparison_label, priority_key, POL
 
 
 HARD_JUMP_POLICY_VERSION = 4
+# A jump back onto its launch face fits when the room ahead exceeds this share of its natural jump (user, 2026-11-21;
+# may change).
+SAME_FACE_FIT_FACTOR = .7
 
 
 def settings(value, scene):
@@ -43,7 +46,7 @@ def settings(value, scene):
 
 def semantic_settings(policy):
     return dict({k:v for k,v in policy.items() if k!='observability'},
-                hardJumpPolicyVersion=HARD_JUMP_POLICY_VERSION,searchPolicyVersion=12,comparisonPolicyVersion=COMPARISON_POLICY_VERSION)
+                hardJumpPolicyVersion=HARD_JUMP_POLICY_VERSION,searchPolicyVersion=17,comparisonPolicyVersion=COMPARISON_POLICY_VERSION)
 
 
 def owner(scene, block):
@@ -78,7 +81,7 @@ def visits(scene, program):
     # Some named profiles report only terminalSupport. Include its physical
     # owner without collapsing the input/jump history used by the solver.
     if program.get('terminalSupport') is not None:
-        result.append((program['profile']['airtime'], owner(scene,program['terminalSupport'])))
+        result.append((program['profile']['duration'], owner(scene,program['terminalSupport'])))
     return result
 
 
@@ -162,7 +165,7 @@ def advantageous_targets(scene, base, child, next_owner):
     next anchor; a jump also when it hits a ceiling or is a grind, slab boost or corner jump
     cancel. Run ticks are generated only as the minimum that makes one of these possible.
     """
-    p, start = child['profile'], base['profile']['airtime']
+    p, start = child['profile'], base['profile']['duration']
     by_box = box_owners(scene)
     def owners(boxes):
         return '+'.join(sorted({by_box[tuple(b)] for b in boxes if tuple(b) in by_box}))
@@ -183,12 +186,16 @@ def advantageous_candidates(scene, table, launch, top, next_owner, types, thresh
     (`table(owner)`, see reachability.service.block_table) and vertical replays only.
 
     Each entry is dict(key, A, via). A jump-now move (via None) has the key advantageous_targets
-    gives as a JSON list and its airtime A; ceiling and grind airtimes are inferred (the built choice stops
-    at the hit), the rest equal the generators' replays. A run-off onto another owner (via) is a
-    ["landing", owner] entry: A counts its airborne inputs only, since the walk-off input moves as a run
-    tick (0 when it lands within that input), and `limit` is the airtime of a jump from here onto that
-    owner, which its run ticks plus A compete with whatever follows it. A walking step-up onto another
-    owner is a ["step", owner] entry with A = 0: its step input is a run tick too.
+    gives as a JSON list and its airtime A: the jump input plus its air inputs through the landing (12 for a
+    flat jump, 3 under a ceiling 2 blocks above the feet, 2 for a grind, slab boost or corner jump cancel).
+    A ceiling or grind A is the earliest descent through any landing top of the launch table, a lower bound
+    (the built choice stops at the hit, and the table ignores where the player can be after it); the
+    frontier uses it only to bound run ticks and takes built landings for the rest. A run-off onto another
+    owner (via) is a ["landing", owner] entry: A counts its airborne inputs only, since the walk-off input
+    moves as a run tick (0 when it lands within that input), and `limit` is the airtime of an unhit jump
+    from here onto that owner (the frontier lowers it to a jump-now landing there), which its run ticks
+    plus A compete with. A walking step-up onto another owner is a ["step", owner] entry with A = 0: its
+    step input is a run tick too.
     """
     import json
     import math
@@ -229,7 +236,7 @@ def advantageous_candidates(scene, table, launch, top, next_owner, types, thresh
                                                        contacts=[dict(state=hit+1, plane=plane, direction=1)]), tops))
             if 0 <= plane-t < f32(.42):
                 event = dict(case='grind', input=0, plane=t, clearance=plane-t)
-                add(('grind', names), min((p['airtime'] for u in tops
+                add(('grind', names), min((p['duration'] for u in tops
                                            for p in [case_profile(t, u, event, threshold=threshold)] if p), default=None))
         if 'stepping' in types:
             for b in kinds['stepping']:
@@ -261,6 +268,27 @@ def advantageous_candidates(scene, table, launch, top, next_owner, types, thresh
             add(['step', name], 0, name)
     return sorted(entries.values(), key=lambda e: e['key'])
 
+
+def same_face_fit(point, velocity, leg, regions, magnitudes, frictions):
+    """Whether a jump landing back on its launch face naturally fits there (O11).
+
+    The room is measured from the player's solved position `point` ([x, z]) to the farthest corner of the face the
+    player stands on, given as its merged player-centre `regions` ([x0, z0, x1, z1]), along the leg's direction
+    class: its axis when the unit leg is within 22.5 degrees of one, else the diagonal of its quadrant. The natural
+    jump accelerates fully along the leg from the solved velocity with the landing schedule's movement magnitudes and
+    frictions.
+    """
+    import math
+    from parkour_solver.reachability.intervals import travel_radii
+    dx, dz = leg
+    if min(abs(dx), abs(dz)) <= math.tan(math.radians(22.5))*max(abs(dx), abs(dz)):
+        u = (math.copysign(1., dx), 0.) if abs(dx) >= abs(dz) else (0., math.copysign(1., dz))
+    else:
+        u = (math.copysign(math.sqrt(.5), dx), math.copysign(math.sqrt(.5), dz))
+    room = max((x-point[0])*u[0]+(z-point[1])*u[1] for region in regions
+               for x in (region[0], region[2]) for z in (region[1], region[3]))
+    jump = travel_radii(velocity[0]*dx+velocity[1]*dz, magnitudes, frictions)[-1]
+    return dict(room=room, jump=jump, fits=room > SAME_FACE_FIT_FACTOR*jump)
 
 def encounter_groups(scene, names):
     """Partition the pairs names[k] -> names[k+1] into groups searched as one frame.
@@ -328,7 +356,7 @@ def within_caps(request, program):
         return False
     if 'maxRunTicksPerJump' in request:
         run=0;p=program['profile']
-        for t in range(p['airtime']):
+        for t in range(p['duration']):
             run=run+1 if p['grounded'][t] and not p['jump'][t] else 0
             if run>request['maxRunTicksPerJump']:return False
     return True
@@ -344,7 +372,7 @@ def transfer_structure(scene, program, start, source, target, *, complete=False,
     `until_arrival`, history after the first target arrival belongs to later
     pairs of the same encounter group and is ignored.
     """
-    p=program['profile'];n=p['airtime']
+    p=program['profile'];n=p['duration']
     launches=[t for t in range(start,n) if p['grounded'][t] and p['jump'][t]]
     source,target=owner(scene,source),owner(scene,target)
     contacts=[(t,name) for t,name in visits(scene,program) if start<t<=n]

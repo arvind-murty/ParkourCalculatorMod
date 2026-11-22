@@ -66,11 +66,11 @@ def _landing_prefixes(scene,program,block_id, *, reuse_full=False):
     events=p.get('contactEvents',[])+p.get('caseEvents',[])
     times={e.get('offset',e.get('input',-1))+1 for e in events if box in e.get('boxes',())
            and (e.get('axis')=='Y' and e.get('direction')==-1 or e.get('case') in ('normal_step','blip'))}
-    if program['terminalSupport']==block_id:times.add(p['airtime'])
+    if program['terminalSupport']==block_id:times.add(p['duration'])
     for tick in sorted(times):
-        if not 0<tick<=p['airtime'] or not p['grounded'][tick] or abs(p['position'][tick]-block['top'])>1e-7:
+        if not 0<tick<=p['duration'] or not p['grounded'][tick] or abs(p['position'][tick]-block['top'])>1e-7:
             continue
-        candidate=program if reuse_full and tick==p['airtime'] and program['terminalSupport']==block_id else truncate_program(program,tick)
+        candidate=program if reuse_full and tick==p['duration'] and program['terminalSupport']==block_id else truncate_program(program,tick)
         candidate['terminalSupport']=block_id
         at=[e for e in events if box in e.get('boxes',()) and e.get('offset',e.get('input',-1))==tick-1]
         if any(e.get('case') in ('normal_step','blip') for e in at):

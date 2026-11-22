@@ -105,8 +105,8 @@ class MovementContactTests(unittest.TestCase):
         ceiling=[.1,3.07+BODY_HEIGHT,2,2,5.2,3]
         choices=list(finish_programs(prefix,3,[ceiling],max_inputs=48,max_contact_variants=8))
         changed=next(x for x in choices if [(e['offset'],e['axis']) for e in x['profile']['contactEvents']]==[(25,'Y')])
-        self.assertEqual(choices[0]['profile']['airtime'],28)
-        self.assertEqual(changed['profile']['airtime'],27)
+        self.assertEqual(choices[0]['profile']['duration'],28)
+        self.assertEqual(changed['profile']['duration'],27)
         self.assertEqual(changed['episodes'],episodes)
         self.assertEqual(changed['trace']['position'][:26],prefix['trace']['position'])
         self.assertAlmostEqual(changed['trace']['position'][26],3.07)
