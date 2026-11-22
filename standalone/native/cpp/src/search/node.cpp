@@ -90,8 +90,7 @@ Value NodeSearch::time_bound(const Program& program) const {
     const NodeFrame& f = frame;
     if (is_null(f.incumbent)) return Value{nullptr};
     const std::int64_t T = program.profile.duration;
-    const Object context{{"fixedTerminal", boolean(false)}};
-    Value decision = compare_candidates(object({{"T", integer_value(T)}}), Value{nullptr}, context, f.incumbent);
+    Value decision = compare_candidates(object({{"T", integer_value(T)}}), Value{nullptr}, Object{}, f.incumbent);
     if (py_equal(at(fields(decision), "action"), text("exclude_bound"))) return incumbent_proof(decision, T);
     const std::int64_t span = std::min(anchors->audit(program, f.anchors).reached, f.group_end);
     const Value proof = remaining_bound(f.guide_plan, span, program, f.motion, f.transfers, f.hard_latches);
@@ -99,7 +98,7 @@ Value NodeSearch::time_bound(const Program& program) const {
     const Value label = object({{"T", integer_value(T)},
                                 {"remainingFinishBound", object({{"ticks", at(fields(proof), "remainingTicks")},
                                                                  {"proofIds", ids ? *ids : array({})}})}});
-    decision = compare_candidates(label, Value{nullptr}, context, f.incumbent);
+    decision = compare_candidates(label, Value{nullptr}, Object{}, f.incumbent);
     if (py_equal(at(fields(decision), "action"), text("exclude_bound"))) return incumbent_proof(decision, T, &proof);
     return Value{nullptr};
 }

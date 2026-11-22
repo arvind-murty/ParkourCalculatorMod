@@ -61,8 +61,6 @@ Value priority_key(const Value& label_value) {
 
 Value compare_candidates(const Value& candidate_value, const Value& peer_value, const Object& context,
                          const Value& incumbent_value) {
-    if (py_equal(get_or_null(context, "purpose"), text("common_clock")))
-        fail("The native comparison has no common_clock purpose");
     const Object& candidate = fields(candidate_value);
     const bool has_peer = !is_null(peer_value);
     Object result{{"version", integer_value(1)},
@@ -79,7 +77,7 @@ Value compare_candidates(const Value& candidate_value, const Value& peer_value, 
     const Value* ticks = get(remaining, "ticks");
     const Value* fallback = get(remaining, "remainingTicks");
     const Num optimistic = add(num(at(candidate, "T")), ticks ? num(*ticks) : fallback ? num(*fallback) : whole(0));
-    if (!is_null(incumbent_value) && !py_truthy(get_or_null(context, "fixedTerminal"))) {
+    if (!is_null(incumbent_value)) {
         const Object& incumbent = fields(incumbent_value);
         const Value* tick = get(incumbent, "T");
         Value from_plan{nullptr};

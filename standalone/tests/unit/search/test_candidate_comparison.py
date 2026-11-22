@@ -68,9 +68,8 @@ class CandidateComparisonTests(unittest.TestCase):
         self.assertEqual(self.compare(candidate,label(17,1,8))['action'], 'keep_incomparable')
         self.assertEqual(self.compare(candidate,incumbent=dict(T=24))['action'], 'exclude_bound')
 
-    def test_fixed_clock_and_unvalidated_peer_do_not_create_new_exclusions(self):
+    def test_unvalidated_peer_does_not_create_new_exclusions(self):
         candidate=label(21,1,9)
-        self.assertNotEqual(self.compare(candidate,incumbent=dict(T=20),context=dict(CONTEXT,fixedTerminal=True))['action'], 'exclude_bound')
         self.assertEqual(self.compare(candidate,dict(label(20,1,8),validated=False))['action'], 'keep_incomparable')
 
     def test_interval_counts_cancelled_ground_impulses_and_ignored_air_presses(self):
@@ -87,15 +86,6 @@ class CandidateComparisonTests(unittest.TestCase):
         self.assertIsNone(missing['J'])
         self.assertEqual(self.compare(missing,label(17,1,8))['action'], 'keep_incomparable')
         self.assertEqual(self.compare(missing,incumbent=dict(T=20))['action'], 'exclude_bound')
-
-    def test_legacy_missing_velocity_metadata_preserves_candidate(self):
-        state=dict(motion=dict(schedule='JAA',phase='air',jumps=1,runs=0))
-        record=dict(id='a',clock_results={'clock':dict(status='feasible',objective=1.,state=state)},
-                    spatial_results={'goal':dict(status='feasible',ticks=20)})
-        peer=dict(record,id='b')
-        verdict=compare_candidates(record,peer,context=dict(purpose='common_clock'))
-        self.assertEqual(verdict['action'],'keep')
-        self.assertIn('missing_state_metadata',verdict['protectionReasons'])
 
 
 if __name__ == '__main__':

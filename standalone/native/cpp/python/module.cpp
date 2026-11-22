@@ -655,7 +655,7 @@ PYBIND11_MODULE(_pkc_native, m) {
     m.def("compare_candidates", [](py::handle candidate, py::handle peer, py::handle context, py::handle incumbent) {
         const pkc::Object ctx = context.is_none() ? pkc::Object{} : *std::get<std::shared_ptr<const pkc::Object>>(convert(context).data);
         return to_python(pkc::compare_candidates(convert(candidate), convert(peer), ctx, convert(incumbent)));
-    }, "search/comparison.compare_candidates for the anchor-search purposes");
+    }, "search/comparison.compare_candidates");
     m.def("assess", [](py::handle label, py::handle peers, py::handle context) {
         return to_python(pkc::assess(convert(label), convert(peers), *std::get<std::shared_ptr<const pkc::Object>>(convert(context).data)));
     }, "search/deferrals.assess");

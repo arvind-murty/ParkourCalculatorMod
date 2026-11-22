@@ -157,7 +157,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
         state['screened'] += effects['screened']
         state['policyRejections'] += effects['policyRejections']
 
-    def accept(child, context_data, effects, queued=()):
+    def accept(child, effects, queued=()):
         """(child, None) when accepted after the proposal screen, (child, 'seen') when already queued, else (None, why)."""
         if child is None or not entry_possible(child['profile'], initial_bounds):
             return None, 'rejected'
@@ -165,8 +165,6 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             effects['policyRejections'] += 1
             effects['exclusions'].append(dict(id=digest(program_search_key(child)), ticks=child['profile']['duration'],
                                               proof=dict(reason='search_policy')))
-            return None, 'rejected'
-        if context_data.get('prefixFilter') is not None and not context_data['prefixFilter'](child):
             return None, 'rejected'
         identity = program_search_key(child)
         if identity in seen or identity in queued:
@@ -184,7 +182,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             effects=proposal_effects(result,child,proposal['fullProgram'])
             if result['proof'] is not None:
                 return None, 'screened', effects
-        child, reason = accept(child, context_data, effects, queued)
+        child, reason = accept(child, effects, queued)
         return child, reason, effects
 
     def link(parent, choice, child):
@@ -736,7 +734,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                     update()
                     continue
             effects=no_effects()
-            child,reason=accept(child,context_data,effects)
+            child,reason=accept(child,effects)
             # Found before any frontier state changes, so a deadline inside it redoes this proposal.
             landed,fit={},None
             if reason is None and 'reached' in e and (child['profile']['grounded'][-1] or lands_later(e['program'],child)):

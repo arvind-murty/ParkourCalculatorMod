@@ -1,6 +1,5 @@
 // Intermediate movement ordering and the comparison policy: search/comparison.py
-// and search/deferrals.assess, on label dicts. Only the purposes the anchor
-// search uses are ported; a 'common_clock' context throws.
+// and search/deferrals.assess, on label dicts.
 #pragma once
 
 #include <cstdint>

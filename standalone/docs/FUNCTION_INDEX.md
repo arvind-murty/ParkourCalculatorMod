@@ -809,13 +809,10 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `comparison_label` | [11](../src/parkour_solver/search/comparison.py#L11) | function |
-| `priority_key` | [38](../src/parkour_solver/search/comparison.py#L38) | function |
-| `_count_protections` | [44](../src/parkour_solver/search/comparison.py#L44) | function |
-| `measurements` | [53](../src/parkour_solver/search/comparison.py#L53) | function |
-| `_clock_protections` | [61](../src/parkour_solver/search/comparison.py#L61) | function |
-| `_clock_decision` | [90](../src/parkour_solver/search/comparison.py#L90) | function |
-| `compare_candidates` | [107](../src/parkour_solver/search/comparison.py#L107) | function |
+| `comparison_label` | [10](../src/parkour_solver/search/comparison.py#L10) | function |
+| `priority_key` | [37](../src/parkour_solver/search/comparison.py#L37) | function |
+| `_count_protections` | [43](../src/parkour_solver/search/comparison.py#L43) | function |
+| `compare_candidates` | [52](../src/parkour_solver/search/comparison.py#L52) | function |
 
 ## search/deferrals.py
 

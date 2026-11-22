@@ -322,8 +322,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
     def time_bound(program,f=None):
         if state['best'] is None:return None
         label=dict(T=program['profile']['duration'])
-        ctx=dict(fixedTerminal=False)
-        decision=compare_candidates(label,context=ctx,incumbent=state['best'])
+        decision=compare_candidates(label,incumbent=state['best'])
         if decision['action']=='exclude_bound':
             return dict(reason=decision['reason'],elapsedInputs=label['T'],incumbentTick=decision['incumbentT'])
         if f is not None:
@@ -335,7 +334,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
             proof=remaining_bound(adapter.guide_plan,span,program,motion,
                                   transfers=records,hard_latches=state['hardLatches'])
             label['remainingFinishBound']=dict(ticks=proof['remainingTicks'],proofIds=proof.get('proofIds',[]))
-            decision=compare_candidates(label,context=ctx,incumbent=state['best'])
+            decision=compare_candidates(label,incumbent=state['best'])
             if decision['action']=='exclude_bound':
                 return dict(proof,reason=decision['reason'],elapsedInputs=label['T'],incumbentTick=decision['incumbentT'])
         return None

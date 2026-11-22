@@ -17,11 +17,10 @@ import re
 import sys
 
 from parkour_solver.io.checkpoint_store import read_report
-from parkour_solver.search.comparison import TOLERANCE as OBJECTIVE_TOLERANCE
+from parkour_solver.schema import TOLERANCE as OBJECTIVE_TOLERANCE
 
 # Migration tolerances for the tolerant mode. Kernels absorb operation-reordering
-# noise; whole solves compare objectives at the tolerance search itself uses to
-# compare them.
+# noise; whole solves compare objectives at the schema's numerical tolerance.
 KERNEL = dict(rel_tol=1e-12, abs_tol=1e-12)
 SOLVE = dict(abs_tol=OBJECTIVE_TOLERANCE)
 
