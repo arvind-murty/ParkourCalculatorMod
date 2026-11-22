@@ -2,19 +2,15 @@
 
 ## Current gate
 
-`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on the walk-off follow-ups
-rebased onto main `1013e7ea` (#7), with the launch face found from the visited owner
-(`b58e2132`): **842 tests, no failures, errors or skips**, source unchanged during the run,
-at a load average of 5.6 to 8.2 ([report](../research/encounter-groups/native-gate-rebased-on-pr7/report.json)).
+`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on the stale-code removal with its
+ported tests (`3e4f71d6`): **580 tests, no failures, errors or skips**, source unchanged during the run
+([report](../research/stale-code-removal/native-gate/report.json)). The count fell from 842 because the
+removed searches' tests went with them.
 Wall-time-bound tests can still fail under heavier load ([deferred P17](DEFERRED_WORK.md)).
 The gate fails on any skip, so it needs `PKC_IPOPT_PYTHON` for the IPOPT tests,
-`PKC_RUN_TICKS_COMPILER` for the Java differential tests and the `research` extra for the
-route-guidance tests.
-A run of the switch-climb source (`55e3beef`) under a load average of 5.5 failed
-`test_prescribed_points_do_not_remove_remote_free_space` (its two 2 s arms
-enumerated 856 and 830 choices); it passed in isolation and on the rerun. Earlier,
-`test_checkpoint_guidance` and `test_integration` failed once the same way. Treat a
-repeat as real. The gate keeps its declared module scope:
+`PKC_RUN_TICKS_COMPILER` for the Java differential tests and the `numerics` and `reachability` extras
+(CasADi, SciPy, Clarabel) for the numerical and disk-relaxation tests.
+Earlier gates saw single load-sensitive failures that passed on rerun; treat a repeat as real. The gate keeps its declared module scope:
 dedicated ladder, climbable, vine and movement-entry modules are excluded, generic
 mixed-ladder controls and all numerical modules are included.
 
@@ -27,6 +23,7 @@ persistence without the removed 32/128 limits.
 
 | Source | Tests | Evidence |
 | --- | ---: | --- |
+| `3e4f71d6` stale-code removal: legacy searches, face catalog, ported tests | 580 | [report](../research/stale-code-removal/native-gate/report.json) |
 | `b58e2132` follow-ups rebased onto `1013e7ea`, launch face from the visited owner | 842 | [report](../research/encounter-groups/native-gate-rebased-on-pr7/report.json) |
 | `4c9c6ba4` + O11 on merged launch faces | 839 | [report](../research/encounter-groups/native-gate-same-face-fit/report.json) |
 | `c4e2f70a` + same-block jumps must fit their block (O11) | 838 | [report](../research/encounter-groups/native-gate-same-block-fit/report.json) |
