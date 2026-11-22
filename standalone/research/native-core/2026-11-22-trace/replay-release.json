@@ -1,0 +1,6 @@
+{
+ "parkour_solver.movement.vertical_profiles:trace_ladder_schedule": {
+  "cases": 5410,
+  "ok": 5410
+ }
+}

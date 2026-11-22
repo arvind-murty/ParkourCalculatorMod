@@ -42,6 +42,10 @@ StepResult vertical_step(const std::vector<VerticalContactRow>& contacts, const 
 
 Num vertical_carry(const Num& movement, bool on_ladder, bool previous_horizontal_collision);
 
+// A vertical config's contacts as vertical_step rows (a case is the truthy `case`
+// key, else `step`); callers have checked them.
+std::vector<VerticalContactRow> vertical_rows(const Array& contacts);
+
 // trace_ladder_schedule(initial, ladder, sneak, hit, jump=[f32(.42) if j else None], contacts=contacts,
 // stop_on_landing=False, threshold=threshold): the form append_choice traces, without target_top or
 // occupied_y_bounds. Failures are not itemized; callers read only the status.

@@ -15,6 +15,7 @@
 #include "pkc/coefficients.hpp"
 #include "pkc/envelopes.hpp"
 #include "pkc/gate.hpp"
+#include "pkc/movement/vertical_profiles.hpp"
 #include "pkc/numerics/builders.hpp"
 #include "pkc/numerics/constraints.hpp"
 #include "pkc/numerics/disk.hpp"
@@ -379,6 +380,18 @@ PYBIND11_MODULE(_pkc_native, m) {
     m.def("free_rectangles", [](py::handle boxes) {
         return to_python(pkc::free_rectangles(convert(boxes)));
     }, "spatial/surfaces.free_rectangles as lists");
+    m.def("trace_ladder_schedule", [](py::handle initial, py::handle ladder, py::handle sneak, py::handle hit,
+                                      py::handle jump, py::handle target_top, py::handle min_landing_state,
+                                      py::handle contacts, py::handle occupied_y_bounds, bool stop_on_landing,
+                                      py::handle threshold) {
+        return to_python(pkc::trace_ladder_schedule(convert(initial), convert(ladder), convert(sneak), convert(hit),
+                                                    convert(jump), convert(target_top), convert(min_landing_state),
+                                                    convert(contacts), convert(occupied_y_bounds), stop_on_landing,
+                                                    convert(threshold)));
+    }, py::arg("initial"), py::arg("ladder"), py::arg("sneak"), py::arg("hit"), py::kw_only(), py::arg("jump") = py::none(),
+       py::arg("target_top") = py::none(), py::arg("min_landing_state") = 0, py::arg("contacts") = py::none(),
+       py::arg("occupied_y_bounds") = py::none(), py::arg("stop_on_landing") = true, py::arg("threshold") = .005,
+       "movement/vertical_profiles.trace_ladder_schedule");
     m.def("float_repr", &pkc::float_repr, "repr(float) for a finite float");
     m.def("sha256_hex", [](py::bytes data) { return pkc::sha256_hex(std::string(data)); });
 }

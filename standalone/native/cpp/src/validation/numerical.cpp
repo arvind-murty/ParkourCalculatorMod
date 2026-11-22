@@ -59,26 +59,6 @@ Value num_values(const std::vector<Num>& values) {
     return array(std::move(out));
 }
 
-// The vertical config's contacts as vertical_step rows; prepare checked them.
-std::vector<VerticalContactRow> vertical_rows(const Object& config) {
-    std::vector<VerticalContactRow> rows;
-    for (const auto& contact_value : items(at(config, "contacts"))) {
-        const Object& c = fields(contact_value);
-        VerticalContactRow row{as_int(at(c, "state")), as_int(at(c, "direction")), num(at(c, "plane")),
-                               false, std::nullopt, std::nullopt, std::nullopt, std::nullopt};
-        if (const Value* kind = get(c, "case"); kind && py_truthy(*kind)) {
-            row.movement_case = as_text(*kind);
-            if (const Value* v = get(c, "lowerHeight")) row.lower_height = num(*v);
-            if (const Value* v = get(c, "higherHeight")) row.higher_height = num(*v);
-            if (const Value* v = get(c, "clearance")) row.clearance = num(*v);
-        } else if (const Value* step = get(c, "step")) {
-            row.step = std::get<bool>(step->data);
-        }
-        rows.push_back(std::move(row));
-    }
-    return rows;
-}
-
 // _replay: the one recurrence/contact/wall/vertical check; controls[t] is tick t's acceleration.
 Object replay(const Object& problem, const Array& yaw_values, const std::vector<Num>& yaw,
               const std::vector<Pair>& controls) {
@@ -112,7 +92,7 @@ Object replay(const Object& problem, const Array& yaw_values, const std::vector<
         y.push_back(num(at(*vertical, "position")));
         vy.push_back(num(at(*vertical, "velocity")));
         grounded.push_back(std::get<bool>(at(*vertical, "onGround").data));
-        rows = vertical_rows(*vertical);
+        rows = vertical_rows(items(at(*vertical, "contacts")));
         for (const auto& j : items(at(*vertical, "jumpVelocity")))
             jumps.push_back(is_null(j) ? std::nullopt : std::optional<Num>(num(j)));
         sneak = flags(at(*vertical, "sneak"));

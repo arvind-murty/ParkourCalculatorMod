@@ -195,6 +195,23 @@ CPython `math.hypot` port now has one copy, `src/py_math.hpp`.
   and live `verify-screen` on the extended input compared 2,292 sequence screens, 1,680 required-contact proofs and
   1,691 program checks with no difference ([summary](2026-11-22-validation/live-screen-release-summary.json)).
 
+## Milestone after merging PR #9, 2026-11-22
+
+Source: `299b72a7` (PR #9 at `73d4489a` merged, with the native follow-ups for merged faces and the new
+`compile_program`), before `e7cd2bc6`.
+
+- A gate corpus recaptured on this source (1,410 preparations, 3,229 coefficient requests, 6,206 programs, 6,197
+  appends, 6,194 envelope builds) replays identically on release and UBSan
+  ([release](2026-11-22-merge9/corpus-replay-release.json), [UBSan](2026-11-22-merge9/corpus-replay-sanitize.json)).
+- The gate modules pass without and with `PKC_NATIVE_CORE`: 734 tests, 10 skips (the Java bridge tests)
+  ([Python](2026-11-22-merge9/suite-python-summary.txt), [native](2026-11-22-merge9/suite-native-summary.txt)).
+- Live `verify-scene` and `verify-screen` on the extended input for 90 s compared every call with no difference on
+  either build ([scene release](2026-11-22-merge9/live-scene-release-summary.json),
+  [scene UBSan](2026-11-22-merge9/live-scene-sanitize-summary.json),
+  [screen release](2026-11-22-merge9/live-screen-release-summary.json),
+  [screen UBSan](2026-11-22-merge9/live-screen-sanitize-summary.json)).
+- Fixed work (extended, 100 solver calls): exact on all 19 transitions ([parity](2026-11-22-merge9/parity.json)).
+
 ## First appends built natively, 2026-11-22
 
 Source: `e7cd2bc6` plus native `append_choice` for a program's first append (Python `_rebuild` without ladder events:
@@ -224,4 +241,22 @@ int/float kinds, since a contact option's `surface` name is a key over them.
   (`e7cd2bc6`) and native first appends: Python and native match exactly on all 19 transitions
   ([parity](2026-11-22-surfaces/parity-python-native.json)); search 43.1 s Python, 28.0 s native. The same run before
   `e7cd2bc6` took 42.2 s Python and 45.9 s native.
+
+## Y traces (trace_ladder_schedule), 2026-11-22
+
+Source: `d04ee030` plus native `movement/vertical_profiles.trace_ladder_schedule` in full (target tops, minimum landing
+states, occupied Y bounds, `stop_on_landing`, itemized failures), dispatched for every caller; `vertical_step` now
+takes per-tick jump velocities and itemizes failures for it and for `validation/numerical`.
+
+- Recorded calls (410 kept of 26,907 on a 90 s extended solve, 5,000 kept of 878,539 on the unit/integration suite)
+  replay identically through the Python function on release and UBSan
+  ([release](2026-11-22-trace/replay-release.json), [UBSan](2026-11-22-trace/replay-sanitize.json)); synthetic
+  schedules with ladders, sneak, jumps, cases, steps, target tops and occupied bounds agree on 30,051 cases (15,165
+  invalid with itemized failures, 12,077 identical errors) on release and 7,501 on UBSan
+  ([release](2026-11-22-trace/synthetic-release.json), [UBSan](2026-11-22-trace/synthetic-sanitize.json)).
+- 13.3 us per call native against 28.4 us Python on a 10 to 25 tick jump schedule, conversion included.
+- The gate modules pass in both modes (777 tests, 10 Java-bridge skips;
+  [Python](2026-11-22-trace/suite-python-summary.txt), [native](2026-11-22-trace/suite-native-summary.txt)); fixed
+  work matches exactly on all 19 transitions, search 43.0 s Python and 28.1 s native
+  ([parity](2026-11-22-trace/parity.json)).
 

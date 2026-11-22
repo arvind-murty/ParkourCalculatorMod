@@ -5,6 +5,7 @@
 #include <cmath>
 #include <map>
 
+#include "schema.hpp"
 #include "value_ops.hpp"
 
 namespace pkc {
@@ -194,6 +195,25 @@ Trace trace_ladder_schedule(const ScalarState& initial, const std::vector<bool>&
     vertical.threshold = threshold;
     vertical.profile = "minecraft-1.8.9";
     return trace;
+}
+
+std::vector<VerticalContactRow> vertical_rows(const Array& contacts) {
+    std::vector<VerticalContactRow> rows;
+    for (const auto& contact_value : contacts) {
+        const Object& c = fields(contact_value);
+        VerticalContactRow row{as_int(at(c, "state")), as_int(at(c, "direction")), num(at(c, "plane")),
+                               false, std::nullopt, std::nullopt, std::nullopt, std::nullopt};
+        if (const Value* kind = get(c, "case"); kind && py_truthy(*kind)) {
+            row.movement_case = as_text(*kind);
+            if (const Value* v = get(c, "lowerHeight")) row.lower_height = num(*v);
+            if (const Value* v = get(c, "higherHeight")) row.higher_height = num(*v);
+            if (const Value* v = get(c, "clearance")) row.clearance = num(*v);
+        } else if (const Value* step = get(c, "step")) {
+            row.step = py_truthy(*step);  // contact.get('step', False)
+        }
+        rows.push_back(std::move(row));
+    }
+    return rows;
 }
 
 }  // namespace pkc
