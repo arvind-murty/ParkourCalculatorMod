@@ -260,3 +260,17 @@ takes per-tick jump velocities and itemizes failures for it and for `validation/
   work matches exactly on all 19 transitions, search 43.0 s Python and 28.1 s native
   ([parity](2026-11-22-trace/parity.json)).
 
+## Cell decomposition and geometry graph, 2026-11-22
+
+Source: `a77d39a5` plus native `spatial/cells.decompose` (with `merge_boxes`, `union_subtract`, contact patches,
+support refinement and portals), `spatial/regions.support_components` and `build_geometry_graph`; Python builds its
+dataclasses from the native rows. The last sampled profile spent 1.4 s of a 34.8 s native run in the graph's Python
+`cells.intersection` loops.
+
+- On every collision scene in the repository (47 distinct), 94 decompositions (with and without support refinement),
+  47 support component sets and 94 graphs (no task goal and a landing goal) agree on release and UBSan
+  ([release](2026-11-22-cells/cells-release.json), [UBSan](2026-11-22-cells/cells-sanitize.json)); over those scenes
+  Python took 0.74 s to decompose and 7.84 s to build graphs, native 0.04 s and 0.46 s.
+- Fixed work: exact on all 19 transitions; search 43.1 s Python, 26.7 s native
+  ([parity](2026-11-22-cells/parity-python-native.json)).
+

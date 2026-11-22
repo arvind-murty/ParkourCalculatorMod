@@ -995,7 +995,7 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `contact_patches` | [133](../src/parkour_solver/spatial/cells.py#L133) | function |
 | `refine_support_cells` | [149](../src/parkour_solver/spatial/cells.py#L149) | function |
 | `decompose` | [187](../src/parkour_solver/spatial/cells.py#L187) | function |
-| `box_segment_interval` | [239](../src/parkour_solver/spatial/cells.py#L239) | function |
+| `box_segment_interval` | [249](../src/parkour_solver/spatial/cells.py#L249) | function |
 
 ## spatial/checkpoints.py
 
@@ -1042,13 +1042,15 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `geometry_key` | [19](../src/parkour_solver/spatial/regions.py#L19) | function |
 | `canonical_cover` | [25](../src/parkour_solver/spatial/regions.py#L25) | function |
 | `SupportComponent` | [59](../src/parkour_solver/spatial/regions.py#L59) | class |
-| `support_components` | [69](../src/parkour_solver/spatial/regions.py#L69) | function |
-| `RouteRegion` | [98](../src/parkour_solver/spatial/regions.py#L98) | class |
-| `RouteTransition` | [110](../src/parkour_solver/spatial/regions.py#L110) | class |
-| `RouteGraph` | [124](../src/parkour_solver/spatial/regions.py#L124) | class |
-| `RouteGraph.to_dict` | [135](../src/parkour_solver/spatial/regions.py#L135) | function |
-| `build_geometry_graph` | [138](../src/parkour_solver/spatial/regions.py#L138) | function |
-| `_incidence_graph` | [150](../src/parkour_solver/spatial/regions.py#L150) | function |
+| `_native` | [69](../src/parkour_solver/spatial/regions.py#L69) | function |
+| `_rows` | [75](../src/parkour_solver/spatial/regions.py#L75) | function |
+| `support_components` | [83](../src/parkour_solver/spatial/regions.py#L83) | function |
+| `RouteRegion` | [117](../src/parkour_solver/spatial/regions.py#L117) | class |
+| `RouteTransition` | [129](../src/parkour_solver/spatial/regions.py#L129) | class |
+| `RouteGraph` | [143](../src/parkour_solver/spatial/regions.py#L143) | class |
+| `RouteGraph.to_dict` | [154](../src/parkour_solver/spatial/regions.py#L154) | function |
+| `build_geometry_graph` | [157](../src/parkour_solver/spatial/regions.py#L157) | function |
+| `_incidence_graph` | [182](../src/parkour_solver/spatial/regions.py#L182) | function |
 
 ## spatial/surfaces.py
 

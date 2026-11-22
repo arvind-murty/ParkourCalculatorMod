@@ -1,0 +1,14 @@
+{
+ "stats": {
+  "decompose": 94,
+  "support_components": 47,
+  "graph": 94
+ },
+ "seconds": {
+  "python decompose": 0.737,
+  "native decompose": 0.036,
+  "python supports": 0.005,
+  "python graph": 7.84,
+  "native graph": 0.459
+ }
+}

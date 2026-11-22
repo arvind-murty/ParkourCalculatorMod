@@ -26,6 +26,8 @@
 #include "pkc/scene/route.hpp"
 #include "pkc/scene/static_collision.hpp"
 #include "pkc/screen.hpp"
+#include "pkc/spatial/cells.hpp"
+#include "pkc/spatial/regions.hpp"
 #include "pkc/spatial/surfaces.hpp"
 #include "pkc/validation/numerical.hpp"
 #include "pkc/validation/vertical.hpp"
@@ -377,6 +379,17 @@ PYBIND11_MODULE(_pkc_native, m) {
                                    std::vector<std::int64_t> members) {
             return to_python(g.contact_options(axis, sign, convert(clearance), members));
         }, "spatial/surfaces.SceneGeometry.contact_options as [surface, plane, members, regions] rows");
+    m.def("decompose", [](py::handle scene, std::int64_t max_cells, py::handle seconds, bool refine_support) {
+        std::optional<double> budget;
+        if (!seconds.is_none()) budget = seconds.cast<double>();
+        return to_python(pkc::decompose(convert(scene), max_cells, budget, refine_support));
+    }, "spatial/cells.decompose as rows; `seconds` is the deadline's remaining budget (None: unlimited)");
+    m.def("support_components", [](py::handle decomposition) {
+        return to_python(pkc::support_components(convert(decomposition)));
+    }, "spatial/regions.support_components on decompose() rows");
+    m.def("build_geometry_graph", [](py::handle scene, py::handle decomposition, py::handle supports, py::handle task_goal) {
+        return to_python(pkc::build_geometry_graph(convert(scene), convert(decomposition), convert(supports), convert(task_goal)));
+    }, "spatial/regions.build_geometry_graph on decompose() and support_components() rows");
     m.def("free_rectangles", [](py::handle boxes) {
         return to_python(pkc::free_rectangles(convert(boxes)));
     }, "spatial/surfaces.free_rectangles as lists");
