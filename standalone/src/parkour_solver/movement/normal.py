@@ -74,34 +74,37 @@ def named_choice(context, kind, initial, event, *, jumping=False, constraints=()
                         region_choices=region_choices)
 
 
-def feet_allowed(context, block):
+def feet_allowed(context, name):
+    """Whether the feet may touch the merged top face `name` (the anchor search's departed and later faces may not)."""
     allowed = context.get('feetAllowed')
-    return allowed is None or allowed(block)
+    return allowed is None or allowed(name)
 
 
 def normal_choices(context):
-    from parkour_solver.movement.contact_combinations import (contact_event, reachable_option, region_choices,
-                                                              scene_contact_options)
-    from parkour_solver.reachability.service import candidate_blocks, walk_off_allowed
+    """One landing per reachable merged top face, its terminalSupport the face's name."""
+    from parkour_solver.movement.contact_combinations import (contact_event, face_name, reachable_option, region_choices,
+                                                              solid_owners)
+    from parkour_solver.reachability.service import candidate_faces, walk_off_allowed
+    owners = solid_owners(context['scene'])
     for initial, jumping, trace in choice_approaches(context):
-        for block in candidate_blocks(context, 'landing'):
+        for face in candidate_faces(context, 'landing'):
             if context.get('checkBudget'):
                 context['checkBudget']()
-            if not feet_allowed(context, block):
+            name = face_name(context['scene'], face, owners)
+            if not feet_allowed(context, name):
                 continue
-            t = first_descent(trace, block['top'])
+            t = first_descent(trace, face.plane)
             if t is None:
                 continue
-            for option in scene_contact_options(context['scene'], 1, 1, members=[block['solidIndex']]):
-                option = reachable_option(context, option, t, jumping=jumping, label=dict(owner=block['id'], role='landing'))
-                if option is None:
-                    continue
-                event = contact_event(option, 'Y', -1, t, 'landing')
-                if (initial['onGround'] and not jumping and block['top'] < initial['position'] and
-                        not walk_off_allowed(context, event['boxes'], label=dict(owner=block['id'], role='landing'))):
-                    continue
-                choice = event_choice(context, 'normal', initial, t + 1, jumping=jumping,
-                    vertical=[dict(state=t + 1, direction=-1, plane=block['top'])], finite=[event],
-                    support=block['id'], landing_phase='pre', region_choices=region_choices(context, event, block['id']))
-                if choice:
-                    yield choice
+            option = reachable_option(context, face, t, jumping=jumping, label=dict(owner=name, role='landing'))
+            if option is None:
+                continue
+            event = contact_event(option, 'Y', -1, t, 'landing')
+            if (initial['onGround'] and not jumping and face.plane < initial['position'] and
+                    not walk_off_allowed(context, event['boxes'], label=dict(owner=name, role='landing'))):
+                continue
+            choice = event_choice(context, 'normal', initial, t + 1, jumping=jumping,
+                vertical=[dict(state=t + 1, direction=-1, plane=face.plane)], finite=[event],
+                support=name, landing_phase='pre', region_choices=region_choices(context, event, name))
+            if choice:
+                yield choice

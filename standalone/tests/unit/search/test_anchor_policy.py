@@ -96,7 +96,7 @@ class AnchorPolicyTests(unittest.TestCase):
         self.assertEqual(view.bind_program(skipped).candidate({},dict(positions=[[.5,.5]]*2),{})['reason'],
                          'missing_prior_anchor')
         ctx=dict(program=history(s,['mid']));view.context(ctx)
-        self.assertTrue(ctx['feetAllowed'](next(b for b in s['blocks'] if b['id']=='goal')))
+        self.assertTrue(ctx['feetAllowed']('goal'))
 
     def test_owner_returns_excluded_but_all_same_owner_jumps_preserved(self):
         s=scene()
@@ -220,9 +220,9 @@ class AnchorPolicyTests(unittest.TestCase):
         self.assertFalse(view.bind_program(p).candidate({},dict(positions=[[.5,.5]]*2),{})['accepted'])
         ctx=dict(program=p);view.context(ctx)
         self.assertEqual(set(ctx),{'program','feetAllowed'})
-        self.assertTrue(ctx['feetAllowed'](next(b for b in s['blocks'] if b['id']=='optional')))
-        self.assertTrue(ctx['feetAllowed'](next(b for b in s['blocks'] if b['id']=='start')))
-        self.assertFalse(ctx['feetAllowed'](next(b for b in s['blocks'] if b['id']=='goal')))
+        self.assertTrue(ctx['feetAllowed']('optional'))
+        self.assertTrue(ctx['feetAllowed']('start'))
+        self.assertFalse(ctx['feetAllowed']('goal'))
 
     def test_exact_failure_has_no_ancestor_side_effect_or_or_parent_shortcut(self):
         policy=policy_spec(dict(purpose='node',oracleRejection=True),first_witness=True)
@@ -293,7 +293,7 @@ class AnchorPolicyTests(unittest.TestCase):
         solid=lambda name:s['collisionScene']['solids'][next(b['solidIndex'] for b in s['blocks'] if b['id']==name)]
         p['profile']['contactEvents']=p['profile']['contactEvents'][:1]
         p['profile']['position'][2]=2.
-        p['profile']['caseEvents']=[dict(input=1,type='stepping',case='blip',boxes=[solid('mid')],lowerBox=solid('optional'))]
+        p['profile']['caseEvents']=[dict(input=1,type='stepping',case='blip',boxes=[solid('mid')],lowerBoxes=[solid('optional')])]
         p['terminalSupport']='mid'
         self.assertEqual([v for v in visits(s,p) if v[0]==2],[(2,'optional'),(2,'mid'),(2,'mid')])
         self.assertTrue(audit(s,p,['mid'])['accepted'])

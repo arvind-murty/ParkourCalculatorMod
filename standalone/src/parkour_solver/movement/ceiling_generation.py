@@ -6,7 +6,8 @@ from parkour_solver.reachability.service import behind_decision, candidate_optio
 
 
 def grind_options(context, feet, allowed=None):
-    """(event, rows, regionChoices) for each exposed side of a member under each low merged underside."""
+    """(event, rows, regionChoices) for each exposed side of a member under each low merged underside; members whose
+    sides share a plane give that side once."""
     scene = context['scene']
     blocks = {b['solidIndex']: b for b in scene['blocks']}
     for option in scene_contact_options(scene, 1, -1):
@@ -25,15 +26,20 @@ def grind_options(context, feet, allowed=None):
         regions = [dict(offset=1, surface=option.surface, owner=owner,
                         options=[[dict(r, name='case:finite') for r in finite_rows(1, region, leg=0, offset=1)]
                                  for region in option.regions])] if len(option.regions) > 1 and context.get('regionItems') else []
+        sides = set()
         for index in option.members:
             box = scene['collisionScene']['solids'][index]
             for axis in ('X', 'Z'):
                 for sign in (-1, 1):
                     if exposed_side(scene, blocks[index], axis, sign, option.plane) and not entry_backward(
                             context, axis, sign, bounding_region(option.regions), label=dict(owner=owner, role='grind')):
+                        row = outside_row(box, axis, sign, 0, 'grind:outside')
+                        if (axis, sign, row['rhs']) in sides:
+                            continue
+                        sides.add((axis, sign, row['rhs']))
                         event = dict(case='grind', input=0, plane=feet, clearance=clearance,
                                      boxes=[list(b) for b in option.boxes], anchors={'beforeJump': 0, 'jump': 1})
-                        yield event, [outside_row(box, axis, sign, 0, 'grind:outside')] + under, regions
+                        yield event, [row] + under, regions
 
 
 class CeilingGenerator:

@@ -131,13 +131,16 @@ def walk_off_allowed(context, landing_boxes, *, label):
     return gate is None or gate.walk_off(context, landing_boxes, label=label)
 
 
-def candidate_blocks(context, kind='blocks'):
-    blocks = context['scene']['blocks']
+def candidate_faces(context, kind):
+    """The merged top faces with a block in the launch face's table of `kind`; every face without a gate or launch face."""
+    from parkour_solver.movement.contact_combinations import top_faces
+    faces = top_faces(context['scene'])
     face = context.get('launchFace')
     if face is None or context['interactionGate'] is None:
-        return blocks
+        return faces
     kept = context['interactionGate'].reachable_faces(face)[kind]
-    return [b for b in blocks if b['id'] in kept]
+    solids = {b['solidIndex'] for b in context['scene']['blocks'] if b['id'] in kept}
+    return [f for f in faces if solids.intersection(f.members)]
 
 
 def candidate_option(context, option, kind='solids'):
@@ -228,10 +231,10 @@ def walk_off_tick(program):
 
 def landing_boxes(program, cut):
     """The boxes a run-off from `cut` first lands on: its landing or step contact, or a flight case's
-    lower block; None when it lands on nothing modeled."""
+    lower face; None when it lands on nothing modeled."""
     p=program['profile']
     events=[(e['offset'],e['boxes']) for e in p['contactEvents'] if e['offset']>=cut and e.get('role') in ('landing','step') and 'boxes' in e]
-    events+=[(e['input'],[e['lowerBox']]) for e in p['caseEvents'] if e['input']>=cut and 'lowerBox' in e]
+    events+=[(e['input'],e['lowerBoxes']) for e in p['caseEvents'] if e['input']>=cut and 'lowerBoxes' in e]
     return min(events,key=lambda e:e[0])[1] if events else None
 
 

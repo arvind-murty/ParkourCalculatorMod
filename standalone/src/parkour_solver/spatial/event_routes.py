@@ -207,6 +207,7 @@ def initial_cursor(domain, roots=None):
             if not program['profile']['grounded'][-1]:
                 attachments.update(r['key'] for r in data['geometry']['regions'] if r['kind']=='air_volume')
             else:
+                # terminalSupport is a face name; frame roots end on the start or an anchor, whose face name is its id.
                 solid=next((b['solidIndex'] for b in data['scene']['blocks'] if b['id']==program['terminalSupport']),None)
                 attachments.update(s['key'] for s in data['geometry']['supports'] if solid in s['solids'] and
                     abs(s['height']-program['profile']['position'][-1])<=1e-7)

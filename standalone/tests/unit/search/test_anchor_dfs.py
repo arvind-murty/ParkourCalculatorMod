@@ -159,8 +159,9 @@ class AnchorDFSTests(unittest.TestCase):
             context=dict(mode='open',scene=s,program=p,state=boundary_state(p),interactionGate=None,threshold=0.,maxInputs=20,maxEntryInputs=20)
             return next(c for c in (append_choice(p,choice,max_inputs=20) for choice in generate_choices('normal',context))
                         if c is not None and c['profile']['grounded'][-1] and c.get('terminalSupport')==support)
-        decision=dict(landings(roots[0],'pad'),decisionPoint=[2.5,.5],decisionVelocity=[0.,0.])
-        hop=landings(decision,'rest')
+        # One landing per face: the jump onto pad lands on pad+rest, and so does the hop back onto it.
+        decision=dict(landings(roots[0],'pad+rest'),decisionPoint=[2.5,.5],decisionVelocity=[0.,0.])
+        hop=landings(decision,'pad+rest')
         self.assertTrue(policy['back'](decision,hop))
         fit=policy['fits'](decision,hop)
         (top,)=[o for o in top_faces(s) if face_name(s,o)=='pad+rest']

@@ -106,6 +106,16 @@ class ExposedTopTests(unittest.TestCase):
         return [c for c in normal_choices(dict(dict(scene=scene, state=state, maxInputs=30, threshold=0., interactionGate=None), **context))
                 if c.get('terminalSupport') == 'floor']
 
+    def test_a_merged_face_gets_one_landing_per_approach(self):
+        from parkour_solver.movement.normal import normal_choices
+        from parkour_solver.physics.vertical import REST_CARRY
+        # floor and pad are flush at one height: one face, named for both, carrying both boxes.
+        scene = box_scene([[0, 0, 0, 2, 1, 2], [2, 0, 0, 4, 1, 2]], [('floor', 1), ('pad', 1)])
+        state = dict(position=1.2, velocity=REST_CARRY, onGround=True, previousHorizontalCollision=False)
+        choices = list(normal_choices(dict(scene=scene, state=state, maxInputs=30, threshold=0., interactionGate=None)))
+        self.assertEqual([c['terminalSupport'] for c in choices], ['floor+pad']*2)
+        self.assertTrue(all(e['boxes'] == scene['collisionScene']['solids'] for c in choices for e in c['profile']['contactEvents']))
+
     def test_landing_next_to_a_taller_neighbour_is_the_clipped_l(self):
         scene = box_scene([[0, 0, 0, 2, 1, 2], [2, 0, 1, 3, 3, 2]], [('floor', 1), ('pillar', 3)])
         walk = self.landings(scene, regionItems=True)
@@ -131,8 +141,8 @@ class ExposedTopTests(unittest.TestCase):
     def test_a_departed_block_gets_no_landing(self):
         scene = box_scene([[0, 0, 0, 2, 1, 2], [2, 0, 1, 3, 3, 2]], [('floor', 1), ('pillar', 3)])
         self.assertTrue(self.landings(scene))
-        self.assertEqual(self.landings(scene, feetAllowed=lambda block: block['id'] != 'floor'), [])
-        self.assertTrue(self.landings(scene, feetAllowed=lambda block: block['id'] != 'pillar'))
+        self.assertEqual(self.landings(scene, feetAllowed=lambda name: name != 'floor'), [])
+        self.assertTrue(self.landings(scene, feetAllowed=lambda name: name != 'pillar'))
 
     def test_real11_run_tick_landing_drops_the_rectangle_it_cannot_reach(self):
         import json

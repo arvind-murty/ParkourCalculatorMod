@@ -110,9 +110,12 @@ outside and wall options exist only on a side face exposed at the feet height (a
 flush against a neighbour yields none; feet exactly on a flush neighbour's top touch
 the face above it), corner cases only at convex corners whose two side faces are both
 exposed at the corner (a flush seam is not a corner), and target, lower and higher
-regions are the blocks' exposed tops, one choice per disconnected piece, keeping only the
-rectangles the approach can reach at that state. Grind uses each
-low merged underside, with outside rows on its members' exposed sides. Exposure never
+regions are merged top faces ([scene surfaces](SCENE_SURFACES.md)), keeping only the
+rectangles the approach can reach at that state. Sides and corners are tested per member
+block of the face; an event carries the face's `boxes` (and a flight case the lower face's
+`lowerBoxes`), a member's choice that repeats another's is dropped, and corner tangent rows
+span the members' shared side. Grind uses each low merged underside, with outside rows on its
+members' exposed sides, each side plane once. Exposure never
 rejects a step trigger: the trigger check uses the event's `boxes`, and uncertain probes
 keep the `InteractionGate` unknown path.
 
@@ -123,8 +126,8 @@ Corner cases share X-approach and next-state Z-escape constraints.
 
 In the anchor search no stepping case touches a merged top face the route has already
 left: the target, higher, corner and lower blocks of the six stepping cases all go through
-the context's `feetAllowed` predicate (which names each block's face) before any reachability
-query, and the emitted-program audit rejects a case event whose `boxes` or `lowerBox` stand on
+the context's `feetAllowed` predicate (on the face's name) before any reachability
+query, and the emitted-program audit rejects a case event whose `boxes` or `lowerBoxes` stand on
 a departed face. These touches never count as visits, and a touch that matches a visit at the
 same tick is not a return: a blip landing on a lower face and stepping onto another in one
 input visits both. Grind and ceiling hits are not at the feet and may touch a

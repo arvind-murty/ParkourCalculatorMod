@@ -58,6 +58,7 @@ class EventGuideAdapter:
                 remaining = self.data['inputDomain']['maxInputs']-parent['profile']['duration']
                 if remaining <= 0:
                     continue
+                # terminalSupport is a face name; frame parents end on the start or an anchor, whose face name is its id.
                 source = next((b for b in self.scene['blocks'] if b['id']==parent['terminalSupport']),None)
                 entry = self.scene['initial']['position'] if source is None else [
                     (source['bounds'][0]+source['bounds'][1])/2,source['top'],(source['bounds'][2]+source['bounds'][3])/2]

@@ -15,9 +15,11 @@ horizontal tangent axes (the union of the shrunk maximal rectangles), so the sea
 one region; a clipping neighbour's edge stays exact, because touching it is allowed.
 `movement.contact_combinations.scene_contact_options` asks with every offered block as a member.
 
-Ceiling generators pass the offered blocks' solids and merge across them. A landing passes its own block, so it stays
-one choice per block (one per disconnected piece of its top) and its region excludes positions a taller neighbour
-blocks. Unwanted-floor checks use clearance 0, one check per exact exposed rectangle.
+Every generator asks with the offered blocks' solids, so landings, steps, flight cases and ceilings are one choice per
+merged face (`contact_combinations.top_faces`, named by `face_name`: its blocks' owners joined). Coplanar tops merge
+when their player-space rectangles touch, i.e. less than a player's width apart, and a face's region excludes positions
+a taller neighbour blocks. Stepping cases test sides and corners per member block (a seam against a flush member is
+neither) and drop a member's choice that repeats another's; corner tangent rows span the members' shared side. Unwanted-floor checks use clearance 0, one check per exact exposed rectangle.
 
 ## Members, not a merged box
 

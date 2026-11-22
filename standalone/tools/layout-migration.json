@@ -5943,7 +5943,7 @@
       "old": "autonomy/fixtures/ceiling-bonk.json",
       "new": "tests/fixtures/movement/ceiling-bonk.json",
       "originalSha256": "ce66f5daa96411cfe5da73c6d6f6a14ea0219a7310417971220c896c9ccbbf8c",
-      "immutable": true
+      "immutable": false
     },
     {
       "old": "autonomy/fixtures/contact-wide-neo.json",
@@ -5979,7 +5979,7 @@
       "old": "autonomy/fixtures/generic-repeat-ceiling.json",
       "new": "tests/fixtures/movement/generic-repeat-ceiling.json",
       "originalSha256": "458d55b5f3a3a547b99a04fac86d655c19ffc4f8d8a54f708401d26ac7fb3fc9",
-      "immutable": true
+      "immutable": false
     },
     {
       "old": "autonomy/fixtures/hanging-vines.json",
@@ -6130,13 +6130,13 @@
       "old": "autonomy/fixtures/stepping/corner_jump_cancel.json",
       "new": "tests/fixtures/movement/stepping/corner_jump_cancel.json",
       "originalSha256": "23666916feb65561891b7b079926b36707605322f4c4551df32d3e65fd120c1d",
-      "immutable": true
+      "immutable": false
     },
     {
       "old": "autonomy/fixtures/stepping/grind.json",
       "new": "tests/fixtures/movement/stepping/grind.json",
       "originalSha256": "1848296f6ba86a42a4dc4eb40b340b8f380630038cc0bf86a19dac3c1db5cfaf",
-      "immutable": true
+      "immutable": false
     },
     {
       "old": "autonomy/fixtures/stepping/normal_step.json",

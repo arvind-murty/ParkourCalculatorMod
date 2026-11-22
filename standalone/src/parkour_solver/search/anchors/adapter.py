@@ -4,8 +4,7 @@ import copy
 
 from parkour_solver.search.identity import digest
 from parkour_solver.search.events.adapter import EventGuideAdapter, EventReference
-from parkour_solver.search.anchors.policy import (audit, encounter_groups, face_namer, owner, support_face, visit_state,
-                                                  visits, semantic_settings)
+from parkour_solver.search.anchors.policy import audit, encounter_groups, owner, visit_state, visits, semantic_settings
 from parkour_solver.spatial.anchor_guides import build_guides, decision_objective, onward_objective
 
 
@@ -108,8 +107,8 @@ class AnchorAdapter(EventGuideAdapter):
         forbidden={owner(self.scene,a) for a in self.anchor_policy['anchors'][end+1:]}
         if end<len(self.anchor_policy['anchors']):
             forbidden.add(owner(self.scene,self.data['task']['block']))
-        excluded,name=set(state['departed'])|forbidden,face_namer(self.scene)
-        context['feetAllowed']=lambda block: support_face(self.scene,block['id'],name) not in excluded
+        excluded=set(state['departed'])|forbidden
+        context['feetAllowed']=lambda name: name not in excluded
 
     def program_allowed(self, program):
         anchors=self.anchor_policy['anchors'];end=self.cursor['groupEnd']

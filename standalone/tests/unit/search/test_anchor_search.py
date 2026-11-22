@@ -442,8 +442,8 @@ class MinimumRunTickTests(unittest.TestCase):
         root=empty_program(s['initial'],threshold=0.);root['terminalSupport']='start'
         context=dict(mode='open',scene=s,program=root,state=boundary_state(root),interactionGate=None,threshold=0.,maxInputs=40,maxEntryInputs=40)
         decision=next(child for c in generate_choices('normal',context) for child in [append_choice(root,c,max_inputs=40)]
-                      if child is not None and child['profile']['grounded'][-1] and child.get('terminalSupport')=='pad')
-        self.assertIn('rest',self.landings(s,decision))
+                      if child is not None and child['profile']['grounded'][-1] and child.get('terminalSupport')=='pad+rest')
+        self.assertIn('pad+rest',self.landings(s,decision))
         emitted,state=self.frontier(scene=s,initial=[decision],
                                     screen=lambda p:dict(reason='off') if p.get('terminalSupport') in ('start','goal') else None)
         self.assertEqual({json.loads(key)[0] for key,_,_ in self.candidates(state)},{'scan'})

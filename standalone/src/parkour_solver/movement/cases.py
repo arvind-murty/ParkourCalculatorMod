@@ -54,29 +54,44 @@ def convex_corner(scene, block, x_direction, z_escape, y):
             and any(r[1] <= y < r[3] and r[0] <= x <= r[2] for o in _faces(scene, block, 'Z', z_escape) for r in o.regions))
 
 
-def top_choices(context, block, state, name='case:region', *, jumping):
-    """(rows, regionChoices) per exposed piece of the block's top that the approach can reach at `state`."""
-    scene = context['scene']
-    result = []
-    for option in scene_contact_options(scene, 1, 1, members=[block['solidIndex']]):
-        option = reachable_option(context, option, state, jumping=jumping,
-                                  label=dict(owner=block['id'], role='lower landing' if name == 'case:lower_landing' else 'top'))
-        if option is None:
-            continue
-        rows = [dict(r, name=name) for r in finite_rows(1, bounding_region(option.regions), t1=state)]
-        choices = [dict(offset=state, surface=option.surface, owner=block['id'],
-                        options=[[dict(r, name=name) for r in finite_rows(1, region, leg=0, offset=state)]
-                                 for region in option.regions])] if len(option.regions) > 1 and context.get('regionItems') else []
-        result.append((rows, choices))
+def top_choices(context, face, owner, state, name='case:region', *, jumping):
+    """(rows, regionChoices) for the merged top face `face` (named `owner`) if the approach can reach it at `state`."""
+    option = reachable_option(context, face, state, jumping=jumping,
+                              label=dict(owner=owner, role='lower landing' if name == 'case:lower_landing' else 'top'))
+    if option is None:
+        return []
+    rows = [dict(r, name=name) for r in finite_rows(1, bounding_region(option.regions), t1=state)]
+    choices = [dict(offset=state, surface=option.surface, owner=owner,
+                    options=[[dict(r, name=name) for r in finite_rows(1, region, leg=0, offset=state)]
+                             for region in option.regions])] if len(option.regions) > 1 and context.get('regionItems') else []
+    return [(rows, choices)]
+
+
+def side_run(box, boxes, axis, sign, along):
+    """`box` with its `along` extent widened to the connected run of `boxes` whose `axis` side (outward `sign`) lies
+    in the same plane as box's, so a merged face's side spans its seams."""
+    s, a = (0 if axis == 'X' else 2), (0 if along == 'X' else 2)
+    plane = (lambda b: b[s+3]) if sign > 0 else (lambda b: b[s])
+    lo, hi, grown = box[a], box[a+3], True
+    while grown:
+        grown = False
+        for b in boxes:
+            if plane(b) == plane(box) and b[a] <= hi and b[a+3] >= lo and (b[a] < lo or b[a+3] > hi):
+                lo, hi, grown = min(lo, b[a]), max(hi, b[a+3]), True
+    result = list(box)
+    result[a], result[a+3] = lo, hi
     return result
 
 
-def corner_rows(box, first, second, x_direction, z_escape):
+def corner_rows(box, first, second, x_direction, z_escape, boxes=()):
+    """Corner rows at `box`'s convex top corner; `boxes` are its face's member boxes, whose coplanar sides the
+    tangent rows span."""
+    boxes = list(boxes) or [box]
     result = [outside_row(box,'X',-x_direction,first),outside_row(box,'Z',z_escape,second)]
-    result += tangent_rows(box,'Z',first)
+    result += tangent_rows(side_run(box,boxes,'X',-x_direction,'Z'),'Z',first)
     r = outside_row(box,'X',-x_direction,second)
     r.update(cmp='GE' if x_direction>0 else 'LE', rhs=r['rhs']+x_direction*2e-6, name='case:cross_x')
-    return result+[r]+tangent_rows(box,'X',second)
+    return result+[r]+tangent_rows(side_run(box,boxes,'Z',z_escape,'X'),'X',second)
 
 
 def case_profile(source_y, target_y, event, *, max_inputs=200, jump_at_start=True, jump_after=None,

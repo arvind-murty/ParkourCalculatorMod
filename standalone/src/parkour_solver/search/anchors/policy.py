@@ -115,8 +115,8 @@ def visits(scene, program):
         t=e['input']+1
         # A cancel/grind touches geometry without landing on its owner. Keep
         # its requested impulse and physical case, but do not invent a visit.
-        if e.get('lowerBox') is not None:
-            events.append((e['input'],1,dict(boxes=[e['lowerBox']])))
+        if e.get('lowerBoxes') is not None:
+            events.append((e['input'],1,dict(boxes=e['lowerBoxes'])))
         boxes=e.get('boxes')
         if boxes and profile['grounded'][t] and abs(profile['position'][t]-max(b[4] for b in boxes))<=1e-7:
             events.append((e['input'],2,e))
@@ -147,7 +147,7 @@ def feet_touches(scene, program):
     for e in program['profile'].get('caseEvents', []):
         if e.get('case') not in FEET_CASES:
             continue
-        for boxes in (e.get('boxes') or (), [e['lowerBox']] if e.get('lowerBox') is not None else ()):
+        for boxes in (e.get('boxes') or (), e.get('lowerBoxes') or ()):
             found = name(boxes)
             if found is not None:
                 result.append((e['input']+1, found))

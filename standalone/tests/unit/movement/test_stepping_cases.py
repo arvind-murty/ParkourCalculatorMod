@@ -279,21 +279,23 @@ class ExposureTests(unittest.TestCase):
         scene = dict(collisionScene=dict(solids=solids),
                      blocks=[dict(id='b' + str(i), sourceBlock='b' + str(i), solidIndex=i, top=b[4]) for i, b in enumerate(solids)])
         state = dict(position=1., velocity=REST_CARRY, onGround=True, previousHorizontalCollision=False)
-        found = set()
+        found = []
         for choice in open_stepping_choices(dict(scene=scene, state=state, maxInputs=10, threshold=0., cases=[case],
                                                    interactionGate=None)):
             event, = choice['profile']['caseEvents']
-            if event['boxes'] == [solids[1]]:
-                found.add(tuple(sorted((r['mode'], r['cmp']) for r in choice['profile']['positionConstraints']
-                                       if r['name'] in ('case:outside', 'case:cross_x'))))
+            if solids[1] in event['boxes']:
+                found.append(tuple(sorted((r['mode'], r['cmp'], round(r['rhs'], 6)) for r in choice['profile']['positionConstraints']
+                                          if r['name'] in ('case:outside', 'case:cross_x'))))
         return found
 
     def test_a_side_flush_against_a_neighbour_offers_no_step(self):
+        # wall is flush with target's Z+ side at its height: one merged face, whose seam is no side.
         start, target, wall = [-2, 0, -2, 2, 1, 4], [2, 0, 0, 3, 1.5, 2], [2, 0, 2, 3, 1.5, 3]
         open_sides = self.sides([start, target], 'normal_step')
         flush = self.sides([start, target, wall], 'normal_step')
-        self.assertIn((('Z', 'GE'),), open_sides)
-        self.assertEqual(flush, open_sides - {(('Z', 'GE'),)})
+        self.assertIn((('Z', 'GE', 2.300001),), open_sides)
+        # The merged face's sides once each: target's X sides stand for wall's too, and its Z+ side is wall's far one.
+        self.assertEqual(sorted(flush), sorted([s for s in open_sides if s != (('Z', 'GE', 2.300001),)]+[(('Z', 'GE', 3.300001),)]))
 
     def test_a_departed_block_gets_no_feet_case_and_no_reachability_query(self):
         from parkour_solver.movement.ceiling_generation import open_ceiling_choices
@@ -319,11 +321,11 @@ class ExposureTests(unittest.TestCase):
             context = dict(mode='open', scene=scene, program=program, state=boundary_state(program), maxInputs=20,
                            threshold=0., interactionGate=gate)
             if reject:
-                context['feetAllowed'] = lambda b: b['id'] != block
+                context['feetAllowed'] = lambda name: name != block
             solid = next(scene['collisionScene']['solids'][b['solidIndex']] for b in scene['blocks'] if b['id'] == block)
             touched = {event['case'] for choice in open_stepping_choices(context)
                        for event in choice['profile'].get('caseEvents', [])
-                       if solid in event.get('boxes', []) + [event.get('lowerBox')]}
+                       if solid in event.get('boxes', []) + event.get('lowerBoxes', [])}
             return touched, gate.owners
 
         for name, block, cases in [
@@ -337,13 +339,35 @@ class ExposureTests(unittest.TestCase):
         scene = prepare_scene(fixture('grind')['request'])
         program = empty_program(scene['initial'], threshold=0.)
         grinds = list(open_ceiling_choices(dict(mode='open', scene=scene, program=program, state=boundary_state(program),
-                                                maxInputs=20, threshold=0., feetAllowed=lambda block: False,
+                                                maxInputs=20, threshold=0., feetAllowed=lambda name: False,
                                                 interactionGate=None)))
         self.assertEqual({e['case'] for c in grinds for e in c['profile']['caseEvents']}, {'grind'})
 
     def test_a_flush_seam_is_not_a_corner(self):
+        # wall is flush with target's Z+ side: the merged face's corners are its outline's, none at the seam.
         start, target, wall = [-2, 0, -2, 2, 1, 4], [2, 0, 0, 3, 1.5, 2], [2, 0, 2, 3, 1.5, 3]
         open_corners = self.sides([start, target], 'corner_jump_cancel')
         seam = self.sides([start, target, wall], 'corner_jump_cancel')
-        self.assertTrue(seam < open_corners)
-        self.assertFalse(any(('Z', 'GE') in rows for rows in seam))
+        rows = lambda found: {row for corner in found for row in corner}
+        self.assertEqual((len(open_corners), len(seam)), (4, 4))
+        self.assertIn(('Z', 'GE', 2.300001), rows(open_corners))
+        self.assertNotIn(('Z', 'GE', 2.300001), rows(seam))
+        self.assertIn(('Z', 'GE', 3.300001), rows(seam))
+
+    def test_corner_rows_span_the_merged_side(self):
+        # target and wall share their X- side; the Z tangent rows at target's -X-Z corner cover both, as one side.
+        target, wall = [2, 0, 0, 3, 1.5, 2], [2, 0, 2, 3, 1.5, 3]
+        tangent = lambda rows: sorted((r['cmp'], round(r['rhs'], 6)) for r in rows if r['name'] == 'case:finite' and r['mode'] == 'Z')
+        self.assertEqual(tangent(corner_rows(target, 0, 1, 1, -1)), [('GE', -0.299999), ('LE', 2.299999)])
+        self.assertEqual(tangent(corner_rows(target, 0, 1, 1, -1, [target, wall])), [('GE', -0.299999), ('LE', 3.299999)])
+        self.assertEqual(corner_rows(target, 0, 1, 1, -1, [target]), corner_rows(target, 0, 1, 1, -1))
+
+    def test_a_grind_under_a_merged_underside_enters_each_side_once(self):
+        from parkour_solver.movement.ceiling_generation import grind_options
+        # Two ceiling boxes make one underside; their Z sides share planes, so each is one entry, not one per box.
+        solids = [[-3, 0, -3, 6, 1, 3], [0, 2.9, -2, 2, 4, 2], [2, 2.9, -2, 4, 4, 2]]
+        scene = dict(collisionScene=dict(solids=solids), blocks=[dict(id=name, sourceBlock=name, solidIndex=i, top=b[4])
+                     for i, (name, b) in enumerate(zip(['floor', 'c1', 'c2'], solids))])
+        rows = [(r['mode'], r['cmp'], round(r['rhs'], 6)) for _, constraints, _ in
+                grind_options(dict(scene=scene, interactionGate=None), 1.) for r in constraints if r['name'] == 'grind:outside']
+        self.assertEqual(sorted(rows), [('X', 'GE', 4.300001), ('X', 'LE', -0.300001), ('Z', 'GE', 2.300001), ('Z', 'LE', -2.300001)])
