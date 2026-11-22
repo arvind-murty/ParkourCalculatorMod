@@ -284,3 +284,39 @@ against 582, the Clarabel solve 5,585 against 4,279, `validate_vertical_schedule
 against 2.2. Fixed work: exact on all 19 transitions; search 42.9 s Python, 26.2 s native
 ([parity](2026-11-22-dispatch/parity-python-native.json)).
 
+## Milestone on 6a34e295, 2026-11-22
+
+- The corpus recaptured at `299b72a7` replays identically on release and UBSan
+  ([release](2026-11-22-overnight/corpus-replay-release.json), [UBSan](2026-11-22-overnight/corpus-replay-sanitize.json)).
+- The gate modules plus the spatial, contact and ladder-schedule modules pass without and with `PKC_NATIVE_CORE`: 802
+  tests, 10 Java-bridge skips ([Python](2026-11-22-overnight/suite-python-summary.txt),
+  [native](2026-11-22-overnight/suite-native-summary.txt)).
+- Live `verify-scene` and `verify-screen` on the extended input for 90 s: no difference on either build
+  ([scene release](2026-11-22-overnight/live-scene-release-summary.json),
+  [scene UBSan](2026-11-22-overnight/live-scene-sanitize-summary.json),
+  [screen release](2026-11-22-overnight/live-screen-release-summary.json),
+  [screen UBSan](2026-11-22-overnight/live-screen-sanitize-summary.json)).
+- Fixed work: exact on all 19 transitions; search 42.0 s Python, 25.5 s native ([parity](2026-11-22-overnight/parity.json)).
+
+## Ladder routes and climbable-cell scenes, 2026-11-22
+
+Source: `86a8636c` plus native `scene/ladders`, the ladder parts of `movement/units` (`ladder_units`,
+`movement_program` with events, `exit_matches`), `movement/ladder/events` (full validation and
+`compile_ladder_events`), `movement/ladder/settings`, ladder passages in `constraints/avoidance` and ladder events in
+`scene/route.schedule`. Routes with ladder events and scenes with climbable cells no longer fall back to Python; only
+ladder appends still do.
+
+- Recorded suite calls replay identically on release and UBSan: 1,354 `scene/ladders` calls (including 41
+  `schedule_constraints`), 2,183 `prepare_route` (33 with ladder events), 1,676 `schedule` (21 with ladder events),
+  4,000 `ladder_units`, 772 `movement_program` and 4,000 `exit_matches`
+  ([release ladders](2026-11-22-ladders/ladders-replay-release.json),
+  [release routes](2026-11-22-ladders/routes-replay-release.json), [UBSan](2026-11-22-ladders/replay-sanitize.json)).
+- `prepare_scene` on every scene request in the repository with its variants: 657 normalized scenes and 1,641
+  identical errors, none left to Python ([release](2026-11-22-ladders/scenes-release.json),
+  [UBSan](2026-11-22-ladders/scenes-sanitize.json)).
+- The gate modules plus the ladder modules pass in both modes: 844 tests, 10 Java-bridge skips
+  ([Python](2026-11-22-ladders/suite-python-summary.txt), [native](2026-11-22-ladders/suite-native-summary.txt));
+  live `verify-scene` finds no difference ([summary](2026-11-22-ladders/live-scene-release-summary.json)); fixed work
+  matches on all 19 transitions, search 42.0 s Python and 25.8 s native
+  ([parity](2026-11-22-ladders/parity-python-native.json)).
+

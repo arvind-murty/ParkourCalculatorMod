@@ -15,6 +15,7 @@
 #include "pkc/coefficients.hpp"
 #include "pkc/envelopes.hpp"
 #include "pkc/gate.hpp"
+#include "pkc/movement/units.hpp"
 #include "pkc/movement/vertical_profiles.hpp"
 #include "pkc/numerics/builders.hpp"
 #include "pkc/numerics/constraints.hpp"
@@ -22,6 +23,7 @@
 #include "pkc/numerics/model.hpp"
 #include "pkc/program.hpp"
 #include "pkc/scene/geometry.hpp"
+#include "pkc/scene/ladders.hpp"
 #include "pkc/scene/normalize.hpp"
 #include "pkc/scene/route.hpp"
 #include "pkc/scene/static_collision.hpp"
@@ -405,6 +407,57 @@ PYBIND11_MODULE(_pkc_native, m) {
        py::arg("target_top") = py::none(), py::arg("min_landing_state") = 0, py::arg("contacts") = py::none(),
        py::arg("occupied_y_bounds") = py::none(), py::arg("stop_on_landing") = true, py::arg("threshold") = .005,
        "movement/vertical_profiles.trace_ladder_schedule");
+    // movement/units.py's ladder parts, for the native ladder code and its replay checks
+    m.def("ladder_units", [](py::handle schedule, py::handle region_id) {
+        const pkc::Value value = convert(schedule);
+        return to_python(pkc::Value{std::make_shared<const pkc::Array>(
+            pkc::ladder_units(*std::get<std::shared_ptr<const pkc::Object>>(value.data), convert(region_id)))});
+    }, py::arg("schedule"), py::arg("region_id") = py::none());
+    m.def("movement_program", [](std::int64_t ticks, py::handle events) {
+        const pkc::Value value = convert(events);
+        return to_python(pkc::Value{std::make_shared<const pkc::Array>(
+            pkc::movement_program(ticks, *std::get<std::shared_ptr<const pkc::Array>>(value.data)))});
+    });
+    m.def("exit_matches", [](std::string kind, double y, py::handle region) {
+        const pkc::Value value = convert(region);
+        return pkc::exit_matches(kind, y, *std::get<std::shared_ptr<const pkc::Object>>(value.data));
+    });
+    // scene/ladders.py, for the native ladder code and its replay checks
+    m.def("ladder_columns", [](py::handle cells) { return to_python(pkc::ladder_columns(convert(cells))); });
+    m.def("ladder_regions", [](py::handle cells) { return to_python(pkc::ladder_regions(convert(cells))); });
+    m.def("region_rectangles", [](py::handle column, py::handle y) {
+        return to_python(pkc::region_rectangles(convert(column), convert(y)));
+    });
+    m.def("region_contains", [](py::handle column, py::handle position) {
+        return pkc::region_contains(convert(column), convert(position));
+    });
+    m.def("region_axis", [](py::handle column, std::string axis) {
+        py::list v = to_python(pkc::region_axis(convert(column), axis));
+        return py::tuple(v);
+    });
+    m.def("climb_walls", [](py::handle column, py::handle solids) {
+        return to_python(pkc::climb_walls(convert(column), convert(solids)));
+    });
+    m.def("movement_contexts", [](py::handle column, py::handle solids, bool include_fall) {
+        return to_python(pkc::movement_contexts(convert(column), convert(solids), include_fall));
+    }, py::arg("column"), py::arg("solids"), py::kw_only(), py::arg("include_fall") = true);
+    m.def("entry_channels", [](py::handle column, py::handle wall) {
+        return to_python(pkc::entry_channels(convert(column), convert(wall)));
+    });
+    m.def("outside_row", [](py::handle face, py::handle state, py::handle margin, py::handle name) {
+        return to_python(pkc::outside_row(convert(face), convert(state), convert(margin), convert(name)));
+    });
+    m.def("schedule_constraints", [](py::handle schedule, py::handle column, py::handle wall, py::handle entry_face,
+                                     py::handle exit_face, py::handle start, py::handle margin) {
+        py::list v = to_python(pkc::schedule_constraints(convert(schedule), convert(column), convert(wall),
+                                                         convert(entry_face), convert(exit_face), convert(start),
+                                                         convert(margin)));
+        return py::tuple(v);
+    }, py::arg("schedule"), py::arg("column"), py::arg("wall"), py::arg("entry_face"), py::arg("exit_face"),
+       py::kw_only(), py::arg("start") = 0, py::arg("margin") = 1e-6);
+    m.def("exit_faces", [](py::handle column, py::handle target) {
+        return to_python(pkc::exit_faces(convert(column), convert(target)));
+    });
     m.def("float_repr", &pkc::float_repr, "repr(float) for a finite float");
     m.def("sha256_hex", [](py::bytes data) { return pkc::sha256_hex(std::string(data)); });
 }

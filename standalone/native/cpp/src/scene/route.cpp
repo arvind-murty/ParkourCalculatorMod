@@ -382,10 +382,18 @@ Value schedule(const Value& route_value, const std::vector<std::int64_t>& alloca
     CompiledHits hits = compile_hits(route, events);
     walls.insert(walls.end(), hits.rows.begin(), hits.rows.end());
     Array contacts = hits.contacts, scene_contacts = hits.scene_contacts;
-    if (py_truthy(get_or_null(route, "ladderEvents"))) throw Unsupported("ladder events are scheduled in Python");
     Object extra;
     std::vector<bool> ladder, sneak;
-    bool masked = false;  // extra.setdefault('ladderTicks' / 'sneak') ran
+    bool masked = false;  // extra holds ladderTicks and sneak
+    if (py_truthy(get_or_null(route, "ladderEvents"))) {
+        CompiledLadders ladders = compile_ladder_events(route, events, state);
+        walls.insert(walls.end(), ladders.rows.begin(), ladders.rows.end());
+        contacts.insert(contacts.end(), ladders.contacts.begin(), ladders.contacts.end());
+        scene_contacts.insert(scene_contacts.end(), ladders.scene_contacts.begin(), ladders.scene_contacts.end());
+        ladder = std::move(ladders.ladder);
+        sneak = std::move(ladders.sneak);
+        masked = true;
+    }
     const Array route_events = listed(route, "contactEvents");
     for (std::size_t i = 0; i < std::min(events.size(), profiles.size()); ++i) {
         const Object& event = fields(events[i]);
@@ -461,7 +469,13 @@ Value schedule(const Value& route_value, const std::vector<std::int64_t>& alloca
     if (const Value* units_value = get(route, "movementUnits"); units_value && !is_null(*units_value)) {
         relative = items(*units_value);
     } else {
-        for (const auto& duration : airtimes) relative.push_back(array(movement_program(as_int(duration))));
+        const Array ladder_events = listed(route, "ladderEvents");
+        for (std::size_t leg = 0; leg < airtimes.size(); ++leg) {
+            Array leg_events;
+            for (const auto& e : ladder_events)
+                if (as_int(at(fields(e), "leg")) == static_cast<std::int64_t>(leg)) leg_events.push_back(e);
+            relative.push_back(array(movement_program(as_int(airtimes[leg]), leg_events)));
+        }
     }
     Array units;
     for (const auto& event_value : events) {

@@ -6,6 +6,7 @@
 #include <string>
 
 #include "../schema.hpp"
+#include "pkc/movement/ladder/settings.hpp"
 #include "pkc/scene/geometry.hpp"
 #include "pkc/scene/objectives.hpp"
 #include "pkc/scene/route.hpp"
@@ -142,7 +143,8 @@ Value prepare_scene(const Value& request) {
     put(scene, "supportClearance", at(checked, "supportClearance"));
     if (py_truthy(get_or_null(scene, "climbableCells"))) {
         if (!solid_scene) fail("Climbable cells require collision_boxes");
-        throw Unsupported("ladder settings are derived in Python");
+        put(scene, "ladderSearch", ladder_settings(scene));
+        return object(std::move(scene));
     }
     if (get(scene, "ladderSearch")) fail("Ladder search needs supplied climbable cells");
     return object(std::move(scene));

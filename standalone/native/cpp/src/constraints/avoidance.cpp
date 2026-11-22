@@ -48,7 +48,16 @@ Num face_clearance(const Object& route, std::int64_t leg, std::int64_t offset, c
             num(at(hit, "direction")).value == -num(at(face, "direction")).value)
             return flt(0.);
     }
-    if (!listed(route, "ladderEvents").empty()) throw Unsupported("ladder events compile in Python");
+    for (const auto& episode_value : listed(route, "ladderEvents")) {
+        const Object& episode = fields(episode_value);
+        const Object& wall = fields(at(episode, "wall"));
+        const Array& hits = items(at(fields(at(episode, "schedule")), "hit"));
+        if (as_int(at(episode, "leg")) == leg && 0 < offset && offset <= static_cast<std::int64_t>(hits.size()) &&
+            py_truthy(hits[offset - 1]) && py_equal(at(wall, "axis"), at(face, "axis")) &&
+            py_equal(at(wall, "plane"), at(face, "plane")) &&
+            num(at(wall, "direction")).value == -num(at(face, "direction")).value)
+            return flt(0.);
+    }
     return clearance;
 }
 

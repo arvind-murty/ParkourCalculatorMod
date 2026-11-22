@@ -491,22 +491,22 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | Symbol | Line | Kind |
 | --- | ---: | --- |
 | `_native` | [32](../src/parkour_solver/numerics/disk.py#L32) | function |
-| `spec` | [40](../src/parkour_solver/numerics/disk.py#L40) | function |
-| `solve` | [72](../src/parkour_solver/numerics/disk.py#L72) | function |
-| `screen` | [97](../src/parkour_solver/numerics/disk.py#L97) | function |
-| `deficits` | [112](../src/parkour_solver/numerics/disk.py#L112) | function |
-| `ipopt_seed` | [122](../src/parkour_solver/numerics/disk.py#L122) | function |
-| `alarm_ticks` | [137](../src/parkour_solver/numerics/disk.py#L137) | function |
-| `RelaxedDispatch` | [151](../src/parkour_solver/numerics/disk.py#L151) | class |
-| `RelaxedDispatch.__init__` | [163](../src/parkour_solver/numerics/disk.py#L163) | function |
-| `RelaxedDispatch.solve` | [166](../src/parkour_solver/numerics/disk.py#L166) | function |
-| `RelaxedDispatch.confirmed` | [169](../src/parkour_solver/numerics/disk.py#L169) | function |
-| `RelaxedDispatch._dispatch` | [172](../src/parkour_solver/numerics/disk.py#L172) | function |
-| `RelaxedDispatch.confirm` | [209](../src/parkour_solver/numerics/disk.py#L209) | function |
-| `_result` | [236](../src/parkour_solver/numerics/disk.py#L236) | function |
-| `_attempt` | [252](../src/parkour_solver/numerics/disk.py#L252) | function |
-| `_solve` | [260](../src/parkour_solver/numerics/disk.py#L260) | function |
-| `_cost` | [363](../src/parkour_solver/numerics/disk.py#L363) | function |
+| `spec` | [41](../src/parkour_solver/numerics/disk.py#L41) | function |
+| `solve` | [70](../src/parkour_solver/numerics/disk.py#L70) | function |
+| `screen` | [95](../src/parkour_solver/numerics/disk.py#L95) | function |
+| `deficits` | [110](../src/parkour_solver/numerics/disk.py#L110) | function |
+| `ipopt_seed` | [117](../src/parkour_solver/numerics/disk.py#L117) | function |
+| `alarm_ticks` | [132](../src/parkour_solver/numerics/disk.py#L132) | function |
+| `RelaxedDispatch` | [143](../src/parkour_solver/numerics/disk.py#L143) | class |
+| `RelaxedDispatch.__init__` | [155](../src/parkour_solver/numerics/disk.py#L155) | function |
+| `RelaxedDispatch.solve` | [158](../src/parkour_solver/numerics/disk.py#L158) | function |
+| `RelaxedDispatch.confirmed` | [161](../src/parkour_solver/numerics/disk.py#L161) | function |
+| `RelaxedDispatch._dispatch` | [164](../src/parkour_solver/numerics/disk.py#L164) | function |
+| `RelaxedDispatch.confirm` | [201](../src/parkour_solver/numerics/disk.py#L201) | function |
+| `_result` | [228](../src/parkour_solver/numerics/disk.py#L228) | function |
+| `_attempt` | [244](../src/parkour_solver/numerics/disk.py#L244) | function |
+| `_solve` | [252](../src/parkour_solver/numerics/disk.py#L252) | function |
+| `_cost` | [355](../src/parkour_solver/numerics/disk.py#L355) | function |
 
 ## numerics/model.py
 
@@ -693,12 +693,12 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | --- | ---: | --- |
 | `_native` | [12](../src/parkour_solver/scene/route.py#L12) | function |
 | `prepare_route` | [18](../src/parkour_solver/scene/route.py#L18) | function |
-| `supports` | [161](../src/parkour_solver/scene/route.py#L161) | function |
-| `center_bounds` | [172](../src/parkour_solver/scene/route.py#L172) | function |
-| `row_tick` | [186](../src/parkour_solver/scene/route.py#L186) | function |
-| `schedule` | [190](../src/parkour_solver/scene/route.py#L190) | function |
-| `initial_guess` | [359](../src/parkour_solver/scene/route.py#L359) | function |
-| `derive_footprints` | [390](../src/parkour_solver/scene/route.py#L390) | function |
+| `supports` | [158](../src/parkour_solver/scene/route.py#L158) | function |
+| `center_bounds` | [169](../src/parkour_solver/scene/route.py#L169) | function |
+| `row_tick` | [183](../src/parkour_solver/scene/route.py#L183) | function |
+| `schedule` | [187](../src/parkour_solver/scene/route.py#L187) | function |
+| `initial_guess` | [356](../src/parkour_solver/scene/route.py#L356) | function |
+| `derive_footprints` | [385](../src/parkour_solver/scene/route.py#L385) | function |
 
 ## scene/static_collision.py
 

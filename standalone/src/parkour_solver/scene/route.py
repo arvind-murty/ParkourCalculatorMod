@@ -18,10 +18,7 @@ def _native():
 def prepare_route(request):
     native = _native()
     if native is not None:
-        try:
-            return native.prepare_route(request)
-        except native.NativeUnsupported:  # ladder events are prepared here
-            pass
+        return native.prepare_route(request)
     route = copy.deepcopy(request)
     if not isinstance(route, dict) or type(route.get('version')) is not int or route['version'] != 1:
         raise ValueError('Expected a version 1 block route')
@@ -189,7 +186,7 @@ def row_tick(event, row):
 
 def schedule(route, allocation, stage='jump'):
     native = _native()
-    if native is not None and not route.get('ladderEvents'):
+    if native is not None:
         plan = native.schedule(route, list(allocation), stage)
         # The native core has no tuples; the checks below are tuples here.
         plan['supportChecks'] = [tuple(check) for check in plan['supportChecks']]

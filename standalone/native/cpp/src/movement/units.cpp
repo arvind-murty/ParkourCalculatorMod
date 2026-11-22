@@ -54,6 +54,167 @@ Array movement_program(std::int64_t ticks) {
     return {movement_unit("normal", 0, ticks)};  // generate_choices('normal', {}, start=0, ends=[ticks])
 }
 
+Array ladder_units(const Object& schedule, const Value& region_id) {
+    const std::int64_t e = as_int(at(schedule, "entryState")), x = as_int(at(schedule, "exitState"));
+    const std::int64_t start = std::max<std::int64_t>(0, e - 1);
+    const Array& hit = items(at(schedule, "hit"));
+    const Value* trace = get(schedule, "trace");
+    const Value* refreshed = trace && is_object(*trace) ? get(fields(*trace), "climbRefreshed") : nullptr;
+    const Array& actual = refreshed ? items(*refreshed) : hit;
+    std::vector<std::int64_t> hits;
+    for (std::int64_t t = start; t < x - 1; ++t)
+        if (py_truthy(actual.at(t))) hits.push_back(t);
+    for (std::int64_t t = 0; t < static_cast<std::int64_t>(hit.size()); ++t)
+        if ((t < start || t >= x - 1) && py_truthy(hit[t])) fail("Climb hits must end inside the ladder");
+    auto ints = [](const std::vector<std::int64_t>& v) {
+        Array out;
+        for (auto i : v) out.push_back(integer_value(i));
+        return array(std::move(out));
+    };
+    Array units;
+    if (!hits.empty()) {
+        for (std::size_t i = 0; i < hits.size(); ++i)
+            if (hits[i] != hits[0] + static_cast<std::int64_t>(i)) fail("A ladder interaction cannot resume climbing after falling");
+        std::int64_t first = hits.front(), end = hits.back() + 1;
+        const Value& window = get_or_null(schedule, "climbWindow");
+        if (!is_null(window)) {
+            first = as_int(items(window)[0]);
+            end = as_int(items(window)[1]);
+        }
+        first = std::min(first, hits.front());
+        end = std::max(end, hits.back() + 1);
+        if (!(start <= first && first <= hits.front() && hits.back() < end && end <= x - 1)) fail("Invalid climbing window");
+        std::vector<std::int64_t> stops;
+        for (std::int64_t t = first; t < end; ++t)
+            if (!py_truthy(actual.at(t))) stops.push_back(t);
+        if (stops.size() > 2 || std::any_of(stops.begin(), stops.end(), [&](std::int64_t t) { return t != first && t != end - 1; }))
+            fail("Climbing only allows one-input endpoint stops");
+        const std::int64_t climb_end = end == x - 1 ? x : end;
+        if (start < first) units.push_back(movement_unit("ladder_fall", start, first, {{"region", region_id}}));
+        units.push_back(movement_unit("ladder_climb", first, climb_end,
+                                      {{"region", region_id}, {"hitWindow", ints({first, end})}, {"stopInputs", ints(stops)},
+                                       {"hitInputs", ints(hits)}}));
+        if (climb_end < x) units.push_back(movement_unit("ladder_fall", climb_end, x, {{"region", region_id}}));
+    } else {
+        units.push_back(movement_unit("ladder_fall", start, x, {{"region", region_id}}));
+    }
+    if (as_text(at(schedule, "exitKind")) == "top" && as_text(at(fields(units.back()), "type")) != "ladder_climb")
+        fail("A top exit must end with ladder_climb");
+    const Value* sneak = get(schedule, "sneak");
+    for (auto& unit_value : units) {
+        Object unit = fields(unit_value);
+        const std::int64_t s = as_int(at(unit, "start")), u_end = as_int(at(unit, "end"));
+        put(unit, "occupiedStates", ints({std::max(e, s), std::min(x, u_end)}));
+        std::vector<std::int64_t> sneaks;
+        for (std::int64_t t = s; t < u_end; ++t)
+            if (sneak ? py_truthy(items(*sneak).at(t)) : (t < x ? false : (fail("IndexError: list index out of range"), false)))
+                sneaks.push_back(t);
+        put(unit, "sneakInputs", ints(sneaks));
+        unit_value = object(std::move(unit));
+    }
+    return units;
+}
+
+Array movement_program(std::int64_t ticks, const Array& events_value) {
+    if (events_value.empty()) return movement_program(ticks);
+    integer(integer_value(ticks), "movement program ticks", 1, 200);
+    std::vector<const Object*> events;
+    for (const auto& e : events_value) events.push_back(&fields(e));
+    std::stable_sort(events.begin(), events.end(), [](const Object* a, const Object* b) {
+        return as_int(at(fields(at(*a, "schedule")), "entryState")) < as_int(at(fields(at(*b, "schedule")), "entryState"));
+    });
+    Array units;
+    std::int64_t cursor = 0;
+    static const char* kKeys[] = {"type", "start", "end", "occupiedStates", "hitInputs", "hitWindow", "stopInputs"};
+    for (const Object* event : events) {
+        const Object& column = fields(at(*event, "column"));
+        Value region_id;
+        if (const Value* id = get(column, "id")) {
+            region_id = *id;
+        } else {
+            region_id = text("(" + std::to_string(as_int(at(column, "x"))) + ", " + std::to_string(as_int(at(column, "minY"))) +
+                             ", " + std::to_string(as_int(at(column, "z"))) + ", " + std::to_string(as_int(at(column, "maxY"))) + ")");
+        }
+        const Object& s = fields(at(*event, "schedule"));
+        const Value* templates = get(s, "generatedUnits");
+        if (!templates) templates = get(s, "movementUnits");
+        Array segment;
+        if (templates) {
+            for (const auto& u : items(*templates))
+                if (is_ladder_type(as_text(at(fields(u), "type")))) segment.push_back(u);
+            std::vector<std::string> kinds;
+            for (const auto& u : segment) kinds.push_back(as_text(at(fields(u), "type")));
+            bool bad = kinds.empty() || std::count(kinds.begin(), kinds.end(), "ladder_climb") > 1;
+            for (const auto& k : kinds) bad = bad || (k != "ladder_climb" && k != "ladder_fall");
+            for (std::size_t i = 1; i < kinds.size(); ++i) bad = bad || kinds[i] == kinds[i - 1];
+            if (bad) fail("Generated ladder units violate the phase grammar");
+            if (as_text(at(s, "exitKind")) == "top" && kinds.back() != "ladder_climb") fail("A top exit must end with ladder_climb");
+            const Array expected = ladder_units(s, region_id);
+            auto keyed = [&](const Array& list) {
+                Array out;
+                for (const auto& u : list) {
+                    Array row;
+                    for (const char* k : kKeys) row.push_back(get_or_null(fields(u), k));
+                    out.push_back(array(std::move(row)));
+                }
+                return out;
+            };
+            if (!py_equal(keyed(segment), keyed(expected))) fail("Generated units disagree with the selected ladder inputs");
+            for (auto& u : segment) u = object(with(fields(u), "region", region_id));
+        } else {
+            segment = ladder_units(s, region_id);
+        }
+        const std::int64_t first_start = as_int(at(fields(segment[0]), "start"));
+        if (first_start < cursor) {
+            const std::int64_t seam = first_start;
+            if (seam != cursor - 1) fail("Movement units overlap");
+            Object previous = fields(units.back());
+            put(previous, "end", integer_value(seam));
+            Array sneaks;
+            if (const Value* existing = get(previous, "sneakInputs"))
+                for (const auto& t : items(*existing))
+                    if (as_int(t) < seam) sneaks.push_back(t);
+            put(previous, "sneakInputs", array(std::move(sneaks)));
+            if (const Value* hit_inputs = get(previous, "hitInputs"))
+                for (const auto& t : items(*hit_inputs))
+                    if (as_int(t) >= seam) fail("Competing climb contacts on a transfer seam");
+            if (as_int(at(previous, "start")) == seam) {
+                const Array& occupied = items(at(previous, "occupiedStates"));
+                Array additional;
+                for (std::int64_t t = as_int(occupied[0]); t < as_int(occupied[1]); ++t) additional.push_back(integer_value(t));
+                segment[0] = object(with(fields(segment[0]), "additionalOccupiedStates", array(std::move(additional))));
+                units.pop_back();
+            } else {
+                units.back() = object(std::move(previous));
+            }
+            cursor = seam;
+        }
+        if (cursor < first_start) units.push_back(movement_unit("normal", cursor, first_start));
+        for (const auto& u : segment) units.push_back(u);
+        cursor = as_int(at(fields(segment.back()), "end"));
+    }
+    if (cursor > ticks) fail("Movement unit exceeds program horizon");
+    if (cursor < ticks) units.push_back(movement_unit("normal", cursor, ticks));
+    const Array& sneak = items(at(fields(at(fields(events_value[0]), "schedule")), "sneak"));
+    for (auto& unit_value : units) {
+        Object unit = fields(unit_value);
+        Array sneaks;
+        for (std::int64_t t = as_int(at(unit, "start")); t < as_int(at(unit, "end")); ++t)
+            if (py_truthy(sneak.at(t))) sneaks.push_back(integer_value(t));
+        put(unit, "sneakInputs", array(std::move(sneaks)));
+        unit_value = object(std::move(unit));
+    }
+    return units;
+}
+
+bool exit_matches(const std::string& kind, double y, const Object& region) {
+    const double min_y = num(at(region, "minY")).value, max_y = num(at(region, "maxY")).value;
+    if (kind == "side") return min_y <= y && y < max_y;
+    if (kind == "top") return y >= max_y;
+    if (kind == "bottom") return y < min_y;
+    fail("Exit kind must be side, top or bottom");
+}
+
 UnitMasks compile_units(std::int64_t ticks, const Array& units) {
     UnitMasks masks{std::vector<bool>(ticks + 1, false), std::vector<bool>(ticks, false),
                     std::vector<bool>(ticks, false)};

@@ -199,17 +199,12 @@ def verify_scene(args):
                      normalize_geometry=geometry.normalize_geometry, prepare_scene=normalize.prepare_scene,
                      prepare_route=route.prepare_route, schedule=route.schedule, initial_guess=route.initial_guess)
     calls = {name: 0 for name in originals}
-    calls['unsupported'] = 0
 
     def checked(name, native_call):
         def call(*positional, **keywords):
             before = copy.deepcopy((positional, keywords))
             expected = originals[name](*positional, **keywords)
-            try:
-                actual = native_call(*before[0], **before[1])
-            except native.NativeUnsupported:
-                calls['unsupported'] += 1
-                return expected
+            actual = native_call(*before[0], **before[1])
             calls[name] += 1
             # Plain JSON keeps dict order, which native results must keep too.
             if json.dumps(actual) != json.dumps(expected):
