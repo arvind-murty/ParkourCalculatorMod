@@ -69,13 +69,17 @@ class CheckpointStore:
         self.connection.close()
 
     def save(self, report):
-        reference, statistics = self.archive(report)
+        reference, statistics, _ = self.archive(report)
         self.publish(reference)
         return statistics
 
-    def archive(self, report):
-        """Store a value once and return a handle usable in subsequent saves."""
-        pending, memo = {}, {}
+    def archive(self, report, targets=()):
+        """Store a value once and return a handle usable in subsequent saves,
+        plus every key path at which each of `targets` (by identity) occurs."""
+        pending, memo, found = {}, {}, {}
+        target_ids = {}
+        for i, target in enumerate(targets):
+            target_ids.setdefault(id(target), []).append(i)
 
         def remember(data):
             key = hashlib.sha256(data).hexdigest()
@@ -119,6 +123,14 @@ class CheckpointStore:
                 data = b'["l",['+b','.join(encode(v) for v in value)+b']]'
             else:
                 data = _json(value)
+            if container and target_ids:
+                # Collected during this walk so callers never walk the report again.
+                hits = [(i, ()) for i in target_ids.get(identity, ())]
+                hits += [(i, (key,)+path) for key, child in (value.items() if isinstance(value, dict) else enumerate(value))
+                         if isinstance(child, (dict, list, tuple))
+                         for i, path in found.get(id(child)) or [(t, ()) for t in target_ids.get(id(child), ())]]
+                if hits:
+                    found[identity] = hits
             if len(data) >= CHUNK_BYTES:
                 data = _json(['r', remember(data)])
             if shared:
@@ -133,7 +145,11 @@ class CheckpointStore:
             self.connection.executemany('INSERT INTO objects VALUES (?, ?)',
                 ((k, zlib.compress(v, level=1)) for k,v in pending.items()))
         self.known.update(pending)
-        return StoredValue(self.identity, root), dict(newObjects=len(pending), newBytes=sum(map(len, pending.values())))
+        paths = [[] for _ in targets]
+        for i, path in found.get(id(report), ()):
+            paths[i].append(path)
+        return (StoredValue(self.identity, root), dict(newObjects=len(pending), newBytes=sum(map(len, pending.values()))),
+                paths)
 
     def publish(self, reference):
         if reference.identity != self.identity:
@@ -146,7 +162,7 @@ class CheckpointStore:
         """Publish replacements against a frozen root without visiting its tree."""
         if base.identity != self.identity:
             raise ValueError('Reference belongs to another checkpoint store')
-        changes, statistics = self.archive(changes)
+        changes, statistics, _ = self.archive(changes)
         data = _json(['p', [base.key, changes.key]])
         key = hashlib.sha256(data).hexdigest()
         if key not in self.known:

@@ -20,7 +20,15 @@ def motion_bound(scene, compiler, seconds):
                 groundMagnitude=sample['magnitude'][0])
 
 
-def reachable_envelopes(problem, y=None):
+# Parent states a child's new states are checked against for travel (user decision). On the Real11 extended
+# task every travel contradiction between new and parent states involved one of the last 6 parent states.
+PARENT_WINDOW = 10
+
+
+def reachable_envelopes(problem, y=None, *, parent_ticks=None):
+    """`parent_ticks`: the input count of the program this one was appended to. Its pairs were checked when
+    their later state was new, so the travel check pairs only new states with new and the last
+    PARENT_WINDOW parent states, and can miss a contradiction with an earlier one."""
     bounds = {}
     for row in problem.get('walls', []):
         if row['mode'] not in ('X', 'Z') or row.get('t2') is not None:
@@ -116,8 +124,9 @@ def reachable_envelopes(problem, y=None):
     radii = travel_radii(speed, problem['magnitude'], problem['friction'], margin=1e-8)
     constrained = max([t for t, _ in bounds]+[c['state'] for c in problem.get('contacts', [])], default=0)
     if contradiction is None:
-        for j in range(1,min(constrained,len(states)-1)+1):
-            for i in range(j):
+        start, earliest = (1, 0) if parent_ticks is None else (parent_ticks+1, max(0, parent_ticks+1-PARENT_WINDOW))
+        for j in range(start,min(constrained,len(states)-1)+1):
+            for i in range(earliest, j):
                 gap = math.hypot(*(max(0.,states[j][axis][0]-states[i][axis][1],states[i][axis][0]-states[j][axis][1])
                                    for axis in ('X','Z')))
                 if gap > radii[j]-radii[i]+1e-7:

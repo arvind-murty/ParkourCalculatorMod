@@ -81,6 +81,7 @@ control work; inclusion here is not authorization to implement a historical plan
 | [research/bookkeeping-measurement/README.md](../research/bookkeeping-measurement/README.md) | Frozen source-era evidence; use research guide for reproduction: Bookkeeping setup and measurement |
 | [research/cell-routes/IMPLEMENTATION_NOTES.md](../research/cell-routes/IMPLEMENTATION_NOTES.md) | Frozen source-era evidence; use research guide for reproduction: Cell-route experiment |
 | [research/cell-routes/README.md](../research/cell-routes/README.md) | Frozen source-era evidence; use research guide for reproduction: Cell-route experiment results |
+| [research/checkpoint-cost/README.md](../research/checkpoint-cost/README.md) | Frozen source-era evidence; use research guide for reproduction: Checkpoint cost and alias paths from the save walk |
 | [research/checkpoint-guidance/README.md](../research/checkpoint-guidance/README.md) | Frozen source-era evidence; use research guide for reproduction: Geometric checkpoint guidance |
 | [research/checkpoint-guidance/RESULTS.md](../research/checkpoint-guidance/RESULTS.md) | Frozen source-era evidence; use research guide for reproduction: Checkpoint guidance results |
 | [research/contact-combinations/README.md](../research/contact-combinations/README.md) | Frozen source-era evidence; use research guide for reproduction: Coupled contact and ladder evidence |
@@ -140,6 +141,8 @@ control work; inclusion here is not authorization to implement a historical plan
 | [research/orchestrator-fixes/audit/CANDIDATE_QUESTIONS.md](../research/orchestrator-fixes/audit/CANDIDATE_QUESTIONS.md) | Frozen source-era evidence; use research guide for reproduction: Real11 candidate questions, answered in order |
 | [research/orchestrator-fixes/audit/PRUNING_FOLLOWUP.md](../research/orchestrator-fixes/audit/PRUNING_FOLLOWUP.md) | Frozen source-era evidence; use research guide for reproduction: Follow-up: what can actually be pruned |
 | [research/orchestrator-fixes/audit/WORKER_CALLS.md](../research/orchestrator-fixes/audit/WORKER_CALLS.md) | Frozen source-era evidence; use research guide for reproduction: Every cold Real11 worker-call slot |
+| [research/parent-linked-programs/README.md](../research/parent-linked-programs/README.md) | Frozen source-era evidence; use research guide for reproduction: Parent-linked programs |
+| [research/prefix-reuse-keys/README.md](../research/prefix-reuse-keys/README.md) | Frozen source-era evidence; use research guide for reproduction: Norm-check reuse and prepared analysis keys |
 | [research/real11-extension/README.md](../research/real11-extension/README.md) | Frozen source-era evidence; use research guide for reproduction: Real11 extension: geometry evidence |
 | [research/real11-long-solve/README.md](../research/real11-long-solve/README.md) | Frozen source-era evidence; use research guide for reproduction: Longer Real11 with fixed initial-0 decisions through B5 |
 | [research/route-guidance/README.md](../research/route-guidance/README.md) | Frozen source-era evidence; use research guide for reproduction: Route-guidance model comparison |

@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "buckets": {
+    "program.program_physics_key": {
+      "calls": 18134,
+      "inclusiveSeconds": 11.608075954020023,
+      "selfSeconds": 11.608075954020023,
+      "maxSeconds": 0.013758830726146698
+    },
+    "program.program_search_key": {
+      "calls": 1534,
+      "inclusiveSeconds": 0.830941878259182,
+      "selfSeconds": 0.019626256078481674,
+      "maxSeconds": 0.0021517500281333923
+    },
+    "callback.profile_write": {
+      "calls": 13,
+      "inclusiveSeconds": 0.008795954287052155,
+      "selfSeconds": 0.008795954287052155,
+      "maxSeconds": 0.001094125211238861
+    },
+    "callback.progress": {
+      "calls": 614,
+      "inclusiveSeconds": 0.015100762248039246,
+      "selfSeconds": 0.006304807960987091,
+      "maxSeconds": 0.0014457553625106812
+    },
+    "program.compile_program": {
+      "calls": 9992,
+      "inclusiveSeconds": 9.904260989278555,
+      "selfSeconds": 9.904260989278555,
+      "maxSeconds": 0.4126201681792736
+    },
+    "preparation.prepare": {
+      "calls": 13106,
+      "inclusiveSeconds": 61.61882742866874,
+      "selfSeconds": 43.10352809354663,
+      "maxSeconds": 0.5879459604620934
+    },
+    "preparation.analyze_model": {
+      "calls": 12172,
+      "inclusiveSeconds": 56.074456952512264,
+      "selfSeconds": 56.074456952512264,
+      "maxSeconds": 0.590582337230444
+    },
+    "preparation.analyze": {
+      "calls": 12124,
+      "inclusiveSeconds": 116.83865761384368,
+      "selfSeconds": 0.2140342965722084,
+      "maxSeconds": 0.5963839180767536
+    },
+    "reachability.screen": {
+      "calls": 1128,
+      "inclusiveSeconds": 8.88032764941454,
+      "selfSeconds": 8.88032764941454,
+      "maxSeconds": 2.5593346655368805
+    },
+    "identity.solve_scope": {
+      "calls": 48,
+      "inclusiveSeconds": 0.002133820205926895,
+      "selfSeconds": 0.002133820205926895,
+      "maxSeconds": 0.00015254318714141846
+    },
+    "identity.solve_identity": {
+      "calls": 48,
+      "inclusiveSeconds": 0.0412011593580246,
+      "selfSeconds": 0.014788776636123657,
+      "maxSeconds": 0.0014769993722438812
+    },
+    "reachability.condition_envelopes": {
+      "calls": 462,
+      "inclusiveSeconds": 1.224195159971714,
+      "selfSeconds": 0.42681143805384636,
+      "maxSeconds": 0.057664040476083755
+    },
+    "identity.validation_prefix": {
+      "calls": 278,
+      "inclusiveSeconds": 0.0003100782632827759,
+      "selfSeconds": 0.0003100782632827759,
+      "maxSeconds": 5.248934030532837e-06
+    },
+    "solver.invoke": {
+      "calls": 119,
+      "inclusiveSeconds": 2.5055066719651222,
+      "selfSeconds": 2.505239363759756,
+      "maxSeconds": 0.47472070902585983
+    },
+    "numerical.evaluate": {
+      "calls": 48,
+      "inclusiveSeconds": 29.110678497701883,
+      "selfSeconds": 24.98615837842226,
+      "maxSeconds": 6.073373503983021
+    },
+    "run.search_and_final_replay": {
+      "calls": 1,
+      "inclusiveSeconds": 295.15500221028924,
+      "selfSeconds": 137.4001494012773,
+      "maxSeconds": 295.15500221028924
+    },
+    "postrun.accepted_replays": {
+      "calls": 1,
+      "inclusiveSeconds": 0.005915209650993347,
+      "selfSeconds": 0.005915209650993347,
+      "maxSeconds": 0.005915209650993347
+    },
+    "postrun.shared_report_write": {
+      "calls": 1,
+      "inclusiveSeconds": 2.0783908776938915,
+      "selfSeconds": 2.0783908776938915,
+      "maxSeconds": 2.0783908776938915
+    },
+    "postrun.shared_report_compact": {
+      "calls": 1,
+      "inclusiveSeconds": 0.43799008429050446,
+      "selfSeconds": 0.43799008429050446,
+      "maxSeconds": 0.43799008429050446
+    }
+  },
+  "sessions": [],
+  "active": [],
+  "accounting": "Inclusive buckets overlap; selfSeconds exclude instrumented children. Unwrapped work stays in its parent.",
+  "wallSeconds": 297.7912443764508,
+  "cpuSeconds": 279.354326,
+  "maxRssBytes": 477298688,
+  "error": null,
+  "gc": {
+    "calls": 87072,
+    "seconds": 57.882573410868645
+  },
+  "cancelled": false
+}

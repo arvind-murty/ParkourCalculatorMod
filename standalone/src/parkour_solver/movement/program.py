@@ -46,16 +46,22 @@ def boundary_state(program, on_ladder=False):
 
 def profile_from_trace(trace, *, contacts=(), cases=(), constraints=(), units=None, landing_phase='post',
                        region_choices=()):
+    return _profile(trace, copy.deepcopy(list(contacts)), copy.deepcopy(list(cases)), copy.deepcopy(list(constraints)),
+                    copy.deepcopy(units) if units is not None else None, landing_phase,
+                    copy.deepcopy(list(region_choices)))
+
+
+def _profile(trace, contacts, cases, constraints, units, landing_phase, region_choices):
+    """Assemble a profile around lists the caller owns; their elements are not copied."""
     n = trace['ticks']
     profile = dict(airtime=n, position=trace['position'], velocity=trace['velocity'], grounded=trace['onGround'],
         jump=[v is not None for v in trace['vertical']['jumpVelocity']], sneak=trace['sneak'],
         ladderTicks=trace['ladderTicks'], contacts=trace['vertical']['contacts'],
-        contactEvents=copy.deepcopy(list(contacts)), caseEvents=copy.deepcopy(list(cases)),
-        positionConstraints=copy.deepcopy(list(constraints)), landingPhase=landing_phase,
+        contactEvents=contacts, caseEvents=cases, positionConstraints=constraints, landingPhase=landing_phase,
         composition='movement_program')
-    profile['generatedUnits'] = copy.deepcopy(units) if units is not None else profile_program(profile)
+    profile['generatedUnits'] = units if units is not None else profile_program(profile)
     if region_choices:
-        profile['regionChoices'] = copy.deepcopy(list(region_choices))
+        profile['regionChoices'] = region_choices
     if trace['vertical']['threshold'] != .005:
         profile['threshold'] = trace['vertical']['threshold']
     return profile
@@ -135,6 +141,86 @@ def append_choice(program, choice, *, max_inputs=200):
     expected = boundary_state(program, tail['ladderTicks'][0])
     if choice.get('initial') != expected:
         raise ValueError('Movement choice consumes a different scalar boundary state')
+    # Ladder appends still rebuild the whole program (deferred); so does the first append, which has no trace.
+    ladder = program['ladderEvents'] or choice.get('ladderEvents') or any(old['ladderTicks']) or any(tail['ladderTicks'])
+    built = _rebuild(program, choice) if ladder or program['trace'] is None else _extend(program, choice)
+    if built is None:
+        return None
+    profile, events, units, trace = built
+    profile['constraintOwners'] = old.get('constraintOwners', [0]*len(old['positionConstraints'])) + [
+        cut+owner if owner else 0 for owner in tail.get('constraintOwners', [0]*len(tail['positionConstraints']))]
+    # parentTicks: the reachability travel check pairs only states after the parent's with nearby ones.
+    result = dict(initial=copy.deepcopy(program['initial']), profile=profile, ladderEvents=events,
+                  movementUnits=units, terminal='open', terminalSupport=choice.get('terminalSupport'),
+                  interactions=program['interactions'] + int(choice.get('interaction', False)), trace=trace,
+                  parentTicks=cut)
+    for key in ('threshold', 'guideSeedYaw', 'repairState', 'solveScope', 'committedThrough', 'settledThrough', 'walkOffs'):
+        if key in program:
+            if key == 'repairState':
+                scope=program[key].get('context', {}).get('scope') or {}
+                if scope.get('solveIdentity') or (scope.get('scope') or {}).get('solveIdentity'):
+                    continue
+            result[key] = copy.deepcopy(program[key])
+    # The parent's states before its last are the child's too, so its key resumes there.
+    result['prefixChain'] = prefix_chain(program)
+    return result
+
+
+def _extend(program, choice):
+    """Trace only the new ticks from the parent's end state and share the parent's content: a built program's
+    content never changes, and appending never rewrites a parent state (tracing is Markov in Y, VY and ground)."""
+    old, tail, parent = program['profile'], choice['profile'], program['trace']
+    cut, size = old['airtime'], tail['airtime']
+    # New contact events land after the parent's last state, so only they need merging.
+    contacts = _contacts([dict(c, offset=cut + c['offset']) for c in tail['contactEvents']])
+    hit = [any(c['axis'] != 'Y' and c['offset'] == cut + t for c in contacts) for t in range(size)]
+    from parkour_solver.physics.vertical import f32
+    piece = trace_ladder_schedule(boundary_state(program), tail['ladderTicks'], tail['sneak'], hit,
+        jump=[f32(.42) if value else None for value in tail['jump']], contacts=tail['contacts'], stop_on_landing=False,
+        threshold=program.get('threshold', .005))
+    if piece['status'] == 'invalid' or piece['ticks'] != size:
+        return None
+    if piece['position'] != tail['position'] or piece['velocity'] != tail['velocity'] or piece['onGround'] != tail['grounded']:
+        return None
+    vertical = parent['vertical']
+    # A truncated parent keeps its trace status, so recompute whether the prefix landed.
+    landed = piece['status'] == 'landed' or any(
+        c['direction'] < 0 and not c.get('case') and parent['onGround'][c['state']] for c in vertical['contacts'])
+    trace = dict(status='landed' if landed else 'simulated', ticks=cut + size,
+        position=parent['position'] + piece['position'][1:], velocity=parent['velocity'][:cut] + piece['velocity'],
+        onGround=parent['onGround'] + piece['onGround'][1:], movement=parent['movement'] + piece['movement'],
+        climbRefreshed=parent['climbRefreshed'] + piece['climbRefreshed'], failures=[],
+        vertical=dict(vertical, jumpVelocity=vertical['jumpVelocity'] + piece['vertical']['jumpVelocity'],
+                      sneak=vertical['sneak'] + piece['vertical']['sneak'],
+                      contacts=vertical['contacts'] + [dict(c, state=cut + c['state']) for c in piece['vertical']['contacts']]),
+        ladderTicks=parent['ladderTicks'] + piece['ladderTicks'][1:], sneak=parent['sneak'] + piece['sneak'],
+        hit=parent['hit'] + piece['hit'], resume=piece['resume'])
+    cases = []
+    for event in tail['caseEvents']:
+        event = copy.deepcopy(event)
+        event['input'] += cut
+        event['anchors'] = {k: v + cut for k, v in event.get('anchors', {}).items()}
+        cases.append(event)
+    constraints = [dict(row, t1=cut + row['t1']) for row in tail['positionConstraints']]
+    region_choices = [dict(entry, offset=cut + entry['offset'], options=[[dict(row, offset=cut + row['offset']) for row in rows]
+                                                                  for rows in entry['options']])
+                      for entry in tail.get('regionChoices', [])]
+    from parkour_solver.movement.ladder.ceiling import own_ceiling_contacts
+    try:
+        contacts, units = own_ceiling_contacts(contacts, [shifted_unit(unit, cut) for unit in tail['generatedUnits']])
+    except ValueError:
+        return None
+    compile_units(size, tail['generatedUnits'])
+    units = old['generatedUnits'] + units
+    profile = _profile(trace, old['contactEvents'] + contacts, old['caseEvents'] + cases,
+                       old['positionConstraints'] + constraints, list(units), tail['landingPhase'],
+                       old.get('regionChoices', []) + region_choices)
+    return profile, [], units, trace
+
+
+def _rebuild(program, choice):
+    old, tail = program['profile'], choice['profile']
+    cut, size = old['airtime'], tail['airtime']
     jump = old['jump'] + tail['jump']
     sneak = old['sneak'] + tail['sneak']
     ladder = old['ladderTicks'][:-1] + [old['ladderTicks'][-1] or tail['ladderTicks'][0]] + tail['ladderTicks'][1:]
@@ -194,22 +280,10 @@ def append_choice(program, choice, *, max_inputs=200):
             and c.get('ownerRegion') == event['column']['id'] and max(0, s['entryState'] - 1) <= c['offset'] < s['exitState']]
     profile = profile_from_trace(trace, contacts=contacts, cases=cases, constraints=constraints,
                                  units=units, landing_phase=tail['landingPhase'], region_choices=region_choices)
-    profile['constraintOwners'] = old.get('constraintOwners', [0]*len(old['positionConstraints'])) + [
-        cut+owner if owner else 0 for owner in tail.get('constraintOwners', [0]*len(tail['positionConstraints']))]
     masks = compile_units(profile['airtime'], units)
     if events and masks['ladderTicks'] != ladder:
         raise ValueError('Movement units disagree with composed ladder membership')
-    result = dict(initial=copy.deepcopy(program['initial']), profile=profile, ladderEvents=events,
-                  movementUnits=units, terminal='open', terminalSupport=choice.get('terminalSupport'),
-                  interactions=program['interactions'] + int(choice.get('interaction', False)), trace=trace)
-    for key in ('threshold', 'guideSeedYaw', 'repairState', 'solveScope', 'committedThrough', 'settledThrough', 'walkOffs'):
-        if key in program:
-            if key == 'repairState':
-                scope=program[key].get('context', {}).get('scope') or {}
-                if scope.get('solveIdentity') or (scope.get('scope') or {}).get('solveIdentity'):
-                    continue
-            result[key] = copy.deepcopy(program[key])
-    return result
+    return profile, events, units, trace
 
 
 def truncate_program(program, ticks):
@@ -220,6 +294,8 @@ def truncate_program(program, ticks):
     if program['ladderEvents'] or any(program['profile']['ladderTicks']):
         raise ValueError('Checkpoint truncation currently supports non-ladder programs')
     result = copy.deepcopy(program)
+    result.pop('parentTicks', None)
+    result.pop('prefixChain', None)
     profile = result['profile']
     profile['airtime'] = ticks
     for key in ('position', 'velocity', 'grounded', 'ladderTicks'):
@@ -265,13 +341,79 @@ def truncate_program(program, ticks):
     return result
 
 
+# Per-state fields: a program's identity folds them state by state, so a child resumes its parent's chain.
+_STATE_FIELDS = ('position', 'velocity', 'grounded', 'jump', 'sneak', 'ladderTicks', 'contacts', 'contactEvents',
+                 'caseEvents', 'positionConstraints', 'regionChoices')
+_CHAIN_SEED = hashlib.sha256(b'pkc-program-v1').digest()
+
+
+def _canonical(value):
+    return json.dumps(value, sort_keys=True, allow_nan=False).encode()
+
+
+def _chain(profile, through, anchor=None):
+    """sha256 chain over states 0..through, resumed from anchor = [state, hex] when given; returns the hashes at
+    through-1 and through. A state owns its position, velocity, ground and ladder flags, the input ending at it,
+    and the contacts, events, rows and region choices that act at it; anything past the last state counts at the
+    last state."""
+    start, h = (anchor[0]+1, bytes.fromhex(anchor[1])) if anchor else (0, _CHAIN_SEED)
+    n = profile['airtime']
+    owned = [dict(contacts=[], contactEvents=[], caseEvents=[], rows=[], regionChoices=[]) for _ in range(start, through+1)]
+    for field, items, key, shift in (('contacts', profile['contacts'], 'state', 0),
+                                     ('contactEvents', profile['contactEvents'], 'offset', 1),
+                                     ('caseEvents', profile['caseEvents'], 'input', 1),
+                                     ('regionChoices', profile.get('regionChoices', ()), 'offset', 1)):
+        for item in items:
+            t = min(item[key]+shift, n)
+            if start <= t <= through:
+                owned[t-start][field].append(item)
+    for row in profile['positionConstraints']:
+        t2 = row.get('t2')
+        t = min(row['t1'] if t2 is None or t2 < row['t1'] else t2, n)
+        if start <= t <= through:
+            owned[t-start]['rows'].append({k: v for k, v in row.items() if k != 'name'})
+    before = h
+    for t, record in enumerate(owned, start):
+        record['rows'].sort(key=_canonical)
+        record.update(t=t, position=profile['position'][t], velocity=profile['velocity'][t], grounded=profile['grounded'][t],
+                      ladder=profile['ladderTicks'][t], jump=profile['jump'][t-1] if t else None,
+                      sneak=profile['sneak'][t-1] if t else None)
+        before, h = h, hashlib.sha256(h+_canonical(record)).digest()
+    return before, h
+
+
+# id(program) -> (program, prefix chain). A built program never changes, and the entry keeps it alive, so its id
+# cannot be reused while cached. Every child of one parent shares the parent's prefix.
+_PREFIXES = {}
+
+
+def prefix_chain(program):
+    """[n-1, hex] over a program's states before its last, which a child never rewrites; None for an empty one."""
+    n = program['profile']['airtime']
+    if not n:
+        return None
+    cached = _PREFIXES.get(id(program))
+    if cached is None:
+        cached = _remember(program, _chain(program['profile'], n-1, program.get('prefixChain'))[1])
+    return cached[1]
+
+
+def _remember(program, before):
+    _PREFIXES[id(program)] = entry = program, [program['profile']['airtime']-1, before.hex()]
+    while len(_PREFIXES) > 1024:
+        _PREFIXES.pop(next(iter(_PREFIXES)))
+    return entry
+
+
 def program_physics_key(program):
-    profile = {k: v for k, v in program['profile'].items() if k not in ('generatedUnits', 'constraintOwners')}
-    profile['positionConstraints'] = sorted(
-        [{k: v for k, v in row.items() if k != 'name'} for row in profile['positionConstraints']],
-        key=lambda row: json.dumps(row, sort_keys=True))
-    return json.dumps([profile, program['terminalSupport'], program.get('threshold', .005),
-                       program['ladderEvents']], sort_keys=True)
+    profile = program['profile']
+    n = profile['airtime']
+    before, h = _chain(profile, n, program.get('prefixChain'))
+    if n and id(program) not in _PREFIXES:
+        _remember(program, before)
+    rest = {k: v for k, v in profile.items() if k not in _STATE_FIELDS+('generatedUnits', 'constraintOwners')}
+    return hashlib.sha256(h+_canonical([rest, program['terminalSupport'], program.get('threshold', .005),
+                                        program['ladderEvents']])).hexdigest()
 
 
 def program_search_key(program):

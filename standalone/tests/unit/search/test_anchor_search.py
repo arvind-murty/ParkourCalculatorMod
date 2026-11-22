@@ -26,24 +26,16 @@ class AnchorSearchTests(unittest.TestCase):
                 single_jump_structure(s,p,0,'start','goal',complete=p['terminalSupport']=='goal')),
             policy_context=dict(version=1,span=0),deadline=time.monotonic()+3,context_adapter=lambda c:c.update(interactionGate=None))
 
-    def test_take_hashes_only_tied_programs_and_matches_full_key_order(self):
+    def test_take_pops_the_smallest_key_with_list_order_breaking_ties(self):
         from parkour_solver.search.frontier import take_first
         def key(p,identity):return (p['T'],-p['J'],identity)
-        identity=lambda p:p['id']
-        for items in ([dict(T=3,J=1,id='a'),dict(T=2,J=1,id='z'),dict(T=2,J=2,id='y'),dict(T=2,J=2,id='b')],
-                      [dict(T=5,J=0,id='q'),dict(T=4,J=0,id='p')],
-                      [dict(T=1,J=0,id='same'),dict(T=1,J=0,id='same',copy=True)]):
-            expected=min(items,key=lambda p:key(p,identity(p)))
-            hashed=[]
-            def counted(p):
-                hashed.append(p['id'])
-                return identity(p)
+        for items,expected in (([dict(T=3,J=1,id='a'),dict(T=2,J=1,id='z'),dict(T=2,J=2,id='y'),dict(T=2,J=2,id='b')],'y'),
+                               ([dict(T=5,J=0,id='q'),dict(T=4,J=0,id='p')],'p'),
+                               ([dict(T=1,J=0,id='same'),dict(T=1,J=0,id='same',copy=True)],None)):
             queue=list(items)
-            self.assertIs(take_first(queue,key,counted),expected)
+            taken=take_first(queue,key)
+            self.assertIs(taken,items[0] if expected is None else next(p for p in items if p['id']==expected))
             self.assertEqual(len(queue),len(items)-1)
-            low=min(key(p,'')[:-1] for p in items)
-            tied=[p['id'] for p in items if key(p,'')[:-1]==low]
-            self.assertEqual(hashed,tied if len(tied)>1 else [])
 
     def test_held_alternatives_restore_one_at_a_time_when_their_branch_dies(self):
         from parkour_solver.search.frontier import restore_alternatives

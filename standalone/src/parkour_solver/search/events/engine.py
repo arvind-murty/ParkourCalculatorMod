@@ -163,7 +163,8 @@ def search_event_routes(request, compiler, *, task_goal=None, discovery=None, an
             else:publish(value)
         publish.begin_repair=begin_repair
         publish.repair_progress=repair_progress
-        last=search(work,local_deadline,on_progress=publish)
+        # Without a saver the search skips progress snapshots entirely.
+        last=search(work,local_deadline,on_progress=publish if options.get('on_progress') else None)
         state['dfs']=last['searchState']; state['best']=last['best']
         dfs=state['dfs']
         for k in used:used[k]+=dfs['discoveryWork'][k]

@@ -5,7 +5,7 @@ from parkour_solver.scene.geometry import expanded_box
 from parkour_solver.reachability.intervals import interaction_reachability, interaction_reachability_many, reachable_envelopes
 
 
-PROOF_POLICY = 3
+PROOF_POLICY = 5
 
 
 def interaction_context_key(context):
@@ -269,24 +269,37 @@ class InteractionGate:
             vertical=validate_vertical_schedule(route,compiled['profiles'],plan)
             if not vertical['feasible']:return None
             plan['vertical']=dict(vertical['vertical'],referencePosition=vertical['y'],referenceVelocity=vertical['vy'])
-            return dict(route=route,profiles=compiled['profiles'],plan=plan,vertical=vertical)
+            return dict(key=key[1],route=route,profiles=compiled['profiles'],plan=plan,vertical=vertical)
         return self._cached(key,build,'preparation')
 
-    def analyze_model(self, route, plan, vertical, *, open_terminal=False, scope=None, initial_intervals=None):
+    def analyze_model(self, route, plan, vertical, *, open_terminal=False, scope=None, initial_intervals=None,
+                      prepared_key=None, parent_ticks=None):
+        """`prepared_key`: the `prepare` key that produced route, plan and vertical. The model is a function of it,
+        so it names the analysis instead of the model's own content. `parent_ticks`: see `reachable_envelopes`."""
         from parkour_solver.bridge.compiler import coefficient_request
         from parkour_solver.canonical import digest
-        request=coefficient_request(route,plan)
-        coefficient=self._cached(('coefficients',digest(request)),
-            lambda:self.compiler.compile(route,plan,self.seconds),'coefficient')
-        rows=[r for r in plan['walls'] if not open_terminal or not r.get('name','').startswith('landing:1:')]
-        model=dict(coefficient,ticks=plan['ticks'],walls=rows,contacts=plan['contacts'],
-            position=route['initial']['position'][::2],velocity=route['initial']['velocity'][::2],
-            threshold=route.get('physicsThreshold',.005),vertical=vertical['vertical'],
-            ladderTicks=plan.get('ladderTicks',[False]*(plan['ticks']+1)))
-        if initial_intervals is not None:model['initialIntervals']=initial_intervals
-        key=interaction_context_key(dict(model=model,y=vertical['y'],scope=scope))
+        def build_model():
+            request=coefficient_request(route,plan)
+            coefficient=self._cached(('coefficients',digest(request)),
+                lambda:self.compiler.compile(route,plan,self.seconds),'coefficient')
+            rows=[r for r in plan['walls'] if not open_terminal or not r.get('name','').startswith('landing:1:')]
+            result=dict(coefficient,ticks=plan['ticks'],walls=rows,contacts=plan['contacts'],
+                position=route['initial']['position'][::2],velocity=route['initial']['velocity'][::2],
+                threshold=route.get('physicsThreshold',.005),vertical=vertical['vertical'],
+                ladderTicks=plan.get('ladderTicks',[False]*(plan['ticks']+1)))
+            if initial_intervals is not None:result['initialIntervals']=initial_intervals
+            return result,coefficient
+        built=None
+        if prepared_key is not None:
+            key=interaction_context_key(dict(prepared=prepared_key,openTerminal=open_terminal,scope=scope,
+                                             initialIntervals=initial_intervals,parentTicks=parent_ticks))
+        else:
+            built=build_model()
+            key=interaction_context_key(dict(model=built[0],y=vertical['y'],scope=scope,parentTicks=parent_ticks))
         def build():
-            envelope=reachable_envelopes(model,vertical['y']);envelope['modelKey']=digest(coefficient)
+            model,coefficient=built or build_model()
+            envelope=reachable_envelopes(model,vertical['y'],parent_ticks=parent_ticks)
+            envelope['modelKey']=digest(coefficient)
             return dict(key=key,model=model,envelopes=envelope,coefficient=coefficient,y=vertical['y'])
         return self._cached(('analysis',key),build,'analysis')
 
@@ -294,7 +307,8 @@ class InteractionGate:
         prepared=self.prepare(program,scene=scene,require_complete=require_complete)
         if prepared is None:return None
         return self.analyze_model(prepared['route'],prepared['plan'],prepared['vertical'],
-                                  open_terminal=open_terminal,scope=scope)
+                                  open_terminal=open_terminal,scope=scope,prepared_key=prepared['key'],
+                                  parent_ticks=program.get('parentTicks'))
 
     def condition(self, analysis, rows):
         """Add X/Z prerequisites and repropagate, retaining the compiled physics."""
@@ -480,15 +494,17 @@ class InteractionGate:
         return False
 
     def required(self, program):
-        envelope = self.envelopes(program)
-        if envelope is None:
+        analysis = self.analyze(program)
+        if analysis is None:
             return dict(reason='vertical_schedule')
+        envelope = analysis['envelopes']
         profile = program['profile']
         if envelope.get('contradiction'):
             return dict(reason='required_interaction_unreachable',input=envelope['contradiction'].get('state'),
                         proof=dict(ruledOut=True,**envelope['contradiction']))
         context = dict(envelopes=envelope)
-        context_key = interaction_context_key(context)
+        # The envelope is a function of its analysis, so the analysis key names this proof context.
+        context_key = analysis['key']
         for event in profile.get('contactEvents', [])+profile.get('caseEvents', []):
             if 'boxes' not in event:
                 continue

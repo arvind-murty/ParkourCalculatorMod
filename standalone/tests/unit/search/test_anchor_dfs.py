@@ -270,7 +270,7 @@ class AnchorDFSTests(unittest.TestCase):
         def probe(node_evaluator,p):
             p=copy.deepcopy(p);p['decisionNode']='node:'+str(p['profile']['airtime'])
             # A ground touch at 5 closes the stretch before it; the prefix ends airborne, so 5 onward is open.
-            p['profile']['grounded']=[True]+[False]*4+[True]+[False]*5
+            p['profile']['grounded']=[True]+[False]*4+[True]+[False]*(p['profile']['airtime']-5)
             p['profile']['regionChoices']=[dict(surface='s',owner='mid',offset=t,options=[[]]) for t in (3,7)]
             checked.append(node_evaluator(p,{},None))
         def node_best(n):

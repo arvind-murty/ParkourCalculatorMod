@@ -1,0 +1,38 @@
+duplicate copies >=2KB by location (bytes, count):
+   2455867     1  dfs.stack.#.generation.continuation.nodeInFlight
+   1349989    55  dfs.stack.#.generation.continuation.alternatives.<id>.programs.#.profile
+    895615    88  dfs.stack.#.generation.continuation.pending.#.profile.positionConstraints
+    737408     9  dfs.stack.#.generation.continuation.alternatives.<id>.programs
+    704914    31  dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.profiles
+    704421     3  dfs.windows.#.candidates
+    586848    26  dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.route.verticalProfiles
+    531177    53  dfs.stack.#.generation.continuation.nodes.<id>.program.profile.positionConstraints
+    488703    52  dfs.stack.#.generation.continuation.pending.#.trace
+    436174    55  dfs.stack.#.generation.continuation.alternatives.<id>.programs.#.trace
+    377646   139  dfs.stack.#.generation.continuation.pending.#.movementUnits
+    260371    34  dfs.stack.#.generation.continuation.pending.#.profile.contactEvents
+    236996    33  dfs.stack.#.generation.continuation.nodes.<id>.program.profile.contactEvents
+    216505    47  dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.attemptLog.#.diagnostics.#.request.vertical
+    192753    31  dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.route.contactEvents
+    166294     8  dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.attemptLog.#.diagnostics.#.request.walls
+    165914    21  dfs.stack.#.generation.continuation.nodes.<id>.alternatives.#.trace
+    165081    19  dfs.stack.#.generation.continuation.nodes.<id>.program.trace
+    157844    62  dfs.stack.#.generation.continuation.nodes.<id>.program.movementUnits
+    157337    57  dfs.stack.#.generation.continuation.pending.#.profile.generatedUnits
+top (copy location <- first location):
+   2455867  dfs.stack.#.generation.continuation.nodeInFlight  <-  dfs.stack.#.generation.continuation.nodes.<id>.program
+   1314665  dfs.stack.#.generation.continuation.alternatives.<id>.programs.#.profile  <-  dfs.stack.#.generation.continuation.nodes.<id>.program.profile
+    887261  dfs.stack.#.generation.continuation.pending.#.profile.positionConstraints  <-  dfs.stack.#.generation.continuation.pending.#.profile.positionConstraints
+    737408  dfs.stack.#.generation.continuation.alternatives.<id>.programs  <-  dfs.stack.#.generation.continuation.nodes.<id>.alternatives
+    704914  dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.profiles  <-  dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.route.verticalProfiles
+    704421  dfs.windows.#.candidates  <-  dfs.stack.#.records
+    586848  dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.route.verticalProfiles  <-  dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.route.verticalProfiles
+    488703  dfs.stack.#.generation.continuation.pending.#.trace  <-  dfs.stack.#.generation.continuation.pending.#.trace
+    444121  dfs.stack.#.generation.continuation.nodes.<id>.program.profile.positionConstraints  <-  dfs.stack.#.generation.continuation.pending.#.profile.positionConstraints
+    425954  dfs.stack.#.generation.continuation.alternatives.<id>.programs.#.trace  <-  dfs.stack.#.generation.continuation.nodes.<id>.program.trace
+    377646  dfs.stack.#.generation.continuation.pending.#.movementUnits  <-  dfs.stack.#.generation.continuation.pending.#.profile.generatedUnits
+    260371  dfs.stack.#.generation.continuation.pending.#.profile.contactEvents  <-  dfs.stack.#.generation.continuation.pending.#.profile.contactEvents
+    229193  dfs.stack.#.generation.continuation.nodes.<id>.program.profile.contactEvents  <-  dfs.stack.#.generation.continuation.pending.#.profile.contactEvents
+    192753  dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.acceptedVariants.#.best.route.contactEvents  <-  dfs.stack.#.generation.continuation.nodes.<id>.program.profile.contactEvents
+    166294  dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.attemptLog.#.diagnostics.#.request.walls  <-  dfs.stack.#.generation.continuation.nodes.<id>.program.repairState.attemptLog.#.diagnostics.#.request.walls
+programs 362 per-tick array bytes 10945322 distinct-array bytes 4275096 bytes repeating an earlier array whole or as its prefix 10643479

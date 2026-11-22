@@ -11,17 +11,10 @@ from parkour_solver.search.identity import processing_key
 from parkour_solver.search.comparison import POLICY_VERSION as COMPARISON_POLICY_VERSION
 
 
-def take_first(items, key, identity):
-    """Pop min(items, key=lambda p: key(p, identity(p))), list order breaking ties.
-
-    The identity hashes the whole program and is only the key's last field, so it is
-    computed only for the programs tied on every other field.
-    """
-    heads = [key(p, '')[:-1] for p in items]
-    low = min(heads)
-    tied = [i for i, head in enumerate(heads) if head == low]
-    index = tied[0] if len(tied) == 1 else min(tied, key=lambda i: identity(items[i]))
-    return items.pop(index)
+def take_first(items, key):
+    """Pop the item with the smallest key, list order breaking ties (user: every tied program is expanded
+    eventually, so the cheapest order wins)."""
+    return items.pop(min(range(len(items)), key=lambda i: key(items[i], '')))
 
 
 def restore_alternatives(state, extra_live=()):
@@ -59,7 +52,7 @@ def restore_alternatives(state, extra_live=()):
 def persistent_programs(scene, *, settings, report, continuation=None, deadline=None, cancel_event=None, work=None,
                         initial_programs=None, checkpoint_tick=None, threshold=.005, screen=None,
                         context_adapter=None, program_filter=None, stop_on_goal=True, terminal_goal=None, stop_supports=None,
-                        node_evaluator=None, priority_key=None, identity_key=None, policy_context=None, live_programs=None,
+                        node_evaluator=None, priority_key=None, policy_context=None, live_programs=None,
                         run_policy=None, **kwargs):
     initial = empty_program(scene['initial'], threshold=threshold)
     initial['terminalSupport'] = scene['startBlock']
@@ -112,11 +105,8 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
     def key(p, identity):
         return priority_key(p, identity) if priority_key else processing_key(p, identity)
 
-    def identity_of(p):
-        return identity_key(p) if identity_key else digest(program_physics_key(p))
-
     def take(items):
-        return take_first(items, key, identity_of)
+        return take_first(items, key)
 
     def restore():
         return node_evaluator is not None and restore_alternatives(state, live_programs() if live_programs else ())

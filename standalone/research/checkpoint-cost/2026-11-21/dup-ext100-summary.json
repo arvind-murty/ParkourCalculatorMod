@@ -1,0 +1,44 @@
+{
+ "engine.py:153:publish < dfs.py:143:publish < dfs.py:162:transition": {
+  "calls": 16,
+  "seconds": 1.6847314201295376,
+  "same": 0,
+  "sameSeconds": 0.0
+ },
+ "engine.py:157:begin_repair < dfs.py:148:begin_repair < dfs.py:762:score": {
+  "calls": 3,
+  "seconds": 0.3186522461473942,
+  "same": 3,
+  "sameSeconds": 0.3186522461473942
+ },
+ "engine.py:157:begin_repair < dfs.py:148:begin_repair < dfs.py:451:evaluate_node": {
+  "calls": 24,
+  "seconds": 7.026032790541649,
+  "same": 0,
+  "sameSeconds": 0.0
+ },
+ "engine.py:153:publish < dfs.py:143:publish < dfs.py:531:evaluate_node": {
+  "calls": 24,
+  "seconds": 8.160461284220219,
+  "same": 0,
+  "sameSeconds": 0.0
+ },
+ "engine.py:153:publish < dfs.py:143:publish < dfs.py:1211:search_goals": {
+  "calls": 1,
+  "seconds": 0.42453737556934357,
+  "same": 0,
+  "sameSeconds": 0.0
+ },
+ "engine.py:182:search_event_routes < engine.py:313:find_checkpoint_route < application.py:27:run": {
+  "calls": 1,
+  "seconds": 0.666492123156786,
+  "same": 0,
+  "sameSeconds": 0.0
+ },
+ "engine.py:245:search_event_routes < engine.py:313:find_checkpoint_route < application.py:27:run": {
+  "calls": 1,
+  "seconds": 0.41031891480088234,
+  "same": 1,
+  "sameSeconds": 0.41031891480088234
+ }
+}

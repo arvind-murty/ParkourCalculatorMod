@@ -96,9 +96,10 @@ class BookkeepingProfileTests(unittest.TestCase):
             self.assertIs(first, gate.analyze(program))
         self.assertEqual(first, expected)
         self.assertEqual(compiler.calls, 1)
-        for kind in ('preparation', 'coefficient', 'analysis'):
+        # An analysis hit is keyed by its preparation, so it never asks for the coefficients again.
+        for kind, counts in (('preparation', (2,1,1)), ('coefficient', (1,0,1)), ('analysis', (2,1,1))):
             row = profile.snapshot()['caches'][kind]
-            self.assertEqual((row['calls'], row['hits'], row['misses']), (2,1,1))
+            self.assertEqual((row['calls'], row['hits'], row['misses']), counts)
 
     def test_digest_sampling_is_bounded_and_preserves_canonical_output(self):
         from parkour_solver.canonical import digest
