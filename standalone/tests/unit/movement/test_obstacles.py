@@ -21,17 +21,6 @@ def scene():
     return json.loads((FIXTURES / 'obstacle-wide-neo.json').read_text())
 
 
-def passage_case():
-    request = prepare_scene(scene())
-    compiled = compile_block_path(request, ['start', 'goal'])
-    route, profile = compiled['route'], compiled['profiles'][0]
-    plan = schedule(route, [0])
-    candidate = {'positions': [[.5 + 3 * t / 12, .5] for t in range(13)]}
-    bound = {'storedSpeedNorm': .5, 'movementAfterSupportCheck': .8,
-             'groundMagnitude': .13, 'groundFriction': .546}
-    return request, route, profile, plan, candidate, bound
-
-
 class ObstacleGeometryTests(unittest.TestCase):
     def test_collision_boxes_derive_supports_and_survive_normalization_without_mutation(self):
         request = scene()

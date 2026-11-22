@@ -7,8 +7,7 @@ everything not being worked on is in the [deferred-work register](DEFERRED_WORK.
 ## Branches and status
 
 - Base branch: the fork's `main`. It contains the Real11 extension work: extended
-  geometry and bounds, the six-direction [face catalog](design/FACE_MERGING_IMPLEMENTATION_PLAN.md)
-  (not yet consumed by any generator) and the [longer Real11 task](../research/real11-long-solve/README.md).
+  geometry and bounds and the [longer Real11 task](../research/real11-long-solve/README.md).
 - Merged as PR #5 (`feat/disk-interim-solver`): automatic discovery runs on the
   Clarabel [disk relaxation](reference/NUMERICAL_SOLVER.md#disk-relaxation): the
   HiGHS LP screen is gone, interim candidates are relaxed, an acceleration-shortfall
@@ -75,7 +74,7 @@ everything not being worked on is in the [deferred-work register](DEFERRED_WORK.
 4. [Branch scheduling](design/BRANCH_SCHEDULING_INVESTIGATION.md) (deferred): when work runs
    and when it is excluded.
 5. [Automatic grouping](design/PRUNING_IMPROVEMENTS_BACKLOG.md#automatic-grouping-joint-constraint-solving):
-   every interaction type now reads one [shared scene geometry](design/FACE_MERGING_IMPLEMENTATION_PLAN.md)
+   every interaction type now reads one [shared scene geometry](design/SCENE_SURFACES.md)
    (`spatial/surfaces.py`); grouping itself is to be re-planned on it. Commitment
    and cadence stay deferred. Other pruning gaps stay in the backlog.
 6. [Pruning research](research/PRUNING_RESEARCH.md): "why one best arrival fails",

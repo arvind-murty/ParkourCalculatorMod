@@ -59,33 +59,32 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/ANCHOR_SEARCH_EXECUTION_REFERENCE.md](ANCHOR_SEARCH_EXECUTION_REFERENCE.md) | 35573 |
 | [docs/ARCHITECTURE.md](ARCHITECTURE.md) | 16419 |
 | [docs/CHECKPOINT_STORAGE.md](CHECKPOINT_STORAGE.md) | 7541 |
-| [docs/CODE_MAP.md](CODE_MAP.md) | 21410 |
-| [docs/CURRENT_STATE.md](CURRENT_STATE.md) | 12964 |
-| [docs/DECISIONS_AND_PLANS.md](DECISIONS_AND_PLANS.md) | 20734 |
-| [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 37622 |
+| [docs/CODE_MAP.md](CODE_MAP.md) | 21395 |
+| [docs/CURRENT_STATE.md](CURRENT_STATE.md) | 12830 |
+| [docs/DECISIONS_AND_PLANS.md](DECISIONS_AND_PLANS.md) | 20520 |
+| [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 37128 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11512 |
-| [docs/DOC_INDEX.md](DOC_INDEX.md) | 28596 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 231452 |
-| [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 66138 |
+| [docs/DOC_INDEX.md](DOC_INDEX.md) | 28532 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 222926 |
+| [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 63944 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
 | [docs/LAYOUT.md](LAYOUT.md) | 6304 |
 | [docs/MOD_REFERENCES.md](MOD_REFERENCES.md) | 5279 |
 | [docs/PERFORMANCE.md](PERFORMANCE.md) | 17694 |
-| [docs/REAL11_EXTENDED_GEOMETRY.md](REAL11_EXTENDED_GEOMETRY.md) | 12380 |
+| [docs/REAL11_EXTENDED_GEOMETRY.md](REAL11_EXTENDED_GEOMETRY.md) | 12104 |
 | [docs/REAL11_GUIDE.md](REAL11_GUIDE.md) | 20426 |
 | [docs/RESULTS_AND_DEBUGGING.md](RESULTS_AND_DEBUGGING.md) | 19019 |
-| [docs/RUNBOOK.md](RUNBOOK.md) | 13414 |
+| [docs/RUNBOOK.md](RUNBOOK.md) | 12940 |
 | [docs/TESTING.md](TESTING.md) | 19252 |
 | [docs/design/ANCHOR_POLICY_DECISIONS.md](design/ANCHOR_POLICY_DECISIONS.md) | 41984 |
 | [docs/design/AVOIDANCE_PASSAGES.md](design/AVOIDANCE_PASSAGES.md) | 21065 |
 | [docs/design/BRANCH_SCHEDULING_INVESTIGATION.md](design/BRANCH_SCHEDULING_INVESTIGATION.md) | 34072 |
-| [docs/design/CONTACT_COMBINATIONS.md](design/CONTACT_COMBINATIONS.md) | 9705 |
-| [docs/design/FACE_MERGING_IMPLEMENTATION_PLAN.md](design/FACE_MERGING_IMPLEMENTATION_PLAN.md) | 23909 |
-| [docs/design/GENERATION_FOLLOWUPS.md](design/GENERATION_FOLLOWUPS.md) | 41392 |
+| [docs/design/CONTACT_COMBINATIONS.md](design/CONTACT_COMBINATIONS.md) | 9683 |
+| [docs/design/GENERATION_FOLLOWUPS.md](design/GENERATION_FOLLOWUPS.md) | 41097 |
 | [docs/design/GENERATION_RELEVANCE_PLAN.md](design/GENERATION_RELEVANCE_PLAN.md) | 11545 |
 | [docs/design/GENERIC_COMPOSITION.md](design/GENERIC_COMPOSITION.md) | 8373 |
-| [docs/design/HARD_JUMP_TICK_PRUNING_AND_REACHABILITY_PLAN.md](design/HARD_JUMP_TICK_PRUNING_AND_REACHABILITY_PLAN.md) | 66434 |
+| [docs/design/HARD_JUMP_TICK_PRUNING_AND_REACHABILITY_PLAN.md](design/HARD_JUMP_TICK_PRUNING_AND_REACHABILITY_PLAN.md) | 66305 |
 | [docs/design/LADDER_STRATEGY_PLAN.md](design/LADDER_STRATEGY_PLAN.md) | 39077 |
 | [docs/design/MIXED_MOVEMENT_CONTACTS.md](design/MIXED_MOVEMENT_CONTACTS.md) | 5966 |
 | [docs/design/MOVEMENT_UNITS.md](design/MOVEMENT_UNITS.md) | 13672 |
@@ -95,6 +94,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/design/ORCHESTRATOR_CONTRACT.md](design/ORCHESTRATOR_CONTRACT.md) | 2449 |
 | [docs/design/PRUNING_IMPROVEMENTS_BACKLOG.md](design/PRUNING_IMPROVEMENTS_BACKLOG.md) | 3528 |
 | [docs/design/REVISIT_DISCOVERY_DEFERRED_PLAN.md](design/REVISIT_DISCOVERY_DEFERRED_PLAN.md) | 10265 |
+| [docs/design/SCENE_SURFACES.md](design/SCENE_SURFACES.md) | 1988 |
 | [docs/design/SEARCH_OBJECTIVE.md](design/SEARCH_OBJECTIVE.md) | 6702 |
 | [docs/design/STEPPING_CASES.md](design/STEPPING_CASES.md) | 12151 |
 | [docs/design/TIME_PROGRESS_FRONTIER.md](design/TIME_PROGRESS_FRONTIER.md) | 18658 |
@@ -104,7 +104,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/reference/MOVEMENT_PORT.md](reference/MOVEMENT_PORT.md) | 12343 |
 | [docs/reference/NUMERICAL_SOLVER.md](reference/NUMERICAL_SOLVER.md) | 23597 |
 | [docs/reference/REPLAY.md](reference/REPLAY.md) | 8680 |
-| [docs/research/GENERIC_ROUTE_DISCOVERY_RESEARCH.md](research/GENERIC_ROUTE_DISCOVERY_RESEARCH.md) | 67875 |
+| [docs/research/GENERIC_ROUTE_DISCOVERY_RESEARCH.md](research/GENERIC_ROUTE_DISCOVERY_RESEARCH.md) | 65980 |
 | [docs/research/HEURISTIC_SOURCE_REVIEW.md](research/HEURISTIC_SOURCE_REVIEW.md) | 17131 |
 | [docs/research/MIXED_INTEGER_RESEARCH.md](research/MIXED_INTEGER_RESEARCH.md) | 15424 |
 | [docs/research/PRUNING_RESEARCH.md](research/PRUNING_RESEARCH.md) | 285642 |
@@ -155,7 +155,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 
 | File | Bytes |
 | --- | ---: |
-| [research/README.md](../research/README.md) | 4693 |
+| [research/README.md](../research/README.md) | 4593 |
 | [research/__init__.py](../research/__init__.py) | 65 |
 | [research/anchor-candidate-audit/.gitignore](../research/anchor-candidate-audit/.gitignore) | 109 |
 | [research/anchor-candidate-audit/README.md](../research/anchor-candidate-audit/README.md) | 10897 |
@@ -1324,7 +1324,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/prefix-reuse-keys/native-gate-main/report.json](../research/prefix-reuse-keys/native-gate-main/report.json) | 19246 |
 | [research/prefix-reuse-keys/native-gate-window/report.json](../research/prefix-reuse-keys/native-gate-window/report.json) | 19246 |
 | [research/prefix-reuse-keys/stage_timers.py](../research/prefix-reuse-keys/stage_timers.py) | 3286 |
-| [research/real11-extension/README.md](../research/real11-extension/README.md) | 2548 |
+| [research/real11-extension/README.md](../research/real11-extension/README.md) | 2455 |
 | [research/real11-extension/ceiling-preprocessing-audit.json](../research/real11-extension/ceiling-preprocessing-audit.json) | 1254 |
 | [research/real11-extension/face-catalog-validation.json](../research/real11-extension/face-catalog-validation.json) | 1877 |
 | [research/real11-extension/face-detection-plan-probe.json](../research/real11-extension/face-detection-plan-probe.json) | 3968 |
@@ -1536,7 +1536,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [src/parkour_solver/spatial/event_routes.py](../src/parkour_solver/spatial/event_routes.py) | 16621 |
 | [src/parkour_solver/spatial/guides.py](../src/parkour_solver/spatial/guides.py) | 6441 |
 | [src/parkour_solver/spatial/regions.py](../src/parkour_solver/spatial/regions.py) | 9011 |
-| [src/parkour_solver/spatial/surfaces.py](../src/parkour_solver/spatial/surfaces.py) | 26867 |
+| [src/parkour_solver/spatial/surfaces.py](../src/parkour_solver/spatial/surfaces.py) | 13085 |
 | [src/parkour_solver/validation/__init__.py](../src/parkour_solver/validation/__init__.py) | 0 |
 | [src/parkour_solver/validation/numerical.py](../src/parkour_solver/validation/numerical.py) | 8788 |
 | [src/parkour_solver/validation/scene.py](../src/parkour_solver/validation/scene.py) | 1952 |
@@ -1618,7 +1618,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/integration/test_block_route_witnesses.py](../tests/integration/test_block_route_witnesses.py) | 10283 |
 | [tests/integration/test_full_route_witness.py](../tests/integration/test_full_route_witness.py) | 1854 |
 | [tests/integration/test_generic_composition.py](../tests/integration/test_generic_composition.py) | 13917 |
-| [tests/integration/test_geometry_bounds.py](../tests/integration/test_geometry_bounds.py) | 5432 |
+| [tests/integration/test_geometry_bounds.py](../tests/integration/test_geometry_bounds.py) | 4077 |
 | [tests/integration/test_integration.py](../tests/integration/test_integration.py) | 6314 |
 | [tests/integration/test_movement_contacts.py](../tests/integration/test_movement_contacts.py) | 7695 |
 | [tests/integration/test_orchestrator_continuation.py](../tests/integration/test_orchestrator_continuation.py) | 12673 |
@@ -1669,7 +1669,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/unit/movement/test_movement_composition.py](../tests/unit/movement/test_movement_composition.py) | 8780 |
 | [tests/unit/movement/test_movement_generation.py](../tests/unit/movement/test_movement_generation.py) | 5375 |
 | [tests/unit/movement/test_movement_units.py](../tests/unit/movement/test_movement_units.py) | 6722 |
-| [tests/unit/movement/test_obstacles.py](../tests/unit/movement/test_obstacles.py) | 5251 |
+| [tests/unit/movement/test_obstacles.py](../tests/unit/movement/test_obstacles.py) | 4771 |
 | [tests/unit/movement/test_runoff.py](../tests/unit/movement/test_runoff.py) | 3527 |
 | [tests/unit/movement/test_stepping_cases.py](../tests/unit/movement/test_stepping_cases.py) | 10751 |
 | [tests/unit/numerics/__init__.py](../tests/unit/numerics/__init__.py) | 0 |
@@ -1703,7 +1703,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/unit/spatial/test_event_routes.py](../tests/unit/spatial/test_event_routes.py) | 4072 |
 | [tests/unit/spatial/test_guide_progress.py](../tests/unit/spatial/test_guide_progress.py) | 2415 |
 | [tests/unit/spatial/test_route_regions.py](../tests/unit/spatial/test_route_regions.py) | 4958 |
-| [tests/unit/spatial/test_surfaces.py](../tests/unit/spatial/test_surfaces.py) | 24049 |
+| [tests/unit/spatial/test_surfaces.py](../tests/unit/spatial/test_surfaces.py) | 7157 |
 
 ## tools
 
@@ -1713,9 +1713,9 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tools/check_docs.py](../tools/check_docs.py) | 1520 |
 | [tools/docs_index.py](../tools/docs_index.py) | 6567 |
 | [tools/generate_coefficient_tables.py](../tools/generate_coefficient_tables.py) | 8706 |
-| [tools/geometry_bounds.py](../tools/geometry_bounds.py) | 6294 |
+| [tools/geometry_bounds.py](../tools/geometry_bounds.py) | 4749 |
 | [tools/layout-extractions.json](../tools/layout-extractions.json) | 6510 |
-| [tools/layout-migration.json](../tools/layout-migration.json) | 363273 |
+| [tools/layout-migration.json](../tools/layout-migration.json) | 365412 |
 | [tools/layout-test-support.json](../tools/layout-test-support.json) | 3356 |
 | [tools/native-suite.json](../tools/native-suite.json) | 2841 |
 | [tools/native_gate.py](../tools/native_gate.py) | 1679 |

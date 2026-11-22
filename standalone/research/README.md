@@ -24,7 +24,7 @@ Read those files with the old key, or with the frozen bundle's own scripts.
 
 | Current tool | Purpose |
 | --- | --- |
-| `python -m tools.geometry_bounds` | Static player collision/landing-cover report; `--faces` adds the production catalog of merged exposed physical faces across all six orientations. |
+| `python -m tools.geometry_bounds` | Static player collision/landing-cover report. |
 | `python -m tools.profiling.run` | Cold current task run, scoped bookkeeping timings, source/config hashes and retained-witness replays. |
 | [Bookkeeping setup and measurements](bookkeeping-measurement/README.md) | Isolated baseline, sampled digest/preparation/copy measurements, hook calibration and durable resume; no production optimization. |
 | [Enumeration attribution](enumeration-attribution/README.md) | Exact block/side-chain/exit counters and fixed-work option replay identify duplicate internal states around B7; production search unchanged. |
