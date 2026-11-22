@@ -25,6 +25,7 @@
 #include "pkc/scene/route.hpp"
 #include "pkc/scene/static_collision.hpp"
 #include "pkc/screen.hpp"
+#include "pkc/spatial/surfaces.hpp"
 #include "pkc/validation/numerical.hpp"
 #include "pkc/validation/vertical.hpp"
 
@@ -365,6 +366,19 @@ PYBIND11_MODULE(_pkc_native, m) {
     m.def("validate_controls", [](py::handle problem, py::handle controls) {
         return to_python(pkc::validate_controls(convert(problem), convert(controls)));
     }, "validation/numerical.validate_controls");
+    py::class_<pkc::SceneGeometry, std::shared_ptr<pkc::SceneGeometry>>(m, "SceneGeometry")
+        .def(py::init([](py::handle solids) { return std::make_shared<pkc::SceneGeometry>(convert(solids)); }))
+        .def("cluster_groups", &pkc::SceneGeometry::cluster_groups, "spatial/surfaces.SceneGeometry._cluster_map's groups")
+        .def("sides", [](const pkc::SceneGeometry& g, std::vector<std::int64_t> members, std::vector<std::int64_t> active) {
+            return to_python(g.sides(members, active));
+        }, "spatial/surfaces.SceneGeometry.sides as plain lists")
+        .def("contact_options", [](const pkc::SceneGeometry& g, int axis, std::int64_t sign, py::handle clearance,
+                                   std::vector<std::int64_t> members) {
+            return to_python(g.contact_options(axis, sign, convert(clearance), members));
+        }, "spatial/surfaces.SceneGeometry.contact_options as [surface, plane, members, regions] rows");
+    m.def("free_rectangles", [](py::handle boxes) {
+        return to_python(pkc::free_rectangles(convert(boxes)));
+    }, "spatial/surfaces.free_rectangles as lists");
     m.def("float_repr", &pkc::float_repr, "repr(float) for a finite float");
     m.def("sha256_hex", [](py::bytes data) { return pkc::sha256_hex(std::string(data)); });
 }

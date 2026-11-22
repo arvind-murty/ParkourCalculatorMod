@@ -209,3 +209,19 @@ the tail traced whole from the initial state), so only ladder appends still rais
   ([release](2026-11-22-first-appends/corpus-replay-release.json),
   [UBSan](2026-11-22-first-appends/corpus-replay-sanitize.json)).
 
+## Scene geometry (spatial/surfaces), 2026-11-22
+
+Source: `39ff210e` plus native `spatial/surfaces` (`free_rectangles` and the `SceneGeometry` computations: contact
+options, cluster groups, sides) with `cells.subtract_open` and `regions.canonical_cover`/`geometry_key`. The Python
+`SceneGeometry` keeps its caches and dataclasses and asks the native geometry on a miss. Coordinates keep their
+int/float kinds, since a contact option's `surface` name is a key over them.
+
+- On every collision scene in the repository (46 distinct solid sets) and an integer-coordinate copy of each, 18,144
+  `contact_options` (every axis and sign, four clearances, all, single and random member sets), 368 cluster groupings,
+  4,326 `sides` and 460 `free_rectangles` agree on release and UBSan
+  ([release](2026-11-22-surfaces/surfaces-release.json), [UBSan](2026-11-22-surfaces/surfaces-sanitize.json)).
+- Fixed work (extended, 100 solver calls) on this source with the Python interaction screen kept for Python callers
+  (`e7cd2bc6`) and native first appends: Python and native match exactly on all 19 transitions
+  ([parity](2026-11-22-surfaces/parity-python-native.json)); search 43.1 s Python, 28.0 s native. The same run before
+  `e7cd2bc6` took 42.2 s Python and 45.9 s native.
+

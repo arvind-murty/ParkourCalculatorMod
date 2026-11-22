@@ -520,8 +520,8 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `_command` | [17](../src/parkour_solver/numerics/solver.py#L17) | function |
-| `solve` | [25](../src/parkour_solver/numerics/solver.py#L25) | function |
+| `_command` | [18](../src/parkour_solver/numerics/solver.py#L18) | function |
+| `solve` | [26](../src/parkour_solver/numerics/solver.py#L26) | function |
 
 ## numerics/worker.py
 
@@ -586,9 +586,8 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `travel_radii` | [6](../src/parkour_solver/reachability/intervals.py#L6) | function |
 | `motion_bound` | [15](../src/parkour_solver/reachability/intervals.py#L15) | function |
 | `reachable_envelopes` | [28](../src/parkour_solver/reachability/intervals.py#L28) | function |
-| `_native` | [142](../src/parkour_solver/reachability/intervals.py#L142) | function |
-| `interaction_reachability` | [148](../src/parkour_solver/reachability/intervals.py#L148) | function |
-| `interaction_reachability_many` | [214](../src/parkour_solver/reachability/intervals.py#L214) | function |
+| `interaction_reachability` | [142](../src/parkour_solver/reachability/intervals.py#L142) | function |
+| `interaction_reachability_many` | [204](../src/parkour_solver/reachability/intervals.py#L204) | function |
 
 ## reachability/screen.py
 
@@ -1067,23 +1066,24 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `Side.key` | [91](../src/parkour_solver/spatial/surfaces.py#L91) | function |
 | `nested` | [95](../src/parkour_solver/spatial/surfaces.py#L95) | function |
 | `intersects` | [102](../src/parkour_solver/spatial/surfaces.py#L102) | function |
-| `free_rectangles` | [106](../src/parkour_solver/spatial/surfaces.py#L106) | function |
-| `SceneGeometry` | [133](../src/parkour_solver/spatial/surfaces.py#L133) | class |
-| `SceneGeometry.__init__` | [136](../src/parkour_solver/spatial/surfaces.py#L136) | function |
-| `SceneGeometry.near` | [147](../src/parkour_solver/spatial/surfaces.py#L147) | function |
-| `SceneGeometry._cells` | [158](../src/parkour_solver/spatial/surfaces.py#L158) | function |
-| `SceneGeometry.clusters` | [163](../src/parkour_solver/spatial/surfaces.py#L163) | function |
-| `SceneGeometry.cluster` | [166](../src/parkour_solver/spatial/surfaces.py#L166) | function |
-| `SceneGeometry.touching` | [169](../src/parkour_solver/spatial/surfaces.py#L169) | function |
-| `SceneGeometry._cluster_map` | [177](../src/parkour_solver/spatial/surfaces.py#L177) | function |
-| `SceneGeometry.active` | [199](../src/parkour_solver/spatial/surfaces.py#L199) | function |
-| `SceneGeometry.sides` | [202](../src/parkour_solver/spatial/surfaces.py#L202) | function |
-| `SceneGeometry.contact_options` | [222](../src/parkour_solver/spatial/surfaces.py#L222) | function |
-| `ContactOption` | [263](../src/parkour_solver/spatial/surfaces.py#L263) | class |
-| `_maximal_rectangles` | [271](../src/parkour_solver/spatial/surfaces.py#L271) | function |
-| `_erode` | [297](../src/parkour_solver/spatial/surfaces.py#L297) | function |
-| `_scene_geometry` | [304](../src/parkour_solver/spatial/surfaces.py#L304) | function |
-| `scene_geometry` | [308](../src/parkour_solver/spatial/surfaces.py#L308) | function |
+| `_native` | [106](../src/parkour_solver/spatial/surfaces.py#L106) | function |
+| `free_rectangles` | [112](../src/parkour_solver/spatial/surfaces.py#L112) | function |
+| `SceneGeometry` | [142](../src/parkour_solver/spatial/surfaces.py#L142) | class |
+| `SceneGeometry.__init__` | [145](../src/parkour_solver/spatial/surfaces.py#L145) | function |
+| `SceneGeometry.near` | [159](../src/parkour_solver/spatial/surfaces.py#L159) | function |
+| `SceneGeometry._cells` | [170](../src/parkour_solver/spatial/surfaces.py#L170) | function |
+| `SceneGeometry.clusters` | [175](../src/parkour_solver/spatial/surfaces.py#L175) | function |
+| `SceneGeometry.cluster` | [178](../src/parkour_solver/spatial/surfaces.py#L178) | function |
+| `SceneGeometry.touching` | [181](../src/parkour_solver/spatial/surfaces.py#L181) | function |
+| `SceneGeometry._cluster_map` | [189](../src/parkour_solver/spatial/surfaces.py#L189) | function |
+| `SceneGeometry.active` | [215](../src/parkour_solver/spatial/surfaces.py#L215) | function |
+| `SceneGeometry.sides` | [218](../src/parkour_solver/spatial/surfaces.py#L218) | function |
+| `SceneGeometry.contact_options` | [241](../src/parkour_solver/spatial/surfaces.py#L241) | function |
+| `ContactOption` | [287](../src/parkour_solver/spatial/surfaces.py#L287) | class |
+| `_maximal_rectangles` | [295](../src/parkour_solver/spatial/surfaces.py#L295) | function |
+| `_erode` | [321](../src/parkour_solver/spatial/surfaces.py#L321) | function |
+| `_scene_geometry` | [328](../src/parkour_solver/spatial/surfaces.py#L328) | function |
+| `scene_geometry` | [332](../src/parkour_solver/spatial/surfaces.py#L332) | function |
 
 ## validation/numerical.py
 

@@ -103,8 +103,17 @@ def intersects(a, b):
     return all(max(a[i], b[i]) <= min(a[i+2], b[i+2]) for i in (0, 1))
 
 
+def _native():
+    """The native core under PKC_NATIVE_CORE, which computes surfaces for every caller; None otherwise."""
+    from parkour_solver import native_core
+    return native_core.from_environment()
+
+
 def free_rectangles(boxes):
     """Maximal closed rectangles disjoint from the open X/Z rectangles of boxes."""
+    native = _native()
+    if native is not None:
+        return [tuple(r) for r in native.free_rectangles([list(b) for b in boxes])]
     xs = [-math.inf]+sorted({b[a] for b in boxes for a in (0, 3)})+[math.inf]
 
     def empty(x0, x1, z0, z1):
@@ -141,6 +150,9 @@ class SceneGeometry:
             bounds[3] - HALF_WIDTH, bounds[4] - BODY_HEIGHT, bounds[5] - HALF_WIDTH)
         self._clusters, self._sides, self._surfaces, self._options = {}, {}, {}, {}
         self._grid = None
+        native = _native()
+        # The native geometry answers cache misses; this object keeps the caches and builds the dataclasses.
+        self._native = None if native is None else native.SceneGeometry([list(s) for s in solids])
 
     GRID_CELL = 4.
 
@@ -176,6 +188,10 @@ class SceneGeometry:
 
     def _cluster_map(self, indices):
         indices = tuple(sorted(indices))
+        if indices not in self._clusters and self._native is not None:
+            self._clusters[indices] = {
+                min(m): Cluster(min(m), tuple(m), tuple(self.solids[i] for i in m), tuple(self.boxes[i] for i in m))
+                for m in self._native.cluster_groups(list(indices))}
         if indices not in self._clusters:
             parent = {i: i for i in indices}
 
@@ -201,6 +217,9 @@ class SceneGeometry:
 
     def sides(self, cluster, active):
         key = (cluster.members, tuple(active))
+        if key not in self._sides and self._native is not None:
+            self._sides[key] = tuple(Side(tuple(tuple(b) for b in bounds), tuple(tuple(o) for o in owners), tuple(region))
+                                     for bounds, owners, region in self._native.sides(list(cluster.members), list(active)))
         if key not in self._sides:
             boxes = [cluster.boxes[k] for k in active]
             sides = []
@@ -230,6 +249,11 @@ class SceneGeometry:
         exact, since touching it is allowed.
         """
         key = axis, sign, clearance, tuple(sorted(members))
+        if key not in self._options and self._native is not None:
+            self._options[key] = tuple(
+                ContactOption(surface, plane, tuple(owners), tuple(self.solids[i] for i in owners),
+                              tuple(tuple(r) for r in regions))
+                for surface, plane, owners, regions in self._native.contact_options(axis, sign, clearance, list(members)))
         if key not in self._options:
             boxes, (u, v), buckets, faces = self.boxes, TANGENT_AXES[axis], {}, {}
             for i in sorted(members):
