@@ -13,7 +13,7 @@ from parkour_solver.search.identity import digest
 from parkour_solver.spatial.surfaces import scene_geometry
 
 
-GENERATION_POLICY = 22
+GENERATION_POLICY = 23
 STATE_VERSION = 11
 
 
@@ -150,10 +150,9 @@ class ConstraintVariants:
         """[stretch begin, solid] for a solve that hit `solid` on movement `tick` (< `through`: scene validation
         replays only the scope's prefix).
 
-        Rows constrain states, and the movement ends in state tick+1 (a landing's first state when it lands)."""
-        state = tick+1
-        return [next(begin for begin, end in landing_segments(self.profile, self.through)
-                     if begin <= state < end or state == end == self.through), solid]
+        A stretch's encounter sweeps its movements begin..end-1 (prepare_encounter), so a movement into a
+        landing belongs to the stretch before it, whose rows reach the landing state."""
+        return [next(begin for begin, end in landing_segments(self.profile, self.through) if begin <= tick < end), solid]
 
     def with_obstacles(self, obstacles):
         """A fresh generator over these obstacles (same inputs, no saved state)."""

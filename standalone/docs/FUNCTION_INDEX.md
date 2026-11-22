@@ -129,21 +129,21 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `ConstraintVariants.__init__` | [50](../src/parkour_solver/constraints/variants.py#L50) | function |
 | `ConstraintVariants.conflict_driven` | [146](../src/parkour_solver/constraints/variants.py#L146) | function |
 | `ConstraintVariants.obstacle_key` | [149](../src/parkour_solver/constraints/variants.py#L149) | function |
-| `ConstraintVariants.with_obstacles` | [158](../src/parkour_solver/constraints/variants.py#L158) | function |
-| `ConstraintVariants.metric` | [162](../src/parkour_solver/constraints/variants.py#L162) | function |
-| `ConstraintVariants.coordinate` | [166](../src/parkour_solver/constraints/variants.py#L166) | function |
-| `ConstraintVariants.check` | [171](../src/parkour_solver/constraints/variants.py#L171) | function |
-| `ConstraintVariants.face_row` | [179](../src/parkour_solver/constraints/variants.py#L179) | function |
-| `ConstraintVariants.effective_key` | [184](../src/parkour_solver/constraints/variants.py#L184) | function |
-| `ConstraintVariants.analyze` | [196](../src/parkour_solver/constraints/variants.py#L196) | function |
-| `ConstraintVariants.excluded` | [214](../src/parkour_solver/constraints/variants.py#L214) | function |
-| `ConstraintVariants.prepare_item` | [221](../src/parkour_solver/constraints/variants.py#L221) | function |
-| `ConstraintVariants.option` | [243](../src/parkour_solver/constraints/variants.py#L243) | function |
-| `ConstraintVariants.__iter__` | [255](../src/parkour_solver/constraints/variants.py#L255) | function |
-| `ConstraintVariants.__next__` | [258](../src/parkour_solver/constraints/variants.py#L258) | function |
-| `ConstraintVariants.choose_item` | [266](../src/parkour_solver/constraints/variants.py#L266) | function |
-| `ConstraintVariants.branch_choice` | [294](../src/parkour_solver/constraints/variants.py#L294) | function |
-| `ConstraintVariants._next_variant` | [312](../src/parkour_solver/constraints/variants.py#L312) | function |
+| `ConstraintVariants.with_obstacles` | [157](../src/parkour_solver/constraints/variants.py#L157) | function |
+| `ConstraintVariants.metric` | [161](../src/parkour_solver/constraints/variants.py#L161) | function |
+| `ConstraintVariants.coordinate` | [165](../src/parkour_solver/constraints/variants.py#L165) | function |
+| `ConstraintVariants.check` | [170](../src/parkour_solver/constraints/variants.py#L170) | function |
+| `ConstraintVariants.face_row` | [178](../src/parkour_solver/constraints/variants.py#L178) | function |
+| `ConstraintVariants.effective_key` | [183](../src/parkour_solver/constraints/variants.py#L183) | function |
+| `ConstraintVariants.analyze` | [195](../src/parkour_solver/constraints/variants.py#L195) | function |
+| `ConstraintVariants.excluded` | [213](../src/parkour_solver/constraints/variants.py#L213) | function |
+| `ConstraintVariants.prepare_item` | [220](../src/parkour_solver/constraints/variants.py#L220) | function |
+| `ConstraintVariants.option` | [242](../src/parkour_solver/constraints/variants.py#L242) | function |
+| `ConstraintVariants.__iter__` | [254](../src/parkour_solver/constraints/variants.py#L254) | function |
+| `ConstraintVariants.__next__` | [257](../src/parkour_solver/constraints/variants.py#L257) | function |
+| `ConstraintVariants.choose_item` | [265](../src/parkour_solver/constraints/variants.py#L265) | function |
+| `ConstraintVariants.branch_choice` | [293](../src/parkour_solver/constraints/variants.py#L293) | function |
+| `ConstraintVariants._next_variant` | [311](../src/parkour_solver/constraints/variants.py#L311) | function |
 
 ## io/capture.py
 

@@ -149,8 +149,9 @@ enumerated up front but obstacle clusters are not. A decision check or anchor le
 first solves its program without avoidance rows. When an accepted point's scene
 replay hits a solid, the repair loop (`search/repair.py` `grow`) adds it to the set
 as `[stretch begin, solid]` and restarts the generator over the larger set. The
-stretch is the one holding the state the colliding movement ends in, so a movement
-into a landing belongs to the stretch that landing starts. That stretch's cluster
+stretch is the one whose encounter sweeps the colliding movement (its movements run
+from its begin to one before its end), so a movement into a landing belongs to the
+stretch before the landing, whose rows reach the landing state. That stretch's cluster
 around the solid then gets its passages, families and switch ticks. Families and the
 switch climb therefore stay joint over every obstacle hit so far. The old generator's
 unsolved branches are dropped, since the new one emits them refined, and accepted
@@ -215,7 +216,7 @@ confirms the kept candidates when the loop ends, and a point it rejected is neve
 saved as a fallback. The family state and held variants persist in the repair
 snapshot (version 3), so a resumed climb solves nothing twice.
 
-Constraint generation uses policy22/state11 and repair avoidancePolicy14 with assembly14. The DFS context
+Constraint generation uses policy23/state11 and repair avoidancePolicy14 with assembly14. The DFS context
 fingerprints the new policy. Old raw generator cursors reject; reproduce an old
 run with its original source and inputs. Source-era scene fields
 `maxContactBranches`, `maxPassageCandidates`, `maxBlockagesPerObstacle`,
