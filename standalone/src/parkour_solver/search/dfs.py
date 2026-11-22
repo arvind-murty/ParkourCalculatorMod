@@ -294,6 +294,25 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
     def score_key(program,f):
         return digest([candidate_key(program),stage_adapter(f).score_context]) if event_route else candidate_key(program)
 
+    def guide_leg(decision, f):
+        """Unit horizontal direction of the decision's current guide leg; None past the last point or when it is zero."""
+        from parkour_solver.spatial.anchor_guides import unit
+        k, points = pair_of(decision, f), adapter.guide_plan['points']
+        return unit(points[k+1][0]-points[k][0], points[k+1][2]-points[k][2]) if k+1 < len(points) else None
+
+    def same_block_fit(decision, landing, f):
+        """same_block_fit for a jump from an ordinary decision landing back on its launch owner (O11); None when
+        there is no leg or no physics to measure it with."""
+        from parkour_solver.search.anchors.policy import same_block_fit as fit
+        leg, analysis = guide_leg(decision, f), gate.analyze(landing)
+        if leg is None or analysis is None:
+            return None
+        here = owner(scene, decision['terminalSupport'])
+        boxes = [scene['collisionScene']['solids'][b['solidIndex']] for b in scene['blocks'] if owner(scene, b['id']) == here]
+        start, end, model = decision['profile']['duration'], landing['profile']['duration'], analysis['model']
+        return fit(decision['decisionPoint'], decision['decisionVelocity'], leg, boxes,
+                   model['magnitude'][start:end], model['friction'][start:end])
+
     def configure(ctx, f):
         stage_adapter(f).context(ctx)
         gate.context(ctx)
@@ -303,9 +322,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
         decision = ctx.get('decision')
         if anchor_route and decision is not None and not decision.get('decisionTurnaround', False):
             # An ordinary decision generates no ceiling hit or grind behind it along its guide leg (O10).
-            from parkour_solver.spatial.anchor_guides import unit
-            k, points = pair_of(decision, f), adapter.guide_plan['points']
-            direction = unit(points[k+1][0]-points[k][0], points[k+1][2]-points[k][2]) if k+1 < len(points) else None
+            direction = guide_leg(decision, f)
             if direction is not None:
                 ctx['forward'] = dict(point=decision['decisionPoint'], direction=direction,
                                       margin=adapter.anchor_policy['turnaround']['spatialMargin'])
@@ -508,7 +525,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
                     if k in program:kept[k]=program[k]
                 kept['lastSolvedDepth']=depth
                 point=best['candidate']['positions'][-1]
-                kept.update(decisionPoint=point,decisionPointTick=program['profile']['duration'],
+                kept.update(decisionPoint=point,decisionVelocity=best['candidate']['velocity'][-1],decisionPointTick=program['profile']['duration'],
                     decisionPointSource='validated_node',decisionTurnaround=classify(adapter.guide_plan,span,point)['isTurnaround'])
                 return kept
             updated=branch_program(result['best'])
@@ -640,6 +657,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
             for root in f['parents']:
                 point=root.get('decisionPoint',scene['initial']['position'][::2])
                 root.setdefault('decisionPoint',point)
+                root.setdefault('decisionVelocity',scene['initial']['velocity'][::2])
                 root.setdefault('decisionPointTick',root['profile']['duration'])
                 root.setdefault('decisionPointSource','original_initial' if not root['profile']['duration'] else 'validated_anchor')
                 root['decisionTurnaround']=classify(adapter.guide_plan,span,point)['isTurnaround']
@@ -653,7 +671,8 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
             # Outside turnarounds a grounded decision runs only the minimum ticks an advantageous jump needs.
             run_policy=dict(ordinary=lambda p:boundary_state(p)['onGround'] and not p.get('decisionTurnaround',False),
                 targets=lambda base,child:advantageous_targets(scene,base,child,next_anchor(scene,base,anchors,task)),
-                candidates=candidates,next=lambda p:next_anchor(scene,p,anchors,task),owner=lambda block:owner(scene,block))
+                candidates=candidates,next=lambda p:next_anchor(scene,p,anchors,task),owner=lambda block:owner(scene,block),
+                fits=lambda decision,landing:same_block_fit(decision,landing,f))
             node_options=dict(node_evaluator=lambda p,n,x:evaluate_node(p,n,x,f),
                 priority_key=lambda p,identity:priority(p,f,identity),
                 live_programs=lambda:live_programs(f),run_policy=run_policy,
@@ -842,7 +861,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
                 if anchor_route:
                     for k in ('decisionNode','decisionParent','decisionDepth','restoredRun'):
                         if k in program:record['child'][k]=program[k]
-                    record['child'].update(decisionPoint=best['candidate']['positions'][-1],
+                    record['child'].update(decisionPoint=best['candidate']['positions'][-1],decisionVelocity=best['candidate']['velocity'][-1],
                         decisionPointTick=program['profile']['duration'],decisionPointSource='validated_anchor',
                         lastSolvedDepth=program.get('decisionDepth',0))
                 record['child'].pop('solveScope',None)
@@ -936,7 +955,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, plans, goals, d
         child = commit_arrival(variant_program,best,source_program=source_program)
         child['settledThrough'] = at
         if anchor_route:
-            child.update(decisionPoint=best['candidate']['positions'][at],decisionPointTick=at,
+            child.update(decisionPoint=best['candidate']['positions'][at],decisionVelocity=best['candidate']['velocity'][at],decisionPointTick=at,
                 decisionPointSource='validated_anchor',lastSolvedDepth=source_program.get('decisionDepth',0))
         key = candidate_key(child)
         if key in {candidate_key(r['child']) for r in f['records'] if r.get('child')}:

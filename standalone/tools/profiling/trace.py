@@ -8,6 +8,7 @@ from pathlib import Path
 from parkour_solver.constraints.encounters import PHASES
 from parkour_solver.io.checkpoint_store import read_report
 from parkour_solver.io.reports import save
+from parkour_solver.search.anchors.policy import SAME_BLOCK_FIT_FACTOR
 from parkour_solver.search.repair import FALLBACK_GAP, FALLBACK_LIMIT
 from parkour_solver.search.repair_state import branch_key
 
@@ -631,8 +632,9 @@ def repair_lines(repair, goal, request_index):
 
 RUN_CANDIDATES = dict(anchor='jump onto anchor', ceiling='ceiling jump under', grind='grind under',
                       slab_boost='slab boost onto', corner_jump_cancel='corner jump cancel onto', landing='run-off onto',
-                      step='step-up onto', scan='run-tick scan')
-RUN_OUTCOMES = dict(dominated='beaten by a kept candidate', unreached='no run count below the bound passed the screens')
+                      step='step-up onto', scan='run-tick scan', same_block='jump back onto')
+RUN_OUTCOMES = dict(dominated='beaten by a kept candidate', unreached='no run count below the bound passed the screens',
+                    held='held (does not fit its block)', queued='queued at once (does not fit its block; nothing else to wait for)')
 
 
 def minimum_run_text(candidates, numbers):
@@ -640,7 +642,8 @@ def minimum_run_text(candidates, numbers):
     def label(c):
         kind, *target = json.loads(c['key'])
         target = [dict(next='to the next anchor',block='to another block').get(t,str(t).upper()) for t in target]
-        return ' '.join([RUN_CANDIDATES.get(kind,kind)]+target)
+        fit = [f'(room {c["room"]:.2f} ≤ {SAME_BLOCK_FIT_FACTOR:g} × jump {c["jump"]:.2f})'] if 'room' in c else []
+        return ' '.join([RUN_CANDIDATES.get(kind,kind)]+target+fit)
     kept = [f'{label(c)} after {plural(c["k"],"run tick")}, landing after {c["total"] if c["total"] is not None else "-"} '
             f'inputs (bound {c["N"] if c["N"] is not None else "-"}) → '+(', '.join(f'node {numbers[n]}' if n in numbers else 'unsolved'
                                                                            for n in c['nodes']) or 'nothing')

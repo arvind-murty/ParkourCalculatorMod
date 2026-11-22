@@ -6,7 +6,8 @@ import math
 import unittest
 
 from parkour_solver.scene.normalize import prepare_scene
-from parkour_solver.search.anchors.policy import audit, encounter_groups, local_counts, priority, settings, visit_state, within_caps, single_jump_structure, transfer_structure
+from parkour_solver.search.anchors.policy import (SAME_BLOCK_FIT_FACTOR, audit, encounter_groups, local_counts, priority,
+    same_block_fit, settings, visit_state, within_caps, single_jump_structure, transfer_structure)
 from parkour_solver.spatial.anchor_guides import build_guides, classify, decision_objective, nearest, onward_objective
 from parkour_solver.search.anchors.adapter import AnchorAdapter
 from parkour_solver.spatial.event_routes import build_route_domain, build_event_graph
@@ -445,6 +446,39 @@ class AnchorPolicyTests(unittest.TestCase):
         self.assertFalse(within_caps(dict(maxRunTicksPerJump=10),p))
         p['restoredRun']=dict(frame=0,candidate='r')
         self.assertFalse(within_caps(dict(maxTotalRunTicks=10),p))
+
+    def test_a_same_block_jump_fits_when_the_room_ahead_exceeds_most_of_its_natural_jump(self):
+        from parkour_solver.reachability.intervals import travel_radii
+        from parkour_solver.scene.geometry import expanded_box
+        sprint=[.3274]+[.026]*11,[.546]+[.91]*11
+        def fit(point, velocity, leg, box, schedule=sprint):
+            return same_block_fit(point,velocity,leg,[box],*schedule)
+        long=[0,0,0,5,1,1]
+        # An 11 degree leg is along +X: the room runs to the widened +X face from the player's position.
+        leg=(math.cos(math.radians(11)),math.sin(math.radians(11)))
+        back=fit([.3,.5],[0,0],leg,long)
+        self.assertEqual((back['room'],back['jump']),(expanded_box(long)[3]-.3,travel_radii(0,*sprint)[-1]))
+        self.assertTrue(back['fits'])
+        # The same block from near its forward edge: the natural jump overshoots it.
+        self.assertEqual(fit([4.,.5],[0,0],leg,long)['room'],expanded_box(long)[3]-4.)
+        self.assertFalse(fit([4.,.5],[0,0],leg,long)['fits'])
+        # A 40 degree leg is diagonal: the room is the projection onto the quadrant's diagonal.
+        leg=(math.cos(math.radians(40)),math.sin(math.radians(40)))
+        cube=[0,0,0,1,1,1]
+        diagonal=fit([.5,.5],[.25*leg[0],.25*leg[1]],leg,cube)
+        self.assertEqual(diagonal['room'],2*(expanded_box(cube)[3]-.5)*math.sqrt(.5))
+        self.assertEqual(diagonal['jump'],travel_radii(.25*leg[0]**2+.25*leg[1]**2,*sprint)[-1])
+        self.assertFalse(diagonal['fits'])
+        # Fitting is strict: room equal to the factor times the jump is held.
+        exact=[.5,.25],[.5,.5]
+        edge=expanded_box(cube)[3]-SAME_BLOCK_FIT_FACTOR*travel_radii(0,*exact)[-1]
+        self.assertEqual(fit([edge,.5],[0,0],(1,0),cube,exact)['room'],SAME_BLOCK_FIT_FACTOR*travel_radii(0,*exact)[-1])
+        self.assertFalse(fit([edge,.5],[0,0],(1,0),cube,exact)['fits'])
+        self.assertTrue(fit([edge-.01,.5],[0,0],(1,0),cube,exact)['fits'])
+        # A two-tick jump (a grind's jump tick and one air tick) fits a 2-block footprint.
+        grind=fit([.5,.5],[.28,0],(1,0),[0,0,0,2,1,1],([.3274,.026],[.546,.91]))
+        self.assertEqual(grind['jump'],travel_radii(.28,[.3274,.026],[.546,.91])[-1])
+        self.assertTrue(grind['fits'])
 
     def test_repair_exhaustion_backtracks_without_oracle_or_ancestor_rejection(self):
         result=dict(status='unknown',best=None,repairState=dict(completed=[

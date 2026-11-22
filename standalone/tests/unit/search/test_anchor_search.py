@@ -348,7 +348,7 @@ def step_up_scene(goal=2):
 
 class MinimumRunTickTests(unittest.TestCase):
     def frontier(self, *, screen=None, ordinary=True, continuation=None, live=(), report=None, scene=None,
-                 policy=True, keep_emitted=False):
+                 policy=True, keep_emitted=False, fits=lambda decision,landing:None):
         from parkour_solver.movement.program import boundary_state
         from parkour_solver.reachability.service import block_table
         from parkour_solver.search.anchors.policy import advantageous_candidates, advantageous_targets, next_anchor, owner
@@ -359,7 +359,7 @@ class MinimumRunTickTests(unittest.TestCase):
                         targets=lambda b,c:advantageous_targets(s,b,c,upcoming(b)),
                         candidates=lambda p:advantageous_candidates(s,lambda o:block_table(s,o,traces),owner(s,p['terminalSupport']),
                             p['profile']['position'][-1],upcoming(p),movement_settings(s)['types'],0.),
-                        next=upcoming,owner=lambda block:owner(s,block))
+                        next=upcoming,owner=lambda block:owner(s,block),fits=fits)
         report=report if report is not None else {}
         source=persistent_programs(s,settings=dict(movement_settings(s),maxPrefixes=1),report=report,
             continuation=continuation,threshold=0.,node_evaluator=lambda p,n,x:dict(status='feasible',program=p),
@@ -433,6 +433,28 @@ class MinimumRunTickTests(unittest.TestCase):
         self.assertEqual((self.reserves(state),self.candidates(state)),([],[]))
         emitted,state=self.frontier(policy=False)
         self.assertIn(1,self.runs(state['pending']))
+
+    def test_a_same_block_jump_that_does_not_fit_waits_for_every_other_branch_of_its_decision(self):
+        held=lambda decision,landing:dict(room=1.,jump=2.,fits=False)
+        key='["same_block", "start"]'
+        hops=lambda programs:[p['decisionNode'] for p in programs if p.get('terminalSupport')=='start' and local_counts(p)['J']]
+        self.assertTrue(hops(self.frontier()[1]['pending']))
+        # While the arrival on goal is alive the hop back onto start is held, not queued.
+        emitted,state=self.frontier(fits=held,keep_emitted=True)
+        self.assertEqual((self.runs(emitted),hops(state['pending'])),([0],[]))
+        (entry,)=[r for r in state['minimumRunCandidates'] if r['key']==key]
+        self.assertEqual((entry['outcome'],entry['room'],entry['jump'],entry['k']),('held',1.,2.,0))
+        # Once it died, the hop is restored.
+        emitted,state=self.frontier(fits=held)
+        self.assertEqual(hops(state['pending']),entry['nodes'])
+        # A run-tick reserve restored in the same pass keeps it waiting.
+        emitted,state=self.frontier(fits=held,screen=self.late(3))
+        self.assertEqual(self.runs(emitted),[3])
+        self.assertEqual([(p['minimumRunSearch']['kind'],p['minimumRunSearch']['start']) for p in state['pending']],[('scan',4)])
+        # With nothing else to wait for it is queued at once.
+        emitted,state=self.frontier(fits=held,screen=lambda p:None if p.get('terminalSupport')=='start' else dict(reason='elsewhere'))
+        self.assertEqual((emitted,hops(state['pending'])),([],entry['nodes']))
+        self.assertEqual([r['outcome'] for r in state['minimumRunCandidates'] if r['key']==key],['queued'])
 
     def test_without_n_the_first_screened_run_count_is_queued_and_the_next_restored_when_it_dies(self):
         emitted,state=self.frontier(screen=self.late(3))

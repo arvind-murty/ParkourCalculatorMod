@@ -248,7 +248,7 @@ Track departed owners: the current owner remains eligible for repeated local jum
 
 A required-anchor cursor advances only on its next actual required contact, never from a same-block setup hop. Optional supports are not globally disabled. Required order remains enforced; do not enter a later required anchor prematurely if that would require a currently unsupported return to fulfill the required sequence.
 
-Global hard latches intentionally restrict the transfer to one jump. Same-block setup preparation remains available on the departure anchor in both latched and unlatched spans, including recovery. Do not accidentally remove all same-block hops from the generator while enforcing no inter-block returns.
+Global hard latches intentionally restrict the transfer to one jump. Same-block setup preparation remains available on the departure anchor in both latched and unlatched spans, including recovery. Do not accidentally remove all same-block hops from the generator while enforcing no inter-block returns. At an ordinary decision, a setup jump that does not naturally fit its block is held as a reserve, not dropped ([O11](#o11--same-block-jumps-must-fit-their-block)).
 
 Current tests must assert both sides: several legal same-block jumps are generated/validated, while A→C→A is excluded as deferred feature scope. Logical DFS backtracking is allowed and is not a physical revisit. No revisit-pair source/family cursor is implemented now; positive-duration horizon and ordinary source limits still bound local chains.
 
@@ -383,7 +383,7 @@ time (user, 2026-11-19/20):
 Every resolution is logged in the frontier's `minimumRunCandidates`. This mirrors
 minimum run ticks for hard jumps (`run_bound`, O7), which is unchanged.
 Turnaround decisions generate run ticks as before and still prefer them
-(`(T,-J,A)`). `searchPolicyVersion` 15 carries this, the decision objectives and O10.
+(`(T,-J,A)`). `searchPolicyVersion` 16 carries this, the decision objectives, O10 and O11.
 
 ## O10 — No backward ceiling hits or grinds at ordinary decisions
 
@@ -410,6 +410,40 @@ Both skips are logged with the generators' reachability exclusions (reasons
 `behind_decision_point` and `entry_against_guide`), so the solve report lists them per
 frame. Run-tick bases and the peeked children of `landings_of` use their decision's
 point and leg, so minimum-run candidates are filtered the same way.
+
+## O11 — Same-block jumps must fit their block
+
+**Settled (user, 2026-11-21):** at an ordinary decision P, a jump that lands back on
+its launch block is generated only when it naturally fits on that block. Otherwise it
+is held as a reserve in case P's run-tick moves fail. On a long block (Real11's B1) a
+hop back onto the block is natural; on B4 the natural jump overshoots, and landing
+back needs braking, so the B4 hop waits while the 3-run-tick jump onto B5 lives.
+
+A child of P is a same-block jump when it jumps on its first input and every landing
+`landings_of` finds for it (its own, or a ceiling hit's, grind's, slab boost's or
+corner jump cancel's earliest landings) is on P's launch owner. Minimum-run
+candidates (O9) keep their own reserves and are not tested. The test
+(`same_block_fit`, `search/anchors/policy.py`):
+
+- **Direction:** the unit horizontal direction d of P's current guide leg (the leg O10
+  uses). Within 22.5° of an axis it is that axis; otherwise it is the diagonal of its
+  quadrant. A leg of zero length gives no test.
+- **Room R:** from P's validated position to the farthest corner, along that
+  direction, of the launch owner's boxes widened by the player's half-width (the full
+  footprint with the hitbox).
+- **Natural jump D:** full acceleration along d from P's validated velocity, through
+  the landing's movement magnitudes and frictions (`travel_radii`).
+- **Fits** when R > 0.7·D (`SAME_BLOCK_FIT_FACTOR`; the factor may change).
+
+A held jump is not queued, sets no N and beats no run-tick candidate. When P queued
+or reserved nothing else it is queued at once; otherwise it is reserved
+(`state['alternatives']`) and restored once nothing below P lives and every node P
+queued or reserved has died, never after a validated group-end arrival below them.
+A run-tick reserve restored in the same pass counts as alive, so it goes first.
+Each held jump is logged in `minimumRunCandidates` with outcome `held` (or `queued`),
+its room and its jump. Restoring it earlier, once the run ticks spent below P reach
+its airtime, is deferred
+([S9](../DEFERRED_WORK.md)).
 
 ## Settled versus remaining implementation choices
 

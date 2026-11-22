@@ -2,10 +2,10 @@
 
 ## Current gate
 
-`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on the solve report's search tree
-(`002b2a4e` plus the change: per-node pruning and repair kept for the report):
-**835 tests, no failures, errors or skips**, source unchanged during the run, at a load
-average of 3.2 to 5.5 ([report](../research/encounter-groups/native-gate-node-report/report.json)).
+`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on same-block jumps that must
+fit their block (`c4e2f70a` plus the change, O11):
+**838 tests, no failures, errors or skips**, source unchanged during the run, at a load
+average of 4.8 to 6.0 ([report](../research/encounter-groups/native-gate-same-block-fit/report.json)).
 Wall-time-bound tests can still fail under heavier load ([deferred P17](DEFERRED_WORK.md)).
 The gate fails on any skip, so it needs `PKC_IPOPT_PYTHON` for the IPOPT tests,
 `PKC_RUN_TICKS_COMPILER` for the Java differential tests and the `research` extra for the
@@ -27,6 +27,8 @@ persistence without the removed 32/128 limits.
 
 | Source | Tests | Evidence |
 | --- | ---: | --- |
+| `c4e2f70a` + same-block jumps must fit their block (O11) | 838 | [report](../research/encounter-groups/native-gate-same-block-fit/report.json) |
+| `c4e2f70a` backward ceiling hits and grinds filtered (O10), B13a/B13b | 836 | [report](../research/encounter-groups/native-gate-backward-filter/report.json) |
 | `002b2a4e` + search tree in the solve report | 835 | [report](../research/encounter-groups/native-gate-node-report/report.json) |
 | `9ab3ec9c` + profile `airtime` renamed `duration` | 833 | [report](../research/encounter-groups/native-gate-profile-duration/report.json) |
 | `ea972fb8` + two-tick jumps count toward N | 833 | [report](../research/encounter-groups/native-gate-p16-two-tick-jumps/report.json) |

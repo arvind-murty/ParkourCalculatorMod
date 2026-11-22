@@ -45,7 +45,7 @@ def propose_choices(kind, context, *, source=None, start=0, max_inputs=200,
         full=append_choice(context['program'],choice,max_inputs=max_inputs)
         if full is not None and inherit_decisions:
             parent=context['program']
-            for field in ('decisionPoint','decisionPointSource','decisionPointTick','decisionTurnaround','restoredRun'):
+            for field in ('decisionPoint','decisionVelocity','decisionPointSource','decisionPointTick','decisionTurnaround','restoredRun'):
                 if field in parent:full[field]=copy.deepcopy(parent[field])
             full['priorityTurnaround']=parent.get('decisionTurnaround',False)
         if full is not None and bind is not None:full=bind(full)

@@ -30,7 +30,8 @@ def extend(s,parent,target,n,extra=False):
 class AnchorDFSTests(unittest.TestCase):
     def run_tree(self, *, logging=True, resume=None, calls=20, interval=1, setup=False, seconds=3,
                  on_progress=None,cancel_event=None,requests_per_evaluation=1,advance=None,node_probe=None,node_best=None,
-                 finishes=1,relaxed=False,final=None,leg_best=None,goal=None,goal_choices=None,generated=None,**settings):
+                 finishes=1,relaxed=False,final=None,leg_best=None,goal=None,goal_choices=None,generated=None,compiler=None,
+                 **settings):
         s=scene(goal) if goal else scene();s['maxTotalRunTicks']=60;s['maxRunTicksPerJump']=60;dispatched=[]
         def generate(target_scene,*,report,initial_programs,continuation=None,node_evaluator,**kwargs):
             saved=copy.deepcopy(continuation) if continuation else dict(expanded=1,cursor=0,exhausted=False)
@@ -93,7 +94,7 @@ class AnchorDFSTests(unittest.TestCase):
              patch('parkour_solver.validation.witness.replay_witness',return_value=dict(passed=True)):
             options=dict(seconds=seconds,score_seconds=2,max_solver_calls=calls)
             options.update(settings)
-            result=find_checkpoint_route(s,object(),anchor_search=dict(anchors=['mid'],observability=logging,
+            result=find_checkpoint_route(s,compiler or object(),anchor_search=dict(anchors=['mid'],observability=logging,
                 solveEveryDecisionLevels=interval),minimum_run_pruning=False,
                 resume_state=resume,on_progress=on_progress,cancel_event=cancel_event,**options)
         return result,dispatched
@@ -112,8 +113,10 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertEqual(result['best']['movementProgram']['profile']['duration'],20)
 
     def test_anchor_frontier_gets_the_minimum_run_policy_for_ordinary_decisions(self):
+        from parkour_solver.bridge.python_compiler import PythonCompiler
         generated=[]
-        self.run_tree(generated=generated)
+        with PythonCompiler() as compiler:
+            self.run_tree(generated=generated,compiler=compiler)
         (roots,options),*_=generated
         policy=options['run_policy'];s=scene();root=roots[0]
         self.assertIs(root['decisionTurnaround'],False)
@@ -123,6 +126,17 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertEqual(policy['targets'](root,extend(s,root,'goal',10)),set())
         self.assertEqual((policy['next'](root),policy['owner'](root['terminalSupport'])),('mid','start'))
         self.assertIn('["anchor", "mid"]',[e['key'] for e in policy['candidates'](root)])
+        # A jump back onto the 1x1 start from its centre, along the +X leg to mid, overshoots it.
+        from parkour_solver.movement.generation import generate_choices
+        from parkour_solver.movement.program import append_choice, boundary_state
+        from parkour_solver.scene.geometry import expanded_box
+        self.assertEqual(root['decisionVelocity'],s['initial']['velocity'][::2])
+        context=dict(mode='open',scene=s,program=root,state=boundary_state(root),interactionGate=None,threshold=0.,maxInputs=20,maxEntryInputs=20)
+        hop=next(c for c in (append_choice(root,choice,max_inputs=20) for choice in generate_choices('normal',context))
+                 if c is not None and c['profile']['grounded'][-1] and c.get('terminalSupport')=='start')
+        fit=policy['fits'](root,hop)
+        self.assertEqual(fit['room'],expanded_box([0,0,0,1,1,1])[3]-root['decisionPoint'][0])
+        self.assertFalse(fit['fits'])
 
     def test_anchor_search_uses_run_budget_across_routes_and_constraint_requests(self):
         clock=[100.]
