@@ -128,13 +128,11 @@ class ExposedTopTests(unittest.TestCase):
             list(normal_choices(dict(scene=scene, state=state, maxInputs=30, threshold=0.)))
         self.assertTrue(self.landings(scene))
 
-    def test_a_departed_block_gets_no_landing_and_supports_still_filter(self):
+    def test_a_departed_block_gets_no_landing(self):
         scene = box_scene([[0, 0, 0, 2, 1, 2], [2, 0, 1, 3, 3, 2]], [('floor', 1), ('pillar', 3)])
         self.assertTrue(self.landings(scene))
         self.assertEqual(self.landings(scene, feetAllowed=lambda block: block['id'] != 'floor'), [])
         self.assertTrue(self.landings(scene, feetAllowed=lambda block: block['id'] != 'pillar'))
-        self.assertEqual(self.landings(scene, supportAllowed=lambda block: block['id'] != 'floor',
-                                       feetAllowed=lambda block: True), [])
 
     def test_real11_run_tick_landing_drops_the_rectangle_it_cannot_reach(self):
         import json

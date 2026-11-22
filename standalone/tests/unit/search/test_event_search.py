@@ -10,8 +10,7 @@ from parkour_solver.search.events.adapter import EventGuideAdapter
 from parkour_solver.search.events.engine import discovery_settings
 from tests.support.checkpoint_guidance import flat_scene
 from tests.support.depth_first import program
-from parkour_solver.movement.program import empty_program, boundary_state
-from parkour_solver.movement.generation import generate_choices
+from parkour_solver.movement.program import empty_program
 
 
 class EventSearchTests(unittest.TestCase):
@@ -55,19 +54,13 @@ class EventSearchTests(unittest.TestCase):
         candidate['positions'][1]=[4.,.5]
         self.assertTrue(view.candidate({},candidate,{})['accepted'])
         self.assertTrue(right_piece[0]<4<right_piece[2] and right_piece[1]<.5<right_piece[3])
-    def test_same_support_setup_is_local_without_removing_its_physical_choices(self):
+    def test_same_support_setup_is_local(self):
         scene=flat_scene();data=build_route_domain(scene,dict(kind='landing',block='goal')).to_dict()
         adapter=EventGuideAdapter(data,build_event_graph(data))
         root=empty_program(scene['initial'],threshold=0.);root['terminalSupport']='start'
         cursor=adapter.initial_cursor([root])
         requests,_,_=adapter.next_goals(cursor,[root])
         self.assertTrue(any(r['localSetupAlias'] for r in requests))
-        view=adapter.for_goal(next(r for r in requests if r['terminal']),cursor)
-        ctx=dict(mode='open',scene=scene,program=root,state=boundary_state(root),maxInputs=20,threshold=0.,interactionGate=None)
-        view.context(ctx)
-        choices=list(generate_choices('normal',ctx))
-        self.assertIn('start',[c['terminalSupport'] for c in choices])
-        self.assertIn('goal',[c['terminalSupport'] for c in choices])
     def test_adapter_has_no_inherited_raw_cell_rejection_paths(self):
         scene=flat_scene();data=build_route_domain(scene,dict(kind='landing',block='goal')).to_dict()
         adapter=EventGuideAdapter(data,build_event_graph(data))
@@ -76,9 +69,6 @@ class EventSearchTests(unittest.TestCase):
         view=adapter.for_goal(next(r for r in requests if r['terminal']),cursor)
         for name in ('box_allowed','region_allowed','prefix','constraint_guards','program_states'):
             self.assertFalse(hasattr(view,name),name)
-        ctx=dict(program=dict(terminalSupport='start'))
-        view.context(ctx)
-        self.assertEqual(set(ctx),{'program','supportAllowed'})
         self.assertNotIn('geometry',view.corridor.to_dict())
 
     def test_declared_anchor_goals_share_prefix_and_publish_actual_child_atomically(self):

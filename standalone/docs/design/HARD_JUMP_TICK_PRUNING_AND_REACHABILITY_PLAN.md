@@ -1,6 +1,6 @@
 # Hard-jump comparisons, proposal reachability and transfer-time bounds
 
-Code named below without a link was removed with the legacy searches on 2026-11-21; read it at `8266a38d`.
+Code named below without a link was removed (the legacy searches on 2026-11-21, `region_rows` on 2026-11-22); read it at `8266a38d`.
 
 Current user-facing combination/pruning/IPOPT tables, decisions/rationale and module ownership are consolidated in the [execution reference](../ANCHOR_SEARCH_EXECUTION_REFERENCE.md). This document remains the detailed implementation/caller-migration and acceptance record for `dd738c98`.
 

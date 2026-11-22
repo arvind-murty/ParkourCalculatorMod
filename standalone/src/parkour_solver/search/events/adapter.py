@@ -122,13 +122,6 @@ class EventGuideAdapter:
     def advance(self, cursor, child, observed, request):
         return advance_cursor(self.data,self.graph,cursor,request,observed)
 
-    def context(self, context):
-        target=self.request['goal']
-        current=context['program']['terminalSupport']
-        allowed=set(target.get('blocks',[target['block']]) if target['kind']=='landing' else [])
-        allowed.add(current)
-        context['supportAllowed']=lambda block:block['id'] in allowed
-
     def program_allowed(self, program):
         return True
 

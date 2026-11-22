@@ -87,8 +87,6 @@ def normal_choices(context):
         for block in candidate_blocks(context, 'landing'):
             if context.get('checkBudget'):
                 context['checkBudget']()
-            if context.get('supportAllowed') is not None and not context['supportAllowed'](block):
-                continue
             if not feet_allowed(context, block):
                 continue
             t = first_descent(trace, block['top'])

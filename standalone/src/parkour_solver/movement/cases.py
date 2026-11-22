@@ -7,16 +7,10 @@ from parkour_solver.movement.contact_combinations import (bounding_region, conta
 from parkour_solver.scene.geometry import expanded_box
 from parkour_solver.spatial.surfaces import scene_geometry
 from parkour_solver.movement.units import profile_program
-from parkour_solver.scene.route import HALF_WIDTH, center_bounds
+from parkour_solver.scene.route import HALF_WIDTH
 
 
 CASES = {'normal_step','slab_boost','blip','blip_up','corner_jump_cancel','corner_blip_up','grind'}
-
-
-def region_rows(block, state, name='case:region', margin=1e-6):
-    bounds = center_bounds(block)
-    return [dict(mode=axis,t1=state,cmp=cmp,rhs=value,name=name)
-            for axis,a in [('X',0),('Z',2)] for cmp,value in [('GE',bounds[a]+margin),('LE',bounds[a+1]-margin)]]
 
 
 def outside_row(box, axis, sign, state, name='case:outside', margin=1e-6):
@@ -47,8 +41,6 @@ def exposed_side(scene, block, axis, sign, y):
 
     Feet exactly on a flush neighbour's top touch the face above it, so the lower edge counts.
     """
-    if 'collisionScene' not in scene:
-        return True
     y, (lo, hi) = _height(scene, block, y), ((0, 2) if axis == 'X' else (1, 3))
     return any(r[lo] <= y < r[hi] for option in _faces(scene, block, axis, sign) for r in option.regions)
 
@@ -56,8 +48,6 @@ def exposed_side(scene, block, axis, sign, y):
 def convex_corner(scene, block, x_direction, z_escape, y):
     """Whether both side faces meeting at a top corner are exposed at that corner; a seam against a flush
     neighbour is not a corner."""
-    if 'collisionScene' not in scene:
-        return True
     box, y = expanded_box(scene['collisionScene']['solids'][block['solidIndex']]), _height(scene, block, y)
     x, z = (box[0] if x_direction > 0 else box[3]), (box[5] if z_escape > 0 else box[2])
     return (any(r[0] <= y < r[2] and r[1] <= z <= r[3] for o in _faces(scene, block, 'X', -x_direction) for r in o.regions)
@@ -67,8 +57,6 @@ def convex_corner(scene, block, x_direction, z_escape, y):
 def top_choices(context, block, state, name='case:region', *, jumping):
     """(rows, regionChoices) per exposed piece of the block's top that the approach can reach at `state`."""
     scene = context['scene']
-    if 'collisionScene' not in scene:
-        return [(region_rows(block, state, name), [])]
     result = []
     for option in scene_contact_options(scene, 1, 1, members=[block['solidIndex']]):
         option = reachable_option(context, option, state, jumping=jumping,
