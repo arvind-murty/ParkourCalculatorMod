@@ -89,7 +89,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/design/MIXED_MOVEMENT_CONTACTS.md](design/MIXED_MOVEMENT_CONTACTS.md) | 5966 |
 | [docs/design/MOVEMENT_UNITS.md](design/MOVEMENT_UNITS.md) | 13672 |
 | [docs/design/OBSTACLES_AND_BLOCKAGES.md](design/OBSTACLES_AND_BLOCKAGES.md) | 25624 |
-| [docs/design/OBSTACLE_RELEVANCE.md](design/OBSTACLE_RELEVANCE.md) | 22459 |
+| [docs/design/OBSTACLE_RELEVANCE.md](design/OBSTACLE_RELEVANCE.md) | 22404 |
 | [docs/design/OBSTACLE_SEARCH.md](design/OBSTACLE_SEARCH.md) | 11808 |
 | [docs/design/ORCHESTRATOR_CONTRACT.md](design/ORCHESTRATOR_CONTRACT.md) | 2449 |
 | [docs/design/PRUNING_IMPROVEMENTS_BACKLOG.md](design/PRUNING_IMPROVEMENTS_BACKLOG.md) | 3528 |
@@ -1530,7 +1530,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [src/parkour_solver/search/goals.py](../src/parkour_solver/search/goals.py) | 2506 |
 | [src/parkour_solver/search/identity.py](../src/parkour_solver/search/identity.py) | 4492 |
 | [src/parkour_solver/search/movement.py](../src/parkour_solver/search/movement.py) | 1292 |
-| [src/parkour_solver/search/ordered_route.py](../src/parkour_solver/search/ordered_route.py) | 19096 |
+| [src/parkour_solver/search/ordered_route.py](../src/parkour_solver/search/ordered_route.py) | 18813 |
 | [src/parkour_solver/search/ranking.py](../src/parkour_solver/search/ranking.py) | 3304 |
 | [src/parkour_solver/search/repair.py](../src/parkour_solver/search/repair.py) | 45728 |
 | [src/parkour_solver/search/repair_state.py](../src/parkour_solver/search/repair_state.py) | 3038 |

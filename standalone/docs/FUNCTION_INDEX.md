@@ -908,10 +908,10 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `search_allocations` | [15](../src/parkour_solver/search/ordered_route.py#L15) | function |
-| `derive_footprints` | [129](../src/parkour_solver/search/ordered_route.py#L129) | function |
-| `numerical_problem` | [146](../src/parkour_solver/search/ordered_route.py#L146) | function |
-| `find_route` | [164](../src/parkour_solver/search/ordered_route.py#L164) | function |
+| `search_allocations` | [14](../src/parkour_solver/search/ordered_route.py#L14) | function |
+| `derive_footprints` | [128](../src/parkour_solver/search/ordered_route.py#L128) | function |
+| `numerical_problem` | [145](../src/parkour_solver/search/ordered_route.py#L145) | function |
+| `find_route` | [163](../src/parkour_solver/search/ordered_route.py#L163) | function |
 
 ## search/ranking.py
 
