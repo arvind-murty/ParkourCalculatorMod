@@ -195,3 +195,17 @@ CPython `math.hypot` port now has one copy, `src/py_math.hpp`.
   and live `verify-screen` on the extended input compared 2,292 sequence screens, 1,680 required-contact proofs and
   1,691 program checks with no difference ([summary](2026-11-22-validation/live-screen-release-summary.json)).
 
+## First appends built natively, 2026-11-22
+
+Source: `e7cd2bc6` plus native `append_choice` for a program's first append (Python `_rebuild` without ladder events:
+the tail traced whole from the initial state), so only ladder appends still raise `NativeUnsupported`.
+
+- Every recorded movement choice of the recaptured corpus (on the PR #9 merge), appended to an empty program at its own
+  initial state with thresholds 0, .005 and .003, gives the same child digest and physics key, or the same `None` or
+  error, on 1,974 appends (1,723 children) on release and UBSan
+  ([release](2026-11-22-first-appends/first-appends-release.json),
+  [UBSan](2026-11-22-first-appends/first-appends-sanitize.json)).
+- The corpus replay now compares all 6,205 appends (its 8 first appends were skipped before) with no difference
+  ([release](2026-11-22-first-appends/corpus-replay-release.json),
+  [UBSan](2026-11-22-first-appends/corpus-replay-sanitize.json)).
+

@@ -681,6 +681,35 @@ void append_all(std::vector<T>& into, const std::vector<T>& from, std::size_t sk
 }
 
 // _extend: trace only the new ticks from the parent's end state.
+// _rebuild for a program's first append, which has no trace to extend: the tail is
+// traced whole from the initial state (equal to an empty program's boundary
+// state), and _rebuild runs compile_units only with ladder events.
+std::optional<std::pair<Profile, Trace>> first_append(const Program& program, const MovementChoice& choice) {
+    const Profile &old = program.profile, &tail = choice.profile;
+    const std::int64_t size = tail.duration;
+    std::vector<ContactEvent> contacts = merge_events(tail.contact_events);
+    std::vector<bool> hit(size, false);
+    for (const auto& c : contacts)
+        if (c.axis != "Y" && c.offset >= 0 && c.offset < size) hit[c.offset] = true;
+    Trace trace = trace_ladder_schedule(boundary_state(program, false), tail.ladder_ticks, tail.sneak, hit, tail.jump,
+                                        tail.contacts, program.threshold.value_or(kDefaultThreshold));
+    if (trace.status == "invalid" || trace.ticks != size) return std::nullopt;
+    if (!same_numbers({trace.position.front()}, old.position) || trace.on_ground.front() != old.grounded.front())
+        pkc::fail("Appending a choice rewrote a prior position or ground state");
+    if (!same_numbers(trace.position, tail.position) || !same_numbers(trace.velocity, tail.velocity) ||
+        trace.on_ground != tail.grounded)
+        return std::nullopt;
+    std::vector<MovementUnit> units = tail.generated_units;
+    try {
+        own_ceiling_contacts(contacts, units);
+    } catch (const std::invalid_argument&) {
+        return std::nullopt;
+    }
+    Profile profile = assemble_profile(trace, std::move(contacts), tail.case_events, tail.position_constraints,
+                                       std::move(units), tail.landing_phase, tail.region_choices.value_or(std::vector<RegionChoice>{}));
+    return std::pair{std::move(profile), std::move(trace)};
+}
+
 std::optional<std::pair<Profile, Trace>> extend(const Program& program, const MovementChoice& choice) {
     const Profile &old = program.profile, &tail = choice.profile;
     const Trace& parent = trace_of(program);
@@ -897,8 +926,7 @@ std::optional<Program> append_choice(const Program& program, const MovementChoic
     if (!program.ladder_events.empty() || !choice.ladder_events.empty() || any_true(old.ladder_ticks) ||
         any_true(tail.ladder_ticks))
         throw Unsupported("ladder appends rebuild the program");
-    if (!program.trace.value) throw Unsupported("the first append rebuilds the program");
-    auto built = extend(program, choice);
+    auto built = program.trace.value ? extend(program, choice) : first_append(program, choice);
     if (!built) return std::nullopt;
     auto& [profile, trace] = *built;
     std::vector<std::int64_t> owners =

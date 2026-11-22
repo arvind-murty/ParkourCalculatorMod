@@ -404,7 +404,7 @@ class InteractionGate:
 
     def _sequenced(self, parent, choice):
         """append_choice(parent, choice), built only for this screen. Under PKC_NATIVE_CORE, when the gate screens
-        natively, it is a native program for the appends that extend a traced parent. The parent's native program
+        natively, it is a native program for every append without ladders. The parent's native program
         is kept by identity: what a screen reads of a program (its states, trace, threshold and seed yaw) never
         changes once it is built."""
         from parkour_solver.movement.program import append_choice
@@ -418,7 +418,7 @@ class InteractionGate:
                 self.native_parents.pop(next(iter(self.native_parents)))
             try:
                 return entry[1].append_choice(choice)
-            except self.native.NativeUnsupported:  # the first append and ladder appends rebuild in Python
+            except self.native.NativeUnsupported:  # ladder appends rebuild in Python
                 pass
         return append_choice(parent,choice)
 

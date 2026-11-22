@@ -134,10 +134,6 @@ class ProgramModelTests(unittest.TestCase):
                 for node in nodes(scene, roots, gate):
                     parent = self.native.program(node)
                     for choice in (c for kind in generated(scene, node, gate, None) for c in kind):
-                        if node['trace'] is None:  # a first append rebuilds in Python
-                            with self.assertRaises(self.native.NativeUnsupported):
-                                parent.append_choice(choice)
-                            continue
                         expected, child = append_choice(node, choice), parent.append_choice(choice)
                         if expected is None:
                             self.assertIsNone(child)
