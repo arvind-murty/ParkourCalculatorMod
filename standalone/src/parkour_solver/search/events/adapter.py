@@ -31,7 +31,6 @@ class EventGuideAdapter:
         self.scene = data['scene']
         self.motion = motion or {}
         self.corridor = EventReference(data['domainId'])
-        self.gates = []
         self.request = None
         self.program = None
         self.counts = dict(eventAudits=0, requiredEventRejections=0)

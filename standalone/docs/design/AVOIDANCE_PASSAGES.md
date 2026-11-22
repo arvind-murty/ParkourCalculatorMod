@@ -150,7 +150,7 @@ the switch climb, and choose their exact rows (`kind='walk_off'`).
 ## Conflict-driven obstacles in anchor search
 
 Anchor search (`search/engine.py`) gives `ConstraintVariants` an obstacle set,
-initially empty, so contact checks, contact regions and route guards are
+initially empty, so contact checks, contact regions and walk-off choices are
 enumerated up front but obstacle clusters are not. A decision check or anchor leg
 first solves its program without avoidance rows. When an accepted point's scene
 replay hits a solid, the repair loop (`search/repair.py` `grow`) adds it to the set

@@ -109,25 +109,6 @@ class ScopeAndViabilityTests(unittest.TestCase):
 
 
 class PersistentGenerationTests(unittest.TestCase):
-    def test_route_side_still_allows_clearing_an_obstacle_vertically(self):
-        from parkour_solver.constraints.variants import ConstraintVariants
-        route=dict(passageCaps=dict(horizontal=2,vertical=2,total=3),supportClearance=1e-6)
-        profile=dict(duration=3,position=[1.,2.5,2.5,1.])
-        positions=[[-.5,.5],[.5,-.5],[1.5,-.5],[2.5,-.5]]
-        box=[0.,0.,0.,1.,2.,1.]
-        envelope=reachable_envelopes(dict(ticks=3,position=positions[0],velocity=[0.,0.],
-            magnitude=[2.]*3,friction=[.9]*3,walls=[]),profile['position'])
-        source=ConstraintVariants(route,profile,dict(events=[dict(jump=0,landing=3,runTicks=0)]),
-            dict(solids=[box]),envelope,dict(through=3,solidIndices=[0]),
-            gates=[dict(id=0,box=box,axis=0,lateral=2,plane=.5)],signature=[(0,1,-1)],reference=positions)
-        def satisfied(variant):
-            for row in variant['rows']:
-                value=positions[row['offset']][0 if row['mode']=='X' else 1]
-                if row['cmp']=='GE' and value<row['rhs'] or row['cmp']=='LE' and value>row['rhs']:
-                    return False
-            return True
-        self.assertTrue(any(satisfied(v) for v in itertools.islice(source,1000)))
-
     def test_choice_and_queue_sizes_do_not_erase_a_late_candidate_after_reload(self):
         scene=flat_scene();cfg=dict(movement_settings(scene),maxInputs=1,maxPrefixes=1,maxQueuedPrefixes=2,maxChoicesPerType=2,types=['normal'])
         scene=dict(scene,movementSearch=cfg.copy())

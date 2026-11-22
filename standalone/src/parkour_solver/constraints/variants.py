@@ -57,8 +57,8 @@ class ConstraintVariants:
                    deadline=deadline, reference=candidate['positions'], owners=owners, budget=budget, cancel_event=cancel_event,
                    objective=route.get('guideObjective', route['objective']))
 
-    def __init__(self, route, profile, plan, geometry, envelopes, scope, *, checks=(), gates=(), signature=(), state=None,
-                 deadline=None, reference=None, route_guards=None, owners=None, budget=None, cancel_event=None,
+    def __init__(self, route, profile, plan, geometry, envelopes, scope, *, checks=(), state=None,
+                 deadline=None, reference=None, owners=None, budget=None, cancel_event=None,
                  segment_solids=None, objective=None, settled=0, obstacles=None, walk_offs=()):
         """`settled`: the branch keeps exact rows before this tick, so obstacle stretches ending by it
         and contact checks before it get no item.
@@ -74,8 +74,7 @@ class ConstraintVariants:
         if state is not None and 'obstacles' in state:
             obstacles = state['obstacles']
         self.arguments = dict(route=route, profile=profile, plan=plan, geometry=geometry, envelopes=envelopes,
-            scope=scope, checks=checks, gates=gates, signature=signature, deadline=deadline, reference=reference,
-            route_guards=route_guards, owners=owners, budget=budget, cancel_event=cancel_event,
+            scope=scope, checks=checks, deadline=deadline, reference=reference, owners=owners, budget=budget, cancel_event=cancel_event,
             segment_solids=segment_solids, objective=objective, settled=settled, walk_offs=walk_offs)
         self.obstacles = None if obstacles is None else sorted(map(list, obstacles))
         self.settled = settled
@@ -83,31 +82,22 @@ class ConstraintVariants:
         # Relaxation screens optimize the configured progress objective at the plan horizon.
         self.objective = objective
         self.envelopes, self.deadline, self.through = envelopes, deadline, scope['through']
-        self.route_guards, self.budget = route_guards, budget
+        self.budget = budget
         self.cancel_event = cancel_event
+        # gates, signature and routeGuards no longer have producers; their constant entries keep saved states resumable.
         context = digest(dict(version=GENERATION_POLICY, route={k: v for k, v in route.items() if k != 'warmYaw'},
-            profile=profile, scope=scope, gates=list(gates), signature=signature, checks=list(checks), geometry=geometry,
+            profile=profile, scope=scope, gates=[], signature=[], checks=list(checks), geometry=geometry,
             envelope=interaction_context_key(envelopes), owners=owners,
             segmentSolids=None if segment_solids is None else sorted(segment_solids.items()),
-            routeGuards=route_guards.context if route_guards is not None else None,
+            routeGuards=None,
             settled=settled, walkOffs=list(walk_offs), **({} if obstacles is None else dict(obstacles=self.obstacles))))
         if state is not None and (state.get('version') != STATE_VERSION or state.get('context') != context):
             raise ValueError('Incompatible constraint-generation continuation (policy%d/state%d)'
                              % (GENERATION_POLICY, STATE_VERSION))
         self.proof_context = context
         self.events = [dict(plan['events'][0], landing=self.through)]
-        self.route_rows = []
-        active = {tuple(geometry['solids'][i]) for i in scope['solidIndices']}
-        selected = {token[0]: token for token in signature}
-        for gate in gates:
-            if gate['id'] not in selected or tuple(gate['box']) not in active:
-                continue
-            _, direction, side = selected[gate['id']]
-            self.route_rows.append(dict(leg=0, offset=self.through, mode='XYZ'[gate['axis']],
-                cmp='GE' if direction > 0 else 'LE', rhs=gate['plane'], name='route:crossing'))
-        items = ([dict(routeGuard=True)] if route_guards is not None else [])
-        items.extend(dict(rows=c['options'], role='contact_region', surface=c['surface'], owner=c['owner'], offset=c['offset'])
-                     for c in profile.get('regionChoices', []) if c['offset'] <= self.through)
+        items = [dict(rows=c['options'], role='contact_region', surface=c['surface'], owner=c['owner'], offset=c['offset'])
+                 for c in profile.get('regionChoices', []) if c['offset'] <= self.through]
         # One option is a fixed row in effect; two (a diagonal tie) branch, without family climbs or conflict joins.
         items.extend(dict(rows=[[row] for row in w['options']], role='walk_off', solids=w['solids'], offset=w['offset'])
                      for w in walk_offs if settled <= w['offset'] < self.through)
@@ -137,7 +127,7 @@ class ConstraintVariants:
                   if check['block']['solidIndex'] in scope['solidIndices'] and settled <= check['offset'] <= self.through]
         self.state = copy.deepcopy(state) if state is not None else dict(
             version=STATE_VERSION, context=context, items=items, exclusions=[], screenExclusions=[],
-            pending=[dict(item=0, rows=self.route_rows, passages=[], choices=[])], seen=[], partialSeen=[], emitted=0,
+            pending=[dict(item=0, rows=[], passages=[], choices=[])], seen=[], partialSeen=[], emitted=0,
             exhausted=False, reference=copy.deepcopy(reference), preparationSteps=0, duplicateVariants=0,
             **({} if self.obstacles is None else dict(obstacles=self.obstacles)),
             metrics={}, uncertainInteractions=[], timings=dict(preparationSeconds=0., variantGenerationSeconds=0.,
@@ -247,8 +237,6 @@ class ConstraintVariants:
 
     def option(self, item, cursor):
         self.prepare_item(item)
-        if item.get('routeGuard'):
-            return self.route_guards.option(cursor)
         if 'rows' in item:
             index = cursor.get('index', 0)
             if index == len(item['rows']):
@@ -291,7 +279,7 @@ class ConstraintVariants:
                 rank = (phases[0]['at'] if phases else -1,
                         sum(len(p['options']) for p in phases), index)
             candidates.append((rank, index, item))
-            if item.get('routeGuard') or item.get('role') == 'contact_region':
+            if item.get('role') == 'contact_region':
                 break
         _, index, item = min(candidates, key=lambda v: v[0])
         node['chosenItem'], node['prepared'] = index, item

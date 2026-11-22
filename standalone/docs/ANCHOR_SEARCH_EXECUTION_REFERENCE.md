@@ -256,7 +256,7 @@ minimum-run search) also runs natively; the frontier commits its exclusions, que
 reserved run counts as alternatives in the same order as the Python search. A batch stops where the Python loop would emit a ready program and commits nothing when the budget stops it,
 so a resumed expansion redoes it from the saved cursor. Each node solve (`search/engine.evaluate_program`) runs its
 constraint generator and repair loop natively (`constraints/variants.hpp`, `search/repair.hpp`) for routes without
-route guards, passages, wall hits or ladder events; the loop calls the compiler, the relaxed or IPOPT numerical solve,
+passages, wall hits or ladder events; the loop calls the compiler, the relaxed or IPOPT numerical solve,
 the candidate filter, the work budget and the progress callback in Python and returns the Python result and repair
 state.
 

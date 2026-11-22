@@ -601,10 +601,9 @@ PYBIND11_MODULE(_pkc_native, m) {
     });
     py::class_<pkc::ConstraintVariants>(m, "ConstraintVariants")
         .def(py::init([](py::handle route, py::handle profile, py::handle geometry, py::handle envelopes, py::handle scope,
-                         py::handle checks, py::handle gates, py::handle signature, py::handle state, py::handle reference,
+                         py::handle checks, py::handle state, py::handle reference,
                          py::handle owners, py::object check, py::handle segment_solids, py::handle objective,
                          std::int64_t settled, py::handle obstacles, py::handle walk_offs) {
-                 if (py::len(signature)) throw std::invalid_argument("Gate signatures have no native producer");
                  pkc::VariantInputs inputs;
                  inputs.route = convert(route);
                  inputs.profile = convert(profile);
@@ -615,7 +614,6 @@ PYBIND11_MODULE(_pkc_native, m) {
                      return *std::get<std::shared_ptr<const pkc::Array>>(convert(py::list(py::reinterpret_borrow<py::object>(values))).data);
                  };
                  inputs.checks = listed_values(checks);
-                 inputs.gates = listed_values(gates);
                  inputs.walk_offs = listed_values(walk_offs);
                  inputs.reference = convert(reference);
                  inputs.owners = convert(owners);
@@ -634,7 +632,7 @@ PYBIND11_MODULE(_pkc_native, m) {
                  return std::make_unique<pkc::ConstraintVariants>(std::move(inputs), std::move(listed), convert(state));
              }),
              py::arg("route"), py::arg("profile"), py::arg("geometry"), py::arg("envelopes"), py::arg("scope"),
-             py::arg("checks"), py::arg("gates"), py::arg("signature"), py::arg("state"), py::arg("reference"),
+             py::arg("checks"), py::arg("state"), py::arg("reference"),
              py::arg("owners"), py::arg("check"), py::arg("segment_solids"), py::arg("objective"), py::arg("settled"),
              py::arg("obstacles"), py::arg("walk_offs"))
         .def("__next__", [](pkc::ConstraintVariants& variants) {

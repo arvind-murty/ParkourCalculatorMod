@@ -201,8 +201,9 @@ ConstraintVariants::ConstraintVariants(VariantInputs inputs, std::optional<Obsta
         for (const auto& [begin, solids] : *inputs_.segment_solids) pairs.push_back(array({integer_value(begin), ints(solids)}));
         segment_solids = array(std::move(pairs));
     }
+    // gates, signature and routeGuards no longer have producers; their constant entries keep saved states resumable.
     Object context{{"version", integer_value(kGenerationPolicy)}, {"route", object(std::move(routed))},
-                   {"profile", inputs_.profile}, {"scope", inputs_.scope}, {"gates", array(inputs_.gates)},
+                   {"profile", inputs_.profile}, {"scope", inputs_.scope}, {"gates", array({})},
                    {"signature", array({})}, {"checks", array(inputs_.checks)}, {"geometry", inputs_.geometry},
                    {"envelope", text(interaction_context_key(inputs_.envelopes))}, {"owners", inputs_.owners},
                    {"segmentSolids", segment_solids}, {"routeGuards", Value{nullptr}},
@@ -500,7 +501,6 @@ Value ConstraintVariants::prepare_item(Value item_value) {
 std::optional<Value> ConstraintVariants::option(const Value& item_value, VariantCursor& cursor) {
     const Value item_prepared = prepare_item(item_value);
     const Object& item = fields(item_prepared);
-    if (py_truthy(get_or_null(item, "routeGuard"))) fail("Route guards have no native producer");
     if (const Value* rows = get(item, "rows")) {
         const std::int64_t index = cursor.index.value_or(0);
         if (index == static_cast<std::int64_t>(items(*rows).size())) return std::nullopt;
@@ -540,7 +540,7 @@ void ConstraintVariants::choose_item(VariantNode& node) {
             rank = {phases.empty() ? -1 : i64(at(fields(phases[0]), "at")), options, index};
         }
         if (!best || rank < std::get<0>(*best)) best.emplace(rank, index, item_value);
-        if (py_truthy(get_or_null(item, "routeGuard")) || py_equal(get_or_null(item, "role"), text("contact_region"))) break;
+        if (py_equal(get_or_null(item, "role"), text("contact_region"))) break;
     }
     node.chosen_item = std::get<1>(*best);
     node.prepared = std::get<2>(*best);

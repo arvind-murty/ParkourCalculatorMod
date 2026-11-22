@@ -56,7 +56,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | File | Bytes |
 | --- | ---: |
 | [docs/AGENT_SETUP.md](AGENT_SETUP.md) | 3797 |
-| [docs/ANCHOR_SEARCH_EXECUTION_REFERENCE.md](ANCHOR_SEARCH_EXECUTION_REFERENCE.md) | 37056 |
+| [docs/ANCHOR_SEARCH_EXECUTION_REFERENCE.md](ANCHOR_SEARCH_EXECUTION_REFERENCE.md) | 37042 |
 | [docs/ARCHITECTURE.md](ARCHITECTURE.md) | 16418 |
 | [docs/CHECKPOINT_STORAGE.md](CHECKPOINT_STORAGE.md) | 7541 |
 | [docs/CODE_MAP.md](CODE_MAP.md) | 37504 |
@@ -65,7 +65,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 36593 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11512 |
 | [docs/DOC_INDEX.md](DOC_INDEX.md) | 28873 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 264571 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 266119 |
 | [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 66137 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
@@ -74,14 +74,14 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/PERFORMANCE.md](PERFORMANCE.md) | 20029 |
 | [docs/REAL11_EXTENDED_GEOMETRY.md](REAL11_EXTENDED_GEOMETRY.md) | 12104 |
 | [docs/REAL11_GUIDE.md](REAL11_GUIDE.md) | 20426 |
-| [docs/RESULTS_AND_DEBUGGING.md](RESULTS_AND_DEBUGGING.md) | 19019 |
+| [docs/RESULTS_AND_DEBUGGING.md](RESULTS_AND_DEBUGGING.md) | 18954 |
 | [docs/RUNBOOK.md](RUNBOOK.md) | 18610 |
 | [docs/TESTING.md](TESTING.md) | 20524 |
 | [docs/design/ANCHOR_POLICY_DECISIONS.md](design/ANCHOR_POLICY_DECISIONS.md) | 42911 |
-| [docs/design/AVOIDANCE_PASSAGES.md](design/AVOIDANCE_PASSAGES.md) | 21429 |
+| [docs/design/AVOIDANCE_PASSAGES.md](design/AVOIDANCE_PASSAGES.md) | 21433 |
 | [docs/design/BRANCH_SCHEDULING_INVESTIGATION.md](design/BRANCH_SCHEDULING_INVESTIGATION.md) | 34072 |
 | [docs/design/CONTACT_COMBINATIONS.md](design/CONTACT_COMBINATIONS.md) | 9645 |
-| [docs/design/GENERATION_FOLLOWUPS.md](design/GENERATION_FOLLOWUPS.md) | 41097 |
+| [docs/design/GENERATION_FOLLOWUPS.md](design/GENERATION_FOLLOWUPS.md) | 41084 |
 | [docs/design/GENERATION_RELEVANCE_PLAN.md](design/GENERATION_RELEVANCE_PLAN.md) | 11545 |
 | [docs/design/GENERIC_COMPOSITION.md](design/GENERIC_COMPOSITION.md) | 8373 |
 | [docs/design/HARD_JUMP_TICK_PRUNING_AND_REACHABILITY_PLAN.md](design/HARD_JUMP_TICK_PRUNING_AND_REACHABILITY_PLAN.md) | 66331 |
@@ -145,7 +145,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/include/pkc/constraints/avoidance.hpp](../native/cpp/include/pkc/constraints/avoidance.hpp) | 973 |
 | [native/cpp/include/pkc/constraints/contacts.hpp](../native/cpp/include/pkc/constraints/contacts.hpp) | 1101 |
 | [native/cpp/include/pkc/constraints/hit_events.hpp](../native/cpp/include/pkc/constraints/hit_events.hpp) | 322 |
-| [native/cpp/include/pkc/constraints/variants.hpp](../native/cpp/include/pkc/constraints/variants.hpp) | 4281 |
+| [native/cpp/include/pkc/constraints/variants.hpp](../native/cpp/include/pkc/constraints/variants.hpp) | 4120 |
 | [native/cpp/include/pkc/envelopes.hpp](../native/cpp/include/pkc/envelopes.hpp) | 967 |
 | [native/cpp/include/pkc/gate.hpp](../native/cpp/include/pkc/gate.hpp) | 764 |
 | [native/cpp/include/pkc/movement/cases.hpp](../native/cpp/include/pkc/movement/cases.hpp) | 2256 |
@@ -188,7 +188,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/include/pkc/validation/vertical.hpp](../native/cpp/include/pkc/validation/vertical.hpp) | 353 |
 | [native/cpp/include/pkc/value.hpp](../native/cpp/include/pkc/value.hpp) | 698 |
 | [native/cpp/include/pkc/vertical.hpp](../native/cpp/include/pkc/vertical.hpp) | 2342 |
-| [native/cpp/python/module.cpp](../native/cpp/python/module.cpp) | 67218 |
+| [native/cpp/python/module.cpp](../native/cpp/python/module.cpp) | 66971 |
 | [native/cpp/src/canonical.cpp](../native/cpp/src/canonical.cpp) | 13203 |
 | [native/cpp/src/coefficient_tables.inc](../native/cpp/src/coefficient_tables.inc) | 23532 |
 | [native/cpp/src/coefficients.cpp](../native/cpp/src/coefficients.cpp) | 9450 |
@@ -197,7 +197,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/src/constraints/encounters.cpp](../native/cpp/src/constraints/encounters.cpp) | 37051 |
 | [native/cpp/src/constraints/hit_events.cpp](../native/cpp/src/constraints/hit_events.cpp) | 9417 |
 | [native/cpp/src/constraints/variant_state.hpp](../native/cpp/src/constraints/variant_state.hpp) | 2469 |
-| [native/cpp/src/constraints/variants.cpp](../native/cpp/src/constraints/variants.cpp) | 35444 |
+| [native/cpp/src/constraints/variants.cpp](../native/cpp/src/constraints/variants.cpp) | 35407 |
 | [native/cpp/src/envelopes.cpp](../native/cpp/src/envelopes.cpp) | 22042 |
 | [native/cpp/src/gate.cpp](../native/cpp/src/gate.cpp) | 5073 |
 | [native/cpp/src/movement/cases.cpp](../native/cpp/src/movement/cases.cpp) | 11200 |
@@ -1757,7 +1757,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [src/parkour_solver/constraints/contacts.py](../src/parkour_solver/constraints/contacts.py) | 11581 |
 | [src/parkour_solver/constraints/encounters.py](../src/parkour_solver/constraints/encounters.py) | 18956 |
 | [src/parkour_solver/constraints/hit_events.py](../src/parkour_solver/constraints/hit_events.py) | 9864 |
-| [src/parkour_solver/constraints/variants.py](../src/parkour_solver/constraints/variants.py) | 22493 |
+| [src/parkour_solver/constraints/variants.py](../src/parkour_solver/constraints/variants.py) | 21640 |
 | [src/parkour_solver/io/__init__.py](../src/parkour_solver/io/__init__.py) | 0 |
 | [src/parkour_solver/io/capture.py](../src/parkour_solver/io/capture.py) | 6352 |
 | [src/parkour_solver/io/checkpoint_store.py](../src/parkour_solver/io/checkpoint_store.py) | 11804 |
@@ -1829,9 +1829,9 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [src/parkour_solver/search/deferrals.py](../src/parkour_solver/search/deferrals.py) | 1228 |
 | [src/parkour_solver/search/dfs.py](../src/parkour_solver/search/dfs.py) | 72906 |
 | [src/parkour_solver/search/domain.py](../src/parkour_solver/search/domain.py) | 960 |
-| [src/parkour_solver/search/engine.py](../src/parkour_solver/search/engine.py) | 15479 |
+| [src/parkour_solver/search/engine.py](../src/parkour_solver/search/engine.py) | 15132 |
 | [src/parkour_solver/search/events/__init__.py](../src/parkour_solver/search/events/__init__.py) | 0 |
-| [src/parkour_solver/search/events/adapter.py](../src/parkour_solver/search/events/adapter.py) | 9558 |
+| [src/parkour_solver/search/events/adapter.py](../src/parkour_solver/search/events/adapter.py) | 9534 |
 | [src/parkour_solver/search/events/engine.py](../src/parkour_solver/search/events/engine.py) | 14149 |
 | [src/parkour_solver/search/feasibility.py](../src/parkour_solver/search/feasibility.py) | 4131 |
 | [src/parkour_solver/search/frontier.py](../src/parkour_solver/search/frontier.py) | 45216 |
@@ -1935,7 +1935,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/integration/test_integration.py](../tests/integration/test_integration.py) | 10053 |
 | [tests/integration/test_movement_contacts.py](../tests/integration/test_movement_contacts.py) | 11263 |
 | [tests/integration/test_native_core.py](../tests/integration/test_native_core.py) | 19886 |
-| [tests/integration/test_orchestrator_continuation.py](../tests/integration/test_orchestrator_continuation.py) | 12673 |
+| [tests/integration/test_orchestrator_continuation.py](../tests/integration/test_orchestrator_continuation.py) | 11449 |
 | [tests/integration/test_package_layout.py](../tests/integration/test_package_layout.py) | 5628 |
 | [tests/integration/test_profiling.py](../tests/integration/test_profiling.py) | 36615 |
 | [tests/integration/test_repair_resume.py](../tests/integration/test_repair_resume.py) | 22867 |
@@ -2045,7 +2045,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tools/profiling/calibrate.py](../tools/profiling/calibrate.py) | 3572 |
 | [tools/profiling/cpp_pruning.py](../tools/profiling/cpp_pruning.py) | 19377 |
 | [tools/profiling/enumeration.py](../tools/profiling/enumeration.py) | 5300 |
-| [tools/profiling/enumeration_calibrate.py](../tools/profiling/enumeration_calibrate.py) | 4470 |
+| [tools/profiling/enumeration_calibrate.py](../tools/profiling/enumeration_calibrate.py) | 4444 |
 | [tools/profiling/enumeration_compare.py](../tools/profiling/enumeration_compare.py) | 3565 |
 | [tools/profiling/parity.py](../tools/profiling/parity.py) | 10060 |
 | [tools/profiling/run.py](../tools/profiling/run.py) | 11737 |

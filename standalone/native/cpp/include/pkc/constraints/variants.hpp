@@ -25,11 +25,10 @@ inline constexpr std::int64_t kVariantStateVersion = 11;  // variants.STATE_VERS
 
 using Obstacles = std::vector<std::array<std::int64_t, 2>>;  // [stretch begin, solid index]
 
-// The constructor's inputs, as ConstraintVariants.__init__ takes them. Route guards and gate signatures have no
-// producer (the event adapter's gates are empty and the engine passes no signature); their digest entries stay.
+// The constructor's inputs, as ConstraintVariants.__init__ takes them.
 struct VariantInputs {
     Value route, profile, geometry, envelopes, scope;  // geometry: the collision scene
-    Array checks, gates, walk_offs;
+    Array checks, walk_offs;
     Value reference, owners, objective;                       // each may be null
     std::optional<std::vector<std::pair<std::int64_t, std::vector<std::int64_t>>>> segment_solids;  // sorted by begin
     std::int64_t settled = 0;

@@ -128,17 +128,15 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, s
         dict(adapter=adapter_identity,policy=policy,nodeQuery=getattr(scoped_adapter,'node_query',False)), coefficients)
     saved_repair=program.get('repairState',{})
     saved_policy=(saved_repair.get('context',{}).get('scope') or {}).get('scope',{}).get('solvePolicy')
-    route_guards=(scoped_adapter.constraint_guards(program['profile'],envelopes,scope,scoped.deadline)
-                  if hasattr(scoped_adapter,'constraint_guards') else None)
     repair_route = route if final_route is None else final_route
-    # Under PKC_NATIVE_CORE the generator and the repair loop run natively for the routes they cover: no route guards,
-    # passages, wall hits or ladder events.
+    # Under PKC_NATIVE_CORE the generator and the repair loop run natively for the routes they cover: no passages,
+    # wall hits or ladder events.
     native = getattr(service, 'native', None)
     deadline = scoped.deadline
-    if (native is not None and route_guards is None and
+    if (native is not None and
             not any(r.get(k) for r in (route, repair_route) for k in ('passages', 'hitEvents', 'ladderEvents'))):
         variants = native.ConstraintVariants(route=route, profile=profiles[0], geometry=scene['collisionScene'],
-            envelopes=envelopes, scope=scope, checks=list(checks), gates=list(scoped_adapter.gates), signature=[],
+            envelopes=envelopes, scope=scope, checks=list(checks),
             state=saved_repair.get('constraintGeneration') if saved_policy==policy else None, reference=reference,
             owners=owners, check=lambda: check_generation(cancel_event, scoped.check, deadline),
             segment_solids=segment_solids(scene, program, profiles[0], scope['through'], service),
@@ -147,13 +145,12 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, s
     else:
         variants = ConstraintVariants(route, profiles[0], plan, scene['collisionScene'], envelopes, scope,
             segment_solids=segment_solids(scene, program, profiles[0], scope['through'], service), checks=checks, walk_offs=walk_offs,
-            gates=scoped_adapter.gates, signature=(),
             state=saved_repair.get('constraintGeneration') if saved_policy==policy else None, deadline=deadline, reference=reference,
             settled=program.get('settledThrough', 0),
             # Conflict-driven: obstacles join the generator only once a solve hits them.
             obstacles=[],
             owners=owners, budget=scoped.check, cancel_event=cancel_event,
-            objective=route.get('guideObjective', route['objective']), route_guards=route_guards)
+            objective=route.get('guideObjective', route['objective']))
         native = None
     mark('eligibilityAndVariantConstruction')
     dispatch = None

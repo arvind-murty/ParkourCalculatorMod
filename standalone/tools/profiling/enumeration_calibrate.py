@@ -21,7 +21,7 @@ def measure(case, checks, observed):
     owner.envelopes = copy.deepcopy(case['envelopes'])
     owner.state = dict(context=case['metadata']['context'],duplicateVariants=0,
         metrics={},uncertainInteractions=[],timings=dict(preparationSeconds=0.,variantGenerationSeconds=0.))
-    owner.deadline, owner.route_guards, owner._active_envelopes = None, None, None
+    owner.deadline, owner._active_envelopes = None, None
     item, cursor, outputs = copy.deepcopy(case['item']), {}, []
     calls = 0
     class FixedWorkEnd(Exception):
