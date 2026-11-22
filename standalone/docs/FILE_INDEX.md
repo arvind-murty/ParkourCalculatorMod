@@ -65,7 +65,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 35721 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11512 |
 | [docs/DOC_INDEX.md](DOC_INDEX.md) | 28532 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 224068 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 224361 |
 | [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 64480 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
@@ -76,7 +76,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/REAL11_GUIDE.md](REAL11_GUIDE.md) | 20426 |
 | [docs/RESULTS_AND_DEBUGGING.md](RESULTS_AND_DEBUGGING.md) | 18940 |
 | [docs/RUNBOOK.md](RUNBOOK.md) | 13113 |
-| [docs/TESTING.md](TESTING.md) | 19731 |
+| [docs/TESTING.md](TESTING.md) | 20146 |
 | [docs/design/ANCHOR_POLICY_DECISIONS.md](design/ANCHOR_POLICY_DECISIONS.md) | 43911 |
 | [docs/design/AVOIDANCE_PASSAGES.md](design/AVOIDANCE_PASSAGES.md) | 21309 |
 | [docs/design/BRANCH_SCHEDULING_INVESTIGATION.md](design/BRANCH_SCHEDULING_INVESTIGATION.md) | 34072 |
@@ -741,7 +741,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/early-passage-screen/evidence/2026-11-15/resume-requests.json](../research/early-passage-screen/evidence/2026-11-15/resume-requests.json) | 2 |
 | [research/early-passage-screen/evidence/2026-11-15/resume-summary.json](../research/early-passage-screen/evidence/2026-11-15/resume-summary.json) | 3840 |
 | [research/early-passage-screen/log_b6_options.py](../research/early-passage-screen/log_b6_options.py) | 20722 |
-| [research/encounter-groups/README.md](../research/encounter-groups/README.md) | 19691 |
+| [research/encounter-groups/README.md](../research/encounter-groups/README.md) | 21023 |
 | [research/encounter-groups/avoidance-ab/ab_calls.py](../research/encounter-groups/avoidance-ab/ab_calls.py) | 3985 |
 | [research/encounter-groups/avoidance-ab/analyze_ab.py](../research/encounter-groups/avoidance-ab/analyze_ab.py) | 2043 |
 | [research/encounter-groups/avoidance-ab/extended-ab-1-off-by-one-analysis.txt](../research/encounter-groups/avoidance-ab/extended-ab-1-off-by-one-analysis.txt) | 2657 |
@@ -773,6 +773,8 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/encounter-groups/native-gate-same-block-fit/tests.log](../research/encounter-groups/native-gate-same-block-fit/tests.log) | 157723 |
 | [research/encounter-groups/native-gate-same-face-fit/report.json](../research/encounter-groups/native-gate-same-face-fit/report.json) | 19246 |
 | [research/encounter-groups/native-gate-same-face-fit/tests.log](../research/encounter-groups/native-gate-same-face-fit/tests.log) | 157967 |
+| [research/encounter-groups/native-gate-settled-repair/report.json](../research/encounter-groups/native-gate-settled-repair/report.json) | 15606 |
+| [research/encounter-groups/native-gate-settled-repair/tests.log](../research/encounter-groups/native-gate-settled-repair/tests.log) | 111019 |
 | [research/encounter-groups/native-gate-walkoff-followups/report.json](../research/encounter-groups/native-gate-walkoff-followups/report.json) | 19246 |
 | [research/encounter-groups/native-gate-walkoff-followups/tests.log](../research/encounter-groups/native-gate-walkoff-followups/tests.log) | 155869 |
 | [research/enumeration-attribution/README.md](../research/enumeration-attribution/README.md) | 8250 |
@@ -1620,7 +1622,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/fixtures/regression/option-representative-resume.json.gz](../tests/fixtures/regression/option-representative-resume.json.gz) | 13101 |
 | [tests/integration/__init__.py](../tests/integration/__init__.py) | 0 |
 | [tests/integration/test_acceptance.py](../tests/integration/test_acceptance.py) | 1849 |
-| [tests/integration/test_block_route_witnesses.py](../tests/integration/test_block_route_witnesses.py) | 10283 |
+| [tests/integration/test_block_route_witnesses.py](../tests/integration/test_block_route_witnesses.py) | 10461 |
 | [tests/integration/test_full_route_witness.py](../tests/integration/test_full_route_witness.py) | 1854 |
 | [tests/integration/test_generic_composition.py](../tests/integration/test_generic_composition.py) | 18362 |
 | [tests/integration/test_geometry_bounds.py](../tests/integration/test_geometry_bounds.py) | 4077 |

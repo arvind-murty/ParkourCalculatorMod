@@ -2,9 +2,11 @@
 
 ## Current gate
 
-`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on O10 widened to every generated move
-(`513f249f`): **594 tests, no failures, errors or skips**, source unchanged during the run
-([report](../research/encounter-groups/native-gate-no-backward-moves/report.json)).
+`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on settled-stretch repair, one solver margin
+and Clarabel verdicts (`89e8dba0`): **593 tests, no failures, errors or skips**, source unchanged during the run
+([report](../research/encounter-groups/native-gate-settled-repair/report.json)). Full discovery on the same
+source: 679 tests, one failure, the ladder test
+`test_repeated_ladder_ceiling_events_regenerate_the_complete_schedule`, which fails on main `a7ddc3be` too.
 Wall-time-bound tests can still fail under heavier load ([deferred P17](DEFERRED_WORK.md)).
 The gate fails on any skip, so it needs `PKC_IPOPT_PYTHON` for the IPOPT tests,
 `PKC_RUN_TICKS_COMPILER` for the Java differential tests and the `numerics` and `reachability` extras
@@ -22,6 +24,7 @@ persistence without the removed 32/128 limits.
 
 | Source | Tests | Evidence |
 | --- | ---: | --- |
+| `89e8dba0` + settled-stretch repair, solver margin and replay tolerance 1e-4, Clarabel verdicts, no pre-solve screen | 593 | [report](../research/encounter-groups/native-gate-settled-repair/report.json) |
 | `513f249f` + no backward moves at ordinary decisions (O10 for every generated move) | 594 | [report](../research/encounter-groups/native-gate-no-backward-moves/report.json) |
 | `73d4489a` + merged faces in visits, launch tables and generation | 590 | [report](../research/stale-code-removal/native-gate-merged-faces/report.json) |
 | `3e4f71d6` stale-code removal: legacy searches, face catalog, ported tests | 580 | [report](../research/stale-code-removal/native-gate/report.json) |

@@ -312,3 +312,21 @@ counts toward N; `ea972fb8` plus that change, 13:58:34 PST, load average 2.6 to 
 4-anchor control is unchanged (T64, -1093.2381026602418, 19 requests, 11 expanded, 5.1 s
 `exhausted`, 8/8 replays); the extended control ends at the deadline (295.1 s) with 401
 requests and 113 expanded, 3/3 replays, keeping 17 ceiling jumps, 1 grind and 13 run-offs.
+
+## Settled-stretch repair, solver margin and Clarabel verdicts, 2026-11-22
+
+Extended control (`extended-anchors-b13ab-control`, 300 s, bookkeeping profile, Python bridge, load average
+4 to 5.6), back to back: `1a5dcb53` (before), `7db27d86` (settled-stretch repair, `SOLVER_MARGIN` and
+`REPLAY_TOLERANCE` 1e-4, Clarabel verdicts, no pre-solve screen), `528afc86` (+ a hit filed under the stretch
+whose encounter sweeps it). All three end at the deadline with no finished route.
+
+| source | frame-3 nodes | hits on settled stretches | same obstacle hit again | IPOPT-rejected nodes | solver calls | IPOPT launches |
+| --- | ---: | --- | ---: | ---: | ---: | ---: |
+| `1a5dcb53` | 281 | 12, every one ends its attempt (`settled_obstacle_hit`) | 1 | 11 | 452 | 31 |
+| `7db27d86` | 264 | 9 repaired; 4 of them hit the same obstacle again and end | 4 | 6 | 655 | 38 |
+| `528afc86` | 259 | 7, all repaired (`obstacle_added`) | 0 | 6 | 657 | 40 |
+
+Node 3.17 (lands on B11), which died of its settled hit before, repairs and stays feasible. Solver calls rise by
+the requests the removed pre-solve screen used to block, which Clarabel now rejects; Clarabel solves in all are
+unchanged (4,110 before, 4,099 after). Scene-replay rejections with exactly zero position and velocity error
+(`unplanned_step` with a contact mismatch at t80 to t82) remain: 14 before, 10 after.
