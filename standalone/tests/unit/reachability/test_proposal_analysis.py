@@ -59,8 +59,8 @@ class ProposalAnalysisTests(unittest.TestCase):
             result=find_route(route,compiler,seconds=5,candidate_seconds=1,retries=0,stop_on_feasible=False,
                               numerical=disk.RelaxedDispatch(gate=gate).solve)
         self.assertEqual(result['status'],'feasible')
-        # The creation screen, find_route's pre-screen and the candidate solve share one content.
-        self.assertEqual((len(contents),len(set(contents))),(3,1))
+        # The creation screen and the candidate solve share one content.
+        self.assertEqual((len(contents),len(set(contents))),(2,1))
 
 
 class ProposalOwnershipTests(unittest.TestCase):
