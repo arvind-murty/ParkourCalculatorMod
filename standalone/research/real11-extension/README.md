@@ -20,7 +20,7 @@ ceiling-generator/constraint behavior was changed by the investigation.
 second geometry-blind key: two valid11-tick singleton profiles are offered by an
 injected combination iterator, but only one is retained. This probe bypasses
 the first dedup deliberately; it makes no numerical/full-scene claim.
-The [single face-merging plan](../../docs/design/FACE_MERGING_IMPLEMENTATION_PLAN.md)
+The single face-merging plan (removed with its unused face catalog on 2026-11-21)
 contains only detection of adjacent coplanar faces in all six orientations and
 representation of their exact unions/source membership for later decisions.
 The probes above do not add bug-fix or solver-integration work to that plan.
@@ -28,9 +28,8 @@ The probes above do not add bug-fix or solver-integration work to that plan.
 Both face detection and representation are now implemented. The
 [production validation](face-catalog-validation.json) records input/source hashes,
 catalog identity,102 merged faces from144 raw faces, B9 member/partial-side checks
-and bounds-report compatibility. Run `tools.geometry_bounds --faces` with the
-input above to reproduce a complete catalog. This remains static geometry;
-current solver decisions have not been migrated to the catalog in this feature.
+and bounds-report compatibility. The catalog and `tools.geometry_bounds --faces` were removed as
+unused on 2026-11-21; reproduce at `8266a38d`.
 
 [Face-detection planning probe](face-detection-plan-probe.json) explores the
 recommended physical-boundary rule using existing subtraction/union primitives.

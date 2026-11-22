@@ -7,10 +7,16 @@ from parkour_solver.search.domain import InitialJumpDomain
 from parkour_solver.validation.witness import replay_witness
 
 
+# Settings archived fixtures still carry for searches that no longer exist: fair_parents (removed in 1df37d63) and
+# the corridor and two-goal comparison searches' limits (removed with those searches).
+RETIRED_SETTINGS = ('fair_parents', 'beam_width', 'unknown_slots', 'objective_gap', 'score_seconds', 'score_call_limit',
+                    'final_call_limit', 'spatial_seconds', 'spatial_calls', 'spatial_candidates', 'spatial_prefixes')
+
+
 def task_settings(fixture):
-    # Archived fixtures still set fair_parents, removed from the search API in 1df37d63.
     settings=copy.deepcopy(fixture.get('settings',{}))
-    settings.pop('fair_parents',None)
+    for name in RETIRED_SETTINGS:
+        settings.pop(name,None)
     return settings
 
 

@@ -1,6 +1,5 @@
 """Search budgets and compiler accounting, independent of route adapters."""
 
-from parkour_solver.bridge.counting import CountingCompiler
 import collections
 import hashlib
 import json

@@ -426,20 +426,35 @@ def program_search_key(program):
 
 
 def compile_program(scene, program, *, require_complete=True):
-    from parkour_solver.search.support_profiles import compile_block_path
+    """The program as a one-leg numerical route on a collision scene, from the start support to the goal support."""
+    from parkour_solver.scene.route import prepare_route
     if not program['profile']['duration']:
         raise ValueError('An empty prefix is not a complete movement route')
     if require_complete and (not program['profile']['grounded'][-1] or program['terminalSupport'] != scene['goalBlock']):
         raise ValueError('An open prefix is not a completed goal route')
-    edge = dict(source=scene['startBlock'], target=scene['goalBlock'], profileKind='movement',
-                profile=program['profile'], ladderEvents=program['ladderEvents'], entryFace=None, exitFace=None)
-    compiled = compile_block_path(scene, [scene['startBlock'], scene['goalBlock']], [edge])
-    compiled['route']['maxTotalRunTicks'] = 0
-    compiled['route']['runBounds'] = [[0, 0]]
+    by_id = {b['id']: b for b in scene['blocks']}
+    supports = [dict(id=name+'@'+str(index), bounds=by_id[name]['bounds'], top=by_id[name]['top'])
+                for index, name in enumerate([scene['startBlock'], scene['goalBlock']])]
+    profile = copy.deepcopy(program['profile'])
+    profile.update(sourceBlock=supports[0]['id'], targetBlock=supports[1]['id'], profileKind='movement')
+    route = prepare_route({'version': 1, 'initial': scene['initial'], 'blocks': supports,
+                           'inputs': scene['inputs'], 'objective': scene['objective'],
+                           'airtimes': [profile['duration']], 'kinds': ['movement'],
+                           'landingPhases': [profile.get('landingPhase', 'pre')],
+                           'contactEntries': [None], 'walkOffExits': [None],
+                           'maxTotalRunTicks': scene['maxTotalRunTicks'],
+                           'runBounds': [[0, scene['maxRunTicksPerJump']]],
+                           'supportClearance': scene['supportClearance']})
+    route['profileDerivation'] = {'kind': 'selected_height_profiles', 'suppliedAirtimes': False,
+                                  'verticalModel': 'parkour_solver.physics.vertical', 'solidSideFaces': False}
+    route.update(sharedMovement=True, ceilingEvents=[], verticalProfiles=[profile],
+                 ladderEvents=[dict(event, leg=0) for event in program['ladderEvents']],
+                 contactEvents=[dict(event, leg=0) for event in profile.get('contactEvents', [])])
+    route.update(maxTotalRunTicks=0, runBounds=[[0, 0]])
     if not require_complete:
-        compiled['route']['terminalSupportRequired'] = False
+        route['terminalSupportRequired'] = False
     if 'threshold' in program:
-        compiled['route']['physicsThreshold'] = program['threshold']
+        route['physicsThreshold'] = program['threshold']
     if 'guideSeedYaw' in program:
-        compiled['route']['warmYaw'] = program['guideSeedYaw'][:]
-    return compiled
+        route['warmYaw'] = program['guideSeedYaw'][:]
+    return {'status': 'derived', 'route': route, 'profiles': [profile]}

@@ -242,9 +242,9 @@ A → C → A → B      not generated now: inter-block return
 A → B → C → B      not generated now: inter-block return
 ```
 
-Use stable physical support-owner provenance. Ignore transient air; compress consecutive same-owner occurrences only for eligibility. Keep every jump event, input count, physical patch/case and actual program in the solver model. Moving among decomposed patches belonging to the same block is not automatically a different block visit.
+Use stable physical support provenance: a visit names the merged top face its contact stands on (`face_namer`, `search/anchors/policy.py`). A face's name joins its blocks' owners, so a block whose top touches no coplanar neighbour is named by its owner, and run ticks across a flush seam stay on one face. Anchors, the start and the goal are whole faces (user, 2026-11-22): `settings` rejects one whose top face holds another block, since its arrival would otherwise never be seen. Ignore transient air; compress consecutive same-face occurrences only for eligibility. Keep every jump event, input count, physical patch/case and actual program in the solver model. Moving among decomposed patches belonging to the same block is not automatically a different block visit.
 
-Track departed owners: the current owner remains eligible for repeated local jumps; after another owner is visited, the departed owner is ineligible for every interaction at the feet (landings, lower landings and the blocks a stepping case steps onto, over or around), while ceiling hits, grinds and wall contacts with it stay allowed. Apply this before expensive contact generation (the `feetAllowed` context predicate) and audit emitted programs as well. Initialize from the original support and reconstruct the same state on resume; supplied roots violating this selected domain must be identified explicitly. Do not use a visited set that rejects the second landing on the **current** owner.
+Track departed faces: the current face remains eligible for repeated local jumps; after another face is visited, the departed face is ineligible for every interaction at the feet (landings, lower landings and the blocks a stepping case steps onto, over or around), while ceiling hits, grinds and wall contacts with it stay allowed. Apply this before expensive contact generation (the `feetAllowed` context predicate) and audit emitted programs as well. Initialize from the original support and reconstruct the same state on resume; supplied roots violating this selected domain must be identified explicitly. Do not use a visited set that rejects the second landing on the **current** face. A feet touch that is itself a visit at that tick is that arrival, not a return: a blip that lands on a lower face and steps onto another in one input visits both.
 
 A required-anchor cursor advances only on its next actual required contact, never from a same-block setup hop. Optional supports are not globally disabled. Required order remains enforced; do not enter a later required anchor prematurely if that would require a currently unsupported return to fulfill the required sequence.
 
@@ -323,22 +323,22 @@ time (user, 2026-11-19/20):
   a grind, slab boost or corner jump cancel is a 2-tick jump, whose input after the
   jump tick is always airborne (user, 2026-11-21).
 - **N** is P's fastest jump-now landing: on the next anchor if any child lands
-  there, else on any block other than P's own. "N is a heuristic for how many run
+  there, else on any face other than P's own (a flush neighbour of P's block is P's face). "N is a heuristic for how many run
   ticks we tolerate": it bounds run ticks only, and a built move that lands past it
   is kept (user, 2026-11-21).
 - **Candidates** come from `advantageous_candidates` (`search/anchors/policy.py`)
-  without building anything: the launch tables (`block_table`) give the blocks and
+  without building anything: the launch tables (`face_table`, measured from every block of P's face) give the blocks and
   undersides, vertical replays give each move's airtime A (A = 2 for slab boosts
   and corner jump cancels; a ceiling or grind A is the earliest descent through any
   landing top of the launch table, a lower bound since it ignores where the player
   can be after the hit). There are three kinds (user, 2026-11-20):
-  1. **Advantageous jump**: k same-block run ticks then the jump, built while
+  1. **Advantageous jump**: k same-face run ticks then the jump, built while
      k + A < N, cheapest (total, A) first, at most
      `MAX_ADVANTAGEOUS_RUN_TICKS = FLAT_JUMP_TICKS − 1` = 11 run ticks (a flat jump
      lasts 12 ticks), on top of the request caps and the time bound. One beaten on
      both total and A by a kept one (advantageous jump-now children count) is not
      built. A kept one beats with its built landing (total and A), not the table's.
-  2. **Run-off onto another block B**: R run ticks, the last walking off the edge
+  2. **Run-off onto another face B**: R run ticks, the last walking off the edge
      (it moves as a run tick: a grounded input), then r airborne inputs (0 when it
      lands within the walk-off input). The fewest R, from 1 to 11, with R + r < J_B,
      the airtime of a jump from P onto B: the vertical replay of an unhit jump,
@@ -383,7 +383,9 @@ time (user, 2026-11-19/20):
 Every resolution is logged in the frontier's `minimumRunCandidates`. This mirrors
 minimum run ticks for hard jumps (`run_bound`, O7), which is unchanged.
 Turnaround decisions generate run ticks as before and still prefer them
-(`(T,-J,A)`). `searchPolicyVersion` 17 carries this, the decision objectives, O10 and O11.
+(`(T,-J,A)`). `searchPolicyVersion` 17 carried this, the decision objectives, O10 and O11; 18 adds the
+same-tick arrival exemption of the departed-owner audit (O6, above); 19 makes visits, the launch tables and the
+candidate keys face-based (O6), with `HARD_JUMP_POLICY_VERSION` 5 for the latch that reads those visits.
 
 ## O10 — No backward ceiling hits or grinds at ordinary decisions
 
@@ -419,14 +421,14 @@ it is held as a reserve in case P's run-tick moves fail. Faces are the merged to
 faces landings see (`scene_contact_options` on Y, +1): coplanar touching tops merge
 into one face across blocks, every solid through the plane clips it, and it is widened
 by the player's half-width. After merging, the individual blocks no longer matter
-here, only faces (anchors stay blocks). On a long face (Real11's B1) a hop back onto
+here, only faces (anchors stay blocks, each a whole face, O6). On a long face (Real11's B1) a hop back onto
 it is natural; on B4 the natural jump overshoots, and landing back needs braking, so
 the B4 hop waits while the 3-run-tick jump onto B5 lives.
 
-A program stands on the merged top faces, at its feet, of the owner it last visited
+A program stands on the merged top faces, at its feet, named by the face it last visited
 (`launch`: landing contacts and case events, so a blip-up or corner blip-up that sets no
 `terminalSupport` counts). P's launch face is the one of those nearest its validated
-position; with none (feet on no top of that owner, or a ladder tick) nothing is held.
+position; with none (feet on no top with that name, or a ladder tick) nothing is held.
 A child of P lands back on it when it jumps on its first input and every landing
 `landings_of` finds for it (its own, or a ceiling hit's, grind's, slab boost's or
 corner jump cancel's earliest landings) stands on exactly that face. A support whose
@@ -450,8 +452,8 @@ or reserved nothing else it is queued at once; otherwise it is reserved
 (`state['alternatives']`) and restored once nothing below P lives and every node P
 queued or reserved has died, never after a validated group-end arrival below them.
 A run-tick reserve restored in the same pass counts as alive, so it goes first.
-Each held jump is logged in `minimumRunCandidates` (key `["same_face", <face's
-owners>]`) with outcome `held` (or `queued`), its room and its jump. Restoring it
+Each held jump is logged in `minimumRunCandidates` (key `["same_face", <face
+name>]`) with outcome `held` (or `queued`), its room and its jump. Restoring it
 earlier, once the run ticks spent below P reach its airtime, is deferred
 ([S9](../DEFERRED_WORK.md)).
 

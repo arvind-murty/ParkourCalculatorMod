@@ -60,8 +60,6 @@ IPOPT dominates: 53 calls, 9.77 s of a 26.6 s search (`profile.json`,
   (`spatial/regions.py`) unions support patches with `canonical_cover`;
   `event_routes` publishes them as `surface['cover']` for guides and anchors; the
   landing contact events carry their block's exposed top from `contact_options`.
-- **Unused:** the physical face catalog `merge_faces` (`spatial/surfaces.py`), used only
-  by `tools/geometry_bounds` and tests.
 
 ## Rules every step keeps
 
@@ -170,8 +168,7 @@ and the line costs a decision and a screen rejection in every B5 frame.
 ## 3. Obstacle footprints: one player-space representation
 
 The stages below are history: `spatial/surfaces.py` now replaces the footprints
-and the face catalog for every consumer
-([contract](FACE_MERGING_IMPLEMENTATION_PLAN.md)).
+for every consumer ([contract](SCENE_SURFACES.md)).
 
 ### What exists
 
@@ -179,7 +176,6 @@ and the face catalog for every consumer
 |---|---|---|---|
 | `decompose`, `contact_patches` (`spatial/cells.py`) | player | free cells, strata, per-solid patches | landing covers |
 | `canonical_cover` (`spatial/regions.py`) | X/Z plane | exact rectangle union | under the row above |
-| `merge_faces` (`spatial/surfaces.py`) | physical | exposed faces merged across touching solids | none |
 | `contact_opportunities` (`movement/contact_profiles.py`), `wall_hit_options` (`constraints/hit_events.py`), `movement/ceiling_generation.py`, `movement/cases.py`, `constraints/contacts.py` | player | contacts from raw faces | movement programs |
 
 ### Stage A (step 1): obstacle clusters, `spatial/surfaces.py`
@@ -437,9 +433,8 @@ before the last; the last leg's best competes directly for the final route.
   record (or its own `recoveryFailure`) sets `parent['recoveryFailure']`.
   `search/dfs.py:949-975`: a leg with `recoveryFailure` and no validated finish
   restores one saved slower run-tick arrival.
-- Only the anchor search (`anchor_route`, `dfs.py:67`) is changed. The old
-  supplied-corridor path keeps its behaviour (register P9 removes it); node checks
-  keep `rankEqualCost=False`.
+- Only the anchor search was changed; the other searches were later removed
+  (2026-11-21). Node checks keep `rankEqualCost=False`.
 
 ### 7.1 Generator tags families (`constraints/variants.py`)
 
@@ -462,9 +457,8 @@ before the last; the last leg's best competes directly for the final route.
 Climbing runs only when the caller passes `climb_families=True` (new keyword of
 `solve_contact_branches` and `evaluate_program`; `dfs.py` `score` passes
 `anchor_route`) together with `rank_equal_cost`, and only for branches that carry a
-`family`. Other callers (`find_blocks` paths in `movement.py`, `climbable.py`,
-`support_profiles.py`, whose collision repairs also produce generator variants) and
-branches without a family (no generator, wall-hit offers) are offered as today.
+`family`. Branches without a family (no generator, wall-hit offers) are offered as
+today.
 
 - Branch metadata: `offer(..., meta=None)` stores `meta = dict(family, switches)` as
   a seventh queue-tuple element (`serial` keeps comparisons from reaching it) and in
@@ -651,4 +645,4 @@ switch ticks per cluster unresolved into later frames. Deferred: the guide path
 usually makes the intermediate objective accurate enough.
 
 Related: [obstacle relevance](OBSTACLE_RELEVANCE.md), [avoidance passages](AVOIDANCE_PASSAGES.md),
-[face merging plan](FACE_MERGING_IMPLEMENTATION_PLAN.md).
+[scene surfaces](SCENE_SURFACES.md).

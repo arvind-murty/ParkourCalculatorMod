@@ -15,13 +15,13 @@ from tests.support.ladder_composition import airborne_case
 from parkour_solver.scene.geometry import BODY_HEIGHT
 from parkour_solver.validation.scene import check_geometry
 from parkour_solver.scene.normalize import prepare_scene
-from parkour_solver.search.support_profiles import compile_block_path
 from parkour_solver.search.repair import solve_contact_branches
 from parkour_solver.constraints.contacts import floor_checks
 from parkour_solver.bridge.python_compiler import PythonCompiler
 from parkour_solver.numerics import prepare, validate
 from parkour_solver.physics.vertical import CLIMB_CARRY
 from parkour_solver.movement.contact_combinations import expanded_face
+from tests.support.ladder_composition import ladder_route
 
 
 ROOT = AUTONOMY_DATA
@@ -157,9 +157,7 @@ class GeneratedMixedContactIntegrationTests(unittest.TestCase):
                     program=next((p for p in candidates if p is not None
                         and [(e['offset'],e['axis']) for e in p['profile']['contactEvents']]==[(offset,'Y')]),None)
                     self.assertIsNotNone(program,{'case':name,'candidates':len(candidates)})
-                    edge=dict(source='start',target='b',profileKind='ladder',profile=program['profile'],
-                              ladderEvents=program['ladderEvents'],entryFace=None,exitFace=None)
-                    compiled=compile_block_path(scene,['start','b'],[edge])
+                    compiled=ladder_route(scene,program,'b')
                     result=solve_contact_branches(compiled['route'],compiled['profiles'],
                         floor_checks(scene,['start','b'],compiled['profiles']),compiler,seconds=30,
                         candidate_seconds=5,retries=1,geometry=scene['collisionScene'],

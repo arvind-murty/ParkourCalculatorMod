@@ -4,12 +4,11 @@ import hashlib
 import json
 import os
 import unittest
+from pathlib import Path
 
-from parkour_solver.search.support_profiles import find_blocks
 from parkour_solver.scene.normalize import prepare_scene
 from parkour_solver.validation.vertical import validate_vertical_schedule
 from parkour_solver.movement.ladder.settings import ladder_settings
-from parkour_solver.search.climbable import run_allocations
 from parkour_solver.bridge.python_compiler import PythonCompiler
 from parkour_solver.movement.ladder.events import compile_ladder_events
 from parkour_solver.scene.ladders import climb_walls, entry_channels, ladder_columns, schedule_constraints
@@ -23,12 +22,6 @@ ROOT = AUTONOMY_DATA
 
 
 class ClimbableContractTests(unittest.TestCase):
-    def test_run_allocations_are_incremental_and_bounded(self):
-        allocations = list(run_allocations(3, 2, 3, 20))
-        self.assertEqual(allocations[0], [0, 0, 0])
-        self.assertEqual([sum(a) for a in allocations], sorted(sum(a) for a in allocations))
-        self.assertTrue(all(max(a) <= 2 and sum(a) <= 3 for a in allocations))
-
     def test_invalid_cells_settings_and_conflicting_metadata_are_rejected(self):
         r = json.loads((ROOT / 'fixtures/ladder-top.json').read_text())
         for value in ([[0, 1.5, 0]], [[True, 1, 0]], [[0, 1]], {}, None):
@@ -88,7 +81,7 @@ class SavedLadderEvidenceTests(unittest.TestCase):
             with self.subTest(name=name):
                 path = ROOT / ('experiments/ladder-search/' + name + '.json')
                 e = json.loads(path.read_text())
-                self.assertEqual(hashlib.sha256((path.parent / e['fixture']).read_bytes()).hexdigest(), e['fixtureSha256'])
+                self.assertEqual(hashlib.sha256((ROOT / ('fixtures/' + Path(e['fixture']).name)).read_bytes()).hexdigest(), e['fixtureSha256'])
                 problem = prepare(e['problem'])
                 candidate = validate(problem, problem['yaw'])
                 self.assertTrue(candidate['feasible'], candidate)
@@ -123,36 +116,3 @@ class SavedLadderEvidenceTests(unittest.TestCase):
             with self.subTest(mutation=index):
                 self.assertFalse(self.check(changed)['feasible'])
 
-
-@unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'),
-                     'Set PKC_IPOPT_PYTHON')
-class ClimbableIntegrationTests(unittest.TestCase):
-    def test_cold_geometry_scenes_find_top_side_and_composed_routes(self):
-        for name, seconds, route_seconds in [('ladder-top', 65, 32), ('ladder-side-landing', 65, 32),
-                                               ('ladder-side-entry', 60, 30),
-                                               ('ladder-thin-top', 70, 38), ('ladder-prefix-suffix', 115, 24)]:
-            with self.subTest(name=name):
-                request = json.loads((ROOT / ('fixtures/' + name + '.json')).read_text())
-                with PythonCompiler() as compiler:
-                    result = find_blocks(request, compiler, seconds=seconds, route_seconds=route_seconds,
-                                         candidate_seconds=1, retries=0, python_executable=os.environ['PKC_IPOPT_PYTHON'])
-                self.assertEqual(result['status'], 'feasible', result)
-                best = result['best']
-                self.assertTrue(best['geometryCheck']['feasible'])
-                self.assertGreaterEqual(sum(best['ladderSchedule']['hit']), 2)
-                self.assertTrue(best['candidate']['feasible'])
-                self.assertLessEqual(best['candidate']['violation'], 1e-7)
-                self.assertFalse(result['minimumTicksProven'])
-                self.assertTrue(all(w['mode'] != 'F' for w in best['plan']['walls']))
-                if name == 'ladder-prefix-suffix':
-                    self.assertEqual(best['blockIds'], ['start', 'pad', 'wall', 'goal'])
-                    self.assertEqual(best['ladderSchedule']['entryFamily'], 'side')
-                if name == 'ladder-side-landing':
-                    self.assertEqual(best['ladderSchedule']['exitKind'], 'side')
-                if name == 'ladder-thin-top':
-                    self.assertEqual(best['blockIds'][-1], 'ladder#2')
-                if name == 'ladder-side-entry':
-                    self.assertEqual(best['ladderSchedule']['entryFamily'], 'side')
-                if name == 'ladder-top':
-                    entries = [e for a in result['attempts'] for e in a.get('generation', {}).get('entryWindows', [])]
-                    self.assertTrue(any(1 in e['unresolvedStates'] for e in entries))

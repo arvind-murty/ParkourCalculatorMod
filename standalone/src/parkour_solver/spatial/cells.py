@@ -114,17 +114,6 @@ class Decomposition:
     statistics: dict
     parent_cells: dict = field(default_factory=dict)
 
-    def locate(self, point, tolerance=0):
-        return [c.id for c in self.cells if contains(c.bounds, point, tolerance)]
-
-    def neighbors(self):
-        result = {c.id: [] for c in self.cells}
-        for p in self.portals:
-            a, b = p.cells
-            result[a].append((b, p.id))
-            result[b].append((a, p.id))
-        return result
-
     def to_dict(self):
         return asdict(self)
 
@@ -260,28 +249,3 @@ def box_segment_interval(box, start, end, tolerance=1e-9):
             lo, hi = max(lo, min(a, b)), min(hi, max(a, b))
     return (max(0., lo), min(1., hi)) if lo <= hi else None
 
-
-def segment_intervals(decomposition, start, end, cell_ids=None, tolerance=1e-9):
-    allowed = set(cell_ids) if cell_ids is not None else None
-    result = []
-    for cell in decomposition.cells:
-        if allowed is not None and cell.id not in allowed:
-            continue
-        interval = box_segment_interval(cell.bounds, start, end, tolerance)
-        if interval is not None:
-            result.append((*interval, cell.id))
-    return sorted(result)
-
-
-def segment_covered(decomposition, start, end, cell_ids=None, tolerance=1e-9):
-    reach = 0.
-    intervals = segment_intervals(decomposition, start, end, cell_ids, tolerance)
-    if not intervals or intervals[0][0] > 0:
-        return False
-    for lo, hi, _ in intervals:
-        if lo > reach:
-            return False
-        reach = max(reach, hi)
-        if reach >= 1:
-            return True
-    return False

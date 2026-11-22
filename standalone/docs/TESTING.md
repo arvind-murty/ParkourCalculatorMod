@@ -2,19 +2,16 @@
 
 ## Current gate
 
-`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on the walk-off follow-ups
-rebased onto main `1013e7ea` (#7), with the launch face found from the visited owner
-(`b58e2132`): **842 tests, no failures, errors or skips**, source unchanged during the run,
-at a load average of 5.6 to 8.2 ([report](../research/encounter-groups/native-gate-rebased-on-pr7/report.json)).
+`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on the stale-code removal with its
+ported tests, the blip departed-owner fix and the run-off-side fixture removal (`23db5983`): **581 tests, no
+failures, errors or skips**, source unchanged during the run
+([report](../research/stale-code-removal/native-gate-blip-fix/report.json)). The count fell from 842 because the
+removed searches' tests went with them.
 Wall-time-bound tests can still fail under heavier load ([deferred P17](DEFERRED_WORK.md)).
 The gate fails on any skip, so it needs `PKC_IPOPT_PYTHON` for the IPOPT tests,
-`PKC_RUN_TICKS_COMPILER` for the Java differential tests and the `research` extra for the
-route-guidance tests.
-A run of the switch-climb source (`55e3beef`) under a load average of 5.5 failed
-`test_prescribed_points_do_not_remove_remote_free_space` (its two 2 s arms
-enumerated 856 and 830 choices); it passed in isolation and on the rerun. Earlier,
-`test_checkpoint_guidance` and `test_integration` failed once the same way. Treat a
-repeat as real. The gate keeps its declared module scope:
+`PKC_RUN_TICKS_COMPILER` for the Java differential tests and the `numerics` and `reachability` extras
+(CasADi, SciPy, Clarabel) for the numerical and disk-relaxation tests.
+Earlier gates saw single load-sensitive failures that passed on rerun; treat a repeat as real. The gate keeps its declared module scope:
 dedicated ladder, climbable, vine and movement-entry modules are excluded, generic
 mixed-ladder controls and all numerical modules are included.
 
@@ -27,6 +24,8 @@ persistence without the removed 32/128 limits.
 
 | Source | Tests | Evidence |
 | --- | ---: | --- |
+| `3e4f71d6` stale-code removal: legacy searches, face catalog, ported tests | 580 | [report](../research/stale-code-removal/native-gate/report.json) |
+| `23db5983` + blip departed-owner fix, run-off-side fixture removed | 581 | [report](../research/stale-code-removal/native-gate-blip-fix/report.json) |
 | `b58e2132` follow-ups rebased onto `1013e7ea`, launch face from the visited owner | 842 | [report](../research/encounter-groups/native-gate-rebased-on-pr7/report.json) |
 | `4c9c6ba4` + O11 on merged launch faces | 839 | [report](../research/encounter-groups/native-gate-same-face-fit/report.json) |
 | `c4e2f70a` + same-block jumps must fit their block (O11) | 838 | [report](../research/encounter-groups/native-gate-same-block-fit/report.json) |
@@ -104,22 +103,19 @@ Run the [new native driver and matched finite-task measurement](../research/anch
 | Area changed | Focused modules under `tests/` |
 | --- | --- |
 | Avoidance passages and encounters | `test_encounters`, `test_option_keys`, `test_obstacles`, `test_movement_composition` |
-| Cells/corridors and bounds | `test_cell_geometry`, `test_cell_routes`, `test_corridor_guards`, `test_cell_local`, `test_cell_experiment` |
+| Cells and route regions | `test_cell_geometry`, `test_route_regions` |
 | Schedule composition/full original state | `test_movement_composition`, `test_movement_units`, `test_movement_generation`, `test_generic_composition`, `test_shared_contacts` |
 | Reachability/scope/retention/persistent generation | `test_orchestrator_continuation`, `test_search_fixes`, `test_screen` |
-| Inner/terminal repair continuation | `test_repair_resume`, `test_search_fixes`, `test_failure_diagnostic` |
-| Timing, progress, goal comparisons/windows | `test_time_progress`, `test_comparison_goals`, `test_checkpoint_guidance`, `test_fixed_clock_goal` |
-| Landings/run-off/normal obstacles | `test_block_profiles`, `test_block_contacts`, `test_block_search`, `test_runoff`, `test_obstacles`, `test_block_route_witnesses` |
+| Inner/terminal repair continuation | `test_repair_resume`, `test_search_fixes` |
+| Landings/run-off/normal obstacles | `test_block_contacts`, `test_runoff`, `test_obstacles`, `test_block_route_witnesses` |
 | Stepping, ceilings, combinations | `test_stepping_cases`, `test_ceiling_contacts`, `test_hit_events`, `test_contact_combinations`, `test_contacts` |
 | Full acceptance | `test_acceptance`, `test_full_route_witness`, `test_integration` |
-| Audit accounting without new solve | `test_candidate_audit` |
 | Movement bridge: coefficients, scene checks, footprints, selection, cross-bridge resume | `test_python_compiler` (Java differential tests need `PKC_RUN_TICKS_COMPILER`), `test_package_layout` |
-| Historical relaxed route models | `test_route_guidance` |
-| Existing ladders | `test_ladder_*`, `test_climbable_search`, `test_hanging_vines`, `test_long_ladder_chains`, `test_movement_entry` |
+| Existing ladders (movement level; the search-level tests wait for M6) | `test_ladder_*`, `test_climbable_search`, `test_hanging_vines`, `test_long_ladder_chains` |
 
 `tests/unit/numerics/` separates `test_model` (scalar equations/constraints), `test_solver` (worker lifecycle, independent validation and failure handling), `test_continuation` (incumbents/inertia phases), `test_capture`, `test_ladder_model`, `test_movement` and real-worker `test_integration`. Reuse these instead of creating a second acceptance oracle.
 
-Useful existing contracts in `test_orchestrator_continuation`: all swept acceleration directions remain in the envelope; required and unwanted interactions share one query; selected clips preserve feasible controls; complete scope cannot omit blocks; fall rejection needs required future contact; schedule equality is stronger than count equality; independent velocity/speed guards; interrupted generation and terminal resume retain work; omitted future obstacles do not reject preliminary guidance. The newer `test_depth_first` adds traversal, promotion, ownership, accepted-variant, resume and early-builder coverage.
+Useful existing contracts in `test_orchestrator_continuation`: all swept acceleration directions remain in the envelope; required and unwanted interactions share one query; selected clips preserve feasible controls; complete scope cannot omit blocks; fall rejection needs required future contact; interrupted generation and screens resume without losing a choice.
 
 ## Non-Real11 regression families
 
@@ -156,22 +152,6 @@ For new runs record source revision plus dirty diff, Python/runtime/compiler con
 
 
 DFS acceptance at `498c054c`: [results and logs](../research/dfs-interactions/README.md) record368/368 selected non-ladder numerical autonomy tests,54/54 IPOPT tests and25/25 post-logging repair/terminal tests passing. The previous broader466-test process exposed two grind/blip regressions, corrected by retaining named-probe uncertainty; both pass in the final non-ladder gate. The pre-existing ladder baseline remains. Current cold/resume reports reconcile14 worker calls, zero repeated completed requests and all independent witness replays. The final affected-scope pass intentionally excludes dedicated ladder/climbable/vine tests and is not an all-suite green claim.
-
-## Virtual terminal goals
-
-`test_terminal_goals` checks descending-height timing, one-sided player-center rows, strict-bound clearance, no fake floor, generic airborne overshoot and independent native scene replay. Run with the native environment from the runbook; otherwise the integration case skips. Existing fixed-clock and physical landing tests remain separate regressions.
-
-## Latest-jump run pruning
-
-`test_minimum_runs` combines generic dispatch/resume/unknown controls with archived Real11 programs. It checks local preparation counts and preserves different prior interactions, hard obstacle-side rows and free/physical terminal contacts. Full counterfactual controls can set `minimum_run_pruning=False` in fresh fixture settings; policy changes intentionally invalidate exact resume. Saved `minimumRunExclusions` include each discrete program and the representative causing exclusion. Continuation-time pruning remains deferred and is not required for this policy.
-
-## Semantic corridor refactor
-
-Add `test_route_regions`, `test_semantic_routes`, `test_route_progress`, `test_route_guards` and `test_semantic_search` to the cell/DFS gate. They cover exact exposed unions and equivalent encodings, checked convex cover, landing versus overflight, 3D layer/passage order, meaningful revisits, no variant splicing, several portals per input, unknown named probes, fixed sweep alternatives, independent initial domains, immutable stage views and continuation. Native tests include inferred intermediate goals/outgoing objectives, exact one-prefix-per-session suspension/resume, finite and airborne virtual finishes, independent replay and archived Real11 witness coverage without seeding discovery.
-
-The semantic schema6 prefix quota can reach zero while already generated ready programs are drained; it cannot silently add an expansion for every new child frame. `test_inferred_intermediate_support_uses_outgoing_guide_objective` checks that boundary as well as actual native guidance wiring. Legacy controls remain under their existing schema5 behavior.
-
-Final spatial-refactor gate: [420 selected native tests](../research/automatic-corridors/allocation-context-final-native-2026-11-03.json), zero failures/errors/skips,234.1s and sourceUnchanged=true. Its47-module list is explicit; dedicated ladder/climbable/vine/movement-entry modules are excluded, while generic mixed ladder controls execute. [Matched Real11 evidence](../research/automatic-corridors/matched-allocation-context-2026-11-03/summary.json) preserves the automatic no-finish deadline and supplied T67 result separately from representation coverage.
 
 ## Generic event discovery
 

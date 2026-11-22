@@ -49,7 +49,8 @@ def climbing_case(beginning=False, ending=False):
 def complete_case(beginning=False, ending=False):
     scene, event, choice = climbing_case(beginning, ending)
     program = append_choice(empty_program(scene['initial']), choice)
-    context = dict(mode='open', scene=scene, program=program, state=boundary_state(program), maxInputs=30)
+    context = dict(mode='open', scene=scene, program=program, state=boundary_state(program), maxInputs=30,
+                   interactionGate=None)
     finish = next(c for c in generate_choices('normal', context) if c.get('terminalSupport') == 'goal')
     return scene, event, append_choice(program, finish)
 

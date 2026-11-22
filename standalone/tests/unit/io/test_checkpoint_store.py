@@ -11,7 +11,6 @@ from unittest.mock import patch
 from parkour_solver.io.checkpoint_store import CheckpointStore, read_report
 from parkour_solver.io.search_checkpoint import SearchCheckpoint
 import tests.support.repair_resume as repair_tests
-import tests.support.depth_first as dfs_tests
 
 
 class StoreCase(unittest.TestCase):
@@ -191,38 +190,6 @@ class SearchCheckpointTests(StoreCase):
 
         self.assertEqual(second['attempts'],[])
 
-    def test_dfs_continues_siblings_without_repeating_completed_calls(self):
-        helper = dfs_tests.DepthFirstHarness()
-        helper.calls = []
-        with CheckpointStore(self.path) as store:
-            helper.progress = SearchCheckpoint(store,{})
-            first = helper.run_search(3)
-        self.assertEqual(read_report(self.path)['searchState'],first['searchState'])
-        self.assertEqual(first['best']['candidate']['objective'],17.)
-        with CheckpointStore(self.path) as store:
-            helper.progress = SearchCheckpoint(store,{})
-            second = helper.run_search(10,read_report(self.path)['searchState'])
-            helper.progress.finish(second,[])
-        self.assertEqual(helper.calls,[(17,17),(21,21),(17,30),(21,30)])
-        self.assertEqual(read_report(self.path)['result'],json.loads(json.dumps(second)))
-
-    def test_dfs_mid_solve_publication_restores_the_active_candidate(self):
-        helper = dfs_tests.DepthFirstHarness()
-        helper.calls, helper.interrupt_once = [], (17,30)
-        with CheckpointStore(self.path) as store:
-            helper.progress = SearchCheckpoint(store,{})
-            first = helper.run_search(10)
-        saved = read_report(self.path)['searchState']
-        self.assertEqual(saved,first['searchState'])
-        self.assertEqual(saved['stack'][-1]['inFlight']['program']['repairState']['marker'],'unfinished')
-        with CheckpointStore(self.path) as store:
-            helper.progress = SearchCheckpoint(store,{})
-            second = helper.run_search(10,saved)
-        self.assertEqual(helper.calls.count((17,17)),1)
-        self.assertEqual(helper.calls.count((21,21)),1)
-        self.assertEqual(helper.calls.count((17,30)),2)  # Only interrupted work repeats.
-        self.assertEqual(second['best']['candidate']['objective'],21.)
-
     def test_interrupted_repair_keeps_pending_branch_and_audit(self):
         helper = repair_tests.RepairHarness()
         state = self.state()
@@ -264,46 +231,13 @@ class NativeCheckpointTests(StoreCase):
                 checked.append(True)
         with PythonCompiler() as compiler, CheckpointStore(self.path) as store:
             writer=CheckedWriter(store,{})
-            result=find_checkpoint_route(scene,compiler,anchor_search={},seconds=8,score_seconds=2,
+            result=find_checkpoint_route(scene,compiler,anchor_search={},seconds=8,
                 max_solver_calls=20,program_filter=InitialJumpDomain([0],max_inputs=28),
                 python_executable=os.environ['PKC_IPOPT_PYTHON'],on_progress=writer)
             writer.finish(result,[])
             self.assertEqual(read_report(self.path)['result'],json.loads(json.dumps(result)))
         self.assertTrue(checked)
         self.assertIn(True,owners,'No internal-node checkpoint was exercised')
-
-    def test_every_native_repair_publication_round_trips_before_completion(self):
-        from parkour_solver.bridge.python_compiler import PythonCompiler
-        from parkour_solver.search.engine import find_checkpoint_route
-        from research.legacy_cell_routes.checkpoint_experiment import replay_witness
-        from parkour_solver.search.compat.support_order import SupportOrder
-        from tests.support.checkpoint_guidance import flat_scene
-        scene = flat_scene()
-        scene['movementSearch']['maxInputs'] = 20
-        scene['objective'] = dict(axis='X',sense='MAX')
-        goal = dict(kind='landing_height_region',height=2.,
-            rows=[dict(mode='X',cmp='GE',rhs=1.5),dict(mode='Z',cmp='GE',rhs=-2.)])
-        checked = []
-        testcase = self
-        class CheckedWriter(SearchCheckpoint):
-            def repair_progress(self,state):
-                super().repair_progress(state)
-                testcase.assertEqual(read_report(testcase.path)['searchState'],json.loads(json.dumps(state)))
-                checked.append(True)
-        with PythonCompiler() as compiler, \
-             CheckpointStore(self.path) as store:
-            writer = CheckedWriter(store,{})
-            result = find_checkpoint_route(scene,compiler,spatial_points=[[.5,1,.5],[8.,3,.5]],
-                checkpoints=[],spatial_goals=[goal],program_filter=SupportOrder(scene,[],None,[0,1],max_inputs=20),
-                seconds=12,max_candidates=8,max_solver_calls=24,candidate_seconds=.8,score_seconds=2,
-                python_executable=os.environ['PKC_IPOPT_PYTHON'],on_progress=writer)
-            self.assertEqual(result['status'],'feasible')
-            replay = replay_witness(scene,result['best'],compiler)
-            self.assertTrue(replay['passed'])
-            writer.finish(result,[replay])
-        self.assertTrue(checked)
-        self.assertEqual(read_report(self.path)['result'],json.loads(json.dumps(result)))
-
 
 if __name__ == '__main__':
     unittest.main()

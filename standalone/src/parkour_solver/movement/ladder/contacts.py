@@ -1,5 +1,5 @@
 import copy
-from parkour_solver.physics.vertical import f32, vertical_move, vertical_step, vertical_carry
+from parkour_solver.physics.vertical import f32
 from parkour_solver.movement.contact_combinations import contact_clearance, expanded_face, merge_contacts
 from parkour_solver.movement.contact_profiles import contact_profile
 from parkour_solver.movement.ladder.schedules import trace_ladder_schedule

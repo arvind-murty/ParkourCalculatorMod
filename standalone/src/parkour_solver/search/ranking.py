@@ -1,4 +1,3 @@
-from parkour_solver.scene.objectives import objective_spec
 import math
 import time
 

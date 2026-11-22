@@ -37,15 +37,13 @@ from parkour_solver.api import solve_task, find_checkpoint_route, solve, replay_
 # solve(fixed_problem, ...) performs fixed-program continuous optimization.
 ```
 
-Console commands are `parkour-solve`, `parkour-blocks`, `parkour-route`,
-`parkour-ipopt` and `parkour-fixed-clock`. `python -m parkour_solver` is the
-physical automatic task CLI. See the [runbook](RUNBOOK.md) for native dependencies,
+Console commands are `parkour-solve` (the anchor search; `python -m parkour_solver`
+is the same CLI) and `parkour-ipopt` (one fixed numerical problem). See the [runbook](RUNBOOK.md) for native dependencies,
 input files and resume. Neither package imports nor worker launch depend on the
 checkout working directory. Runtime takes task/compiler paths explicitly.
 
 The old **public** autonomy/ipopt facades remain for `standalone.autonomy` and
-`standalone.ipopt`, their solve/solve_blocks CLIs, the cell_routes public facade,
-and automatic_experiment/fixed_clock_experiment CLIs. They require an installed
+`standalone.ipopt`, the `ipopt` solve command and the cell_routes `automatic_experiment` CLI. They require an installed
 `parkour_solver`; the `standalone` namespace itself requires the repository parent
 on the import path. Old private module paths and direct execution of moved
 implementation files are not supported. Maintained tests/tools use current names.

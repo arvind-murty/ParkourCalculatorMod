@@ -10,7 +10,7 @@ import json
 from dataclasses import asdict, dataclass, field
 
 from parkour_solver.scene.geometry import thin
-from parkour_solver.spatial.cells import Cell, cell_portals, contains, dimension, intersection, merge_boxes, subtract_open
+from parkour_solver.spatial.cells import Cell, cell_portals, contains, dimension, intersection
 
 
 SCHEMA = 1
@@ -135,78 +135,6 @@ class RouteGraph:
     def to_dict(self):
         return asdict(self)
 
-    def neighbors(self):
-        result = {r.key: [] for r in self.regions}
-        for transition in self.transitions:
-            result[transition.source].append(transition)
-        return result
-
-
-def free_transit_cover(scene,decomposition,*,max_regions=20000,deadline=None):
-    """Overlapping free cuboids remove arbitrary subtraction-plane extensions.
-
-    Expand exact free seeds in all axis orders, also clipping one seed face at
-    physical obstacle planes. Every result is checked with the same open-solid
-    subtraction as decompose; original coverage is retained. This is a bounded
-    convex cover construction, not a completeness claim about maximal cuboids.
-    """
-    import itertools
-    import time
-    from parkour_solver.scene.geometry import expanded_box
-    bounds=decomposition.bounds
-    solids=sorted(set(tuple(expanded_box(b)) for b in scene['collisionScene']['solids']))
-    coordinates=[sorted({bounds[a],bounds[a+3]} |
-        {s[i] for s in solids for i in (a,a+3) if bounds[a]<=s[i]<=bounds[a+3]}) for a in range(3)]
-    base=merge_boxes([c.bounds for c in decomposition.cells])
-    seeds=set(base)
-    for box in base:
-        for axis in range(3):
-            for edge in coordinates[axis]:
-                if box[axis]<edge<box[axis+3]:
-                    lo,hi=list(box),list(box)
-                    lo[axis]=hi[axis+3]=edge
-                    seeds.update((tuple(lo),tuple(hi)))
-    if len(seeds)>max_regions:
-        raise ValueError('Transit cover exceeded max_regions; seeds were not truncated')
-    def free(box):
-        return all(subtract_open(box,solid)==[box] for solid in solids)
-    result=set(base)
-    for seed in sorted(seeds):
-        if deadline is not None and time.monotonic()>=deadline:
-            raise TimeoutError('transit_cover_deadline')
-        for order in itertools.permutations(range(3)):
-            box=list(seed)
-            for axis in order:
-                if seed[axis]==seed[axis+3]:
-                    continue
-                for edge in coordinates[axis]:
-                    if edge>=box[axis]:
-                        break
-                    candidate=box[:];candidate[axis]=edge
-                    if free(tuple(candidate)):
-                        box=candidate;break
-                for edge in reversed(coordinates[axis]):
-                    if edge<=box[axis+3]:
-                        break
-                    candidate=box[:];candidate[axis+3]=edge
-                    if free(tuple(candidate)):
-                        box=candidate;break
-            result.add(tuple(box))
-            if len(result)>max_regions:
-                raise ValueError('Transit cover exceeded max_regions; geometry was not truncated')
-    return sorted(b for b in result if not any(a!=b and intersection(a,b)==b for a in result))
-
-
-def build_route_graph(scene, decomposition, task_goal=None, *, max_regions=20000, deadline=None):
-    """Build geometry incidence; retain unknown movement feasibility explicitly."""
-    supports = support_components(decomposition)
-    # Reconstruct convex transit domains across local refinement seams. Surface
-    # states remain explicit; the cuts above a footprint do not themselves
-    # create independent overflight routes.
-    transit=free_transit_cover(scene,decomposition,max_regions=max_regions,deadline=deadline)
-    return _incidence_graph(scene, decomposition, supports, task_goal, transit, deadline=deadline)
-
-
 def build_geometry_graph(scene, decomposition, supports=None, task_goal=None, *, deadline=None):
     """Exact raw-cell incidence without mandatory overlapping-box expansion.
 
@@ -267,119 +195,15 @@ def _incidence_graph(scene, decomposition, supports, task_goal, transit, *, dead
     # Do not fabricate grounded contact if the actual initial state is airborne.
     if not starts:
         starts = tuple(sorted(r.key for r in air_regions.values() if any(contains(b,start) for b in r.cover)))
-    if task_goal is not None and task_goal.get('kind') == 'landing_height_region':
-        from parkour_solver.search.virtual_goals import prepare_goal
-        task_goal = prepare_goal(task_goal)
-        terminal = 'terminal:' + geometry_key(task_goal)
-        regions.append(RouteRegion(terminal, 'terminal_predicate', (), (), predicate=task_goal))
-        # Coverage bounds are only collision-query limits, never finish walls.
-        # A finish link is unresolved until the descending height clock and rows
-        # hold; it is not permission to leave this volume through a solid.
-        for region in list(regions):
-            if region.kind in ('air_volume', 'support_surface'):
-                possible=False
-                for box in region.cover:
-                    if box[1] > task_goal['height']+1e-7:
-                        continue
-                    if region.kind=='air_volume' and box[1]>=task_goal['height']:
-                        # A free descending crossing ends below this height.
-                        # Actual clipping at that plane finishes through the
-                        # explicit support state, preserving that alternative.
-                        continue
-                    clipped=list(box)
-                    for row in task_goal['rows']:
-                        axis=0 if row['mode']=='X' else 2
-                        if row['cmp']=='GE':
-                            clipped[axis]=max(clipped[axis],row['rhs'])
-                        else:
-                            clipped[axis+3]=min(clipped[axis+3],row['rhs'])
-                    possible |= all(clipped[a] <= clipped[a+3] for a in (0,2))
-                if possible:
-                    link(region.key, terminal, 'finish', ())
-        goals = (terminal,)
-    elif task_goal is None or task_goal.get('kind') == 'landing':
-        goal_id = scene['goalBlock'] if task_goal is None else task_goal.get('block', scene['goalBlock'])
-        goal_block = next(b for b in scene['blocks'] if b['id'] == goal_id)
-        goal_owner = goal_block.get('sourceBlock', goal_id)
-        goals = tuple(s.key for s in supports if s.owner == goal_owner and s.height == goal_block['top']
-                      and goal_block['solidIndex'] in s.solids)
-    else:
-        raise ValueError('Route graph requires a physical landing or virtual height-region task goal')
+    if task_goal is not None and task_goal.get('kind') != 'landing':
+        raise ValueError('Route graph requires a physical landing task goal')
+    goal_id = scene['goalBlock'] if task_goal is None else task_goal.get('block', scene['goalBlock'])
+    goal_block = next(b for b in scene['blocks'] if b['id'] == goal_id)
+    goal_owner = goal_block.get('sourceBlock', goal_id)
+    goals = tuple(s.key for s in supports if s.owner == goal_owner and s.height == goal_block['top']
+                  and goal_block['solidIndex'] in s.solids)
     context = geometry_key(dict(schema=SCHEMA, bounds=decomposition.bounds,
         regions=[asdict(r) for r in regions], transitions=[asdict(t) for t in transitions],
         starts=starts, goals=goals, taskGoal=task_goal))
     return RouteGraph(SCHEMA, context, regions, transitions, supports, starts, goals)
 
-
-def annotate_normal_proposals(scene, graph, compiler, *, seconds):
-    """Order transfers using existing zero-threshold normal movement builders.
-
-    Missing normal profiles do not exclude stepping/ceiling/unknown methods.
-    This is an optimistic proposal screen, never a feasibility certificate.
-    """
-    import math
-    import time
-    from parkour_solver.physics.vertical import REST_CARRY
-    from parkour_solver.search.support_profiles import minimum_distance
-    from parkour_solver.movement.generation import generate_choices
-    from parkour_solver.movement.settings import movement_settings
-    from parkour_solver.movement.normal import approaches, first_descent
-    from parkour_solver.reachability.intervals import motion_bound, travel_radii
-    deadline=time.monotonic()+seconds
-    def remaining():
-        if time.monotonic()>=deadline:
-            raise TimeoutError('spatial_proposal_deadline')
-        return deadline-time.monotonic()
-    speed=motion_bound(scene,compiler,remaining())['storedSpeedNorm']
-    horizon=movement_settings(scene)['maxInputs']
-    bounds={s.key:[(b[0],b[3],b[2],b[5]) for b in s.cover] for s in graph.supports}
-    flights={}
-    by_solid={}
-    for s in graph.supports:
-        for solid in s.solids:
-            by_solid.setdefault(solid,[]).append(s)
-    transfers={}
-    flight_proposals={}
-    virtual=next((r.predicate for r in graph.regions if r.kind=='terminal_predicate'),None)
-    def radius_for(grounded,jump):
-        key=(tuple(grounded),tuple(jump))
-        if key not in flights:
-            flight=compiler.compile(dict(scene,sharedMovement=True),dict(grounded=grounded,jump=jump),remaining())
-            radius=travel_radii(speed,flight['magnitude'],flight['friction'])[-1]
-            flights[key]=radius+1e-7*(1+radius)
-        return flights[key]
-    for source in graph.supports:
-        state=dict(position=source.height,velocity=REST_CARRY,onGround=True,previousHorizontalCollision=False)
-        ctx=dict(mode='open',scene=scene,state=state,maxInputs=horizon,threshold=0.,checkBudget=remaining,interactionGate=None)
-        air=dict(maxY=source.height,normalFinish=False,evidence='normal_proposal_only')
-        for _,jumping,trace in approaches(ctx):
-            air['maxY']=max(air['maxY'],max(trace['position']))
-            if virtual is not None:
-                tick=first_descent(trace,virtual['height'])
-                if tick is not None:
-                    n=tick+1
-                    radius=radius_for([True]+[False]*(n-1),[jumping]+[False]*(n-1))
-                    target=[-math.inf,math.inf,-math.inf,math.inf]
-                    for row in virtual['rows']:
-                        axis=0 if row['mode']=='X' else 2
-                        index=axis if row['cmp']=='GE' else axis+1
-                        target[index]=(max if row['cmp']=='GE' else min)(target[index],row['rhs'])
-                    gap=min(minimum_distance(b,target) for b in bounds[source.key])
-                    air['normalFinish'] |= gap<=radius
-        flight_proposals[source.key]=air
-        for choice in generate_choices('normal',ctx):
-            profile=choice['profile']
-            block=next(b for b in scene['blocks'] if b['id']==choice['terminalSupport'])
-            targets=by_solid.get(block['solidIndex'],[])
-            n=profile['duration']
-            radius=radius_for(profile['grounded'][:-1],profile['jump'])
-            for target in targets:
-                gap=min(minimum_distance(a,b) for a in bounds[source.key] for b in bounds[target.key])
-                if gap<=radius:
-                    transfers.setdefault(geometry_key((source.key,target.key)),dict(source=source.key,target=target.key,
-                        capability='not_ruled_out',evidence='normal_proposal_optimistic_radius',threshold=0.,profiles=[]))['profiles'].append(
-                            dict(airInputs=n,radius=radius,gap=gap))
-    graph.transfers=transfers
-    graph.flight_proposals=flight_proposals
-    graph.context=geometry_key((graph.context,transfers,flight_proposals))
-    return graph

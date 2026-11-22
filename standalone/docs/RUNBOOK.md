@@ -109,12 +109,6 @@ conventions, body-overlap endpoints, neighbor cuts and standing headroom.
 Static geometry is not a jump/replay check. That input is geometry-only; the
 existing runnable benchmark below remains a distinct task.
 
-Add `--faces` to the bounds command to include merged physical faces in all six
-orientations. JSON adds `faceCatalog` and `faceStatistics`; optional Markdown
-includes each face's normal, plane, exact rectangle cover and source parts. The
-[face catalog API and implementation](design/FACE_MERGING_IMPLEMENTATION_PLAN.md)
-preserve original member regions, internal-face clipping, holes and catalog
-identity. These physical covers are separate from the player-expanded bounds.
 
 ## Run a solve and report it
 
@@ -242,21 +236,15 @@ actual-world geometry validity.
 ## Saved-data audits and older strategies
 
 ```sh
-"$PKC_IPOPT_PYTHON" -m tools.audit_candidates \
-  --directory research/orchestrator-fixes/evidence --output /tmp/candidate-audit-new
 "$PKC_IPOPT_PYTHON" -m tools.witness_bound_audit \
   --reports /absolute/path/to/accepted/report.json.gz --output /tmp/bound-audit-new.json
 ```
 
-Candidate auditing makes no IPOPT calls; optional `--compiler` adds independent
-Java replay. Bounds auditing checks retained valid witnesses and is not a cold
-discovery seed. Read the [Real11 guide](REAL11_GUIDE.md) before interpreting counts.
+Bounds auditing checks retained valid witnesses and is not a cold discovery seed. The
+candidate audit of the old orchestrator's saved evidence was removed with its searches. Read the [Real11 guide](REAL11_GUIDE.md) before interpreting counts.
 
-Fixed-clock/virtual controls remain available as `parkour-fixed-clock` or
-`python -m parkour_solver.cli.fixed_clock`, for example with
-`research/virtual-finish/fixture.json`. Supplied-corridor library strategies live
-under `spatial/compat` and `search/compat`. Their virtual/state64/source-specific
-measurements are distinct from current finite-anchor evidence.
+The fixed-clock, virtual-goal, supplied-corridor and blocks searches were removed
+(2026-11-21); their evidence records `8266a38d` or earlier as its source revision.
 
 [research/README.md](../research/README.md) explains preserved bundles. Historical
 scripts and READMEs retain their original commands/imports; reproduce those against

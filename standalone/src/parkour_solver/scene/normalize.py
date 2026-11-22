@@ -1,6 +1,6 @@
 """Normalize the supplied physical scene without choosing a search strategy."""
 import copy
-from parkour_solver.schema import integer, number
+from parkour_solver.schema import integer
 from parkour_solver.scene.geometry import normalize_geometry
 from parkour_solver.scene.route import prepare_route
 from parkour_solver.scene.objectives import objective_spec

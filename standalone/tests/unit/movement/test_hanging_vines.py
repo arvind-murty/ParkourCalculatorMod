@@ -4,7 +4,6 @@ import json
 import os
 import unittest
 
-from parkour_solver.search.support_profiles import find_blocks
 from parkour_solver.bridge.python_compiler import PythonCompiler
 from parkour_solver.scene.ladders import entry_channels, movement_contexts, schedule_constraints
 from parkour_solver.movement.ladder.schedules import generate_ladder_schedules
@@ -95,24 +94,6 @@ class HangingVineTests(unittest.TestCase):
 @unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'),
                      'Set PKC_IPOPT_PYTHON')
 class HangingVineIntegrationTests(unittest.TestCase):
-    def test_cold_discovery_solves_hanging_vines_without_a_climb_wall(self):
-        with PythonCompiler() as compiler:
-            result=find_blocks(json.loads((ROOT/'fixtures/hanging-vines.json').read_text()),compiler,
-                seconds=45,route_seconds=18,candidate_seconds=1,retries=0,python_executable=os.environ['PKC_IPOPT_PYTHON'])
-        self.assertEqual(result['status'],'feasible',{'termination':result.get('termination')})
-        best=result['best']
-        self.assertTrue(best['geometryCheck']['feasible'])
-        event=best['route']['ladderEvents'][0]
-        self.assertEqual(event['wall']['mode'],'fall_only')
-        self.assertEqual(event['wall']['parts'],[])
-        self.assertFalse(any(best['ladderSchedule']['hit']))
-        self.assertTrue(any(best['plan']['ladderTicks']))
-        self.assertFalse(any(c['axis']!=1 for c in best['plan']['sceneContacts']))
-        self.assertEqual(sum(best['plan']['jump']),1)
-        self.assertTrue(best['candidate']['feasible'])
-        self.assertLessEqual(best['candidate']['violation'],1e-7)
-        self.assertFalse(result['minimumTicksProven'])
-
     def test_saved_wall_free_candidate_revalidates_scalar_physics_and_scene(self):
         e=json.loads((ROOT/'experiments/contact-combinations/hanging-vines.json').read_text())
         self.assertEqual(hashlib.sha256((ROOT/e['fixture']).read_bytes()).hexdigest(),e['fixtureSha256'])

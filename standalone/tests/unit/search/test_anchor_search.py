@@ -8,7 +8,7 @@ from unittest.mock import patch
 from parkour_solver.movement.program import empty_program
 from parkour_solver.movement.settings import movement_settings
 from parkour_solver.search.frontier import persistent_programs
-from parkour_solver.search.anchors.policy import local_counts, single_jump_structure
+from parkour_solver.search.anchors.policy import local_counts, transfer_structure
 from parkour_solver.search.feasibility import meaningful_choice
 from parkour_solver.search.application import run
 from tests.support.checkpoint_guidance import flat_scene
@@ -23,7 +23,7 @@ class AnchorSearchTests(unittest.TestCase):
         return persistent_programs(s,settings=cfg,report=report if report is not None else {},
             continuation=continuation,threshold=0.,node_evaluator=evaluator,
             program_filter=lambda p:local_counts(p)['R']<=2 and (not latched or not latched() or
-                single_jump_structure(s,p,0,'start','goal',complete=p['terminalSupport']=='goal')),
+                transfer_structure(s,p,0,'start','goal',complete=p['terminalSupport']=='goal')['valid']),
             policy_context=dict(version=1,span=0),deadline=time.monotonic()+3,context_adapter=lambda c:c.update(interactionGate=None))
 
     def test_take_pops_the_smallest_key_with_list_order_breaking_ties(self):
@@ -348,22 +348,22 @@ def step_up_scene(goal=2):
 
 class MinimumRunTickTests(unittest.TestCase):
     def frontier(self, *, screen=None, ordinary=True, continuation=None, live=(), report=None, scene=None,
-                 policy=True, keep_emitted=False, fits=lambda decision,landing:None,
+                 policy=True, keep_emitted=False, initial=None, fits=lambda decision,landing:None,
                  back=lambda decision,landing:landing.get('terminalSupport')==decision.get('terminalSupport')):
         from parkour_solver.movement.program import boundary_state
-        from parkour_solver.reachability.service import block_table
-        from parkour_solver.search.anchors.policy import advantageous_candidates, advantageous_targets, next_anchor, owner
+        from parkour_solver.reachability.service import face_table
+        from parkour_solver.search.anchors.policy import advantageous_candidates, advantageous_targets, next_anchor, terminal_face
         s=scene or step_scene()
         upcoming=lambda p:next_anchor(s,p,[],'goal')
         traces={}
         run_policy=dict(ordinary=lambda p:ordinary and boundary_state(p)['onGround'],
                         targets=lambda b,c:advantageous_targets(s,b,c,upcoming(b)),
-                        candidates=lambda p:advantageous_candidates(s,lambda o:block_table(s,o,traces),owner(s,p['terminalSupport']),
+                        candidates=lambda p:advantageous_candidates(s,lambda o:face_table(s,o,traces),terminal_face(s,p),
                             p['profile']['position'][-1],upcoming(p),movement_settings(s)['types'],0.),
-                        next=upcoming,owner=lambda block:owner(s,block),back=back,fits=fits)
+                        next=upcoming,face=lambda p:terminal_face(s,p),back=back,fits=fits)
         report=report if report is not None else {}
         source=persistent_programs(s,settings=dict(movement_settings(s),maxPrefixes=1),report=report,
-            continuation=continuation,threshold=0.,node_evaluator=lambda p,n,x:dict(status='feasible',program=p),
+            continuation=continuation,initial_programs=initial,threshold=0.,node_evaluator=lambda p,n,x:dict(status='feasible',program=p),
             policy_context=dict(version=1,span=0),deadline=time.monotonic()+20,screen=screen,
             context_adapter=lambda c:c.update(interactionGate=None),run_policy=run_policy if policy else None,
             live_programs=lambda:list(live)+(emitted if keep_emitted else []))
@@ -426,6 +426,27 @@ class MinimumRunTickTests(unittest.TestCase):
     @staticmethod
     def hits(p):
         return any(e.get('role')=='ceiling' for e in p['profile'].get('contactEvents',[]))
+
+    def test_a_jump_now_landing_on_the_launch_face_sets_no_n(self):
+        from parkour_solver.movement.generation import generate_choices
+        from parkour_solver.movement.program import append_choice, boundary_state
+        from parkour_solver.scene.normalize import prepare_scene
+        # pad and rest make one face. Landings on start and goal are screened out, so the only jump-now landings are on
+        # the launch face and there is no N: run counts are scanned instead.
+        s=prepare_scene(dict(version=1, sceneModel='collision_boxes', geometryBounds=[-10,-5,-10,20,12,10],
+            initial=dict(position=[.5,1,.5], velocity=[0,-.0784000015258789,0], yaw=-90),
+            startBlock='start', goalBlock='goal', maxWallHits=0, maxContactCombinations=0,
+            blocks=[dict(id='start', boxes=[[0,0,0,1,1,1]]), dict(id='pad', boxes=[[2,0,0,3,1,1]]),
+                    dict(id='rest', boxes=[[3,0,0,4,1,1]]), dict(id='goal', boxes=[[12,0,0,13,1,1]])],
+            movementSearch=dict(types=['normal'], maxInputs=40)))
+        root=empty_program(s['initial'],threshold=0.);root['terminalSupport']='start'
+        context=dict(mode='open',scene=s,program=root,state=boundary_state(root),interactionGate=None,threshold=0.,maxInputs=40,maxEntryInputs=40)
+        decision=next(child for c in generate_choices('normal',context) for child in [append_choice(root,c,max_inputs=40)]
+                      if child is not None and child['profile']['grounded'][-1] and child.get('terminalSupport')=='pad+rest')
+        self.assertIn('pad+rest',self.landings(s,decision))
+        emitted,state=self.frontier(scene=s,initial=[decision],
+                                    screen=lambda p:dict(reason='off') if p.get('terminalSupport') in ('start','goal') else None)
+        self.assertEqual({json.loads(key)[0] for key,_,_ in self.candidates(state)},{'scan'})
 
     def test_jump_now_reaching_the_next_anchor_queues_no_run_ticks(self):
         emitted,state=self.frontier()
@@ -720,7 +741,7 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
         scene = flat_scene()
         scene['movementSearch'].update(maxInputs=28, maxPrefixes=64)
         with PythonCompiler() as compiler:
-            settings = dict(anchor_search={}, seconds=12, score_seconds=4, max_solver_calls=40,
+            settings = dict(anchor_search={}, seconds=12, max_solver_calls=40,
                             program_filter=InitialJumpDomain([0], max_inputs=28),
                             python_executable=os.environ['PKC_IPOPT_PYTHON'])
             settings.update(options)
@@ -785,7 +806,7 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
         from parkour_solver.search.engine import find_checkpoint_route
         from parkour_solver.validation.witness import replay_witness
         with PythonCompiler() as compiler:
-            result = find_checkpoint_route(prepare_scene(request), compiler, anchor_search={}, seconds=20, score_seconds=4,
+            result = find_checkpoint_route(prepare_scene(request), compiler, anchor_search={}, seconds=20,
                                            max_solver_calls=40, python_executable=os.environ['PKC_IPOPT_PYTHON'])
             best = result['best']
             self.assertIsNotNone(best, result['termination'])
@@ -821,6 +842,10 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
                                              goal=[[5,0,-1,6,1,1]]))
         self.assertIn(1, [c['direction'] for c in best['vertical']['contacts']])
         grind = dict(fixture('grind')['request'], movementSearch=dict(types=['normal','ceiling'], maxInputs=20))
+        # The search needs the goal to be a face of its own, so the start floor ends where the goal begins and the goal
+        # stands a sixteenth lower.
+        boxes = dict(start=[[-4, 0, -3, .8, 1, 3]], goal=[[.8, 0, -1, 5, .9375, 2]])
+        grind['blocks'] = [dict(b, boxes=boxes.get(b['id'], b['boxes'])) for b in grind['blocks']]
         self.assertEqual(self.solve_relaxed(grind)['vertical']['contacts'][0]['case'], 'grind')
 
     def test_relaxed_route_turns_toward_a_goal_off_the_initial_heading(self):

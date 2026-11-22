@@ -3,23 +3,23 @@
 import heapq
 import math
 
-from parkour_solver.spatial.checkpoints import Checkpoint, horizontal_segments
+from parkour_solver.spatial.checkpoints import direction_objective, horizontal_segments
 from parkour_solver.spatial.cells import box_segment_interval
 from parkour_solver.spatial.regions import geometry_key
-from parkour_solver.spatial.compat.corridors import conditioned_anchor
+
+
+def conditioned_anchor(cover, before, after):
+    """Project a local reference into a finite opening; never create a waypoint row."""
+    reference = tuple((a+b)/2 for a, b in zip(before, after))
+    points = [tuple(min(max(reference[a], b[a]), b[a+3]) for a in range(3)) for b in cover]
+    return min(points, key=lambda p: (math.dist(before, p)+math.dist(p, after), p))
 
 
 def task_reference(data, origin):
     task = data['task'] or dict(kind='landing', block=data['scene']['goalBlock'])
-    if task['kind'] == 'landing':
-        block = next(b for b in data['scene']['blocks'] if b['id'] == task['block'])
-        groups = [s for s in data['surfaces'] if block['solidIndex'] in s['solids'] and s['height'] == block['top']]
-        return conditioned_anchor([b for s in groups for b in s['cover']], origin, origin) if groups else tuple(origin)
-    point = list(origin); point[1] = task['height']
-    for row in task['rows']:
-        axis = 0 if row['mode'] == 'X' else 2
-        point[axis] = (max if row['cmp'] == 'GE' else min)(point[axis], row['rhs'])
-    return tuple(point)
+    block = next(b for b in data['scene']['blocks'] if b['id'] == task['block'])
+    groups = [s for s in data['surfaces'] if block['solidIndex'] in s['solids'] and s['height'] == block['top']]
+    return conditioned_anchor([b for s in groups for b in s['cover']], origin, origin) if groups else tuple(origin)
 
 
 def segment_in_cover(boxes, a, b):
@@ -125,10 +125,10 @@ def outgoing_objective(data, graph, request, guide):
         segments=horizontal_segments(SimpleNamespace(points=witness['points']))
         if segments:
             first=segments[0]
-            return Checkpoint(1,-1,first['direction'],tuple(first['start']),tuple(first['end']),()).objective
+            return direction_objective(first['direction'])
     end = task_reference(data, start)
     dx, dz = end[0]-start[0], end[2]-start[2]
     length = math.hypot(dx, dz)
     if length <= 1e-9:
         return dict(data['scene']['objective'])
-    return Checkpoint(1,-1,(dx/length,dz/length),tuple(start),tuple(end),()).objective
+    return direction_objective((dx/length,dz/length))

@@ -10,8 +10,7 @@ from parkour_solver.search.events.adapter import EventGuideAdapter
 from parkour_solver.search.events.engine import discovery_settings
 from tests.support.checkpoint_guidance import flat_scene
 from tests.support.depth_first import program
-from parkour_solver.movement.program import empty_program, boundary_state
-from parkour_solver.movement.generation import generate_choices
+from parkour_solver.movement.program import empty_program
 
 
 class EventSearchTests(unittest.TestCase):
@@ -55,19 +54,13 @@ class EventSearchTests(unittest.TestCase):
         candidate['positions'][1]=[4.,.5]
         self.assertTrue(view.candidate({},candidate,{})['accepted'])
         self.assertTrue(right_piece[0]<4<right_piece[2] and right_piece[1]<.5<right_piece[3])
-    def test_same_support_setup_is_local_without_removing_its_physical_choices(self):
+    def test_same_support_setup_is_local(self):
         scene=flat_scene();data=build_route_domain(scene,dict(kind='landing',block='goal')).to_dict()
         adapter=EventGuideAdapter(data,build_event_graph(data))
         root=empty_program(scene['initial'],threshold=0.);root['terminalSupport']='start'
         cursor=adapter.initial_cursor([root])
         requests,_,_=adapter.next_goals(cursor,[root])
         self.assertTrue(any(r['localSetupAlias'] for r in requests))
-        view=adapter.for_goal(next(r for r in requests if r['terminal']),cursor)
-        ctx=dict(mode='open',scene=scene,program=root,state=boundary_state(root),maxInputs=20,threshold=0.,interactionGate=None)
-        view.context(ctx)
-        choices=list(generate_choices('normal',ctx))
-        self.assertIn('start',[c['terminalSupport'] for c in choices])
-        self.assertIn('goal',[c['terminalSupport'] for c in choices])
     def test_adapter_has_no_inherited_raw_cell_rejection_paths(self):
         scene=flat_scene();data=build_route_domain(scene,dict(kind='landing',block='goal')).to_dict()
         adapter=EventGuideAdapter(data,build_event_graph(data))
@@ -76,9 +69,6 @@ class EventSearchTests(unittest.TestCase):
         view=adapter.for_goal(next(r for r in requests if r['terminal']),cursor)
         for name in ('box_allowed','region_allowed','prefix','constraint_guards','program_states'):
             self.assertFalse(hasattr(view,name),name)
-        ctx=dict(program=dict(terminalSupport='start'))
-        view.context(ctx)
-        self.assertEqual(set(ctx),{'program','supportAllowed'})
         self.assertNotIn('geometry',view.corridor.to_dict())
 
     def test_declared_anchor_goals_share_prefix_and_publish_actual_child_atomically(self):
@@ -112,8 +102,8 @@ class EventSearchTests(unittest.TestCase):
         with patch('parkour_solver.search.engine.motion_bound',return_value=dict(movementAfterSupportCheck=.5)), \
              patch('parkour_solver.search.dfs.iter_movement_programs',side_effect=generate), \
              patch('parkour_solver.search.engine.evaluate_program',side_effect=evaluate):
-            result=find_checkpoint_route(scene,object(),anchor_search=dict(anchors=['mid']),seconds=2,score_seconds=1,max_solver_calls=1,
-                                         score_call_limit=1,on_progress=progress)
+            result=find_checkpoint_route(scene,object(),anchor_search=dict(anchors=['mid']),seconds=2,max_solver_calls=1,
+on_progress=progress)
         self.assertEqual(dispatched,[('mid',10)])
         self.assertTrue(published)
         dfs=result['searchState']['dfs']
@@ -125,14 +115,5 @@ class EventSearchTests(unittest.TestCase):
         mid=[f for f in dfs['stack']+dfs['goalQueue'] if f['owner']==root['owner'] and f['goal']['block']=='mid']
         self.assertEqual(len(mid),1)
         json.dumps(result['searchState'],allow_nan=False)
-
-    def test_explicit_old_catalogue_settings_and_states_are_not_reinterpreted(self):
-        with self.assertRaisesRegex(ValueError,'Legacy spatialSettings'):
-            find_checkpoint_route(flat_scene(),None,spatial_settings=dict(max_routes=1))
-        with self.assertRaisesRegex(ValueError,'Incompatible automatic event'):
-            find_checkpoint_route(flat_scene(),None,resume_state=dict(version=1,kind='semantic_route_queue'))
-        with self.assertRaises(ValueError):discovery_settings(dict(maxGuideMaterializations=0))
-        with self.assertRaises(ValueError):discovery_settings(dict(max_visits=2))
-
 
 if __name__=='__main__':unittest.main()
