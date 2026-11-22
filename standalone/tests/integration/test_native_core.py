@@ -115,9 +115,9 @@ class ProgramModelTests(unittest.TestCase):
                 c for c in evidence['route']['contactEvents'] if cut <= c['offset'] < event['schedule']['exitState']]))
             choice = ladder_event_choice(event, start=cut)
             self.assert_round_trips(self.native.round_trip_choice, choice)
-            with self.assertRaises(self.native.NativeUnsupported):  # ladder appends rebuild in Python
-                self.native.program(program).append_choice(choice)
+            child = self.native.program(program).append_choice(choice)
             program = append_choice(program, choice)
+            self.assertEqual(canonical(child.to_python()), canonical(program))
             self.assert_round_trips(self.native.round_trip_program, program)
             cut = program['profile']['duration']
         self.assertTrue(any(u.get('effects') for u in program['movementUnits']))

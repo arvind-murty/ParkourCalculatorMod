@@ -10,7 +10,13 @@
 #include <utility>
 
 #include "pkc/canonical.hpp"
+#include "pkc/movement/contact_combinations.hpp"
+#include "pkc/movement/ladder/ceiling.hpp"
+#include "pkc/movement/units.hpp"
+#include "pkc/movement/vertical_profiles.hpp"
+#include "pkc/scene/ladders.hpp"
 #include "pkc/vertical.hpp"
+#include "schema.hpp"
 #include "value_ops.hpp"
 
 namespace pkc {
@@ -710,6 +716,278 @@ std::optional<std::pair<Profile, Trace>> first_append(const Program& program, co
     return std::pair{std::move(profile), std::move(trace)};
 }
 
+// _rebuild for appends with ladder events or ladder ticks, on JSON values: the
+// whole program is traced again, ladder events are shifted and re-checked
+// (_events), units are rebuilt around them and ceilings are owned again. The
+// pieces are decoded back for assemble_profile.
+struct LadderBuilt {
+    Profile profile;
+    Trace trace;
+    std::vector<Value> events;
+};
+
+std::optional<Value> shifted_events(const Array& events_value, const Value& trace_value) {  // _events
+    const Object& trace = fields(trace_value);
+    const std::int64_t n = as_int(at(trace, "ticks"));
+    const Array& positions = items(at(trace, "position"));
+    std::vector<Object> result;
+    for (const auto& e : events_value) result.push_back(fields(e));
+    for (std::size_t index = 0; index < result.size(); ++index) {
+        Object& event = result[index];
+        Object s = fields(at(event, "schedule"));
+        const Value& column_id = at(fields(at(event, "column")), "id");
+        std::int64_t next_context = n + 1;
+        for (std::size_t other = index + 1; other < result.size(); ++other)
+            if (py_equal(at(fields(at(result[other], "column")), "id"), column_id)) {
+                next_context = as_int(at(fields(at(result[other], "schedule")), "constraintStart"));
+                break;
+            }
+        put(s, "constraintEnd", integer_value(next_context));
+        const std::int64_t entry = as_int(at(s, "entryState")), exit = as_int(at(s, "exitState"));
+        Array ladder, hit;
+        for (std::int64_t t = 0; t <= n; ++t) ladder.push_back(boolean(entry <= t && t < exit));
+        Array padded = items(at(s, "hit"));
+        for (std::int64_t t = 0; t < n; ++t) padded.push_back(boolean(false));
+        for (std::int64_t t = 0; t < n; ++t) hit.push_back(padded[t]);
+        put(s, "ticks", integer_value(n));
+        put(s, "ladderTicks", array(ladder));
+        put(s, "hit", array(std::move(hit)));
+        put(s, "sneak", at(trace, "sneak"));
+        put(s, "trace", trace_value);
+        put(s, "postExitTicks", integer_value(n - exit));
+        const Value& column = at(event, "column");
+        const Object& c = fields(column);
+        for (std::size_t t = 0; t < std::min(ladder.size(), positions.size()); ++t)
+            if (py_truthy(ladder[t]) &&
+                !region_contains(column, array({at(c, "x"), positions[t], at(c, "z")})))
+                return std::nullopt;
+        if (!exit_matches(as_text(at(s, "exitKind")), num(positions.at(exit)).value, c)) return std::nullopt;
+        try {
+            ladder_units(s, column_id);
+        } catch (const std::invalid_argument&) {
+            return std::nullopt;
+        }
+        put(event, "schedule", object(std::move(s)));
+    }
+    Array out;
+    for (auto& e : result) out.push_back(object(std::move(e)));
+    return array(std::move(out));
+}
+
+Value shift_event(const Value& event_value, std::int64_t offset) {  // _shift_event
+    Object event = fields(event_value);
+    Object s = fields(at(event, "schedule"));
+    put(s, "constraintStart", integer_value(offset));
+    put(s, "entryState", integer_value(as_int(at(s, "entryState")) + offset));
+    put(s, "exitState", integer_value(as_int(at(s, "exitState")) + offset));
+    Array hit(offset, boolean(false));
+    for (const auto& h : items(at(s, "hit"))) hit.push_back(h);
+    put(s, "hit", array(std::move(hit)));
+    for (const char* key : {"climbWindow", "stopInputs"})
+        if (const Value* v = get(s, key); v && !is_null(*v)) {
+            Array shifted;
+            for (const auto& t : items(*v)) shifted.push_back(integer_value(as_int(t) + offset));
+            put(s, key, array(std::move(shifted)));
+        }
+    for (const char* key : {"contactEvents", "ladderCeilingEvents"})
+        if (const Value* v = get(s, key)) {
+            Array shifted;
+            for (const auto& c : items(*v))
+                shifted.push_back(object(with(fields(c), "offset", integer_value(as_int(at(fields(c), "offset")) + offset))));
+            put(s, key, array(std::move(shifted)));
+        }
+    erase(s, "generatedUnits");
+    erase(s, "movementUnits");
+    put(event, "schedule", object(std::move(s)));
+    return object(std::move(event));
+}
+
+std::optional<LadderBuilt> ladder_rebuild(const Program& program, const MovementChoice& choice) {
+    const Object old = fields(encode(program.profile)), tail = fields(encode(choice.profile));
+    const std::int64_t cut = program.profile.duration, size = choice.profile.duration;
+    auto joined = [&](const char* key) {
+        Array out = items(at(old, key));
+        for (const auto& v : items(at(tail, key))) out.push_back(v);
+        return out;
+    };
+    const Array jump = joined("jump"), sneak = joined("sneak");
+    const Array& old_ladder = items(at(old, "ladderTicks"));
+    const Array& tail_ladder = items(at(tail, "ladderTicks"));
+    Array ladder(old_ladder.begin(), old_ladder.end() - 1);
+    ladder.push_back(boolean(py_truthy(old_ladder.back()) || py_truthy(tail_ladder.front())));
+    for (std::size_t t = 1; t < tail_ladder.size(); ++t) ladder.push_back(tail_ladder[t]);
+    Array tagged;
+    for (const auto& c : items(at(old, "contacts"))) tagged.push_back(object(with(fields(c), "axis", integer_value(1))));
+    for (const auto& c : items(at(tail, "contacts"))) {
+        Object shifted = with(fields(c), "state", integer_value(cut + as_int(at(fields(c), "state"))));
+        tagged.push_back(object(with(std::move(shifted), "axis", integer_value(1))));
+    }
+    Array vertical;
+    for (const auto& c : merge_contacts(tagged, false)) {
+        Object untagged = fields(c);
+        erase(untagged, "axis");
+        vertical.push_back(object(std::move(untagged)));
+    }
+    Array stated;  // _contacts: merged by (offset + 1, axis), then without the state key
+    for (const auto& e : items(at(old, "contactEvents")))
+        stated.push_back(object(with(fields(e), "state", integer_value(as_int(at(fields(e), "offset")) + 1))));
+    for (const auto& e : items(at(tail, "contactEvents"))) {
+        Object shifted = with(fields(e), "offset", integer_value(cut + as_int(at(fields(e), "offset"))));
+        stated.push_back(object(with(std::move(shifted), "state", integer_value(cut + as_int(at(fields(e), "offset")) + 1))));
+    }
+    Array contacts;
+    for (const auto& c : merge_contacts(stated, false)) {
+        Object without = fields(c);
+        erase(without, "state");
+        contacts.push_back(object(std::move(without)));
+    }
+    Array hit;
+    for (std::int64_t t = 0; t < cut + size; ++t)
+        hit.push_back(boolean(std::any_of(contacts.begin(), contacts.end(), [&](const Value& c) {
+            return !py_equal(at(fields(c), "axis"), text("Y")) && as_int(at(fields(c), "offset")) == t;
+        })));
+    Array jumps;
+    for (const auto& j : jump) jumps.push_back(py_truthy(j) ? real(kJumpVelocity) : Value{nullptr});
+    const Value threshold = value(program.threshold.value_or(kDefaultThreshold));
+    const Value trace_value = trace_ladder_schedule(encode(program.initial), array(ladder), array(sneak), array(hit),
+                                                    array(jumps), Value{nullptr}, integer_value(0), array(vertical),
+                                                    Value{nullptr}, false, threshold);
+    const Object& trace = fields(trace_value);
+    if (as_text(at(trace, "status")) == "invalid" || as_int(at(trace, "ticks")) != cut + size) return std::nullopt;
+    auto slice = [](const Array& values, std::size_t first, std::size_t end) {
+        end = std::min(end, values.size());
+        first = std::min(first, end);
+        return array(Array(values.begin() + first, values.begin() + end));
+    };
+    const Array& positions = items(at(trace, "position"));
+    const Array& grounds = items(at(trace, "onGround"));
+    const Array& velocities = items(at(trace, "velocity"));
+    if (!py_equal(slice(positions, 0, cut + 1), at(old, "position")) || !py_equal(slice(grounds, 0, cut + 1), at(old, "grounded")))
+        pkc::fail("Appending a choice rewrote a prior position or ground state");
+    if (!py_equal(slice(velocities, 0, cut), slice(items(at(old, "velocity")), 0, cut)))
+        pkc::fail("Appending a choice rewrote a prior velocity");
+    if (!py_equal(slice(positions, cut, positions.size()), at(tail, "position")) ||
+        !py_equal(slice(velocities, cut, velocities.size()), at(tail, "velocity")) ||
+        !py_equal(slice(grounds, cut, grounds.size()), at(tail, "grounded")))
+        return std::nullopt;
+    Array cases = items(at(old, "caseEvents"));
+    for (const auto& e : items(at(tail, "caseEvents"))) {
+        Object event = fields(e);
+        put(event, "input", integer_value(as_int(at(event, "input")) + cut));
+        Object anchors;
+        if (const Value* a = get(event, "anchors"))
+            for (const auto& [k, v] : fields(*a)) anchors.emplace_back(k, integer_value(as_int(v) + cut));
+        put(event, "anchors", object(std::move(anchors)));
+        cases.push_back(object(std::move(event)));
+    }
+    Array constraints = items(at(old, "positionConstraints"));
+    for (const auto& r : items(at(tail, "positionConstraints")))
+        constraints.push_back(object(with(fields(r), "t1", integer_value(cut + as_int(at(fields(r), "t1"))))));
+    const Value* old_choices = get(old, "regionChoices");
+    Array region_choices = old_choices ? items(*old_choices) : Array{};
+    if (const Value* tail_choices = get(tail, "regionChoices"))
+        for (const auto& entry_value : items(*tail_choices)) {
+            Object entry = fields(entry_value);
+            put(entry, "offset", integer_value(cut + as_int(at(entry, "offset"))));
+            Array options;
+            for (const auto& rows : items(at(entry, "options"))) {
+                Array shifted;
+                for (const auto& r : items(rows))
+                    shifted.push_back(object(with(fields(r), "offset", integer_value(cut + as_int(at(fields(r), "offset"))))));
+                options.push_back(array(std::move(shifted)));
+            }
+            put(entry, "options", array(std::move(options)));
+            region_choices.push_back(object(std::move(entry)));
+        }
+    Array units = items(at(old, "generatedUnits"));
+    for (const auto& u : items(at(tail, "generatedUnits"))) units.push_back(shifted_unit(u, cut));
+    Array all_events;
+    for (const auto& e : program.ladder_events) all_events.push_back(e);
+    for (const auto& e : choice.ladder_events) all_events.push_back(shift_event(e, cut));
+    const auto events_value = shifted_events(all_events, trace_value);
+    if (!events_value) return std::nullopt;
+    const Array& events = items(*events_value);
+    if (!events.empty()) {
+        const Array templates = units;
+        Array kept;
+        for (const auto& u : templates)
+            if (as_text(at(fields(u), "type")).rfind("ladder_", 0) != 0) kept.push_back(u);
+        units = overlay_program(movement_program(as_int(at(trace, "ticks")), events), kept);
+        for (auto& unit_value : units) {
+            Object unit = fields(unit_value);
+            const std::int64_t start = as_int(at(unit, "start")), end = as_int(at(unit, "end"));
+            const std::string type = as_text(at(unit, "type"));
+            if (type.rfind("ladder_", 0) == 0) {
+                Array effects;
+                for (const auto& t : templates) {
+                    const Object& u = fields(t);
+                    const std::string kind = as_text(at(u, "type"));
+                    if (kind != "normal" && kind != "ladder_climb" && kind != "ladder_fall" && as_int(at(u, "start")) < end &&
+                        as_int(at(u, "end")) > start)
+                        effects.push_back(t);
+                }
+                if (!effects.empty()) put(unit, "effects", array(std::move(effects)));
+            }
+            Array jumped, grounded, sneaked;
+            for (std::int64_t t = start; t < end; ++t) {
+                if (py_truthy(jump.at(t))) jumped.push_back(integer_value(t));
+                if (py_truthy(grounds.at(t))) grounded.push_back(integer_value(t));
+                if (py_truthy(sneak.at(t))) sneaked.push_back(integer_value(t));
+            }
+            put(unit, "jumpInputs", array(std::move(jumped)));
+            put(unit, "groundedInputs", array(std::move(grounded)));
+            put(unit, "sneakInputs", array(std::move(sneaked)));
+            unit_value = object(std::move(unit));
+        }
+    }
+    try {
+        std::tie(contacts, units) = pkc::own_ceiling_contacts(contacts, units);
+    } catch (const std::invalid_argument&) {
+        return std::nullopt;
+    }
+    Array owned_events;
+    for (const auto& event_value : events) {
+        Object event = fields(event_value);
+        Object s = fields(at(event, "schedule"));
+        const std::int64_t entry = as_int(at(s, "entryState")), exit = as_int(at(s, "exitState"));
+        const Value& column_id = at(fields(at(event, "column")), "id");
+        Array ceilings;
+        for (const auto& c : contacts) {
+            const Object& contact = fields(c);
+            if (py_equal(get_or_null(contact, "effect"), text("ladder_ceiling")) &&
+                py_equal(get_or_null(contact, "ownerRegion"), column_id) &&
+                std::max<std::int64_t>(0, entry - 1) <= as_int(at(contact, "offset")) && as_int(at(contact, "offset")) < exit)
+                ceilings.push_back(c);
+        }
+        put(s, "ladderCeilingEvents", array(std::move(ceilings)));
+        put(event, "schedule", object(std::move(s)));
+        owned_events.push_back(object(std::move(event)));
+    }
+    LadderBuilt built;
+    decode(trace_value, built.trace, Path{nullptr, "trace"});
+    std::vector<ContactEvent> typed_contacts;
+    std::vector<CaseEvent> typed_cases;
+    std::vector<PositionConstraint> typed_constraints;
+    std::vector<MovementUnit> typed_units;
+    std::vector<RegionChoice> typed_choices;
+    decode(array(contacts), typed_contacts, Path{nullptr, "contacts"});
+    decode(array(cases), typed_cases, Path{nullptr, "caseEvents"});
+    decode(array(constraints), typed_constraints, Path{nullptr, "positionConstraints"});
+    decode(array(units), typed_units, Path{nullptr, "generatedUnits"});
+    decode(array(region_choices), typed_choices, Path{nullptr, "regionChoices"});
+    built.profile = assemble_profile(built.trace, std::move(typed_contacts), std::move(typed_cases),
+                                     std::move(typed_constraints), std::move(typed_units), choice.profile.landing_phase,
+                                     std::move(typed_choices));
+    const UnitMasks masks = compile_units(built.profile.duration, units);
+    if (!owned_events.empty()) {
+        std::vector<bool> expected;
+        for (const auto& v : ladder) expected.push_back(py_truthy(v));
+        if (masks.ladder_ticks != expected) pkc::fail("Movement units disagree with composed ladder membership");
+    }
+    built.events.assign(owned_events.begin(), owned_events.end());
+    return built;
+}
+
 std::optional<std::pair<Profile, Trace>> extend(const Program& program, const MovementChoice& choice) {
     const Profile &old = program.profile, &tail = choice.profile;
     const Trace& parent = trace_of(program);
@@ -923,10 +1201,17 @@ std::optional<Program> append_choice(const Program& program, const MovementChoic
     auto any_true = [](const std::vector<bool>& flags) {
         return std::find(flags.begin(), flags.end(), true) != flags.end();
     };
+    std::optional<std::pair<Profile, Trace>> built;
+    std::vector<Value> ladder_events;
     if (!program.ladder_events.empty() || !choice.ladder_events.empty() || any_true(old.ladder_ticks) ||
-        any_true(tail.ladder_ticks))
-        throw Unsupported("ladder appends rebuild the program");
-    auto built = program.trace.value ? extend(program, choice) : first_append(program, choice);
+        any_true(tail.ladder_ticks)) {
+        auto rebuilt = ladder_rebuild(program, choice);
+        if (!rebuilt) return std::nullopt;
+        built = std::pair{std::move(rebuilt->profile), std::move(rebuilt->trace)};
+        ladder_events = std::move(rebuilt->events);
+    } else {
+        built = program.trace.value ? extend(program, choice) : first_append(program, choice);
+    }
     if (!built) return std::nullopt;
     auto& [profile, trace] = *built;
     std::vector<std::int64_t> owners =
@@ -952,6 +1237,7 @@ std::optional<Program> append_choice(const Program& program, const MovementChoic
     result.settled_through = program.settled_through;
     result.walk_offs = program.walk_offs;
     result.prefix_chain = prefix_chain(program);
+    result.ladder_events = std::move(ladder_events);
     return result;
 }
 

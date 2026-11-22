@@ -404,9 +404,8 @@ class InteractionGate:
 
     def _sequenced(self, parent, choice):
         """append_choice(parent, choice), built only for this screen. Under PKC_NATIVE_CORE, when the gate screens
-        natively, it is a native program for every append without ladders. The parent's native program
-        is kept by identity: what a screen reads of a program (its states, trace, threshold and seed yaw) never
-        changes once it is built."""
+        natively, it is a native program. The parent's native program is kept by identity: what a screen reads of a
+        program (its states, trace, threshold and seed yaw) never changes once it is built."""
         from parkour_solver.movement.program import append_choice
         if (self.native is not None and self.scene['sceneModel']=='collision_boxes'
                 and getattr(self.compiler,'table_coefficients',False)):
@@ -418,7 +417,7 @@ class InteractionGate:
                 self.native_parents.pop(next(iter(self.native_parents)))
             try:
                 return entry[1].append_choice(choice)
-            except self.native.NativeUnsupported:  # ladder appends rebuild in Python
+            except self.native.NativeUnsupported:  # a ceiling a ladder climb owns outside a ladder append
                 pass
         return append_choice(parent,choice)
 

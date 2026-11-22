@@ -320,3 +320,20 @@ ladder appends still do.
   matches on all 19 transitions, search 42.0 s Python and 25.8 s native
   ([parity](2026-11-22-ladders/parity-python-native.json)).
 
+## Ladder appends built natively, 2026-11-22
+
+Source: `28e9460b` plus native ladder appends (Python `_rebuild`'s ladder path: the whole program traced again,
+ladder events shifted and re-checked, units rebuilt around them and ceilings owned again by
+`movement/ladder/ceiling.own_ceiling_contacts`), so `append_choice` builds every child natively. Native
+`merge_contacts` now keys on any axis value, as the Python does: contact events name their axis.
+
+- 3,084 recorded suite appends (21 with ladder events or ticks) give the same child digest and physics key, or the
+  same None or error, on release and UBSan ([release](2026-11-22-ladder-appends/appends-release.json),
+  [UBSan](2026-11-22-ladder-appends/appends-sanitize.json)); `test_native_core` now compares a ladder program with
+  ceiling effects append by append.
+- The gate and ladder modules pass in both modes: 844 tests, 10 Java-bridge skips
+  ([Python](2026-11-22-ladder-appends/suite-python-summary.txt),
+  [native](2026-11-22-ladder-appends/suite-native-summary.txt)); live `verify-scene` finds no difference
+  ([summary](2026-11-22-ladder-appends/live-scene-release-summary.json)); fixed work matches on all 19 transitions,
+  search 43.8 s Python and 26.7 s native ([parity](2026-11-22-ladder-appends/parity-python-native.json)).
+

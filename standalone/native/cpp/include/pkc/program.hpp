@@ -193,8 +193,9 @@ Value to_value(const Program& program);
 Value to_value(const MovementChoice& choice);
 Value to_value(const Profile& profile);
 
-// Thrown for inputs a native unit leaves to Python (ladder appends, ladder routes
-// and scenes); the caller runs the Python.
+// Thrown for inputs a native unit leaves to Python (a refined interaction screen
+// with a model, a ceiling a ladder climb owns outside a ladder append); the
+// caller runs the Python.
 struct Unsupported : std::logic_error {
     using std::logic_error::logic_error;
 };

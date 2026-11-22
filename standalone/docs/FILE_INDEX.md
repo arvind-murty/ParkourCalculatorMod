@@ -59,13 +59,13 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/ANCHOR_SEARCH_EXECUTION_REFERENCE.md](ANCHOR_SEARCH_EXECUTION_REFERENCE.md) | 35604 |
 | [docs/ARCHITECTURE.md](ARCHITECTURE.md) | 16418 |
 | [docs/CHECKPOINT_STORAGE.md](CHECKPOINT_STORAGE.md) | 7541 |
-| [docs/CODE_MAP.md](CODE_MAP.md) | 32155 |
+| [docs/CODE_MAP.md](CODE_MAP.md) | 32471 |
 | [docs/CURRENT_STATE.md](CURRENT_STATE.md) | 12858 |
 | [docs/DECISIONS_AND_PLANS.md](DECISIONS_AND_PLANS.md) | 20981 |
 | [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 36593 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11512 |
 | [docs/DOC_INDEX.md](DOC_INDEX.md) | 28873 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 244268 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 247534 |
 | [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 66138 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
@@ -75,7 +75,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/REAL11_EXTENDED_GEOMETRY.md](REAL11_EXTENDED_GEOMETRY.md) | 12104 |
 | [docs/REAL11_GUIDE.md](REAL11_GUIDE.md) | 20426 |
 | [docs/RESULTS_AND_DEBUGGING.md](RESULTS_AND_DEBUGGING.md) | 19019 |
-| [docs/RUNBOOK.md](RUNBOOK.md) | 18049 |
+| [docs/RUNBOOK.md](RUNBOOK.md) | 18036 |
 | [docs/TESTING.md](TESTING.md) | 20524 |
 | [docs/design/ANCHOR_POLICY_DECISIONS.md](design/ANCHOR_POLICY_DECISIONS.md) | 42911 |
 | [docs/design/AVOIDANCE_PASSAGES.md](design/AVOIDANCE_PASSAGES.md) | 21429 |
@@ -138,7 +138,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 
 | File | Bytes |
 | --- | ---: |
-| [native/cpp/CMakeLists.txt](../native/cpp/CMakeLists.txt) | 4551 |
+| [native/cpp/CMakeLists.txt](../native/cpp/CMakeLists.txt) | 4583 |
 | [native/cpp/LICENSE.cpython](../native/cpp/LICENSE.cpython) | 13936 |
 | [native/cpp/include/pkc/canonical.hpp](../native/cpp/include/pkc/canonical.hpp) | 977 |
 | [native/cpp/include/pkc/coefficients.hpp](../native/cpp/include/pkc/coefficients.hpp) | 355 |
@@ -147,6 +147,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/include/pkc/envelopes.hpp](../native/cpp/include/pkc/envelopes.hpp) | 921 |
 | [native/cpp/include/pkc/gate.hpp](../native/cpp/include/pkc/gate.hpp) | 764 |
 | [native/cpp/include/pkc/movement/contact_combinations.hpp](../native/cpp/include/pkc/movement/contact_combinations.hpp) | 872 |
+| [native/cpp/include/pkc/movement/ladder/ceiling.hpp](../native/cpp/include/pkc/movement/ladder/ceiling.hpp) | 323 |
 | [native/cpp/include/pkc/movement/ladder/events.hpp](../native/cpp/include/pkc/movement/ladder/events.hpp) | 591 |
 | [native/cpp/include/pkc/movement/ladder/settings.hpp](../native/cpp/include/pkc/movement/ladder/settings.hpp) | 239 |
 | [native/cpp/include/pkc/movement/units.hpp](../native/cpp/include/pkc/movement/units.hpp) | 1146 |
@@ -156,7 +157,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/include/pkc/numerics/continuation.hpp](../native/cpp/include/pkc/numerics/continuation.hpp) | 1132 |
 | [native/cpp/include/pkc/numerics/disk.hpp](../native/cpp/include/pkc/numerics/disk.hpp) | 1036 |
 | [native/cpp/include/pkc/numerics/model.hpp](../native/cpp/include/pkc/numerics/model.hpp) | 475 |
-| [native/cpp/include/pkc/program.hpp](../native/cpp/include/pkc/program.hpp) | 7483 |
+| [native/cpp/include/pkc/program.hpp](../native/cpp/include/pkc/program.hpp) | 7542 |
 | [native/cpp/include/pkc/scene/geometry.hpp](../native/cpp/include/pkc/scene/geometry.hpp) | 700 |
 | [native/cpp/include/pkc/scene/ladders.hpp](../native/cpp/include/pkc/scene/ladders.hpp) | 1093 |
 | [native/cpp/include/pkc/scene/normalize.hpp](../native/cpp/include/pkc/scene/normalize.hpp) | 272 |
@@ -179,7 +180,8 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/src/constraints/hit_events.cpp](../native/cpp/src/constraints/hit_events.cpp) | 9417 |
 | [native/cpp/src/envelopes.cpp](../native/cpp/src/envelopes.cpp) | 21426 |
 | [native/cpp/src/gate.cpp](../native/cpp/src/gate.cpp) | 5073 |
-| [native/cpp/src/movement/contact_combinations.cpp](../native/cpp/src/movement/contact_combinations.cpp) | 14336 |
+| [native/cpp/src/movement/contact_combinations.cpp](../native/cpp/src/movement/contact_combinations.cpp) | 14830 |
+| [native/cpp/src/movement/ladder/ceiling.cpp](../native/cpp/src/movement/ladder/ceiling.cpp) | 4071 |
 | [native/cpp/src/movement/ladder/events.cpp](../native/cpp/src/movement/ladder/events.cpp) | 9809 |
 | [native/cpp/src/movement/ladder/settings.cpp](../native/cpp/src/movement/ladder/settings.cpp) | 2381 |
 | [native/cpp/src/movement/units.cpp](../native/cpp/src/movement/units.cpp) | 19411 |
@@ -190,7 +192,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/src/numerics/disk.cpp](../native/cpp/src/numerics/disk.cpp) | 19254 |
 | [native/cpp/src/numerics/model.cpp](../native/cpp/src/numerics/model.cpp) | 15824 |
 | [native/cpp/src/numerics/worker.cpp](../native/cpp/src/numerics/worker.cpp) | 22202 |
-| [native/cpp/src/program.cpp](../native/cpp/src/program.cpp) | 38971 |
+| [native/cpp/src/program.cpp](../native/cpp/src/program.cpp) | 54502 |
 | [native/cpp/src/py_math.hpp](../native/cpp/src/py_math.hpp) | 1870 |
 | [native/cpp/src/scene/geometry.cpp](../native/cpp/src/scene/geometry.cpp) | 11718 |
 | [native/cpp/src/scene/ladders.cpp](../native/cpp/src/scene/ladders.cpp) | 21611 |
@@ -1300,6 +1302,12 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/native-core/2026-11-22-first-appends/corpus-replay-sanitize.json](../research/native-core/2026-11-22-first-appends/corpus-replay-sanitize.json) | 803 |
 | [research/native-core/2026-11-22-first-appends/first-appends-release.json](../research/native-core/2026-11-22-first-appends/first-appends-release.json) | 56 |
 | [research/native-core/2026-11-22-first-appends/first-appends-sanitize.json](../research/native-core/2026-11-22-first-appends/first-appends-sanitize.json) | 56 |
+| [research/native-core/2026-11-22-ladder-appends/appends-release.json](../research/native-core/2026-11-22-ladder-appends/appends-release.json) | 113 |
+| [research/native-core/2026-11-22-ladder-appends/appends-sanitize.json](../research/native-core/2026-11-22-ladder-appends/appends-sanitize.json) | 113 |
+| [research/native-core/2026-11-22-ladder-appends/live-scene-release-summary.json](../research/native-core/2026-11-22-ladder-appends/live-scene-release-summary.json) | 519 |
+| [research/native-core/2026-11-22-ladder-appends/parity-python-native.json](../research/native-core/2026-11-22-ladder-appends/parity-python-native.json) | 176 |
+| [research/native-core/2026-11-22-ladder-appends/suite-native-summary.txt](../research/native-core/2026-11-22-ladder-appends/suite-native-summary.txt) | 41 |
+| [research/native-core/2026-11-22-ladder-appends/suite-python-summary.txt](../research/native-core/2026-11-22-ladder-appends/suite-python-summary.txt) | 42 |
 | [research/native-core/2026-11-22-ladders/ladders-replay-release.json](../research/native-core/2026-11-22-ladders/ladders-replay-release.json) | 927 |
 | [research/native-core/2026-11-22-ladders/live-scene-release-summary.json](../research/native-core/2026-11-22-ladders/live-scene-release-summary.json) | 519 |
 | [research/native-core/2026-11-22-ladders/parity-python-native.json](../research/native-core/2026-11-22-ladders/parity-python-native.json) | 176 |
@@ -1369,7 +1377,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/native-core/2026-11-22-validation/replay-sanitize.json](../research/native-core/2026-11-22-validation/replay-sanitize.json) | 105 |
 | [research/native-core/2026-11-22-validation/synthetic-intervals-release.json](../research/native-core/2026-11-22-validation/synthetic-intervals-release.json) | 34 |
 | [research/native-core/2026-11-22-validation/synthetic-intervals-sanitize.json](../research/native-core/2026-11-22-validation/synthetic-intervals-sanitize.json) | 32 |
-| [research/native-core/README.md](../research/native-core/README.md) | 24999 |
+| [research/native-core/README.md](../research/native-core/README.md) | 26295 |
 | [research/obstacle-avoidance/README.md](../research/obstacle-avoidance/README.md) | 3166 |
 | [research/obstacle-avoidance/blocked-result.json](../research/obstacle-avoidance/blocked-result.json) | 52110 |
 | [research/obstacle-avoidance/cross-neo-request.json](../research/obstacle-avoidance/cross-neo-request.json) | 5584 |
@@ -1683,7 +1691,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [src/parkour_solver/reachability/__init__.py](../src/parkour_solver/reachability/__init__.py) | 0 |
 | [src/parkour_solver/reachability/intervals.py](../src/parkour_solver/reachability/intervals.py) | 12208 |
 | [src/parkour_solver/reachability/screen.py](../src/parkour_solver/reachability/screen.py) | 2297 |
-| [src/parkour_solver/reachability/service.py](../src/parkour_solver/reachability/service.py) | 34605 |
+| [src/parkour_solver/reachability/service.py](../src/parkour_solver/reachability/service.py) | 34585 |
 | [src/parkour_solver/reachability/viability.py](../src/parkour_solver/reachability/viability.py) | 2511 |
 | [src/parkour_solver/scene/__init__.py](../src/parkour_solver/scene/__init__.py) | 0 |
 | [src/parkour_solver/scene/geometry.py](../src/parkour_solver/scene/geometry.py) | 7562 |
@@ -1810,7 +1818,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/integration/test_geometry_bounds.py](../tests/integration/test_geometry_bounds.py) | 4077 |
 | [tests/integration/test_integration.py](../tests/integration/test_integration.py) | 10053 |
 | [tests/integration/test_movement_contacts.py](../tests/integration/test_movement_contacts.py) | 11263 |
-| [tests/integration/test_native_core.py](../tests/integration/test_native_core.py) | 19906 |
+| [tests/integration/test_native_core.py](../tests/integration/test_native_core.py) | 19886 |
 | [tests/integration/test_orchestrator_continuation.py](../tests/integration/test_orchestrator_continuation.py) | 12673 |
 | [tests/integration/test_package_layout.py](../tests/integration/test_package_layout.py) | 5628 |
 | [tests/integration/test_profiling.py](../tests/integration/test_profiling.py) | 36615 |

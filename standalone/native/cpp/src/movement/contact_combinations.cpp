@@ -48,10 +48,19 @@ Array merge_contacts(const Array& contacts, bool scene, std::optional<std::int64
         Value first;
         std::optional<Object> merged;  // first's fields once a scene union extends them
     };
-    std::map<std::pair<std::int64_t, std::int64_t>, Entry> merged;
+    // Keyed by (state, axis) as the Python dict is: the axis is a number (route contacts) or a name (contact events).
+    struct KeyLess {
+        bool operator()(const std::pair<std::int64_t, Value>& a, const std::pair<std::int64_t, Value>& b) const {
+            if (a.first != b.first) return a.first < b.first;
+            double x, y;
+            if (numeric(a.second, x) && numeric(b.second, y)) return x < y;
+            return as_text(a.second) < as_text(b.second);
+        }
+    };
+    std::map<std::pair<std::int64_t, Value>, Entry, KeyLess> merged;
     for (const auto& contact_value : contacts) {
         const auto& contact = fields(contact_value);
-        std::pair<std::int64_t, std::int64_t> key{as_int(at(contact, "state")), axis ? *axis : as_int(at(contact, "axis"))};
+        std::pair<std::int64_t, Value> key{as_int(at(contact, "state")), axis ? integer_value(*axis) : at(contact, "axis")};
         auto [found, inserted] = merged.try_emplace(key, Entry{contact_value, std::nullopt});
         if (inserted) continue;
         Entry& entry = found->second;
