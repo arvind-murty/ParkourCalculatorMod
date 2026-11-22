@@ -135,8 +135,15 @@ struct NativeCoefficients {
     py::object dict;
 };
 
+// A typed program: a context's parent, or a child built natively that only the
+// gate's screens read.
+struct NativeProgram {
+    std::shared_ptr<const pkc::Program> program;
+    std::string physics_key;  // computed on first request
+};
+
 struct NativePrepared {
-    pkc::Program program;
+    std::shared_ptr<const pkc::Program> program;
     pkc::Value result;  // {route, profiles, plan, vertical}
     std::string key;
     py::object dict;
@@ -167,6 +174,7 @@ py::object to_python(const pkc::Value& value) {
 PYBIND11_MODULE(_pkc_native, m) {
     m.doc() = "Native core for parkour_solver (canonical identity, typed programs, gate preparation).";
     py::register_exception<std::invalid_argument>(m, "NativeValueError", PyExc_ValueError);
+    py::register_exception<pkc::Unsupported>(m, "NativeUnsupported", PyExc_NotImplementedError);
     m.def("canonical_json", [](py::handle value) { return py::bytes(pkc::canonical_json(convert(value))); },
           "json.dumps(value, sort_keys=True, allow_nan=False).encode()");
     m.def("digest", [](py::handle value) { return pkc::digest(convert(value)); },
@@ -226,7 +234,7 @@ PYBIND11_MODULE(_pkc_native, m) {
     py::class_<NativeAnalysis, std::shared_ptr<NativeAnalysis>>(m, "NativeAnalysis")
         .def_property_readonly("key", [](NativeAnalysis& self) { return self.analysis.key; })
         .def("required", [](NativeAnalysis& self) {
-            return to_python(pkc::required_proof(self.analysis, self.prepared->program));
+            return to_python(pkc::required_proof(self.analysis, *self.prepared->program));
         }, "InteractionGate.required's proof, or None")
         .def("to_python", [](NativeAnalysis& self) {
             return memoized(self.dict, [&] {
@@ -244,9 +252,37 @@ PYBIND11_MODULE(_pkc_native, m) {
                 return py::object(out);
             });
         }, "InteractionGate.analyze_model's result dict");
+    py::class_<NativeProgram, std::shared_ptr<NativeProgram>>(m, "NativeProgram")
+        .def("append_choice", [](NativeProgram& self, py::handle choice, std::int64_t max_inputs) -> py::object {
+            auto child = pkc::append_choice(*self.program, pkc::choice_from_value(convert(choice)), max_inputs);
+            if (!child) return py::none();
+            return py::cast(std::make_shared<NativeProgram>(
+                NativeProgram{std::make_shared<const pkc::Program>(std::move(*child)), {}}));
+        }, py::arg("choice"), py::arg("max_inputs") = 200,
+           "movement/program.append_choice; raises NativeUnsupported for the appends it rebuilds")
+        .def("physics_key", [](NativeProgram& self) {
+            if (self.physics_key.empty()) self.physics_key = pkc::program_physics_key(*self.program);
+            return self.physics_key;
+        }, "movement/program.program_physics_key")
+        .def_property_readonly("parent_ticks", [](NativeProgram& self) -> py::object {
+            if (!self.program->parent_ticks) return py::none();
+            return py::int_(*self.program->parent_ticks);
+        })
+        .def("to_python", [](NativeProgram& self) { return to_python(pkc::to_value(*self.program)); });
+    m.def("program", [](py::handle value) {
+        return std::make_shared<NativeProgram>(
+            NativeProgram{std::make_shared<const pkc::Program>(pkc::program_from_value(convert(value))), {}});
+    }, "A program dict as a typed program");
+    m.def("prepare", [](py::handle scene, std::shared_ptr<NativeProgram> program, bool require_complete,
+                        std::string key) -> py::object {
+        auto result = pkc::gate_prepare(convert(scene), *program->program, require_complete);
+        if (!result) return py::none();
+        return py::cast(std::make_shared<NativePrepared>(
+            NativePrepared{program->program, std::move(*result), std::move(key), {}}));
+    }, "prepare for a typed program (tried before the dict overload, whose handle accepts anything)");
     m.def("prepare", [](py::handle scene, py::handle program, bool require_complete, std::string key) -> py::object {
-        auto typed = pkc::program_from_value(convert(program));
-        auto result = pkc::gate_prepare(convert(scene), typed, require_complete);
+        auto typed = std::make_shared<const pkc::Program>(pkc::program_from_value(convert(program)));
+        auto result = pkc::gate_prepare(convert(scene), *typed, require_complete);
         if (!result) return py::none();
         return py::cast(std::make_shared<NativePrepared>(
             NativePrepared{std::move(typed), std::move(*result), std::move(key), {}}));

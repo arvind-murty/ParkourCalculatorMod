@@ -212,15 +212,16 @@ def verify_envelopes(args):
 
 
 def verify_screen(args):
-    """Run a real solve on the native gate; every required() and check_program() is repeated on a shadow
-    Python gate (same scene and compiler) and the proofs compared."""
+    """Run a real solve on the native gate; every sequence(), required() and check_program() is repeated on a
+    shadow Python gate (same scene and compiler) and the proofs compared."""
     import copy
     from parkour_solver.reachability.service import InteractionGate
     args.output.mkdir(parents=True, exist_ok=False)
     native = load(args.variant)
     os.environ.pop('PKC_NATIVE_CORE', None)
-    init, required, check_program = InteractionGate.__init__, InteractionGate.required, InteractionGate.check_program
-    calls = dict(required=0, check_program=0)
+    init, sequence = InteractionGate.__init__, InteractionGate.sequence
+    required, check_program = InteractionGate.required, InteractionGate.check_program
+    calls = dict(sequence=0, required=0, check_program=0)
 
     def shadowed(gate, *positional, **keywords):
         init(gate, *positional, **keywords)
@@ -230,7 +231,8 @@ def verify_screen(args):
 
     def compared(name, original):
         def call(gate, program, *positional, **keywords):
-            if getattr(gate, 'native', None) is None:  # the shadow itself
+            # The shadow itself, or a native program from sequence, which the sequence comparison covers.
+            if getattr(gate, 'native', None) is None or not isinstance(program, dict):
                 return original(gate, program, *positional, **keywords)
             mirror = copy.deepcopy(program)
             actual = original(gate, program, *positional, **keywords)
@@ -242,13 +244,27 @@ def verify_screen(args):
             return actual
         return call
 
+    def sequenced(gate, context, choice):
+        if getattr(gate, 'native', None) is None:
+            return sequence(gate, context, choice)
+        mirror = dict(program=copy.deepcopy(context['program']), frameId=context.get('frameId'))  # what sequence reads
+        actual = sequence(gate, context, choice)
+        expected = sequence(gate.shadow, mirror, copy.deepcopy(choice))
+        calls['sequence'] += 1
+        if json.dumps(actual, sort_keys=True) != json.dumps(expected, sort_keys=True):
+            save_infinite(args.output / 'mismatch.json', dict(call='sequence', program=mirror['program'], choice=choice))
+            raise AssertionError(f'native sequence differs at call {calls["sequence"]}')
+        return actual
+
     InteractionGate.__init__ = shadowed
+    InteractionGate.sequence = sequenced
     InteractionGate.required = compared('required', required)
     InteractionGate.check_program = compared('check_program', check_program)
     try:
         summary = checked_solve(args, {}, {})
     finally:
-        InteractionGate.__init__, InteractionGate.required, InteractionGate.check_program = init, required, check_program
+        InteractionGate.__init__, InteractionGate.sequence = init, sequence
+        InteractionGate.required, InteractionGate.check_program = required, check_program
     summary.update(screenCalls=calls, mismatches=0)
     save(args.output / 'summary.json', summary)
     print(json.dumps(summary))

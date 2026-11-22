@@ -99,6 +99,19 @@ Run the [new native driver and matched finite-task measurement](../research/anch
 
 [Runbook](RUNBOOK.md) supplies commands/environment. [File index](FILE_INDEX.md) lists every tracked test and fixture; [function index](FUNCTION_INDEX.md) indexes production definitions. Tests use `unittest`; many require explicit compiler/worker environment variables. Always report skips. No new test runner or formatting tool is required.
 
+## When to run what
+
+Every standalone workstream verifies in two tiers:
+
+- **Each change:** only what the change can affect: the focused modules for the touched
+  area (table below) and the test modules that import the touched files. Native core
+  changes add the release build, that unit's corpus replay, `test_native_core` and the
+  unit's live `tools.native_cpp verify-*` check on the release build; C++ changes add
+  the UBSan build.
+- **Milestones:** the full gate (rerun with `PKC_NATIVE_CORE` when native units are
+  involved), live checks on both builds and any equal-work timing, once when a feature
+  or migration step is complete (before its commit) and before every push.
+
 ## Choose tests by contract
 
 | Area changed | Focused modules under `tests/` |

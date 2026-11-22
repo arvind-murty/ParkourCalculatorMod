@@ -13,22 +13,15 @@
 #include <utility>
 #include <vector>
 
+#include "pkc/vertical.hpp"
 #include "value_ops.hpp"
 
 namespace pkc {
 namespace {
 
-double f32(double value) { return static_cast<double>(static_cast<float>(value)); }
-
-// physics/vertical.py, scene/route.py, scene/geometry.py, schema.py, spatial/surfaces.py
+// scene/route.py, scene/geometry.py, schema.py, spatial/surfaces.py
 const double kHalfWidth = f32(0.6) / 2;
 const double kBodyHeight = f32(1.8);
-const double kStepHeight = f32(0.6);
-const double kGravity = 0.08;
-const double kYDrag = f32(0.98);
-const double kClimbCarry = (0.2 - kGravity) * kYDrag;
-const double kCap = f32(0.15);
-const double kJumpVelocity = f32(.42);
 constexpr double kTolerance = 1e-7;
 constexpr int kTangentAxes[3][2] = {{1, 2}, {0, 2}, {0, 1}};
 
@@ -577,100 +570,6 @@ Schedule schedule(const Object& route) {
     return result;
 }
 
-struct VerticalContactRow {
-    std::int64_t state, direction;
-    Num plane;
-    bool step = false;
-    std::optional<std::string> movement_case;
-    std::optional<Num> lower_height, higher_height, clearance;
-};
-
-// physics/vertical.py vertical_step for one tick.
-struct StepResult {
-    Num proposed, carry;
-    bool ground;
-    bool failed;
-};
-
-StepResult vertical_step(const std::vector<VerticalContactRow>& contacts, const std::vector<bool>& jumps,
-                         const std::vector<bool>& sneak, const Num& threshold, std::int64_t tick, const Num& position,
-                         const Num& velocity, bool on_ladder, bool grounded) {
-    Num movement = std::abs(velocity.value) < threshold.value ? flt(0.0) : velocity;
-    bool jumping = jumps[tick];
-    if (jumping) movement = flt(kJumpVelocity);
-    if (on_ladder) {
-        if (-0.15 > movement.value) movement = flt(-0.15);
-        if (sneak[tick] && movement.value < 0) movement = flt(0.0);
-    }
-    Num proposed = add(position, movement), carry = movement;
-    bool ground = false, failed = jumping && !grounded;
-    const double tolerance = kTolerance;
-    for (const auto& contact : contacts) {
-        if (contact.state != tick + 1) continue;
-        const Num& plane = contact.plane;
-        if (contact.movement_case) {
-            const std::string& kind = *contact.movement_case;
-            double delta = sub(plane, position).value;
-            double lower = contact.lower_height ? contact.lower_height->value : position.value;
-            double upper = contact.higher_height ? contact.higher_height->value : plane.value;
-            double m = movement.value, y = position.value;
-            bool valid = false;
-            if (kind == "normal_step") {
-                valid = grounded && !jumping && 0 < delta && delta <= kStepHeight + tolerance;
-            } else if (kind == "slab_boost") {
-                valid = grounded && jumping && m < delta && delta <= kStepHeight + tolerance;
-            } else if (kind == "blip" || kind == "blip_up" || kind == "corner_blip_up") {
-                valid = !grounded && m < 0 && y >= lower && proposed.value < lower;
-                if (kind == "blip") {
-                    valid = valid && 0 <= delta && delta <= kStepHeight + tolerance;
-                } else {
-                    valid = valid && plane.value == y;
-                    double gap = upper - y;
-                    valid = valid && (kind == "blip_up" ? y > upper : 0 <= gap && gap <= kStepHeight + tolerance);
-                }
-            } else if (kind == "corner_jump_cancel") {
-                double gap = upper - y;
-                valid = grounded && jumping && kJumpVelocity < gap && gap <= kStepHeight + tolerance &&
-                        plane.value == y;
-            } else if (kind == "grind") {
-                double clearance = contact.clearance ? contact.clearance->value : -1;
-                valid = grounded && jumping && 0 <= clearance && clearance < m && plane.value == y;
-            }
-            if (valid) {
-                proposed = plane;
-                carry = flt(0.0);
-                ground = kind == "normal_step" || kind == "blip" || kind == "blip_up" || kind == "corner_blip_up";
-            } else {
-                failed = true;
-            }
-        } else if (contact.step) {
-            double rise = sub(plane, position).value;
-            bool valid = (grounded || movement.value < 0) && movement.value < rise && 0 < rise &&
-                         rise <= kStepHeight + tolerance;
-            if (valid) {
-                proposed = plane;
-                carry = flt(0.0);
-                ground = movement.value < 0;
-            } else {
-                failed = true;
-            }
-        } else {
-            double direction = static_cast<double>(contact.direction);
-            double approach = direction * sub(position, plane).value;
-            double reach = direction * sub(proposed, plane).value;
-            if (approach > tolerance || reach < 0) {
-                failed = true;
-            } else {
-                proposed = plane;
-                carry = flt(0.0);
-                ground = direction < 0 && movement.value < 0;
-            }
-        }
-    }
-    if (!std::isfinite(proposed.value) || !std::isfinite(carry.value)) fail("Non-finite vertical replay");
-    return {proposed, carry, ground, failed};
-}
-
 std::optional<Num> optional_number(const Object& object, std::string_view key, const std::string& name) {
     if (const Value* v = get(object, key)) return number(*v, name);
     return std::nullopt;
@@ -797,7 +696,8 @@ Object validate_vertical_schedule(const Object& route, const Object& profile, co
         std::copy(next_positions, next_positions + 2, positions);
         std::copy(next_velocities, next_velocities + 2, velocities);
         previous_hits.push_back(hit);
-        StepResult step = vertical_step(rows, jumps, sneak, threshold, t, y[t], vy[t], ladder[t], grounded[t]);
+        StepResult step = vertical_step(rows, jumps, sneak, threshold, t, y[t], vy[t], ladder[t], grounded[t],
+                                        kTolerance);
         y.push_back(step.proposed);
         double carry = ladder[t + 1] && previous_hits[t + 1] ? kClimbCarry : (step.carry.value - kGravity) * kYDrag;
         vy.push_back(flt(carry));

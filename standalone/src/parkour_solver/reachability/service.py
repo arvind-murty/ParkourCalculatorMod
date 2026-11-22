@@ -279,6 +279,7 @@ class InteractionGate:
         self.relaxation_start = {kind: collections.Counter(counts) for kind, counts in STATS.items()}
         self.block_table, self.jump_traces = {}, {}
         self.approaches = {}
+        self.native_parents = {}  # id(program) -> (program, its native program); see _sequenced
 
     def reachable_blocks(self, owner):
         if owner in self.block_table:
@@ -309,16 +310,19 @@ class InteractionGate:
 
     def _prepared(self, program, *, scene=None, require_complete=False):
         """The cached preparation: a dict, or under PKC_NATIVE_CORE a native one for the routes it covers
-        (collision-box scenes without ladder events), whose dict is built only when Python reads it."""
+        (collision-box scenes without ladder events), whose dict is built only when Python reads it. `program` may
+        be a native program from `_sequenced`."""
         from parkour_solver.movement.program import compile_program, program_physics_key
         from parkour_solver.scene.route import prepare_route, schedule
         from parkour_solver.validation.vertical import validate_vertical_schedule
         from parkour_solver.canonical import digest
         scene=self.scene if scene is None else scene
+        typed=not isinstance(program,dict)
         key=('prepared',digest(dict(scene={k:v for k,v in scene.items() if k!='movementSearch'},
-            program=program_physics_key(program),complete=require_complete)))
+            program=program.physics_key() if typed else program_physics_key(program),complete=require_complete)))
         def build():
-            if self.native is not None and scene['sceneModel']=='collision_boxes' and not program.get('ladderEvents'):
+            if typed or (self.native is not None and scene['sceneModel']=='collision_boxes'
+                         and not program.get('ladderEvents')):
                 return self.native.prepare(scene,program,require_complete,key[1])
             compiled=compile_program(scene,program,require_complete=require_complete)
             route=prepare_route(compiled['route']);plan=schedule(route,[0])
@@ -368,7 +372,7 @@ class InteractionGate:
         """analyze's cached result: a dict, or a native analysis when the preparation is native."""
         prepared=self._prepared(program,scene=scene,require_complete=require_complete)
         if prepared is None:return None
-        parent_ticks=program.get('parentTicks')
+        parent_ticks=program.get('parentTicks') if isinstance(program,dict) else program.parent_ticks
         # A native analysis compiles coefficients from the native tables, so only for a compiler whose replies
         # equal them; any other compiler (test doubles) gets the Python model of the same preparation.
         if isinstance(prepared,dict) or not getattr(self.compiler,'table_coefficients',False):
@@ -398,9 +402,8 @@ class InteractionGate:
 
     def sequence(self, context, choice):
         """Screen a shared named outcome before multiplying its side variants."""
-        from parkour_solver.movement.program import append_choice
         if context.get('checkBudget'):context['checkBudget']()
-        program=append_choice(context['program'],choice)
+        program=self._sequenced(context['program'],choice)
         self.metrics['sequenceChecks']=self.metrics.get('sequenceChecks',0)+1
         proof=dict(reason='composition_rejected') if program is None else self.required(program)
         if proof:
@@ -408,6 +411,26 @@ class InteractionGate:
             self.exclusions.append(dict(reason='joint_prerequisites_unreachable',proof=proof,frame=context.get('frameId'),
                 input=context['program']['profile']['duration'],cases=choice['profile'].get('caseEvents',[])))
         return proof
+
+    def _sequenced(self, parent, choice):
+        """append_choice(parent, choice), built only for this screen. Under PKC_NATIVE_CORE, when the gate screens
+        natively, it is a native program for the appends that extend a traced parent. The parent's native program
+        is kept by identity: what a screen reads of a program (its states, trace, threshold and seed yaw) never
+        changes once it is built."""
+        from parkour_solver.movement.program import append_choice
+        if (self.native is not None and self.scene['sceneModel']=='collision_boxes'
+                and getattr(self.compiler,'table_coefficients',False)):
+            entry=self.native_parents.pop(id(parent),None)
+            if entry is None or entry[0] is not parent:
+                entry=parent,self.native.program(parent)
+            self.native_parents[id(parent)]=entry
+            while len(self.native_parents)>64:
+                self.native_parents.pop(next(iter(self.native_parents)))
+            try:
+                return entry[1].append_choice(choice)
+            except self.native.NativeUnsupported:  # the first append and ladder appends rebuild in Python
+                pass
+        return append_choice(parent,choice)
 
     def check_program(self, program, objective=None):
         """None or a rejection proof. A run-off's launch-support face selection is appended to program['walkOffs']."""

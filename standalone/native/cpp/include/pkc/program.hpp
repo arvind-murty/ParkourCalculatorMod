@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <map>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -167,6 +168,9 @@ struct Program {
     std::optional<std::int64_t> committed_through, settled_through;
     std::optional<std::vector<WalkOff>> walk_offs;
     std::optional<Value> repair_state, solve_scope;
+    // Keys append_choice sets: the parent's duration and its prefix chain ([state, hex], or null).
+    std::optional<std::int64_t> parent_ticks;
+    std::optional<Value> prefix_chain;
     // Search-layer keys (decision, comparison and repair bookkeeping) that
     // search/ adds to programs; carried unchanged until search/ is native.
     Object annotations;
@@ -188,5 +192,19 @@ MovementChoice choice_from_value(const Value& value);
 Value to_value(const Program& program);
 Value to_value(const MovementChoice& choice);
 Value to_value(const Profile& profile);
+
+// Thrown for an append append_choice rebuilds instead of extending (the first
+// append, which has no trace, and ladder appends); the caller runs the Python.
+struct Unsupported : std::logic_error {
+    using std::logic_error::logic_error;
+};
+
+// movement/program.py append_choice: the child, or nullopt when the choice does
+// not compose. Errors throw std::invalid_argument with the Python's message.
+std::optional<Program> append_choice(const Program& program, const MovementChoice& choice,
+                                     std::int64_t max_inputs = 200);
+
+// movement/program.py program_physics_key (hex).
+std::string program_physics_key(const Program& program);
 
 }  // namespace pkc

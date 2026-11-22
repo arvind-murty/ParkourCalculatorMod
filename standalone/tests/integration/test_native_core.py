@@ -115,10 +115,39 @@ class ProgramModelTests(unittest.TestCase):
                 c for c in evidence['route']['contactEvents'] if cut <= c['offset'] < event['schedule']['exitState']]))
             choice = ladder_event_choice(event, start=cut)
             self.assert_round_trips(self.native.round_trip_choice, choice)
+            with self.assertRaises(self.native.NativeUnsupported):  # ladder appends rebuild in Python
+                self.native.program(program).append_choice(choice)
             program = append_choice(program, choice)
             self.assert_round_trips(self.native.round_trip_program, program)
             cut = program['profile']['duration']
         self.assertTrue(any(u.get('effects') for u in program['movementUnits']))
+
+    def test_real11_appends_build_like_python(self):
+        from tests.support.block_table import compiler, generated, nodes, real11_inputs
+        from parkour_solver.movement.program import append_choice, program_physics_key
+        from parkour_solver.reachability.service import InteractionGate
+        built = rejected = 0
+        with compiler() as java:
+            for scene, roots in real11_inputs():
+                gate = InteractionGate(scene, java, seconds=10)
+                gate.native = None
+                for node in nodes(scene, roots, gate):
+                    parent = self.native.program(node)
+                    for choice in (c for kind in generated(scene, node, gate, None) for c in kind):
+                        if node['trace'] is None:  # a first append rebuilds in Python
+                            with self.assertRaises(self.native.NativeUnsupported):
+                                parent.append_choice(choice)
+                            continue
+                        expected, child = append_choice(node, choice), parent.append_choice(choice)
+                        if expected is None:
+                            self.assertIsNone(child)
+                            rejected += 1
+                            continue
+                        self.assertEqual(canonical(child.to_python()), canonical(expected))
+                        self.assertEqual(child.physics_key(), program_physics_key(expected))
+                        self.assertEqual(child.parent_ticks, node['profile']['duration'])
+                        built += 1
+        self.assertTrue(built)
 
     def test_number_kinds_absent_keys_and_annotations_survive(self):
         from parkour_solver.movement.program import empty_program
@@ -167,7 +196,7 @@ class GatePreparationTests(unittest.TestCase):
 
     def test_gate_with_the_native_core_screens_like_the_python_gate(self):
         import copy
-        from tests.support.block_table import compiler, nodes, real11_inputs
+        from tests.support.block_table import compiler, generated, nodes, real11_inputs
         from parkour_solver.reachability.service import InteractionGate
         same = lambda value: json.dumps(value, sort_keys=True)  # analyses hold infinities
         checked, proofs = 0, set()
@@ -178,6 +207,9 @@ class GatePreparationTests(unittest.TestCase):
                 python, native = InteractionGate(scene, bridge, seconds=10), InteractionGate(scene, bridge, seconds=10)
                 python.native, native.native = None, self.native
                 for node in nodes(scene, roots, generator):
+                    for choice in (c for kind in generated(scene, node, generator, None) for c in kind):
+                        self.assertEqual(same(native.sequence(dict(program=node), choice)),
+                                         same(python.sequence(dict(program=node), choice)))
                     if not node['profile']['duration']:
                         continue
                     expected = python.required(node)

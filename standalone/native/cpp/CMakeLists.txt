@@ -19,7 +19,7 @@ if(PKC_SANITIZE)
   add_compile_options(-fsanitize=undefined -fsanitize-trap=undefined)
 endif()
 
-add_library(pkc_core STATIC src/canonical.cpp src/coefficients.cpp src/envelopes.cpp src/gate.cpp src/program.cpp src/screen.cpp src/sha256.cpp)
+add_library(pkc_core STATIC src/canonical.cpp src/coefficients.cpp src/envelopes.cpp src/gate.cpp src/program.cpp src/screen.cpp src/sha256.cpp src/vertical.cpp)
 target_include_directories(pkc_core PUBLIC include)
 
 find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)

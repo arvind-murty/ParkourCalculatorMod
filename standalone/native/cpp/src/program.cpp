@@ -1,10 +1,17 @@
 #include "pkc/program.hpp"
 
+#include <algorithm>
+#include <array>
 #include <cmath>
+#include <map>
 #include <stdexcept>
 #include <string_view>
 #include <type_traits>
 #include <utility>
+
+#include "pkc/canonical.hpp"
+#include "pkc/vertical.hpp"
+#include "value_ops.hpp"
 
 namespace pkc {
 namespace {
@@ -456,6 +463,8 @@ void describe(R& p, V& v, Program*) {
     v.opt("walkOffs", p.walk_offs);
     v.opt("repairState", p.repair_state);
     v.opt("solveScope", p.solve_scope);
+    v.opt("parentTicks", p.parent_ticks);
+    v.opt("prefixChain", p.prefix_chain);
 }
 
 template <class R, class V>
@@ -508,5 +517,427 @@ MovementChoice choice_from_value(const Value& value) {
 Value to_value(const Program& program) { return encode(program); }
 Value to_value(const MovementChoice& choice) { return encode(choice); }
 Value to_value(const Profile& profile) { return encode(profile); }
+
+// ---- movement/program.py: append_choice and the physics key ---------------
+
+namespace {
+
+const Num kDefaultThreshold{.005, false};
+
+const Trace& trace_of(const Program& program) {
+    if (!program.trace.value) pkc::fail("program trace is missing");
+    return *program.trace.value;
+}
+
+// boundary_state(program, on_ladder)
+ScalarState boundary_state(const Program& program, bool on_ladder) {
+    const Profile& p = program.profile;
+    Num vy = p.velocity.back();
+    if (p.duration && on_ladder != p.ladder_ticks.back())
+        vy = vertical_carry(trace_of(program).movement.back(), on_ladder, trace_of(program).hit.back());
+    return {p.grounded.back(), p.position.back(),
+            p.duration ? bool(trace_of(program).hit.back()) : program.initial.previous_horizontal_collision, vy};
+}
+
+bool same_state(const ScalarState& a, const ScalarState& b) {
+    return a.on_ground == b.on_ground && a.position.value == b.position.value &&
+           a.previous_horizontal_collision == b.previous_horizontal_collision && a.velocity.value == b.velocity.value;
+}
+
+bool same_numbers(const std::vector<Num>& a, const std::vector<Num>& b) {
+    if (a.size() != b.size()) return false;
+    for (std::size_t i = 0; i < a.size(); ++i)
+        if (a[i].value != b[i].value) return false;
+    return true;
+}
+
+std::optional<std::string> surface_of(const ContactEvent& event) {  // event.get('surface')
+    return event.surface ? event.surface->value : std::nullopt;
+}
+
+bool same_plane(const std::optional<Num>& a, const std::optional<Num>& b) {
+    return a.has_value() == b.has_value() && (!a || a->value == b->value);
+}
+
+// _contacts: merge_contacts([dict(e, state=e['offset'] + 1)]) without the state key.
+std::vector<ContactEvent> merge_events(std::vector<ContactEvent> events) {
+    std::map<std::pair<std::int64_t, std::string>, std::size_t> merged;
+    for (std::size_t i = 0; i < events.size(); ++i) {
+        auto [found, inserted] = merged.try_emplace({events[i].offset, events[i].axis}, i);
+        if (inserted) continue;
+        const ContactEvent& previous = events[found->second];
+        if (!same_plane(previous.plane, events[i].plane) || previous.direction != events[i].direction ||
+            surface_of(previous) != surface_of(events[i]))
+            pkc::fail("Conflicting contacts on one input axis");
+    }
+    std::vector<ContactEvent> result;
+    result.reserve(merged.size());
+    for (const auto& [key, index] : merged) {
+        result.push_back(std::move(events[index]));
+        result.back().state.reset();
+    }
+    return result;
+}
+
+// movement/units.py shifted_unit
+MovementUnit shifted_unit(MovementUnit unit, std::int64_t offset) {
+    unit.start += offset;
+    unit.end += offset;
+    for (auto* field : {&unit.hit_window, &unit.occupied_states, &unit.stop_inputs, &unit.hit_inputs,
+                        &unit.sneak_inputs, &unit.additional_occupied_states, &unit.jump_inputs,
+                        &unit.grounded_inputs})
+        if (*field)
+            for (auto& t : **field) t += offset;
+    if (unit.anchors)
+        for (auto& [key, t] : *unit.anchors) t += offset;
+    if (unit.effects)
+        for (auto& effect : *unit.effects) effect = shifted_unit(std::move(effect), offset);
+    return unit;
+}
+
+// movement/units.py compile_units, for its checks.
+void compile_units(std::int64_t ticks, const std::vector<MovementUnit>& units) {
+    static const std::map<std::string, bool> kTypes = {{"normal", false},     {"ladder_climb", true},
+                                                       {"ladder_fall", true}, {"ceiling", false},
+                                                       {"stepping", false}};
+    std::int64_t cursor = 0;
+    for (const auto& unit : units) {
+        if (!kTypes.count(unit.type) || unit.start != cursor || !(cursor < unit.end && unit.end <= ticks))
+            pkc::fail("Movement units must partition the complete input timeline");
+        for (const auto* values : {&unit.jump_inputs, &unit.grounded_inputs}) {
+            if (!*values) continue;
+            std::vector<std::int64_t> seen;
+            for (auto t : **values) {
+                if (t < unit.start || t >= unit.end || std::count(seen.begin(), seen.end(), t))
+                    pkc::fail("Invalid unit input control");
+                seen.push_back(t);
+            }
+        }
+        if (unit.hit_inputs)
+            for (auto t : *unit.hit_inputs)
+                if (unit.type != "ladder_climb" || t < unit.start || t >= unit.end) pkc::fail("Invalid unit climb input");
+        if (unit.sneak_inputs)
+            for (auto t : *unit.sneak_inputs)
+                if (t < unit.start || t >= unit.end) pkc::fail("Invalid unit Sneak input");
+        cursor = unit.end;
+    }
+    if (cursor != ticks) pkc::fail("Movement program is incomplete");
+}
+
+const MovementUnit* unit_at(const std::vector<MovementUnit>& units, std::int64_t tick) {
+    for (const auto& unit : units)
+        if (unit.start <= tick && tick < unit.end) return &unit;
+    return nullptr;
+}
+
+// movement/ladder/ceiling.py own_ceiling_contacts for units without ladder ticks:
+// no unit climbs, so it only strips ladder-ceiling effects and checks that no
+// contact claims one. A climbing owner would need the ladder rebuild.
+void own_ceiling_contacts(const std::vector<ContactEvent>& contacts, std::vector<MovementUnit>& units) {
+    for (auto& unit : units) {
+        if (!unit.effects) continue;
+        auto& effects = *unit.effects;
+        effects.erase(std::remove_if(effects.begin(), effects.end(),
+                                     [](const MovementUnit& e) { return e.type == "ladder_ceiling"; }),
+                      effects.end());
+        if (effects.empty()) unit.effects.reset();
+    }
+    for (const auto& contact : contacts) {
+        if (contact.axis != "Y" || contact.role != "ceiling") continue;
+        const MovementUnit* owner = unit_at(units, contact.offset);
+        if (owner && owner->type == "ladder_climb") throw Unsupported("ladder ceiling contact");
+        if (contact.effect == "ladder_ceiling") pkc::fail("Ladder ceiling requires a climbing owner");
+    }
+}
+
+// _profile
+Profile assemble_profile(const Trace& trace, std::vector<ContactEvent> contacts, std::vector<CaseEvent> cases,
+                         std::vector<PositionConstraint> constraints, std::vector<MovementUnit> units,
+                         const std::string& landing_phase, std::vector<RegionChoice> region_choices) {
+    Profile p;
+    p.duration = trace.ticks;
+    p.position = trace.position;
+    p.velocity = trace.velocity;
+    p.grounded = trace.on_ground;
+    p.jump.reserve(trace.vertical.jump_velocity.size());
+    for (const auto& v : trace.vertical.jump_velocity) p.jump.push_back(v.value.has_value());
+    p.sneak = trace.sneak;
+    p.ladder_ticks = trace.ladder_ticks;
+    p.contacts = trace.vertical.contacts;
+    p.contact_events = std::move(contacts);
+    p.case_events = std::move(cases);
+    p.position_constraints = std::move(constraints);
+    p.landing_phase = landing_phase;
+    p.composition = "movement_program";
+    p.generated_units = std::move(units);
+    if (!region_choices.empty()) p.region_choices = std::move(region_choices);
+    if (trace.vertical.threshold.value != kDefaultThreshold.value) p.threshold = trace.vertical.threshold;
+    return p;
+}
+
+template <class T>
+void append_all(std::vector<T>& into, const std::vector<T>& from, std::size_t skip = 0) {
+    into.insert(into.end(), from.begin() + static_cast<std::ptrdiff_t>(skip), from.end());
+}
+
+// _extend: trace only the new ticks from the parent's end state.
+std::optional<std::pair<Profile, Trace>> extend(const Program& program, const MovementChoice& choice) {
+    const Profile &old = program.profile, &tail = choice.profile;
+    const Trace& parent = trace_of(program);
+    const std::int64_t cut = old.duration, size = tail.duration;
+    std::vector<ContactEvent> shifted = tail.contact_events;
+    for (auto& c : shifted) c.offset += cut;
+    std::vector<ContactEvent> contacts = merge_events(std::move(shifted));
+    std::vector<bool> hit(size, false);
+    for (const auto& c : contacts)
+        if (c.axis != "Y" && c.offset >= cut && c.offset < cut + size) hit[c.offset - cut] = true;
+    Trace piece = trace_ladder_schedule(boundary_state(program, false), tail.ladder_ticks, tail.sneak, hit, tail.jump,
+                                        tail.contacts, program.threshold.value_or(kDefaultThreshold));
+    if (piece.status == "invalid" || piece.ticks != size) return std::nullopt;
+    if (!same_numbers(piece.position, tail.position) || !same_numbers(piece.velocity, tail.velocity) ||
+        piece.on_ground != tail.grounded)
+        return std::nullopt;
+    bool landed = piece.status == "landed";
+    for (const auto& c : parent.vertical.contacts)
+        landed = landed || (c.direction < 0 && !c.movement_case && parent.on_ground.at(c.state));
+
+    Trace trace;
+    trace.status = landed ? "landed" : "simulated";
+    trace.ticks = cut + size;
+    trace.position = parent.position;
+    append_all(trace.position, piece.position, 1);
+    trace.velocity.assign(parent.velocity.begin(), parent.velocity.begin() + cut);
+    append_all(trace.velocity, piece.velocity);
+    trace.on_ground = parent.on_ground;
+    append_all(trace.on_ground, piece.on_ground, 1);
+    trace.movement = parent.movement;
+    append_all(trace.movement, piece.movement);
+    trace.climb_refreshed = parent.climb_refreshed;
+    append_all(trace.climb_refreshed, piece.climb_refreshed);
+    trace.vertical = parent.vertical;
+    append_all(trace.vertical.jump_velocity, piece.vertical.jump_velocity);
+    append_all(trace.vertical.sneak, piece.vertical.sneak);
+    for (auto c : piece.vertical.contacts) {
+        c.state += cut;
+        trace.vertical.contacts.push_back(std::move(c));
+    }
+    trace.ladder_ticks = parent.ladder_ticks;
+    append_all(trace.ladder_ticks, piece.ladder_ticks, 1);
+    trace.sneak = parent.sneak;
+    append_all(trace.sneak, piece.sneak);
+    trace.hit = parent.hit;
+    append_all(trace.hit, piece.hit);
+    trace.resume = piece.resume;
+
+    std::vector<CaseEvent> cases = old.case_events;
+    for (CaseEvent event : tail.case_events) {
+        event.input += cut;
+        for (auto& [key, t] : event.anchors) t += cut;
+        cases.push_back(std::move(event));
+    }
+    std::vector<PositionConstraint> constraints = old.position_constraints;
+    for (PositionConstraint row : tail.position_constraints) {
+        row.t1 += cut;  // t2 is not shifted, as in the Python
+        constraints.push_back(std::move(row));
+    }
+    std::vector<RegionChoice> region_choices = old.region_choices.value_or(std::vector<RegionChoice>{});
+    for (RegionChoice entry : tail.region_choices.value_or(std::vector<RegionChoice>{})) {
+        entry.offset += cut;
+        for (auto& rows : entry.options)
+            for (auto& row : rows) row.offset += cut;
+        region_choices.push_back(std::move(entry));
+    }
+    std::vector<MovementUnit> units;
+    units.reserve(tail.generated_units.size());
+    for (const auto& unit : tail.generated_units) units.push_back(shifted_unit(unit, cut));
+    try {
+        own_ceiling_contacts(contacts, units);
+    } catch (const std::invalid_argument&) {
+        return std::nullopt;
+    }
+    compile_units(size, tail.generated_units);
+    std::vector<MovementUnit> all_units = old.generated_units;
+    append_all(all_units, units);
+    std::vector<ContactEvent> all_contacts = old.contact_events;
+    append_all(all_contacts, contacts);
+    Profile profile = assemble_profile(trace, std::move(all_contacts), std::move(cases), std::move(constraints),
+                                       std::move(all_units), tail.landing_phase, std::move(region_choices));
+    return std::pair{std::move(profile), std::move(trace)};
+}
+
+bool skip_repair_state(const Value& state) {  // a repair state scoped to a solve identity is not inherited
+    const Value* context = get(fields(state), "context");
+    if (!context) return false;
+    const Value* scope = get(fields(*context), "scope");
+    if (!scope || !py_truthy(*scope)) return false;
+    const Object& outer = fields(*scope);
+    if (const Value* identity = get(outer, "solveIdentity"); identity && py_truthy(*identity)) return true;
+    const Value* inner = get(outer, "scope");
+    if (!inner || !py_truthy(*inner)) return false;
+    const Value* identity = get(fields(*inner), "solveIdentity");
+    return identity && py_truthy(*identity);
+}
+
+std::string hex(const std::array<std::uint8_t, 32>& bytes) {
+    static const char* digits = "0123456789abcdef";
+    std::string out;
+    out.reserve(64);
+    for (auto b : bytes) {
+        out += digits[b >> 4];
+        out += digits[b & 0xF];
+    }
+    return out;
+}
+
+std::string unhex(const std::string& text) {
+    if (text.size() != 64) pkc::fail("prefix chain hash must be 64 hex digits");
+    auto digit = [](char c) -> int {
+        if (c >= '0' && c <= '9') return c - '0';
+        if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+        if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+        pkc::fail("prefix chain hash must be hex");
+    };
+    std::string out(32, '\0');
+    for (std::size_t i = 0; i < 32; ++i) out[i] = static_cast<char>(digit(text[2 * i]) * 16 + digit(text[2 * i + 1]));
+    return out;
+}
+
+std::string raw(const std::array<std::uint8_t, 32>& bytes) { return std::string(bytes.begin(), bytes.end()); }
+
+// _chain: sha256 chain over states start..through, resumed from anchor = [state, hex]
+// when given; returns the raw hashes at through-1 and through.
+std::pair<std::string, std::string> chain(const Profile& profile, std::int64_t through, const Value* anchor) {
+    static const std::string kSeed = raw(sha256("pkc-program-v1"));
+    std::int64_t start = 0;
+    std::string h = kSeed;
+    if (anchor && !is_null(*anchor)) {
+        const Array& pair = items(*anchor);
+        start = std::get<std::int64_t>(pair.at(0).data) + 1;
+        h = unhex(as_text(pair.at(1)));
+    }
+    const std::int64_t n = profile.duration;
+    if (through < start) return {h, h};
+    struct Owned {
+        Array contacts, contact_events, case_events, region_choices;
+        std::vector<std::pair<std::string, Value>> rows;  // canonical bytes, row
+    };
+    std::vector<Owned> owned(static_cast<std::size_t>(through - start + 1));
+    auto slot = [&](std::int64_t t) -> Owned* {
+        t = std::min(t, n);
+        return start <= t && t <= through ? &owned[static_cast<std::size_t>(t - start)] : nullptr;
+    };
+    for (const auto& c : profile.contacts)
+        if (Owned* o = slot(c.state)) o->contacts.push_back(encode(c));
+    for (const auto& c : profile.contact_events)
+        if (Owned* o = slot(c.offset + 1)) o->contact_events.push_back(encode(c));
+    for (const auto& c : profile.case_events)
+        if (Owned* o = slot(c.input + 1)) o->case_events.push_back(encode(c));
+    if (profile.region_choices)
+        for (const auto& c : *profile.region_choices)
+            if (Owned* o = slot(c.offset + 1)) o->region_choices.push_back(encode(c));
+    for (const auto& row : profile.position_constraints) {
+        std::int64_t t = !row.t2 || *row.t2 < row.t1 ? row.t1 : *row.t2;
+        if (Owned* o = slot(t)) {
+            PositionConstraint unnamed = row;
+            unnamed.name.reset();
+            Value value = encode(unnamed);
+            o->rows.emplace_back(canonical_json(value), std::move(value));
+        }
+    }
+    std::string before = h;
+    for (std::int64_t t = start; t <= through; ++t) {
+        Owned& o = owned[static_cast<std::size_t>(t - start)];
+        std::stable_sort(o.rows.begin(), o.rows.end(),
+                         [](const auto& a, const auto& b) { return a.first < b.first; });
+        Array rows;
+        rows.reserve(o.rows.size());
+        for (auto& [bytes, row] : o.rows) rows.push_back(std::move(row));
+        Object record{{"contacts", array(std::move(o.contacts))},
+                      {"contactEvents", array(std::move(o.contact_events))},
+                      {"caseEvents", array(std::move(o.case_events))},
+                      {"rows", array(std::move(rows))},
+                      {"regionChoices", array(std::move(o.region_choices))},
+                      {"t", integer_value(t)},
+                      {"position", encode(profile.position.at(t))},
+                      {"velocity", encode(profile.velocity.at(t))},
+                      {"grounded", boolean(profile.grounded.at(t))},
+                      {"ladder", boolean(profile.ladder_ticks.at(t))},
+                      {"jump", t ? boolean(profile.jump.at(t - 1)) : kNull},
+                      {"sneak", t ? boolean(profile.sneak.at(t - 1)) : kNull}};
+        before = h;
+        h = raw(sha256(h + canonical_json(object(std::move(record)))));
+    }
+    return {before, h};
+}
+
+// prefix_chain: [n-1, hex] over a program's states before its last; null for an empty one.
+Value prefix_chain(const Program& program) {
+    const std::int64_t n = program.profile.duration;
+    if (!n) return kNull;
+    const Value* anchor = program.prefix_chain ? &*program.prefix_chain : nullptr;
+    std::string hash = chain(program.profile, n - 1, anchor).second;
+    std::array<std::uint8_t, 32> bytes{};
+    std::copy(hash.begin(), hash.end(), bytes.begin());
+    return array({integer_value(n - 1), text(hex(bytes))});
+}
+
+}  // namespace
+
+std::optional<Program> append_choice(const Program& program, const MovementChoice& choice, std::int64_t max_inputs) {
+    const Profile &old = program.profile, &tail = choice.profile;
+    const std::int64_t cut = old.duration, size = tail.duration;
+    if (size < 1 || size > 200) pkc::fail("movement choice duration is out of range");
+    if (cut + size > std::min<std::int64_t>(max_inputs, 200)) return std::nullopt;
+    if (tail.ladder_ticks.empty()) pkc::fail("movement choice ladderTicks is empty");
+    if (!same_state(choice.initial, boundary_state(program, tail.ladder_ticks[0])))
+        pkc::fail("Movement choice consumes a different scalar boundary state");
+    auto any_true = [](const std::vector<bool>& flags) {
+        return std::find(flags.begin(), flags.end(), true) != flags.end();
+    };
+    if (!program.ladder_events.empty() || !choice.ladder_events.empty() || any_true(old.ladder_ticks) ||
+        any_true(tail.ladder_ticks))
+        throw Unsupported("ladder appends rebuild the program");
+    if (!program.trace.value) throw Unsupported("the first append rebuilds the program");
+    auto built = extend(program, choice);
+    if (!built) return std::nullopt;
+    auto& [profile, trace] = *built;
+    std::vector<std::int64_t> owners =
+        old.constraint_owners.value_or(std::vector<std::int64_t>(old.position_constraints.size(), 0));
+    for (auto owner : tail.constraint_owners.value_or(std::vector<std::int64_t>(tail.position_constraints.size(), 0)))
+        owners.push_back(owner ? cut + owner : 0);
+    profile.constraint_owners = std::move(owners);
+
+    Program result;
+    result.initial = program.initial;
+    result.movement_units = profile.generated_units;
+    result.profile = std::move(profile);
+    result.terminal = "open";
+    result.terminal_support = choice.terminal_support;
+    result.interactions = program.interactions + (choice.interaction ? 1 : 0);
+    result.trace.value = std::move(trace);
+    result.parent_ticks = cut;
+    result.threshold = program.threshold;
+    result.guide_seed_yaw = program.guide_seed_yaw;
+    if (program.repair_state && !skip_repair_state(*program.repair_state)) result.repair_state = program.repair_state;
+    result.solve_scope = program.solve_scope;
+    result.committed_through = program.committed_through;
+    result.settled_through = program.settled_through;
+    result.walk_offs = program.walk_offs;
+    result.prefix_chain = prefix_chain(program);
+    return result;
+}
+
+std::string program_physics_key(const Program& program) {
+    const Profile& profile = program.profile;
+    const Value* anchor = program.prefix_chain ? &*program.prefix_chain : nullptr;
+    std::string h = chain(profile, profile.duration, anchor).second;
+    Object rest{{"duration", integer_value(profile.duration)},
+                {"composition", text(profile.composition)},
+                {"landingPhase", text(profile.landing_phase)}};
+    if (profile.threshold) rest.emplace_back("threshold", encode(*profile.threshold));
+    Value tail = array({object(std::move(rest)), encode(program.terminal_support),
+                        encode(program.threshold.value_or(kDefaultThreshold)), encode(program.ladder_events)});
+    return hex(sha256(h + canonical_json(tail)));
+}
 
 }  // namespace pkc

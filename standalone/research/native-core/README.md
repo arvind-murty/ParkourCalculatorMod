@@ -40,3 +40,31 @@ transitions identical ([1](2026-11-21-screen/parity-python-1-native-1.json),
 90 s repeated 3,486 `required` and 1,264 `check_program` calls (release) and 3,563 / 1,294 (UBSan) on a shadow Python
 gate with no difference ([release](2026-11-21-screen/live-screen-release-summary.json),
 [UBSan](2026-11-21-screen/live-screen-sanitize-summary.json)).
+
+## Sequence screens built natively, 2026-11-21
+
+Source: `08ef3aa1` (main's PR #8 merged, which roughly doubles the fixed-work case's sequence screens) plus native
+sequence screens: `InteractionGate.sequence` appends the choice to a native copy of the context's program
+(`append_choice`'s extend path, the physics key and the vertical trace in C++) and screens that child without building
+it in Python. Same fixed-work input and method as above. Step 1 is a native build of `08ef3aa1`; runs alternated, load
+average 4.4 to 5.4.
+
+| Run | Search s | Expanded | Calls | Preparation misses / hits | Analysis misses / hits | Coefficient misses | Sequence checks |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| step 1 native 1 | 35.10 | 41 | 100 | 3,269 / 2,119 | 3,284 / 1,554 | 2,069 | 2,020 |
+| step 2 native 1 | 34.43 | 41 | 100 | 3,269 / 2,119 | 3,284 / 1,554 | 2,069 | 2,020 |
+| step 1 native 2 | 33.81 | 41 | 100 | 3,269 / 2,119 | 3,284 / 1,554 | 2,069 | 2,020 |
+| step 2 native 2 | 33.30 | 41 | 100 | 3,269 / 2,119 | 3,284 / 1,554 | 2,069 | 2,020 |
+| Python 1 | 50.35 | 41 | 100 | 3,269 / 2,119 | 3,284 / 1,554 | 2,069 | 2,020 |
+| step 2 native 3 | 33.21 | 41 | 100 | 3,269 / 2,119 | 3,284 / 1,554 | 2,069 | 2,020 |
+| Python 2 | 50.30 | 41 | 100 | 3,269 / 2,119 | 3,284 / 1,554 | 2,069 | 2,020 |
+| step 2 native 4 | 33.55 | 41 | 100 | 3,269 / 2,119 | 3,284 / 1,554 | 2,069 | 2,020 |
+
+Native sequence screens cut mean search time 1.7% against step 1 (34.46 s to 33.87 s), about the size of the run
+spread; against Python the native core now cuts it 33.7% (50.33 s to 33.38 s). Every pair has identical gate counters
+and exact parity on all 19 transitions ([step 1 vs 2: 1](2026-11-21-sequence/parity-step1-1-step2-1.json),
+[2](2026-11-21-sequence/parity-step1-2-step2-2.json); [Python vs native: 1](2026-11-21-sequence/parity-python-1-native-1.json),
+[2](2026-11-21-sequence/parity-python-2-native-2.json)). `tools.native_cpp verify-screen` on the extended input for
+90 s repeated 2,198 `sequence`, 1,566 `required` and 1,577 `check_program` calls (release) and 2,302 / 1,680 / 1,691
+(UBSan) on a shadow Python gate with no difference ([release](2026-11-21-sequence/live-screen-release-summary.json),
+[UBSan](2026-11-21-sequence/live-screen-sanitize-summary.json)).

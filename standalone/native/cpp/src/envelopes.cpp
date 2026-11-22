@@ -12,14 +12,14 @@
 #include <utility>
 #include <vector>
 
+#include "pkc/vertical.hpp"
 #include "value_ops.hpp"
 
 namespace pkc {
 namespace {
 
 constexpr double kInf = std::numeric_limits<double>::infinity();
-const double kCap = static_cast<double>(static_cast<float>(0.15));  // physics/vertical.CAP
-constexpr std::int64_t kParentWindow = 10;                          // intervals.PARENT_WINDOW
+constexpr std::int64_t kParentWindow = 10;  // intervals.PARENT_WINDOW
 
 using Interval = std::array<Num, 2>;
 using StateBox = std::array<Interval, 3>;  // X, Z, Y
