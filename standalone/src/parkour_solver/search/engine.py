@@ -100,7 +100,7 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, c
     if hasattr(scoped_adapter,'bind_program'):
         scoped_adapter = scoped_adapter.bind_program(program)
     if checkpoint is not None:
-        if program['profile']['airtime'] != checkpoint.tick:
+        if program['profile']['duration'] != checkpoint.tick:
             raise ValueError('Every compared program must end at the shared absolute tick')
         route['objective'] = dict(axis='X', sense='MAX')
         route['guideObjective'] = checkpoint.objective

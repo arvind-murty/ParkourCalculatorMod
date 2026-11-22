@@ -117,6 +117,21 @@ class AnchorSearchTests(unittest.TestCase):
         self.assertTrue(all(local_counts(p)['J']>=1 for p in calls))
         self.assertTrue(all(p['decisionDepth']>=1 for p in calls))
 
+    def test_every_pruned_child_names_the_node_whose_expansion_generated_it(self):
+        expanded=[None];report={}
+        def evaluate(p,nodes,forced):
+            expanded.append(p['decisionNode'])
+            return dict(status='feasible',program=p)
+        source=self.frontier(evaluate,report=report,limit=30)
+        try:list(source)
+        finally:source.close()
+        state=report['continuation']
+        rejected=[x for x in state['exclusions'] if x['proof']['reason']=='search_policy']
+        # A fixed filter (at most two run ticks) rejects children only as they are generated; the root has no decision node.
+        self.assertEqual(len(rejected),state['policyRejections'])
+        self.assertTrue(rejected)
+        self.assertTrue({x['node'] for x in state['exclusions']}<=set(expanded))
+
     def test_rejected_child_preserves_parent_and_other_children(self):
         queried=[];report={}
         def evaluate(p,nodes,forced):
@@ -280,7 +295,7 @@ class AnchorSearchTests(unittest.TestCase):
                 threshold=0.,node_evaluator=lambda *a:self.fail('Arrival should use mandatory anchor solve'),
                 policy_context=dict(version=1),deadline=time.monotonic()+2)
             p=next(source);source.close()
-        self.assertEqual(p['profile']['airtime'],12)
+        self.assertEqual(p['profile']['duration'],12)
         self.assertEqual(p['terminalSupport'],'goal')
         self.assertEqual(p['profile']['positionConstraints'],[])
 
@@ -295,22 +310,46 @@ def step_scene():
         movementSearch=dict(types=['normal'], maxInputs=40)))
 
 
-def ceiling_scene(low=1.5, lid=None):
+def ceiling_scene(low=1.5, lid=None, ledge=None):
     # From start (top 2): low is a run-off whose roof underside is 2 above it (a grind from low); goal is a jump.
     from parkour_solver.scene.normalize import prepare_scene
     blocks=[dict(id='start', boxes=[[0,1,0,2,2,2]]), dict(id='low', boxes=[[2,low-1,0,3,low,4]]),
             dict(id='roof', boxes=[[2,low+2,2,3,low+3,4]]), dict(id='goal', boxes=[[6,2,0,7,3,2]])]
     if lid is not None:
         blocks.append(dict(id='lid', boxes=[[0,lid,0,1,lid+1,1]]))
+    if ledge is not None:
+        blocks.append(dict(id='ledge', boxes=[[2,1,0,3,ledge,2]]))
     return prepare_scene(dict(version=1, sceneModel='collision_boxes', geometryBounds=[-10,-8,-10,20,12,10],
         initial=dict(position=[1,2,1], velocity=[0,-.0784000015258789,0], yaw=-90),
         startBlock='start', goalBlock='goal', maxWallHits=0, maxContactCombinations=0,
         blocks=blocks, movementSearch=dict(types=['normal','ceiling'], maxInputs=40)))
 
 
+def covered_scene(lid):
+    # lid covers all of start (top 2), so start's jumps hit it; low is flush with start and half a block lower.
+    from parkour_solver.scene.normalize import prepare_scene
+    blocks=[dict(id='start', boxes=[[0,1,0,1.5,2,2]]), dict(id='lid', boxes=[[0,lid,0,1.5,lid+1,2]]),
+            dict(id='low', boxes=[[1.5,.5,-1,4,1.5,3]]), dict(id='goal', boxes=[[9,2,0,10,3,2]])]
+    return prepare_scene(dict(version=1, sceneModel='collision_boxes', geometryBounds=[-10,-8,-10,20,12,10],
+        initial=dict(position=[1,2,1], velocity=[0,-.0784000015258789,0], yaw=-90),
+        startBlock='start', goalBlock='goal', maxWallHits=0, maxContactCombinations=0,
+        blocks=blocks, movementSearch=dict(types=['normal','ceiling'], maxInputs=40)))
+
+
+def step_up_scene(goal=2):
+    # slab is half a block above start and flush with it: a walking step-up, or a slab boost.
+    from parkour_solver.scene.normalize import prepare_scene
+    return prepare_scene(dict(version=1, sceneModel='collision_boxes', geometryBounds=[-10,-5,-10,20,12,10],
+        initial=dict(position=[.5,1,.5], velocity=[.25,-.0784000015258789,0], yaw=-90),
+        startBlock='start', goalBlock='goal', maxWallHits=0, maxContactCombinations=0,
+        blocks=[dict(id='start', boxes=[[-2,0,-2,3,1,2]]), dict(id='slab', boxes=[[3,0,-2,4,1.5,2]]),
+                dict(id='goal', boxes=[[6,goal-1,-1,7,goal,1]])], movementSearch=dict(types=['normal','stepping'], maxInputs=40)))
+
+
 class MinimumRunTickTests(unittest.TestCase):
     def frontier(self, *, screen=None, ordinary=True, continuation=None, live=(), report=None, scene=None,
-                 policy=True, keep_emitted=False):
+                 policy=True, keep_emitted=False, fits=lambda decision,landing:None,
+                 back=lambda decision,landing:landing.get('terminalSupport')==decision.get('terminalSupport')):
         from parkour_solver.movement.program import boundary_state
         from parkour_solver.reachability.service import block_table
         from parkour_solver.search.anchors.policy import advantageous_candidates, advantageous_targets, next_anchor, owner
@@ -321,7 +360,7 @@ class MinimumRunTickTests(unittest.TestCase):
                         targets=lambda b,c:advantageous_targets(s,b,c,upcoming(b)),
                         candidates=lambda p:advantageous_candidates(s,lambda o:block_table(s,o,traces),owner(s,p['terminalSupport']),
                             p['profile']['position'][-1],upcoming(p),movement_settings(s)['types'],0.),
-                        next=upcoming,owner=lambda block:owner(s,block))
+                        next=upcoming,owner=lambda block:owner(s,block),back=back,fits=fits)
         report=report if report is not None else {}
         source=persistent_programs(s,settings=dict(movement_settings(s),maxPrefixes=1),report=report,
             continuation=continuation,threshold=0.,node_evaluator=lambda p,n,x:dict(status='feasible',program=p),
@@ -366,6 +405,28 @@ class MinimumRunTickTests(unittest.TestCase):
         # A screen that rules out goal arrivals with fewer than `minimum` run ticks.
         return lambda p:dict(reason='late') if p['terminalSupport']=='goal' and local_counts(p)['R']<minimum else None
 
+    @staticmethod
+    def landings(s, program, screen=None):
+        # {block: duration} of the earliest landing on each block among the generators' choices after program that pass screen.
+        from parkour_solver.movement.generation import generate_choices
+        from parkour_solver.movement.program import append_choice, boundary_state
+        settings=movement_settings(s)
+        context=dict(mode='open',scene=s,program=program,state=boundary_state(program),interactionGate=None,threshold=0.,
+                     maxInputs=settings['maxInputs']-program['profile']['duration'],maxEntryInputs=settings['maxEntryInputs'])
+        found={}
+        for kind in settings['types']:
+            for choice in generate_choices(kind,context):
+                child=append_choice(program,choice,max_inputs=settings['maxInputs'])
+                if (child is not None and child['profile']['grounded'][-1] and child.get('terminalSupport')
+                        and (screen is None or screen(child) is None)):
+                    found[child['terminalSupport']]=min(found.get(child['terminalSupport'],child['profile']['duration']),
+                                                        child['profile']['duration'])
+        return found
+
+    @staticmethod
+    def hits(p):
+        return any(e.get('role')=='ceiling' for e in p['profile'].get('contactEvents',[]))
+
     def test_jump_now_reaching_the_next_anchor_queues_no_run_ticks(self):
         emitted,state=self.frontier()
         self.assertEqual((self.runs(emitted),self.runs(state['pending'])),([0],[0]))
@@ -374,13 +435,36 @@ class MinimumRunTickTests(unittest.TestCase):
         emitted,state=self.frontier(policy=False)
         self.assertIn(1,self.runs(state['pending']))
 
+    def test_a_jump_back_onto_its_face_that_does_not_fit_waits_for_every_other_branch_of_its_decision(self):
+        # The stand-in face test: a landing back on the decision's support block is on its face.
+        held=lambda decision,landing:dict(room=1.,jump=2.,fits=False,face='start')
+        key='["same_face", "start"]'
+        hops=lambda programs:[p['decisionNode'] for p in programs if p.get('terminalSupport')=='start' and local_counts(p)['J']]
+        self.assertTrue(hops(self.frontier()[1]['pending']))
+        # While the arrival on goal is alive the hop back onto start is held, not queued.
+        emitted,state=self.frontier(fits=held,keep_emitted=True)
+        self.assertEqual((self.runs(emitted),hops(state['pending'])),([0],[]))
+        (entry,)=[r for r in state['minimumRunCandidates'] if r['key']==key]
+        self.assertEqual((entry['outcome'],entry['room'],entry['jump'],entry['k']),('held',1.,2.,0))
+        # Once it died, the hop is restored.
+        emitted,state=self.frontier(fits=held)
+        self.assertEqual(hops(state['pending']),entry['nodes'])
+        # A run-tick reserve restored in the same pass keeps it waiting.
+        emitted,state=self.frontier(fits=held,screen=self.late(3))
+        self.assertEqual(self.runs(emitted),[3])
+        self.assertEqual([(p['minimumRunSearch']['kind'],p['minimumRunSearch']['start']) for p in state['pending']],[('scan',4)])
+        # With nothing else to wait for it is queued at once.
+        emitted,state=self.frontier(fits=held,screen=lambda p:None if p.get('terminalSupport')=='start' else dict(reason='elsewhere'))
+        self.assertEqual((emitted,hops(state['pending'])),([],entry['nodes']))
+        self.assertEqual([r['outcome'] for r in state['minimumRunCandidates'] if r['key']==key],['queued'])
+
     def test_without_n_the_first_screened_run_count_is_queued_and_the_next_restored_when_it_dies(self):
         emitted,state=self.frontier(screen=self.late(3))
         self.assertEqual(self.runs(emitted),[3])
         self.assertEqual(self.runs(state['pending']),[0])
         self.assertEqual(self.reserves(state),[('scan','next',4)])
         scan=[r for r in state['minimumRunCandidates'] if r['key']=='["scan", "next"]']
-        self.assertEqual([(r['k'],r['N']) for r in scan],[(3,emitted[0]['profile']['airtime'])])
+        self.assertEqual([(r['k'],r['N']) for r in scan],[(3,emitted[0]['profile']['duration'])])
         saved=json.loads(json.dumps(state))
         # While the 3-tick arrival is alive the reserve waits and the queued hop is expanded instead.
         again,alive=self.frontier(screen=self.late(3),continuation=saved,live=emitted)
@@ -390,6 +474,21 @@ class MinimumRunTickTests(unittest.TestCase):
         again,state=self.frontier(screen=self.late(3),continuation=saved)
         self.assertEqual(self.runs(again),[4])
         self.assertEqual(self.reserves(state),[('scan','next',5)])
+
+    def test_scan_counts_a_walk_off_input_as_a_run_tick(self):
+        from parkour_solver.scene.normalize import prepare_scene
+        # goal is flush with start and one lower; with every jump screened out there is no N and the scan keeps a run-off.
+        s=prepare_scene(dict(version=1, sceneModel='collision_boxes', geometryBounds=[-10,-6,-10,20,12,10],
+            initial=dict(position=[.5,1,.5], velocity=[.25,-.0784000015258789,0], yaw=-90),
+            startBlock='start', goalBlock='goal', maxWallHits=0, maxContactCombinations=0,
+            blocks=[dict(id='start', boxes=[[-2,0,-2,1,1,2]]), dict(id='goal', boxes=[[1,-1,-2,4,0,2]])],
+            movementSearch=dict(types=['normal'], maxInputs=30)))
+        emitted,state=self.frontier(scene=s,screen=lambda p:dict(reason='jump') if any(p['profile']['jump']) else None)
+        (scan,)=[r for r in state['minimumRunCandidates'] if r['key']=='["scan", "next"]']
+        (child,)=[p for p in emitted+state['pending'] if p.get('decisionNode')==scan['nodes'][0]]
+        self.assertEqual(local_counts(child)['J'],0)
+        self.assertEqual((scan['k'],scan['A'],scan['N']),
+                         (local_counts(child)['R'],local_counts(child)['A'],child['profile']['duration']))
 
     def test_no_run_option_or_reserve_past_the_cap(self):
         from parkour_solver.movement.normal import MAX_ADVANTAGEOUS_RUN_TICKS
@@ -416,8 +515,8 @@ class MinimumRunTickTests(unittest.TestCase):
             blocks=[dict(id='start', boxes=[[-2,0,-2,1,1,2]]), dict(id='middle', boxes=[[1,-1,-2,4,0,2]]),
                     dict(id='goal', boxes=[[6,-1,-1,7,0,1]])], movementSearch=dict(types=['normal'], maxInputs=30)))
         emitted,state=self.frontier(scene=s)
-        jumped=min(p['profile']['airtime'] for p in state['pending'] if p['terminalSupport']=='middle' and local_counts(p)['J'])
-        runoffs=[p['profile']['airtime'] for p in state['pending'] if p['terminalSupport']=='middle' and not local_counts(p)['J']]
+        jumped=min(p['profile']['duration'] for p in state['pending'] if p['terminalSupport']=='middle' and local_counts(p)['J'])
+        runoffs=[p['profile']['duration'] for p in state['pending'] if p['terminalSupport']=='middle' and not local_counts(p)['J']]
         self.assertTrue(runoffs)
         self.assertLess(max(runoffs),jumped)
         # Without a reachability gate in this test a run-off onto goal is built too; middle is the point.
@@ -427,10 +526,10 @@ class MinimumRunTickTests(unittest.TestCase):
         from parkour_solver.reachability import service
         s=ceiling_scene(-2.)
         key='["landing", "low"]'
-        lands=lambda state,jump:sorted((local_counts(p)['R'],p['profile']['airtime']) for p in state['pending']
+        lands=lambda state,jump:sorted((local_counts(p)['R'],p['profile']['duration']) for p in state['pending']
                                        if p['terminalSupport']=='low' and bool(local_counts(p)['J'])==jump)
         emitted,state=self.frontier(scene=s)
-        N=min(p['profile']['airtime'] for p in emitted)
+        N=min(p['profile']['duration'] for p in emitted)
         (_,jumped),=lands(state,True)
         # Falling onto deep low takes longer than N but less than jumping onto it: walked off at once (R 1).
         (_,fell),=lands(state,False)
@@ -451,13 +550,7 @@ class MinimumRunTickTests(unittest.TestCase):
         self.assertEqual((lands(state,True),lands(state,False),self.candidates(state,key=key)),([],[],[]))
 
     def test_run_step_is_one_branch_of_one_or_two_run_ticks(self):
-        from parkour_solver.scene.normalize import prepare_scene
-        # slab is half a block above start and flush with it: a walking step-up.
-        s=prepare_scene(dict(version=1, sceneModel='collision_boxes', geometryBounds=[-10,-5,-10,20,12,10],
-            initial=dict(position=[.5,1,.5], velocity=[.25,-.0784000015258789,0], yaw=-90),
-            startBlock='start', goalBlock='goal', maxWallHits=0, maxContactCombinations=0,
-            blocks=[dict(id='start', boxes=[[-2,0,-2,3,1,2]]), dict(id='slab', boxes=[[3,0,-2,4,1.5,2]]),
-                    dict(id='goal', boxes=[[6,1,-1,7,2,1]])], movementSearch=dict(types=['normal','stepping'], maxInputs=40)))
+        s=step_up_scene()
         key='["step", "slab"]'
         steps=lambda state:sorted({local_counts(p)['R'] for p in state['pending'] if p['terminalSupport']=='slab' and not local_counts(p)['J']})
         early=lambda minimum:lambda p:dict(reason='early') if (p['terminalSupport']=='slab' and not local_counts(p)['J']
@@ -476,7 +569,7 @@ class MinimumRunTickTests(unittest.TestCase):
         s=ceiling_scene(-2.,lid=4.3)
         hits=lambda p:not p['profile']['grounded'][-1]
         emitted,state=self.frontier(scene=s)
-        N=min(p['profile']['airtime'] for p in emitted)
+        N=min(p['profile']['duration'] for p in emitted)
         lid='["ceiling", "lid"]'
         self.assertEqual(self.candidates(state,key=lid),[(lid,1,'dominated')])
         self.assertIn(('dominated',lid,1),self.reserves(state))
@@ -488,6 +581,70 @@ class MinimumRunTickTests(unittest.TestCase):
         self.assertEqual(self.candidates(state,'kept',lid),[(lid,k,'kept') for k in range(1,N-A)])
         self.assertEqual([r for r in self.reserves(state) if r[1]==lid],[])
 
+    def test_a_slab_boost_lands_like_a_two_tick_jump_and_sets_n(self):
+        # The slab boost's choice stops at its jump tick; it lands on slab on the next input. goal is out of jump
+        # reach, so that landing is N.
+        s=step_up_scene(goal=3)
+        emitted,state=self.frontier(scene=s)
+        boost=next(p for p in state['pending'] if not p['profile']['grounded'][-1] and not local_counts(p)['R']
+                   and any(e['case']=='slab_boost' for e in p['profile']['caseEvents']))
+        self.assertEqual(self.landings(s,boost)['slab'],2)
+        (widen,)=[h['programs'][0]['minimumRunSearch'] for h in state['alternatives'].values()
+                  if h['programs'][0]['minimumRunSearch']['kind']=='widen']
+        self.assertEqual(widen['lower'],2)
+        self.assertIn(dict(ticks=2,owner='slab',node=boost['decisionNode']),widen['landings'])
+        # No run-up jump fits under N = 2; only the walking step-up is built.
+        self.assertEqual([(r['key'],r['outcome']) for r in state['minimumRunCandidates']],[('["step", "slab"]','kept')])
+
+    def test_a_ceiling_jump_beats_with_its_built_landing_not_the_table(self):
+        # The table puts a lid hit's landing on ledge, the highest top start reaches; with ledge screened out the
+        # built hits land back on start, later, and the jump-now hit no longer beats its run-up.
+        s=ceiling_scene(-2.,lid=4.3,ledge=2.4)
+        lid='["ceiling", "lid"]'
+        emitted,state=self.frontier(scene=s)
+        (table,)=[r for r in state['minimumRunCandidates'] if r['key']==lid]
+        self.assertEqual((table['k'],table['outcome']),(1,'dominated'))
+        unledged=lambda p:dict(reason='ledge') if p['profile']['grounded'][-1] and p['terminalSupport']=='ledge' else None
+        emitted,state=self.frontier(scene=s,screen=unledged)
+        (kept,)=[r for r in state['minimumRunCandidates'] if r['key']==lid]
+        (child,)=[p for p in state['pending'] if p.get('decisionNode')==kept['nodes'][0]]
+        landed=min(self.landings(s,child,unledged).values())
+        self.assertEqual((kept['k'],kept['outcome'],kept['total'],kept['A']),(1,'kept',landed,landed-1))
+        self.assertGreater(kept['A'],table['A'])
+
+    def test_without_n_a_scan_counts_a_ceiling_jump_by_its_landing(self):
+        # Every landing off start without a ceiling hit, or without a run tick, is screened out: no jump-now
+        # child lands elsewhere, and only a hit after a run tick reaches low.
+        s=covered_scene(4.3)
+        screen=lambda p:(dict(reason='late') if p['profile']['grounded'][-1] and p['terminalSupport']!='start'
+                         and (not self.hits(p) or local_counts(p)['R']<1) else None)
+        emitted,state=self.frontier(scene=s,screen=screen)
+        (scan,)=[r for r in state['minimumRunCandidates'] if r['key']=='["scan", "block"]']
+        (child,)=[p for p in state['pending'] if p.get('decisionNode')==scan['nodes'][0]]
+        self.assertTrue(self.hits(child) and not child['profile']['grounded'][-1])
+        self.assertEqual((scan['k'],scan['N']),(1,self.landings(s,child,screen)['low']))
+
+    def test_a_runoff_competes_with_a_ceiling_jump_onto_its_block(self):
+        # A jump-now lid hit lands on low before the unhit jump would; a run-off must land before it.
+        s=covered_scene(4.3)
+        key='["landing", "low"]'
+        pending=self.frontier(scene=s)[1]['pending']
+        bound=self.landings(s,next(p for p in pending if self.hits(p) and not local_counts(p)['R']))['low']
+        unhit=min(p['profile']['duration'] for p in pending if p['terminalSupport']=='low' and local_counts(p)['J'])
+        self.assertLess(bound,unhit)
+        runoffs=lambda minimum:lambda p:(dict(reason='early') if p['profile']['grounded'][-1] and p['terminalSupport']=='low'
+                                         and not local_counts(p)['J'] and local_counts(p)['R']<minimum else None)
+        fits=[]
+        for minimum in (3,4):
+            with self.subTest(minimum=minimum):
+                emitted,state=self.frontier(scene=s,screen=runoffs(minimum))
+                (record,)=[r for r in state['minimumRunCandidates'] if r['key']==key]
+                fits.append(minimum+record['A']<bound)
+                self.assertEqual((record['N'],record['k'],record['outcome']),
+                                 (bound,minimum if fits[-1] else None,'kept' if fits[-1] else 'unreached'))
+        # One run count fits under the bound and the next does not.
+        self.assertEqual(fits,[True,False])
+
     def test_when_n_block_dies_n_widens_to_the_next_landing(self):
         from parkour_solver.scene.normalize import prepare_scene
         # a is a quick landing, b a slow one; goal needs three run ticks (screen), so it only fits under b's N.
@@ -498,7 +655,7 @@ class MinimumRunTickTests(unittest.TestCase):
                     dict(id='a', boxes=[[0,0,2,1,1.5,3]]), dict(id='b', boxes=[[0,-2,-4,1,-1,-3]])],
             movementSearch=dict(types=['normal'], maxInputs=40)))
         # N comes from the jump-now landings only.
-        landing=lambda state,name:min(p['profile']['airtime'] for p in state['pending']
+        landing=lambda state,name:min(p['profile']['duration'] for p in state['pending']
                                       if p.get('terminalSupport')==name and local_counts(p)['J'])
         emitted,state=self.frontier(scene=s,screen=self.late(3))
         goal='["anchor", "goal"]'
@@ -638,6 +795,10 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
             self.assertEqual(result['finalization']['stage'], 'complete')
             self.assertNotIn('model', best['candidate'])
             self.assertTrue(replay_witness(prepare_scene(result['effectiveRequest']), best, compiler)['passed'])
+            # The solve report reads a feasible node's alternatives from the repair it keeps beside its committed program.
+            dfs = result['searchState']['dfs']
+            nodes = [n for f in dfs['frames']+dfs['stack'] for n in f['generation'].get('continuation', {}).get('nodes', {}).values()]
+            self.assertTrue(all(n['repairState']['completed'] for n in nodes if n['status'] == 'feasible'))
         return best
 
     def boxes(self, types, **blocks):

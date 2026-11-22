@@ -298,7 +298,7 @@ class BookkeepingProfileTests(unittest.TestCase):
         relaxation = dict(screen=dict(solved=5, cacheHits=4, infeasible=1, undecided=1), candidate=dict(solved=7))
         report = dict(result=dict(best=None, termination='exhausted', elapsedSeconds=1., work=dict(solverCalls=1, workerLaunches=1),
                                   expandedPrefixes=2, searchState=state, interactionGate=dict(relaxation=relaxation)))
-        markdown = render(report, requests, list(routes.values()), stop_report(state, requests))
+        markdown = render(report, requests, list(routes.values()), stop_report(state, requests), {})
         self.assertIn('Disk-relaxation pre-checks: 5 solved (4 more from cache), 1 proved infeasible, 1 undecided by '
                       'Clarabel and counted as not ruled out.', markdown)
         self.assertIn('- Frame 0 → B2: 2 routes (2 feasible)\n  - Frame 1 → B3: 1 route (1 feasible), from route 0.1 (lands B2 t3)', markdown)
@@ -313,6 +313,59 @@ class BookkeepingProfileTests(unittest.TestCase):
         from tools.profiling.trace import rows_text
         self.assertEqual(rows_text([dict(mode='X', t1=1, cmp='GE', rhs=1.000001)], [('B6', 'X', 'GE', 1.), ('B7', 'X', 'GE', 1.)]),
                          'B6/B7: X ≥ 1.000 at t1')
+
+    def test_node_tree_describes_each_node_and_groups_what_its_expansion_pruned(self):
+        from tools.profiling.trace import node_trace, render, stop_report
+        low, high, lid = [0, 0, 0, 1, 1, 1], [2, 0, 0, 3, 1, 1], [0, 3, 0, 1, 4, 1]
+        def land(t, box):
+            return dict(offset=t, axis='Y', direction=-1, boxes=[box], role='landing')
+        def node(parent, status, end, jumps, events, cases=(), rows=(), repair=None):
+            profile = dict(jump=[t in jumps for t in range(end)], contactEvents=events, caseEvents=list(cases),
+                           positionConstraints=list(rows))
+            return dict(status=status, parent=parent, depth=1, program=dict(movementUnits=[dict(end=end)], profile=profile),
+                        **(dict(repairState=repair) if repair else {}))
+        repair = dict(completed=[dict(branch='[[], [], []]', status='feasible', validationStatus='accepted', problemHashes=['h1'])],
+                      attemptLog=[dict(status='feasible', problemHash='h1')])
+        grind = (dict(case='grind', input=7, boxes=[lid]),)
+        outside = (dict(mode='X', t1=7, cmp='LE', rhs=-.3, name='grind:outside'),)
+        ground = [land(0, low), land(1, low), land(2, low), land(5, high), land(6, high)]
+        nodes = dict(a=node('root', 'feasible', 6, {3}, ground[:4], repair=repair),
+                     b=node('a', 'feasible', 8, {3, 7}, ground, grind, outside),
+                     c=node('reserve', 'exhausted', 9, {3, 7}, ground+[land(8, high)], grind, outside))
+        # A node built from a held reserve belongs to the node holding it, as does a child queued from the reserve.
+        continuation = dict(nodes=nodes, decisionParents=dict(reserve='b'),
+                            pending=[dict(needsNodeSolve=True, decisionParent='reserve')], exclusions=[
+            dict(node='a', proof=dict(reason='search_policy')), dict(node='root', proof=dict(reason='disk_control_relaxation_infeasible'))],
+            minimumRunCandidates=[dict(node='root', key='["ceiling", "b3"]', k=1, total=9, N=12, outcome='kept', nodes=['a']),
+                                  dict(node='a', key='["step", "b2"]', k=None, total=None, N=None, outcome='unreached', nodes=[])])
+        frame = dict(id=3, goal=dict(block='b2'), parents=[dict(decisionNode='root')], goalRequest=dict(afterTick=0), records=[],
+                     generation=dict(generated=9, screenedPrefixes=1, policyRejections=2, totalExpandedPrefixes=2,
+                                     continuation=continuation))
+        state = dict(dfs=dict(stack=[frame]))
+        scene = dict(blocks=[dict(id='b1', boxes=[low]), dict(id='b2', boxes=[high]), dict(id='b3', boxes=[lid, [0, 4, 0, 1, 5, 1]])])
+        trees = node_trace(state, scene)
+        requests = [dict(index=4, fingerprint='h1', status='feasible', workerStatus='Solved', backend='clarabel', seconds=.01)]
+        report = dict(result=dict(best=None, termination='deadline', elapsedSeconds=1., work=dict(solverCalls=1, workerLaunches=0),
+                                  expandedPrefixes=2, searchState=state, effectiveRequest=scene))
+        markdown = render(report, requests, [], stop_report(state, requests), trees)
+        self.assertIn('| Block | X | Y | Z |\n|---|---|---|---|\n| B1 | [0, 1] | [0, 1] | [0, 1] |\n'
+                      '| B2 | [2, 3] | [0, 1] | [0, 1] |\n| B3#0 | [0, 1] | [3, 4] | [0, 1] |\n| B3#1 | [0, 1] | [4, 5] | [0, 1] |', markdown)
+        self.assertIn('Decision nodes solved: 3 (2 feasible, 1 no alternative survived (backtracks)). Prefixes generated: 9; '
+                      'ruled out by the screens: 1; rejected by the search policy: 2 (1 when generated, 1 when taken from the '
+                      'queue); expanded: 2; left unexpanded: 1.', markdown)
+        # t6 follows t5's landing input, so it is a run tick; node 3.3 starts on the grind's landing input.
+        self.assertIn('- node 3.1 (feasible, t0-5): runs 3 ticks on B1 (t0-2), jumps t3, lands on B2 t5\n'
+                      '  - node 3.2 (feasible, t6-7): runs 1 tick on B2 (t6), jumps t7, grinds under B3#0 t7 from its X- '
+                      'side\n    - node 3.3 (exhausted, t8-8): lands on B2 t8', markdown)
+        self.assertIn('Solved children: node 3.1.\nChildren queued but not yet solved: 0.\nChildren pruned when generated: 1 disk '
+                      'control relaxation.\nMinimum run ticks: ceiling jump under B3 after 1 run tick, landing after 9 inputs '
+                      '(bound 12) → node 3.1.', markdown)
+        self.assertIn('Solved children: node 3.3.\nChildren queued but not yet solved: 1.', markdown)
+        self.assertIn('| 1 | no avoidance rows | feasible | accepted | request 4 feasible, Clarabel Solved, 0.01 s |', markdown)
+        self.assertIn('Solved children: node 3.2.\nChildren queued but not yet solved: 0.\nChildren pruned when generated: 1 '
+                      'search policy (time, hard-anchor latch '
+                      'or minimum-run bound).\nMinimum run ticks: no run count below the bound passed the screens: step-up '
+                      'onto B2.', markdown)
 
     def test_contact_region_items_and_chosen_rectangles_are_named(self):
         import json

@@ -67,7 +67,7 @@ class CellLocalTests(unittest.TestCase):
         cells = [Cell(i, (lo,-5,-2,hi,8,2), 3) for i,(lo,hi) in enumerate([(-1,2),(2,4),(4,6)])]
         d = Decomposition((-1,-5,-2,6,8,2), cells, [], [], {}, {})
         corridor = Corridor(0, [0,1,2], [], [], (), [(-1,0,-2,6,0,2)], 0, stage_paths=[[0,1,2]])
-        program = dict(profile=dict(airtime=2, contactEvents=[], positionConstraints=[
+        program = dict(profile=dict(duration=2, contactEvents=[], positionConstraints=[
             dict(mode='X',t1=1,cmp='GE',rhs=5), dict(mode='X',t1=2,cmp='LE',rhs=1)]))
         adapter = CorridorAdapter(scene, corridor, [], decomposition=d)
         self.assertFalse(adapter.prefix(program))

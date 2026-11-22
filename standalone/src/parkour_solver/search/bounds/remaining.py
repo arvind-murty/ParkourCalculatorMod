@@ -13,7 +13,7 @@ def cover_distance(left, right):
 
 def _vertical_remaining(guides, span, program, transfers, hard_latches):
     from parkour_solver.physics.vertical import REST_CARRY
-    names=guides['anchors'];p=program['profile'];n=p['airtime']
+    names=guides['anchors'];p=program['profile'];n=p['duration']
     reached=program.get('terminalSupport')==names[span+1] and p['grounded'][-1]
     terms=[]
     for i in range(span+int(reached),len(names)-1):

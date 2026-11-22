@@ -24,7 +24,7 @@ def latest_jump(program, scene):
     Prior decisions, in-flight contacts/cases, constraints and terminal contact
     stay in the key. Unknown or interacting ground preparations do not qualify.
     """
-    p=program['profile'];n=p['airtime']
+    p=program['profile'];n=p['duration']
     jumps=[t for t in range(n) if p['jump'][t] and p['grounded'][t]]
     if not jumps or program.get('ladderEvents') or any(p['ladderTicks']):return None
     takeoff=jumps[-1];ground=takeoff

@@ -4,7 +4,7 @@ from parkour_solver.movement.program import empty_program, append_choice, trunca
 def program(scene, n, family):
     p = empty_program(scene['initial'], threshold=0.)
     jumps = [8] if family==17 else [0,12]
-    p['profile'].update(airtime=n,position=[1.]*(n+1),velocity=[0.]*(n+1),
+    p['profile'].update(duration=n,position=[1.]*(n+1),velocity=[0.]*(n+1),
         grounded=[(t<8 if family==17 else False) or t in jumps or t==n for t in range(n+1)],
         jump=[t in jumps for t in range(n)],sneak=[False]*n,ladderTicks=[False]*(n+1))
     p.update(terminalSupport='goal',family=family,trace=dict(hit=[False]*n))
@@ -30,7 +30,7 @@ class DepthFirstHarness(unittest.TestCase):
             if checkpoint_tick:
                 # The continuation must adopt the selected arrival's inputs and
                 # hard decision rows, without fixing its optimized endpoint.
-                self.assertEqual(initial_programs[0]['profile']['airtime'],initial_programs[0]['family'])
+                self.assertEqual(initial_programs[0]['profile']['duration'],initial_programs[0]['family'])
                 self.assertTrue(any(r['name']=='selected_avoid' for r in initial_programs[0]['profile']['positionConstraints']))
             while saved['cursor']<len(choices):
                 p=choices[saved['cursor']];saved['cursor']+=1
@@ -38,7 +38,7 @@ class DepthFirstHarness(unittest.TestCase):
             saved['exhausted']=True;report['termination']='exhausted'
         def evaluate(s,p,compiler,adapter,work,motion,**kwargs):
             work.before_solve({})
-            n=p['profile']['airtime']
+            n=p['profile']['duration']
             self.assertEqual(kwargs['first_witness'],n!=30)
             self.calls.append((p['family'],n))
             if getattr(self,'interrupt_once',None)==(p['family'],n):

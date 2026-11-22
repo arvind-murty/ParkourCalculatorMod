@@ -55,7 +55,7 @@ class EventGuideAdapter:
             earliest = float('inf')
             target = request['goal']
             for parent in parents:
-                remaining = self.data['inputDomain']['maxInputs']-parent['profile']['airtime']
+                remaining = self.data['inputDomain']['maxInputs']-parent['profile']['duration']
                 if remaining <= 0:
                     continue
                 source = next((b for b in self.scene['blocks'] if b['id']==parent['terminalSupport']),None)
@@ -95,7 +95,7 @@ class EventGuideAdapter:
             return (not possible, same, not request['terminal'],distance,earliest,request['id'])
         requests.sort(key=rank)
         for request in requests:
-            request['afterTick']=min(p['profile']['airtime'] for p in parents)
+            request['afterTick']=min(p['profile']['duration'] for p in parents)
             event=next(e for e in self.graph['events'] if e['id']==request['event'])
             request['localSetupAlias']=not request['terminal'] and bool(
                 set(event['attachments']).intersection(cursor['attachments']))

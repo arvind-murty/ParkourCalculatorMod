@@ -33,8 +33,8 @@ def compatible(previous, current):
             or new[0].get('composition') != 'movement_program':
         return False
     old, new = old[0], new[0]
-    n = old['airtime']
-    if n > new['airtime']:
+    n = old['duration']
+    if n > new['duration']:
         return False
     for key in ('position', 'velocity', 'grounded', 'ladderTicks', 'jump', 'sneak'):
         if old[key] != new[key][:len(old[key])]:

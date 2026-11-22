@@ -18,7 +18,7 @@ class BlockProfileTests(unittest.TestCase):
         for drop, expected in [(.0625, 1), (.125, 2), (.25, 3), (.5, 4), (1, 5)]:
             with self.subTest(drop=drop):
                 profile = runoff_profile(2, 2 - drop)
-                self.assertEqual(profile['airtime'], expected)
+                self.assertEqual(profile['duration'], expected)
                 self.assertEqual(profile['jump'], [False] * expected)
                 self.assertEqual(profile['grounded'], [True] + [False] * (expected - 1) + [True])
                 request = prepare({'version': 1, 'ticks': expected, 'position': [0, 0], 'velocity': [0, 0],
@@ -34,7 +34,7 @@ class BlockProfileTests(unittest.TestCase):
                 result = validate(request, [0] * expected)
                 self.assertTrue(result['feasible'], result)
                 self.assertEqual(result['onGround'], profile['grounded'])
-                self.assertLess(profile['airtime'], ordinary_jump_profile(2, 2 - drop)['airtime'])
+                self.assertLess(profile['duration'], ordinary_jump_profile(2, 2 - drop)['duration'])
 
     def test_runoff_cannot_rise_and_respects_its_simulation_horizon(self):
         self.assertIsNone(runoff_profile(1, 1))
@@ -43,7 +43,7 @@ class BlockProfileTests(unittest.TestCase):
 
     def test_half_block_stair_has_a_takeoff_and_one_airborne_input(self):
         profile = stair_jump_profile(1, 1.5)
-        self.assertEqual(profile['airtime'], 2)
+        self.assertEqual(profile['duration'], 2)
         self.assertEqual(profile['position'], [1, 1.5, 1.5])
         self.assertEqual(profile['grounded'], [True, False, True])
         self.assertTrue(profile['contacts'][0]['step'])
@@ -68,7 +68,7 @@ class BlockProfileTests(unittest.TestCase):
         for delta, expected in [(0, 12), (.5, 10), (1, 9), (-1, 14)]:
             with self.subTest(delta=delta):
                 profile = ordinary_jump_profile(5, 5 + delta)
-                self.assertEqual(profile['airtime'], expected)
+                self.assertEqual(profile['duration'], expected)
                 self.assertEqual(profile['grounded'], [True] + [False] * (expected - 1) + [True])
                 self.assertEqual(profile['position'][-1], 5 + delta)
                 self.assertEqual(profile['velocity'][-1], REST_CARRY)

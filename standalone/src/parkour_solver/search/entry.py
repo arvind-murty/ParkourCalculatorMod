@@ -14,7 +14,7 @@ def build_entry_problem(context, column, wall, channel, entry, compiler, seconds
                         prefix=None, extra_contacts=(), hit_on_entry=False):
     scene, route, base = context['scene'], context['route'], context['base']
     offset = base['ticks']
-    cut = prefix['profile']['airtime'] if prefix is not None else 0
+    cut = prefix['profile']['duration'] if prefix is not None else 0
     local_n, n = cut + entry, offset + cut + entry
     if n == 0:
         raise ValueError('A zero-input entry uses initial membership')
@@ -93,7 +93,7 @@ def entry_contact_options(context, prefix=None, max_entry=14):
     if prefix is not None:
         from parkour_solver.movement.contacts import program_seed
         from parkour_solver.movement.generation import generate_choices
-        cut = prefix['profile']['airtime']
+        cut = prefix['profile']['duration']
         seed = program_seed(prefix, cut + max_entry)
         return [[dict(c, offset=c['offset'] - cut) for c in choice['contactEvents']]
                 for choice in generate_choices('ceiling', dict(mode='timeline', schedule=seed,

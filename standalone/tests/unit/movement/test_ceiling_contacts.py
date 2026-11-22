@@ -29,7 +29,7 @@ class CeilingProfileTests(unittest.TestCase):
             box = [-2, bottom, -2, 5, 5, 3]
             profile = ceiling_profile(1, 1, underside(box), 'ceiling')
             hit = profile['ceilingEvent']['offset']
-            self.assertLess(profile['airtime'], ordinary_jump_profile(1, 1)['airtime'])
+            self.assertLess(profile['duration'], ordinary_jump_profile(1, 1)['duration'])
             self.assertEqual(profile['velocity'][hit + 1], REST_CARRY)
             self.assertLess(profile['position'][hit + 2], profile['position'][hit + 1])
             self.assertEqual(sum(c['direction'] > 0 for c in profile['contacts']), 1)
@@ -38,7 +38,7 @@ class CeilingProfileTests(unittest.TestCase):
             self.assertTrue(all(y < plane for y in profile['position'][hit + 2:]))
         self.assertIsNone(ceiling_profile(1, 1, underside([-2, 5, -2, 5, 6, 3]), 'high'))
         short = ceiling_profile(1, 1, underside([-2, 1 + f32(1.8), -2, 5, 5, 3]), 'low', max_inputs=2)
-        self.assertEqual(short['airtime'], 2)
+        self.assertEqual(short['duration'], 2)
 
 
 class OpenCeilingTests(unittest.TestCase):
@@ -49,6 +49,26 @@ class OpenCeilingTests(unittest.TestCase):
         state = dict(position=1., velocity=REST_CARRY, onGround=True, previousHorizontalCollision=False)
         return [c for c in open_ceiling_choices(dict(dict(scene=scene, state=state, maxInputs=20, threshold=0., interactionGate=None), **context))
                 if c['profile']['contactEvents']]
+
+    def test_an_ordinary_decision_offers_nothing_behind_it_and_no_grind_entered_against_its_leg(self):
+        from parkour_solver.movement.ceiling_generation import open_ceiling_choices
+        def offered(**context):
+            scene = dict(collisionScene=dict(solids=[[0, 3, 0, 1, 4, 1]]), ceilingHits=True, blocks=[dict(id='c0', solidIndex=0)])
+            state = dict(position=1., velocity=REST_CARRY, onGround=True, previousHorizontalCollision=False)
+            kinds = []
+            for c in open_ceiling_choices(dict(scene=scene, state=state, maxInputs=20, threshold=0., interactionGate=None,
+                                               program=dict(profile=dict(duration=0)), **context)):
+                entry = [r['mode']+('+' if r['cmp'] == 'GE' else '-') for r in c['profile']['positionConstraints']
+                         if r.get('name') == 'grind:outside']
+                kinds.append('grind '+entry[0] if entry else 'ceiling')
+            return sorted(kinds)
+        self.assertEqual(offered(), ['ceiling', 'grind X+', 'grind X-', 'grind Z+', 'grind Z-'])
+        # The leg runs +Z: a grind entered from Z+ moves backwards; X entries move sideways.
+        ahead = dict(point=[.5, .5], direction=(0., 1.), margin=.3)
+        self.assertEqual(offered(forward=ahead), ['ceiling', 'grind X+', 'grind X-', 'grind Z-'])
+        # The ceiling's player-centre region ends at z 1.3, 0.7 behind a decision point at z 2.
+        self.assertEqual(offered(forward=dict(ahead, point=[.5, 2.])), [])
+        self.assertEqual(offered(forward=dict(ahead, point=[.5, 1.5])), ['ceiling', 'grind X+', 'grind X-', 'grind Z-'])
 
     def test_touching_coplanar_ceilings_are_one_choice_with_both_members(self):
         boxes = [[0, 3, 0, 1, 4, 1], [1, 3, 0, 2, 4, 1]]

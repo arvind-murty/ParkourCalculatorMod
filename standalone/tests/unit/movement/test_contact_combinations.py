@@ -143,7 +143,7 @@ class MixedVerticalTests(unittest.TestCase):
         h = event('X', box=[1, 0, -4, 2, 6, 4])
         c = event('Y', box=[-2, 3, -2, 3, 4, 3])
         profile = contact_profile(1, 1, [h, c], max_inputs=30)
-        self.assertEqual(profile['airtime'], 3)
+        self.assertEqual(profile['duration'], 3)
         self.assertEqual(profile['velocity'][1], REST_CARRY)
         self.assertEqual({e['axis'] for e in profile['contactEvents']}, {'X', 'Y'})
         generated = generate_contact_profiles(1, 1, [h, c, event('Z', 1)], max_inputs=30, limit=100)
@@ -264,7 +264,7 @@ class StepCombinationIntegrationTests(unittest.TestCase):
              'maxJumps':1,'maxRunTicksPerJump':0,'maxTotalRunTicks':0,'maxContactCombinations':0}
         selected = [event('Y',direction=-1,box=stair,role='step'),event('X',box=xwall),event('Z',box=zwall)]
         p = contact_profile(1,1.5,selected,max_inputs=4,jump_at_start=False)
-        self.assertEqual(p['airtime'],1)
+        self.assertEqual(p['duration'],1)
         scene = prepare_scene(r)
         compiled = compile_block_path(scene,['floor','stair'],[{'source':'floor','target':'stair',
             'profileKind':'step','profile':p,'entryFace':None,'exitFace':None}])
@@ -291,7 +291,7 @@ class StepCombinationIntegrationTests(unittest.TestCase):
             'climbableCells':[[0,1,0]],'maxJumps':1,'maxRunTicksPerJump':0,'maxTotalRunTicks':0,'maxContactCombinations':0}
         selected = [event('X',box=xwall),event('Z',box=zwall),event('Y',box=ceiling),event('Y',1,box=ceiling)]
         profile = contact_profile(1,1,selected,max_inputs=8,ladder=[True]*9)
-        self.assertEqual(profile['airtime'],3)
+        self.assertEqual(profile['duration'],3)
         scene = prepare_scene(request)
         compiled = compile_block_path(scene,['floor','goal'],[{'source':'floor','target':'goal','profileKind':'contacts',
             'profile':profile,'entryFace':None,'exitFace':None}])

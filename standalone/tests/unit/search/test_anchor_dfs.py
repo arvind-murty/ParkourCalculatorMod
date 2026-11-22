@@ -12,8 +12,8 @@ from tests.support.anchor_policy import scene, history
 
 
 def extend(s,parent,target,n,extra=False):
-    p=history(s,[]);start=parent['profile']['airtime']
-    p['profile'].update(airtime=n,position=[1.]*(n+1),velocity=[0.]*(n+1),grounded=[True]*(n+1),
+    p=history(s,[]);start=parent['profile']['duration']
+    p['profile'].update(duration=n,position=[1.]*(n+1),velocity=[0.]*(n+1),grounded=[True]*(n+1),
         jump=[False]*n,sneak=[False]*n,ladderTicks=[False]*(n+1))
     p['profile']['jump'][:start]=parent['profile']['jump']
     p['profile']['jump'][start]=True
@@ -30,7 +30,8 @@ def extend(s,parent,target,n,extra=False):
 class AnchorDFSTests(unittest.TestCase):
     def run_tree(self, *, logging=True, resume=None, calls=20, interval=1, setup=False, seconds=3,
                  on_progress=None,cancel_event=None,requests_per_evaluation=1,advance=None,node_probe=None,node_best=None,
-                 finishes=1,relaxed=False,final=None,leg_best=None,goal=None,goal_choices=None,generated=None,**settings):
+                 finishes=1,relaxed=False,final=None,leg_best=None,goal=None,goal_choices=None,generated=None,compiler=None,
+                 **settings):
         s=scene(goal) if goal else scene();s['maxTotalRunTicks']=60;s['maxRunTicksPerJump']=60;dispatched=[]
         def generate(target_scene,*,report,initial_programs,continuation=None,node_evaluator,**kwargs):
             saved=copy.deepcopy(continuation) if continuation else dict(expanded=1,cursor=0,exhausted=False)
@@ -51,7 +52,7 @@ class AnchorDFSTests(unittest.TestCase):
             else:
                 # Certifying subtree learns the global hard latch. A later
                 # incoming history must not reopen a two-jump local structure.
-                choices=[extend(s,parent,'goal',20,extra=parent['profile']['airtime']==11)]
+                choices=[extend(s,parent,'goal',20,extra=parent['profile']['duration']==11)]
                 for _ in range(finishes-1):
                     # An equally timed, lower-scoring finish (objective -1 per sneak input).
                     choices.append(copy.deepcopy(choices[-1]))
@@ -66,8 +67,8 @@ class AnchorDFSTests(unittest.TestCase):
             for _ in range(requests_per_evaluation):
                 scoped.before_solve({})
                 if advance is not None:advance()
-            dispatched.append((p['terminalSupport'],p['profile']['airtime'],kwargs.get('solve_policy')))
-            n=p['profile']['airtime']
+            dispatched.append((p['terminalSupport'],p['profile']['duration'],kwargs.get('solve_policy')))
+            n=p['profile']['duration']
             candidate=dict(yaw=[0.]*n,positions=[[.5,.5]]*(n+1),velocity=[[0.,0.]]*(n+1),objective=-float(sum(p['profile']['sneak'])))
             best=dict(candidate=candidate,plan=dict(ticks=n,walls=[]),allocation=[0],cost=0,route=dict(source='relaxed',objective=dict(axis='X',sense='MAX')))
             if kwargs.get('final_route') is not None:
@@ -93,7 +94,7 @@ class AnchorDFSTests(unittest.TestCase):
              patch('parkour_solver.validation.witness.replay_witness',return_value=dict(passed=True)):
             options=dict(seconds=seconds,score_seconds=2,max_solver_calls=calls)
             options.update(settings)
-            result=find_checkpoint_route(s,object(),anchor_search=dict(anchors=['mid'],observability=logging,
+            result=find_checkpoint_route(s,compiler or object(),anchor_search=dict(anchors=['mid'],observability=logging,
                 solveEveryDecisionLevels=interval),minimum_run_pruning=False,
                 resume_state=resume,on_progress=on_progress,cancel_event=cancel_event,**options)
         return result,dispatched
@@ -109,11 +110,13 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertNotIn('anchor',[p for _,_,p in purposes])
         self.assertIn(('goal',20,'terminal'),purposes)
         self.assertNotIn(15,[t for _,t,_ in purposes])
-        self.assertEqual(result['best']['movementProgram']['profile']['airtime'],20)
+        self.assertEqual(result['best']['movementProgram']['profile']['duration'],20)
 
     def test_anchor_frontier_gets_the_minimum_run_policy_for_ordinary_decisions(self):
+        from parkour_solver.bridge.python_compiler import PythonCompiler
         generated=[]
-        self.run_tree(generated=generated)
+        with PythonCompiler() as compiler:
+            self.run_tree(generated=generated,compiler=compiler)
         (roots,options),*_=generated
         policy=options['run_policy'];s=scene();root=roots[0]
         self.assertIs(root['decisionTurnaround'],False)
@@ -123,6 +126,40 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertEqual(policy['targets'](root,extend(s,root,'goal',10)),set())
         self.assertEqual((policy['next'](root),policy['owner'](root['terminalSupport'])),('mid','start'))
         self.assertIn('["anchor", "mid"]',[e['key'] for e in policy['candidates'](root)])
+        # A jump back onto the 1x1 start from its centre, along the +X leg to mid, overshoots its top face.
+        from parkour_solver.movement.generation import generate_choices
+        from parkour_solver.movement.program import append_choice, boundary_state
+        from parkour_solver.movement.contact_combinations import scene_contact_options
+        self.assertEqual(root['decisionVelocity'],s['initial']['velocity'][::2])
+        context=dict(mode='open',scene=s,program=root,state=boundary_state(root),interactionGate=None,threshold=0.,maxInputs=20,maxEntryInputs=20)
+        hop=next(c for c in (append_choice(root,choice,max_inputs=20) for choice in generate_choices('normal',context))
+                 if c is not None and c['profile']['grounded'][-1] and c.get('terminalSupport')=='start')
+        fit=policy['fits'](root,hop)
+        (top,)=[o for o in scene_contact_options(s,1,1) if o.plane==1]
+        self.assertTrue(policy['back'](root,hop))
+        # The face comes from the visited owner, not terminalSupport, which a blip-up does not set.
+        self.assertTrue(policy['back'](dict(root,terminalSupport=None),dict(hop,terminalSupport=None)))
+        self.assertEqual((fit['room'],fit['face']),(max(r[2] for r in top.regions)-root['decisionPoint'][0],'start'))
+        self.assertFalse(fit['fits'])
+
+    def test_a_jump_onto_a_block_merged_into_the_launch_face_lands_back_on_that_face(self):
+        from parkour_solver.bridge.python_compiler import PythonCompiler
+        from parkour_solver.movement.contact_combinations import scene_contact_options
+        from parkour_solver.movement.generation import generate_choices
+        from parkour_solver.movement.program import append_choice, boundary_state
+        # goal's top is flush with start's and touches it: one merged face, two blocks long on X.
+        generated=[]
+        with PythonCompiler() as compiler:
+            self.run_tree(goal=(1,0,0,2,1,1),generated=generated,compiler=compiler)
+        (roots,options),*_=generated
+        policy=options['run_policy'];s=scene((1,0,0,2,1,1));root=roots[0]
+        context=dict(mode='open',scene=s,program=root,state=boundary_state(root),interactionGate=None,threshold=0.,maxInputs=20,maxEntryInputs=20)
+        hop=next(c for c in (append_choice(root,choice,max_inputs=20) for choice in generate_choices('normal',context))
+                 if c is not None and c['profile']['grounded'][-1] and c.get('terminalSupport')=='goal')
+        self.assertTrue(policy['back'](root,hop))
+        fit=policy['fits'](root,hop)
+        (top,)=[o for o in scene_contact_options(s,1,1) if o.plane==1]
+        self.assertEqual((fit['face'],fit['room']),('goal+start',max(r[2] for r in top.regions)-root['decisionPoint'][0]))
 
     def test_anchor_search_uses_run_budget_across_routes_and_constraint_requests(self):
         clock=[100.]
@@ -207,7 +244,7 @@ class AnchorDFSTests(unittest.TestCase):
         saved=self.queued_tree(refinement)
         checked=[];cancel=threading.Event()
         def bound(guides,span,program,motion,**kwargs):
-            checked.append(program['profile']['airtime'])
+            checked.append(program['profile']['duration'])
             return dict(remainingTicks=remaining)
         def progress(state):
             last=state['dfs']['transitions'][-1]
@@ -231,7 +268,7 @@ class AnchorDFSTests(unittest.TestCase):
 
     def test_equal_optimistic_finish_is_kept_without_checking_other_queued_records(self):
         result=self.check_lazy_queue_bound(remaining=9)
-        self.assertEqual(result['searchState']['dfs']['stack'][-1]['parents'][0]['profile']['airtime'],11)
+        self.assertEqual(result['searchState']['dfs']['stack'][-1]['parents'][0]['profile']['duration'],11)
 
     def test_global_latch_accepts_setup_after_certifier_and_backtracking(self):
         result,calls=self.run_tree(setup=True)
@@ -268,9 +305,9 @@ class AnchorDFSTests(unittest.TestCase):
         choice=dict(kind='cluster',clusterId=0,begin=0,end=5,sides=[[['X',1,.25]]])
         checked=[]
         def probe(node_evaluator,p):
-            p=copy.deepcopy(p);p['decisionNode']='node:'+str(p['profile']['airtime'])
+            p=copy.deepcopy(p);p['decisionNode']='node:'+str(p['profile']['duration'])
             # A ground touch at 5 closes the stretch before it; the prefix ends airborne, so 5 onward is open.
-            p['profile']['grounded']=[True]+[False]*4+[True]+[False]*(p['profile']['airtime']-5)
+            p['profile']['grounded']=[True]+[False]*4+[True]+[False]*(p['profile']['duration']-5)
             p['profile']['regionChoices']=[dict(surface='s',owner='mid',offset=t,options=[[]]) for t in (3,7)]
             checked.append(node_evaluator(p,{},None))
         def node_best(n):
@@ -292,7 +329,7 @@ class AnchorDFSTests(unittest.TestCase):
         from parkour_solver.search.repair_state import branch_key
         checked=[]
         def probe(node_evaluator,p):
-            p=copy.deepcopy(p);p['decisionNode']='node:'+str(p['profile']['airtime'])
+            p=copy.deepcopy(p);p['decisionNode']='node:'+str(p['profile']['duration'])
             checked.append(node_evaluator(p,{},None))
         def choice(n,rhs,key,value):
             row=dict(leg=0,offset=3,mode='X',cmp='GE',rhs=rhs,name='avoidance')
@@ -319,7 +356,7 @@ class AnchorDFSTests(unittest.TestCase):
     def test_interrupted_node_climb_is_suspended_not_decided(self):
         checked=[]
         def probe(node_evaluator,p):
-            p=copy.deepcopy(p);p['decisionNode']='node:'+str(p['profile']['airtime'])
+            p=copy.deepcopy(p);p['decisionNode']='node:'+str(p['profile']['duration'])
             checked.append(node_evaluator(p,{},None))
         def node_best(n):
             # The climb found a best but still has a queued branch: a cancelled or out-of-time check.
@@ -375,7 +412,7 @@ class AnchorDFSTests(unittest.TestCase):
                 p=choices[saved['cursor']];saved['cursor']+=1;yield p
             saved['exhausted']=True
         def evaluate(target_scene,p,compiler,adapter,work,motion,**kwargs):
-            work.before_solve({});n=p['profile']['airtime'];calls.append((p['terminalSupport'],n))
+            work.before_solve({});n=p['profile']['duration'];calls.append((p['terminalSupport'],n))
             rejected=(reject_first and p['terminalSupport']=='finish' and n==finish_tick and
                       (reject_all or p['profile']['jump'][12]))
             best=None if rejected else dict(plan=dict(ticks=n,walls=p['profile']['positionConstraints']),
@@ -407,7 +444,7 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertTrue(all(r['program']['terminalSupport']=='goal' for r in dfs['minimumRunExclusions']))
 
     def physical(self, p, objective):
-        n=p['profile']['airtime']
+        n=p['profile']['duration']
         return dict(candidate=dict(yaw=[1.]*n,positions=[[.5,.6]]*(n+1),velocity=[[0.,0.]]*(n+1),objective=objective),
                     plan=dict(ticks=n,walls=[]),allocation=[0],cost=0)
 
@@ -454,7 +491,7 @@ class AnchorDFSTests(unittest.TestCase):
     def test_resume_reuses_a_complete_finalization_and_reruns_an_interrupted_one(self):
         calls=[]
         def final(p,kwargs):
-            calls.append(p['profile']['airtime'])
+            calls.append(p['profile']['duration'])
             return self.physical(p,-.5)
         first,_=self.run_tree(relaxed=True,final=final)
         saved=json.loads(json.dumps(first['searchState']))

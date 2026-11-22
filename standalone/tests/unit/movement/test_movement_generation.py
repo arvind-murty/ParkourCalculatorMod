@@ -19,7 +19,7 @@ class MovementGenerationTests(unittest.TestCase):
             expected = [(name, fn(0, target)) for name, fn in [('ordinary', ordinary_jump_profile), ('run_off', runoff_profile)]]
             self.assertEqual([(c['profileKind'], c['profile']) for c in choices], [(name, p) for name, p in expected if p is not None])
             for c in choices:
-                self.assertEqual(c['unit']['end'], c['profile']['airtime'])
+                self.assertEqual(c['unit']['end'], c['profile']['duration'])
                 self.assertEqual(c['unit']['jumpInputs'], [0] if c['profile']['jump'][0] else [])
                 self.assertEqual(c['unit']['exitCondition'], {'kind': 'support', 'top': target})
 

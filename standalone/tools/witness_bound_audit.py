@@ -26,7 +26,7 @@ def main():
     for path in args.reports:
         result=read_report(path)['result'];state=result['searchState']
         scene=prepare_scene(result['effectiveRequest']);guides=state['guidePlan'];motion=state['motion']
-        program=result['best']['movementProgram'];finish=program['profile']['airtime']
+        program=result['best']['movementProgram'];finish=program['profile']['duration']
         table=transfer_bounds(scene,guides,motion,InteractionGate(scene,object()))
         contacts=visits(scene,program);anchors=guides['anchors']
         times=[next(t for t,name in contacts if name==a) for a in anchors]

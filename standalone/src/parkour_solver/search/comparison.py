@@ -11,7 +11,7 @@ TOLERANCE = 1e-7
 def comparison_label(program, *, start=0, through=None, identity='', mode='ordinary',
                      context=None, evidence=None):
     p = program.get('profile', {})
-    n = p.get('airtime', 0)
+    n = p.get('duration', 0)
     end = n if through is None else through
     if not 0 <= start <= end <= n:
         raise ValueError('Comparison interval lies outside the program')

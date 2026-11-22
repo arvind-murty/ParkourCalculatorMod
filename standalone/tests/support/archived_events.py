@@ -1,4 +1,5 @@
-"""Archived programs predate member boxes, landing regions and floor-check regions; convert them to the current fields."""
+"""Archived programs predate member boxes, landing regions, floor-check regions and the profile's `duration` name;
+convert them to the current fields."""
 from parkour_solver.movement.contact_combinations import contact_clearance, expanded_face
 from parkour_solver.scene.route import center_bounds
 
@@ -9,6 +10,9 @@ def current_events(value, clearance=None):
         for item in value:
             current_events(item, clearance)
     elif isinstance(value, dict):
+        if 'airtime' in value and 'postExitTicks' not in value:
+            # A profile's input count was named airtime (a ladder timing group's airtime is a different count).
+            value['duration'] = value.pop('airtime')
         if 'box' in value and ('axis' in value and 'direction' in value and 'offset' in value or 'case' in value):
             box = value.pop('box')
             value['boxes'] = [box]

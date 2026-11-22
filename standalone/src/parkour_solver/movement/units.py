@@ -144,7 +144,7 @@ def shifted_unit(unit, offset):
 
 
 def profile_program(profile):
-    n = profile['airtime']
+    n = profile['duration']
     cases = sorted(profile.get('caseEvents', []), key=lambda c: c['input'])
     ceiling = [dict(type='ceiling', case='ceiling_hit', input=e['offset'], anchors={'hit': e['offset'] + 1})
                for e in profile.get('contactEvents', []) if e.get('role') == 'ceiling' and e.get('effect') != 'ladder_ceiling']

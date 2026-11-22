@@ -27,9 +27,9 @@ optional supports/obstacles, not automatically mandatory anchors.
   boxes at different top heights. They are separate identifiers in this input;
   neither mandatory routing nor final ownership semantics are inferred from the
   accidental duplicate label.
-- B13 is a compound +Z stair: lower half Z[−1091,−1090.5], Y[6,6.5]; upper half
-  Z[−1090.5,−1090], Y[6,7]. Normalization names these b13#0 and b13#1, with
-  shared physical owner b13.
+- The +Z stair is two blocks (user, 2026-11-21): b13a, the lower half Z[−1091,−1090.5],
+  Y[6,6.5], and b13b, the upper half Z[−1090.5,−1090], Y[6,7]. Each is its own block
+  for landings, anchors and the visit rules.
 - Coverage remains the old declared [726,−200,−1108,749,24,−1085] box, which
   contains these supplied solids. This does not assert undeclared world terrain.
 
@@ -48,8 +48,8 @@ has been expanded. Touching boundaries do not mean overlapping solid interiors.
 | B10 | [730,731] | [−1091,−1090] | [9,10] |
 | B11 | [730,731] | [−1094,−1092] | [6,6.5] |
 | B12 | [730,731] | [−1092,−1091] | [5,6] |
-| B13 lower | [730,731] | [−1091,−1090.5] | [6,6.5] |
-| B13 upper | [730,731] | [−1090.5,−1090] | [6,7] |
+| B13a (stair, lower half) | [730,731] | [−1091,−1090.5] | [6,6.5] |
+| B13b (stair, upper half) | [730,731] | [−1090.5,−1090] | [6,7] |
 | B14 | [730,731] | [−1090,−1089] | [1,21] |
 | B15 | [731,733] | [−1090,−1089] | [10,11] |
 | B16 | [733,734] | [−1089,−1088] | [10.8125,11] |
@@ -103,9 +103,9 @@ or reachability/landing-time proofs.
 | b9b | 9.5 | [729.7, 731.3] × [-1091.7, -1091.3] | b9a (side), b10 (side) |
 | b10 | 10 | [729.7, 731.3] × [-1091.3, -1090.3] | b14 (side), b15 (side) |
 | b11 | 6.5 | [729.7, 731.3] × [-1093.7, -1091.7] | b6 (side), b7 (side) |
-| b12 | 6 | [729.7, 731.3] × [-1091.7, -1091.3] | b11 (side), b13#0 (side), b13#1 (side) |
-| b13#0 | 6.5 | [729.7, 731.3] × [-1091.3, -1090.8] | b13#1 (side), b14 (side), b18 (side) |
-| b13#1 | 7 | [729.7, 731.3] × [-1090.8, -1090.3] | b14 (side) |
+| b12 | 6 | [729.7, 731.3] × [-1091.7, -1091.3] | b11 (side), b13a (side), b13b (side) |
+| b13a | 6.5 | [729.7, 731.3] × [-1091.3, -1090.8] | b13b (side), b14 (side), b18 (side) |
+| b13b | 7 | [729.7, 731.3] × [-1090.8, -1090.3] | b14 (side) |
 | b14 | 21 | [729.7, 731.3] × [-1090.3, -1088.7] | — |
 | b15 | 11 | [731.3, 732.7] × [-1090.3, -1088.7] | b14 (side), b17 (side) |
 | b16 | 11 | [732.7, 734.3] × [-1088.7, -1087.7] | b17 (side) |
@@ -127,9 +127,9 @@ or reachability/landing-time proofs.
   B9a and B10 cut both ends, leaving center Z[−1091.7,−1091.3], width0.4.
   B14 cuts the +Z end of B10. B15 also appears as a potential raw-footprint
   blocker there, but adds no stricter cut after B14.
-- **Lower row B11→B12→B13:** B11 and both B13 halves cut B12 to the same
-  narrow Z strip[−1091.7,−1091.3]. B13’s upper riser cuts the lower tread
-  at center Z−1090.8; B14 limits the upper tread at Z−1090.3. Their step
+- **Lower row B11→B12→B13a→B13b:** B11, B13a and B13b cut B12 to the same
+  narrow Z strip[−1091.7,−1091.3]. B13b's riser cuts B13a's tread
+  at center Z−1090.8; B14 limits B13b's tread at Z−1090.3. Their step
   heights are0.5. The finite tread regions include permitted body overhang.
 - **Lower-row ceilings:** B11 has2.0 blocks of gap to B8 and2.5 to B9a.
   B12 has3.0 to B9b. B13’s lower/upper tops have2.5/2.0 to B10. All fit

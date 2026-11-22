@@ -25,7 +25,7 @@ def prepare_goal(spec):
 
 
 def height_clock(program, spec):
-    p=program['profile'];n=p['airtime']
+    p=program['profile'];n=p['duration']
     if not n:
         return False
     t=n-1
@@ -47,7 +47,7 @@ def bind_goal(program, spec, clearance=1e-6):
         return program
     if program.get('terminalGoal')==spec:
         return program
-    result=copy.deepcopy(program);p=result['profile'];n=p['airtime']
+    result=copy.deepcopy(program);p=result['profile'];n=p['duration']
     result.pop('prefixChain',None)
     p.setdefault('constraintOwners',[0]*len(p['positionConstraints']))
     rows=goal_rows(spec,n,clearance)
@@ -60,7 +60,7 @@ def bind_goal(program, spec, clearance=1e-6):
 def satisfied(program, candidate, spec, clearance=1e-6):
     if not height_clock(program,spec):
         return False
-    n=program['profile']['airtime']
+    n=program['profile']['duration']
     if len(candidate['positions'])<=n:
         return False
     return all((candidate['positions'][n][0 if r['mode']=='X' else 1]-r['rhs'])*

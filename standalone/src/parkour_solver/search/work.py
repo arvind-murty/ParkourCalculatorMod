@@ -34,7 +34,7 @@ class SearchWork:
         key = hashlib.sha256(json.dumps([profile, program['ladderEvents']], sort_keys=True).encode()).hexdigest()
         self.program_keys.add(key)
         self.counts['completePrograms'] += 1
-        self.counts['completeProgramInputs'] += profile['airtime']
+        self.counts['completeProgramInputs'] += profile['duration']
         for u in program['movementUnits']:
             self.program_domains[u['type']] += 1
         self.counts['selectedFiniteContacts'] += len(profile.get('contactEvents', []))

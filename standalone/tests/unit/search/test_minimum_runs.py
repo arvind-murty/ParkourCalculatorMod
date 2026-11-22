@@ -24,7 +24,7 @@ class MinimumRunTests(unittest.TestCase):
         for minimum in (0,1,2,5,9):
             with self.subTest(minimum=minimum):
                 reps={};p=flight(self.scene,minimum)
-                remember(reps,latest_jump(p,self.scene),'feasible',p['profile']['airtime'])
+                remember(reps,latest_jump(p,self.scene),'feasible',p['profile']['duration'])
                 self.assertIsNone(exclusion(reps,latest_jump(flight(self.scene,minimum),self.scene)))
                 q=exclusion(reps,latest_jump(flight(self.scene,minimum+1),self.scene))
                 self.assertEqual((q['runTicks'],q['minimumFeasibleRunTicks']),(minimum+1,minimum))
@@ -32,7 +32,7 @@ class MinimumRunTests(unittest.TestCase):
                 if minimum:
                     shorter=flight(self.scene,minimum-1);description=latest_jump(shorter,self.scene)
                     self.assertIsNone(exclusion(reps,description))
-                    remember(reps,description,'shorter_feasible',shorter['profile']['airtime'])
+                    remember(reps,description,'shorter_feasible',shorter['profile']['duration'])
                     q=exclusion(reps,latest_jump(p,self.scene))
                     self.assertEqual(q['minimumFeasibleRunTicks'],minimum-1)
                     self.assertEqual(q['representative'],'shorter_feasible')
@@ -41,8 +41,8 @@ class MinimumRunTests(unittest.TestCase):
         p=flight(self.scene,0);q=flight(self.scene,1)
         for v,delta in [(p,0),(q,1)]:
             v['profile']['positionConstraints'].append(dict(mode='X',t1=4+delta,cmp='LE',rhs=4.,name='chosen_side'))
-            v['profile']['constraintOwners'].append(v['profile']['airtime'])
-        reps={};remember(reps,latest_jump(p,self.scene),'a',p['profile']['airtime'])
+            v['profile']['constraintOwners'].append(v['profile']['duration'])
+        reps={};remember(reps,latest_jump(p,self.scene),'a',p['profile']['duration'])
         self.assertIsNotNone(exclusion(reps,latest_jump(q,self.scene)))
         q['profile']['positionConstraints'][-1]['cmp']='GE'
         self.assertIsNone(exclusion(reps,latest_jump(q,self.scene)))
@@ -61,7 +61,7 @@ class MinimumRunTests(unittest.TestCase):
         def entry(offset):
             options=[[dict(leg=0,offset=offset,mode='X',cmp='LE',rhs=rhs,name='contact:region')] for rhs in (4.,5.)]
             return dict(offset=offset,surface='surface:test',owner='goal',options=options)
-        p['profile']['regionChoices']=[entry(p['profile']['airtime']-1)]
+        p['profile']['regionChoices']=[entry(p['profile']['duration']-1)]
         self.assertNotEqual(latest_jump(p,self.scene)['pattern'],latest_jump(q,self.scene)['pattern'])
         q['profile']['regionChoices']=[entry(latest_jump(q,self.scene)['groundState'])]
         self.assertIsNone(latest_jump(q,self.scene))
@@ -70,7 +70,7 @@ class MinimumRunTests(unittest.TestCase):
         p=flight(self.scene,0);q=flight(self.scene,1)
         q['profile']['positionConstraints'].append(dict(mode='X',t1=0,cmp='GE',rhs=.4,name='prior_decision'))
         q['profile']['constraintOwners'].append(0)
-        reps={};remember(reps,latest_jump(p,self.scene),'a',p['profile']['airtime'])
+        reps={};remember(reps,latest_jump(p,self.scene),'a',p['profile']['duration'])
         self.assertIsNone(exclusion(reps,latest_jump(q,self.scene)))
 
 
@@ -114,12 +114,12 @@ class MinimumRunDfsTests(unittest.TestCase):
         def generate(s,*,report,continuation=None,initial_programs=None,checkpoint_tick=None,**kw):
             report['continuation']=dict(continuation or dict(cursor=0,expanded=0,exhausted=False));saved=report['continuation']
             ps=[flight(scene,r) for r in range(3)] if checkpoint_tick is None else [append_choice(initial_programs[0],
-                event_choice(dict(threshold=0.),'normal',boundary_state(initial_programs[0]),checkpoint_tick-initial_programs[0]['profile']['airtime'],jumping=True))]
+                event_choice(dict(threshold=0.),'normal',boundary_state(initial_programs[0]),checkpoint_tick-initial_programs[0]['profile']['duration'],jumping=True))]
             while saved['cursor']<len(ps):
                 p=ps[saved['cursor']];saved['cursor']+=1;yield p
             saved['exhausted']=True;report['termination']='exhausted'
         def evaluate(s,p,compiler,adapter,work,motion,**kw):
-            work.before_solve({});n=p['profile']['airtime'];self.calls.append(n)
+            work.before_solve({});n=p['profile']['duration'];self.calls.append(n)
             best=None if unknown_zero and n==12 else dict(candidate=dict(yaw=[0.]*n,positions=[[.5,0.]]*(n+1),velocity=[[.2,0.]]*(n+1),objective=float(n)),
                 plan=dict(ticks=n,walls=p['profile']['positionConstraints']),profiles=[p['profile']],allocation=[0],cost=0)
             return dict(status='feasible' if best else 'unknown',termination='done',best=best,

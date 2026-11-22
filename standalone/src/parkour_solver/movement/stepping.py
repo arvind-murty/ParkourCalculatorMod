@@ -62,7 +62,7 @@ def stepping_profiles(context):
         flight=ordinary_jump_profile(source_y,lower['top'],max_inputs=horizon)
         if flight is None:
             continue
-        hit=flight['airtime'];landing=hit-1;y=flight['position'][landing]
+        hit=flight['duration'];landing=hit-1;y=flight['position'][landing]
         free=y+vertical_move(dict(threshold=.005,jumpVelocity=[None]*hit,sneak=[False]*hit),landing,flight['velocity'][landing],False)
         if free>=lower['top']:
             continue

@@ -145,7 +145,7 @@ Real11 boundary examples from direct geometry inspection:
 - B9a's +Z face atZ−1092 is covered by B9b over Y[9,9.5]; its exposed portion
   is Y[9.5,10.5]. B9b's corresponding −Z face is entirely internal.
 - B10's −Z face atZ−1091 exposes only Y[9.5,10]; B9b covers its lower part.
-- B13's two stair boxes share physical owner b13 but retain distinct part IDs.
+- The boxes of one multi-box block share its physical owner but retain distinct part IDs.
   Hidden internal riser/base portions must not become candidate exposed faces.
 
 [Planning probe](../../research/real11-extension/face-detection-plan-probe.json)
@@ -188,8 +188,8 @@ than generic copying of private lookup structures.
 ```text
 SourceSolid:
     solidIndex                 # original scene-array index
-    blockId                    # sourceBlock, e.g. b13
-    partId                     # normalized support id, e.g. b13#0
+    blockId                    # sourceBlock, e.g. stair
+    partId                     # normalized support id, e.g. stair#0
     box                        # original physical AABB
 
 SourceFace:
