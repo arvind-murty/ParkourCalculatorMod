@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 
 from parkour_solver.constraints.variants import ConstraintVariants
-from parkour_solver.reachability.service import query_interaction, normalize_alternatives
+from parkour_solver.reachability.service import query_interaction
 from parkour_solver.reachability.intervals import reachable_envelopes
 
 
@@ -49,15 +49,6 @@ class InteractionNormalizationTests(unittest.TestCase):
         self.assertTrue(any(x['proof']['reason']=='norm_reach_contradiction'
                             for x in owner.state['screenExclusions']))
 
-    def test_individually_possible_obstacles_are_rechecked_together(self):
-        x=dict(leg=0,offset=1,mode='X',cmp='GE',rhs=.8)
-        z=dict(leg=0,offset=1,mode='Z',cmp='GE',rhs=.8)
-        owner=self.staged([[x]],[z])
-        self.assertFalse(owner._screen([x])['ruledOut'])
-        self.assertFalse(owner._screen([z])['ruledOut'])
-        self.assertEqual(list(owner),[])
-        self.assertEqual(owner.state['screenExclusions'][-1]['proof']['reason'],'norm_reach_contradiction')
-
     def test_legacy_pending_prefix_is_screened_before_resuming_next_obstacle(self):
         rows=[dict(leg=0,offset=1,mode=axis,cmp='GE',rhs=.8) for axis in ('X','Z')]
         owner=self.staged([rows],[dict(leg=0,offset=2,mode='Z',cmp='GE',rhs=.1)])
@@ -66,32 +57,6 @@ class InteractionNormalizationTests(unittest.TestCase):
         restored=self.staged([rows],owner.items[1]['rows'][0],saved)
         with patch.object(restored,'option',side_effect=AssertionError('Expanded rejected legacy prefix')):
             self.assertEqual(list(restored),[])
-
-    def test_unknown_relaxation_does_not_exclude_prefix(self):
-        # Individually broad bounds admit these rows; exact acceleration coupling
-        # would reject them. A missing/unknown relaxation check must retain the work.
-        rows=[dict(leg=0,offset=1,mode='X',cmp='GE',rhs=1.),
-              dict(leg=0,offset=2,mode='X',cmp='LE',rhs=0.)]
-        owner=self.staged([rows],[dict(leg=0,offset=1,mode='Z',cmp='GE',rhs=-.1)])
-        with patch('parkour_solver.numerics.disk.screen',return_value=None):
-            self.assertFalse(owner._screen(rows)['ruledOut'])
-            self.assertEqual(len(list(owner)),1)
-
-    def test_far_avoid_is_omitted_but_absent_required_contact_rejects_owner(self):
-        request = dict(box=[100., 0., 0., 101., 3., 1.], role='unwanted_contact',
-            windows=[dict(tick=t, phase=p) for t in range(3) for p in ('Y','X','Z')])
-        cache = {}
-        avoid = query_interaction(request, context(), session=cache)
-        self.assertEqual(avoid['status'], 'absent')
-        required = query_interaction(dict(request, role='required_contact'), context(), session=cache)
-        items, audit = normalize_alternatives([dict(requestId='avoid'), dict(requestId='land')],
-                                              dict(avoid=avoid, land=required))
-        self.assertEqual(items, [])
-        self.assertEqual([a['action'] for a in audit], ['omit', 'reject_owner'])
-        self.assertNotEqual(avoid['id'], required['id'])
-        near = query_interaction(dict(request, box=[1.,0.,-.2,2.,3.,.2]), context(), session=cache)
-        self.assertEqual(near['status'], 'not_ruled_out')
-        self.assertEqual(query_interaction(request, {})['status'], 'unknown')
 
     def test_top_contact_boundary_does_not_share_interior_absence_proof(self):
         request = dict(box=[-.5,0.,-.5,.5,1.,.5], role='unwanted_contact', windows=[dict(tick=0, phase='Y')])
@@ -154,16 +119,6 @@ class InteractionNormalizationTests(unittest.TestCase):
         saved['version'] = 1
         with self.assertRaisesRegex(ValueError, 'Incompatible constraint'):
             source(saved)
-
-    def test_absent_prerequisite_rejects_the_whole_owned_alternative(self):
-        proofs=dict(a=dict(id='a',status='absent',role='approach_prerequisite'),
-                    b=dict(id='b',status='unknown',role='required_contact'),
-                    c=dict(id='c',status='unknown',role='required_contact'))
-        kept,audit=normalize_alternatives([dict(requestId='a',owner='case1'),dict(requestId='b',owner='case1'),
-                                           dict(requestId='c',owner='case2')],proofs)
-        self.assertEqual(kept,[dict(requestId='c',owner='case2')])
-        self.assertEqual([v['action'] for v in audit],['reject_owner','reject_owner','retain'])
-
 
 if __name__ == '__main__':
     unittest.main()

@@ -5,7 +5,6 @@ import unittest
 
 from parkour_solver.bridge.python_compiler import PythonCompiler
 from parkour_solver.scene.ladders import climb_walls, entry_channels, ladder_columns
-from parkour_solver.search.ladder_ranking import rank_ladder_schedules, straight_line_score
 from parkour_solver.movement.ladder.schedules import generate_ladder_schedules
 from parkour_solver.scene.route import HALF_WIDTH
 
@@ -18,16 +17,6 @@ class LadderGeometryTests(unittest.TestCase):
         self.assertEqual(len(walls), 1)
         self.assertEqual([(c['family'], c['axis'], c['direction']) for c in entry_channels(columns[0], walls[0])],
                          [('front', 'X', -1), ('side', 'Z', -1), ('side', 'Z', 1)])
-
-    def test_straight_line_ranking_evaluates_progress_and_caps(self):
-        early = {'magnitude': [.1, .01], 'friction': [.9, .9], 'base': [0, 0]}
-        late = {'magnitude': [.01, .1], 'friction': [.9, .9], 'base': [0, 0]}
-        a, b = (straight_line_score(c, [False] * 3, 1) for c in (early, late))
-        self.assertGreater(a['distance'], b['distance'])
-        self.assertLess(a['finalSpeed'], b['finalSpeed'])
-        capped = straight_line_score({'magnitude': [.4], 'friction': [.9], 'base': [0]}, [True, True], 1)
-        self.assertAlmostEqual(capped['distance'], .15000000596046448)
-
 
 class LadderBridgeTests(unittest.TestCase):
     def setUp(self):
@@ -67,19 +56,6 @@ class LadderBridgeTests(unittest.TestCase):
         self.assertFalse(self.compiler.check_scene(scene, positions, [[.3, 0, 0]], [False, False], 5,
                                                  contacts=contacts, **contract)['feasible'])
 
-    def test_first_clamped_sneak_can_preserve_progress_better_than_late_sneak(self):
-        route = {'sharedMovement': True, 'inputs': {'forward': .98, 'strafe': 0, 'sprint': True,
-                                                   'incomingSprint': False, 'force45': True}}
-        plan = {'grounded': [True, False, False, False], 'jump': [True, False, False, False],
-                'ladderTicks': [False, True, True, True, True],
-                'sceneContacts': [{'state': s, 'axis': 0} for s in (2, 3, 4)]}
-        scores = []
-        for tick in (1, 3):
-            p = dict(plan, sneak=[t == tick for t in range(4)])
-            coefficients = self.compiler.compile(route, p, 5)
-            scores.append(straight_line_score(coefficients, p['ladderTicks'], 3))
-        self.assertGreater(scores[0]['distance'], scores[1]['distance'])
-
     def test_coplanar_climb_parts_require_the_declared_face_plane_and_overlap(self):
         lower, upper = [1, 0, -1, 2, 2, 2], [1, 2, -1, 2, 4, 2]
         scene = {'version': 1, 'profile': 'minecraft-1.8.9', 'bounds': [-5, -5, -5, 5, 10, 5],
@@ -94,15 +70,3 @@ class LadderBridgeTests(unittest.TestCase):
                 checked = self.compiler.check_scene(scene, positions, movement, [False, False], 5,
                                                      contacts=[dict(contact, boxes=[wrong])])
                 self.assertFalse(checked['feasible'])
-
-    def test_ranked_pool_preserves_backups_and_does_not_change_schedules(self):
-        request = json.loads(MOVEMENT_FIXTURES / 'ladder-schedule-generator.json'.read_text())
-        request['maxSchedules'] = 20
-        schedules = generate_ladder_schedules(request)['schedules']
-        original = copy.deepcopy(schedules)
-        result = rank_ladder_schedules(schedules, self.compiler, seconds=5, representatives=1)
-        self.assertEqual(result['rankedCount'], len(schedules))
-        self.assertTrue(result['backups'])
-        self.assertEqual(schedules, original)
-        for row in result['ranked'] + result['backups']:
-            self.assertEqual(row['score']['initialVelocity'], [0, 0])

@@ -21,29 +21,6 @@ def waypoint_seed(problem, waypoints):
     return yaw
 
 
-def _raw_candidate(problem, candidate):
-    candidate['rawMovement'] = []
-    for t, yaw in enumerate(candidate['yaw']):
-        angle = problem['base'][t] + math.radians(yaw)
-        candidate['rawMovement'].append([(v if abs(v) >= problem['threshold'] else 0) + problem['magnitude'][t] * q
-            for v, q in zip(candidate['velocity'][t], (math.cos(angle), math.sin(angle)))])
-    candidate['friction'] = problem['friction']
-    candidate['movement'] = problem['movement']
-    return candidate
-
-
-def _vertical(config, ladder, hits):
-    n, x, contacts = len(ladder) - 1, 0., []
-    for t in range(n):
-        x += .05 if t + 1 in hits else .1
-        if t + 1 in hits:
-            contacts.append({'state': t + 1, 'axis': 0, 'plane': x, 'direction': 1})
-    return validate(prepare({'version': 1, 'ticks': n, 'position': [0, 0], 'velocity': [0, 0],
-        'magnitude': [.1] * n, 'friction': [0] * n, 'base': [0] * n, 'yaw': [0] * n,
-        'contacts': contacts, 'vertical': config, 'ladderTicks': ladder,
-        'objective': {'axis': 'X', 'sense': 'MAX', 'tick': n}}), [0] * n)
-
-
 def ladder_waypoints(problem, selections):
     waypoints = []
     for offset, selected in selections:

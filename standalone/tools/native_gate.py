@@ -1,8 +1,6 @@
 """Run the explicitly recorded native acceptance scope from any cwd."""
 import argparse
-import hashlib
 import json
-import os
 from pathlib import Path
 import sys
 import time

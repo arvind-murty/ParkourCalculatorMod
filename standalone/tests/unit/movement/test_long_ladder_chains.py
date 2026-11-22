@@ -7,10 +7,10 @@ import unittest
 from parkour_solver.constraints.contacts import floor_checks
 from parkour_solver.search.repair import solve_contact_branches
 from parkour_solver.scene.normalize import prepare_scene
-from parkour_solver.movement.profiles import compile_block_path
 from parkour_solver.bridge.python_compiler import PythonCompiler
 from parkour_solver.validation.scene import check_geometry
 from parkour_solver.numerics import prepare, validate
+from tests.support.ladder_composition import ladder_route
 
 
 ROOT=AUTONOMY_DATA
@@ -48,10 +48,11 @@ class LongLadderChainTests(unittest.TestCase):
                     scene=prepare_scene(request)
                     self.assertGreater(scene['initial']['position'][2],.5)
                     self.assertEqual(e['route']['ladderEvents'][0]['schedule']['entryState'],0)
-                    edge=dict(source='start',target=scene['goalBlock'],profileKind='ladder',profile=e['profiles'][0],
-                              ladderEvents=e['route']['ladderEvents'],entryFace=None,exitFace=None)
                     path=['start',scene['goalBlock']]
-                    compiled=compile_block_path(scene,path,[edge])
+                    # Evidence saved before the profile rename names the input count `airtime`.
+                    profile={('duration' if k=='airtime' else k):v for k,v in e['profiles'][0].items()}
+                    compiled=ladder_route(scene,dict(profile=profile,ladderEvents=e['route']['ladderEvents']),
+                                          scene['goalBlock'])
                     r=solve_contact_branches(compiled['route'],compiled['profiles'],floor_checks(scene,path,compiled['profiles']),
                         compiler,seconds=45,candidate_seconds=10,retries=1,geometry=scene['collisionScene'],
                         motion_bound={'storedSpeedNorm':2,'movementAfterSupportCheck':2},
@@ -64,7 +65,6 @@ class LongLadderChainTests(unittest.TestCase):
                     self.assertGreater(b['candidate']['positions'][1][1],scene['initial']['position'][2])
                     self.assertEqual(sum(b['plan']['jump']),1)
                     self.assertFalse(any(b['candidate']['onGround'][1:-1]))
-
 
 if __name__=='__main__':
     unittest.main()

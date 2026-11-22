@@ -7,8 +7,6 @@ import unittest
 from unittest.mock import patch
 
 from parkour_solver.search.repair import solve_contact_branches
-from parkour_solver.spatial.checkpoints import retain_unresolved
-from parkour_solver.search.engine import _key
 from parkour_solver.movement.program import compile_program, program_physics_key
 from parkour_solver.search.movement import iter_movement_programs
 from parkour_solver.search.repair_state import compatible, context
@@ -58,18 +56,6 @@ class RepairResumeTests(RepairHarness, unittest.TestCase):
             resume_state=json.loads(json.dumps(first['repairState'])),retry_unresolved=False)
         self.assertEqual(requests,[[row]])
         self.assertEqual(resumed['status'],'feasible')
-
-    def test_extended_program_keeps_guess_without_copying_exact_old_problem_work(self):
-        scene=flat_scene()
-        parent=next(p for p in programs(scene,2) if p['profile']['jump'][0])
-        parent['guideSeedYaw']=[12.,13.]
-        parent['repairState']=dict(context=dict(scope=dict(solveIdentity='old-exact-problem')),pending=[dict(rows=[])])
-        generator=iter_movement_programs(scene,checkpoint_tick=4,threshold=0.,initial_programs=[parent],
-                                         context_adapter=lambda c:c.update(interactionGate=None))
-        child=next(generator);generator.close()
-        self.assertNotIn('repairState',child)
-        self.assertEqual(child['guideSeedYaw'],[12.,13.])
-        self.assertEqual(len(parent['repairState']['pending']),1)
 
     def test_valid_saved_incumbent_does_not_need_another_numerical_request(self):
         first=self.invoke(route(),lambda *a,**k:outcome(),lambda *a:dict(accepted=True))
@@ -173,35 +159,6 @@ class RepairResumeTests(RepairHarness, unittest.TestCase):
         self.assertIsNone(second['best'])
 
 
-    def test_corridor_diagnostics_survive_branch_result_without_new_replay_calls(self):
-        from parkour_solver.validation.scoped_scene import CorridorAdapter
-        from parkour_solver.spatial.compat.corridors import Corridor
-        request = route()
-        scene = flat_scene()
-        corridor = Corridor(3, [], [], [], (), [(-1., 0., -1., 1., 0., 1.)], 0.)
-        adapter = CorridorAdapter(scene, corridor, [])
-        response = outcome()
-        wall = dict(mode='X', t1=0, cmp='GE', rhs=-.5)
-        response['best']['plan'].update(events=[dict(jump=0)], walls=[wall])
-        response['best']['candidate']['positions'] = [[0., 0.], [2., 0.], [3., 0.]]
-        response['attempts'] = [dict(problemHash='fixed-problem', status='feasible', allocation=[0], stage='jump', leg=0)]
-        def filter_candidate(plan, candidate, vertical):
-            return adapter.candidate(plan, candidate, vertical, partial=True)
-        with patch('parkour_solver.search.repair.check_geometry') as physical:
-            result = self.invoke(request, lambda *a, **k: copy.deepcopy(response), filter_candidate,
-                geometry=scene['collisionScene'])
-        physical.assert_not_called()
-        logged = json.loads(json.dumps(result, allow_nan=False))['contactAttempts'][0]['candidateFilter']['corridorAudit']
-        self.assertEqual(logged['numericalRequests'][0]['problemHash'], 'fixed-problem')
-        self.assertEqual(logged['physicalReplay']['status'], 'not_run')
-        self.assertEqual(logged['failure']['input'], 0)
-        self.assertEqual(logged['failure']['phase'], 'X')
-        self.assertEqual(logged['plan']['walls'], [wall])
-        self.assertEqual(logged['selectedPassages'], [])
-        self.assertEqual(logged['selectedHits'], [])
-        self.assertIsNone(result['best'])
-        self.assertEqual(len(result['repairState']['pending']), 1)
-
     def test_pending_guards_and_facing_guesses_resume_without_repeating_root(self):
         rows=[dict(leg=0,offset=1,mode='X',cmp='GE',rhs=v) for v in (1,2)]
         def filter_candidate(*args):
@@ -261,29 +218,6 @@ class RepairResumeTests(RepairHarness, unittest.TestCase):
                            lambda *a:dict(accepted=True),cancel_event=cancelled)
         state=json.loads(json.dumps(result['repairState']))
         self.assertEqual(len(state['pending']),1)
-
-    def test_compatible_extension_preserves_symbolic_state_and_has_distinct_search_identity(self):
-        scene=flat_scene()
-        first=next(p for p in programs(scene,2) if p['profile']['jump'][0])
-        compiled=compile_program(scene,first,require_complete=False)
-        ctx=context(compiled['route'],compiled['profiles'],scene['collisionScene'],{'corridor':1})
-        branch=dict(score=1,rows=[dict(leg=0,offset=1,mode='Z',cmp='LE',rhs=.4)],passages=[],hits=[],warmYaw=[1,2])
-        state=dict(version=1,context=ctx,pending=[branch],unresolved=[],seen=[])
-        retained=retain_unresolved(first,state)
-        self.assertEqual(program_physics_key(first),program_physics_key(retained))
-        self.assertEqual(_key(first),_key(retained))
-        generator=iter_movement_programs(scene,checkpoint_tick=4,threshold=0.,initial_programs=[retained],deadline=time.monotonic()+2,
-                                         context_adapter=lambda c:c.update(interactionGate=None))
-        extended=next(generator);generator.close()
-        self.assertEqual(extended['repairState'],state)
-        self.assertEqual(extended['guideSeedYaw'],[1,2])
-        later=compile_program(scene,extended,require_complete=False)
-        new_ctx=context(later['route'],later['profiles'],scene['collisionScene'],{'corridor':1})
-        self.assertTrue(compatible(ctx,new_ctx))
-        new_ctx['profiles'][0]['jump'][0]=False
-        self.assertFalse(compatible(ctx,new_ctx))
-        self.assertNotIn('positions',retained)
-        self.assertNotIn('velocity',retained)
 
     def climb(self, order, value, *, solves=100, **kwargs):
         # Each variant's single row encodes its family and switch tick; value(family, tick) is the objective.

@@ -3,10 +3,10 @@ import math
 import unittest
 
 from parkour_solver.constraints.contacts import avoid_contact_rows, contact_conflicts, floor_checks
-from parkour_solver.movement.profiles import ordinary_jump_profile, runoff_profile, stair_jump_profile
-from parkour_solver.movement.profiles import compile_block_path
+from parkour_solver.movement.profiles import ordinary_jump_profile
 from parkour_solver.scene.normalize import prepare_scene
 from parkour_solver.scene.route import HALF_WIDTH, schedule
+from tests.support.checkpoint_guidance import landing_programs
 
 
 def descending_scene():
@@ -17,52 +17,23 @@ def descending_scene():
                        {'id': 'goal', 'bounds': [2, 3, 0, 1], 'top': 1}]}
 
 
+def descending_collision_scene(goal_top=1, extra=()):
+    """descending_scene as collision boxes, which the open generators need."""
+    blocks = [dict(id='start', boxes=[[0, 1, 0, 1, 2, 1]]), dict(id='goal', boxes=[[2, goal_top - 1, 0, 3, goal_top, 1]])]
+    return prepare_scene(dict(version=1, sceneModel='collision_boxes', geometryBounds=[-5, -5, -5, 10, 10, 10],
+                              initial=dict(position=[.5, 2, .5], velocity=[0, -.0784000015258789, 0]),
+                              startBlock='start', goalBlock='goal', blocks=blocks + list(extra)))
+
+
+def run_off(scene):
+    return next(p for p in landing_programs(scene, 'normal') if not any(p['profile']['jump']))
+
+
+def ordinary_jump(scene):
+    return next(p for p in landing_programs(scene, 'normal') if p['profile']['jump'][0] and len(p['movementUnits']) == 1)
+
+
 class FloorContactTests(unittest.TestCase):
-    def test_runoff_checks_the_departure_floor_on_its_first_input(self):
-        scene = prepare_scene(descending_scene())
-        profile = runoff_profile(2, 1)
-        profile['profileKind'] = 'run_off'
-        checks = floor_checks(scene, ['start', 'goal'], [profile])
-        self.assertIn(('start', 0), [(c['block']['id'], c['offset']) for c in checks if c['reason'] == 'earlier_floor'])
-
-    def test_no_jump_first_movement_uses_its_own_step_eligibility(self):
-        scene = prepare_scene(descending_scene())
-        scene['blocks'].append({'id': 'low_step', 'bounds': [3, 4, 0, 1], 'top': 2.25})
-        fall = floor_checks(scene, ['start', 'goal'], [runoff_profile(2, 1)])
-        jump = floor_checks(scene, ['start', 'goal'], [ordinary_jump_profile(2, 1)])
-        self.assertTrue(any(c['block']['id'] == 'low_step' and c['reason'] == 'unplanned_stair' for c in fall))
-        self.assertFalse(any(c['block']['id'] == 'low_step' and c['reason'] == 'unplanned_stair' for c in jump))
-
-    def test_ordinary_profile_must_avoid_an_unplanned_first_movement_stair_cancel(self):
-        scene = descending_scene()
-        scene['blocks'][1]['top'] = 2.5
-        scene = prepare_scene(scene)
-        ordinary = ordinary_jump_profile(2, 2.5)
-        checks = floor_checks(scene, ['start', 'goal'], [ordinary])
-        self.assertEqual([(c['reason'], c['offset']) for c in checks], [('unplanned_stair', 1)])
-        scene['stairBoost'] = False
-        self.assertEqual(floor_checks(scene, ['start', 'goal'], [ordinary]), checks)
-        stair = stair_jump_profile(2, 2.5)
-        stair['profileKind'] = 'stair'
-        self.assertEqual(floor_checks(scene, ['start', 'goal'], [stair]), [])
-
-    def test_descending_profile_must_miss_the_departure_floor_before_the_lower_target(self):
-        scene = prepare_scene(descending_scene())
-        compiled = compile_block_path(scene, ['start', 'goal'])
-        checks = floor_checks(scene, ['start', 'goal'], compiled['profiles'])
-        self.assertEqual([(c['block']['id'], c['offset']) for c in checks], [('start', 11)])
-        plan = schedule(compiled['route'], [2])
-        positions = [[10, 10] for _ in range(plan['ticks'] + 1)]
-        positions[13] = [.5, .5]
-        conflicts = contact_conflicts(checks, plan, {'positions': positions})
-        self.assertEqual(len(conflicts), 1)
-        self.assertEqual(conflicts[0]['state'], 13)
-        rows = avoid_contact_rows(conflicts[0], 1e-6)
-        self.assertEqual({(r['mode'], r['cmp']) for r in rows}, {('X', 'LE'), ('X', 'GE'), ('Z', 'LE'), ('Z', 'GE')})
-        self.assertTrue(all(r['leg'] == 0 and r['offset'] == 11 for r in rows))
-        positions[13] = [2, .5]
-        self.assertEqual(contact_conflicts(checks, plan, {'positions': positions}), [])
-
     def test_higher_intermediate_floor_is_checked_even_if_it_is_not_in_the_route(self):
         scene = prepare_scene(descending_scene())
         scene['blocks'].append({'id': 'unselected', 'bounds': [5, 6, 0, 1], 'top': 2.5})
@@ -80,11 +51,52 @@ class FloorContactTests(unittest.TestCase):
         self.assertEqual(scene, original)
 
 
-
 def box_scene(solids, tops):
     return dict(collisionScene=dict(solids=solids),
                 blocks=[dict(id=name, sourceBlock=name, solidIndex=i, top=top) for i, (name, top) in enumerate(tops)])
 
+
+    def test_runoff_checks_the_departure_floor_on_its_first_input(self):
+        scene = descending_collision_scene()
+        checks = floor_checks(scene, ['start', 'goal'], [run_off(scene)['profile']])
+        self.assertIn(('start', 0), [(c['block']['id'], c['offset']) for c in checks if c['reason'] == 'earlier_floor'])
+
+    def test_no_jump_first_movement_uses_its_own_step_eligibility(self):
+        scene = descending_collision_scene(extra=[dict(id='low_step', boxes=[[3, 1.25, 0, 4, 2.25, 1]])])
+        fall = floor_checks(scene, ['start', 'goal'], [run_off(scene)['profile']])
+        jump = floor_checks(scene, ['start', 'goal'], [ordinary_jump(scene)['profile']])
+        self.assertTrue(any(c['block']['id'] == 'low_step' and c['reason'] == 'unplanned_stair' for c in fall))
+        self.assertFalse(any(c['block']['id'] == 'low_step' and c['reason'] == 'unplanned_stair' for c in jump))
+
+    def test_ordinary_profile_must_avoid_an_unplanned_first_movement_stair_cancel(self):
+        scene = descending_collision_scene(goal_top=2.5)
+        ordinary = ordinary_jump(scene)['profile']
+        checks = floor_checks(scene, ['start', 'goal'], [ordinary])
+        self.assertEqual([(c['reason'], c['offset']) for c in checks], [('unplanned_stair', 1)])
+        scene['stairBoost'] = False
+        self.assertEqual(floor_checks(scene, ['start', 'goal'], [ordinary]), checks)
+        stair = next(p for p in landing_programs(scene, 'stepping', cases=['slab_boost']))
+        self.assertEqual(floor_checks(scene, ['start', 'goal'], [stair['profile']]), [])
+
+    def test_descending_profile_must_miss_the_departure_floor_before_the_lower_target(self):
+        from parkour_solver.movement.program import compile_program
+        from parkour_solver.scene.route import prepare_route
+        scene = descending_collision_scene()
+        compiled = compile_program(scene, ordinary_jump(scene))
+        checks = floor_checks(scene, ['start', 'goal'], compiled['profiles'])
+        self.assertEqual([(c['block']['id'], c['offset']) for c in checks], [('start', 11)])
+        route = prepare_route(dict(compiled['route'], maxTotalRunTicks=2, runBounds=[[0, 2]]))
+        plan = schedule(route, [2])
+        positions = [[10, 10] for _ in range(plan['ticks'] + 1)]
+        positions[13] = [.5, .5]
+        conflicts = contact_conflicts(checks, plan, {'positions': positions})
+        self.assertEqual(len(conflicts), 1)
+        self.assertEqual(conflicts[0]['state'], 13)
+        rows = avoid_contact_rows(conflicts[0], 1e-6)
+        self.assertEqual({(r['mode'], r['cmp']) for r in rows}, {('X', 'LE'), ('X', 'GE'), ('Z', 'LE'), ('Z', 'GE')})
+        self.assertTrue(all(r['leg'] == 0 and r['offset'] == 11 for r in rows))
+        positions[13] = [2, .5]
+        self.assertEqual(contact_conflicts(checks, plan, {'positions': positions}), [])
 
 class ExposedTopTests(unittest.TestCase):
     def landings(self, scene, **context):
@@ -93,6 +105,16 @@ class ExposedTopTests(unittest.TestCase):
         state = dict(position=1.2, velocity=REST_CARRY, onGround=True, previousHorizontalCollision=False)
         return [c for c in normal_choices(dict(dict(scene=scene, state=state, maxInputs=30, threshold=0., interactionGate=None), **context))
                 if c.get('terminalSupport') == 'floor']
+
+    def test_a_merged_face_gets_one_landing_per_approach(self):
+        from parkour_solver.movement.normal import normal_choices
+        from parkour_solver.physics.vertical import REST_CARRY
+        # floor and pad are flush at one height: one face, named for both, carrying both boxes.
+        scene = box_scene([[0, 0, 0, 2, 1, 2], [2, 0, 0, 4, 1, 2]], [('floor', 1), ('pad', 1)])
+        state = dict(position=1.2, velocity=REST_CARRY, onGround=True, previousHorizontalCollision=False)
+        choices = list(normal_choices(dict(scene=scene, state=state, maxInputs=30, threshold=0., interactionGate=None)))
+        self.assertEqual([c['terminalSupport'] for c in choices], ['floor+pad']*2)
+        self.assertTrue(all(e['boxes'] == scene['collisionScene']['solids'] for c in choices for e in c['profile']['contactEvents']))
 
     def test_landing_next_to_a_taller_neighbour_is_the_clipped_l(self):
         scene = box_scene([[0, 0, 0, 2, 1, 2], [2, 0, 1, 3, 3, 2]], [('floor', 1), ('pillar', 3)])
@@ -116,13 +138,11 @@ class ExposedTopTests(unittest.TestCase):
             list(normal_choices(dict(scene=scene, state=state, maxInputs=30, threshold=0.)))
         self.assertTrue(self.landings(scene))
 
-    def test_a_departed_block_gets_no_landing_and_supports_still_filter(self):
+    def test_a_departed_block_gets_no_landing(self):
         scene = box_scene([[0, 0, 0, 2, 1, 2], [2, 0, 1, 3, 3, 2]], [('floor', 1), ('pillar', 3)])
         self.assertTrue(self.landings(scene))
-        self.assertEqual(self.landings(scene, feetAllowed=lambda block: block['id'] != 'floor'), [])
-        self.assertTrue(self.landings(scene, feetAllowed=lambda block: block['id'] != 'pillar'))
-        self.assertEqual(self.landings(scene, supportAllowed=lambda block: block['id'] != 'floor',
-                                       feetAllowed=lambda block: True), [])
+        self.assertEqual(self.landings(scene, feetAllowed=lambda name: name != 'floor'), [])
+        self.assertTrue(self.landings(scene, feetAllowed=lambda name: name != 'pillar'))
 
     def test_real11_run_tick_landing_drops_the_rectangle_it_cannot_reach(self):
         import json
@@ -386,9 +406,17 @@ class BlockTableTests(unittest.TestCase):
         from parkour_solver.reachability.service import InteractionGate
         scene = box_scene([[0, 0, 0, 1, 1, 1], [1, 0, 3, 2, 1, 4], [100, 0, 0, 101, 1, 1], [0, 30, 0, 1, 31, 1]],
                           [('start', 1), ('near', 1), ('far', 1), ('high', 31)])
-        table = InteractionGate(scene, None).reachable_blocks('start')
+        table = InteractionGate(scene, None).reachable_faces('start')
         self.assertEqual(table['blocks'], {'start', 'near'})
         self.assertEqual(table['solids'], {0, 1})
+
+    def test_a_face_table_measures_from_every_block_of_the_face(self):
+        from parkour_solver.reachability.service import face_table
+        # A and B make one long face; far is out of reach from A alone but next to B's far end.
+        scene = box_scene([[0, 0, 0, 1, 1, 1], [1, 0, 0, 8, 1, 1], [10, 0, 0, 11, 1, 1]], [('A', 1), ('B', 1), ('far', 1)])
+        self.assertIn('far', face_table(scene, 'A+B', {})['blocks'])
+        # No face is named A, so its table is A's own blocks', as before faces.
+        self.assertEqual(face_table(scene, 'A', {})['blocks'], {'A', 'B'})
 
     def test_real11_extended_table_kinds_for_b5(self):
         import json
@@ -397,7 +425,7 @@ class BlockTableTests(unittest.TestCase):
         from parkour_solver.scene.normalize import prepare_scene
         request = json.loads((STANDALONE_ROOT/'cases/real11/extended-anchors.json').read_text())['request']
         scene = prepare_scene(request)
-        table = InteractionGate(scene, None).reachable_blocks('b5')
+        table = InteractionGate(scene, None).reachable_faces('b5')
         solid = {b['id']: b['solidIndex'] for b in scene['blocks']}
         self.assertEqual(table['landing'], {'b5', 'b7', 'b11', 'b12', 'b13a', 'b13b', 'b18'})
         self.assertEqual(table['stepping']-table['landing'], {'b19'})
@@ -419,7 +447,7 @@ class BlockTableTests(unittest.TestCase):
                 tabled = [[(c['profile'], c.get('terminalSupport')) for c in kind]
                           for kind in generated(scene, node, gate, owner)]
                 self.assertEqual(tabled, plain, (owner, node['profile']['duration']))
-                removed += len(scene['blocks'])-len(gate.reachable_blocks(owner)['blocks'])
+                removed += len(scene['blocks'])-len(gate.reachable_faces(owner)['blocks'])
         return removed
 
     def test_table_keeps_every_real11_choice(self):

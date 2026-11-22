@@ -2,7 +2,7 @@ import copy
 import unittest
 from unittest.mock import patch
 
-from parkour_solver.movement.profiles import ordinary_jump_profile, runoff_profile
+from parkour_solver.movement.profiles import ordinary_jump_profile
 from parkour_solver.movement.generation import GENERATORS, generate_choices, generate_unit_programs, materialize_generated_units, sneak_domain
 from parkour_solver.movement.units import compile_units, movement_program
 from parkour_solver.movement.ladder.schedules import generate_ladder_schedules
@@ -13,16 +13,6 @@ def context(**options):
 
 
 class MovementGenerationTests(unittest.TestCase):
-    def test_normal_uses_existing_jump_and_runoff_physics(self):
-        for target in (-2, 0, .5, 1, 2):
-            choices = list(generate_choices('normal', {'mode': 'support', 'sourceTop': 0, 'targetTop': target}))
-            expected = [(name, fn(0, target)) for name, fn in [('ordinary', ordinary_jump_profile), ('run_off', runoff_profile)]]
-            self.assertEqual([(c['profileKind'], c['profile']) for c in choices], [(name, p) for name, p in expected if p is not None])
-            for c in choices:
-                self.assertEqual(c['unit']['end'], c['profile']['duration'])
-                self.assertEqual(c['unit']['jumpInputs'], [0] if c['profile']['jump'][0] else [])
-                self.assertEqual(c['unit']['exitCondition'], {'kind': 'support', 'top': target})
-
     def test_composer_uses_registered_generators_and_emits_exact_five_grammars(self):
         with patch.object(GENERATORS['normal'], 'generate', wraps=GENERATORS['normal'].generate) as normal, \
                 patch.object(GENERATORS['ladder_climb'], 'generate', wraps=GENERATORS['ladder_climb'].generate) as climb, \

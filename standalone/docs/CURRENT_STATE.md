@@ -7,8 +7,7 @@ everything not being worked on is in the [deferred-work register](DEFERRED_WORK.
 ## Branches and status
 
 - Base branch: the fork's `main`. It contains the Real11 extension work: extended
-  geometry and bounds, the six-direction [face catalog](design/FACE_MERGING_IMPLEMENTATION_PLAN.md)
-  (not yet consumed by any generator) and the [longer Real11 task](../research/real11-long-solve/README.md).
+  geometry and bounds and the [longer Real11 task](../research/real11-long-solve/README.md).
 - Merged as PR #5 (`feat/disk-interim-solver`): automatic discovery runs on the
   Clarabel [disk relaxation](reference/NUMERICAL_SOLVER.md#disk-relaxation): the
   HiGHS LP screen is gone, interim candidates are relaxed, an acceleration-shortfall
@@ -75,7 +74,7 @@ everything not being worked on is in the [deferred-work register](DEFERRED_WORK.
 4. [Branch scheduling](design/BRANCH_SCHEDULING_INVESTIGATION.md) (deferred): when work runs
    and when it is excluded.
 5. [Automatic grouping](design/PRUNING_IMPROVEMENTS_BACKLOG.md#automatic-grouping-joint-constraint-solving):
-   every interaction type now reads one [shared scene geometry](design/FACE_MERGING_IMPLEMENTATION_PLAN.md)
+   every interaction type now reads one [shared scene geometry](design/SCENE_SURFACES.md)
    (`spatial/surfaces.py`); grouping itself is to be re-planned on it. Commitment
    and cadence stay deferred. Other pruning gaps stay in the backlog.
 6. [Pruning research](research/PRUNING_RESEARCH.md): "why one best arrival fails",
@@ -104,7 +103,7 @@ everything not being worked on is in the [deferred-work register](DEFERRED_WORK.
 | Numerical queries | Selected meaningful completed decisions at cadence1; anchors/final mandatory. No raw-hold NLP or separate ancestor-probe pass. Every query re-solves from original state with earlier facings free. |
 | Solve intent / outcome | Intermediate configured onward objective plus early feasible stop; final configured optimization. A feasible seed can avoid an intermediate worker. Exact operational oracle rejection, repair exhaustion and suspended/error are distinct; child failure never labels an unqueried ancestor. |
 | Guide / turnaround | Backward nearest-point landing-cover guides, onward E→N objective, no discrete progress/slack score. >110° guide cue; one approach-facing physical/imaginary diagonal edge+0.3-block margin gives one frozen binary mode, with distances and replay flips logged. |
-| Visits / movement scope | Multiple current-owner hops supported; departed-owner returns and repeated mandatory anchors deferred. Intentional wall-hit generation deferred; required named-case contacts remain. Supplied corridors/virtual tasks keep separate compatibility paths. |
+| Visits / movement scope | Visits name merged top faces. Multiple current-face hops supported; departed-face returns and repeated mandatory anchors deferred. Intentional wall-hit generation deferred; required named-case contacts remain. Tasks are physical landings; the supplied-corridor, fixed-clock, virtual-goal and blocks searches were removed (2026-11-21). |
 
 Search needs only Python and the numerical extras: the default movement bridge
 (`bridge.python_compiler`) answers coefficient, footprint and scene requests in
@@ -112,8 +111,7 @@ process with the Java bridge's replies, and the Java bridge is an explicit oracl
 ([runbook](RUNBOOK.md#install-and-environment)).
 
 All intermediate comparison predicates live in `search.comparison`; callers
-normalize evidence and execute its verdict. Legacy `minimum_runs` family extraction
-and `time_progress` record APIs delegate rather than owning a second policy.
+normalize evidence and execute its verdict.
 Terminal actualT/objective ranking stays separate. Cells, portals and soft guide
 points are not discrete input clocks or fixed dynamic seams.
 

@@ -1,9 +1,7 @@
 """Verify production boundaries and byte-preserved relocated evidence."""
-import argparse
 import ast
 import hashlib
 import json
-from pathlib import Path
 
 from tools.paths import STANDALONE_ROOT
 

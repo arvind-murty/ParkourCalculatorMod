@@ -5,10 +5,9 @@ This directory is outside the installed solver. Current production code is in
 for active commands and the [decisions index](../docs/DECISIONS_AND_PLANS.md) for
 which proposals are implemented or deferred.
 
-`route_guidance/` is the disk/SOCP scientific prototype, with current imports and
-optional research dependencies. `legacy_cell_routes/` contains maintained
-comparison/diagnostic drivers removed from production. These can use production
-APIs but production cannot import them.
+`route_guidance/` keeps the disk/SOCP prototype's README and measurements. Its scripts, and the
+`legacy_cell_routes/` comparison and diagnostic drivers, were removed with the legacy searches they ran
+through (2026-11-21); both last ran at `8266a38d`.
 
 All other existing experiment directories are **frozen bundles** relocated from
 `autonomy/experiments/`. Their Python, readmes, data, reports, diagrams, manifests,
@@ -25,7 +24,7 @@ Read those files with the old key, or with the frozen bundle's own scripts.
 
 | Current tool | Purpose |
 | --- | --- |
-| `python -m tools.geometry_bounds` | Static player collision/landing-cover report; `--faces` adds the production catalog of merged exposed physical faces across all six orientations. |
+| `python -m tools.geometry_bounds` | Static player collision/landing-cover report. |
 | `python -m tools.profiling.run` | Cold current task run, scoped bookkeeping timings, source/config hashes and retained-witness replays. |
 | [C++ pruning pilot](cpp-pruning-pilot/README.md) | Exact Python/C++ envelope and interaction comparisons, paired live searches and a reproducible experimental native build. |
 | [Bookkeeping setup and measurements](bookkeeping-measurement/README.md) | Isolated baseline, sampled digest/preparation/copy measurements, hook calibration and durable resume; no production optimization. |

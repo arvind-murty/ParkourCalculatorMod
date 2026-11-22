@@ -3,7 +3,7 @@
 import math
 
 from parkour_solver.canonical import digest
-from parkour_solver.spatial.checkpoints import Checkpoint
+from parkour_solver.spatial.checkpoints import direction_objective
 
 
 def nearest(cover, point):
@@ -106,7 +106,7 @@ def decision_objective(guides, reached, point, fallback):
     direction=unit(target[0]-point[0],target[2]-point[2])
     if direction is None:
         return dict(fallback)
-    return Checkpoint(1,-1,direction,tuple(point),tuple(target),()).objective
+    return direction_objective(direction)
 
 
 def onward_objective(guides, span, fallback):
@@ -118,4 +118,4 @@ def onward_objective(guides, span, fallback):
     direction=unit(n[0]-e[0],n[2]-e[2])
     if direction is None:
         return dict(fallback)
-    return Checkpoint(1,-1,direction,tuple(e),tuple(n),()).objective
+    return direction_objective(direction)

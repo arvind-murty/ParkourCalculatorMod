@@ -294,7 +294,8 @@ class JavaOracleTests(unittest.TestCase):
     @unittest.skipUnless(RUNTIME, 'Set PKC_IPOPT_PYTHON for fixture candidate calls')
     def test_fixture_candidate_calls_match(self):
         from parkour_solver.search.ordered_route import find_route
-        from parkour_solver.search.support_profiles import find_blocks
+        from parkour_solver.search.engine import find_checkpoint_route
+        from tests.support.checkpoint_guidance import flat_scene
         from tests.support.paths import AUTONOMY_DATA
         recorded = []
 
@@ -308,9 +309,9 @@ class JavaOracleTests(unittest.TestCase):
         with Recorder(json.loads(Path(CONFIG).read_text())) as java:
             find_route(json.loads((fixtures / 'two-jumps.json').read_text()), java, seconds=20, candidate_seconds=2,
                        retries=0, python_executable=RUNTIME)
-            for name in ('blocks-required-run.json', 'obstacle-under-ceiling.json'):
-                find_blocks(json.loads((fixtures / name).read_text()), java, seconds=20, route_seconds=8,
-                            candidate_seconds=1, retries=0, python_executable=RUNTIME)
+            # A collision-scene anchor search also validates scenes (sceneCheck).
+            find_checkpoint_route(flat_scene(), java, anchor_search={}, seconds=20, max_solver_calls=8,
+                                  python_executable=RUNTIME)
         actions = {message.get('action', 'compile') for message, _ in recorded}
         self.assertTrue({'compile', 'sceneCheck', 'footprints'} <= actions, actions)
         for index, (message, expected) in enumerate(recorded):
@@ -346,7 +347,7 @@ class JavaOracleTests(unittest.TestCase):
             with CheckpointStore(path) as store, mock.patch.object(RelaxedDispatch, 'solve', record):
                 writer = SearchCheckpoint(store, {})
                 # Generous budgets keep outcomes independent of host load across the compared runs.
-                result = find_checkpoint_route(scene, compiler, anchor_search={}, seconds=300, score_seconds=20,
+                result = find_checkpoint_route(scene, compiler, anchor_search={}, seconds=300,
                     candidate_seconds=20, max_solver_calls=20, program_filter=InitialJumpDomain([0], max_inputs=28),
                     python_executable=RUNTIME, on_progress=writer, cancel_event=cancel, resume_state=resume_state)
                 writer.finish(result, [])

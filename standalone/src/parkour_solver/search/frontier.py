@@ -3,7 +3,7 @@ import json
 import time
 
 from parkour_solver.movement.cases import entry_possible
-from parkour_solver.movement.program import append_choice, boundary_state, empty_program, program_physics_key, program_search_key, truncate_program
+from parkour_solver.movement.program import boundary_state, empty_program, program_physics_key, program_search_key
 from parkour_solver.movement.generation import generate_choices, propose_choices, assess_proposal
 from parkour_solver.movement.normal import MAX_ADVANTAGEOUS_RUN_TICKS
 from parkour_solver.canonical import digest
@@ -54,8 +54,8 @@ def restore_alternatives(state, extra_live=()):
 
 
 def persistent_programs(scene, *, settings, report, continuation=None, deadline=None, cancel_event=None, work=None,
-                        initial_programs=None, checkpoint_tick=None, threshold=.005, screen=None,
-                        context_adapter=None, program_filter=None, stop_on_goal=True, terminal_goal=None, stop_supports=None,
+                        initial_programs=None, threshold=.005, screen=None,
+                        context_adapter=None, program_filter=None, stop_supports=None,
                         node_evaluator=None, priority_key=None, policy_context=None, live_programs=None,
                         run_policy=None, **kwargs):
     initial = empty_program(scene['initial'], threshold=threshold)
@@ -65,10 +65,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
     # settings below already owns the domain and deliberately excludes slices.
     context_value = dict(version=3, comparisonPolicy=COMPARISON_POLICY_VERSION, proposalPolicy=1, scene={k:v for k,v in scene.items() if k!='movementSearch'}, settings={k: v for k, v in settings.items() if k not in
         ('maxPrefixes', 'maxQueuedPrefixes', 'maxChoicesPerType', 'expansionsPerProposal')},
-        roots=[program_search_key(p) for p in seeds], checkpoint=checkpoint_tick, threshold=threshold,
-        stopOnGoal=stop_on_goal)
-    if terminal_goal is not None:
-        context_value['terminalGoal']=terminal_goal
+        roots=[program_search_key(p) for p in seeds], threshold=threshold)
     if stop_supports is not None:
         context_value['stopSupports']=stop_supports
     if policy_context is not None:
@@ -100,10 +97,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             raise TimeoutError('deadline')
 
     def complete(p):
-        if terminal_goal is not None:
-            return p.get('terminalGoal')==terminal_goal
-        return (checkpoint_tick is not None and p['profile']['duration'] == checkpoint_tick or
-            stop_on_goal and p['profile']['grounded'][-1] and p['terminalSupport'] in (stop_supports or [scene['goalBlock']])
+        return (p['profile']['grounded'][-1] and p['terminalSupport'] in (stop_supports or [scene['goalBlock']])
             and p['profile']['duration'] > 0)
 
     def key(p, identity):
@@ -128,14 +122,10 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
         # `decision` is the decision P whose expansion this is (a run-tick base or a peeked child extends it).
         context_data = dict(mode='open', scene=scene, program=p, decision=p if decision is None else decision, state=boundary_state(p),
             maxInputs=settings['maxInputs']-p['profile']['duration'], maxEntryInputs=settings['maxEntryInputs'],
-            checkBudget=budget, deadline=deadline, cancelEvent=cancel_event, normalGap=checkpoint_tick is not None,
+            checkBudget=budget, deadline=deadline, cancelEvent=cancel_event,
             generationRecords=[])
-        if terminal_goal is not None:
-            context_data['terminalGoal']=terminal_goal
         if threshold != .005:
             context_data['threshold'] = threshold
-        if checkpoint_tick is not None:
-            context_data['normalGapInputs'] = checkpoint_tick-p['profile']['duration']
         if not run_ticks:
             context_data['runTickChoices'] = False
         if context_adapter is not None:
@@ -143,13 +133,9 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
         return context_data
 
     def proposals(kind, context_data, start=0):
-        bind=None
-        if terminal_goal is not None:
-            from parkour_solver.movement.virtual_goals import bind_goal
-            bind=lambda p:bind_goal(p,terminal_goal,scene.get('supportClearance',1e-6))
         return iter(propose_choices(kind,context_data,source=generate_choices(kind,context_data),start=start,
             max_inputs=settings['maxInputs'],inherit_decisions=node_evaluator is not None,
-            project=project_owned if node_evaluator is not None and stop_on_goal else None,bind=bind))
+            project=project_owned if node_evaluator is not None else None))
 
     def no_effects():
         return dict(exclusions=[], screened=0, policyRejections=0)
@@ -173,9 +159,6 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
 
     def accept(child, context_data, effects, queued=()):
         """(child, None) when accepted after the proposal screen, (child, 'seen') when already queued, else (None, why)."""
-        before_projection=child
-        if child is not None and checkpoint_tick is not None and child['profile']['duration'] > checkpoint_tick:
-            child = truncate_program(child, checkpoint_tick)
         if child is None or not entry_possible(child['profile'], initial_bounds):
             return None, 'rejected'
         if program_filter is not None and not program_filter(child):
@@ -188,12 +171,6 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
         identity = program_search_key(child)
         if identity in seen or identity in queued:
             return child, 'seen'
-        if screen is not None and child is not before_projection:
-            proof = screen(child)
-            if proof is not None:
-                effects['screened'] += 1
-                effects['exclusions'].append(dict(id=digest(identity), ticks=child['profile']['duration'], proof=proof))
-                return None, 'screened'
         return child, None
 
     def check_child(proposal, context_data, queued=()):
@@ -243,27 +220,27 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
         return {json.dumps(list(target)) for target in run_policy['targets'](base, child)}
 
     def landings_of(child, decision):
-        """{owner: program} of an accepted child's earliest landing on each block (owner None off any block).
+        """{face: program} of an accepted child's earliest landing on each face (None off any face).
 
         A grounded child's is its own. An airborne advantageous jump (its built choice stops at a ceiling hit, or at
-        the jump tick of a grind, slab boost or corner jump cancel) lands in its own child's choices: per block, the
+        the jump tick of a grind, slab boost or corner jump cancel) lands in its own child's choices: per face, the
         earliest of those that passes the screens. Their screens change no frontier state and are not recorded;
         the child's own expansion repeats them.
         """
-        owner_of=lambda p:run_policy['owner'](p['terminalSupport']) if p.get('terminalSupport') else None
+        face_of=run_policy['face']
         p=child['profile']
         if p['grounded'][-1]:
-            return {owner_of(child):child}
+            return {face_of(child):child}
         context_data=expansion_context(child,decision=decision)
         proposed=[proposal for kind in settings['types'] for proposal in proposals(kind,context_data)
                   if proposal['program'] is not None and proposal['program']['profile']['grounded'][-1]]
         found={}
         for proposal in sorted(proposed,key=lambda proposal:proposal['program']['profile']['duration']):
-            if owner_of(proposal['program']) in found:
+            if face_of(proposal['program']) in found:
                 continue
             landed,_,_=check_child(proposal,context_data)
             if landed is not None and landed['profile']['grounded'][-1]:
-                found.setdefault(owner_of(landed),landed)
+                found.setdefault(face_of(landed),landed)
         return found
 
     def lands_later(base, child):
@@ -273,32 +250,32 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
     def minimum_runs(e):
         """Minimum run ticks for advantageous jumps at an ordinary decision P (see run_policy).
 
-        N is P's fastest jump-now landing (on the next anchor first, else on any other block); a ceiling hit,
+        N is P's fastest jump-now landing (on the next anchor first, else on any other face); a ceiling hit,
         grind, slab boost or corner jump cancel lands in its child's choices (landings_of). Candidates come from run_policy['candidates'] (tables
         and vertical replays, nothing built):
-        - k same-block run ticks then an advantageous jump: built when k + airtime < N, cheapest first, unless
+        - k same-face run ticks then an advantageous jump: built when k + airtime < N, cheapest first, unless
           a kept one beats it on both total and airtime. The table airtime only bounds the run ticks; a built
           one beats with its built landing, which may lie past N. Each kept one reserves its next run count;
-          beaten ones wait for their beaters; when N's block dies, N widens to the next landing.
-        - a run-off onto another block B, whose walk-off input is a run tick: the fewest run ticks (1 to 11)
+          beaten ones wait for their beaters; when N's face dies, N widens to the next landing.
+        - a run-off onto another face B, whose walk-off input is a run tick: the fewest run ticks (1 to 11)
           landing before a jump onto B would (run ticks + airborne inputs < the entry's limit, lowered to a
           jump-now landing on B, which may exceed N), only when a jump-now proposal lands on B.
-        - a walking step-up onto another block, whose step input is a run tick: on the first tick, else after
+        - a walking step-up onto another face, whose step input is a run tick: on the first tick, else after
           one run tick (more run-up is a slab boost).
         Run-offs and step-ups take no part in beating and hold no reserve. Without N, run counts are scanned
-        until a block is reached.
+        until a face is reached.
         Everything is computed before frontier state changes, so a deadline inside redoes the step.
         """
         from parkour_solver.search.feasibility import meaningful_choice
         program=e['program']
         search=program.get('minimumRunSearch')
         node=search['node'] if search else program.get('decisionNode')
-        upcoming,here,owner=run_policy['next'](program),run_policy['owner'](program['terminalSupport']),run_policy['owner']
+        upcoming,here,face=run_policy['next'](program),run_policy['face'](program),run_policy['face']
         effects,queued,queued_ids,log,reserves=[],[],set(),[],[]
         levels,bases,checks,keys,peeked=[],[[program]],{},{},{}
 
         def level(k):
-            """Unscreened proposals of every type after k same-block run ticks (bases are never queued)."""
+            """Unscreened proposals of every type after k same-face run ticks (bases are never queued)."""
             while len(levels)<=k:
                 if len(levels)==len(bases):
                     ids,found=set(),[]
@@ -332,7 +309,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             return checks[id(proposal)]
 
         def lands(child):
-            return owner(child['terminalSupport']) if child['profile']['grounded'][-1] and child.get('terminalSupport') else None
+            return face(child) if child['profile']['grounded'][-1] else None
 
         def landing(child):
             """landings_of(child) in ticks after P."""
@@ -386,7 +363,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             reserves.append((dict(node=node,**fields),list(watch)))
 
         def source(landings, dead):
-            """(N, owner) of the fastest landing on the next anchor, else on a live block; None without one."""
+            """(N, face) of the fastest landing on the next anchor, else on a live face; None without one."""
             for allowed in (lambda o:o==upcoming,lambda o:o not in dead):
                 times=[(l['ticks'],l['owner']) for l in landings if allowed(l['owner'])]
                 if times:
@@ -412,7 +389,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             record(entry,None,None,N,0,number,'unreached')
 
         def jumped():
-            """Owners a jump-now proposal lands on: a run-off reaches only blocks close enough to jump onto."""
+            """Faces a jump-now proposal lands on: a run-off reaches only faces close enough to jump onto."""
             return {lands(proposal['program']) for _,_,proposal in level(0) if proposal['choice']['profile']['jump'][0]}
 
         def round_(dead, lower, N, kept, number, landed, landings, widen=True):
@@ -428,7 +405,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                     counts=[0,1]
                 else:
                     # The walk-off input is a run tick too: k run ticks before it, at most 11 in all. A jump-now
-                    # landing on the block (landings_of's included) lowers the vertical replay's bound.
+                    # landing on the face (landings_of's included) lowers the vertical replay's bound.
                     entry=dict(entry,limit=min([entry['limit']]+[l['ticks'] for l in landings if l['owner']==entry['via']]))
                     reachable=jumped() if reachable is None else reachable
                     counts=[k for k in range(MAX_ADVANTAGEOUS_RUN_TICKS) if k+1+entry['A']<entry['limit']] if entry['via'] in reachable else []
@@ -475,10 +452,10 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
 
         def scan(dead, start, lower, kept, number, landed, landings):
             """No N: the first run count whose screened jumps (by their landings, landings_of) or run-offs reach
-            the next anchor, else another block."""
+            the next anchor, else another face."""
             def landers(k, wanted):
-                """(item, child, reason, owner, ticks) of the screened landers after k run ticks, each on its
-                earliest wanted block."""
+                """(item, child, reason, face, ticks) of the screened landers after k run ticks, each on its
+                earliest wanted face."""
                 found=[]
                 for item in level(k):
                     base,_,proposal=item
@@ -607,7 +584,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                     state['policyRejections'] += 1
                     continue
                 state['emitted'] += 1
-                program['terminal'] = 'open' if checkpoint_tick is not None else 'landed'
+                program['terminal'] = 'landed'
                 update()
                 yield program
                 continue
@@ -725,9 +702,9 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                     for target in target_keys(e['program'],child):
                         e['reached'].setdefault(target,[]).append([child['decisionNode'],min(landed.values(),default=None)])
                     if child['profile']['grounded'][-1] or lands_later(e['program'],child):
-                        # N for minimum_runs: this decision's jump-now landings on other blocks, landings_of's included.
+                        # N for minimum_runs: this decision's jump-now landings on other faces, landings_of's included.
                         e['landings'].extend(dict(ticks=ticks,owner=owner,node=child['decisionNode']) for owner,ticks in landed.items()
-                                             if owner not in (None,run_policy['owner'](e['program']['terminalSupport'])))
+                                             if owner not in (None,run_policy['face'](e['program'])))
             for field in ('choice','child','fullProgram','projected','proposalChecked'):e.pop(field,None)
             update()
         state['exhausted'] = True

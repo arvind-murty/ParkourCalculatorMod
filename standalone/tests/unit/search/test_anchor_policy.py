@@ -1,4 +1,4 @@
-from tests.support.anchor_policy import scene, history
+from tests.support.anchor_policy import flush_scene, scene, history
 from tests.support.paths import AUTONOMY_DATA
 import copy
 import json
@@ -7,7 +7,7 @@ import unittest
 
 from parkour_solver.scene.normalize import prepare_scene
 from parkour_solver.search.anchors.policy import (SAME_FACE_FIT_FACTOR, audit, encounter_groups, local_counts, priority,
-    same_face_fit, settings, visit_state, within_caps, single_jump_structure, transfer_structure)
+    same_face_fit, settings, visit_state, visits, within_caps, transfer_structure)
 from parkour_solver.spatial.anchor_guides import build_guides, classify, decision_objective, nearest, onward_objective
 from parkour_solver.search.anchors.adapter import AnchorAdapter
 from parkour_solver.spatial.event_routes import build_route_domain, build_event_graph
@@ -83,7 +83,7 @@ class AnchorPolicyTests(unittest.TestCase):
         self.assertTrue(transfer_structure(s,p,0,'start','mid',complete=True,until_arrival=True)['valid'])
 
     def test_group_end_arrival_requires_every_anchor_inside_the_group(self):
-        s=scene((5,0,0,6,2,1));data=build_route_domain(s,dict(kind='landing',block='goal')).to_dict()
+        s=scene((5,0,0,6,2.5,1));data=build_route_domain(s,dict(kind='landing',block='goal')).to_dict()
         adapter=AnchorAdapter(data,build_event_graph(data),settings(dict(anchors=['mid']),s))
         root=history(s,[]);cursor=adapter.initial_cursor([root])
         self.assertEqual((cursor['anchorIndex'],cursor['groupEnd']),(0,1))
@@ -96,7 +96,7 @@ class AnchorPolicyTests(unittest.TestCase):
         self.assertEqual(view.bind_program(skipped).candidate({},dict(positions=[[.5,.5]]*2),{})['reason'],
                          'missing_prior_anchor')
         ctx=dict(program=history(s,['mid']));view.context(ctx)
-        self.assertTrue(ctx['feetAllowed'](next(b for b in s['blocks'] if b['id']=='goal')))
+        self.assertTrue(ctx['feetAllowed']('goal'))
 
     def test_owner_returns_excluded_but_all_same_owner_jumps_preserved(self):
         s=scene()
@@ -142,12 +142,12 @@ class AnchorPolicyTests(unittest.TestCase):
         json.dumps(guides,allow_nan=False)
 
     def test_decision_objective_aims_from_the_last_block_toward_the_next_required_anchor(self):
-        from parkour_solver.spatial.checkpoints import Checkpoint
+        from parkour_solver.spatial.checkpoints import direction_objective
         s=scene();data=build_route_domain(s,dict(kind='landing',block='goal')).to_dict()
         def view(anchors):
             return AnchorAdapter(data,build_event_graph(data),settings(dict(anchors=anchors),s))
         def aim(point,target):
-            return Checkpoint(1,-1,(target[0]-point[0],target[2]-point[2]),(),(),()).objective
+            return direction_objective((target[0]-point[0],target[2]-point[2]))
         adapter=view(['mid']);points=adapter.guide_plan['points']
         # The start's guide point is the initial position.
         self.assertEqual(adapter.program_objective(history(s,['start'])),aim(points[0],points[1]))
@@ -220,9 +220,9 @@ class AnchorPolicyTests(unittest.TestCase):
         self.assertFalse(view.bind_program(p).candidate({},dict(positions=[[.5,.5]]*2),{})['accepted'])
         ctx=dict(program=p);view.context(ctx)
         self.assertEqual(set(ctx),{'program','feetAllowed'})
-        self.assertTrue(ctx['feetAllowed'](next(b for b in s['blocks'] if b['id']=='optional')))
-        self.assertTrue(ctx['feetAllowed'](next(b for b in s['blocks'] if b['id']=='start')))
-        self.assertFalse(ctx['feetAllowed'](next(b for b in s['blocks'] if b['id']=='goal')))
+        self.assertTrue(ctx['feetAllowed']('optional'))
+        self.assertTrue(ctx['feetAllowed']('start'))
+        self.assertFalse(ctx['feetAllowed']('goal'))
 
     def test_exact_failure_has_no_ancestor_side_effect_or_or_parent_shortcut(self):
         policy=policy_spec(dict(purpose='node',oracleRejection=True),first_witness=True)
@@ -288,6 +288,59 @@ class AnchorPolicyTests(unittest.TestCase):
         self.assertEqual((state['valid'],state['current'],state['departed']),(True,'mid',['start']))
         self.assertTrue(audit(s,p,['mid'])['accepted'])
 
+    def test_a_blip_landing_on_one_owner_and_stepping_onto_another_is_not_a_return(self):
+        s=scene();p=history(s,['start','start'])
+        solid=lambda name:s['collisionScene']['solids'][next(b['solidIndex'] for b in s['blocks'] if b['id']==name)]
+        p['profile']['contactEvents']=p['profile']['contactEvents'][:1]
+        p['profile']['position'][2]=2.
+        p['profile']['caseEvents']=[dict(input=1,type='stepping',case='blip',boxes=[solid('mid')],lowerBoxes=[solid('optional')])]
+        p['terminalSupport']='mid'
+        self.assertEqual([v for v in visits(s,p) if v[0]==2],[(2,'optional'),(2,'mid'),(2,'mid')])
+        self.assertTrue(audit(s,p,['mid'])['accepted'])
+
+    def test_run_ticks_across_a_flush_seam_stay_on_one_face(self):
+        s=flush_scene()
+        p=history(s,['start','A','B','A'])
+        self.assertEqual(visits(s,p),[(0,'start'),(1,'start'),(2,'A+B'),(3,'A+B'),(4,'A+B'),(4,'A+B')])
+        state=visit_state(s,p)
+        self.assertEqual((state['valid'],state['current'],state['departed']),(True,'A+B',['start']))
+        self.assertEqual(audit(s,history(s,['start','A','B','start']),[])['reason'],'departed_owner_return')
+
+    def test_anchors_start_and_goal_must_be_whole_faces(self):
+        s=flush_scene()
+        self.assertEqual(settings({},s)['anchors'],[])
+        with self.assertRaisesRegex(ValueError,'^A shares its top face with B; declare them as one block$'):
+            settings(dict(anchors=['A']),s)
+        for name,box in (('start',[1,0,0,1.5,1,1]),('goal',[7,0,0,8,1,1])):
+            with self.subTest(name), self.assertRaisesRegex(ValueError,'^'+name+' shares its top face with .*pad'):
+                settings({},flush_scene(('pad',box)))
+
+    def test_face_namer_names_one_block_by_its_face_and_cut_pieces_by_their_owner(self):
+        from parkour_solver.search.anchors.policy import face_namer, support_face
+        # wall stands through C's top and cuts it in two; E is flush with C's right piece only.
+        s=flush_scene(('C',[10,0,0,13,1,1]),('W',[11,0,0,12,3,1]),('E',[13,0,0,14,1,1]))
+        solid=lambda name:s['collisionScene']['solids'][next(b['solidIndex'] for b in s['blocks'] if b['id']==name)]
+        name=face_namer(s)
+        self.assertEqual((name([solid('A')]),name([solid('B')]),name([solid('A'),solid('B')])),('A+B',)*3)
+        self.assertEqual((name([solid('C')]),name([solid('E')]),name([solid('C'),solid('E')])),('C','C+E','C+E'))
+        self.assertEqual((name([solid('start')]),name([[50,0,0,51,1,1]])),('start',None))
+        self.assertEqual([support_face(s,b) for b in ('A','B','start','A+B',None)],['A+B','A+B','start','A+B',None])
+
+    def test_a_merged_pair_gives_one_advantageous_entry_and_one_target_key(self):
+        from parkour_solver.reachability.service import face_table
+        from parkour_solver.search.anchors.policy import advantageous_candidates, advantageous_targets
+        # P+Q is a raised merged pair beside start (a step-up or slab boost), C+D a lower one (a run-off).
+        s=flush_scene(('P',[0,0,1,1,1.5,2]),('Q',[0,0,2,1,1.5,3]),('C',[0,0,-2,1,.5,-1]),('D',[0,0,-3,1,.5,-2]))
+        keys=[json.loads(e['key']) for e in advantageous_candidates(s,lambda name:face_table(s,name,{}),'start',1.,'goal',
+                                                                        ['normal','stepping'],0.)]
+        self.assertEqual([k for k in keys if k[1] not in ('A+B','goal')],
+                         [['corner_jump_cancel','P+Q'],['landing','C+D'],['slab_boost','P+Q'],['step','P+Q']])
+        solid=lambda name:s['collisionScene']['solids'][next(b['solidIndex'] for b in s['blocks'] if b['id']==name)]
+        base=history(s,['start']);child=history(s,['start','start'])
+        child['profile']['contactEvents'].pop();child['profile']['grounded'][-1]=False;child['terminalSupport']=None
+        child['profile']['caseEvents']=[dict(input=1,case='slab_boost',boxes=[solid('Q')])]
+        self.assertEqual(advantageous_targets(s,base,child,'goal'),{('slab_boost','P+Q')})
+
     def test_next_anchor_follows_the_required_order_then_the_task_block(self):
         from parkour_solver.search.anchors.policy import next_anchor
         s=scene();anchors=['mid','optional']
@@ -325,7 +378,7 @@ class AnchorPolicyTests(unittest.TestCase):
     def test_advantageous_candidates_match_the_generators_airtimes(self):
         from parkour_solver.movement.generation import generate_choices
         from parkour_solver.movement.program import append_choice, boundary_state
-        from parkour_solver.reachability.service import block_table
+        from parkour_solver.reachability.service import face_table
         from parkour_solver.search.anchors.policy import advantageous_candidates, advantageous_targets
         # From start (top 2): low is a run-off with roof over it, slab a step-up, lid a low ceiling, goal a jump.
         s=prepare_scene(dict(version=1, sceneModel='collision_boxes', geometryBounds=[-10,-8,-10,20,12,10],
@@ -351,7 +404,7 @@ class AnchorPolicyTests(unittest.TestCase):
         def fastest(owner, jump):
             return min(child['profile']['duration'] for c,child in children(root)
                        if c['profile']['jump'][0]==jump and landed(child) and child.get('terminalSupport')==owner)
-        table=lambda owner:block_table(s,owner,{})
+        table=lambda name:face_table(s,name,{})
         entries={e['key']:e for e in advantageous_candidates(s,table,'start',2.,'goal',types,0.)}
         for key,e in entries.items():
             kind,target=json.loads(key)
@@ -372,12 +425,12 @@ class AnchorPolicyTests(unittest.TestCase):
 
     def test_hard_structure_excludes_setup_hop_runoff_and_zero_jump_finish(self):
         s=scene();p=history(s,['mid'])
-        self.assertTrue(single_jump_structure(s,p,0,'start','mid',complete=True))
+        self.assertTrue(transfer_structure(s,p,0,'start','mid',complete=True)['valid'])
         p['profile']['jump']=[False]
-        self.assertTrue(single_jump_structure(s,p,0,'start','mid'))
-        self.assertFalse(single_jump_structure(s,p,0,'start','mid',complete=True))
+        self.assertTrue(transfer_structure(s,p,0,'start','mid')['valid'])
+        self.assertFalse(transfer_structure(s,p,0,'start','mid',complete=True)['valid'])
         p=history(s,['start','mid']);p['profile']['jump']=[True,False]
-        self.assertFalse(single_jump_structure(s,p,0,'start','mid',complete=True))
+        self.assertFalse(transfer_structure(s,p,0,'start','mid',complete=True)['valid'])
 
     def test_hard_transfer_keeps_arbitrary_source_setup_jumps_and_counts_them(self):
         s=scene()
@@ -388,19 +441,19 @@ class AnchorPolicyTests(unittest.TestCase):
             self.assertEqual(result['preparationJumps'],list(range(hops)))
             self.assertEqual(result['transferJumps'],[hops])
             self.assertEqual(local_counts(p)['J'],hops+1)
-            self.assertTrue(single_jump_structure(s,history(s,['start']*hops),0,'start','mid'))
+            self.assertTrue(transfer_structure(s,history(s,['start']*hops),0,'start','mid')['valid'])
             self.assertFalse(within_caps(dict(maxJumps=hops),p))
 
     def test_setup_does_not_admit_an_intermediate_block_or_two_transfer_impulses(self):
         s=scene()
-        self.assertFalse(single_jump_structure(s,history(s,['start','optional','mid']),0,'start','mid',complete=True))
+        self.assertFalse(transfer_structure(s,history(s,['start','optional','mid']),0,'start','mid',complete=True)['valid'])
         p=history(s,['start','start','mid'])
         p['profile']['contactEvents']=p['profile']['contactEvents'][:1]+p['profile']['contactEvents'][2:]
         result=transfer_structure(s,p,0,'start','mid',complete=True)
         self.assertFalse(result['valid'])
         self.assertEqual(result['reason'],'multiple_transfer_impulses')
-        self.assertFalse(single_jump_structure(s,history(s,['mid','start']),0,'start','mid'))
-        self.assertFalse(single_jump_structure(s,history(s,['mid','mid']),0,'start','mid',complete=True))
+        self.assertFalse(transfer_structure(s,history(s,['mid','start']),0,'start','mid')['valid'])
+        self.assertFalse(transfer_structure(s,history(s,['mid','mid']),0,'start','mid',complete=True)['valid'])
 
     def test_transfer_uses_current_anchor_boundary_and_physical_owner_aliases(self):
         s=scene();p=history(s,['mid','mid','goal'])
@@ -409,7 +462,7 @@ class AnchorPolicyTests(unittest.TestCase):
         self.assertEqual(result['preparationJumps'],[1])
         self.assertEqual(result['transferJumps'],[2])
         next(b for b in s['blocks'] if b['id']=='optional')['sourceBlock']='start'
-        self.assertTrue(single_jump_structure(s,history(s,['optional','mid']),0,'start','mid',complete=True))
+        self.assertTrue(transfer_structure(s,history(s,['optional','mid']),0,'start','mid',complete=True)['valid'])
 
     def test_source_contact_at_target_arrival_is_part_of_the_same_transfer(self):
         s=scene();p=history(s,['start','mid'])
@@ -431,7 +484,7 @@ class AnchorPolicyTests(unittest.TestCase):
         saved=current_events(json.loads(gzip.decompress((base/'virtual-finish/evidence/initial0-cold.json.gz').read_bytes())))
         program=saved['result']['best']['movementProgram']
         setup=truncate_program(program,12)
-        self.assertTrue(single_jump_structure(s,setup,0,'b1','b2'))
+        self.assertTrue(transfer_structure(s,setup,0,'b1','b2')['valid'])
         landing=truncate_program(program,21)
         result=transfer_structure(s,landing,0,'b1','b2',complete=True)
         self.assertTrue(result['valid'])

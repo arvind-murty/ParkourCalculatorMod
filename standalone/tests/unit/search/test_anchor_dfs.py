@@ -31,8 +31,8 @@ class AnchorDFSTests(unittest.TestCase):
     def run_tree(self, *, logging=True, resume=None, calls=20, interval=1, setup=False, seconds=3,
                  on_progress=None,cancel_event=None,requests_per_evaluation=1,advance=None,node_probe=None,node_best=None,
                  finishes=1,relaxed=False,final=None,leg_best=None,goal=None,goal_choices=None,generated=None,compiler=None,
-                 **settings):
-        s=scene(goal) if goal else scene();s['maxTotalRunTicks']=60;s['maxRunTicksPerJump']=60;dispatched=[]
+                 extra=(),**settings):
+        s=scene(goal,extra) if goal else scene(extra=extra);s['maxTotalRunTicks']=60;s['maxRunTicksPerJump']=60;dispatched=[]
         def generate(target_scene,*,report,initial_programs,continuation=None,node_evaluator,**kwargs):
             saved=copy.deepcopy(continuation) if continuation else dict(expanded=1,cursor=0,exhausted=False)
             report['continuation']=saved
@@ -63,7 +63,7 @@ class AnchorDFSTests(unittest.TestCase):
                 yield p
             saved['exhausted']=True
         def evaluate(target_scene,p,compiler,adapter,work,motion,**kwargs):
-            scoped=ScopedWork(work,kwargs['solver_calls'],min(work.deadline,time.monotonic()+kwargs['seconds']))
+            scoped=ScopedWork(work,None,min(work.deadline,time.monotonic()+kwargs['seconds']))
             for _ in range(requests_per_evaluation):
                 scoped.before_solve({})
                 if advance is not None:advance()
@@ -92,7 +92,7 @@ class AnchorDFSTests(unittest.TestCase):
              patch('parkour_solver.search.dfs.iter_movement_programs',side_effect=generate), \
              patch('parkour_solver.search.engine.evaluate_program',side_effect=evaluate), \
              patch('parkour_solver.validation.witness.replay_witness',return_value=dict(passed=True)):
-            options=dict(seconds=seconds,score_seconds=2,max_solver_calls=calls)
+            options=dict(seconds=seconds,max_solver_calls=calls)
             options.update(settings)
             result=find_checkpoint_route(s,compiler or object(),anchor_search=dict(anchors=['mid'],observability=logging,
                 solveEveryDecisionLevels=interval),minimum_run_pruning=False,
@@ -100,10 +100,10 @@ class AnchorDFSTests(unittest.TestCase):
         return result,dispatched
 
     def test_touching_goal_makes_one_group_without_an_anchor_solve(self):
-        # The goal is flush with mid, so start -> mid -> goal is one encounter group.
+        # The goal touches mid's side (higher, so a face of its own), so start -> mid -> goal is one encounter group.
         def goal_choices(s,parent):
             return [extend(s,parent,'goal',15),extend(s,extend(s,parent,'mid',10),'goal',20)]
-        result,calls=self.run_tree(goal=(5,0,0,6,2,1),goal_choices=goal_choices)
+        result,calls=self.run_tree(goal=(5,0,0,6,2.5,1),goal_choices=goal_choices)
         groups=result['adapter']['guidePlan']['groups']
         self.assertEqual([(g['first'],g['last']) for g in groups],[(0,1)])
         purposes=[(b,t,(p or {}).get('purpose')) for b,t,p in calls]
@@ -124,7 +124,7 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertFalse(policy['ordinary'](dict(root,decisionTurnaround=True)))
         self.assertEqual(policy['targets'](root,extend(s,root,'mid',10)),{('anchor','mid')})
         self.assertEqual(policy['targets'](root,extend(s,root,'goal',10)),set())
-        self.assertEqual((policy['next'](root),policy['owner'](root['terminalSupport'])),('mid','start'))
+        self.assertEqual((policy['next'](root),policy['face'](root)),('mid','start'))
         self.assertIn('["anchor", "mid"]',[e['key'] for e in policy['candidates'](root)])
         # A jump back onto the 1x1 start from its centre, along the +X leg to mid, overshoots its top face.
         from parkour_solver.movement.generation import generate_choices
@@ -144,29 +144,34 @@ class AnchorDFSTests(unittest.TestCase):
 
     def test_a_jump_onto_a_block_merged_into_the_launch_face_lands_back_on_that_face(self):
         from parkour_solver.bridge.python_compiler import PythonCompiler
-        from parkour_solver.movement.contact_combinations import scene_contact_options
+        from parkour_solver.movement.contact_combinations import face_name, top_faces
         from parkour_solver.movement.generation import generate_choices
         from parkour_solver.movement.program import append_choice, boundary_state
-        # goal's top is flush with start's and touches it: one merged face, two blocks long on X.
+        # pad and rest are flush at start's height: one merged face, two blocks long on X, that is no anchor. Faces merge
+        # in player space, so pad keeps more than a player's width from start.
+        extra=(('pad',(2,0,0,3,1,1)),('rest',(3,0,0,4,1,1)))
         generated=[]
         with PythonCompiler() as compiler:
-            self.run_tree(goal=(1,0,0,2,1,1),generated=generated,compiler=compiler)
+            self.run_tree(extra=extra,generated=generated,compiler=compiler)
         (roots,options),*_=generated
-        policy=options['run_policy'];s=scene((1,0,0,2,1,1));root=roots[0]
-        context=dict(mode='open',scene=s,program=root,state=boundary_state(root),interactionGate=None,threshold=0.,maxInputs=20,maxEntryInputs=20)
-        hop=next(c for c in (append_choice(root,choice,max_inputs=20) for choice in generate_choices('normal',context))
-                 if c is not None and c['profile']['grounded'][-1] and c.get('terminalSupport')=='goal')
-        self.assertTrue(policy['back'](root,hop))
-        fit=policy['fits'](root,hop)
-        (top,)=[o for o in scene_contact_options(s,1,1) if o.plane==1]
-        self.assertEqual((fit['face'],fit['room']),('goal+start',max(r[2] for r in top.regions)-root['decisionPoint'][0]))
+        policy=options['run_policy'];s=scene(extra=extra)
+        def landings(p, support):
+            context=dict(mode='open',scene=s,program=p,state=boundary_state(p),interactionGate=None,threshold=0.,maxInputs=20,maxEntryInputs=20)
+            return next(c for c in (append_choice(p,choice,max_inputs=20) for choice in generate_choices('normal',context))
+                        if c is not None and c['profile']['grounded'][-1] and c.get('terminalSupport')==support)
+        # One landing per face: the jump onto pad lands on pad+rest, and so does the hop back onto it.
+        decision=dict(landings(roots[0],'pad+rest'),decisionPoint=[2.5,.5],decisionVelocity=[0.,0.])
+        hop=landings(decision,'pad+rest')
+        self.assertTrue(policy['back'](decision,hop))
+        fit=policy['fits'](decision,hop)
+        (top,)=[o for o in top_faces(s) if face_name(s,o)=='pad+rest']
+        self.assertEqual((fit['face'],fit['room']),('pad+rest',max(r[2] for r in top.regions)-2.5))
 
     def test_anchor_search_uses_run_budget_across_routes_and_constraint_requests(self):
         clock=[100.]
         def advance():clock[0]+=.05
         with patch('time.monotonic',side_effect=lambda:clock[0]):
-            result,calls=self.run_tree(calls=100,seconds=100,requests_per_evaluation=30,advance=advance,
-                score_seconds=.01,score_call_limit=1,final_call_limit=1)
+            result,calls=self.run_tree(calls=100,seconds=100,requests_per_evaluation=30,advance=advance)
         self.assertEqual([(b,t) for b,t,_ in calls],[('mid',10),('goal',20),('mid',11)])
         self.assertEqual(result['work']['solverCalls'],90)
         allocations=result['searchState']['allocations']

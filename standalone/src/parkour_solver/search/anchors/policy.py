@@ -1,4 +1,4 @@
-"""Declared milestones and acyclic physical-owner visits, including local hops."""
+"""Declared milestones and acyclic visits of merged top faces, including local hops."""
 
 import copy
 
@@ -6,7 +6,7 @@ from parkour_solver.canonical import digest
 from parkour_solver.search.comparison import comparison_label, priority_key, POLICY_VERSION as COMPARISON_POLICY_VERSION
 
 
-HARD_JUMP_POLICY_VERSION = 4
+HARD_JUMP_POLICY_VERSION = 5
 # A jump back onto its launch face fits when the room ahead exceeds this share of its natural jump (user, 2026-11-21;
 # may change).
 SAME_FACE_FIT_FACTOR = .7
@@ -25,6 +25,13 @@ def settings(value, scene):
         raise ValueError('Anchors must be ordered unique scene blocks')
     if scene['startBlock'] in anchors or scene['goalBlock'] in anchors:
         raise ValueError('Initial and terminal supports are implicit endpoints')
+    # Visits name merged faces, so an anchor is only reached if its top is a whole face of its own (user, 2026-11-22).
+    from parkour_solver.movement.contact_combinations import solid_owners, top_faces
+    solid, owners = {b['id']: b['solidIndex'] for b in scene['blocks']}, solid_owners(scene)
+    for a in anchors+[scene['startBlock'], scene['goalBlock']]:
+        shared = {o for f in top_faces(scene) if solid[a] in f.members for i in f.members for o in owners[i]}-{owner(scene, a)}
+        if shared:
+            raise ValueError(f"{a} shares its top face with {', '.join(sorted(shared))}; declare them as one block")
     if result['version'] != 1 or result['feasibilityPolicy'] != 'numerical_oracle':
         raise ValueError("Unsupported anchor policy: version must be 1 and feasibilityPolicy 'numerical_oracle'")
     if type(result['solveEveryDecisionLevels']) is not int or result['solveEveryDecisionLevels'] < 1:
@@ -46,7 +53,7 @@ def settings(value, scene):
 
 def semantic_settings(policy):
     return dict({k:v for k,v in policy.items() if k!='observability'},
-                hardJumpPolicyVersion=HARD_JUMP_POLICY_VERSION,searchPolicyVersion=17,comparisonPolicyVersion=COMPARISON_POLICY_VERSION)
+                hardJumpPolicyVersion=HARD_JUMP_POLICY_VERSION,searchPolicyVersion=19,comparisonPolicyVersion=COMPARISON_POLICY_VERSION)
 
 
 def owner(scene, block):
@@ -58,9 +65,49 @@ def box_owners(scene):
     return {tuple(scene['collisionScene']['solids'][b['solidIndex']]): owner(scene,b['id']) for b in scene['blocks']}
 
 
+def face_namer(scene):
+    """A function naming the merged top face a list of boxes stands on; None when no box is a block's solid.
+
+    Boxes inside one face that are not all of it (one block, while generation still lands per block) take the
+    face's name. Boxes making up a whole face, or a block cut into differently named pieces, take their owners'
+    join.
+    """
+    from parkour_solver.movement.contact_combinations import face_name, solid_owners, top_faces
+    owners = solid_owners(scene)
+    index = {tuple(scene['collisionScene']['solids'][i]): i for i in owners}
+    faces = {}
+    for option in top_faces(scene):
+        for i in option.members:
+            faces.setdefault(i, []).append((frozenset(option.members), face_name(scene, option, owners)))
+
+    def name(boxes):
+        found = frozenset(index[tuple(b)] for b in boxes if tuple(b) in index)
+        if not found:
+            return None
+        holding = [(members, n) for members, n in faces.get(min(found), ()) if found <= members]
+        names = {n for _, n in holding}
+        if len(names) == 1 and all(members != found for members, _ in holding):
+            return names.pop()
+        return '+'.join(sorted(set().union(*(owners[i] for i in found))))
+    return name
+
+
+def support_face(scene, support, name=None):
+    """The face a block id (terminalSupport, the start block) names through its solid; any other value unchanged."""
+    block = next((b for b in scene['blocks'] if b['id'] == support), None)
+    if block is None:
+        return support
+    return (name or face_namer(scene))([scene['collisionScene']['solids'][block['solidIndex']]])
+
+
+def terminal_face(scene, program):
+    """The face a program's terminalSupport names; None without one (slab boosts and blip-ups set none)."""
+    return support_face(scene, program['terminalSupport']) if program.get('terminalSupport') else None
+
+
 def visits(scene, program):
     """Read actual selected contacts, never profile height or transient air IDs."""
-    by_box = box_owners(scene)
+    name = face_namer(scene)
     events = [(e['offset'], 0, e) for e in program['profile'].get('contactEvents', [])
               if e['axis'] == 'Y' and e.get('direction') == -1]
     profile=program['profile']
@@ -68,20 +115,20 @@ def visits(scene, program):
         t=e['input']+1
         # A cancel/grind touches geometry without landing on its owner. Keep
         # its requested impulse and physical case, but do not invent a visit.
-        if e.get('lowerBox') is not None:
-            events.append((e['input'],1,dict(boxes=[e['lowerBox']])))
+        if e.get('lowerBoxes') is not None:
+            events.append((e['input'],1,dict(boxes=e['lowerBoxes'])))
         boxes=e.get('boxes')
         if boxes and profile['grounded'][t] and abs(profile['position'][t]-max(b[4] for b in boxes))<=1e-7:
             events.append((e['input'],2,e))
-    result = [(0, owner(scene,scene['startBlock']))]
+    result = [(0, support_face(scene,scene['startBlock'],name))]
     for tick, _, e in sorted(events, key=lambda x:(x[0],x[1],digest(x[2]))):
-        name = next((by_box[tuple(b)] for b in e.get('boxes', ()) if tuple(b) in by_box), None)
-        if name is not None:
-            result.append((tick+1, name))
+        found = name(e.get('boxes', ()))
+        if found is not None:
+            result.append((tick+1, found))
     # Some named profiles report only terminalSupport. Include its physical
-    # owner without collapsing the input/jump history used by the solver.
+    # face without collapsing the input/jump history used by the solver.
     if program.get('terminalSupport') is not None:
-        result.append((program['profile']['duration'], owner(scene,program['terminalSupport'])))
+        result.append((program['profile']['duration'], support_face(scene,program['terminalSupport'],name)))
     return result
 
 
@@ -95,13 +142,15 @@ FEET_CASES = frozenset(('normal_step', 'slab_boost', 'blip', 'blip_up', 'corner_
 
 
 def feet_touches(scene, program):
-    by_box = box_owners(scene)
+    name = face_namer(scene)
     result = []
     for e in program['profile'].get('caseEvents', []):
         if e.get('case') not in FEET_CASES:
             continue
-        boxes = list(e.get('boxes') or ()) + ([e['lowerBox']] if e.get('lowerBox') is not None else [])
-        result.extend((e['input']+1, by_box[tuple(b)]) for b in boxes if tuple(b) in by_box)
+        for boxes in (e.get('boxes') or (), e.get('lowerBoxes') or ()):
+            found = name(boxes)
+            if found is not None:
+                result.append((e['input']+1, found))
     return sorted(result)
 
 
@@ -110,12 +159,16 @@ def visit_state(scene, program):
     departed = set()
     valid = True
     touches = feet_touches(scene,program)
+    arrivals = visits(scene,program)
+    # A touch that is itself a visit at that tick (a blip's lower landing) is not a return to that face.
+    visited = set(arrivals)
     def touch_until(tick):
         nonlocal valid
         while touches and (tick is None or touches[0][0] < tick):
-            if touches.pop(0)[1] in departed:
+            touch = touches.pop(0)
+            if touch[1] in departed and touch not in visited:
                 valid = False
-    for tick, name in visits(scene,program):
+    for tick, name in arrivals:
         touch_until(tick)
         if name == current:
             continue
@@ -150,7 +203,8 @@ def audit(scene, program, anchors, *, reached=None):
 
 
 def next_anchor(scene, program, anchors, task):
-    """Owner of the next required anchor (anchors are visited in order), or of the task block after the last."""
+    """Face name (its owner, see settings) of the next required anchor (anchors are visited in order), or of the task
+    block after the last."""
     reached = audit(scene, program, anchors)['reached']
     return owner(scene, anchors[reached] if reached < len(anchors) else task)
 
@@ -169,6 +223,9 @@ def advantageous_targets(scene, base, child, next_owner):
     by_box = box_owners(scene)
     def owners(boxes):
         return '+'.join(sorted({by_box[tuple(b)] for b in boxes if tuple(b) in by_box}))
+    # Undersides are already merged, so a ceiling or grind is named by its boxes' owners; a slab boost or corner
+    # jump cancel by the top face it steps onto, as advantageous_candidates keys it.
+    face = face_namer(scene)
     keys = set()
     if p['grounded'][-1] and owner(scene, child.get('terminalSupport')) == next_owner:
         keys.add(('anchor', next_owner))
@@ -176,14 +233,14 @@ def advantageous_targets(scene, base, child, next_owner):
         return keys
     keys |= {('ceiling', owners(e['boxes'])) for e in p.get('contactEvents', [])
              if e.get('role') == 'ceiling' and e['offset'] >= start}
-    keys |= {(e['case'], owners(e['boxes'])) for e in p.get('caseEvents', [])
+    keys |= {(e['case'], owners(e['boxes']) if e['case'] == 'grind' else face(e['boxes'])) for e in p.get('caseEvents', [])
              if e.get('case') in ADVANTAGE_CASES and e['input'] >= start}
     return keys
 
 
 def advantageous_candidates(scene, table, launch, top, next_owner, types, threshold=.005):
-    """Advantageous moves from a grounded decision on owner `launch` (feet at `top`), from launch tables
-    (`table(owner)`, see reachability.service.block_table) and vertical replays only.
+    """Advantageous moves from a grounded decision on face `launch` (feet at `top`), from launch tables
+    (`table(face)`, see reachability.service.face_table) and vertical replays only.
 
     Each entry is dict(key, A, via). A jump-now move (via None) has the key advantageous_targets
     gives as a JSON list and its airtime A: the jump input plus its air inputs through the landing (12 for a
@@ -191,11 +248,11 @@ def advantageous_candidates(scene, table, launch, top, next_owner, types, thresh
     A ceiling or grind A is the earliest descent through any landing top of the launch table, a lower bound
     (the built choice stops at the hit, and the table ignores where the player can be after it); the
     frontier uses it only to bound run ticks and takes built landings for the rest. A run-off onto another
-    owner (via) is a ["landing", owner] entry: A counts its airborne inputs only, since the walk-off input
+    face (via) is a ["landing", face] entry: A counts its airborne inputs only, since the walk-off input
     moves as a run tick (0 when it lands within that input), and `limit` is the airtime of an unhit jump
-    from here onto that owner (the frontier lowers it to a jump-now landing there), which its run ticks
-    plus A compete with. A walking step-up onto another owner is a ["step", owner] entry with A = 0: its
-    step input is a run tick too.
+    from here onto that face (the frontier lowers it to a jump-now landing there), which its run ticks
+    plus A compete with. A walking step-up onto another face is a ["step", face] entry with A = 0: its
+    step input is a run tick too. Slab boosts and corner jump cancels are keyed by the face they step onto.
     """
     import json
     import math
@@ -204,7 +261,9 @@ def advantageous_candidates(scene, table, launch, top, next_owner, types, thresh
     from parkour_solver.movement.normal import first_descent, replay
     from parkour_solver.physics.vertical import REST_CARRY, f32
     blocks = {b['id']: b for b in scene['blocks']}
-    by_box = box_owners(scene)
+    by_box, name_boxes = box_owners(scene), face_namer(scene)
+    def face(block):
+        return support_face(scene, block, name_boxes)
     undersides = scene_contact_options(scene, 1, -1) if 'ceiling' in types and scene.get('ceilingHits', True) else []
 
     def rest(y):
@@ -214,7 +273,7 @@ def advantageous_candidates(scene, table, launch, top, next_owner, types, thresh
         return min((t+1 for u in tops for t in [first_descent(trace, u)] if t is not None), default=None)
 
     def jumps(name, t):
-        """(kind, owner) -> A for the jumps from a block of owner `name` with feet at t."""
+        """(kind, name) -> A for the jumps from face `name` with feet at t."""
         kinds = table(name)
         tops = {blocks[b]['top'] for b in kinds['landing']}
         trace = replay(rest(t), 200, jumping=True, threshold=threshold)
@@ -241,8 +300,8 @@ def advantageous_candidates(scene, table, launch, top, next_owner, types, thresh
         if 'stepping' in types:
             for b in kinds['stepping']:
                 if f32(.42) < blocks[b]['top']-t <= f32(.6):
-                    add(('slab_boost', owner(scene, b)), 2)
-                    add(('corner_jump_cancel', owner(scene, b)), 2)
+                    add(('slab_boost', face(b)), 2)
+                    add(('corner_jump_cancel', face(b)), 2)
         return found
 
     entries = {}
@@ -255,12 +314,12 @@ def advantageous_candidates(scene, table, launch, top, next_owner, types, thresh
     kinds, fall = table(launch), replay(rest(top), 200, threshold=threshold)
     rise = replay(rest(top), 200, jumping=True, threshold=threshold)
     for b in sorted(kinds['landing'] | kinds['stepping']):
-        name, u = owner(scene, b), blocks[b]['top']
+        name, u = face(b), blocks[b]['top']
         if name == launch:
             continue
         if 'normal' in types and b in kinds['landing'] and (u < top or u == top and name == next_owner):
             t = first_descent(fall, u)
-            limit = landing(rise, {blocks[c]['top'] for c in kinds['landing'] if owner(scene, c) == name})
+            limit = landing(rise, {blocks[c]['top'] for c in kinds['landing'] if face(c) == name})
             if t is None or limit is None:
                 continue
             add(['landing', name], t, name, limit=limit)
@@ -296,22 +355,23 @@ def encounter_groups(scene, names):
     From a group's first end block, follow touching solids (the obstacle-cluster
     test) that some landing block of the chain can touch in one flight. Every such
     solid joins and extends the chain; the block-table kinds only label members as
-    landings (blocks a landing block can land on) or hit/ceiling obstacles. The
-    group runs through the last later anchor among the landing blocks.
+    landings (blocks a landing block can land on) or hit/ceiling obstacles. A
+    landing block's table measures from its whole face. The group runs through
+    the last later anchor among the landing blocks.
     """
-    from parkour_solver.reachability.service import block_table
+    from parkour_solver.reachability.service import face_table
     from parkour_solver.spatial.surfaces import scene_geometry
     geometry = scene_geometry(scene['collisionScene'])
     solid = {b['id']: b['solidIndex'] for b in scene['blocks']}
     by_solid = {}
     for b in scene['blocks']:
         by_solid.setdefault(b['solidIndex'], []).append(b['id'])
-    traces, tables = {}, {}
+    traces, tables, name_boxes = {}, {}, face_namer(scene)
 
     def table(name):
-        key = owner(scene, name)
+        key = support_face(scene, name, name_boxes)
         if key not in tables:
-            tables[key] = block_table(scene, key, traces)
+            tables[key] = face_table(scene, key, traces)
         return tables[key]
 
     def neighbours(name):
@@ -405,6 +465,3 @@ def transfer_structure(scene, program, start, source, target, *, complete=False,
                 preparationJumps=preparation,transferJumps=transfer,arrival=arrival,
                 transferSteppingInputs=stepping,assumption='hard_transfer_without_stepping')
 
-
-def single_jump_structure(scene, program, start, source, target, *, complete=False):
-    return transfer_structure(scene,program,start,source,target,complete=complete)['valid']

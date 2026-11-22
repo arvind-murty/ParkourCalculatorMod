@@ -19,9 +19,6 @@ def generate_choices(kind, context, **options):
         raise ValueError('Open choices use relative inputs; the composer owns retiming')
     if kind not in GENERATORS:
         raise ValueError('Unsupported movement generator: ' + str(kind))
-    if kind=='normal' and context.get('mode')=='open' and context.get('terminalGoal') is not None:
-        from parkour_solver.movement.virtual_goals import finish_choices
-        yield from finish_choices(context)
     for choice in GENERATORS[kind].generate(context, **options):
         if choice['unit']['type'] != kind:
             raise ValueError('Movement generator returned a different type')
@@ -81,20 +78,7 @@ class NormalGenerator:
             from parkour_solver.movement.normal import normal_choices
             yield from normal_choices(context)
             return
-        if context.get('mode') in ('support', 'profile'):
-            from parkour_solver.movement.profiles import ordinary_jump_profile, runoff_profile
-            profiles = [(context.get('profileKind', 'ordinary'), context['profile'])] if context.get('mode') == 'profile' else [
-                (name, derive(context['sourceTop'], context['targetTop'], max_inputs=context.get('maxInputs', 200)))
-                for name, derive in [('ordinary', ordinary_jump_profile), ('run_off', runoff_profile)]]
-            for name, profile in profiles:
-                if profile is None:
-                    continue
-                end = start + profile['duration']
-                unit = movement_unit('normal', start, end, jumpInputs=[start] if profile['jump'][0] else [],
-                    entryCondition={'kind': 'support', 'top': context['sourceTop']},
-                    exitCondition={'kind': 'support', 'top': context['targetTop']})
-                yield {'unit': unit, 'profile': profile, 'profileKind': name}
-            return
+        # Route preparation (units.movement_program) fills the timeline between named units with plain normal units.
         for end in ends if ends is not None else context.get('ends', []):
             if end > start:
                 yield {'unit': _unit('normal', context, start, end), 'primaryHitInputs': []}

@@ -7,20 +7,20 @@ import os
 import random
 import time
 import unittest
+from pathlib import Path
 
 from parkour_solver.scene.ladders import ladder_columns, ladder_regions, climb_walls, entry_channels, exit_faces
 from parkour_solver.movement.ladder.contacts import ceiling_sequence, with_contacts
 from parkour_solver.movement.ladder.schedules import generate_ladder_schedules, trace_ladder_schedule
 from parkour_solver.movement.ladder.episodes import compose_ladder_episodes
 from parkour_solver.scene.normalize import prepare_scene
-from parkour_solver.search.support_profiles import find_blocks
-from parkour_solver.movement.profiles import compile_block_path
 from parkour_solver.constraints.contacts import floor_checks
 from parkour_solver.search.repair import solve_contact_branches; from parkour_solver.validation.vertical import validate_vertical_schedule
 from parkour_solver.bridge.python_compiler import PythonCompiler
 from parkour_solver.scene.route import prepare_route, schedule
 from parkour_solver.physics.vertical import REST_CARRY, CLIMB_CARRY, f32
 from parkour_solver.movement.ceiling_profiles import ceiling_options
+from tests.support.ladder_composition import ladder_route
 
 
 ROOT = AUTONOMY_DATA
@@ -50,35 +50,6 @@ class LadderRegionTests(unittest.TestCase):
             self.assertEqual(set(represented), {tuple(c) for c in cells})
             self.assertEqual(len(represented), len(set(represented)))
 
-    def test_airborne_transfer_preserves_y_and_has_only_one_launch(self):
-        scene, episodes, program = airborne_case()
-        self.assertIsNotNone(program)
-        p = program['profile']
-        self.assertEqual(p['duration'], 28)
-        self.assertEqual(sum(p['jump']), 1)
-        self.assertFalse(any(p['grounded'][1:-1]))
-        self.assertEqual(p['velocity'][6], (CLIMB_CARRY - .08) * f32(.98))
-        self.assertNotEqual(p['velocity'][11], REST_CARRY)
-        edge = {'source': 'start', 'target': 'b', 'profileKind': 'ladder', 'profile': p,
-                'ladderEvents': program['ladderEvents'], 'entryFace': None, 'exitFace': None}
-        c = compile_block_path(scene, ['start', 'b'], [edge])
-        c['route']['maxTotalRunTicks'] = 2
-        c['route']['runBounds'] = [[0,2]]
-        c['route'] = prepare_route(c['route'])
-        a, b = schedule(c['route'], [0]), schedule(c['route'], [2])
-        self.assertEqual([c['state'] + 2 for c in a['contacts']], [c['state'] for c in b['contacts']])
-        self.assertEqual(a['ladderTicks'], b['ladderTicks'][2:])
-        self.assertTrue(validate_vertical_schedule(c['route'], c['profiles'], a)['feasible'])
-        self.assertTrue(validate_vertical_schedule(c['route'], c['profiles'], b)['feasible'])
-        invalid = copy.deepcopy(c['route'])
-        invalid['ladderEvents'][1]['schedule']['ladderTicks'][2] = True
-        with self.assertRaises(ValueError):
-            prepare_route(invalid)
-        duplicate = copy.deepcopy(episodes)
-        duplicate[1]['column']['id'] = duplicate[0]['column']['id']
-        with self.assertRaises(ValueError):
-            compose_ladder_episodes(1, 3, duplicate, max_inputs=60)
-
     def test_repeated_ladder_ceiling_events_regenerate_the_complete_schedule(self):
         config = json.loads((ROOT / 'fixtures/ladder-schedule-generator.json').read_text())
         s = next(s for s in generate_ladder_schedules(config)['schedules']
@@ -106,50 +77,36 @@ class LadderRegionTests(unittest.TestCase):
         self.assertEqual(generated['entryWindows'][0]['firstCandidateState'], state)
         self.assertTrue(generated['schedules'])
 
+    def test_airborne_transfer_preserves_y_and_has_only_one_launch(self):
+        scene, episodes, program = airborne_case()
+        self.assertIsNotNone(program)
+        p = program['profile']
+        self.assertEqual(p['duration'], 28)
+        self.assertEqual(sum(p['jump']), 1)
+        self.assertFalse(any(p['grounded'][1:-1]))
+        self.assertEqual(p['velocity'][6], (CLIMB_CARRY - .08) * f32(.98))
+        self.assertNotEqual(p['velocity'][11], REST_CARRY)
+        c = ladder_route(scene, program, 'b')
+        c['route']['maxTotalRunTicks'] = 2
+        c['route']['runBounds'] = [[0,2]]
+        c['route'] = prepare_route(c['route'])
+        a, b = schedule(c['route'], [0]), schedule(c['route'], [2])
+        self.assertEqual([c['state'] + 2 for c in a['contacts']], [c['state'] for c in b['contacts']])
+        self.assertEqual(a['ladderTicks'], b['ladderTicks'][2:])
+        self.assertTrue(validate_vertical_schedule(c['route'], c['profiles'], a)['feasible'])
+        self.assertTrue(validate_vertical_schedule(c['route'], c['profiles'], b)['feasible'])
+        invalid = copy.deepcopy(c['route'])
+        invalid['ladderEvents'][1]['schedule']['ladderTicks'][2] = True
+        with self.assertRaises(ValueError):
+            prepare_route(invalid)
+        duplicate = copy.deepcopy(episodes)
+        duplicate[1]['column']['id'] = duplicate[0]['column']['id']
+        with self.assertRaises(ValueError):
+            compose_ladder_episodes(1, 3, duplicate, max_inputs=60)
+
 
 @unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'),
                      'Set PKC_IPOPT_PYTHON')
-class LadderCompositionIntegrationTests(unittest.TestCase):
-    def test_direct_airborne_transfer_solves_without_a_fictitious_landing(self):
-        scene, episodes, program = airborne_case()
-        edge = {'source': 'start', 'target': 'b', 'profileKind': 'ladder', 'profile': program['profile'],
-                'ladderEvents': program['ladderEvents'], 'entryFace': None, 'exitFace': None}
-        compiled = compile_block_path(scene, ['start','b'], [edge])
-        with PythonCompiler() as compiler:
-            result = solve_contact_branches(compiled['route'], compiled['profiles'], floor_checks(scene, ['start','b'], compiled['profiles']),
-                compiler, seconds=18, candidate_seconds=3, retries=1, geometry=scene['collisionScene'],
-                motion_bound={'storedSpeedNorm':2,'movementAfterSupportCheck':2}, python_executable=os.environ['PKC_IPOPT_PYTHON'])
-        self.assertEqual(result['status'], 'feasible', result)
-        b = result['best']
-        self.assertTrue(b['geometryCheck']['feasible'])
-        self.assertEqual(len(b['route']['ladderEvents']), 2)
-        self.assertFalse(any(b['candidate']['onGround'][1:-1]))
-        self.assertEqual(sum(b['plan']['jump']), 1)
-
-    def test_geometry_only_ladder_ceiling_and_two_ladder_routes(self):
-        for name, seconds, route_seconds in [('ladder-ceiling', 90, 40), ('two-ladders', 160, 28), ('airborne-ladder-transfer',180,105)]:
-            with self.subTest(name=name):
-                request = json.loads((ROOT / ('fixtures/' + name + '.json')).read_text())
-                if name == 'two-ladders':
-                    request['ladderSearch']['maxTransferPrograms'] = 0
-                with PythonCompiler() as compiler:
-                    result = find_blocks(request, compiler, seconds=seconds, route_seconds=route_seconds,
-                        candidate_seconds=1, retries=0, python_executable=os.environ['PKC_IPOPT_PYTHON'])
-                self.assertEqual(result['status'], 'feasible', result)
-                best = result['best']
-                self.assertTrue(best['geometryCheck']['feasible'])
-                if name == 'two-ladders':
-                    self.assertEqual(best['blockIds'], ['start','a','b'])
-                    self.assertEqual(len(best['route']['ladderEvents']), 2)
-                elif name == 'airborne-ladder-transfer':
-                    self.assertEqual(len(best['route']['ladderEvents']), 2)
-                    self.assertFalse(any(best['candidate']['onGround'][1:-1]))
-                    self.assertEqual(sum(best['plan']['jump']),1)
-                else:
-                    self.assertTrue(any(e['axis'] == 'Y' for e in best['route']['contactEvents']))
-                    self.assertTrue(any(best['ladderSchedule']['hit']))
-
-
 class CompositionEvidenceTests(unittest.TestCase):
     def test_saved_multiple_ladder_ceiling_transfer_and_contact_blockage_contracts(self):
         from parkour_solver.validation.scene import check_geometry
@@ -160,7 +117,7 @@ class CompositionEvidenceTests(unittest.TestCase):
                 with self.subTest(name=name):
                     e = json.loads((ROOT / ('experiments/contact-combinations/' + name + '.json')).read_text())
                     if 'fixtureSha256' in e:
-                        fixture = ROOT / 'experiments/contact-combinations' / e['fixture']
+                        fixture = ROOT / ('fixtures/' + Path(e['fixture']).name)
                         self.assertEqual(hashlib.sha256(fixture.read_bytes()).hexdigest(), e['fixtureSha256'])
                     p = prepare(e['problem'])
                     c = validate(p, p['yaw'])
@@ -179,3 +136,21 @@ class CompositionEvidenceTests(unittest.TestCase):
                         gates = gate_timeline(e['route']['passages'], e['plan']['events'])
                         self.assertEqual(gates[0]['firstState'], e['plan']['sceneContacts'][0]['state'])
                         self.assertEqual(len(gates), 2)
+
+@unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'),
+                     'Set PKC_IPOPT_PYTHON')
+class LadderCompositionIntegrationTests(unittest.TestCase):
+    def test_direct_airborne_transfer_solves_without_a_fictitious_landing(self):
+        scene, episodes, program = airborne_case()
+        compiled = ladder_route(scene, program, 'b')
+        with PythonCompiler() as compiler:
+            result = solve_contact_branches(compiled['route'], compiled['profiles'], floor_checks(scene, ['start','b'], compiled['profiles']),
+                compiler, seconds=18, candidate_seconds=3, retries=1, geometry=scene['collisionScene'],
+                motion_bound={'storedSpeedNorm':2,'movementAfterSupportCheck':2}, python_executable=os.environ['PKC_IPOPT_PYTHON'])
+        self.assertEqual(result['status'], 'feasible', result)
+        b = result['best']
+        self.assertTrue(b['geometryCheck']['feasible'])
+        self.assertEqual(len(b['route']['ladderEvents']), 2)
+        self.assertFalse(any(b['candidate']['onGround'][1:-1]))
+        self.assertEqual(sum(b['plan']['jump']), 1)
+

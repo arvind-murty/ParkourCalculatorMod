@@ -26,3 +26,11 @@ def airborne_case():
                          'hitInputs': list(hits), 'entryFace': face, 'exitFace': exit_face, 'exitKind': 'top'})
     program = compose_ladder_episodes(1, 3, episodes, max_inputs=60)
     return scene, episodes, program
+
+
+def ladder_route(scene, program, target):
+    """The production one-leg route (movement.program.compile_program) of a composed ladder program (its `profile` and
+    `ladderEvents`) from the start support to `target`."""
+    from parkour_solver.movement.program import compile_program
+    return compile_program(dict(scene, goalBlock=target),
+                           dict(profile=program['profile'], ladderEvents=program['ladderEvents'], terminalSupport=target))

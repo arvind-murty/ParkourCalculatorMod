@@ -4,22 +4,13 @@ from parkour_solver.search.application import run
 from parkour_solver.io.provenance import source_hashes, source_revision
 
 import argparse
-import gzip
-import hashlib
 import json
 from pathlib import Path
 import signal
-import subprocess
 import sys
 import threading
-import time
 
-from parkour_solver.scene.normalize import prepare_scene
 from parkour_solver.bridge.compiler import open_compiler
-from parkour_solver.validation.witness import replay_witness
-from parkour_solver.search.engine import find_checkpoint_route
-from parkour_solver.search.domain import InitialJumpDomain
-from parkour_solver.io.reports import save
 from parkour_solver.io.checkpoint_store import CheckpointStore, read_report
 from parkour_solver.io.search_checkpoint import SearchCheckpoint
 

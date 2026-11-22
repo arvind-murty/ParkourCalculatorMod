@@ -8,23 +8,12 @@ The input is a supplied support sequence, a fixed final horizon, and optional ho
 
 Current coverage is ordinary jumps, run timing, landing support and two-face horizontal passages on this declared sequence. Alternate support sequences, arbitrary stepping/ceiling outcomes, ladders and intentional wall hits are outside this implementation. Their omission cannot support a bound over a larger route family.
 
-## Run
+## Source
 
-From `standalone/`, with the native bridge already prepared and the package installed:
-
-```sh
-../.venv-guidance/bin/python -m pip install --editable '.[research]'
-OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 ../.venv-guidance/bin/python \
-  -m research.route_guidance.experiment \
-  --input research/route-guidance/fixtures \
-  --compiler build/native/compiler.json \
-  --output runs/route-guidance-new.json \
-  --seconds 3 --refine-seconds 3 --repeats 3
-```
-
-Use new output paths. This is the preserved scientific prototype, separate from
-the active anchor solver; its source-era next-step notes are not current work
-authorization. See the [research guide](../README.md) and [runbook](../../docs/RUNBOOK.md).
+The scripts were removed with the legacy block search they compiled routes through (2026-11-21). They last ran at
+`8266a38d`; recover one with `git show 8266a38d:standalone/research/route_guidance/<file>.py`. The measurements below
+stay as evidence for that revision. This was a scientific prototype, separate from the anchor solver; its source-era
+next-step notes are not current work authorization. See the [research guide](../README.md).
 
 The conic backend is Clarabel, using its direct sparse interface. The two compact models use CasADi/IPOPT. Dependencies live in a separate ignored environment. The native mod disk solver is a modeling reference and is not imported or modified.
 

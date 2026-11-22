@@ -92,7 +92,6 @@ def instrument(profiler):
     from parkour_solver.search import deferrals as preparation_deferrals
     from parkour_solver.validation import witness as checkpoint_experiment
     from parkour_solver.search import engine as checkpoint_search, dfs as depth_first
-    from parkour_solver.search.events import engine as event_search
     changes = []
 
     def replace(module, key, value):

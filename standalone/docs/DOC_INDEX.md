@@ -35,7 +35,6 @@ control work; inclusion here is not authorization to implement a historical plan
 | [docs/design/AVOIDANCE_PASSAGES.md](design/AVOIDANCE_PASSAGES.md) | Design contract; check decisions index for implemented/deferred scope: Geometry-driven avoidance passages |
 | [docs/design/BRANCH_SCHEDULING_INVESTIGATION.md](design/BRANCH_SCHEDULING_INVESTIGATION.md) | Design contract; check decisions index for implemented/deferred scope: Concrete solver-orchestration improvements |
 | [docs/design/CONTACT_COMBINATIONS.md](design/CONTACT_COMBINATIONS.md) | Design contract; check decisions index for implemented/deferred scope: Contact combination implementation |
-| [docs/design/FACE_MERGING_IMPLEMENTATION_PLAN.md](design/FACE_MERGING_IMPLEMENTATION_PLAN.md) | Design contract; check decisions index for implemented/deferred scope: Adjacent-face merging: implementation plan |
 | [docs/design/GENERATION_FOLLOWUPS.md](design/GENERATION_FOLLOWUPS.md) | Design contract; check decisions index for implemented/deferred scope: Generation follow-ups: implementation plan |
 | [docs/design/GENERATION_RELEVANCE_PLAN.md](design/GENERATION_RELEVANCE_PLAN.md) | Design contract; check decisions index for implemented/deferred scope: Preliminary plan: generate only relevant, distinct interaction models |
 | [docs/design/GENERIC_COMPOSITION.md](design/GENERIC_COMPOSITION.md) | Design contract; check decisions index for implemented/deferred scope: Generic movement programs |
@@ -49,6 +48,7 @@ control work; inclusion here is not authorization to implement a historical plan
 | [docs/design/ORCHESTRATOR_CONTRACT.md](design/ORCHESTRATOR_CONTRACT.md) | Design contract; check decisions index for implemented/deferred scope: Fixed-decision continuous-solve contract |
 | [docs/design/PRUNING_IMPROVEMENTS_BACKLOG.md](design/PRUNING_IMPROVEMENTS_BACKLOG.md) | Design contract; check decisions index for implemented/deferred scope: Deferred pruning and orchestration improvements |
 | [docs/design/REVISIT_DISCOVERY_DEFERRED_PLAN.md](design/REVISIT_DISCOVERY_DEFERRED_PLAN.md) | Design contract; check decisions index for implemented/deferred scope: Deferred plan: physical block revisits and momentum preparation |
+| [docs/design/SCENE_SURFACES.md](design/SCENE_SURFACES.md) | Design contract; check decisions index for implemented/deferred scope: Scene surfaces |
 | [docs/design/SEARCH_OBJECTIVE.md](design/SEARCH_OBJECTIVE.md) | Design contract; check decisions index for implemented/deferred scope: Search order: total ticks, then objective |
 | [docs/design/STEPPING_CASES.md](design/STEPPING_CASES.md) | Design contract; check decisions index for implemented/deferred scope: Stepping terminology and cases |
 | [docs/design/TIME_PROGRESS_FRONTIER.md](design/TIME_PROGRESS_FRONTIER.md) | Design contract; check decisions index for implemented/deferred scope: Time and progress comparisons: two distinct goals |

@@ -423,7 +423,8 @@
       "old": "autonomy/block_search.py",
       "new": "src/parkour_solver/search/support_profiles.py",
       "originalSha256": "1b57fdaa023f3c0057ae8d4e4c65692160c569f2976a82e57557bf4a9d76fecf",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/blockages.py",
@@ -447,7 +448,8 @@
       "old": "autonomy/ceiling_contacts.py",
       "new": "src/parkour_solver/movement/ceiling_contacts.py",
       "originalSha256": "754b887c88ac423a8f4bbd486f2246acd7820c4ebe9b9ba1778eb0ac6d557040",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/ceiling_generation.py",
@@ -501,7 +503,8 @@
       "old": "autonomy/cell_routes/checkpoint_experiment.py",
       "new": "research/legacy_cell_routes/checkpoint_experiment.py",
       "originalSha256": "c669d8c5179113607b652accb3f2e57a716dfed059f7e1aad6d4524f22c3453f",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/cell_routes/checkpoint_persistence.py",
@@ -525,7 +528,8 @@
       "old": "autonomy/cell_routes/comparison_audit.py",
       "new": "research/legacy_cell_routes/comparison_audit.py",
       "originalSha256": "5d0a13c87a22e0224b6dd3d59a3ee940581cf573f177ea0b6742fb2a6053fc4e",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/cell_routes/comparison_goals.py",
@@ -537,13 +541,15 @@
       "old": "autonomy/cell_routes/corridor_guards.py",
       "new": "src/parkour_solver/spatial/compat/corridor_guards.py",
       "originalSha256": "051cd8d75b457cc5407013d56f01345fec33eaebd5ec20156bced3068b1db479",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/cell_routes/coverage_audit.py",
       "new": "research/legacy_cell_routes/coverage_audit.py",
       "originalSha256": "ab4f796a6d5aa9153bb142df431fe76bf368a9599c6afd7cee93c6efcfbc2f51",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/cell_routes/decision_windows.py",
@@ -568,7 +574,8 @@
       "old": "autonomy/cell_routes/event_coverage_audit.py",
       "new": "research/legacy_cell_routes/event_coverage_audit.py",
       "originalSha256": "aefe8f47dc3d472748bfcaa8a5458b5e675aae6098b426fe52adc94270235ab5",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/cell_routes/event_routes.py",
@@ -586,31 +593,36 @@
       "old": "autonomy/cell_routes/experiment.py",
       "new": "research/legacy_cell_routes/experiment.py",
       "originalSha256": "77ea642f386fd13da3e512d57754d9add567c96d19895e47fbdcfacc08fc44f1",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/cell_routes/failure_diagnostic.py",
       "new": "research/legacy_cell_routes/failure_diagnostic.py",
       "originalSha256": "3b4fd1524d71a923c3b573e78e55ed36de0af71b22e534369088c5ee48a4c3a1",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/cell_routes/fix_validation.py",
       "new": "research/legacy_cell_routes/fix_validation.py",
       "originalSha256": "27fd57a8cb24e117a1287561c8b6a52157e394c23f1381935bd0f617a1200fc8",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/cell_routes/fixed_clock_experiment.py",
       "new": "src/parkour_solver/cli/fixed_clock.py",
       "originalSha256": "5ef1ff86bc7d0cb0efcf792b7e716dab0e4c06e00142caae6bf1f3048ca55222",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/cell_routes/generation_diagnostic.py",
       "new": "research/legacy_cell_routes/generation_diagnostic.py",
       "originalSha256": "f3374b3d9bb1871ecf89e0a0bdc5ef0d0c87ef7aae4f5b1752e2cd4f821d6e54",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/cell_routes/geometry.py",
@@ -628,13 +640,15 @@
       "old": "autonomy/cell_routes/local.py",
       "new": "src/parkour_solver/validation/scoped_scene.py",
       "originalSha256": "bbdc212ea19ce81da4d3e8ced421e72611ffb3fbdcbdf70c581b4f52f56c3f6d",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/cell_routes/minimum_runs.py",
       "new": "src/parkour_solver/search/compat/minimum_runs.py",
       "originalSha256": "04d87eb807be6cb1584fe059e1847afaa2e381ffcccb35b4f67c5308e65b439f",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/cell_routes/node_feasibility.py",
@@ -658,49 +672,57 @@
       "old": "autonomy/cell_routes/repair_diagnostic.py",
       "new": "research/legacy_cell_routes/repair_diagnostic.py",
       "originalSha256": "58b803c3b3d8c11ce98f354194abe8de41aa4f862edff25f2fb29f4f1810e8ae",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/cell_routes/repair_resume_experiment.py",
       "new": "research/legacy_cell_routes/repair_resume_experiment.py",
       "originalSha256": "0132d046f37a06fa46aee93fe1d8f36fe21c5a2776299e4ba3edea95202e25b1",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/cell_routes/route_guards.py",
       "new": "src/parkour_solver/constraints/route_guards.py",
       "originalSha256": "546a5ebdf27044ecb430f846adec35e96f60a3c7cda49555ddf8aad2d0b2ee4c",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/cell_routes/route_progress.py",
       "new": "src/parkour_solver/spatial/compat/progress.py",
       "originalSha256": "d6e1edc8998a546d39cd97398048370ee70b85c294cb2f92766ee3bc84275dc1",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/cell_routes/route_queue.py",
       "new": "src/parkour_solver/search/compat/corridor_queue.py",
       "originalSha256": "2dfc5e41988ab9ac4cb23f193b22daa33dccc57ce7e57cf8e586f0884c3c3889",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/cell_routes/routes.py",
       "new": "src/parkour_solver/spatial/compat/corridors.py",
       "originalSha256": "8324e4581a1388a4bce28f6f096c6a3c71fcd80985df4fb6c4a6b4b393bbe3b4",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/cell_routes/scalar_seed_diagnostic.py",
       "new": "research/legacy_cell_routes/scalar_seed_diagnostic.py",
       "originalSha256": "37c6385cc56ed7cfc26aea44865284fafa41fe5bcde8abf001aa433f827bc8ba",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/cell_routes/semantic_adapter.py",
       "new": "src/parkour_solver/search/compat/semantic_adapter.py",
       "originalSha256": "9e061910a306dcc215ad1bf088ee94a9b087c80753549602c2664e30b30a42e4",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/cell_routes/support_order.py",
@@ -712,7 +734,8 @@
       "old": "autonomy/cell_routes/time_progress.py",
       "new": "src/parkour_solver/search/compat/time_progress.py",
       "originalSha256": "8e2cb9db03e287c99c19243b15393c5475053f69936394f7b24acf8852112501",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/cell_routes/transfer_time_bounds.py",
@@ -730,13 +753,15 @@
       "old": "autonomy/cell_routes/two_goal_experiment.py",
       "new": "research/legacy_cell_routes/two_goal_experiment.py",
       "originalSha256": "d0475b4fbe80b942b7f6352e4d8641c901554d595a90e8961236a4155fb7c1e2",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/cell_routes/window_diagnostic.py",
       "new": "research/legacy_cell_routes/window_diagnostic.py",
       "originalSha256": "8ed7bc87477ab8b9b20009c4b0d35f1abbac13a297cac4caf47f0c3454325f6c",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/cell_routes/window_experiment.py",
@@ -755,7 +780,8 @@
       "old": "autonomy/climbable_search.py",
       "new": "src/parkour_solver/search/climbable.py",
       "originalSha256": "bfc21052a0aa02d2ef3484f090377ba1885700e8f631c11e30442b864db48cc3",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/compiler.gradle",
@@ -4937,7 +4963,7 @@
       "old": "autonomy/experiments/obstacle-avoidance/README.md",
       "new": "research/obstacle-avoidance/README.md",
       "originalSha256": "4431bdc09c42594fa5d4ea7dcfc45977a325a7bd392cc80be2ce4c41755cbb15",
-      "immutable": true
+      "immutable": false
     },
     {
       "old": "autonomy/experiments/obstacle-avoidance/blocked-result.json",
@@ -4961,19 +4987,21 @@
       "old": "autonomy/experiments/obstacle-avoidance/runoff-side-request.json",
       "new": "research/obstacle-avoidance/runoff-side-request.json",
       "originalSha256": "39cd88261baf5ba343f56c6a438a425906a7b12fa193adb59f5ffb55fef4ccd2",
-      "immutable": true
+      "immutable": false,
+      "retired": "2026-11-22"
     },
     {
       "old": "autonomy/experiments/obstacle-avoidance/runoff-side-result.json",
       "new": "research/obstacle-avoidance/runoff-side-result.json",
       "originalSha256": "f3a035a04991587b42eb7f1ac1487619aabb9ae92245868598f3480435987415",
-      "immutable": true
+      "immutable": false,
+      "retired": "2026-11-22"
     },
     {
       "old": "autonomy/experiments/obstacle-avoidance/summary.json",
       "new": "research/obstacle-avoidance/summary.json",
       "originalSha256": "31dd828f3deb76af37a1ee8bd22a79448a0b08a5fadbfe6386c7cc7a0aaa7021",
-      "immutable": true
+      "immutable": false
     },
     {
       "old": "autonomy/experiments/obstacle-avoidance/under-ceiling-request.json",
@@ -5915,7 +5943,7 @@
       "old": "autonomy/fixtures/ceiling-bonk.json",
       "new": "tests/fixtures/movement/ceiling-bonk.json",
       "originalSha256": "ce66f5daa96411cfe5da73c6d6f6a14ea0219a7310417971220c896c9ccbbf8c",
-      "immutable": true
+      "immutable": false
     },
     {
       "old": "autonomy/fixtures/contact-wide-neo.json",
@@ -5951,7 +5979,7 @@
       "old": "autonomy/fixtures/generic-repeat-ceiling.json",
       "new": "tests/fixtures/movement/generic-repeat-ceiling.json",
       "originalSha256": "458d55b5f3a3a547b99a04fac86d655c19ffc4f8d8a54f708401d26ac7fb3fc9",
-      "immutable": true
+      "immutable": false
     },
     {
       "old": "autonomy/fixtures/hanging-vines.json",
@@ -6047,7 +6075,8 @@
       "old": "autonomy/fixtures/obstacle-runoff-side.json",
       "new": "tests/fixtures/movement/obstacle-runoff-side.json",
       "originalSha256": "23b58403d831b0c99c052080e807b854517fbcb15e71f80a7a5210904dfb1ca1",
-      "immutable": true
+      "immutable": false,
+      "retired": "2026-11-22"
     },
     {
       "old": "autonomy/fixtures/obstacle-under-ceiling.json",
@@ -6101,13 +6130,13 @@
       "old": "autonomy/fixtures/stepping/corner_jump_cancel.json",
       "new": "tests/fixtures/movement/stepping/corner_jump_cancel.json",
       "originalSha256": "23666916feb65561891b7b079926b36707605322f4c4551df32d3e65fd120c1d",
-      "immutable": true
+      "immutable": false
     },
     {
       "old": "autonomy/fixtures/stepping/grind.json",
       "new": "tests/fixtures/movement/stepping/grind.json",
       "originalSha256": "1848296f6ba86a42a4dc4eb40b340b8f380630038cc0bf86a19dac3c1db5cfaf",
-      "immutable": true
+      "immutable": false
     },
     {
       "old": "autonomy/fixtures/stepping/normal_step.json",
@@ -6209,7 +6238,8 @@
       "old": "autonomy/ladder_ranking.py",
       "new": "src/parkour_solver/search/ladder_ranking.py",
       "originalSha256": "790bfe1c60c31d4a95809693b0a9a265be7ed465f867816ec3a4f396a6d0fdc1",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/ladder_schedules.py",
@@ -6234,7 +6264,8 @@
       "old": "autonomy/linkcraft.py",
       "new": "src/parkour_solver/io/linkcraft.py",
       "originalSha256": "12d90184af1c46ea5f4f7feccae9b298df06a7d480a76205563cd4a359c554a3",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/mixed_ladder.py",
@@ -6258,7 +6289,8 @@
       "old": "autonomy/movement_entry.py",
       "new": "src/parkour_solver/search/entry.py",
       "originalSha256": "3d138978c86629171ce4b96a32f66693c7bca48c34473d7020708d5940aa25f1",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/movement_frontier.py",
@@ -6360,61 +6392,71 @@
       "old": "autonomy/route_guidance/__init__.py",
       "new": "research/route_guidance/__init__.py",
       "originalSha256": "61e00fc0290c1c749d777036078c90a61a4dda3d960b05523ef1f17d46ba2b8f",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/route_guidance/compact.py",
       "new": "research/route_guidance/compact.py",
       "originalSha256": "4a4995b93e82b05689818e93c95e6b44871436580f203dd26314d2b26b490831",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/route_guidance/conic.py",
       "new": "research/route_guidance/conic.py",
       "originalSha256": "c82decc17d6923d943e7a3e8e5e8b1ede6a8e546ed6f886e17f2c2f5a4e7f66a",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/route_guidance/experiment.py",
       "new": "research/route_guidance/experiment.py",
       "originalSha256": "b3b0ff360c17fd7eabca8ac8d46267f53886cc77fe10181e8949d81792d62983",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/route_guidance/graph.py",
       "new": "research/route_guidance/graph.py",
       "originalSha256": "7d4091cde110030408eafbf393294d2d578ddd00e8b74000e6c104950ba61081",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/route_guidance/guidance.py",
       "new": "research/route_guidance/guidance.py",
       "originalSha256": "3d728144ad85a3b74f0dee974ef9de639132e815c0de42710ead6eaa9845c50f",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/route_guidance/inertia_ablation.py",
       "new": "research/route_guidance/inertia_ablation.py",
       "originalSha256": "868224587a66f53b957051bec1ab953195c36ccdc38395a52ee6abc96f637a30",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/route_guidance/physical.py",
       "new": "research/route_guidance/physical.py",
       "originalSha256": "5fcd9a54626935262df7519c9198e40355250cd62fb115fc25e28dcf756b0198",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/route_guidance/replay.py",
       "new": "research/route_guidance/replay.py",
       "originalSha256": "1e0807d2c06d93a978d33b3e6729894ff1946cd52e122f13a2f3d02a87e13f07",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/route_guidance/report.py",
       "new": "research/route_guidance/report.py",
       "originalSha256": "6db72ff37ab83f22c344b750a5058a264dda572795ac32e3d5f03ed67b7db50d",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/route_guidance/requirements-plot.txt",
@@ -6444,13 +6486,15 @@
       "old": "autonomy/solve.py",
       "new": "src/parkour_solver/cli/ordered_route.py",
       "originalSha256": "674e2653aedf730164b6210721d088ca33a7fc1370f83a519206bd217b66b37a",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/solve_blocks.py",
       "new": "src/parkour_solver/cli/blocks.py",
       "originalSha256": "faf9cbaf5fdd8432e98aa580e5ea1dff9b5a0e3f63f860898460227a87aa531c",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/solve_spec.py",
@@ -6468,7 +6512,8 @@
       "old": "autonomy/terminal_goals.py",
       "new": "src/parkour_solver/movement/virtual_goals.py",
       "originalSha256": "afadafef3a464a22aa150826c2bb77828dd0417e4bdac330d5438d55537c5264",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_acceptance.py",
@@ -6510,7 +6555,8 @@
       "old": "autonomy/tests/test_block_profiles.py",
       "new": "tests/unit/movement/test_block_profiles.py",
       "originalSha256": "ce01d5ec160722f1dd7ecc18e6799a2148fab10fd9c61c47d9861c8cfee7cfcf",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_block_route_witnesses.py",
@@ -6522,13 +6568,15 @@
       "old": "autonomy/tests/test_block_search.py",
       "new": "tests/unit/search/test_block_search.py",
       "originalSha256": "41a1c592c087b0cb09124aa3fbe603238e7998c357950964955883b4fe5a600a",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_candidate_audit.py",
       "new": "tests/research/test_candidate_audit.py",
       "originalSha256": "f067c43495043ded51a555bc290d2d3b00586402ddeffddcc92f2f4dd4df505d",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_candidate_comparison.py",
@@ -6546,7 +6594,8 @@
       "old": "autonomy/tests/test_cell_experiment.py",
       "new": "tests/research/test_cell_experiment.py",
       "originalSha256": "000940d15ec18fc7659b03030fc5750b110cddfa7b51ef15338755e70d432653",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_cell_geometry.py",
@@ -6558,19 +6607,22 @@
       "old": "autonomy/tests/test_cell_local.py",
       "new": "tests/unit/spatial/test_cell_local.py",
       "originalSha256": "a06e26d857747fde76be6e02dce00b38a030af8b797599d934cb804b9a115d5b",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_cell_routes.py",
       "new": "tests/unit/spatial/test_cell_routes.py",
       "originalSha256": "7785624b9f9a45c2dcb0fa806e378d84dc139b3bf4a67922f20b4a3e5defa347",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_checkpoint_guidance.py",
       "new": "tests/unit/spatial/test_checkpoint_guidance.py",
       "originalSha256": "cb6c0c23692faa8b4a6640a8f5e0e2931f55447d03fb29131a253600bf001c9f",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_checkpoint_store.py",
@@ -6582,13 +6634,15 @@
       "old": "autonomy/tests/test_climbable_search.py",
       "new": "tests/unit/movement/test_climbable_search.py",
       "originalSha256": "3d37fd4bd52446943cc3897502a58e1e0439fde5a746e03d2185e992eb991c69",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_comparison_goals.py",
       "new": "tests/unit/search/test_comparison_goals.py",
       "originalSha256": "7cfadabf206c9054afed446aff3e797a34e2d33dbcf12ffc52dce32e1e335b9b",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_contact_combinations.py",
@@ -6606,7 +6660,8 @@
       "old": "autonomy/tests/test_corridor_guards.py",
       "new": "tests/unit/spatial/test_corridor_guards.py",
       "originalSha256": "1cab923721c5d1993608c0bb764898a8e7f6206f94e3482623276e5077580d7d",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_decision_windows.py",
@@ -6619,7 +6674,8 @@
       "old": "autonomy/tests/test_depth_first.py",
       "new": "tests/unit/search/test_depth_first.py",
       "originalSha256": "b82dd7cb6dbf7ff371fe1e11b1cc0b9f22f7d87f23a8a41cc81c20db3b94f95e",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_event_domain.py",
@@ -6643,19 +6699,22 @@
       "old": "autonomy/tests/test_failure_diagnostic.py",
       "new": "tests/research/test_failure_diagnostic.py",
       "originalSha256": "0a8c56059b7a37aae0b0558fb0bdd1b6584515e7f617ba2d908cb67edbe2dc7c",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_feasibility_mode.py",
       "new": "tests/unit/movement/test_feasibility_mode.py",
       "originalSha256": "8d002b41373c8e9fd6539ac2c72404f481707ff302b6e884e562665589e888ae",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_fixed_clock_goal.py",
       "new": "tests/unit/search/test_fixed_clock_goal.py",
       "originalSha256": "d04a9d15a86889f7c3c627196b7cc11863a866cbd157bd317021b6729df964ab",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_full_route_witness.py",
@@ -6679,7 +6738,8 @@
       "old": "autonomy/tests/test_hanging_vines.py",
       "new": "tests/unit/movement/test_hanging_vines.py",
       "originalSha256": "cc934c014d87a586007b6eb800935f3693008b3346ad9659fddcb4f8d1aa6af5",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_hit_events.py",
@@ -6703,7 +6763,8 @@
       "old": "autonomy/tests/test_ladder_bridge.py",
       "new": "tests/unit/movement/test_ladder_bridge.py",
       "originalSha256": "18922e153251ebdd513bbd1a72d8a954168d0f2d7034bd806d096599e632cbc5",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_ladder_ceiling.py",
@@ -6733,19 +6794,22 @@
       "old": "autonomy/tests/test_linkcraft.py",
       "new": "tests/unit/io/test_linkcraft.py",
       "originalSha256": "6c5eba9f1dbd4b4b8349161122977ac63939c03763a8dc104db659a4f6382202",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_long_ladder_chains.py",
       "new": "tests/unit/movement/test_long_ladder_chains.py",
       "originalSha256": "382961f1599638d7289a0b14dfa5ec12077196b5347b403d9bb00f18f28c1dab",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_minimum_runs.py",
       "new": "tests/unit/search/test_minimum_runs.py",
       "originalSha256": "b4fabe11170c8d7daa73d7f8d64e406a5ace95f7e22107f01ac0ba71d4bf9f7d",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_movement_composition.py",
@@ -6763,7 +6827,8 @@
       "old": "autonomy/tests/test_movement_entry.py",
       "new": "tests/unit/movement/test_movement_entry.py",
       "originalSha256": "ddebf60a8c197b49582dc7eb9440fa329e47bafd108a94b6abe8dc105b6add88",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_movement_generation.py",
@@ -6805,19 +6870,22 @@
       "old": "autonomy/tests/test_route_guards.py",
       "new": "tests/unit/spatial/test_route_guards.py",
       "originalSha256": "9361b87f4652c66e3bc2afa219aeb6574688c296acf837b800efeee607270af2",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_route_guidance.py",
       "new": "tests/research/test_route_guidance.py",
       "originalSha256": "d266c9a4d417141726c84425974b041b29263154af3167951bfdd161cadd7bbf",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_route_progress.py",
       "new": "tests/unit/spatial/test_route_progress.py",
       "originalSha256": "e65006866b4783f64bc543d4316df7a8f5a17c7d837b171ff84ece14789ea38d",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_route_regions.py",
@@ -6853,13 +6921,15 @@
       "old": "autonomy/tests/test_semantic_routes.py",
       "new": "tests/unit/spatial/test_semantic_routes.py",
       "originalSha256": "42b297bbd4c4c51eeffe8ee030208577318e53327030f33eab0c9eb50f15e0ac",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_semantic_search.py",
       "new": "tests/unit/search/test_semantic_search.py",
       "originalSha256": "a937231474c4a486d390f2bd71b0acc5fca2bdb6812d5e32153ecee220212603",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_shared_contacts.py",
@@ -6877,13 +6947,15 @@
       "old": "autonomy/tests/test_terminal_goals.py",
       "new": "tests/unit/search/test_terminal_goals.py",
       "originalSha256": "a2315e14be41192c167d7765a69d3058c96e469041c9f99541a8ea7e2a620ca4",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_time_progress.py",
       "new": "tests/unit/search/test_time_progress.py",
       "originalSha256": "9332193a51ce15e3b44d41c55eaf9eb19afef7c3844a1fde18ab1f88ea8326a3",
-      "immutable": false
+      "immutable": false,
+      "retired": "2026-11-21"
     },
     {
       "old": "autonomy/tests/test_transfer_time_bounds.py",

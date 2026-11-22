@@ -1,12 +1,10 @@
 """Scoped observations of the maintained encounter builder's phase counters."""
 from collections import Counter
 from contextlib import contextmanager
-import copy
 import functools
 import hashlib
 import inspect
 import json
-import weakref
 
 
 class EnumerationProfile:

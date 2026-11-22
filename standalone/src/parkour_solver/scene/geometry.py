@@ -3,7 +3,7 @@ import math
 import struct
 import sys
 
-from parkour_solver.physics.vertical import clamp, f32, vertical_move
+from parkour_solver.physics.vertical import f32
 from parkour_solver.schema import number
 from parkour_solver.scene.route import HALF_WIDTH
 

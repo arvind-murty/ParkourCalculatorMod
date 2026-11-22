@@ -1,9 +1,9 @@
 # Time and progress comparisons: two distinct goals
 
 Design record for common-clock time and progress labels, from user rulings on
-2026-11-01 and 2026-11-02. The labels and protection guards are implemented for the
-legacy common-clock search in `search/compat/time_progress.py`, which delegates to
-`search.comparison.compare_candidates`. The active anchor DFS orders by
+2026-11-01 and 2026-11-02. The labels and protection guards served the legacy
+common-clock search, removed on 2026-11-21; `search.comparison.compare_candidates` keeps
+the predicates. The active anchor DFS orders by
 `(T,-J,tickCost,id)` (`search/comparison.py`) and does not run a global
 position/velocity exclusion pass ([decisions](../DECISIONS_AND_PLANS.md)).
 [Measurements](../../research/two-goal-comparisons/README.md).

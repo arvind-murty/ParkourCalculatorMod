@@ -10,12 +10,10 @@ from unittest.mock import patch
 from parkour_solver.reachability.intervals import reachable_envelopes, interaction_reachability
 from parkour_solver.search.identity import solve_scope, processing_key, motion_record
 from parkour_solver.reachability.viability import prefix_viability
-from parkour_solver.search.movement import iter_movement_programs
+from parkour_solver.search.frontier import persistent_programs
 from parkour_solver.movement.settings import movement_settings
 from parkour_solver.movement.program import empty_program, program_physics_key
 from tests.support.checkpoint_guidance import flat_scene, programs
-from parkour_solver.search.compat.time_progress import retain_two_goals
-from tests.support.time_progress import label
 from parkour_solver.numerics import prepare, validate
 
 
@@ -137,41 +135,39 @@ class PersistentGenerationTests(unittest.TestCase):
         def child(program, choice, **kwargs):
             p=copy.deepcopy(root);q=p['profile'];q.update(duration=1,position=[1.,1.],velocity=[0.,0.],grounded=[True,True],
                 jump=[False],sneak=[False],ladderTicks=[False,False],positionConstraints=[dict(mode='X',t1=1,cmp='GE',rhs=float(choice))])
-            p['marker']=choice
+            p['marker']=choice;p['terminalSupport']='goal'
             return p
         def generated(*args):return iter(range(30))
         with patch('parkour_solver.search.frontier.generate_choices',side_effect=generated), \
              patch('parkour_solver.movement.program.append_choice',side_effect=child):
             report={}
-            gen=iter_movement_programs(scene,settings=cfg,checkpoint_tick=1,threshold=0.,persistent=True,report=report)
+            gen=persistent_programs(scene,settings=cfg,threshold=0.,report=report)
             first=next(gen);saved=json.loads(json.dumps(report['continuation']));gen.close()
             # The automatic route queue shrinks a route's final allocation.
             # Allocation fields can appear in both settings and the scene.
             cfg=dict(cfg,maxPrefixes=2,maxQueuedPrefixes=1,maxChoicesPerType=3)
             scene=dict(scene,movementSearch=cfg.copy())
             resumed={}
-            rest=list(iter_movement_programs(scene,settings=cfg,checkpoint_tick=1,threshold=0.,persistent=True,
-                report=resumed,continuation=saved))
+            rest=list(persistent_programs(scene,settings=cfg,threshold=0.,report=resumed,continuation=saved))
         self.assertEqual({p['marker'] for p in [first]+rest},set(range(30)))
         self.assertEqual(len(rest),29)
         self.assertEqual(resumed['queueDrops'],0)
         self.assertTrue(resumed['continuation']['exhausted'])
         changed=dict(scene,movementSearch=dict(cfg,maxInputs=2))
         with self.assertRaisesRegex(ValueError,'Incompatible movement generation'):
-            list(iter_movement_programs(changed,settings=movement_settings(changed),checkpoint_tick=1,
-                threshold=0.,persistent=True,report={},continuation=saved))
+            list(persistent_programs(changed,settings=movement_settings(changed),threshold=0.,report={},continuation=saved))
 
     def test_interrupted_screen_keeps_the_unprocessed_choice(self):
         scene=flat_scene();cfg=dict(movement_settings(scene),maxPrefixes=1,types=['normal'])
         report={}
         def interrupted(p):raise TimeoutError('screen_deadline')
-        list(iter_movement_programs(scene,settings=cfg,checkpoint_tick=2,threshold=0.,persistent=True,report=report,screen=interrupted,
-                                    context_adapter=lambda c:c.update(interactionGate=None)))
+        list(persistent_programs(scene,settings=cfg,threshold=0.,report=report,screen=interrupted,
+                                 context_adapter=lambda c:c.update(interactionGate=None)))
         state=json.loads(json.dumps(report['continuation']))
         self.assertIn('choice',state['expansion'])
         resumed={}
-        values=list(iter_movement_programs(scene,settings=cfg,checkpoint_tick=2,threshold=0.,persistent=True,report=resumed,continuation=state,
-                                          context_adapter=lambda c:c.update(interactionGate=None)))
+        values=list(persistent_programs(scene,settings=cfg,threshold=0.,report=resumed,continuation=state,
+                                        context_adapter=lambda c:c.update(interactionGate=None)))
         self.assertTrue(values)
 
     def test_constraint_generation_cursor_survives_a_new_facing_guess(self):
@@ -193,106 +189,10 @@ class PersistentGenerationTests(unittest.TestCase):
                             (actual[0]['rows'], actual[0]['selectedPassages']))
 
 
-class StateProtectionTests(unittest.TestCase):
-    def check_protected(self, field, value):
-        a,b=label('best',10,5),label('protected',15,3)
-        b[0]['clock_results']['clock:10']['state'][field]=value
-        kept,_=retain_two_goals([a,b],cap=10)
-        self.assertEqual({r['id'] for r,_ in kept},{'best','protected'})
-
-    def test_forward_velocity_and_speed_are_independent_guards(self):
-        self.check_protected('forwardVelocity',.2)
-        self.check_protected('speed',.3)
-
-    def test_different_schedules_are_not_clock_compared_even_with_equal_counts(self):
-        a,b=label('best',10,5),label('other',15,3)
-        b[0]['clock_results']['clock:10']['state']['motion']['schedule'][0]='J'
-        kept,_=retain_two_goals([a,b],cap=10)
-        self.assertEqual(len(kept),2)
-
-    def test_missing_velocity_keeps_candidate_unknown_rather_than_inferior(self):
-        a,b=label('best',10,5),label('unknown',15,3)
-        b[0]['clock_results']['clock:10'].pop('state')
-        self.assertEqual(len(retain_two_goals([a,b],cap=10)[0]),2)
-
+class QueueKeyTests(unittest.TestCase):
     def test_queue_key_counts_effective_grounded_inputs(self):
         p=dict(profile=dict(duration=4,grounded=[True,True,False,False,False],jump=[False,True,True,False]))
         self.assertEqual(processing_key(p,'x'),(4,-1,1,'x'))
-
-
-class OuterResumeTests(unittest.TestCase):
-    def test_split_search_does_not_dispatch_the_completed_terminal_again(self):
-        from parkour_solver.search.engine import find_checkpoint_route
-        from parkour_solver.spatial.checkpoints import Checkpoint
-        scene=flat_scene();seeds=list(programs(scene,2))[:2]
-        self.assertEqual(len(seeds),2)
-        cp=Checkpoint(2,-1,(1.,0.),tuple(scene['initial']['position']),(5.5,1.,.5),())
-        calls=[]
-        def generated(scene,*,report,continuation=None,**kwargs):
-            state=copy.deepcopy(continuation) if continuation else dict(cursor=0,expanded=0,exhausted=False)
-            report['continuation']=state
-            while state['cursor'] < len(seeds):
-                value=copy.deepcopy(seeds[state['cursor']]);state['cursor']+=1
-                yield value
-            state['exhausted']=True;report['termination']='exhausted'
-        def evaluate(scene,p,compiler,adapter,work,motion,**kwargs):
-            work.before_solve({});identity=program_physics_key(p);calls.append(identity)
-            score=float(seeds.index(next(q for q in seeds if program_physics_key(q)==identity)))
-            best=dict(allocation=[0],cost=0,plan=dict(ticks=2,walls=[]),profiles=[p['profile']],
-                candidate=dict(objective=score,positions=[[0.,0.],[score,0.],[score,0.]],velocity=[[0.,0.]]*3,yaw=[0.,0.]))
-            return dict(status='feasible',termination='done',best=best,work=dict(solverCalls=1),
-                fullSceneValidated=True,repairState=dict(pending=[],unresolved=[],constraintGeneration=dict(exhausted=True)))
-        class Compiler:pass
-        options=dict(terminal_checkpoint=cp,spatial_points=[[.5,1.,.5],[5.5,1.,.5]],seconds=3,rescue_passes=0)
-        with patch('parkour_solver.search.engine.motion_bound',return_value={}), \
-             patch('parkour_solver.search.dfs.iter_movement_programs',side_effect=generated), \
-             patch('parkour_solver.search.dfs.generate_choices',side_effect=lambda *args,**kwargs:(v for v in ())), \
-             patch('parkour_solver.search.engine.evaluate_program',side_effect=evaluate), \
-             patch('parkour_solver.validation.witness.replay_witness',return_value=dict(passed=True)):
-            first=find_checkpoint_route(scene,Compiler(),max_solver_calls=1,**options)
-            saved=json.loads(json.dumps(first['searchState']))
-            second=find_checkpoint_route(scene,Compiler(),max_solver_calls=5,resume_state=saved,**options)
-        self.assertEqual(len(calls),2)
-        self.assertEqual(len(set(calls)),2)
-        self.assertTrue(second['resume']['exact'])
-        self.assertEqual(second['best']['candidate']['objective'],1.)
-
-
-@unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'),'Requires standalone numerical bridge')
-class ScopedNumericalTests(unittest.TestCase):
-    def test_omitted_future_obstacle_does_not_reject_preliminary_guidance(self):
-        from parkour_solver.bridge.python_compiler import PythonCompiler
-        from parkour_solver.spatial.cells import decompose
-        from parkour_solver.spatial.compat.corridors import corridor_for_points, landmarks
-        from parkour_solver.validation.scoped_scene import CorridorAdapter
-        from parkour_solver.work import SearchWork
-        from parkour_solver.search.engine import evaluate_program
-        from parkour_solver.reachability.intervals import motion_bound
-        from research.legacy_cell_routes.checkpoint_experiment import replay_witness
-        scene=flat_scene()
-        scene['initial']['velocity'][0]=.4
-        scene['collisionScene']['solids'][1]=[4.,0.,-1.,5.,1.,1.]
-        scene['blocks'][1]['bounds']=[4.,5.,-1.,1.]
-        scene['collisionScene']['solids'].append([2.,0.,.3,3.,4.,1.])
-        scene['blocks'].append(dict(id='wall',sourceBlock='wall',solidIndex=2,top=4.,bounds=[2.,3.,.3,1.]))
-        program=next(p for p in programs(scene,12) if p['terminalSupport']=='goal' and p['profile']['jump'][0])
-        d=decompose(scene);g=landmarks(scene)
-        corridor=corridor_for_points(d,[[.5,1.,.5],[1.5,1.,-1.],[4.,1.,-1.],[4.5,1.,.5]],g)
-        adapter=CorridorAdapter(scene,corridor,g,decomposition=d)
-        with PythonCompiler() as compiler:
-            motion=motion_bound(scene,compiler,3)
-            preliminary=evaluate_program(scene,program,compiler,adapter,SearchWork(12),motion,
-                seconds=8,candidate_seconds=1,solver_calls=12,python_executable=os.environ['PKC_IPOPT_PYTHON'],
-                scope=dict(purpose='preliminary',modeledBlocks=['start','goal']))
-            self.assertIsNotNone(preliminary['best'],preliminary['termination'])
-            self.assertFalse(preliminary['fullSceneValidated'])
-            self.assertFalse(replay_witness(scene,preliminary['best'],compiler)['geometry']['feasible'])
-            program['guideSeedYaw']=preliminary['best']['candidate']['yaw']
-            full=evaluate_program(scene,program,compiler,adapter,SearchWork(24),motion,
-                seconds=12,candidate_seconds=1,solver_calls=24,python_executable=os.environ['PKC_IPOPT_PYTHON'])
-            self.assertIsNotNone(full['best'],full['termination'])
-            self.assertTrue(full['fullSceneValidated'])
-            self.assertTrue(replay_witness(scene,full['best'],compiler)['passed'])
 
 
 if __name__ == '__main__':

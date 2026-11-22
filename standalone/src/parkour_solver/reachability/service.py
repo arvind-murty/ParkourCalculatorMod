@@ -71,23 +71,6 @@ def query_interaction(request, context, *, session=None, budget=None, context_ke
     return proof
 
 
-def normalize_alternatives(alternatives, proofs):
-    """Remove absent unwanted items; absent prerequisites reject their owner."""
-    kept, audit = [], []
-    rejected = {item.get('owner') for item in alternatives if
-                proofs[item['requestId']]['status']=='absent' and
-                proofs[item['requestId']]['role']!='unwanted_contact'}
-    for item in alternatives:
-        proof = proofs[item['requestId']]
-        action = ('omit' if proof['role'] == 'unwanted_contact' else 'reject_owner') if proof['status'] == 'absent' else 'retain'
-        if item.get('owner') in rejected and action=='retain':
-            action='reject_owner'
-        audit.append(dict(requestId=item['requestId'], proof=proof['id'], action=action))
-        if action == 'retain':
-            kept.append(item)
-    return kept, audit
-
-
 def block_interaction(envelopes, box, tick, phases=('Y', 'X', 'Z'), *, interior=False):
     return interaction_reachability(envelopes, dict(alternatives=[dict(regions=[
         dict(tick=tick, phase=phase, bounds=expanded_box(box), interior=interior)]) for phase in phases]))
@@ -164,33 +147,38 @@ def walk_off_allowed(context, landing_boxes, *, label):
     return gate is None or gate.walk_off(context, landing_boxes, label=label)
 
 
-def candidate_blocks(context, kind='blocks'):
-    blocks = context['scene']['blocks']
-    owner = context.get('launchOwner')
-    if owner is None or context['interactionGate'] is None:
-        return blocks
-    kept = context['interactionGate'].reachable_blocks(owner)[kind]
-    return [b for b in blocks if b['id'] in kept]
+def candidate_faces(context, kind):
+    """The merged top faces with a block in the launch face's table of `kind`; every face without a gate or launch face."""
+    from parkour_solver.movement.contact_combinations import top_faces
+    faces = top_faces(context['scene'])
+    face = context.get('launchFace')
+    if face is None or context['interactionGate'] is None:
+        return faces
+    kept = context['interactionGate'].reachable_faces(face)[kind]
+    solids = {b['solidIndex'] for b in context['scene']['blocks'] if b['id'] in kept}
+    return [f for f in faces if solids.intersection(f.members)]
 
 
 def candidate_option(context, option, kind='solids'):
-    owner = context.get('launchOwner')
-    if owner is None or context['interactionGate'] is None:
+    face = context.get('launchFace')
+    if face is None or context['interactionGate'] is None:
         return True
-    solids = context['interactionGate'].reachable_blocks(owner)[kind]
+    solids = context['interactionGate'].reachable_faces(face)[kind]
     return any(i in solids for i in option.members)
 
 
-def block_table(scene, owner, traces):
-    """Blocks one flight from `owner` can touch, by kind (generous: no route, as-given speed limits).
+def face_table(scene, name, traces):
+    """Blocks one flight from face `name` can touch, by kind (generous: no route, as-given speed limits).
 
-    Heights are relative to the launch piece's top (feet): any block whose raw
-    bottom is within head reach can be hit; `landing` tops are within the game's
+    Reach is measured from every block of the face's owners (contact_combinations.face_owners), so a face of
+    one owner measures from all of that owner's blocks. Heights are relative to each launch block's top
+    (feet): any block whose raw bottom is within head reach can be hit; `landing` tops are within the game's
     jump rise; `ceiling` bottoms lie between head height and head reach.
     `stepping` adds blip secondaries, touched one (air) tick after a landing-block
     primary. `traces` caches threshold-0 jump traces by top height.
     """
     import math
+    from parkour_solver.movement.contact_combinations import face_owners
     from parkour_solver.movement.normal import JUMP_RISE, first_descent, replay
     from parkour_solver.physics.vertical import REST_CARRY, STEP_HEIGHT
     from parkour_solver.scene.geometry import BODY_HEIGHT
@@ -204,6 +192,7 @@ def block_table(scene, owner, traces):
     tops = {b['id']: b['top'] for b in blocks}
     solid_of = {b['id']: b['solidIndex'] for b in blocks}
     kept, landing, ceiling, primaries, ticks = set(), set(), set(), [], None
+    owners = face_owners(scene, name)
 
     def near(box, radius):
         foot = [box[0], box[2], box[3], box[5]]
@@ -215,7 +204,7 @@ def block_table(scene, owner, traces):
                 yield i, other
 
     for block in blocks:
-        if block.get('sourceBlock', block['id']) != owner:
+        if block.get('sourceBlock', block['id']) not in owners:
             continue
         kept.add(block['id'])
         if block['top'] not in traces:
@@ -258,10 +247,10 @@ def walk_off_tick(program):
 
 def landing_boxes(program, cut):
     """The boxes a run-off from `cut` first lands on: its landing or step contact, or a flight case's
-    lower block; None when it lands on nothing modeled."""
+    lower face; None when it lands on nothing modeled."""
     p=program['profile']
     events=[(e['offset'],e['boxes']) for e in p['contactEvents'] if e['offset']>=cut and e.get('role') in ('landing','step') and 'boxes' in e]
-    events+=[(e['input'],[e['lowerBox']]) for e in p['caseEvents'] if e['input']>=cut and 'lowerBox' in e]
+    events+=[(e['input'],e['lowerBoxes']) for e in p['caseEvents'] if e['input']>=cut and 'lowerBoxes' in e]
     return min(events,key=lambda e:e[0])[1] if events else None
 
 
@@ -277,19 +266,20 @@ class InteractionGate:
         self.exclusions = []
         from parkour_solver.numerics.disk import STATS
         self.relaxation_start = {kind: collections.Counter(counts) for kind, counts in STATS.items()}
-        self.block_table, self.jump_traces = {}, {}
+        self.face_tables, self.jump_traces = {}, {}
         self.approaches = {}
         self.native_parents = {}  # id(program) -> (program, its native program); see _sequenced
 
-    def reachable_blocks(self, owner):
-        if owner in self.block_table:
-            return self.block_table[owner]
+    def reachable_faces(self, name):
+        if name in self.face_tables:
+            return self.face_tables[name]
         import time
         started = time.process_time()
-        self.block_table[owner] = block_table(self.scene, owner, self.jump_traces)
+        self.face_tables[name] = face_table(self.scene, name, self.jump_traces)
+        # Reports and profiling read these metric names.
         self.metrics['blockTableBuilds'] = self.metrics.get('blockTableBuilds', 0)+1
         self.metrics['blockTableSeconds'] = self.metrics.get('blockTableSeconds', 0.)+time.process_time()-started
-        return self.block_table[owner]
+        return self.face_tables[name]
 
     def _cached(self, key, build, kind):
         hit = key in self.cache

@@ -1,1 +1,0 @@
-from parkour_solver.movement.ceiling_profiles import ceiling_profile
