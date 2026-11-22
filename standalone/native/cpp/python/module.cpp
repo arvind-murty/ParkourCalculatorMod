@@ -2,6 +2,7 @@
 // this boundary; native units keep their state in C++ between calls.
 #include <pybind11/pybind11.h>
 
+#include <optional>
 #include <stdexcept>
 #include <type_traits>
 #include <unordered_map>
@@ -9,6 +10,7 @@
 
 #include "pkc/canonical.hpp"
 #include "pkc/coefficients.hpp"
+#include "pkc/envelopes.hpp"
 #include "pkc/gate.hpp"
 #include "pkc/program.hpp"
 
@@ -151,6 +153,12 @@ PYBIND11_MODULE(_pkc_native, m) {
     m.def("compile_coefficients", [](py::handle request) {
         return to_python(pkc::compile_coefficients(convert(request)));
     }, "physics/coefficients.compile_request for one coefficient_request message");
+    m.def("reachable_envelopes", [](py::handle problem, py::handle y, py::handle parent_ticks) {
+        std::optional<std::int64_t> parent;
+        if (!parent_ticks.is_none()) parent = parent_ticks.cast<std::int64_t>();
+        return to_python(pkc::reachable_envelopes(convert(problem), convert(y), parent));
+    }, py::arg("problem"), py::arg("y") = py::none(), py::arg("parent_ticks") = py::none(),
+       "reachability/intervals.reachable_envelopes without the `model` entry");
     m.def("float_repr", &pkc::float_repr, "repr(float) for a finite float");
     m.def("sha256_hex", [](py::bytes data) {
         static const char* hex = "0123456789abcdef";

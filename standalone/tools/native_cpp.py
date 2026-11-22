@@ -186,6 +186,36 @@ def verify_coefficients(args):
     print(json.dumps(summary))
 
 
+def verify_envelopes(args):
+    """Run a real solve where every reachable_envelopes result is also built natively and compared."""
+    from parkour_solver.reachability import intervals
+    args.output.mkdir(parents=True, exist_ok=False)
+    native = load(args.variant)
+    original = intervals.reachable_envelopes
+    calls = dict(count=0)
+
+    def checked(problem, y=None, *, parent_ticks=None):
+        expected = original(problem, y, parent_ticks=parent_ticks)
+        actual = native.reachable_envelopes(problem, y, parent_ticks)
+        calls['count'] += 1
+        # Envelopes hold infinities, so compare with JSON's Infinity; `model` aliases the input.
+        if json.dumps(actual, sort_keys=True) != json.dumps({k: v for k, v in expected.items() if k != 'model'},
+                                                             sort_keys=True):
+            save_infinite(args.output / 'mismatch.json', dict(problem=problem, y=y, parentTicks=parent_ticks))
+            raise AssertionError(f'native envelopes differ at call {calls["count"]}')
+        return expected
+
+    summary = checked_solve(args, dict(reachable_envelopes=original), dict(reachable_envelopes=checked))
+    summary.update(envelopeCalls=calls['count'], mismatches=0)
+    save(args.output / 'summary.json', summary)
+    print(json.dumps(summary))
+
+
+def save_infinite(path, value):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, indent=2) + '\n')
+
+
 def canonical_bytes(value):
     return json.dumps(value, sort_keys=True, allow_nan=False)
 
@@ -211,6 +241,11 @@ def main():
     p.add_argument('--seconds', type=float, required=True)
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--variant', choices=sorted(BUILDS), default='release')
+    p = commands.add_parser('verify-envelopes')
+    p.add_argument('--input', type=Path, required=True)
+    p.add_argument('--seconds', type=float, required=True)
+    p.add_argument('--output', type=Path, required=True)
+    p.add_argument('--variant', choices=sorted(BUILDS), default='release')
     p = commands.add_parser('verify-coefficients')
     p.add_argument('--input', type=Path, required=True)
     p.add_argument('--seconds', type=float, required=True)
@@ -218,7 +253,7 @@ def main():
     p.add_argument('--variant', choices=sorted(BUILDS), default='release')
     args = parser.parse_args()
     dict(build=build, verify_digest=verify_digest, verify_programs=verify_programs, verify_gate=verify_gate,
-         verify_coefficients=verify_coefficients)[args.command.replace('-', '_')](args)
+         verify_coefficients=verify_coefficients, verify_envelopes=verify_envelopes)[args.command.replace('-', '_')](args)
 
 
 if __name__ == '__main__':

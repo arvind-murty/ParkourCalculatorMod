@@ -10,6 +10,7 @@
 #include <string_view>
 #include <utility>
 
+#include "pkc/program.hpp"
 #include "pkc/value.hpp"
 
 namespace pkc {
@@ -130,6 +131,23 @@ inline bool py_equal(const Array& left, const Array& right) {
 inline bool contains(const Array& values, const Value& value) {
     return std::any_of(values.begin(), values.end(), [&](const Value& item) { return py_equal(item, value); });
 }
+
+// ---- numbers with Python int/float kinds: int op int stays int, anything else is float.
+
+inline Value value(const Num& num) {
+    if (num.integral) return integer_value(static_cast<std::int64_t>(num.value));
+    return real(num.value);
+}
+
+inline Num add(const Num& a, const Num& b) { return {a.value + b.value, a.integral && b.integral}; }
+inline Num sub(const Num& a, const Num& b) { return {a.value - b.value, a.integral && b.integral}; }
+inline Num mul(const Num& a, const Num& b) { return {a.value * b.value, a.integral && b.integral}; }
+inline Num whole(std::int64_t v) { return {static_cast<double>(v), true}; }
+inline Num flt(double v) { return {v, false}; }
+
+// Python max(a, b) keeps a unless b is strictly larger; min keeps a unless b is strictly smaller.
+inline Num py_max(const Num& a, const Num& b) { return b.value > a.value ? b : a; }
+inline Num py_min(const Num& a, const Num& b) { return b.value < a.value ? b : a; }
 
 // Python truthiness: None, False, 0, 0.0 and empty str/list/dict are false.
 inline bool py_truthy(const Value& value) {

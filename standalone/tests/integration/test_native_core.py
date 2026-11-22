@@ -265,3 +265,46 @@ class CoefficientCompilerTests(unittest.TestCase):
         for change in changes:
             with self.subTest(change=change):
                 self.assert_same_outcome(dict(base, **change))
+
+
+class EnvelopeTests(unittest.TestCase):
+    """Native reachable_envelopes must equal the Python function's result, apart from its aliased `model`."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.native = native()
+
+    def assert_same(self, problem, y, parent_ticks=None):
+        from parkour_solver.reachability.intervals import reachable_envelopes
+        expected = {k: v for k, v in reachable_envelopes(problem, y, parent_ticks=parent_ticks).items() if k != 'model'}
+        actual = self.native.reachable_envelopes(problem, y, parent_ticks)
+        self.assertEqual(json.dumps(actual, sort_keys=True), json.dumps(expected, sort_keys=True))
+        return expected
+
+    def test_real11_analyses_build_like_python(self):
+        from tests.support.block_table import compiler, nodes, real11_inputs
+        from parkour_solver.reachability.service import InteractionGate
+        reasons = set()
+        with compiler() as bridge:
+            for scene, roots in real11_inputs():
+                gate = InteractionGate(scene, bridge, seconds=10)
+                gate.native = None
+                for node in nodes(scene, roots, gate):
+                    analysis = gate.analyze(node) if node['profile']['airtime'] else None
+                    if analysis is None:
+                        continue
+                    model, y, ticks = analysis['model'], analysis['y'], analysis['model']['ticks']
+                    with self.subTest(ticks=ticks):
+                        for parent_ticks in (None, ticks // 2, ticks - 1):
+                            result = self.assert_same(model, y, parent_ticks)
+                            reasons.add((result['contradiction'] or {}).get('reason'))
+                        self.assert_same(model, None)
+                        p, v = model['position'], model['velocity']
+                        widened = dict(model, initialIntervals=[[c - .25 for c in p], [c + .25 for c in p],
+                                                               [c - .1 for c in v], [c + .1 for c in v]])
+                        self.assert_same(widened, y)
+                        blocked = dict(model, walls=model['walls'] + [dict(mode='X', cmp='GE', rhs=p[0] + 50., t1=1),
+                                                                      dict(mode='X', cmp='LE', rhs=p[0] - 50., t1=1)])
+                        reasons.add(self.assert_same(blocked, y)['contradiction']['reason'])
+        self.assertIn(None, reasons)
+        self.assertIn('interval_reach_contradiction', reasons)

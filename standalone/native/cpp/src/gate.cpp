@@ -47,20 +47,6 @@ std::int64_t integer(const Value& value, const std::string& name, std::int64_t l
     return *held;
 }
 
-Value value(const Num& num) {
-    if (num.integral) return integer_value(static_cast<std::int64_t>(num.value));
-    return real(num.value);
-}
-
-Num add(const Num& a, const Num& b) { return {a.value + b.value, a.integral && b.integral}; }
-Num sub(const Num& a, const Num& b) { return {a.value - b.value, a.integral && b.integral}; }
-Num mul(const Num& a, const Num& b) { return {a.value * b.value, a.integral && b.integral}; }
-Num whole(std::int64_t v) { return {static_cast<double>(v), true}; }
-Num flt(double v) { return {v, false}; }
-
-// Python max(a, b) keeps a unless b is strictly larger; min likewise.
-Num py_max(const Num& a, const Num& b) { return b.value > a.value ? b : a; }
-
 // ---- scene/route.py helpers ----------------------------------------------
 
 bool supports(const Object& block, double x, double z) {
