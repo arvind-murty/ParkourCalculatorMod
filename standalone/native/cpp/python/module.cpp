@@ -26,6 +26,7 @@
 #include "pkc/scene/static_collision.hpp"
 #include "pkc/screen.hpp"
 #include "pkc/validation/numerical.hpp"
+#include "pkc/validation/vertical.hpp"
 
 namespace py = pybind11;
 
@@ -204,6 +205,13 @@ PYBIND11_MODULE(_pkc_native, m) {
     m.def("compile_coefficients", [](py::handle request) {
         return to_python(pkc::compile_coefficients(convert(request)));
     }, "physics/coefficients.compile_request for one coefficient_request message");
+    m.def("interaction_reachability", [](py::handle envelopes, py::handle interaction, bool refine) {
+        return to_python(pkc::interaction_reachability(convert(envelopes), convert(interaction), refine));
+    }, py::arg("envelopes"), py::arg("interaction"), py::arg("refine") = false,
+       "reachability/intervals.interaction_reachability; raises NativeUnsupported for a refined screen with a model");
+    m.def("interaction_reachability_many", [](py::handle envelopes, py::handle interactions) {
+        return to_python(pkc::interaction_reachability_many(convert(envelopes), convert(interactions)));
+    }, "reachability/intervals.interaction_reachability_many");
     m.def("reachable_envelopes", [](py::handle problem, py::handle y, py::handle parent_ticks) {
         std::optional<std::int64_t> parent;
         if (!parent_ticks.is_none()) parent = parent_ticks.cast<std::int64_t>();
@@ -351,6 +359,9 @@ PYBIND11_MODULE(_pkc_native, m) {
     m.def("validate", [](py::handle problem, py::handle yaw) {
         return to_python(pkc::validate(convert(problem), convert(yaw)));
     }, "validation/numerical.validate");
+    m.def("validate_vertical_schedule", [](py::handle route, py::handle profiles, py::handle plan) {
+        return to_python(pkc::validate_vertical_schedule(convert(route), convert(profiles), convert(plan)));
+    }, "validation/vertical.validate_vertical_schedule");
     m.def("validate_controls", [](py::handle problem, py::handle controls) {
         return to_python(pkc::validate_controls(convert(problem), convert(controls)));
     }, "validation/numerical.validate_controls");

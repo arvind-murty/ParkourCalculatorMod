@@ -1,5 +1,5 @@
-// reachability/intervals.reachable_envelopes: conservative X/Z state boxes, interaction
-// phases and travel radii for one movement model.
+// reachability/intervals: conservative X/Z state boxes, interaction phases and
+// travel radii for one movement model, and the interaction screens over them.
 #pragma once
 
 #include <cstdint>
@@ -9,10 +9,15 @@
 
 namespace pkc {
 
-// Python's math.hypot(a, b) (CPython 3.12 vector_norm), bit for bit.
-double python_hypot(double a, double b);
-
 // The Python result without its `model` entry, which aliases the input problem.
 Value reachable_envelopes(const Value& problem, const Value& y, std::optional<std::int64_t> parent_ticks);
+
+// interaction_reachability(envelopes, interaction, refine=refine, objective=...).
+// A refined screen of envelopes with a model throws Unsupported: disk.screen's
+// decided-result cache stays in Python.
+Value interaction_reachability(const Value& envelopes, const Value& interaction, bool refine = false);
+
+// interaction_reachability_many(envelopes, interactions).
+Value interaction_reachability_many(const Value& envelopes, const Value& interactions);
 
 }  // namespace pkc

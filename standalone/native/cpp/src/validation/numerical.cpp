@@ -325,7 +325,7 @@ Value validate_controls(const Value& problem_value, const Value& controls_value)
     std::size_t worst = 0;
     std::vector<double> excess;
     for (std::size_t t = 0; t < ticks; ++t) {
-        excess.push_back(hypot(controls[t][0].value, controls[t][1].value) - magnitude[t].value);
+        excess.push_back(python_hypot(controls[t][0].value, controls[t][1].value) - magnitude[t].value);
         if (excess[t] > excess[worst]) worst = t;
     }
     if (excess[worst] > kTolerance) {

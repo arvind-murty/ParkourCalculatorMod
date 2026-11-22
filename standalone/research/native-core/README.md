@@ -172,3 +172,26 @@ requests take a different path, two of them ending `Solve_Succeeded` instead of 
 fix the Python and native workers agree on 121 runs of 40 suite ladder requests (664 phases)
 ([parity](2026-11-22-numerics/worker-ladder-parity-release.json)).
 
+## Vertical schedule checks and interaction screens, 2026-11-22
+
+Source: `ea92580c` plus native `validation/vertical.validate_vertical_schedule` (the general Python form, through
+native `prepare` and `validate`; the gate now calls it instead of its own one-profile copy) and
+`reachability/intervals.interaction_reachability`/`_many` (the gate's required-contact screen now calls it too; a
+refined screen of envelopes with a model raises `NativeUnsupported`, since `disk.screen`'s cache stays in Python). The
+CPython `math.hypot` port now has one copy, `src/py_math.hpp`.
+
+- 4,000 recorded `validate_vertical_schedule` calls of a 90 s extended solve replay identically on release and UBSan
+  ([release](2026-11-22-validation/replay-release.json), [UBSan](2026-11-22-validation/replay-sanitize.json)).
+- 3,000 `interaction_reachability` and 884 `interaction_reachability_many` calls of a 90 s extended solve replay
+  identically through the Python functions, 2 of them refined screens that fall back
+  ([release](2026-11-22-validation/replay-intervals-release.json),
+  [UBSan](2026-11-22-validation/replay-intervals-sanitize.json)); synthetic rows (relative, equality, out-of-range),
+  regions (every phase, interior, distance gaps) and alternatives on 30 recorded envelopes, with and without
+  contradictions, origins and radii, agree on 2,400 queries
+  ([release](2026-11-22-validation/synthetic-intervals-release.json),
+  [UBSan](2026-11-22-validation/synthetic-intervals-sanitize.json)).
+- The recorded gate corpus (1,216 preparations, envelopes, programs and appends) is unchanged on both builds
+  ([release](2026-11-22-validation/gate-corpus-release.json), [UBSan](2026-11-22-validation/gate-corpus-sanitize.json)),
+  and live `verify-screen` on the extended input compared 2,292 sequence screens, 1,680 required-contact proofs and
+  1,691 program checks with no difference ([summary](2026-11-22-validation/live-screen-release-summary.json)).
+

@@ -4,12 +4,14 @@
 // including their digests and int/float kinds.
 #include "pkc/screen.hpp"
 
+
 #include <algorithm>
 #include <array>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "py_math.hpp"
 #include "pkc/canonical.hpp"
 #include "pkc/envelopes.hpp"
 #include "value_ops.hpp"
@@ -20,12 +22,6 @@ namespace {
 const double kHalfWidth = static_cast<double>(static_cast<float>(0.6)) / 2;  // scene/route.HALF_WIDTH
 const double kBodyHeight = static_cast<double>(static_cast<float>(1.8));    // scene/geometry.BODY_HEIGHT
 constexpr std::int64_t kProofPolicy = 5;                                     // service.PROOF_POLICY
-
-Num num(const Value& value) {
-    if (auto* integer = std::get_if<std::int64_t>(&value.data)) return whole(*integer);
-    if (auto* real_value = std::get_if<double>(&value.data)) return flt(*real_value);
-    fail("expected a number");
-}
 
 std::array<Num, 6> expanded_box(const Box& box) {  // scene/geometry.expanded_box
     return {sub(box[0], flt(kHalfWidth)), sub(box[1], flt(kBodyHeight)), sub(box[2], flt(kHalfWidth)),
@@ -39,47 +35,18 @@ Value box_value(const Box& box) {
 }
 
 // interaction_reachability(envelopes, {alternatives: [{regions: [region]}]}) for one
-// region with interior=False, on envelopes without a contradiction.
-Value region_check(const Object& envelopes, const std::array<Num, 6>& box, std::int64_t tick, const char* phase) {
-    const Array& phases = items(at(envelopes, "phases"));
-    Value result = kNull;
-    if (tick < static_cast<std::int64_t>(phases.size())) {
-        const Object& domain = fields(at(fields(phases[tick]), phase));
-        const Value& origin = get_or_null(envelopes, "origin");
-        if (!is_null(origin) && get(envelopes, "radii")) {
-            const Array& radii = items(at(envelopes, "radii"));
-            double radius = num(radii.at(std::string_view(phase) == "Y" ? tick : tick + 1)).value;
-            const Array& at_origin = items(origin);
-            double gaps[2];
-            for (int k = 0; k < 2; ++k) {
-                int i = k * 2;
-                double coordinate = num(at_origin[k]).value;
-                gaps[k] = std::max({box[i].value - coordinate, 0., coordinate - box[i + 3].value});
-            }
-            double gap = python_hypot(gaps[0], gaps[1]);
-            if (gap > radius + 1e-7)
-                result = object({{"ruledOut", boolean(true)}, {"reason", text("interaction_distance_unreachable")},
-                                 {"tick", integer_value(tick)}, {"phase", text(phase)}, {"gap", real(gap)},
-                                 {"travelUpperBound", real(radius)}});
-        }
-        const char* axes[3] = {"X", "Y", "Z"};
-        for (int i = 0; is_null(result) && i < 3; ++i) {
-            const Array& range = items(at(domain, axes[i]));
-            double lo = num(range[0]).value, hi = num(range[1]).value;
-            if (hi < box[i].value - 1e-7 || lo > box[i + 3].value + 1e-7)
-                result = object({{"ruledOut", boolean(true)}, {"reason", text("interaction_region_unreachable")},
-                                 {"tick", integer_value(tick)}, {"phase", text(phase)}, {"axis", text(axes[i])},
-                                 {"reachable", array({range[0], range[1]})},
-                                 {"required", array({value(box[i]), value(box[i + 3])})}});
-        }
-    }
-    if (is_null(result)) return object({{"ruledOut", boolean(false)}, {"reason", text("not_ruled_out")}});
-    return object({{"ruledOut", boolean(true)}, {"reason", text("all_interaction_alternatives_excluded")},
-                   {"alternatives", array({result})}});
+// non-interior region, as query_interaction asks it.
+Value region_check(const Value& envelopes, const std::array<Num, 6>& box, std::int64_t tick, const char* phase) {
+    Array bounds;
+    for (const Num& n : box) bounds.push_back(value(n));
+    Value region = object({{"tick", integer_value(tick)}, {"phase", text(phase)}, {"bounds", array(std::move(bounds))},
+                           {"interior", boolean(false)}});
+    return interaction_reachability(envelopes, object({{"alternatives", array({object({{"regions", array({region})}})})}}));
 }
 
 // query_interaction for a required_contact request on one box at one tick.
-Value required_contact(const Object& envelopes, const std::string& context_key, const Box& box, std::int64_t tick) {
+Value required_contact(const Value& envelopes_value, const std::string& context_key, const Box& box, std::int64_t tick) {
+    const Object& envelopes = fields(envelopes_value);
     const char* phases[3] = {"Y", "X", "Z"};
     Array windows;
     for (const char* p : phases) windows.push_back(object({{"tick", integer_value(tick)}, {"phase", text(p)}}));
@@ -97,7 +64,7 @@ Value required_contact(const Object& envelopes, const std::string& context_key, 
             entry = {{"tick", integer_value(tick)}, {"phase", text(phases[k])}, {"ruledOut", boolean(false)},
                      {"reason", text("window_outside_context")}};
         } else {
-            entry = fields(region_check(envelopes, expanded, tick, phases[k]));  // dict(checked, **window)
+            entry = fields(region_check(envelopes_value, expanded, tick, phases[k]));  // dict(checked, **window)
             put(entry, "tick", integer_value(tick));
             put(entry, "phase", text(phases[k]));
         }
@@ -183,7 +150,7 @@ Value required_proof(const GateAnalysis& analysis, const Program& program) {
     auto check = [&](const std::vector<Box>& boxes, std::int64_t tick) -> Value {
         Value first = kNull;
         for (const Box& box : boxes) {
-            Value proof = required_contact(envelopes, analysis.key, box, tick);
+            Value proof = required_contact(analysis.envelopes, analysis.key, box, tick);
             if (is_null(first)) first = proof;
             if (std::get<std::string>(at(fields(proof), "status").data) != "absent") return kNull;
         }

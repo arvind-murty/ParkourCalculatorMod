@@ -598,7 +598,7 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `Monitor.eval` | [105](../src/parkour_solver/numerics/worker.py#L105) | function |
 | `fixed_phase` | [112](../src/parkour_solver/numerics/worker.py#L112) | function |
 | `phase` | [241](../src/parkour_solver/numerics/worker.py#L241) | function |
-| `main` | [290](../src/parkour_solver/numerics/worker.py#L290) | function |
+| `main` | [292](../src/parkour_solver/numerics/worker.py#L292) | function |
 
 ## observability/turns.py
 
@@ -644,8 +644,9 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `travel_radii` | [6](../src/parkour_solver/reachability/intervals.py#L6) | function |
 | `motion_bound` | [15](../src/parkour_solver/reachability/intervals.py#L15) | function |
 | `reachable_envelopes` | [28](../src/parkour_solver/reachability/intervals.py#L28) | function |
-| `interaction_reachability` | [142](../src/parkour_solver/reachability/intervals.py#L142) | function |
-| `interaction_reachability_many` | [202](../src/parkour_solver/reachability/intervals.py#L202) | function |
+| `_native` | [142](../src/parkour_solver/reachability/intervals.py#L142) | function |
+| `interaction_reachability` | [148](../src/parkour_solver/reachability/intervals.py#L148) | function |
+| `interaction_reachability_many` | [214](../src/parkour_solver/reachability/intervals.py#L214) | function |
 
 ## reachability/screen.py
 

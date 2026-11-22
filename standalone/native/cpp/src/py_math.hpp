@@ -10,42 +10,35 @@ namespace pkc {
 inline double radians(double degrees) { return degrees * (M_PI / 180.0); }  // math.radians
 inline double degrees(double radians) { return radians * (180.0 / M_PI); }  // math.degrees
 
-// math.hypot(x, y): CPython's vector_norm (Modules/mathmodule.c), not libm hypot.
-inline double hypot(double x, double y) {
-    double max = std::fmax(std::fabs(x), std::fabs(y));
-    if (std::isinf(x) || std::isinf(y)) return INFINITY;
-    if (std::isnan(x) || std::isnan(y)) return NAN;
-    if (max == 0.0) return max;
-    int max_e;
-    std::frexp(max, &max_e);
-    if (max_e < -1023) return DBL_MIN * hypot(x / DBL_MIN, y / DBL_MIN);
-    const double scale = std::ldexp(1.0, -max_e);
-    double csum = 1.0, frac1 = 0.0, frac2 = 0.0;
-    auto mul = [](double a, double b, double& lo) {  // dl_mul: lossless product
-        double z = a * b;
-        lo = std::fma(a, b, -z);
-        return z;
-    };
-    auto fast_sum = [](double a, double b, double& lo) {  // dl_fast_sum: |a| >= |b|
-        double sum = a + b;
-        lo = b - (sum - a);
-        return sum;
-    };
-    for (double v : {x, y}) {
-        double lo, sum_lo;
-        double hi = mul(v * scale, v * scale, lo);
-        csum = fast_sum(csum, hi, sum_lo);
-        frac1 += lo;
-        frac2 += sum_lo;
+// CPython 3.12.2 math.hypot (vector_norm with compensated rounding) for two
+// coordinates; libm hypot can differ by one ULP and change a travel decision.
+// See native/cpp/LICENSE.cpython and Modules/mathmodule.c at v3.12.2.
+inline double python_hypot(double a, double b) {
+    double values[2] = {std::fabs(a), std::fabs(b)};
+    double maximum = values[1] > values[0] ? values[1] : values[0];
+    if (std::isinf(values[0]) || std::isinf(values[1])) return INFINITY;
+    if (std::isnan(values[0]) || std::isnan(values[1])) return NAN;
+    if (maximum == 0.) return maximum;
+    int exponent;
+    std::frexp(maximum, &exponent);
+    if (exponent < -1023) return DBL_MIN * python_hypot(values[0] / DBL_MIN, values[1] / DBL_MIN);
+    double scale = std::ldexp(1., -exponent), sum = 1., frac1 = 0., frac2 = 0.;
+    for (double value : values) {
+        double x = value * scale;
+        double product = x * x, product_error = std::fma(x, x, -product);
+        double combined = sum + product, error = (sum - combined) + product;
+        sum = combined;
+        frac1 += product_error;
+        frac2 += error;
     }
-    double h = std::sqrt(csum - 1.0 + (frac1 + frac2));
-    double lo, sum_lo;
-    double hi = mul(-h, h, lo);
-    csum = fast_sum(csum, hi, sum_lo);
-    frac1 += lo;
-    frac2 += sum_lo;
-    double correction = csum - 1.0 + (frac1 + frac2);
-    h += correction / (2.0 * h);  // differential correction
+    double h = std::sqrt(sum - 1. + (frac1 + frac2));
+    double product = -h * h, product_error = std::fma(-h, h, -product);
+    double combined = sum + product, error = (sum - combined) + product;
+    sum = combined;
+    frac1 += product_error;
+    frac2 += error;
+    double correction = sum - 1. + (frac1 + frac2);
+    h += correction / (2. * h);
     return h / scale;
 }
 

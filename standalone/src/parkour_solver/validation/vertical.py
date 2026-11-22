@@ -4,6 +4,10 @@ from parkour_solver.physics.vertical import f32
 
 
 def validate_vertical_schedule(route, profiles, plan):
+    from parkour_solver import native_core
+    native = native_core.from_environment()
+    if native is not None:
+        return native.validate_vertical_schedule(route, profiles, plan)
     n = plan['ticks']
     contacts = []
     for event, profile in zip(plan['events'], profiles):

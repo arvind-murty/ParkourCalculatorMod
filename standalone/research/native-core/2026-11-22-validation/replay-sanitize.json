@@ -1,0 +1,6 @@
+{
+ "parkour_solver.validation.vertical:validate_vertical_schedule": {
+  "cases": 4000,
+  "ok": 4000
+ }
+}

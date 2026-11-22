@@ -3,15 +3,19 @@
 // bounds use Num with Python's max/min tie rules.
 #include "pkc/envelopes.hpp"
 
+
+#include <algorithm>
 #include <array>
 #include <cfloat>
 #include <cmath>
 #include <limits>
 #include <map>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
+#include "py_math.hpp"
 #include "pkc/vertical.hpp"
 #include "value_ops.hpp"
 
@@ -23,6 +27,8 @@ constexpr std::int64_t kParentWindow = 10;  // intervals.PARENT_WINDOW
 
 using Interval = std::array<Num, 2>;
 using StateBox = std::array<Interval, 3>;  // X, Z, Y
+
+std::int64_t integer_of(const Value& value) { return std::get<std::int64_t>(value.data); }
 
 Num num(const Value& value) {  // a Python int or float operand
     if (auto* integer = std::get_if<std::int64_t>(&value.data)) return whole(*integer);
@@ -43,38 +49,6 @@ Value reason(std::int64_t state, int axis, const char* why) {
 }
 
 }  // namespace
-
-// CPython 3.12.2 math.hypot (vector_norm with compensated rounding) for two
-// coordinates; libm hypot can differ by one ULP and change a travel decision.
-// See native/cpp/LICENSE.cpython and Modules/mathmodule.c at v3.12.2.
-double python_hypot(double a, double b) {
-    double values[2] = {std::fabs(a), std::fabs(b)};
-    double maximum = values[1] > values[0] ? values[1] : values[0];
-    if (std::isinf(values[0]) || std::isinf(values[1])) return kInf;
-    if (std::isnan(values[0]) || std::isnan(values[1])) return std::numeric_limits<double>::quiet_NaN();
-    if (maximum == 0.) return maximum;
-    int exponent;
-    std::frexp(maximum, &exponent);
-    if (exponent < -1023) return DBL_MIN * python_hypot(values[0] / DBL_MIN, values[1] / DBL_MIN);
-    double scale = std::ldexp(1., -exponent), sum = 1., frac1 = 0., frac2 = 0.;
-    for (double value : values) {
-        double x = value * scale;
-        double product = x * x, product_error = std::fma(x, x, -product);
-        double combined = sum + product, error = (sum - combined) + product;
-        sum = combined;
-        frac1 += product_error;
-        frac2 += error;
-    }
-    double h = std::sqrt(sum - 1. + (frac1 + frac2));
-    double product = -h * h, product_error = std::fma(-h, h, -product);
-    double combined = sum + product, error = (sum - combined) + product;
-    sum = combined;
-    frac1 += product_error;
-    frac2 += error;
-    double correction = sum - 1. + (frac1 + frac2);
-    h += correction / (2. * h);
-    return h / scale;
-}
 
 Value reachable_envelopes(const Value& problem_value, const Value& y_value, std::optional<std::int64_t> parent_ticks) {
     const Object& problem = fields(problem_value);
@@ -281,6 +255,133 @@ Value reachable_envelopes(const Value& problem_value, const Value& y_value, std:
                    {"contradiction", contradiction},
                    {"radii", array(std::move(radius_values))},
                    {"origin", initial ? kNull : at(problem, "position")}});
+}
+
+Value interaction_reachability(const Value& envelopes_value, const Value& interaction_value, bool refine) {
+    const Object& envelopes = fields(envelopes_value);
+    const Object interaction = is_list(interaction_value) ? Object{{"rows", interaction_value}} : fields(interaction_value);
+    auto ruled_out = [](Object fields_after) {
+        Object out{{"ruledOut", boolean(true)}};
+        for (auto& field : fields_after) out.push_back(std::move(field));
+        return object(std::move(out));
+    };
+    const Value not_ruled_out = object({{"ruledOut", boolean(false)}, {"reason", text("not_ruled_out")}});
+    if (const Value* contradiction = get(envelopes, "contradiction"); contradiction && py_truthy(*contradiction))
+        return ruled_out(fields(*contradiction));
+    if (const Value* alternatives = get(interaction, "alternatives")) {
+        Array results;
+        for (const auto& item : items(*alternatives))
+            results.push_back(interaction_reachability(envelopes_value, item, refine));
+        const bool all = std::all_of(results.begin(), results.end(),
+                                     [](const Value& r) { return py_truthy(at(fields(r), "ruledOut")); });
+        if (!results.empty() && all)
+            return ruled_out({{"reason", text("all_interaction_alternatives_excluded")}, {"alternatives", array(results)}});
+        return not_ruled_out;
+    }
+    const Array& states = items(at(envelopes, "states"));
+    const auto count = static_cast<std::int64_t>(states.size());
+    auto in_states = [&](const Value& t) {
+        return std::holds_alternative<std::int64_t>(t.data) && integer_of(t) >= 0 && integer_of(t) < count;
+    };
+    std::map<std::pair<std::int64_t, std::string>, std::array<Num, 2>> tightened;
+    if (const Value* rows = get(interaction, "rows")) {
+        for (const auto& row_value : items(*rows)) {
+            const Object& row = fields(row_value);
+            const Value& axis_value = get_or_null(row, "mode");
+            const Value* t1 = get(row, "t1");
+            const Value& t_value = t1 ? *t1 : get_or_null(row, "offset");
+            const bool horizontal = std::holds_alternative<std::string>(axis_value.data) &&
+                                    (as_text(axis_value) == "X" || as_text(axis_value) == "Z");
+            if (!horizontal || is_null(t_value) || !in_states(t_value)) continue;
+            const std::string& axis = as_text(axis_value);
+            const std::int64_t t = integer_of(t_value);
+            auto found = tightened.find({t, axis});
+            std::array<Num, 2> range;
+            if (found != tightened.end()) {
+                range = found->second;
+            } else {
+                const Array& state = items(at(fields(states[t]), axis));
+                range = {num(state[0]), num(state[1])};
+            }
+            Num lo = range[0], hi = range[1];
+            const Value& t2 = get_or_null(row, "t2");
+            if (!is_null(t2)) {
+                if (!in_states(t2)) continue;
+                const Array& other = items(at(fields(states[integer_of(t2)]), axis));
+                const Num a = num(other[0]), b = num(other[1]);
+                const Value* op = get(row, "op");
+                if (op && std::holds_alternative<std::string>(op->data) && as_text(*op) == "MINUS") {
+                    std::tie(lo, hi) = std::make_pair(sub(lo, b), sub(hi, a));
+                } else {
+                    std::tie(lo, hi) = std::make_pair(add(lo, a), add(hi, b));
+                }
+            }
+            const Num rhs = num(at(row, "rhs"));
+            const std::string& cmp = as_text(at(row, "cmp"));
+            const bool lower = cmp == "GE" || cmp == "EQ", upper = cmp == "LE" || cmp == "EQ";
+            if ((lower && hi.value < rhs.value - 1e-7) || (upper && lo.value > rhs.value + 1e-7))
+                return ruled_out({{"reason", text("interaction_row_unreachable")}, {"tick", t_value},
+                                  {"phase", text("state")}, {"axis", axis_value},
+                                  {"reachable", array({value(lo), value(hi)})},
+                                  {"required", object({{"cmp", at(row, "cmp")}, {"rhs", at(row, "rhs")}})}});
+            if (is_null(t2))
+                tightened[{t, axis}] = {lower ? py_max(lo, flt(rhs.value - 1e-7)) : lo,
+                                        upper ? py_min(hi, flt(rhs.value + 1e-7)) : hi};
+        }
+    }
+    if (const Value* regions = get(interaction, "regions")) {
+        const Value& origin = get_or_null(envelopes, "origin");
+        const Value* radii = get(envelopes, "radii");
+        for (const auto& region_value : items(*regions)) {
+            const Object& region = fields(region_value);
+            const Value& t_value = at(region, "tick");
+            const Value* phase_value = get(region, "phase");
+            const std::string phase = phase_value ? as_text(*phase_value) : "state";
+            const Array& domains = phase == "state" ? states : items(at(envelopes, "phases"));
+            const std::int64_t t = integer_of(t_value);
+            if (t < 0 || t >= static_cast<std::int64_t>(domains.size())) continue;
+            const Object& domain = phase == "state" ? fields(domains[t]) : fields(at(fields(domains[t]), phase));
+            const Array& box = items(at(region, "bounds"));
+            if (!is_null(origin) && radii) {
+                const Value& radius = items(*radii).at(phase == "state" || phase == "Y" ? t : t + 1);
+                double gaps[2];
+                for (int k = 0; k < 2; ++k) {
+                    const int i = k * 2;
+                    const Num c = num(items(origin)[k]);
+                    gaps[k] = py_max(py_max(sub(num(box[i]), c), flt(0.)), sub(c, num(box[i + 3]))).value;
+                }
+                const double gap = python_hypot(gaps[0], gaps[1]);
+                if (gap > num(radius).value + 1e-7)
+                    return ruled_out({{"reason", text("interaction_distance_unreachable")}, {"tick", t_value},
+                                      {"phase", text(phase)}, {"gap", real(gap)}, {"travelUpperBound", radius}});
+            }
+            const Value* interior = get(region, "interior");
+            const bool inside = interior && py_truthy(*interior);
+            for (int i = 0; i < 3; ++i) {
+                const char* axis = i == 0 ? "X" : i == 1 ? "Y" : "Z";
+                const Array& range = items(at(domain, axis));
+                const double lo = num(range[0]).value, hi = num(range[1]).value;
+                const double low = num(box[i]).value, high = num(box[i + 3]).value;
+                const bool excluded = inside ? (hi <= low || lo >= high) : (hi < low - 1e-7 || lo > high + 1e-7);
+                if (excluded)
+                    return ruled_out({{"reason", text("interaction_region_unreachable")}, {"tick", t_value},
+                                      {"phase", text(phase)}, {"axis", text(axis)},
+                                      {"reachable", array({range[0], range[1]})},
+                                      {"required", array({box[i], box[i + 3]})}});
+            }
+        }
+    }
+    if (refine) {
+        const Value* model = get(envelopes, "model");
+        if (model && !is_null(*model)) throw Unsupported("refined interaction screens run disk.screen in Python");
+    }
+    return not_ruled_out;
+}
+
+Value interaction_reachability_many(const Value& envelopes, const Value& interactions) {
+    Array out;
+    for (const auto& query : items(interactions)) out.push_back(interaction_reachability(envelopes, query));
+    return array(std::move(out));
 }
 
 }  // namespace pkc

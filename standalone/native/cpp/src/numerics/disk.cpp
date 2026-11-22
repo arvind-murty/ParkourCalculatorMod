@@ -360,7 +360,7 @@ Value disk_deficits(const Value& problem, const Value& controls) {
         const Array& c = items(rows[t]);
         double value = 0.;
         if (m > 0) {
-            const double gap = m - hypot(num(c[0]).value, num(c[1]).value);
+            const double gap = m - python_hypot(num(c[0]).value, num(c[1]).value);
             value = (gap > 0. ? gap : 0.) / m;  // max(0., gap) keeps 0. unless gap is larger
         }
         shortfall.push_back(value);

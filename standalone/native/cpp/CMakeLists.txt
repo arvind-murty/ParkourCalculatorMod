@@ -26,7 +26,7 @@ add_library(pkc_core STATIC src/canonical.cpp src/coefficients.cpp src/envelopes
             src/movement/contact_combinations.cpp src/movement/ladder/events.cpp src/movement/units.cpp
             src/numerics/builders.cpp src/numerics/constraints.cpp src/numerics/disk.cpp src/numerics/continuation.cpp src/numerics/model.cpp
             src/scene/geometry.cpp src/scene/normalize.cpp src/scene/objectives.cpp src/scene/route.cpp src/scene/static_collision.cpp
-            src/validation/numerical.cpp)
+            src/validation/numerical.cpp src/validation/vertical.cpp)
 target_include_directories(pkc_core PUBLIC include)
 
 # Clarabel.cpp's C API over the Rust solver, at the version the Python package
