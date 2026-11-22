@@ -385,33 +385,47 @@ minimum run ticks for hard jumps (`run_bound`, O7), which is unchanged.
 Turnaround decisions generate run ticks as before and still prefer them
 (`(T,-J,A)`). `searchPolicyVersion` 17 carried this, the decision objectives, O10 and O11; 18 adds the
 same-tick arrival exemption of the departed-owner audit (O6, above); 19 makes visits, the launch tables and the
-candidate keys face-based (O6), with `HARD_JUMP_POLICY_VERSION` 5 for the latch that reads those visits.
+candidate keys face-based (O6), with `HARD_JUMP_POLICY_VERSION` 5 for the latch that reads those visits; 20 widens
+O10 to every generated move.
 
-## O10 — No backward ceiling hits or grinds at ordinary decisions
+## O10 — No backward moves at ordinary decisions
 
-**Settled (user, 2026-11-21):** an ordinary decision (not a turnaround) generates no
-ceiling hit or grind that sends the player backwards along its guide leg; turnarounds
-are where backward moves belong (O5, O7). The DFS gives the generator context the
-decision's validated point, the unit direction of its current guide leg (the span's
-guide point to the next, horizontal) and the turnaround margin (0.3 blocks). A leg of
-zero horizontal length gives no direction and no filter. The ceiling generator
-(`open_ceiling_choices`, `movement/ceiling_generation.py`) then skips:
+**Settled (user, 2026-11-21; widened to every generated move 2026-11-22):** an ordinary
+decision (not a turnaround) generates no move that makes backward progress along its
+guide leg; turnarounds are where backward moves belong (O5, O7). The DFS gives the
+generator context the decision's validated point, the moves its current guide leg (the
+span's guide point to the next, horizontal) allows, and the turnaround margin (0.3
+blocks). A leg of zero horizontal length gives no filter.
 
-- a **ceiling hit or grind behind the decision**: its contact's player-centre regions,
-  clipped to the reachable envelope at the contact input, end more than the margin
-  behind the decision point along the leg (`behind_decision`,
-  `reachability/service.py`). Real11's ceiling hit under B22 from B11 (the B7→B20 leg
-  runs +X+Z, B22 lies at the B11 landing's −Z edge) is one;
-- a **grind entered against the leg**: a grind starts outside one exposed face of the
-  low ceiling and enters under it on the jump tick, so entering from a face whose
-  outward axis points along the leg moves backwards on that axis (`entry_backward`).
-  With a leg running +X+Z, grinds entered from X+ or Z+ are skipped; along a leg that
-  is exactly axis-aligned, the two side faces are kept.
+The allowed moves come from the leg's direction class (`leg_class`,
+`spatial/anchor_guides.py`, shared with O11; its one knob is `AXIS_LEG_DEGREES`, 22.5°).
+Within 22.5° of an axis the leg is that axis and allows moving forward and both ways
+sideways, so only straight back is disallowed; otherwise it is its quadrant's diagonal
+and allows only its two forward axis directions. This is a heuristic for when the
+landing is not known; run-off avoidance, which knows its landing, keeps its own
+beyond-on-both-axes test (`walk_off_faces`, `constraints/contacts.py`).
+
+A generated choice is skipped, or loses the rectangles concerned, for:
+
+- **a region behind the decision**: a rectangle the move must reach (a landing, lower
+  landing, step or flight-case top, ceiling underside or grind underside), clipped to the
+  reachable envelope at its input, that lies more than the margin beyond the decision
+  point in a disallowed direction (`behind_decision`, `reachability/service.py`). The
+  check runs in `reachable_option` (`movement/contact_combinations.py`), which every
+  region-carrying generator already calls, so a behind rectangle is dropped like an
+  unreachable one and a move goes only when none is left;
+- **an entry by a disallowed move**: a move that crosses a block's side, or contacts
+  a side wall, from outside it moves against that side's outward axis
+  (`entry_backward`). It covers grinds (`movement/ceiling_generation.py`), normal steps,
+  slab boosts, blip-ups, corner jump cancels and corner blip-ups (`movement/stepping.py`;
+  corner rows cross the X side and only pass the Z side) and the wall approach of blips
+  (`landing_wall_options`, `movement/cases.py`). Wall avoidance rows are not entries.
 
 Both skips are logged with the generators' reachability exclusions (reasons
 `behind_decision_point` and `entry_against_guide`), so the solve report lists them per
 frame. Run-tick bases and the peeked children of `landings_of` use their decision's
-point and leg, so minimum-run candidates are filtered the same way.
+point and leg, so minimum-run candidates are filtered the same way. Run ticks are not
+generated moves and are not filtered. `searchPolicyVersion` 20 carries the widening.
 
 ## O11 — Jumps back onto the launch face must fit it
 
@@ -437,9 +451,9 @@ is unknown.
 Minimum-run candidates (O9) keep their own reserves and are not tested. The test
 (`same_face_fit`, `search/anchors/policy.py`):
 
-- **Direction:** the unit horizontal direction d of P's current guide leg (the leg O10
-  uses). Within 22.5° of an axis it is that axis; otherwise it is the diagonal of its
-  quadrant. A leg of zero length gives no test.
+- **Direction:** the heading of the direction class of P's current guide leg d (the class
+  O10 uses, `leg_class`): within 22.5° of an axis it is that axis; otherwise it is the
+  diagonal of its quadrant. A leg of zero length gives no test.
 - **Room R:** from P's validated position to the face's farthest corner along that
   direction. In Real11, B12's face is only 0.4 deep (z −1091.7 to −1091.3) because the
   higher B11 and B13A wall it in.

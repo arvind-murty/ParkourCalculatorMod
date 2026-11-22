@@ -150,11 +150,13 @@ def region_choices(context, event, owner):
 
 
 def reachable_option(context, option, tick, *, jumping, label):
-    """The top or underside option keeping only the rectangles the approach can reach at `tick`, or None."""
-    from parkour_solver.reachability.service import bounds_allowed
+    """The top or underside option keeping only the rectangles the approach can reach at `tick` without a move the
+    decision's guide leg disallows (O10), or None."""
+    from parkour_solver.reachability.service import behind_decision, bounds_allowed
     regions = tuple(r for r in option.regions
                     if bounds_allowed(context, [r[0], 0, r[1], r[2], 0, r[3]], tick, label=label, jumping=jumping,
-                                      phases=('Y',)))
+                                      phases=('Y',))
+                    and not behind_decision(context, r, tick, jumping=jumping, label=label))
     return dataclasses.replace(option, regions=regions) if regions else None
 
 

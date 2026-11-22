@@ -34,8 +34,8 @@ def _fresh(made, *key):
 def open_stepping_choices(context):
     """Steps, slab boosts and flight cases onto merged top faces: the side and corner code runs per member block, each
     choice carries its face's boxes and name, and a member repeating another's choice is dropped."""
-    from parkour_solver.movement.contact_combinations import face_name, solid_owners
-    from parkour_solver.reachability.service import candidate_faces, interaction_allowed, walk_off_allowed
+    from parkour_solver.movement.contact_combinations import bounding_region, face_name, solid_owners
+    from parkour_solver.reachability.service import candidate_faces, entry_backward, interaction_allowed, walk_off_allowed
     from parkour_solver.movement.program import scalar_initial
     from parkour_solver.movement.normal import choice_approaches, feet_allowed, first_descent, named_choice
     initial = scalar_initial(context['state'])
@@ -62,7 +62,8 @@ def open_stepping_choices(context):
                         continue
                     for axis in ('X', 'Z'):
                         for direction in (-1, 1):
-                            if not exposed_side(scene, block, axis, -direction, y0):
+                            if not exposed_side(scene, block, axis, -direction, y0) or entry_backward(
+                                    context, axis, -direction, bounding_region(face.regions), label=dict(owner=block['id'], role=case)):
                                 continue
                             for top, regions in top_choices(context, face, name, 1, jumping=jumping):
                                 rows = [outside_row(box, axis, -direction, 0)] + top
@@ -78,7 +79,10 @@ def open_stepping_choices(context):
                         interaction_allowed(context, box, 0, jumping=True, label=dict(owner=block['id'], role='corner_jump_cancel'))):
                     for xdir in (-1, 1):
                         for zdir in (-1, 1):
-                            if not convex_corner(scene, block, xdir, zdir, y0):
+                            # corner_rows enter across the X side facing -xdir; the Z side is only passed.
+                            if not convex_corner(scene, block, xdir, zdir, y0) or entry_backward(
+                                    context, 'X', -xdir, bounding_region(face.regions),
+                                    label=dict(owner=block['id'], role='corner_jump_cancel')):
                                 continue
                             rows = corner_rows(box, 0, 1, xdir, zdir, face.boxes)
                             if not _fresh(made, 'corner_jump_cancel', rows):
@@ -111,7 +115,8 @@ def open_stepping_choices(context):
 
 
 def _open_flight_cases(context, initial, jumping, faces, lower, lower_boxes, lower_rows, lower_regions, landing, y, enabled):
-    from parkour_solver.reachability.service import interaction_allowed
+    from parkour_solver.movement.contact_combinations import bounding_region
+    from parkour_solver.reachability.service import entry_backward, interaction_allowed
     from parkour_solver.movement.normal import feet_allowed, named_choice
     import json
     scene = context['scene']
@@ -136,7 +141,7 @@ def _open_flight_cases(context, initial, jumping, faces, lower, lower_boxes, low
                         anchors={'landing':landing,'hit':landing+1})
                     options = ()
                     if sequence_allowed(shared_event, lower_rows + top, name):
-                        options = landing_wall_options(scene, block, landing, y) if landing else (
+                        options = landing_wall_options(context, block, landing, y) if landing else (
                             ([outside_row(box, axis, sign, 0, 'blip:wall_avoid')], [])
                             for axis in ('X', 'Z') for sign in (-1, 1) if exposed_side(scene, block, axis, sign, y))
                     for rows, finite in options:
@@ -158,11 +163,15 @@ def _open_flight_cases(context, initial, jumping, faces, lower, lower_boxes, low
                 tops = top_choices(context, higher, name, landing + 1, jumping=jumping) if case == 'blip_up' else [([], [])]
                 if not any(sequence_allowed(shared_event, lower_rows + top) for top, _ in tops):
                     continue
+                entered = lambda axis, sign: not entry_backward(context, axis, sign, bounding_region(higher.regions),
+                                                                label=dict(owner=block['id'], role=case))
                 options = ([([outside_row(box, axis, sign, landing, 'blip_up:outside')] + top, regions)
-                            for axis in ('X', 'Z') for sign in (-1, 1) if exposed_side(scene, block, axis, sign, y)
+                            for axis in ('X', 'Z') for sign in (-1, 1)
+                            if exposed_side(scene, block, axis, sign, y) and entered(axis, sign)
                             for top, regions in tops] if case == 'blip_up' else
                            [(corner_rows(box, landing, landing + 1, xdir, zdir, higher.boxes), [])
-                            for xdir in (-1, 1) for zdir in (-1, 1) if convex_corner(scene, block, xdir, zdir, y)])
+                            for xdir in (-1, 1) for zdir in (-1, 1)
+                            if convex_corner(scene, block, xdir, zdir, y) and entered('X', -xdir)])
                 for constraint, regions in options:
                     if not _fresh(made, case, constraint):
                         continue

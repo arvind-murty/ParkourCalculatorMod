@@ -273,15 +273,15 @@ class SteppingNumericalTests(unittest.TestCase):
 
 
 class ExposureTests(unittest.TestCase):
-    def sides(self, solids, case):
+    def sides(self, solids, case, **context):
         from parkour_solver.movement.stepping import open_stepping_choices
         from parkour_solver.physics.vertical import REST_CARRY
         scene = dict(collisionScene=dict(solids=solids),
                      blocks=[dict(id='b' + str(i), sourceBlock='b' + str(i), solidIndex=i, top=b[4]) for i, b in enumerate(solids)])
         state = dict(position=1., velocity=REST_CARRY, onGround=True, previousHorizontalCollision=False)
         found = []
-        for choice in open_stepping_choices(dict(scene=scene, state=state, maxInputs=10, threshold=0., cases=[case],
-                                                   interactionGate=None)):
+        for choice in open_stepping_choices(dict(dict(scene=scene, state=state, maxInputs=10, threshold=0., cases=[case],
+                                                      interactionGate=None, program=dict(profile=dict(duration=0))), **context)):
             event, = choice['profile']['caseEvents']
             if solids[1] in event['boxes']:
                 found.append(tuple(sorted((r['mode'], r['cmp'], round(r['rhs'], 6)) for r in choice['profile']['positionConstraints']
@@ -296,6 +296,39 @@ class ExposureTests(unittest.TestCase):
         self.assertIn((('Z', 'GE', 2.300001),), open_sides)
         # The merged face's sides once each: target's X sides stand for wall's too, and its Z+ side is wall's far one.
         self.assertEqual(sorted(flush), sorted([s for s in open_sides if s != (('Z', 'GE', 2.300001),)]+[(('Z', 'GE', 3.300001),)]))
+
+    def test_an_ordinary_decision_steps_and_corners_in_only_by_allowed_moves(self):
+        from parkour_solver.spatial.anchor_guides import leg_class
+        start, target = [-2, 0, -2, 2, 1, 4], [2, 0, 0, 3, 1.5, 2]
+        plus_x = dict(point=[0., 1.], allowed=leg_class((1., 0.))[1], margin=.3)
+        diagonal = dict(plus_x, allowed=leg_class((.6, .8))[1])
+        for case in ('normal_step', 'slab_boost'):
+            steps = self.sides([start, target], case)
+            self.assertEqual(len(steps), 4, case)
+            # +X: entering across the X+ side moves -X; the Z sides are sideways. +X+Z also drops the Z+ side.
+            self.assertEqual(sorted(self.sides([start, target], case, forward=plus_x)),
+                             sorted(s for s in steps if s != (('X', 'GE', 3.300001),)), case)
+            self.assertEqual(sorted(self.sides([start, target], case, forward=diagonal)),
+                             sorted(s for s in steps if s not in ((('X', 'GE', 3.300001),), (('Z', 'GE', 2.300001),))), case)
+            # The target's top ends at x 3.3, 1.7 behind a decision point at x 5.
+            self.assertEqual(self.sides([start, target], case, forward=dict(plus_x, point=[5., 1.])), [], case)
+        corners = self.sides([start, target], 'corner_jump_cancel', forward=plus_x)
+        self.assertEqual(len(corners), 2)
+        self.assertTrue(all(('X', 'LE', 1.699999) in corner for corner in corners))
+
+    def test_an_ordinary_decision_approaches_no_wall_by_a_disallowed_move(self):
+        from parkour_solver.movement.cases import landing_wall_options
+        from parkour_solver.spatial.anchor_guides import leg_class
+        solids = [[-3, 0, -3, 6, 1, 3], [0, 1, 0, 1, 2, 1]]
+        scene = dict(collisionScene=dict(solids=solids), blocks=[dict(id=name, sourceBlock=name, solidIndex=i, top=b[4])
+                     for i, (name, b) in enumerate(zip(['floor', 'wall'], solids))])
+        def approaches(**context):
+            return sorted((e['axis'], e['direction']) for _, finite in landing_wall_options(
+                dict(dict(scene=scene, interactionGate=None, program=dict(profile=dict(duration=0))), **context),
+                scene['blocks'][1], 2, 1.) for e in finite)
+        self.assertEqual(approaches(), [('X', -1), ('X', 1), ('Z', -1), ('Z', 1)])
+        self.assertEqual(approaches(forward=dict(point=[0., 0.], allowed=leg_class((1., 0.))[1], margin=.3)),
+                         [('X', 1), ('Z', -1), ('Z', 1)])
 
     def test_a_departed_block_gets_no_feet_case_and_no_reachability_query(self):
         from parkour_solver.movement.ceiling_generation import open_ceiling_choices

@@ -312,10 +312,11 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
         ctx['frameId'] = f['id']
         decision = ctx.get('decision')
         if decision is not None and not decision.get('decisionTurnaround', False):
-            # An ordinary decision generates no ceiling hit or grind behind it along its guide leg (O10).
+            # An ordinary decision generates no move its guide leg's direction class disallows (O10).
+            from parkour_solver.spatial.anchor_guides import leg_class
             direction = guide_leg(decision, f)
             if direction is not None:
-                ctx['forward'] = dict(point=decision['decisionPoint'], direction=direction,
+                ctx['forward'] = dict(point=decision['decisionPoint'], allowed=leg_class(direction)[1],
                                       margin=adapter.anchor_policy['turnaround']['spatialMargin'])
 
     def time_bound(program,f=None):

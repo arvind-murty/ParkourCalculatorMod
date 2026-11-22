@@ -500,6 +500,15 @@ class AnchorPolicyTests(unittest.TestCase):
         p['restoredRun']=dict(frame=0,candidate='r')
         self.assertFalse(within_caps(dict(maxTotalRunTicks=10),p))
 
+    def test_a_leg_within_22_5_degrees_of_an_axis_is_that_axis_and_otherwise_its_diagonal(self):
+        from parkour_solver.spatial.anchor_guides import leg_class
+        at=lambda degrees:leg_class((math.cos(math.radians(degrees)),math.sin(math.radians(degrees))))
+        self.assertEqual(at(0),((1.,0.),{('X',1),('Z',1),('Z',-1)}))
+        self.assertEqual(at(22),((1.,0.),{('X',1),('Z',1),('Z',-1)}))
+        self.assertEqual(at(23),((math.sqrt(.5),math.sqrt(.5)),{('X',1),('Z',1)}))
+        self.assertEqual(at(100),((0.,1.),{('Z',1),('X',1),('X',-1)}))
+        self.assertEqual(at(-135),((-math.sqrt(.5),-math.sqrt(.5)),{('X',-1),('Z',-1)}))
+
     def test_a_jump_back_onto_its_face_fits_when_the_room_ahead_exceeds_most_of_its_natural_jump(self):
         from parkour_solver.reachability.intervals import travel_radii
         sprint=[.3274]+[.026]*11,[.546]+[.91]*11

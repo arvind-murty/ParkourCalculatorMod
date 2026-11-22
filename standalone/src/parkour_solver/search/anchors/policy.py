@@ -53,7 +53,7 @@ def settings(value, scene):
 
 def semantic_settings(policy):
     return dict({k:v for k,v in policy.items() if k!='observability'},
-                hardJumpPolicyVersion=HARD_JUMP_POLICY_VERSION,searchPolicyVersion=19,comparisonPolicyVersion=COMPARISON_POLICY_VERSION)
+                hardJumpPolicyVersion=HARD_JUMP_POLICY_VERSION,searchPolicyVersion=20,comparisonPolicyVersion=COMPARISON_POLICY_VERSION)
 
 
 def owner(scene, block):
@@ -332,18 +332,14 @@ def same_face_fit(point, velocity, leg, regions, magnitudes, frictions):
     """Whether a jump landing back on its launch face naturally fits there (O11).
 
     The room is measured from the player's solved position `point` ([x, z]) to the farthest corner of the face the
-    player stands on, given as its merged player-centre `regions` ([x0, z0, x1, z1]), along the leg's direction
-    class: its axis when the unit leg is within 22.5 degrees of one, else the diagonal of its quadrant. The natural
-    jump accelerates fully along the leg from the solved velocity with the landing schedule's movement magnitudes and
-    frictions.
+    player stands on, given as its merged player-centre `regions` ([x0, z0, x1, z1]), along the heading of the leg's
+    direction class (`leg_class`). The natural jump accelerates fully along the leg from the solved velocity with the
+    landing schedule's movement magnitudes and frictions.
     """
-    import math
     from parkour_solver.reachability.intervals import travel_radii
+    from parkour_solver.spatial.anchor_guides import leg_class
     dx, dz = leg
-    if min(abs(dx), abs(dz)) <= math.tan(math.radians(22.5))*max(abs(dx), abs(dz)):
-        u = (math.copysign(1., dx), 0.) if abs(dx) >= abs(dz) else (0., math.copysign(1., dz))
-    else:
-        u = (math.copysign(math.sqrt(.5), dx), math.copysign(math.sqrt(.5), dz))
+    u, _ = leg_class(leg)
     room = max((x-point[0])*u[0]+(z-point[1])*u[1] for region in regions
                for x in (region[0], region[2]) for z in (region[1], region[3]))
     jump = travel_radii(velocity[0]*dx+velocity[1]*dz, magnitudes, frictions)[-1]

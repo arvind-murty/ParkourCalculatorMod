@@ -213,7 +213,7 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `corner_rows` | [86](../src/parkour_solver/movement/cases.py#L86) | function |
 | `case_profile` | [97](../src/parkour_solver/movement/cases.py#L97) | function |
 | `landing_wall_options` | [130](../src/parkour_solver/movement/cases.py#L130) | function |
-| `entry_possible` | [147](../src/parkour_solver/movement/cases.py#L147) | function |
+| `entry_possible` | [152](../src/parkour_solver/movement/cases.py#L152) | function |
 
 ## movement/ceiling_generation.py
 
@@ -249,12 +249,12 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `contact_event` | [136](../src/parkour_solver/movement/contact_combinations.py#L136) | function |
 | `region_choices` | [142](../src/parkour_solver/movement/contact_combinations.py#L142) | function |
 | `reachable_option` | [152](../src/parkour_solver/movement/contact_combinations.py#L152) | function |
-| `bounding_region` | [161](../src/parkour_solver/movement/contact_combinations.py#L161) | function |
-| `wall_heights` | [165](../src/parkour_solver/movement/contact_combinations.py#L165) | function |
-| `region_offset` | [170](../src/parkour_solver/movement/contact_combinations.py#L170) | function |
-| `finite_rows` | [175](../src/parkour_solver/movement/contact_combinations.py#L175) | function |
-| `compile_contact_events` | [181](../src/parkour_solver/movement/contact_combinations.py#L181) | function |
-| `contact_combinations` | [212](../src/parkour_solver/movement/contact_combinations.py#L212) | function |
+| `bounding_region` | [163](../src/parkour_solver/movement/contact_combinations.py#L163) | function |
+| `wall_heights` | [167](../src/parkour_solver/movement/contact_combinations.py#L167) | function |
+| `region_offset` | [172](../src/parkour_solver/movement/contact_combinations.py#L172) | function |
+| `finite_rows` | [177](../src/parkour_solver/movement/contact_combinations.py#L177) | function |
+| `compile_contact_events` | [183](../src/parkour_solver/movement/contact_combinations.py#L183) | function |
+| `contact_combinations` | [214](../src/parkour_solver/movement/contact_combinations.py#L214) | function |
 
 ## movement/contact_profiles.py
 
@@ -426,7 +426,7 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `_sequence_allowed` | [13](../src/parkour_solver/movement/stepping.py#L13) | function |
 | `_fresh` | [24](../src/parkour_solver/movement/stepping.py#L24) | function |
 | `open_stepping_choices` | [34](../src/parkour_solver/movement/stepping.py#L34) | function |
-| `_open_flight_cases` | [113](../src/parkour_solver/movement/stepping.py#L113) | function |
+| `_open_flight_cases` | [117](../src/parkour_solver/movement/stepping.py#L117) | function |
 
 ## movement/units.py
 
@@ -748,11 +748,11 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `advantageous_targets` | [215](../src/parkour_solver/search/anchors/policy.py#L215) | function |
 | `advantageous_candidates` | [241](../src/parkour_solver/search/anchors/policy.py#L241) | function |
 | `same_face_fit` | [331](../src/parkour_solver/search/anchors/policy.py#L331) | function |
-| `encounter_groups` | [352](../src/parkour_solver/search/anchors/policy.py#L352) | function |
-| `local_counts` | [402](../src/parkour_solver/search/anchors/policy.py#L402) | function |
-| `priority` | [407](../src/parkour_solver/search/anchors/policy.py#L407) | function |
-| `within_caps` | [411](../src/parkour_solver/search/anchors/policy.py#L411) | function |
-| `transfer_structure` | [425](../src/parkour_solver/search/anchors/policy.py#L425) | function |
+| `encounter_groups` | [348](../src/parkour_solver/search/anchors/policy.py#L348) | function |
+| `local_counts` | [398](../src/parkour_solver/search/anchors/policy.py#L398) | function |
+| `priority` | [403](../src/parkour_solver/search/anchors/policy.py#L403) | function |
+| `within_caps` | [407](../src/parkour_solver/search/anchors/policy.py#L407) | function |
+| `transfer_structure` | [421](../src/parkour_solver/search/anchors/policy.py#L421) | function |
 
 ## search/application.py
 
@@ -962,10 +962,11 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `landing_cover` | [16](../src/parkour_solver/spatial/anchor_guides.py#L16) | function |
 | `terminal_point` | [23](../src/parkour_solver/spatial/anchor_guides.py#L23) | function |
 | `unit` | [40](../src/parkour_solver/spatial/anchor_guides.py#L40) | function |
-| `build_guides` | [45](../src/parkour_solver/spatial/anchor_guides.py#L45) | function |
-| `classify` | [79](../src/parkour_solver/spatial/anchor_guides.py#L79) | function |
-| `decision_objective` | [91](../src/parkour_solver/spatial/anchor_guides.py#L91) | function |
-| `onward_objective` | [112](../src/parkour_solver/spatial/anchor_guides.py#L112) | function |
+| `leg_class` | [49](../src/parkour_solver/spatial/anchor_guides.py#L49) | function |
+| `build_guides` | [62](../src/parkour_solver/spatial/anchor_guides.py#L62) | function |
+| `classify` | [96](../src/parkour_solver/spatial/anchor_guides.py#L96) | function |
+| `decision_objective` | [108](../src/parkour_solver/spatial/anchor_guides.py#L108) | function |
+| `onward_objective` | [129](../src/parkour_solver/spatial/anchor_guides.py#L129) | function |
 
 ## spatial/cells.py
 

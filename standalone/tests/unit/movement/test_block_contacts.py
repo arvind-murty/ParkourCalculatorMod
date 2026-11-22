@@ -129,6 +129,20 @@ class ExposedTopTests(unittest.TestCase):
             self.assertEqual(choice['profile']['positionConstraints'], [])
         self.assertTrue(all('regionChoices' not in c['profile'] for c in self.landings(scene)))
 
+    def test_an_ordinary_decision_keeps_only_the_rectangles_it_reaches_without_going_back(self):
+        from parkour_solver.spatial.anchor_guides import leg_class
+        scene = box_scene([[0, 0, 0, 2, 1, 2], [2, 0, 1, 3, 3, 2]], [('floor', 1), ('pillar', 3)])
+        regions = [c['profile']['contactEvents'][0]['regions'] for c in self.landings(scene)]
+        self.assertTrue(regions and all(len(r) == 2 for r in regions))
+        # The leg runs +Z; the L's short rectangle ends at z 0.7, 0.8 behind a decision point at z 1.5.
+        forward = dict(point=[1., 1.5], allowed=leg_class((0., 1.))[1], margin=.3)
+        program = dict(profile=dict(duration=0))
+        walk = self.landings(scene, forward=forward, program=program, regionItems=True)
+        self.assertEqual([c['profile']['contactEvents'][0]['regions'] for c in walk], [r[:1] for r in regions])
+        self.assertTrue(all('regionChoices' not in c['profile'] for c in walk))
+        # At z 3 the whole face is more than 0.3 behind.
+        self.assertEqual(self.landings(scene, forward=dict(forward, point=[1., 3.]), program=program), [])
+
     def test_generation_without_a_gate_key_is_an_error_and_none_opts_out(self):
         from parkour_solver.movement.normal import normal_choices
         from parkour_solver.physics.vertical import REST_CARRY
