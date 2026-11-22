@@ -13,7 +13,7 @@ from parkour_solver.search.identity import digest
 from parkour_solver.spatial.surfaces import scene_geometry
 
 
-GENERATION_POLICY = 20
+GENERATION_POLICY = 21
 STATE_VERSION = 11
 
 
@@ -50,8 +50,8 @@ class ConstraintVariants:
     def __init__(self, route, profile, plan, geometry, envelopes, scope, *, checks=(), gates=(), signature=(), state=None,
                  deadline=None, reference=None, route_guards=None, owners=None, budget=None, cancel_event=None,
                  segment_solids=None, objective=None, settled=0, obstacles=None, walk_offs=()):
-        """`settled`: the branch keeps exact rows before this tick, so obstacle stretches ending by it
-        and contact checks before it get no item.
+        """`settled`: the branch keeps exact rows before this tick, so contact checks before it get no item, and
+        neither do obstacle stretches ending by it, except a conflict-driven obstacle a solve hit there.
 
         `walk_offs`: run-off launch-support face selections the creation screen carried (program['walkOffs']),
         each one item over its options; the caller drops the floor checks they replace.
@@ -107,7 +107,8 @@ class ConstraintVariants:
         names = {i: owners[i] if owners is not None else 'solid:'+str(i) for i in scope['solidIndices']}
         reachable = segment_solids or {}
         for begin, end in landing_segments(profile, self.through):
-            if end <= settled:
+            # A settled stretch keeps its rows, but a re-solve can still hit an obstacle they never covered.
+            if end <= settled and self.obstacles is None:
                 continue
             # The obstacle is built from the solids this stretch can reach: an unreachable member's
             # space is free for the stretch, and dropping it can split a touching cluster.
@@ -146,14 +147,13 @@ class ConstraintVariants:
         return self.obstacles is not None
 
     def obstacle_key(self, solid, tick):
-        """[stretch begin, solid] for a solve that hit `solid` on movement `tick`; None on a settled stretch.
+        """[stretch begin, solid] for a solve that hit `solid` on movement `tick` (< `through`: scene validation
+        replays only the scope's prefix).
 
         Rows constrain states, and the movement ends in state tick+1 (a landing's first state when it lands)."""
         state = tick+1
-        for begin, end in landing_segments(self.profile, self.through):
-            if begin <= state < end or state == end == self.through:
-                return [begin, solid] if end > self.settled else None
-        return None
+        return [next(begin for begin, end in landing_segments(self.profile, self.through)
+                     if begin <= state < end or state == end == self.through), solid]
 
     def with_obstacles(self, obstacles):
         """A fresh generator over these obstacles (same inputs, no saved state)."""

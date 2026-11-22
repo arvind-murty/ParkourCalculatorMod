@@ -154,8 +154,8 @@ into a landing belongs to the stretch that landing starts. That stretch's cluste
 around the solid then gets its passages, families and switch ticks. Families and the
 switch climb therefore stay joint over every obstacle hit so far. The old generator's
 unsolved branches are dropped, since the new one emits them refined, and accepted
-points stay. A hit on a settled stretch, or on an obstacle already in the set, has
-no repair. Obstacles no solve touches never get items: the optimum without them
+points stay. A hit on a settled stretch is repaired the same way and keeps that
+stretch's settled rows; a hit on an obstacle already in the set has no repair. Obstacles no solve touches never get items: the optimum without them
 bounds every variant, so they can be ignored safely (user, 2026-11-20). Partial
 combinations are screened by intervals only, because every branch is solved and the
 solve is the relaxation check. The set and the emitted branches persist
@@ -215,7 +215,7 @@ confirms the kept candidates when the loop ends, and a point it rejected is neve
 saved as a fallback. The family state and held variants persist in the repair
 snapshot (version 3), so a resumed climb solves nothing twice.
 
-Constraint generation uses policy20/state11 and repair avoidancePolicy14 with assembly13. The DFS context
+Constraint generation uses policy21/state11 and repair avoidancePolicy14 with assembly13. The DFS context
 fingerprints the new policy. Old raw generator cursors reject; reproduce an old
 run with its original source and inputs. Source-era scene fields
 `maxContactBranches`, `maxPassageCandidates`, `maxBlockagesPerObstacle`,
@@ -254,10 +254,12 @@ belong to the open stretch, are dropped, and so are `regionChoices` before it.
 The program records `settledThrough`; `append_choice` passes it to children and
 `truncate_program` clamps it. Group-end arrivals already keep every row up to the
 arrival and record `settledThrough` = the arrival tick. Every later solve builds
-`ConstraintVariants(settled=settledThrough)`, which creates no item for an
-obstacle stretch ending at or before the settled tick and no contact-check item
-before it, so a settled stretch is never re-decided; scene validation of every
-solve still covers it, and a collision there becomes a repair source as before.
+`ConstraintVariants(settled=settledThrough)`, which creates no contact-check item
+before the settled tick and no item for an obstacle stretch ending by it, so a
+settled choice is never re-decided. Scene validation of every solve still covers
+those stretches: a re-solve can drift into an obstacle no settled row covers, and
+that obstacle then gets an item on its settled stretch like any conflict-driven
+hit (`obstacle_key`, `grow`).
 The other choices are held, not queued (`search/repair.py` `node_alternatives`):
 accepted variants are grouped by `branchKey` (open stretches are re-decided
 later, so families that differ only there are one choice), and each group keeps

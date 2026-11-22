@@ -317,6 +317,9 @@ class EncounterTests(unittest.TestCase):
             return {(i['begin'], i['end']) for i in source(4, profile=airborne, settled=settled).items if 'clusterId' in i}
         self.assertEqual(stretches(0), {(0, 2), (2, 4)})
         self.assertEqual(stretches(2), {(2, 4)})
+        # A conflict-driven obstacle a re-solve hit on a settled stretch gets its item there.
+        hit = source(4, profile=airborne, settled=2, obstacles=[[0, 0]])
+        self.assertEqual({(i['begin'], i['end']) for i in hit.items if 'clusterId' in i}, {(0, 2)})
 
     def test_conflict_driven_generator_enumerates_only_hit_obstacles(self):
         boxes = [(0., 0., -.2, 1., 3., .2), (0., 0., 4., 1., 3., 5.)]
@@ -336,7 +339,7 @@ class EncounterTests(unittest.TestCase):
         owner = source(4, profile=airborne, obstacles=[])
         self.assertEqual((owner.obstacle_key(0, 0), owner.obstacle_key(0, 1), owner.obstacle_key(0, 3)),
                          ([0, 0], [2, 0], [2, 0]))
-        self.assertIsNone(source(4, profile=airborne, obstacles=[], settled=2).obstacle_key(0, 0))
+        self.assertEqual(source(4, profile=airborne, obstacles=[], settled=2).obstacle_key(0, 0), [0, 0])
 
     def test_a_hit_obstacle_gets_the_passages_full_enumeration_gives_it(self):
         whole = list(source(4, magnitude=1., friction=0.))

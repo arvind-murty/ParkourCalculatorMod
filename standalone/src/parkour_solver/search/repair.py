@@ -464,12 +464,12 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
 
         The generator restarts over the larger obstacle set, so families and switch climbs stay joint over
         every obstacle hit so far. The old generator's unsolved branches lack the new obstacle's rows and
-        are dropped (the new generator emits them refined); accepted points stay. A hit on an enumerated
-        obstacle or a settled stretch has no repair."""
+        are dropped (the new generator emits them refined); accepted points stay. A hit on a settled stretch is
+        repaired the same way, keeping the stretch's settled rows. A hit on an enumerated obstacle has no repair."""
         nonlocal variant_source, source_exhausted, generated
         key = variant_source.obstacle_key(collision['solidIndex'], collision['tick'])
-        if key is None or key in variant_source.obstacles:
-            attempts[-1]['termination'] = 'settled_obstacle_hit' if key is None else 'enumerated_obstacle_hit'
+        if key in variant_source.obstacles:
+            attempts[-1]['termination'] = 'enumerated_obstacle_hit'
             return
         attempts[-1]['termination'] = 'obstacle_added'
         variant_source = variant_source.with_obstacles(variant_source.obstacles+[key])

@@ -61,11 +61,11 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/CHECKPOINT_STORAGE.md](CHECKPOINT_STORAGE.md) | 7541 |
 | [docs/CODE_MAP.md](CODE_MAP.md) | 21394 |
 | [docs/CURRENT_STATE.md](CURRENT_STATE.md) | 12858 |
-| [docs/DECISIONS_AND_PLANS.md](DECISIONS_AND_PLANS.md) | 21122 |
-| [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 36593 |
+| [docs/DECISIONS_AND_PLANS.md](DECISIONS_AND_PLANS.md) | 21509 |
+| [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 35721 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11512 |
 | [docs/DOC_INDEX.md](DOC_INDEX.md) | 28532 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 223470 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 224068 |
 | [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 64666 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
@@ -78,7 +78,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/RUNBOOK.md](RUNBOOK.md) | 12940 |
 | [docs/TESTING.md](TESTING.md) | 19731 |
 | [docs/design/ANCHOR_POLICY_DECISIONS.md](design/ANCHOR_POLICY_DECISIONS.md) | 43911 |
-| [docs/design/AVOIDANCE_PASSAGES.md](design/AVOIDANCE_PASSAGES.md) | 21065 |
+| [docs/design/AVOIDANCE_PASSAGES.md](design/AVOIDANCE_PASSAGES.md) | 21250 |
 | [docs/design/BRANCH_SCHEDULING_INVESTIGATION.md](design/BRANCH_SCHEDULING_INVESTIGATION.md) | 34072 |
 | [docs/design/CONTACT_COMBINATIONS.md](design/CONTACT_COMBINATIONS.md) | 9645 |
 | [docs/design/GENERATION_FOLLOWUPS.md](design/GENERATION_FOLLOWUPS.md) | 41097 |
@@ -1450,7 +1450,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [src/parkour_solver/constraints/contacts.py](../src/parkour_solver/constraints/contacts.py) | 11581 |
 | [src/parkour_solver/constraints/encounters.py](../src/parkour_solver/constraints/encounters.py) | 18678 |
 | [src/parkour_solver/constraints/hit_events.py](../src/parkour_solver/constraints/hit_events.py) | 9864 |
-| [src/parkour_solver/constraints/variants.py](../src/parkour_solver/constraints/variants.py) | 22320 |
+| [src/parkour_solver/constraints/variants.py](../src/parkour_solver/constraints/variants.py) | 22511 |
 | [src/parkour_solver/io/__init__.py](../src/parkour_solver/io/__init__.py) | 0 |
 | [src/parkour_solver/io/capture.py](../src/parkour_solver/io/capture.py) | 6352 |
 | [src/parkour_solver/io/checkpoint_store.py](../src/parkour_solver/io/checkpoint_store.py) | 11804 |
@@ -1532,7 +1532,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [src/parkour_solver/search/movement.py](../src/parkour_solver/search/movement.py) | 1292 |
 | [src/parkour_solver/search/ordered_route.py](../src/parkour_solver/search/ordered_route.py) | 19096 |
 | [src/parkour_solver/search/ranking.py](../src/parkour_solver/search/ranking.py) | 3312 |
-| [src/parkour_solver/search/repair.py](../src/parkour_solver/search/repair.py) | 45756 |
+| [src/parkour_solver/search/repair.py](../src/parkour_solver/search/repair.py) | 45766 |
 | [src/parkour_solver/search/repair_state.py](../src/parkour_solver/search/repair_state.py) | 3038 |
 | [src/parkour_solver/search/work.py](../src/parkour_solver/search/work.py) | 2518 |
 | [src/parkour_solver/spatial/__init__.py](../src/parkour_solver/spatial/__init__.py) | 0 |
@@ -1657,7 +1657,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/unit/bridge/__init__.py](../tests/unit/bridge/__init__.py) | 0 |
 | [tests/unit/bridge/test_python_compiler.py](../tests/unit/bridge/test_python_compiler.py) | 25220 |
 | [tests/unit/constraints/__init__.py](../tests/unit/constraints/__init__.py) | 51 |
-| [tests/unit/constraints/test_encounters.py](../tests/unit/constraints/test_encounters.py) | 24539 |
+| [tests/unit/constraints/test_encounters.py](../tests/unit/constraints/test_encounters.py) | 24813 |
 | [tests/unit/constraints/test_option_keys.py](../tests/unit/constraints/test_option_keys.py) | 4788 |
 | [tests/unit/io/__init__.py](../tests/unit/io/__init__.py) | 0 |
 | [tests/unit/io/test_checkpoint_store.py](../tests/unit/io/test_checkpoint_store.py) | 12700 |

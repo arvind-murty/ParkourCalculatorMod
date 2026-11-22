@@ -127,8 +127,8 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `ConstraintVariants` | [20](../src/parkour_solver/constraints/variants.py#L20) | class |
 | `ConstraintVariants.for_plan` | [22](../src/parkour_solver/constraints/variants.py#L22) | function |
 | `ConstraintVariants.__init__` | [50](../src/parkour_solver/constraints/variants.py#L50) | function |
-| `ConstraintVariants.conflict_driven` | [145](../src/parkour_solver/constraints/variants.py#L145) | function |
-| `ConstraintVariants.obstacle_key` | [148](../src/parkour_solver/constraints/variants.py#L148) | function |
+| `ConstraintVariants.conflict_driven` | [146](../src/parkour_solver/constraints/variants.py#L146) | function |
+| `ConstraintVariants.obstacle_key` | [149](../src/parkour_solver/constraints/variants.py#L149) | function |
 | `ConstraintVariants.with_obstacles` | [158](../src/parkour_solver/constraints/variants.py#L158) | function |
 | `ConstraintVariants.metric` | [162](../src/parkour_solver/constraints/variants.py#L162) | function |
 | `ConstraintVariants.coordinate` | [166](../src/parkour_solver/constraints/variants.py#L166) | function |
