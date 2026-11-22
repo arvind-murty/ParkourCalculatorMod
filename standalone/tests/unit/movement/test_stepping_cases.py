@@ -1,4 +1,4 @@
-from tests.support.stepping_cases import FIXTURES, fixture
+from tests.support.stepping_cases import FIXTURES, case_programs, fixture, fixture_program
 from tests.support.paths import AUTONOMY_DATA
 import copy
 import itertools
@@ -15,20 +15,18 @@ from parkour_solver.movement.generation import generate_choices
 from parkour_solver.movement.units import compile_units, overlay_program, profile_program, shifted_unit
 from parkour_solver.validation.scene import check_geometry
 from parkour_solver.scene.route import prepare_route, schedule
+from parkour_solver.movement.program import compile_program
 from parkour_solver.numerics import prepare
 from parkour_solver.physics.vertical import REST_CARRY, f32, vertical_step
 
 
-def generated(data):
-    scene = prepare_scene(data['request'])
-    by_id = {b['id']: b for b in scene['blocks']}
-    choices = list(generate_choices('ceiling' if data['case'] == 'grind' else 'stepping',
-        dict(scene=scene, source=by_id['start'], target=by_id['goal'], cases=[data['case']], maxInputs=40,
-             interactionGate=None)))
-    choice = choices[data['choice']]
-    edge = dict(source='start', target='goal', profileKind=choice['profileKind'], profile=choice['profile'],
-                entryFace=choice.get('entryFace'), exitFace=None)
-    return scene, edge
+def solve(scene, program, compiler, seconds=10):
+    compiled = compile_program(scene, program)
+    return compiled, solve_contact_branches(compiled['route'], compiled['profiles'],
+        floor_checks(scene, [scene['startBlock'], scene['goalBlock']], compiled['profiles']), compiler,
+        seconds=seconds, candidate_seconds=1, retries=0, geometry=scene['collisionScene'],
+        motion_bound=dict(movementAfterSupportCheck=.8, storedSpeedNorm=.6),
+        python_executable=os.environ['PKC_IPOPT_PYTHON'])
 
 
 class SteppingCaseTests(unittest.TestCase):
@@ -71,6 +69,65 @@ class SteppingCaseTests(unittest.TestCase):
                           contacts=[dict(state=1, direction=-1, plane=plane, case=kind, **metadata)])
             self.assertTrue(vertical_step(config, 0, y, vy, False, jump is not None, 0)[3], kind)
 
+    def test_a_profile_without_landing_phase_compiles_with_pre_landing_timing(self):
+        scene, _, program = fixture_program('blip')
+        profile = {k: v for k, v in program['profile'].items() if k != 'landingPhase'}
+        compiled = compile_program(scene, dict(program, profile=profile))
+        self.assertEqual(compiled['route']['landingPhases'], ['pre'])
+        self.assertIn((profile['duration'] - 1, 1, 'landing'), schedule(compiled['route'], [0])['supportChecks'])
+
+    def test_generated_units_retime_all_case_controls_constraints_and_scene_contacts(self):
+        for path in FIXTURES.glob('*.json'):
+            data = json.loads(path.read_text())
+            scene, _, program = fixture_program(path.stem)
+            compiled = compile_program(scene, program)
+            route = compiled['route']
+            route.update(maxTotalRunTicks=2, runBounds=[[0, 2]])
+            route = prepare_route(route)
+            a, b = schedule(route, [0]), schedule(route, [2])
+            profile = program['profile']
+            self.assertEqual(a['ticks'], profile['duration'])
+            self.assertEqual(b['grounded'][2:], profile['grounded'][:-1])
+            self.assertEqual(b['jump'][2:], profile['jump'])
+            self.assertEqual([shifted_unit(u, 2) for u in a['movementUnits']], b['movementUnits'][1:])
+            self.assertEqual([dict(c, state=c['state'] + 2) for c in a['sceneContacts']], b['sceneContacts'])
+            self.assertTrue(validate_vertical_schedule(route, compiled['profiles'], b)['feasible'], path.name)
+            partial = schedule(route, [2], stage='run')
+            self.assertEqual(partial['ticks'], 2)
+            self.assertTrue(validate_vertical_schedule(route, compiled['profiles'], partial)['feasible'], path.name)
+            typed = [u for u in a['movementUnits'] if u['type'] in ('stepping', 'ceiling')]
+            self.assertEqual([u['case'] for u in typed], [data['case']])
+            for row in profile.get('positionConstraints', []):
+                self.assertIn(dict(row, t1=row['t1'] + 2), b['walls'])
+            broken = copy.deepcopy(route)
+            broken['verticalProfiles'][0]['generatedUnits'][0]['jumpInputs'] = [199]
+            with self.assertRaises(ValueError):
+                prepare_route(broken)
+
+    def test_elevated_ground_hands_off_to_jump_or_ground_then_air(self):
+        for name in ['blip_up', 'blip_up-jump', 'corner_blip_up']:
+            _, _, program = fixture_program(name)
+            p = program['profile']
+            hit = next(e['anchors']['hit'] for e in p['caseEvents'] if e['case'] in ('blip_up', 'corner_blip_up'))
+            self.assertEqual(p['position'][hit], p['position'][hit - 1])
+            self.assertTrue(p['grounded'][hit])
+            self.assertEqual(p['velocity'][hit], REST_CARRY)
+            self.assertTrue(p['jump'][hit] if name.endswith('jump') else not p['jump'][hit])
+            self.assertFalse(p['grounded'][hit + 1])
+            self.assertAlmostEqual(p['position'][hit + 1] - p['position'][hit],
+                                   f32(.42) if name.endswith('jump') else REST_CARRY)
+            self.assertEqual(program['movementUnits'][-1]['type'], 'normal')
+
+    def test_grind_and_corner_cancel_share_y_without_claiming_a_wall_hit(self):
+        programs = [fixture_program(name)[2] for name in ['grind', 'corner_jump_cancel']]
+        self.assertEqual(programs[0]['profile']['position'], programs[1]['profile']['position'])
+        for p in programs:
+            self.assertEqual(p['profile']['position'], [1, 1, 1])
+            self.assertEqual(p['profile']['grounded'], [True, False, True])
+            self.assertFalse(any(e['axis'] != 'Y' for e in p['profile'].get('contactEvents', [])))
+        self.assertEqual(programs[0]['movementUnits'][0]['type'], 'ceiling')
+        self.assertEqual(programs[1]['movementUnits'][0]['type'], 'stepping')
+
     def test_ladder_ownership_survives_typed_air_overlay(self):
         units = [dict(type='normal', start=0, end=2, jumpInputs=[0], groundedInputs=[0], sneakInputs=[]),
                  dict(type='ladder_climb', start=2, end=5, occupiedStates=[3, 5], hitInputs=[2, 3]),
@@ -98,6 +155,123 @@ class SteppingCaseTests(unittest.TestCase):
 
 @unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'),
                      'Set PKC_IPOPT_PYTHON')
+
+@unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'),
+                     'Set PKC_IPOPT_PYTHON')
+class SteppingNumericalTests(unittest.TestCase):
+    def test_fresh_original_state_solves_for_every_case_and_both_blip_wall_choices(self):
+        with PythonCompiler() as compiler:
+            for path in sorted(FIXTURES.glob('*.json')):
+                with self.subTest(fixture=path.name):
+                    data = json.loads(path.read_text())
+                    scene, _, program = fixture_program(path.stem)
+                    _, result = solve(scene, program, compiler)
+                    self.assertEqual(result['status'], 'feasible', result)
+                    best = result['best']
+                    self.assertTrue(best['geometryCheck']['feasible'])
+                    self.assertEqual(best['plan']['ticks'], program['profile']['duration'])
+                    vertical = dict(vertical=best['vertical'], **{k: best['candidate'][k] for k in ('y', 'vy', 'onGround')})
+                    missing = copy.deepcopy(best['plan'])
+                    missing['sceneContacts'] = [c for c in missing['sceneContacts'] if not c.get('movementCase')]
+                    self.assertFalse(check_geometry(scene['collisionScene'], missing, best['candidate'], vertical, compiler, 3)['feasible'])
+                    if path.stem == 'blip-wall':
+                        event = next(e for e in program['profile']['contactEvents'] if e['axis'] != 'Y')
+                        landing = event['offset'] + 1
+                        self.assertEqual(best['candidate']['velocity'][landing]['XZ'.index(event['axis'])], 0)
+                        self.assertTrue(best['candidate']['movement']['horizontalCollision'][landing])
+                        self.assertFalse(best['candidate']['movement']['sprinting'][landing])
+                        self.assertEqual(best['candidate']['y'][landing + 1], 1.5)
+                    elif data['case'] in ('grind', 'corner_jump_cancel'):
+                        self.assertFalse(any(best['candidate']['movement']['horizontalCollision']))
+                    if data['case'] in ('blip_up', 'corner_blip_up'):
+                        hit = next(e['anchors']['hit'] for e in program['profile']['caseEvents'] if e['case'] == data['case'])
+                        self.assertEqual(best['candidate']['y'][hit], best['candidate']['y'][hit - 1])
+                        self.assertTrue(best['candidate']['onGround'][hit])
+
+    def test_z_facing_corner_controls_do_not_inherit_x_facing_vertical_cancellation(self):
+        def swap_box(box):
+            return [box[2], box[1], box[0], box[5], box[4], box[3]]
+        with PythonCompiler() as compiler:
+            for name in ['corner_jump_cancel', 'corner_blip_up']:
+                scene, _, program = fixture_program(name)
+                _, result = solve(scene, program, compiler, seconds=8)
+                self.assertEqual(result['status'], 'feasible', result)
+                best = result['best']
+                candidate = copy.deepcopy(best['candidate'])
+                for key in ('positions', 'velocity', 'rawMovement'):
+                    candidate[key] = [row[::-1] for row in candidate[key]]
+                plan = copy.deepcopy(best['plan'])
+                for contact in plan['sceneContacts']:
+                    contact['boxes'] = [swap_box(box) for box in contact['boxes']]
+                    if contact['axis'] in (0, 2):
+                        contact['axis'] = 2 - contact['axis']
+                geometry = copy.deepcopy(scene['collisionScene'])
+                geometry['solids'] = [swap_box(box) for box in geometry['solids']]
+                geometry['bounds'] = swap_box(geometry['bounds'])
+                vertical = dict(vertical=best['vertical'], **{k: best['candidate'][k] for k in ('y', 'vy', 'onGround')})
+                self.assertFalse(check_geometry(geometry, plan, candidate, vertical, compiler, 3)['feasible'])
+
+    def test_normal_step_supports_both_horizontal_axes(self):
+        data = fixture('normal_step')
+        request = data['request']
+        request['initial']['position'] = request['initial']['position'][::-1]
+        request['initial']['velocity'] = request['initial']['velocity'][::-1]
+        for block in request['blocks']:
+            block['boxes'] = [[b[2], b[1], b[0], b[5], b[4], b[3]] for b in block['boxes']]
+        scene, found = case_programs(data)
+        with PythonCompiler() as compiler:
+            _, result = solve(scene, found[0][1], compiler)
+        self.assertEqual(result['status'], 'feasible', result)
+        self.assertEqual(result['best']['plan']['ticks'], 1)
+        self.assertTrue(result['best']['geometryCheck']['feasible'])
+
+    def test_grind_continues_through_normal_air_to_a_lower_floor(self):
+        data = fixture('grind')
+        request = data['request']
+        request['blocks'][0]['boxes'][0][3] = .55
+        request['blocks'][-1]['boxes'][0][4] = .5
+        scene, found = case_programs(data)
+        with PythonCompiler() as compiler:
+            _, result = solve(scene, found[0][1], compiler, seconds=8)
+        self.assertEqual(result['status'], 'feasible', result)
+        self.assertTrue(result['best']['geometryCheck']['feasible'])
+        self.assertEqual(result['best']['candidate']['y'][:2], [1, 1])
+        self.assertEqual(result['best']['candidate']['y'][-1], .5)
+        self.assertGreater(result['best']['plan']['ticks'], 2)
+
+    def test_open_generation_covers_the_catalogue_and_allows_composite_height_gain(self):
+        for name in ['blip', 'blip_up', 'corner_blip_up', 'corner_jump_cancel', 'grind']:
+            self.assertTrue(case_programs(fixture(name))[1], name)
+        data = fixture('blip_up')
+        data['request']['blocks'] = [dict(id='start', boxes=[[-2, 1, -1, 1, 2, 1]]),
+            dict(id='lower', boxes=[[2, 2, -1, 3, 2.5, 1]]),
+            dict(id='higher', boxes=[[3, 2.5, -1, 3.125, 2.625, 1]]),
+            dict(id='goal', boxes=[[5, 2, -1, 6, 3.5, 1]])]
+        scene = prepare_scene(data['request'])
+        from parkour_solver.movement.program import boundary_state, empty_program
+        root = empty_program(scene['initial'], threshold=0.)
+        cases = {e['case'] for c in generate_choices('stepping', dict(mode='open', scene=scene, program=root,
+                 state=boundary_state(root), maxInputs=40, threshold=0., interactionGate=None))
+                 for e in c['profile'].get('caseEvents', [])}
+        self.assertIn('blip_up', cases)
+
+    def test_open_generation_offers_steps_and_jumps_onto_a_step_up(self):
+        data = fixture('normal_step')
+        scene = prepare_scene(data['request'])
+        from parkour_solver.movement.program import boundary_state, empty_program
+        root = empty_program(scene['initial'], threshold=0.)
+        context = dict(mode='open', scene=scene, program=root, state=boundary_state(root), maxInputs=40, threshold=0.,
+                       interactionGate=None)
+        cases = {e['case'] for c in generate_choices('stepping', context) for e in c['profile'].get('caseEvents', [])}
+        self.assertTrue({'normal_step', 'slab_boost'} <= cases, cases)
+        self.assertTrue(any(c.get('terminalSupport') == 'goal' and c['profile']['jump'][0]
+                            for c in generate_choices('normal', context)))
+        with PythonCompiler() as compiler:
+            _, result = solve(scene, fixture_program('normal_step')[2], compiler)
+        self.assertEqual(result['status'], 'feasible', result)
+        self.assertEqual(result['best']['plan']['ticks'], 1)
+
+
 class ExposureTests(unittest.TestCase):
     def sides(self, solids, case):
         from parkour_solver.movement.stepping import open_stepping_choices

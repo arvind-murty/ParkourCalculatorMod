@@ -11,6 +11,7 @@ from parkour_solver.movement.ceiling_profiles import ceiling_options
 from parkour_solver.bridge.python_compiler import PythonCompiler
 from parkour_solver.scene.route import schedule
 from parkour_solver.physics.vertical import REST_CARRY, f32
+from tests.support.checkpoint_guidance import landing_programs
 
 
 FIXTURE = AUTONOMY_DATA / 'fixtures/ceiling-bonk.json'
@@ -19,6 +20,72 @@ FIXTURE = AUTONOMY_DATA / 'fixtures/ceiling-bonk.json'
 def underside(box):
     option, = ceiling_options([box])
     return option
+
+
+def ceiling_scene(bottom):
+    """A wide start block (top 1) under a ceiling box with the given bottom; the goal is out of one jump's reach, so a
+    hit lands back on the start."""
+    return prepare_scene(dict(version=1, sceneModel='collision_boxes', geometryBounds=[-5, -5, -5, 20, 10, 10],
+        initial=dict(position=[.5, 1, .5], velocity=[0, -.0784000015258789, 0]), startBlock='start', goalBlock='goal',
+        blocks=[dict(id='start', boxes=[[-2, 0, -2, 5, 1, 3]]), dict(id='ceiling', boxes=[[-2, bottom, -2, 5, bottom + 1, 3]]),
+                dict(id='goal', boxes=[[15, 0, 0, 16, 1, 1]])]))
+
+
+class CeilingProfileTests(unittest.TestCase):
+    def test_existing_y_model_regenerates_single_hit_and_shorter_landing(self):
+        for bottom in [3, 3.4, 3.9]:
+            with self.subTest(bottom=bottom):
+                scene = ceiling_scene(bottom)
+                hits = [p for p in landing_programs(scene, 'ceiling', goal='start')
+                        if any(e.get('role') == 'ceiling' for e in p['profile']['contactEvents'])]
+                self.assertTrue(hits)
+                profile = hits[0]['profile']
+                hit = next(e['offset'] for e in profile['contactEvents'] if e.get('role') == 'ceiling')
+                self.assertLess(profile['duration'], ordinary_jump_profile(1, 1)['duration'])
+                self.assertEqual(profile['velocity'][hit + 1], REST_CARRY)
+                self.assertLess(profile['position'][hit + 2], profile['position'][hit + 1])
+                self.assertEqual(sum(c['direction'] > 0 for c in profile['contacts']), 1)
+                plane = bottom - f32(1.8)
+                self.assertTrue(all(y <= plane for y in profile['position'][:hit + 1]))
+                self.assertTrue(all(y < plane for y in profile['position'][hit + 2:]))
+        self.assertFalse(any(any(e.get('role') == 'ceiling' for e in p['profile']['contactEvents'])
+                             for p in landing_programs(ceiling_scene(5), 'ceiling', goal='start')))
+
+
+@unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'),
+                     'Set PKC_IPOPT_PYTHON')
+class CeilingContactIntegrationTests(unittest.TestCase):
+    def test_geometry_discovers_bonk_and_the_hit_route_solves(self):
+        from parkour_solver.constraints.contacts import floor_checks
+        from parkour_solver.movement.program import compile_program
+        from parkour_solver.scene.route import prepare_route
+        from parkour_solver.search.repair import solve_contact_branches
+        from parkour_solver.validation.scene import check_geometry
+        scene = prepare_scene(json.loads(FIXTURE.read_text()))
+        self.assertTrue(any(p['profile']['jump'][0] for p in landing_programs(scene, 'normal')))
+        bonk = next(p for p in landing_programs(scene, 'ceiling')
+                    if any(e.get('role') == 'ceiling' for e in p['profile']['contactEvents']))
+        self.assertEqual(bonk['profile']['duration'], 3)
+        compiled = compile_program(scene, bonk)
+        with PythonCompiler() as compiler:
+            result = solve_contact_branches(compiled['route'], compiled['profiles'],
+                floor_checks(scene, ['start', 'goal'], compiled['profiles']), compiler, seconds=15, candidate_seconds=1,
+                retries=0, geometry=scene['collisionScene'], motion_bound=dict(movementAfterSupportCheck=.8, storedSpeedNorm=.6),
+                python_executable=os.environ['PKC_IPOPT_PYTHON'])
+            self.assertEqual(result['status'], 'feasible', result)
+            best = result['best']
+            self.assertEqual(best['plan']['ticks'], 3)
+            self.assertTrue(best['geometryCheck']['feasible'])
+            self.assertTrue(all(best['candidate']['movement']['sprinting']))
+            self.assertFalse(any(best['candidate']['movement']['horizontalCollision']))
+            route = prepare_route(dict(compiled['route'], maxTotalRunTicks=2, runBounds=[[0, 2]]))
+            plan = schedule(route, [2])
+            self.assertEqual(min(c['state'] for c in plan['sceneContacts'] if c['axis'] == 1 and c['direction'] > 0), 3)
+            self.assertTrue(validate_vertical_schedule(route, compiled['profiles'], plan)['feasible'])
+            missing = copy.deepcopy(best['plan'])
+            missing['sceneContacts'] = []
+            vertical = {'vertical': best['vertical'], **{k: best['candidate'][k] for k in ('y', 'vy', 'onGround')}}
+            self.assertFalse(check_geometry(scene['collisionScene'], missing, best['candidate'], vertical, compiler, 5)['feasible'])
 
 
 class OpenCeilingTests(unittest.TestCase):

@@ -156,6 +156,51 @@ def select(program, scene, kind, predicate):
     return combined
 
 
+class GenericQueueTests(unittest.TestCase):
+    def test_new_registered_types_and_cost_order_need_no_pair_specific_queue_logic(self):
+        from parkour_solver.search.frontier import persistent_programs
+        from parkour_solver.movement.settings import movement_settings
+        from parkour_solver.movement.generation import GENERATORS, register_movement_type
+        from parkour_solver.movement.units import MOVEMENT_TYPES
+        from parkour_solver.movement.program import movement_choice
+        from parkour_solver.movement.normal import replay
+        scene = prepare_scene(json.loads((AUTONOMY_DATA / 'fixtures/generic-grind-blip.json').read_text()))
+        class Generator:
+            def generate(self, context, **options):
+                for duration in (2, 1):
+                    trace = replay(context['state'], duration, contacts=[dict(state=t + 1, plane=1, direction=-1)
+                                                                        for t in range(duration)])
+                    unit = dict(type='test_extension', start=0, end=duration)
+                    yield movement_choice('test_extension', context['state'], trace, units=[unit], support=scene['goalBlock'])
+        register_movement_type('test_extension', Generator())
+        try:
+            self.assertIn('test_extension', movement_settings(dict(scene, movementSearch={}))['types'])
+            cfg = movement_settings(dict(scene, movementSearch=dict(types=['test_extension'], maxInputs=3)))
+            report = {}
+            results = list(persistent_programs(scene, settings=cfg, report=report))
+            self.assertEqual([p['profile']['duration'] for p in results], [1, 2])
+            self.assertTrue(report['continuation']['exhausted'])
+        finally:
+            GENERATORS.pop('test_extension')
+            MOVEMENT_TYPES.pop('test_extension')
+
+    def test_cancellation_deadlines_and_limits_preserve_unknown_coverage(self):
+        import threading
+        import time
+        from parkour_solver.movement.settings import movement_settings
+        from parkour_solver.search.frontier import persistent_programs
+        scene = prepare_scene(json.loads((AUTONOMY_DATA / 'fixtures/generic-grind-blip.json').read_text()))
+        cancel = threading.Event()
+        cancel.set()
+        for options, expected in [(dict(cancel_event=cancel), 'cancelled'), (dict(deadline=time.monotonic() - 1), 'deadline')]:
+            report = {}
+            self.assertEqual(list(persistent_programs(scene, settings=movement_settings(scene), report=report,
+                                                      context_adapter=lambda c: c.update(interactionGate=None),
+                                                      **options)), [])
+            self.assertEqual(report['termination'], expected)
+            self.assertFalse(report['minimumTicksProven'])
+            self.assertFalse(report['continuation']['exhausted'])
+
 @unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'),
                      'Set PKC_IPOPT_PYTHON')
 class GenericNumericalTests(unittest.TestCase):
@@ -175,6 +220,18 @@ class GenericNumericalTests(unittest.TestCase):
         self.assertEqual(result['best']['candidate']['positions'][0], scene['initial']['position'][::2])
         self.assertEqual(result['best']['candidate']['velocity'][0], scene['initial']['velocity'][::2])
         return result['best']
+
+    def test_grind_then_airborne_blip_compose_into_one_movement(self):
+        scene = prepare_scene(json.loads((ROOT / 'fixtures/generic-grind-blip.json').read_text()))
+        program = select(empty_program(scene['initial']), scene, 'ceiling',
+                         lambda c: any(e['case'] == 'grind' for e in c['profile']['caseEvents']))
+        program = select(program, scene, 'stepping', lambda c: c.get('terminalSupport') == scene['goalBlock']
+                         and c['profile']['caseEvents'][0]['case'] == 'blip')
+        best = self.solve(scene, program)
+        self.assertEqual(best['plan']['ticks'], 5)
+        self.assertEqual([u['type'] for u in best['plan']['movementUnits']], ['ceiling', 'normal', 'stepping'])
+        self.assertFalse(any(best['candidate']['onGround'][1:-1]))
+        self.assertEqual(best['plan']['jump'], [True, False, False, False, False])
 
     def test_repeated_ceiling_type_with_blip_and_ground_movement_between(self):
         scene = prepare_scene(json.loads((ROOT / 'fixtures/generic-repeat-ceiling.json').read_text()))

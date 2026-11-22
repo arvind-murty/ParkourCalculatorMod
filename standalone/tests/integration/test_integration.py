@@ -18,6 +18,16 @@ RUNTIME = os.environ.get('PKC_IPOPT_PYTHON')
 FIXTURES = AUTONOMY_DATA / 'fixtures'
 
 
+def anchor_route(name, compiler, **changes):
+    """The anchor search's result on an obstacle fixture, with intentional wall hits and ceiling hits off as the old
+    obstacle tests ran them."""
+    from parkour_solver.search.engine import find_checkpoint_route
+    request = json.loads((FIXTURES / name).read_text())
+    request.update(ceilingHits=False, maxWallHits=0)
+    for change in changes.values():
+        change(request)
+    return find_checkpoint_route(request, compiler, anchor_search={}, seconds=60, python_executable=RUNTIME)
+
 @unittest.skipUnless(RUNTIME, 'Set PKC_IPOPT_PYTHON')
 class IntegrationTests(unittest.TestCase):
     def test_shared_scene_bridge_detects_swept_walls_and_releases_below_the_bottom(self):
@@ -105,6 +115,85 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(result['gameReplay'], 'not_run')
         print('Linkcraft j5-j9', best['allocation'], round(result['elapsedSeconds'], 3), 's')
 
+
+    def test_wall_and_ceiling_the_player_cannot_pass_between_are_one_obstacle(self):
+        # The wall and the overhanging ceiling are 0.14 apart: one cluster the route passes as a whole.
+        with PythonCompiler() as compiler:
+            result = anchor_route('obstacle-interleaved.json', compiler)
+        self.assertEqual(result['status'], 'feasible', result['termination'])
+        self.assertEqual(result['best']['plan']['ticks'], 12)
+        self.assertTrue(result['best']['geometryCheck']['feasible'])
+
+    def test_full_obstacle_geometry_finds_cross_and_wide_neos_and_checks_both_models(self):
+        def wide_goal(request):
+            # The historical full-width goal also permits a cross landing at its edge. Require a real return from the side.
+            target = next(b for b in request['blocks'] if b['id'] == request['goalBlock'])
+            target['boxes'][0][2], target['boxes'][0][5] = .4, .6
+            request['initial']['velocity'][0] = .1
+        with PythonCompiler() as compiler:
+            for fixture, changes in [('obstacle-cross-neo.json', {}), ('obstacle-wide-neo.json', dict(goal=wide_goal))]:
+                with self.subTest(fixture=fixture):
+                    result = anchor_route(fixture, compiler, **changes)
+                    self.assertEqual(result['status'], 'feasible', result['termination'])
+                    best = result['best']
+                    self.assertEqual(best['plan']['ticks'], 12)
+                    self.assertTrue(best['geometryCheck']['feasible'])
+                    scene = prepare_scene(result['effectiveRequest'])
+                    coefficients = compiler.compile(best['route'], best['plan'], 2)
+                    problem = prepare(dict(coefficients, version=1, ticks=best['plan']['ticks'],
+                                           position=scene['initial']['position'][::2],
+                                           velocity=scene['initial']['velocity'][::2], yaw=best['candidate']['yaw'],
+                                           walls=best['plan']['walls'], vertical=best['vertical'],
+                                           objective={'axis': 'X', 'sense': 'MAX', 'tick': best['plan']['ticks']}))
+                    self.assertTrue(validate(problem, best['candidate']['yaw'])['feasible'])
+                    vertical = validate_vertical_schedule(best['route'], best['profiles'], best['plan'])
+                    self.assertTrue(check_geometry(scene['collisionScene'], best['plan'], best['candidate'], vertical,
+                                                   compiler, 3)['feasible'])
+                    self.assertFalse(any(w['mode'] == 'F' for w in problem['walls']))
+
+    def test_ceiling_can_be_passed_under_and_a_sealed_wall_is_never_accepted(self):
+        with PythonCompiler() as compiler:
+            under = anchor_route('obstacle-under-ceiling.json', compiler)
+            blocked = anchor_route('obstacle-blocked.json', compiler)
+        self.assertEqual(under['status'], 'feasible', under['termination'])
+        self.assertTrue(under['best']['geometryCheck']['feasible'])
+        self.assertEqual(under['best']['plan']['ticks'], 12)
+        self.assertEqual(blocked['status'], 'unknown')
+        self.assertIsNone(blocked['best'])
+
+    def test_source_runoff_can_leave_the_near_side_and_stays_clear_while_y_overlaps(self):
+        from parkour_solver.constraints.contacts import floor_checks
+        from parkour_solver.movement.generation import generate_choices
+        from parkour_solver.movement.program import append_choice, boundary_state, compile_program, empty_program
+        from parkour_solver.search.repair import solve_contact_branches
+        request = json.loads((FIXTURES / 'obstacle-runoff-side.json').read_text())
+        request.update(ceilingHits=False, maxWallHits=0)
+        scene = prepare_scene(request)
+        def choices(program):
+            return generate_choices('normal', dict(mode='open', scene=scene, program=program, state=boundary_state(program),
+                                                   maxInputs=40, threshold=0., interactionGate=None))
+        root = empty_program(scene['initial'], threshold=0.)
+        root['terminalSupport'] = scene['startBlock']
+        # One run tick on the start, then a run-off landing on the goal.
+        runs = [p for p in (append_choice(root, c) for c in choices(root)) if p is not None
+                and p['profile']['duration'] == 1 and p.get('terminalSupport') == scene['startBlock']]
+        program = next(p for run in runs for p in (append_choice(run, c) for c in choices(run)) if p is not None
+                       and p['profile']['duration'] == 5 and not any(p['profile']['jump'])
+                       and p.get('terminalSupport') == scene['goalBlock'] and p['profile']['grounded'][-1])
+        compiled = compile_program(scene, program)
+        with PythonCompiler() as compiler:
+            result = solve_contact_branches(compiled['route'], compiled['profiles'],
+                floor_checks(scene, [scene['startBlock'], scene['goalBlock']], compiled['profiles']), compiler,
+                seconds=15, candidate_seconds=1, retries=0, geometry=scene['collisionScene'],
+                motion_bound=dict(movementAfterSupportCheck=.8, storedSpeedNorm=.6), python_executable=RUNTIME)
+        self.assertEqual(result['status'], 'feasible', result['termination'])
+        best = result['best']
+        self.assertEqual(best['plan']['ticks'], 5)
+        start = next(b for b in scene['blocks'] if b['id'] == scene['startBlock'])
+        for tick in range(1, best['plan']['ticks'] + 1):
+            if best['candidate']['y'][tick] < 1 and best['candidate']['y'][tick] + BODY_HEIGHT > 0:
+                self.assertFalse(supports(start, *best['candidate']['positions'][tick]))
+        self.assertTrue(best['geometryCheck']['feasible'])
 
 if __name__ == '__main__':
     unittest.main()

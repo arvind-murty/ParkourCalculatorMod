@@ -45,3 +45,27 @@ def programs(scene, tick, limit=64):
                 pending.append(child)
         pending.sort(key=lambda p: p['profile']['duration'])
     return found[:limit]
+
+
+def landing_programs(scene, kind, goal='goal', **fields):
+    """Programs of one `kind` choice from the start state that land on `goal`, completed by one normal landing on it
+    when the choice itself ends elsewhere or in the air."""
+    from parkour_solver.movement.generation import generate_choices
+    from parkour_solver.movement.program import append_choice, boundary_state, empty_program
+    def context(program, **more):
+        return dict(mode='open', scene=scene, program=program, state=boundary_state(program), maxInputs=40,
+                    threshold=0., interactionGate=None, **more)
+    landed = lambda p: p is not None and p['profile']['grounded'][-1] and p.get('terminalSupport') == goal
+    root = empty_program(scene['initial'], threshold=0.)
+    root['terminalSupport'] = scene['startBlock']
+    result = []
+    for choice in generate_choices(kind, context(root, **fields)):
+        first = append_choice(root, choice, max_inputs=60)
+        if first is None:
+            continue
+        if landed(first):
+            result.append(first)
+        elif not first['profile']['grounded'][-1]:
+            result.extend(p for p in (append_choice(first, c, max_inputs=60)
+                                      for c in generate_choices('normal', context(first))) if landed(p))
+    return result

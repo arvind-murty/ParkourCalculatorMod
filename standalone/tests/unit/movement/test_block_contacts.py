@@ -6,6 +6,7 @@ from parkour_solver.constraints.contacts import avoid_contact_rows, contact_conf
 from parkour_solver.movement.profiles import ordinary_jump_profile
 from parkour_solver.scene.normalize import prepare_scene
 from parkour_solver.scene.route import HALF_WIDTH, schedule
+from tests.support.checkpoint_guidance import landing_programs
 
 
 def descending_scene():
@@ -14,6 +15,22 @@ def descending_scene():
             'startBlock': 'start', 'goalBlock': 'goal',
             'blocks': [{'id': 'start', 'bounds': [0, 1, 0, 1], 'top': 2},
                        {'id': 'goal', 'bounds': [2, 3, 0, 1], 'top': 1}]}
+
+
+def descending_collision_scene(goal_top=1, extra=()):
+    """descending_scene as collision boxes, which the open generators need."""
+    blocks = [dict(id='start', boxes=[[0, 1, 0, 1, 2, 1]]), dict(id='goal', boxes=[[2, goal_top - 1, 0, 3, goal_top, 1]])]
+    return prepare_scene(dict(version=1, sceneModel='collision_boxes', geometryBounds=[-5, -5, -5, 10, 10, 10],
+                              initial=dict(position=[.5, 2, .5], velocity=[0, -.0784000015258789, 0]),
+                              startBlock='start', goalBlock='goal', blocks=blocks + list(extra)))
+
+
+def run_off(scene):
+    return next(p for p in landing_programs(scene, 'normal') if not any(p['profile']['jump']))
+
+
+def ordinary_jump(scene):
+    return next(p for p in landing_programs(scene, 'normal') if p['profile']['jump'][0] and len(p['movementUnits']) == 1)
 
 
 class FloorContactTests(unittest.TestCase):
@@ -38,6 +55,48 @@ def box_scene(solids, tops):
     return dict(collisionScene=dict(solids=solids),
                 blocks=[dict(id=name, sourceBlock=name, solidIndex=i, top=top) for i, (name, top) in enumerate(tops)])
 
+
+    def test_runoff_checks_the_departure_floor_on_its_first_input(self):
+        scene = descending_collision_scene()
+        checks = floor_checks(scene, ['start', 'goal'], [run_off(scene)['profile']])
+        self.assertIn(('start', 0), [(c['block']['id'], c['offset']) for c in checks if c['reason'] == 'earlier_floor'])
+
+    def test_no_jump_first_movement_uses_its_own_step_eligibility(self):
+        scene = descending_collision_scene(extra=[dict(id='low_step', boxes=[[3, 1.25, 0, 4, 2.25, 1]])])
+        fall = floor_checks(scene, ['start', 'goal'], [run_off(scene)['profile']])
+        jump = floor_checks(scene, ['start', 'goal'], [ordinary_jump(scene)['profile']])
+        self.assertTrue(any(c['block']['id'] == 'low_step' and c['reason'] == 'unplanned_stair' for c in fall))
+        self.assertFalse(any(c['block']['id'] == 'low_step' and c['reason'] == 'unplanned_stair' for c in jump))
+
+    def test_ordinary_profile_must_avoid_an_unplanned_first_movement_stair_cancel(self):
+        scene = descending_collision_scene(goal_top=2.5)
+        ordinary = ordinary_jump(scene)['profile']
+        checks = floor_checks(scene, ['start', 'goal'], [ordinary])
+        self.assertEqual([(c['reason'], c['offset']) for c in checks], [('unplanned_stair', 1)])
+        scene['stairBoost'] = False
+        self.assertEqual(floor_checks(scene, ['start', 'goal'], [ordinary]), checks)
+        stair = next(p for p in landing_programs(scene, 'stepping', cases=['slab_boost']))
+        self.assertEqual(floor_checks(scene, ['start', 'goal'], [stair['profile']]), [])
+
+    def test_descending_profile_must_miss_the_departure_floor_before_the_lower_target(self):
+        from parkour_solver.movement.program import compile_program
+        from parkour_solver.scene.route import prepare_route
+        scene = descending_collision_scene()
+        compiled = compile_program(scene, ordinary_jump(scene))
+        checks = floor_checks(scene, ['start', 'goal'], compiled['profiles'])
+        self.assertEqual([(c['block']['id'], c['offset']) for c in checks], [('start', 11)])
+        route = prepare_route(dict(compiled['route'], maxTotalRunTicks=2, runBounds=[[0, 2]]))
+        plan = schedule(route, [2])
+        positions = [[10, 10] for _ in range(plan['ticks'] + 1)]
+        positions[13] = [.5, .5]
+        conflicts = contact_conflicts(checks, plan, {'positions': positions})
+        self.assertEqual(len(conflicts), 1)
+        self.assertEqual(conflicts[0]['state'], 13)
+        rows = avoid_contact_rows(conflicts[0], 1e-6)
+        self.assertEqual({(r['mode'], r['cmp']) for r in rows}, {('X', 'LE'), ('X', 'GE'), ('Z', 'LE'), ('Z', 'GE')})
+        self.assertTrue(all(r['leg'] == 0 and r['offset'] == 11 for r in rows))
+        positions[13] = [2, .5]
+        self.assertEqual(contact_conflicts(checks, plan, {'positions': positions}), [])
 
 class ExposedTopTests(unittest.TestCase):
     def landings(self, scene, **context):
