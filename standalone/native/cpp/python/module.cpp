@@ -17,6 +17,7 @@
 #include "pkc/gate.hpp"
 #include "pkc/numerics/builders.hpp"
 #include "pkc/numerics/constraints.hpp"
+#include "pkc/numerics/disk.hpp"
 #include "pkc/numerics/model.hpp"
 #include "pkc/program.hpp"
 #include "pkc/scene/geometry.hpp"
@@ -330,6 +331,21 @@ PYBIND11_MODULE(_pkc_native, m) {
                                                 parent.is_none() ? nullptr : &parent_value));
     }, py::arg("route"), py::arg("plan"), py::arg("coefficients"), py::arg("parent") = py::none(),
        "numerics/builders.numerical_problem");
+    m.def("disk_spec", [](py::handle problem, py::handle extra_rows, py::handle objective, bool strict) {
+        pkc::Value objective_value = convert(objective);
+        return to_python(pkc::disk_spec(convert(problem), convert(extra_rows),
+                                        objective.is_none() ? nullptr : &objective_value, strict));
+    }, py::arg("problem"), py::arg("extra_rows"), py::arg("objective"), py::arg("strict"), "numerics/disk.spec");
+    m.def("disk_solve", [](py::handle content, double time_limit, unsigned max_iter) {
+        return to_python(pkc::disk_solve(convert(content), time_limit, max_iter));
+    }, "numerics/disk._solve with disk.MAX_ITER");
+    m.def("disk_deficits", [](py::handle problem, py::handle controls) {
+        return to_python(pkc::disk_deficits(convert(problem), convert(controls)));
+    }, "numerics/disk.deficits as a list");
+    m.def("ipopt_seed", [](py::handle yaw) { return to_python(pkc::ipopt_seed(convert(yaw))); }, "numerics/disk.ipopt_seed");
+    m.def("alarm_ticks", [](py::handle problem, py::handle shortfall, double fraction) {
+        return to_python(pkc::alarm_ticks(convert(problem), convert(shortfall), fraction));
+    }, "numerics/disk.alarm_ticks with disk.ALARM_FRACTION");
     m.def("reduce_walls", [](py::handle walls) { return to_python(pkc::reduce_walls(convert(walls))); },
           "numerics/constraints.reduce_walls");
     m.def("validate", [](py::handle problem, py::handle yaw) {

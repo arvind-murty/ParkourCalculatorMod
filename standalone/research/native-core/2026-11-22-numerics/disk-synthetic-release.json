@@ -1,0 +1,25 @@
+{
+ "spec": {
+  "cases": 10296
+ },
+ "_attempt": {
+  "cases": 998,
+  "status PrimalInfeasible": 566,
+  "status Solved": 421,
+  "mismatches": 30,
+  "differs objective motion": 30,
+  "max objective ulps": 1024.0,
+  "max objective abs e-15": 3.553,
+  "status AlmostSolved": 10,
+  "status DualInfeasible": 1
+ },
+ "deficits": {
+  "cases": 455
+ },
+ "alarm_ticks": {
+  "cases": 862
+ },
+ "ipopt_seed": {
+  "cases": 431
+ }
+}

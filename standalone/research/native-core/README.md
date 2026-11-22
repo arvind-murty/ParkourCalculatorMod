@@ -140,4 +140,24 @@ every caller to them and `numerics/solver.py` launches the native worker.
   threshold (zero-event, fixed-pattern and polish phases), give identical worker message streams in all 84 runs (275
   phases, 164 candidates; elapsed times aside) with a 60 s budget that no phase reached. Total worker time 19.6 s native
   against 35.9 s Python ([parity](2026-11-22-numerics/worker-parity-release.json)).
+- The UBSan build gives the same results on all of the above, with no trap
+  ([calls](2026-11-22-numerics/calls-replay-sanitize.json),
+  [numerical_problem](2026-11-22-numerics/numerical-problem-replay-sanitize.json),
+  [synthetic](2026-11-22-numerics/synthetic-sanitize.json), [worker](2026-11-22-numerics/worker-parity-sanitize.json)).
 
+## Numerics: the disk relaxation over Clarabel.cpp, 2026-11-22
+
+Source: `081f4f30` plus native `numerics/disk` (`spec`, `_solve` with its cost, `deficits`, `ipopt_seed`,
+`alarm_ticks`) over Clarabel.cpp v0.11.1's C API, the Python package's Clarabel version; the decided-result cache,
+`STATS` and `RelaxedDispatch` stay in Python. `_solve` and `alarm_ticks` take `MAX_ITER` and `ALARM_FRACTION` from the
+Python module, so its settings stay the ones in force.
+
+- Every `disk.py` call of a 90 s extended solve replays identically through the Python functions on release and UBSan:
+  1,279 `spec`, 1,053 Clarabel solves (740 solved, 305 infeasible, 8 undecided; statuses, controls, objectives and
+  iteration counts), 142 `deficits` and `alarm_ticks`, 20 `ipopt_seed`
+  ([release](2026-11-22-numerics/disk-replay-release.json), [UBSan](2026-11-22-numerics/disk-replay-sanitize.json)).
+- Synthetic variants of 12 recorded requests (strict and screen specs with offset, facing, relative, equality and
+  duplicate rows, unsupported classes, constant-zero and supplied objectives, custom and motion objectives, interval
+  starts) agree on 10,296 specs and 998 solves except the score of 30 motion-objective solves, which differs by at most
+  3.6e-15: numpy's `cost @ x` groups the four terms of a motion score differently from the native sum
+  ([release](2026-11-22-numerics/disk-synthetic-release.json), [UBSan](2026-11-22-numerics/disk-synthetic-sanitize.json)).

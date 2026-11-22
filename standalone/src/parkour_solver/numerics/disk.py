@@ -29,12 +29,23 @@ STATS = dict(screen=collections.Counter(), candidate=collections.Counter())
 _DECIDED = {}
 
 
+def _native():
+    """The native core under PKC_NATIVE_CORE, which builds and solves the relaxation; None otherwise.
+
+    The decided-result cache and STATS stay here with their readers."""
+    from parkour_solver import native_core
+    return native_core.from_environment()
+
+
 def spec(problem, extra_rows=(), objective=None, *, strict):
     """Canonical numerical content, or None outside the supported class.
 
     Screens (strict=False) drop rows the relaxation cannot express, which keeps
     them a relaxation; candidates (strict=True) must keep every row.
     """
+    native = _native()
+    if native is not None:
+        return native.disk_spec(problem, list(extra_rows), objective, strict)
     if problem.get('threshold', 0.) != 0 or any(problem.get('ladderTicks', [])) or 'inertiaPattern' in problem:
         return None
     n = problem['ticks']
@@ -100,6 +111,9 @@ def screen(model, extra_rows=(), objective=None):
 
 def deficits(problem, controls):
     """Per-tick relative acceleration shortfall: (peak, values, tick of peak)."""
+    native = _native()
+    if native is not None:
+        return tuple(native.disk_deficits(problem, controls))
     values = [max(0., m-math.hypot(*c))/m if m > 0 else 0. for m, c in zip(problem['magnitude'], controls)]
     peak = max(values, default=0.)
     return peak, values, values.index(peak) if values else None
@@ -114,6 +128,9 @@ def ipopt_seed(yaw):
     infeasibility; a uniform turn breaks every mirror symmetry while staying in
     the same basin (research/disk-relaxation/README.md#confirmation-seed).
     """
+    native = _native()
+    if native is not None:
+        return native.ipopt_seed(yaw)
     return [y+math.degrees(SEED_TILT) for y in yaw]
 
 
@@ -124,6 +141,9 @@ def alarm_ticks(problem, shortfall):
     impossible at full strength; every full-model infeasibility measured had a jump tick at least 28% short
     (research/disk-relaxation/README.md). Jumps come from the program's vertical schedule.
     """
+    native = _native()
+    if native is not None:
+        return native.alarm_ticks(problem, shortfall, ALARM_FRACTION)
     jumps = (problem.get('vertical') or {}).get('jumpVelocity') or [None]*problem['ticks']
     return [t for t, s in enumerate(shortfall) if s > ALARM_FRACTION and jumps[t] is not None]
 
@@ -238,6 +258,9 @@ def _attempt(content, time_limit):
 
 
 def _solve(content, time_limit):
+    native = _native()
+    if native is not None:  # MAX_ITER is passed so the module setting stays the one in force
+        return native.disk_solve(content, time_limit, MAX_ITER)
     import clarabel
     import numpy as np
     from scipy.sparse import coo_matrix, csc_matrix

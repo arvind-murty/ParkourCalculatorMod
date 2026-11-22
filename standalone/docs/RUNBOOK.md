@@ -30,7 +30,7 @@ prepares and analyzes collision-box routes without ladder events natively and an
 its required-contact screens there, building Python dicts only for readers that ask.
 Its sequence screens append the choice to a native copy of the context's program and
 screen that child without building it in Python; a program's first append and ladder
-appends still build in Python. The Python bridge replays scene checks and derives footprints natively, and `scene/` normalizes scenes and builds routes, schedules and initial yaw guesses natively for every caller; scenes with climbable cells and routes with ladder events stay in Python. The numerical request checks, `validation/numerical` replays and `numerical_problem` run natively for every caller, and `numerics/solver.py` launches the native IPOPT worker (`pkc_numerics_worker`, built beside the module against the casadi of the build's Python) instead of `python -m parkour_solver.numerics.worker`. It compiles their coefficients from the native tables, so the compiler's call counts
+appends still build in Python. The Python bridge replays scene checks and derives footprints natively, and `scene/` normalizes scenes and builds routes, schedules and initial yaw guesses natively for every caller; scenes with climbable cells and routes with ladder events stay in Python. The numerical request checks, `validation/numerical` replays, `numerical_problem` and the disk relaxation's model and Clarabel solve (`numerics/disk.py`, whose decided-result cache and counters stay in Python) run natively for every caller, and `numerics/solver.py` launches the native IPOPT worker (`pkc_numerics_worker`, built beside the module against the casadi of the build's Python) instead of `python -m parkour_solver.numerics.worker`. It compiles their coefficients from the native tables, so the compiler's call counts
 omit them; only bridges whose replies equal those tables allow that
 (`table_coefficients`), and any other compiler gets the Python analysis. Everything else, and every run without the
 variable, uses the Python implementation, which stays the parity oracle.
@@ -159,8 +159,9 @@ own validation. Exit status 1 means a difference:
 "$PKC_IPOPT_PYTHON" -B -m tools.profiling.parity /path/to/python.json.gz /path/to/native.json.gz [--tolerant]
 ```
 
-Build the native C++ core (`native/cpp/`, needs CMake and the pinned pybind11 from
-`research/cpp-pruning-pilot/requirements.txt`) into `build/native/cpp/`, or the
+Build the native C++ core (`native/cpp/`, needs CMake, the pinned pybind11 from
+`research/cpp-pruning-pilot/requirements.txt`, the `numerics` extra's casadi and cargo; the first configure
+fetches Clarabel.cpp v0.11.1 and the crates pinned by `native/cpp/third_party/clarabel/Cargo.lock`) into `build/native/cpp/`, or the
 undefined-behavior-sanitizer variant into `build/native/cpp-sanitize/`. Then check
 every `canonical.digest` call of a real solve against the native encoder, round-trip
 every program and movement choice that `movement/program.py` builds through the typed

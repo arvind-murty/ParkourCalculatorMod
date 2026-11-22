@@ -548,22 +548,23 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `spec` | [32](../src/parkour_solver/numerics/disk.py#L32) | function |
-| `solve` | [61](../src/parkour_solver/numerics/disk.py#L61) | function |
-| `screen` | [86](../src/parkour_solver/numerics/disk.py#L86) | function |
-| `deficits` | [101](../src/parkour_solver/numerics/disk.py#L101) | function |
-| `ipopt_seed` | [108](../src/parkour_solver/numerics/disk.py#L108) | function |
-| `alarm_ticks` | [120](../src/parkour_solver/numerics/disk.py#L120) | function |
-| `RelaxedDispatch` | [131](../src/parkour_solver/numerics/disk.py#L131) | class |
-| `RelaxedDispatch.__init__` | [143](../src/parkour_solver/numerics/disk.py#L143) | function |
-| `RelaxedDispatch.solve` | [146](../src/parkour_solver/numerics/disk.py#L146) | function |
-| `RelaxedDispatch.confirmed` | [149](../src/parkour_solver/numerics/disk.py#L149) | function |
-| `RelaxedDispatch._dispatch` | [152](../src/parkour_solver/numerics/disk.py#L152) | function |
-| `RelaxedDispatch.confirm` | [189](../src/parkour_solver/numerics/disk.py#L189) | function |
-| `_result` | [216](../src/parkour_solver/numerics/disk.py#L216) | function |
-| `_attempt` | [232](../src/parkour_solver/numerics/disk.py#L232) | function |
-| `_solve` | [240](../src/parkour_solver/numerics/disk.py#L240) | function |
-| `_cost` | [340](../src/parkour_solver/numerics/disk.py#L340) | function |
+| `_native` | [32](../src/parkour_solver/numerics/disk.py#L32) | function |
+| `spec` | [40](../src/parkour_solver/numerics/disk.py#L40) | function |
+| `solve` | [72](../src/parkour_solver/numerics/disk.py#L72) | function |
+| `screen` | [97](../src/parkour_solver/numerics/disk.py#L97) | function |
+| `deficits` | [112](../src/parkour_solver/numerics/disk.py#L112) | function |
+| `ipopt_seed` | [122](../src/parkour_solver/numerics/disk.py#L122) | function |
+| `alarm_ticks` | [137](../src/parkour_solver/numerics/disk.py#L137) | function |
+| `RelaxedDispatch` | [151](../src/parkour_solver/numerics/disk.py#L151) | class |
+| `RelaxedDispatch.__init__` | [163](../src/parkour_solver/numerics/disk.py#L163) | function |
+| `RelaxedDispatch.solve` | [166](../src/parkour_solver/numerics/disk.py#L166) | function |
+| `RelaxedDispatch.confirmed` | [169](../src/parkour_solver/numerics/disk.py#L169) | function |
+| `RelaxedDispatch._dispatch` | [172](../src/parkour_solver/numerics/disk.py#L172) | function |
+| `RelaxedDispatch.confirm` | [209](../src/parkour_solver/numerics/disk.py#L209) | function |
+| `_result` | [236](../src/parkour_solver/numerics/disk.py#L236) | function |
+| `_attempt` | [252](../src/parkour_solver/numerics/disk.py#L252) | function |
+| `_solve` | [260](../src/parkour_solver/numerics/disk.py#L260) | function |
+| `_cost` | [363](../src/parkour_solver/numerics/disk.py#L363) | function |
 
 ## numerics/model.py
 

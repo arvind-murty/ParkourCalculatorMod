@@ -1,0 +1,22 @@
+{
+ "parkour_solver.numerics.disk:spec": {
+  "cases": 1279
+ },
+ "parkour_solver.numerics.disk:_attempt": {
+  "cases": 1053,
+  "status Solved": 740,
+  "status PrimalInfeasible": 301,
+  "status MaxIterations": 2,
+  "status NumericalError": 6,
+  "status AlmostPrimalInfeasible": 4
+ },
+ "parkour_solver.numerics.disk:deficits": {
+  "cases": 142
+ },
+ "parkour_solver.numerics.disk:ipopt_seed": {
+  "cases": 20
+ },
+ "parkour_solver.numerics.disk:alarm_ticks": {
+  "cases": 142
+ }
+}

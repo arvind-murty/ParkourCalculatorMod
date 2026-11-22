@@ -24,10 +24,34 @@ endif()
 add_library(pkc_core STATIC src/canonical.cpp src/coefficients.cpp src/envelopes.cpp src/gate.cpp src/program.cpp src/screen.cpp src/sha256.cpp src/vertical.cpp
             src/constraints/avoidance.cpp src/constraints/hit_events.cpp
             src/movement/contact_combinations.cpp src/movement/ladder/events.cpp src/movement/units.cpp
-            src/numerics/builders.cpp src/numerics/constraints.cpp src/numerics/continuation.cpp src/numerics/model.cpp
+            src/numerics/builders.cpp src/numerics/constraints.cpp src/numerics/disk.cpp src/numerics/continuation.cpp src/numerics/model.cpp
             src/scene/geometry.cpp src/scene/normalize.cpp src/scene/objectives.cpp src/scene/route.cpp src/scene/static_collision.cpp
             src/validation/numerical.cpp)
 target_include_directories(pkc_core PUBLIC include)
+
+# Clarabel.cpp's C API over the Rust solver, at the version the Python package
+# uses (0.11.1). Only its Rust wrapper is built (its C++ API needs Eigen);
+# third_party/clarabel/Cargo.lock pins the crates. Needs cargo.
+include(FetchContent)
+FetchContent_Declare(clarabel_cpp GIT_REPOSITORY https://github.com/oxfordcontrol/Clarabel.cpp.git
+                     GIT_TAG 0de6259a3edfd5cc041ec42b2148599ce63e73cb  # v0.11.1
+                     GIT_SUBMODULES Clarabel.rs SOURCE_SUBDIR no-cmake-build)
+FetchContent_MakeAvailable(clarabel_cpp)
+find_program(CARGO cargo HINTS "$ENV{HOME}/.cargo/bin" REQUIRED)
+set(CLARABEL_TARGET_DIR "${CMAKE_BINARY_DIR}/clarabel-target")
+set(CLARABEL_LIBRARY "${CLARABEL_TARGET_DIR}/release/libclarabel_c.a")
+add_custom_command(OUTPUT "${CLARABEL_LIBRARY}"
+  COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_CURRENT_SOURCE_DIR}/third_party/clarabel/Cargo.lock"
+          "${clarabel_cpp_SOURCE_DIR}/rust_wrapper/Cargo.lock"
+  COMMAND "${CMAKE_COMMAND}" -E env "CARGO_TARGET_DIR=${CLARABEL_TARGET_DIR}"
+          "${CARGO}" build --release --locked --lib --manifest-path "${clarabel_cpp_SOURCE_DIR}/rust_wrapper/Cargo.toml"
+  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/clarabel/Cargo.lock" VERBATIM)
+add_custom_target(clarabel_build DEPENDS "${CLARABEL_LIBRARY}")
+add_library(clarabel_c STATIC IMPORTED)
+set_target_properties(clarabel_c PROPERTIES IMPORTED_LOCATION "${CLARABEL_LIBRARY}"
+                      INTERFACE_INCLUDE_DIRECTORIES "${clarabel_cpp_SOURCE_DIR}/include")
+add_dependencies(clarabel_c clarabel_build)
+target_link_libraries(pkc_core PUBLIC clarabel_c)
 
 find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
 execute_process(COMMAND "${Python_EXECUTABLE}" -m pybind11 --cmakedir
