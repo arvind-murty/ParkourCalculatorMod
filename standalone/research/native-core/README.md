@@ -397,3 +397,17 @@ fixed before commit.
   [native](2026-11-22-generator-dispatch/suite-native-summary.txt)); live `verify-scene` finds no difference
   ([summary](2026-11-22-generator-dispatch/live-scene-release-summary.json)).
 
+## Anchor policy readers for native callers, 2026-11-22
+
+Source: `a83f4c06` plus a native `AnchorScene` (`search/anchors/policy.hpp`): `face_namer`, `support_face`, `visits`,
+`launch`, `feet_touches`, `visit_state`, `audit`, `next_anchor` and `advantageous_targets` on typed programs, with the
+scene's face and owner tables built once.
+
+- Shadowing every Python call in the fixed-work solve: 10,737 `visits`, 4,063 `feet_touches` and `visit_state`, 3,830
+  `audit`, 1,803 `next_anchor`, 1,752 `advantageous_targets` and 1,642 `launch` results, all equal
+  ([shadow](2026-11-22-anchor-policy/policy-shadow-release.json)); the same under AddressSanitizer
+  ([shadow](2026-11-22-anchor-policy/policy-shadow-asan.json)).
+- Dispatching them from Python was slower (alternating native runs 26.2/26.7 s against 23.8/25.9 s,
+  [timing](2026-11-22-anchor-policy/dispatch-timing.json)): each call converts a whole program, which costs more than the
+  Python reader. Python keeps them; the native DFS node, whose children stay native, calls `AnchorScene`.
+

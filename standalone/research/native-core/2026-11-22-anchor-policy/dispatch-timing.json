@@ -1,0 +1,12 @@
+{
+ "input": "research/prefix-reuse-keys/2026-11-21/extended-fixedwork100.json",
+ "mode": "PKC_NATIVE_CORE set, same module build",
+ "base": "a83f4c06 Python policy readers",
+ "new": "policy readers dispatched to AnchorScene (not committed)",
+ "searchSeconds": {
+  "base-1": 23.825659915804863,
+  "new-1": 26.237010080367327,
+  "base-2": 25.94110420718789,
+  "new-2": 26.663767248392105
+ }
+}

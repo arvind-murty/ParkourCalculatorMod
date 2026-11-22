@@ -24,6 +24,7 @@
 #include "pkc/program.hpp"
 #include "pkc/movement/generation.hpp"
 #include "pkc/reachability/service.hpp"
+#include "pkc/search/anchors/policy.hpp"
 #include "pkc/scene/geometry.hpp"
 #include "pkc/scene/ladders.hpp"
 #include "pkc/scene/normalize.hpp"
@@ -229,6 +230,19 @@ pkc::GenerationContext generation_context(py::dict context) {
         py::object budget = context["checkBudget"];
         out.check_budget = [budget] { budget(); };
     }
+    return out;
+}
+
+py::object optional_text(const std::optional<std::string>& value) {
+    return value ? py::object(py::str(*value)) : py::object(py::none());
+}
+
+py::dict visit_state_dict(const pkc::VisitState& state) {  // visit_state's dict
+    py::dict out;
+    out["version"] = 1;
+    out["current"] = optional_text(state.current);
+    out["departed"] = state.departed;
+    out["valid"] = state.valid;
     return out;
 }
 
@@ -577,6 +591,38 @@ PYBIND11_MODULE(_pkc_native, m) {
         .def_property_readonly("metrics", [](pkc::InteractionGate& gate) {
             return to_python(pkc::Value{std::make_shared<const pkc::Object>(gate.metrics())});
         });
+    py::class_<pkc::AnchorScene, std::shared_ptr<pkc::AnchorScene>>(m, "AnchorScene")
+        .def(py::init([](py::handle scene) { return std::make_shared<pkc::AnchorScene>(convert(scene)); }))
+        .def("visits", [](const pkc::AnchorScene& s, py::handle program) { return s.visits(*program_arg(program)); })
+        .def("launch", [](const pkc::AnchorScene& s, py::handle program, std::optional<std::int64_t> begin,
+                          std::optional<std::int64_t> end) { return s.launch(*program_arg(program), begin, end); },
+             py::arg("program"), py::arg("begin") = py::none(), py::arg("end") = py::none())
+        .def("feet_touches", [](const pkc::AnchorScene& s, py::handle program) { return s.feet_touches(*program_arg(program)); })
+        .def("visit_state", [](const pkc::AnchorScene& s, py::handle program) {
+            return visit_state_dict(s.visit_state(*program_arg(program)));
+        })
+        .def("audit", [](const pkc::AnchorScene& s, py::handle program, std::vector<std::string> anchors,
+                         std::optional<std::int64_t> reached) {
+            const auto a = s.audit(*program_arg(program), anchors, reached);
+            py::dict out;
+            out["accepted"] = !a.reason;
+            out["reason"] = optional_text(a.reason);
+            out["visits"] = visit_state_dict(a.visits);
+            out["reached"] = a.reached;
+            out["ticks"] = a.ticks;
+            return out;
+        }, py::arg("program"), py::arg("anchors"), py::arg("reached") = py::none())
+        .def("next_anchor", [](const pkc::AnchorScene& s, py::handle program, std::vector<std::string> anchors,
+                               const std::string& task) { return s.next_anchor(*program_arg(program), anchors, task); })
+        .def("advantageous_targets", [](const pkc::AnchorScene& s, py::handle base, py::handle child,
+                                        const std::string& next_owner) {
+            py::set out;
+            for (const auto& [kind, name] : s.advantageous_targets(*program_arg(base), *program_arg(child), next_owner))
+                out.add(py::make_tuple(kind, optional_text(name)));
+            return out;
+        })
+        .def("owner", &pkc::AnchorScene::owner)
+        .def("support_face", &pkc::AnchorScene::support_face);
     m.def("disk_cached_solve", [](py::handle content, double seconds, const std::string& kind, double cap, unsigned max_iter) {
         return to_python(pkc::disk_cached_solve(convert(content), seconds, kind, cap, max_iter));
     }, "numerics/disk.solve on the native decided-result cache the native gate's screens share");

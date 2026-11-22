@@ -523,6 +523,8 @@ MovementChoice choice_from_value(const Value& value) {
 Value to_value(const Program& program) { return encode(program); }
 Value to_value(const MovementChoice& choice) { return encode(choice); }
 Value to_value(const Profile& profile) { return encode(profile); }
+Value to_value(const ContactEvent& event) { return encode(event); }
+Value to_value(const CaseEvent& event) { return encode(event); }
 
 template <class T>
 std::vector<T> records(const Value& value, const char* name) {

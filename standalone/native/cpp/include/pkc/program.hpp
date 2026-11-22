@@ -192,6 +192,8 @@ MovementChoice choice_from_value(const Value& value);
 Value to_value(const Program& program);
 Value to_value(const MovementChoice& choice);
 Value to_value(const Profile& profile);
+Value to_value(const ContactEvent& event);
+Value to_value(const CaseEvent& event);
 
 // Typed records from their dict lists (strict, as program_from_value), for builders that assemble them as dicts.
 std::vector<PositionConstraint> position_constraints_from_value(const Value& value);
