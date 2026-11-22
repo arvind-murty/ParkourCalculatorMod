@@ -43,10 +43,10 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `PythonCompiler.derive_standing_footprints` | [32](../src/parkour_solver/bridge/python_compiler.py#L32) | function |
 | `PythonCompiler.check_scene` | [35](../src/parkour_solver/bridge/python_compiler.py#L35) | function |
 | `PythonCompiler._exchange` | [41](../src/parkour_solver/bridge/python_compiler.py#L41) | function |
-| `PythonCompiler.provenance` | [60](../src/parkour_solver/bridge/python_compiler.py#L60) | function |
-| `PythonCompiler.close` | [64](../src/parkour_solver/bridge/python_compiler.py#L64) | function |
-| `PythonCompiler.__enter__` | [67](../src/parkour_solver/bridge/python_compiler.py#L67) | function |
-| `PythonCompiler.__exit__` | [70](../src/parkour_solver/bridge/python_compiler.py#L70) | function |
+| `PythonCompiler.provenance` | [61](../src/parkour_solver/bridge/python_compiler.py#L61) | function |
+| `PythonCompiler.close` | [65](../src/parkour_solver/bridge/python_compiler.py#L65) | function |
+| `PythonCompiler.__enter__` | [68](../src/parkour_solver/bridge/python_compiler.py#L68) | function |
+| `PythonCompiler.__exit__` | [71](../src/parkour_solver/bridge/python_compiler.py#L71) | function |
 
 ## canonical.py
 

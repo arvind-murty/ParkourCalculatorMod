@@ -80,3 +80,15 @@ steps and wall hits, also relabelled as movement cases) and the budget: Python a
 identical on release and UBSan ([release](2026-11-21-scene/replay-release.json),
 [UBSan](2026-11-21-scene/replay-sanitize.json)). `tools.native_cpp verify-scene` on that solve compared all 21 checks
 with no difference ([summary](2026-11-21-scene/live-scene-release-summary.json)).
+
+## Scene geometry, 2026-11-22
+
+Source: `3c31cb51` plus native `scene/geometry` (`normalize_geometry`, `route_footprints`, `support_center_interval`);
+the Python bridge derives footprints natively under `PKC_NATIVE_CORE`. Every collision-box scene in the repository
+(107) went through both `normalize_geometry`s with 8 perturbations each, compared as plain JSON so key order counts
+too; their supports' footprints (standing and not), and 6,000 interval pairs of random, subnormal and near-edge
+doubles: identical on release and UBSan ([release](2026-11-21-scene/geometry-release.json),
+[UBSan](2026-11-21-scene/geometry-sanitize.json)). `verify-scene` compared
+21 scene checks, 89 footprint derivations and 4 normalizations on the 120 s Real11 solve, and 135 / 1,122 / 3 on the
+extended input for 90 s, with no difference ([short](2026-11-21-scene/live-geometry-short-summary.json),
+[extended](2026-11-21-scene/live-geometry-extended-summary.json)).

@@ -15,6 +15,7 @@
 #include "pkc/envelopes.hpp"
 #include "pkc/gate.hpp"
 #include "pkc/program.hpp"
+#include "pkc/scene/geometry.hpp"
 #include "pkc/scene/static_collision.hpp"
 #include "pkc/screen.hpp"
 
@@ -295,6 +296,12 @@ PYBIND11_MODULE(_pkc_native, m) {
         return to_python(pkc::check_scene(convert(request), budget));
     }, py::arg("request"), py::arg("seconds") = py::none(),
        "scene/static_collision.check_scene; `seconds` is the budget left (None: unlimited)");
+    m.def("normalize_geometry", [](py::handle scene) { return to_python(pkc::normalize_geometry(convert(scene))); },
+          "scene/geometry.normalize_geometry, returning the normalized scene");
+    m.def("route_footprints", [](py::handle blocks, bool standing) {
+        return to_python(pkc::route_footprints(convert(blocks), standing));
+    }, py::arg("blocks"), py::arg("standing") = false, "scene/geometry.route_footprints");
+    m.def("support_center_interval", &pkc::support_center_interval, "scene/geometry.support_center_interval");
     m.def("float_repr", &pkc::float_repr, "repr(float) for a finite float");
     m.def("sha256_hex", [](py::bytes data) {
         static const char* hex = "0123456789abcdef";

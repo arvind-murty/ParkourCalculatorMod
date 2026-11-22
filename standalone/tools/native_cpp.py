@@ -187,24 +187,36 @@ def verify_coefficients(args):
 
 
 def verify_scene(args):
-    """Run a real solve where every scene check is also replayed natively and compared."""
-    from parkour_solver.scene import static_collision
+    """Run a real solve where every scene check, footprint derivation and geometry normalization is also run natively
+    and compared."""
+    import copy
+    from parkour_solver.scene import geometry, static_collision
     args.output.mkdir(parents=True, exist_ok=False)
     native = load(args.variant)
-    os.environ.pop('PKC_NATIVE_CORE', None)  # the bridge under check must replay with Python, the oracle
-    original = static_collision.check_scene
-    calls = dict(count=0)
+    os.environ.pop('PKC_NATIVE_CORE', None)  # the solve under check must run Python, the oracle
+    originals = dict(check_scene=static_collision.check_scene, route_footprints=geometry.route_footprints,
+                     normalize_geometry=geometry.normalize_geometry)
+    calls = {name: 0 for name in originals}
 
-    def checked(request, deadline=None):
-        expected = original(request, deadline)
-        calls['count'] += 1
-        if canonical_bytes(native.check_scene(request)) != canonical_bytes(expected):
-            save(args.output / 'mismatch.json', dict(request=request))
-            raise AssertionError(f'native scene check differs at call {calls["count"]}')
+    def compared(name, expected, actual, request):
+        calls[name] += 1
+        # Plain JSON keeps dict order, which the normalized scene must keep too.
+        if json.dumps(actual) != json.dumps(expected):
+            save_infinite(args.output / 'mismatch.json', dict(call=name, request=request))
+            raise AssertionError(f'native {name} differs at call {calls[name]}')
         return expected
 
-    summary = checked_solve(args, dict(check_scene=original), dict(check_scene=checked))
-    summary.update(sceneChecks=calls['count'], mismatches=0)
+    checked = dict(
+        check_scene=lambda request, deadline=None: compared(
+            'check_scene', originals['check_scene'](request, deadline), native.check_scene(request), request),
+        route_footprints=lambda blocks, standing=False: compared(
+            'route_footprints', originals['route_footprints'](blocks, standing), native.route_footprints(blocks, standing),
+            blocks),
+        normalize_geometry=lambda scene: (lambda before: compared(
+            'normalize_geometry', originals['normalize_geometry'](scene), native.normalize_geometry(before), before))(
+            copy.deepcopy(scene)))
+    summary = checked_solve(args, originals, checked)
+    summary.update(calls=calls, mismatches=0)
     save(args.output / 'summary.json', summary)
     print(json.dumps(summary))
 

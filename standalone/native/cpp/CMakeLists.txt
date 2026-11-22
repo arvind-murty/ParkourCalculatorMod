@@ -20,7 +20,7 @@ if(PKC_SANITIZE)
 endif()
 
 add_library(pkc_core STATIC src/canonical.cpp src/coefficients.cpp src/envelopes.cpp src/gate.cpp src/program.cpp src/screen.cpp src/sha256.cpp src/vertical.cpp
-            src/scene/static_collision.cpp)
+            src/scene/geometry.cpp src/scene/static_collision.cpp)
 target_include_directories(pkc_core PUBLIC include)
 
 find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)

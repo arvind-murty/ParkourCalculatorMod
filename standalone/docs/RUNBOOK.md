@@ -30,7 +30,7 @@ prepares and analyzes collision-box routes without ladder events natively and an
 its required-contact screens there, building Python dicts only for readers that ask.
 Its sequence screens append the choice to a native copy of the context's program and
 screen that child without building it in Python; a program's first append and ladder
-appends still build in Python. The Python bridge replays scene checks natively. It compiles their coefficients from the native tables, so the compiler's call counts
+appends still build in Python. The Python bridge replays scene checks and derives footprints natively. It compiles their coefficients from the native tables, so the compiler's call counts
 omit them; only bridges whose replies equal those tables allow that
 (`table_coefficients`), and any other compiler gets the Python analysis. Everything else, and every run without the
 variable, uses the Python implementation, which stays the parity oracle.
@@ -187,7 +187,8 @@ difference and saves it as `mismatch.json`:
 ```
 
 `verify-screen` solves on the native gate and repeats every `sequence`, `required` and
-`check_program` call on a shadow Python gate.
+`check_program` call on a shadow Python gate. `verify-scene` repeats every scene check,
+footprint derivation and geometry normalization natively.
 
 A new program field fails the typed conversion by name, so add it to
 `native/cpp/include/pkc/program.hpp` in the same change.
