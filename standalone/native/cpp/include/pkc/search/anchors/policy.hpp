@@ -54,6 +54,12 @@ public:
     // transfer_structure(scene, program, start, source, target, complete=..., until_arrival=...)'s dict.
     Value transfer_structure(const Program& program, std::int64_t start, const std::string& source,
                              const std::string& target, bool complete, bool until_arrival) const;
+    // within_caps(request, program): the request's maxJumps, maxTotalRunTicks and maxRunTicksPerJump.
+    bool within_caps(const Object& request, const Program& program) const;
+    // AnchorAdapter.decision_point(program) on the guide plan: [x, y, z].
+    Value decision_point(const Program& program, const Value& guides) const;
+    // AnchorAdapter.program_objective: decision_objective toward the next required anchor.
+    Value program_objective(const Program& program, const Value& guides, const std::vector<std::string>& anchors) const;
     // advantageous_targets: (kind, name) keys; a slab boost or corner cancel on no face has no name.
     std::set<std::pair<std::string, std::optional<std::string>>> advantageous_targets(
         const Program& base, const Program& child, const std::string& next_owner) const;
@@ -68,5 +74,9 @@ private:
     std::map<std::vector<double>, std::string> box_owner_;     // box_owners: the last block on a box names it
     std::map<std::int64_t, std::vector<std::pair<std::set<std::int64_t>, std::string>>> faces_;
 };
+
+// spatial/anchor_guides.py: classify(guides, span, point) and decision_objective(guides, reached, point, fallback).
+Value classify(const Value& guides, std::int64_t span, double x, double z);
+Value decision_objective(const Value& guides, std::int64_t reached, const Value& point, const Value& fallback);
 
 }  // namespace pkc

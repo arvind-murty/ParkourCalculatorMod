@@ -631,6 +631,16 @@ PYBIND11_MODULE(_pkc_native, m) {
                                       bool until_arrival) {
             return to_python(s.transfer_structure(*program_arg(program), start, source, target, complete, until_arrival));
         })
+        .def("within_caps", [](const pkc::AnchorScene& s, py::handle request, py::handle program) {
+            return s.within_caps(*std::get<std::shared_ptr<const pkc::Object>>(convert(request).data), *program_arg(program));
+        })
+        .def("decision_point", [](const pkc::AnchorScene& s, py::handle program, py::handle guides) {
+            return to_python(s.decision_point(*program_arg(program), convert(guides)));
+        })
+        .def("program_objective", [](const pkc::AnchorScene& s, py::handle program, py::handle guides,
+                                     std::vector<std::string> anchors) {
+            return to_python(s.program_objective(*program_arg(program), convert(guides), anchors));
+        })
         .def("owner", &pkc::AnchorScene::owner)
         .def("support_face", &pkc::AnchorScene::support_face);
     m.def("comparison_label", [](py::handle program, std::int64_t start, std::optional<std::int64_t> through,
@@ -675,6 +685,13 @@ PYBIND11_MODULE(_pkc_native, m) {
                                  std::int64_t terminal_tick, std::optional<std::vector<std::string>> types) {
         return to_python(pkc::prefix_viability(convert(scene), *program_arg(program), required, terminal_tick, types));
     }, "reachability/viability.prefix_viability");
+    m.def("classify", [](py::handle guides, std::int64_t span, py::handle point) {
+        auto p = point.cast<std::vector<double>>();
+        return to_python(pkc::classify(convert(guides), span, p.at(0), p.at(1)));
+    }, "spatial/anchor_guides.classify");
+    m.def("decision_objective", [](py::handle guides, std::int64_t reached, py::handle point, py::handle fallback) {
+        return to_python(pkc::decision_objective(convert(guides), reached, convert(point), convert(fallback)));
+    }, "spatial/anchor_guides.decision_objective");
     m.def("disk_cached_solve", [](py::handle content, double seconds, const std::string& kind, double cap, unsigned max_iter) {
         return to_python(pkc::disk_cached_solve(convert(content), seconds, kind, cap, max_iter));
     }, "numerics/disk.solve on the native decided-result cache the native gate's screens share");

@@ -1,0 +1,17 @@
+{
+ "stats": {
+  "within_caps": 429,
+  "feet_touches": 4063,
+  "visits": 10737,
+  "visit_state": 4063,
+  "audit": 3830,
+  "launch": 1642,
+  "decision_point": 1196,
+  "decision_objective": 1196,
+  "program_objective": 1196,
+  "next_anchor": 1803,
+  "advantageous_targets": 1752,
+  "transfer_structure": 6
+ },
+ "mismatches": []
+}

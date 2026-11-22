@@ -5,6 +5,7 @@
 #include <cmath>
 #include <tuple>
 
+#include "../../py_math.hpp"
 #include "../../schema.hpp"
 #include "pkc/canonical.hpp"
 
@@ -300,6 +301,105 @@ Value AnchorScene::transfer_structure(const Program& program, std::int64_t start
                    {"arrival", arrival ? integer_value(*arrival) : Value{nullptr}},
                    {"transferSteppingInputs", ints(stepping)},
                    {"assumption", text("hard_transfer_without_stepping")}});
+}
+
+bool AnchorScene::within_caps(const Object& request, const Program& program) const {
+    const Profile& p = program.profile;
+    std::int64_t jumps = 0, runs = 0;
+    for (std::int64_t t = 0; t < p.duration; ++t) {
+        if (p.grounded[t] && p.jump[t]) ++jumps;
+        else if (p.grounded[t]) ++runs;
+    }
+    if (const Value* cap = get(request, "maxJumps"); cap && jumps > num(*cap).value) return false;
+    if (const Value* cap = get(request, "maxTotalRunTicks"); cap && runs > num(*cap).value) return false;
+    if (const Value* cap = get(request, "maxRunTicksPerJump")) {
+        std::int64_t run = 0;
+        for (std::int64_t t = 0; t < p.duration; ++t) {
+            run = p.grounded[t] && !p.jump[t] ? run + 1 : 0;
+            if (run > num(*cap).value) return false;
+        }
+    }
+    return true;
+}
+
+Value AnchorScene::decision_point(const Program& program, const Value& guides) const {
+    const std::string name = visits(program).back().second;
+    const Array& names = items(at(fields(guides), "anchors"));
+    for (std::size_t k = 0; k < names.size(); ++k)
+        if (owner(as_text(names[k])) == name) return items(at(fields(guides), "points")).at(k);
+    const std::set<std::string> owners =
+        face_owners(scene_contact_options(scene_, geometry_, 1, 1), owners_, std::optional<std::string>(name));
+    const Array& solids = items(at(fields(at(fields(scene_), "collisionScene")), "solids"));
+    std::vector<const Array*> chosen;
+    for (const auto& b : items(at(fields(scene_), "blocks")))
+        if (owners.count(owner(as_text(at(fields(b), "id"))))) chosen.push_back(&items(solids.at(as_int(at(fields(b), "solidIndex")))));
+    Value top = (*chosen.front())[4];
+    for (const Array* s : chosen)
+        if (num((*s)[4]).value > num(top).value) top = (*s)[4];
+    double x0 = INFINITY, x1 = -INFINITY, z0 = INFINITY, z1 = -INFINITY;
+    for (const Array* s : chosen)
+        if (num((*s)[4]).value == num(top).value) {
+            x0 = std::min(x0, num((*s)[0]).value);
+            x1 = std::max(x1, num((*s)[3]).value);
+            z0 = std::min(z0, num((*s)[2]).value);
+            z1 = std::max(z1, num((*s)[5]).value);
+        }
+    return array({real((x0 + x1) / 2), top, real((z0 + z1) / 2)});
+}
+
+Value AnchorScene::program_objective(const Program& program, const Value& guides, const std::vector<std::string>& anchors) const {
+    return decision_objective(guides, audit(program, anchors).reached, decision_point(program, guides),
+                              at(fields(scene_), "objective"));
+}
+
+Value classify(const Value& guides_value, std::int64_t span, double x, double z) {
+    const Object& guides = fields(guides_value);
+    Array distances;
+    bool turnaround = false;
+    for (const auto& tv : items(at(guides, "turns"))) {
+        const Object& turn = fields(tv);
+        bool listed = false;
+        for (const auto& s : items(at(turn, "spans"))) listed = listed || as_int(s) == span;
+        if (!listed) continue;
+        const Array& normal = items(at(turn, "normal"));
+        const double raw = 0 + num(normal[0]).value * x + num(normal[1]).value * z - num(at(turn, "offset")).value;
+        const double shifted = raw + num(at(turn, "margin")).value;
+        turnaround = turnaround || shifted >= 0;
+        distances.push_back(object({{"boundary", at(turn, "id")}, {"rawDistance", real(raw)},
+                                    {"shiftedDistance", real(shifted)}, {"inside", boolean(shifted >= 0)}}));
+    }
+    return object({{"version", integer_value(1)}, {"guide", at(guides, "id")}, {"span", integer_value(span)},
+                   {"point", array({real(x), real(z)})}, {"isTurnaround", boolean(turnaround)},
+                   {"distances", array(std::move(distances))}});
+}
+
+Value decision_objective(const Value& guides_value, std::int64_t reached, const Value& point_value, const Value& fallback) {
+    const Object& guides = fields(guides_value);
+    const Array& point = items(point_value);
+    const double px = num(point[0]).value, pz = num(point[2]).value;
+    std::int64_t i = reached + 1;
+    const Value* turn = nullptr;
+    for (const auto& t : items(at(guides, "turns")))
+        if (as_int(at(fields(t), "index")) == i) {
+            turn = &t;
+            break;
+        }
+    if (turn) {
+        const Value inside = classify(guides_value, reached, px, pz);
+        for (const auto& d : items(at(fields(inside), "distances")))
+            if (py_equal(at(fields(d), "boundary"), at(fields(*turn), "id")) && py_truthy(at(fields(d), "inside"))) {
+                ++i;
+                break;
+            }
+    }
+    const Array& points = items(at(guides, "points"));
+    if (i >= static_cast<std::int64_t>(points.size())) return fallback;
+    const Array& target = items(points[i]);
+    const double dx = num(target[0]).value - px, dz = num(target[2]).value - pz, length = python_hypot(dx, dz);
+    if (length <= 1e-12) return fallback;
+    // direction_objective: the progress objective along a unit direction, as a custom-yaw X maximization.
+    return object({{"axis", text("X")}, {"sense", text("MAX")},
+                   {"customYaw", real(degrees(std::atan2(-(dx / length), dz / length)))}});
 }
 
 }  // namespace pkc

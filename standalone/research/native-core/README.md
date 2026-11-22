@@ -441,4 +441,9 @@ identity) and `viability.prefix_viability`. Nothing dispatches to them yet.
   46 calls on the tests' partial programs were skipped. The policy and fixed-work shadows are also clean under
   AddressSanitizer ([policy](2026-11-22-node-helpers/policy-tests-shadow-asan.json),
   [fixed work](2026-11-22-node-helpers/fixedwork-shadow-asan.json)).
+- `AnchorScene` also gains `within_caps`, the adapter's `decision_point` and `program_objective`, with
+  `anchor_guides.classify` and `decision_objective`: 1,196 decision points and objectives and 429 cap checks in the
+  fixed-work solve, and 283 objectives and 470 cap checks over the anchor tests, all equal
+  ([solve](2026-11-22-node-helpers/objectives-fixedwork-shadow-release.json),
+  [tests](2026-11-22-node-helpers/objectives-tests-shadow-release.json)).
 
