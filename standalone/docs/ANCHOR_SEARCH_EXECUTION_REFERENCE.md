@@ -247,11 +247,11 @@ checkpoint storage format stays version1. Never redirect work to an old checkout
 because a source-era handoff contains its absolute path.
 
 Under `PKC_NATIVE_CORE`, an anchor frame whose gate has a native core and whose program filter is at most an initial
-jump domain expands each decision that is not an ordinary one (no minimum-run bookkeeping) one movement type at a
-time natively (`search/node.hpp`): generation, composition, owned-endpoint projection, the frame's screen and
-eligibility (incumbent, hard-latch and run bounds, viability, program screen, caps, anchor audit), acceptance and
-linking run in one call, and the frontier applies its queued children, exclusions and DFS state changes in proposal
-order. A batch stops where the Python loop would emit a ready program and commits nothing when the budget stops it,
+jump domain expands each decision one movement type at a time natively (`search/node.hpp`): generation,
+composition, owned-endpoint projection, the frame's screen and eligibility (incumbent, hard-latch and run bounds,
+viability, program screen, caps, anchor audit), acceptance and linking run in one call, with an ordinary decision's
+landings, same-face fit and advantageous targets, and the frontier applies its queued and held children, exclusions,
+minimum-run records and DFS state changes in proposal order. The minimum-run search itself stays in Python. A batch stops where the Python loop would emit a ready program and commits nothing when the budget stops it,
 so a resumed expansion redoes it from the saved cursor.
 
 The movement continuation also keeps what the [solve report](RESULTS_AND_DEBUGGING.md#solve-reports)

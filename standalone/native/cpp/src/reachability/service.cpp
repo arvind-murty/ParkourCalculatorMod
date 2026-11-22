@@ -208,8 +208,13 @@ std::shared_ptr<const GatePrepared> InteractionGate::prepared(const std::shared_
 }
 
 std::shared_ptr<const GateAnalysis> InteractionGate::analysis(const std::shared_ptr<const Program>& program) {
+    return analyzed(program).second;
+}
+
+std::pair<std::shared_ptr<const GatePrepared>, std::shared_ptr<const GateAnalysis>> InteractionGate::analyzed(
+    const std::shared_ptr<const Program>& program) {
     auto prepared = this->prepared(program);
-    if (!prepared) return nullptr;
+    if (!prepared) return {nullptr, nullptr};
     const Value parent = program->parent_ticks ? integer_value(*program->parent_ticks) : Value{nullptr};
     // analysis_key: interaction_context_key over the preparation it models.
     const std::string key = digest(object({{"policy", integer_value(kProofPolicy)},
@@ -218,7 +223,7 @@ std::shared_ptr<const GateAnalysis> InteractionGate::analysis(const std::shared_
                                                                {"scope", Value{nullptr}},
                                                                {"initialIntervals", Value{nullptr}},
                                                                {"parentTicks", parent}})}}));
-    return cached<GateAnalysis>("analysis:" + key, "analysis", [&]() -> std::shared_ptr<const GateAnalysis> {
+    return {prepared, cached<GateAnalysis>("analysis:" + key, "analysis", [&]() -> std::shared_ptr<const GateAnalysis> {
         const Value request = coefficient_request(prepared->result);
         auto coefficient = cached<Value>("coefficients:" + digest(request), "coefficient",
                                          [&]() -> std::shared_ptr<const Value> {
@@ -227,7 +232,7 @@ std::shared_ptr<const GateAnalysis> InteractionGate::analysis(const std::shared_
         return std::make_shared<const GateAnalysis>(analyze_prepared(
             prepared->result, *coefficient, true,
             program->parent_ticks ? std::optional<std::int64_t>(*program->parent_ticks) : std::nullopt, key));
-    });
+    })};
 }
 
 Value InteractionGate::required(const std::shared_ptr<const Program>& program) {

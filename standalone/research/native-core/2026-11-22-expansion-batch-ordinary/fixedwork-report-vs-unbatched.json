@@ -1,0 +1,34 @@
+[
+ [
+  ".provenance.command[0]",
+  "/Users/arvindmurty/CS/pkc-wt/standalone-cpp-benchmark/standalone/tools/profiling/run.py != tools.profiling.run"
+ ],
+ [
+  ".provenance.command[4]",
+  "/private/var/tmp/standalone-cpp-node-20261122/batch2/base != /private/var/tmp/standalone-cpp-node-20261122/batch4/fixed/run"
+ ],
+ [
+  ".provenance.sourceHashes.parkour_solver/search/dfs.py",
+  "9629f7ccf5d38ad79a89e5d8034f9e7b6bbe0dae6b0832ac2a83166f2c958d39 != ac4af32163a4b613bc19fb0978b3e06a7a4a22ff104198ba80f05f6d45a058c0"
+ ],
+ [
+  ".provenance.sourceHashes.parkour_solver/search/events/engine.py",
+  "deea5cfc58550cfa82e11297528641e98bf53b7fceca5dd4c13fe5646e010716 != 04094aa8f4e201765256b0f1d3180a1cc4dc53c5b6ae5bb48d98474854e320ba"
+ ],
+ [
+  ".provenance.sourceHashes.parkour_solver/search/frontier.py",
+  "639568c47532d4ed9ded65e63185c851fede71303389f9b76c50f9fc4d695b36 != 2b27d4df37dbc10fe0ecc08714ae526ab5ef725c48d973f7a054142df1948ead"
+ ],
+ [
+  ".provenance.sourceHashes.parkour_solver/search/movement.py",
+  "891901719bd293f78647b135e367b390bda51053e978ecc6d71ef8e7a92aa417 != d991bf47f0724a0ec04abf49b1d0cfab49106aedf74bcc7032cf272708a08a2c"
+ ],
+ [
+  ".provenance.sourceRevision",
+  "6efd46d6af504925f2c4661a869465351d0c22e1 != 91e6d9394f24dda5c39dc0528ea12df92c1524a5"
+ ],
+ [
+  ".result.interactionGate.metrics.preparationHits",
+  "1968 != 1945"
+ ]
+]

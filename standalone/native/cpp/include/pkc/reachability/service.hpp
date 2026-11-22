@@ -53,6 +53,9 @@ public:
     std::shared_ptr<const GatePrepared> prepared(const std::shared_ptr<const Program>& program,
                                                  bool require_complete = false);
     std::shared_ptr<const GateAnalysis> analysis(const std::shared_ptr<const Program>& program);
+    // The analysis with the preparation it models, both null when the vertical schedule is infeasible.
+    std::pair<std::shared_ptr<const GatePrepared>, std::shared_ptr<const GateAnalysis>> analyzed(
+        const std::shared_ptr<const Program>& program);
     Value required(const std::shared_ptr<const Program>& program);  // a proof or null
     // approach's envelopes, or null when unknown.
     Value approach(const GenerationContext& context, std::int64_t tick, bool jumping);

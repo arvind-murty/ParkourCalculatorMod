@@ -636,10 +636,10 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
                 policyContext=policy_context, excludedRuns=[c for frame_id, c in excluded_runs if frame_id == f['id']])
             return gate.native.NodeSearch(gate.core, native_scenes['anchorScene'], frame), context_id
         def expand(program, kind, cursor, *, seen, stop_supports, initial_bounds, max_inputs, choices_per_type, ready,
-                   budget):
+                   ordinary, budget):
             search, context_id = node_search()
             records, finished = search.expand_type(program, kind, cursor, list(stop_supports or ()), list(initial_bounds),
-                                                   max_inputs, choices_per_type, ready, seen, budget)
+                                                   max_inputs, choices_per_type, ready, ordinary, seen, budget)
             for record in records:  # the dfs state changes of each proposal's screen and eligibility, in order
                 effects = record['effects']
                 state['timeBoundExclusions'].extend(effects['timeBoundExclusions'])

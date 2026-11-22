@@ -471,3 +471,24 @@ it, so a frame's first decision carries none.
   ([Python](2026-11-22-expansion-batch/suite-python-summary.txt), [native](2026-11-22-expansion-batch/suite-native-summary.txt),
   [live](2026-11-22-expansion-batch/live-scene-release-summary.json)).
 
+## The expansion batch for ordinary decisions, 2026-11-22
+
+Source: `91e6d939` plus ordinary decisions in the batch: each accepted child's landings (its own face, or for an
+airborne advantageous jump the earliest screened landing per face among its child's proposals, whose screens change
+DFS state but no frontier state), the same-face fit of a jump back onto the launch face, and its advantageous target
+keys, returned for the frontier's held, reached and landings records. The minimum-run search stays in Python. The
+gate binding's `analysis` counted a second preparation hit per Python `analyze`; it now counts one, as the batch does.
+
+- Fixed work: 102 batches over 739 proposals (3,423 left in Python, the minimum-run search); the short Real11 control:
+  30 batches. Both reports equal the unbatched native runs' except that preparation-hit count and provenance
+  ([fixed work](2026-11-22-expansion-batch-ordinary/fixedwork-report-vs-unbatched.json),
+  [short control](2026-11-22-expansion-batch-ordinary/short-control-report-vs-unbatched.json),
+  [counts](2026-11-22-expansion-batch-ordinary/fixedwork-batch-counts.json)); all 19 fixed-work transitions match
+  Python ([parity](2026-11-22-expansion-batch-ordinary/parity-python-native.json)).
+- Suites pass in both modes (844 tests, 10 Java-bridge skips), live `verify-scene` finds no difference, and the anchor
+  and stepping tests pass under AddressSanitizer with the batch active
+  ([Python](2026-11-22-expansion-batch-ordinary/suite-python-summary.txt),
+  [native](2026-11-22-expansion-batch-ordinary/suite-native-summary.txt),
+  [live](2026-11-22-expansion-batch-ordinary/live-scene-release-summary.json),
+  [ASan](2026-11-22-expansion-batch-ordinary/screen-shadow-tests-asan.json)).
+

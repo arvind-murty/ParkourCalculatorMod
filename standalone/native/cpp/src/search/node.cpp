@@ -253,35 +253,37 @@ Value NodeSearch::screen(Program& program, NodeEffects& effects) const {
 
 namespace {
 
-// dfs.configure and AnchorAdapter.context for a decision expanding itself.
-GenerationContext expansion_context(const NodeSearch& search, const std::shared_ptr<const Program>& parent,
-                                    std::int64_t settings_max_inputs, const std::function<void()>& budget) {
+// dfs.configure and AnchorAdapter.context: `program` is the context's program, `decision` the decision expanding.
+GenerationContext expansion_context(const NodeSearch& search, const std::shared_ptr<const Program>& program,
+                                    const Program& decision, std::int64_t settings_max_inputs, bool run_ticks,
+                                    const std::function<void()>& budget) {
     const NodeFrame& f = search.frame;
     GenerationContext context;
-    context.program = parent;
-    context.state = boundary_state(*parent);
-    context.max_inputs = settings_max_inputs - parent->profile.duration;
+    context.program = program;
+    context.state = boundary_state(*program);
+    context.max_inputs = settings_max_inputs - program->profile.duration;
     context.threshold = Num{0., false};
+    context.run_tick_choices = run_ticks;
     context.gate = search.gate;
     context.check_budget = budget;
     context.frame_id = f.frame_id;
     context.region_items = true;
-    if (auto launch = search.anchors->launch(*parent)) context.launch_face = launch->second;
+    if (auto launch = search.anchors->launch(*program)) context.launch_face = launch->second;
     std::set<std::string> excluded;
-    for (const auto& d : search.anchors->visit_state(*parent).departed) excluded.insert(d);
+    for (const auto& d : search.anchors->visit_state(*program).departed) excluded.insert(d);
     for (std::size_t a = f.group_end + 1; a < f.anchors.size(); ++a) excluded.insert(search.anchors->owner(f.anchors[a]));
     if (f.group_end < static_cast<std::int64_t>(f.anchors.size())) excluded.insert(search.anchors->owner(f.task_block));
     context.feet_allowed_fn = [excluded](const std::string& name) { return !excluded.count(name); };
-    const Value* turnaround = get(parent->annotations, "decisionTurnaround");
+    const Value* turnaround = get(decision.annotations, "decisionTurnaround");
     if (!(turnaround && py_truthy(*turnaround))) {
-        const std::int64_t k = std::min(search.anchors->audit(*parent, f.anchors).reached, f.group_end);
+        const std::int64_t k = std::min(search.anchors->audit(decision, f.anchors).reached, f.group_end);
         const Array& points = items(at(fields(f.guide_plan), "points"));
         if (k + 1 < static_cast<std::int64_t>(points.size())) {
             const Array &a = items(points[k]), &b = items(points[k + 1]);
             const double dx = num(b[0]).value - num(a[0]).value, dz = num(b[2]).value - num(a[2]).value;
             const double length = python_hypot(dx, dz);
             if (length > 1e-12) {
-                const Array& point = items(at(parent->annotations, "decisionPoint"));
+                const Array& point = items(at(decision.annotations, "decisionPoint"));
                 context.forward = Forward{{num(point[0]).value, num(point[1]).value}, {dx / length, dz / length},
                                           num(f.turnaround_margin)};
             }
@@ -295,21 +297,135 @@ Value exclusion(const Program& program, const Value& proof, const char* scope) {
                    {"ticks", integer_value(program.profile.duration)}, {"proof", proof}, {"scope", text(scope)}});
 }
 
+struct Composed {  // a propose_choices proposal
+    std::optional<Program> full, owned;
+    bool projected = false;
+};
+
+Composed compose(const NodeSearch& search, const Program& parent, const MovementChoice& choice,
+                 const std::vector<std::string>& supports, std::int64_t settings_max_inputs) {
+    Composed out;
+    out.full = append_choice(parent, choice, settings_max_inputs);
+    if (!out.full) return out;
+    for (const char* field : {"decisionPoint", "decisionVelocity", "decisionPointSource", "decisionPointTick",
+                              "decisionTurnaround", "restoredRun"})
+        if (const Value* v = get(parent.annotations, field)) annotate(*out.full, field, *v);
+    const Value* turnaround = get(parent.annotations, "decisionTurnaround");
+    annotate(*out.full, "priorityTurnaround", turnaround ? *turnaround : boolean(false));
+    std::optional<LandingPrefix> best;  // project_owned: min(arrivals, key=(duration, terminalSupport))
+    for (const auto& block : supports)
+        for (auto& prefix : landing_prefixes(search.frame.scene, *out.full, block, true))
+            if (!best || std::make_pair(prefix.program.profile.duration, *prefix.program.terminal_support.value) <
+                             std::make_pair(best->program.profile.duration, *best->program.terminal_support.value))
+                best = std::move(prefix);
+    if (!best) {
+        out.owned = out.full;
+    } else if (best->reused) {
+        annotate(*out.full, "ownedEndpoint", integer_value(best->program.profile.duration));
+        out.owned = out.full;
+    } else {
+        annotate(best->program, "ownedEndpoint", integer_value(best->program.profile.duration));
+        out.owned = std::move(best->program);
+        out.projected = true;
+    }
+    return out;
+}
+
+struct Checked {  // check_child: both screens and acceptance, without frontier state
+    std::string outcome;  // screened | rejected | seen | accepted
+    Array exclusions;
+    std::int64_t screened = 0, policy_rejections = 0;
+};
+
+Checked check(const NodeSearch& search, Composed& proposal, const std::array<double, 4>& initial_bounds,
+              const std::set<std::string>& seen, NodeEffects& effects) {
+    Checked out;
+    if (proposal.owned) {  // assess_proposal
+        const Value proof = search.screen(*proposal.owned, effects);
+        if (is_null(proof) && proposal.projected) {
+            const Value full_proof = search.gate->check_program(std::make_shared<const Program>(*proposal.full), Value{nullptr}).first;
+            if (!is_null(full_proof)) out.exclusions.push_back(exclusion(*proposal.full, full_proof, "unused_extension"));
+        }
+        if (!is_null(proof)) {
+            out.screened = 1;
+            out.exclusions.push_back(exclusion(*proposal.owned, proof, "owned_proposal"));
+            out.outcome = "screened";
+            return out;
+        }
+    }
+    if (!proposal.owned || !entry_possible(proposal.owned->profile, initial_bounds)) {
+        out.outcome = "rejected";
+    } else if (!search.eligible(*proposal.owned, effects)) {
+        out.policy_rejections = 1;
+        out.exclusions.push_back(object({{"id", text(digest(text(program_search_key(*proposal.owned))))},
+                                         {"ticks", integer_value(proposal.owned->profile.duration)},
+                                         {"proof", object({{"reason", text("search_policy")}})}}));
+        out.outcome = "rejected";
+    } else {
+        out.outcome = seen.count(program_search_key(*proposal.owned)) ? "seen" : "accepted";
+    }
+    return out;
+}
+
+std::optional<std::string> terminal_face(const NodeSearch& search, const Program& p) {
+    if (!p.terminal_support.value) return std::nullopt;
+    return search.anchors->support_face(*p.terminal_support.value);
+}
+
+// dfs.program_faces: the merged top faces a grounded program stands on at its feet.
+std::vector<FaceOption> program_faces(const NodeSearch& search, const Program& program) {
+    std::vector<FaceOption> out;
+    const auto found = search.anchors->launch(program);
+    if (!found) return out;
+    for (const auto& o : search.gate->top_faces())
+        if (num(o.plane).value == program.profile.position.back().value && face_name(o, search.gate->owners()) == found->second)
+            out.push_back(o);
+    return out;
+}
+
+std::optional<FaceOption> launch_face(const NodeSearch& search, const Program& decision) {
+    const Array& point = items(at(decision.annotations, "decisionPoint"));
+    const double x = num(point[0]).value, z = num(point[1]).value;
+    std::optional<FaceOption> best;
+    double best_key = INFINITY;
+    for (auto& o : program_faces(search, decision)) {
+        double key = INFINITY;
+        for (const auto& rv : o.regions) {
+            const Array& r = items(rv);
+            key = std::min(key, python_hypot(std::max({num(r[0]).value - x, 0., x - num(r[2]).value}),
+                                             std::max({num(r[1]).value - z, 0., z - num(r[3]).value})));
+        }
+        if (!best || key < best_key) {
+            best = o;
+            best_key = key;
+        }
+    }
+    return best;
+}
+
 }  // namespace
 
 Expansion expand_type(const NodeSearch& search, const Program& parent_program, const std::string& kind, std::int64_t cursor,
                       const std::vector<std::string>& stop_supports, const std::array<double, 4>& initial_bounds,
-                      std::int64_t settings_max_inputs, std::int64_t choices_per_type, bool ready,
+                      std::int64_t settings_max_inputs, std::int64_t choices_per_type, bool ready, bool ordinary,
                       std::set<std::string> seen, const std::function<void()>& budget) {
     const NodeFrame& f = search.frame;
     auto parent = std::make_shared<const Program>(parent_program);
-    const GenerationContext context = expansion_context(search, parent, settings_max_inputs, budget);
+    const GenerationContext context = expansion_context(search, parent, *parent, settings_max_inputs, !ordinary, budget);
     const std::vector<MovementChoice> choices = generate_choices(kind, context);
     const std::vector<std::string> supports =
         stop_supports.empty() ? std::vector<std::string>{as_text(at(fields(f.scene), "goalBlock"))} : stop_supports;
     auto complete = [&](const Program& p) {
         return p.profile.grounded.back() && supported_by(p, supports) && p.profile.duration > 0;
     };
+    const std::string next_owner = ordinary ? search.anchors->next_anchor(*parent, f.anchors, f.task_block) : std::string();
+    auto target_keys = [&](const Program& child) {
+        Array keys;
+        for (const auto& [kind_name, name] : search.anchors->advantageous_targets(*parent, child, next_owner))
+            keys.push_back(text(dumps(array({text(kind_name), name ? text(*name) : Value{nullptr}}), false, false)));
+        return keys;
+    };
+    const std::optional<std::string> own_face = terminal_face(search, *parent);
     Expansion expansion;
     std::vector<ProposalRecord>& records = expansion.records;
     auto emits = [&](std::int64_t ordinal) { return ready && (ordinal + 1) % choices_per_type == 0; };
@@ -318,67 +434,110 @@ Expansion expand_type(const NodeSearch& search, const Program& parent_program, c
         if (static_cast<std::int64_t>(ordinal) < cursor) continue;
         ProposalRecord record;
         record.ordinal = static_cast<std::int64_t>(ordinal);
-        Array exclusions;
-        // propose_choices: compose, inherit the decision fields, project onto the owned landing.
-        std::optional<Program> full = append_choice(*parent, choices[ordinal], settings_max_inputs);
-        std::optional<Program> owned;
-        bool projected = false;
-        if (full) {
-            for (const char* field : {"decisionPoint", "decisionVelocity", "decisionPointSource", "decisionPointTick",
-                                      "decisionTurnaround", "restoredRun"})
-                if (const Value* v = get(parent->annotations, field)) annotate(*full, field, *v);
-            const Value* turnaround = get(parent->annotations, "decisionTurnaround");
-            annotate(*full, "priorityTurnaround", turnaround ? *turnaround : boolean(false));
-            std::optional<LandingPrefix> best;  // min(arrivals, key=(duration, terminalSupport))
-            for (const auto& block : supports)
-                for (auto& prefix : landing_prefixes(f.scene, *full, block, true))
-                    if (!best || std::make_pair(prefix.program.profile.duration, *prefix.program.terminal_support.value) <
-                                     std::make_pair(best->program.profile.duration, *best->program.terminal_support.value))
-                        best = std::move(prefix);
-            if (best) {
-                annotate(best->program, "ownedEndpoint", integer_value(best->program.profile.duration));
-                if (best->reused) {
-                    annotate(*full, "ownedEndpoint", integer_value(best->program.profile.duration));
-                    owned = *full;
+        Composed proposal = compose(search, *parent, choices[ordinal], supports, settings_max_inputs);
+        const Checked checked = check(search, proposal, initial_bounds, seen, record.effects);
+        record.exclusions = array(checked.exclusions);
+        record.screened = checked.screened;
+        record.policy_rejections = checked.policy_rejections;
+        record.outcome = checked.outcome;
+        if (checked.outcome == "accepted") {
+            Program child = std::move(*proposal.owned);
+            // Found before any frontier state changes (landings_of and the same-face fit).
+            Array landed;
+            Value fit{nullptr};
+            const bool grounded = child.profile.grounded.back();
+            Array targets;
+            bool lands = false;
+            if (ordinary) {
+                targets = target_keys(child);
+                lands = grounded || !targets.empty();  // grounded or lands_later
+            }
+            if (ordinary && lands) {
+                const std::int64_t start = parent->profile.duration;
+                std::vector<std::pair<std::optional<std::string>, Program>> landings;  // landings_of, by first face
+                if (grounded) {
+                    landings.emplace_back(terminal_face(search, child), child);
                 } else {
-                    owned = std::move(best->program);
-                    projected = true;
+                    auto shared = std::make_shared<const Program>(child);
+                    const GenerationContext inner = expansion_context(search, shared, *parent, settings_max_inputs, true, budget);
+                    std::vector<Composed> proposed;
+                    for (const auto& type : f.types)
+                        for (const auto& choice : generate_choices(type, inner)) {
+                            Composed c = compose(search, child, choice, supports, settings_max_inputs);
+                            if (c.owned && c.owned->profile.grounded.back()) proposed.push_back(std::move(c));
+                        }
+                    std::stable_sort(proposed.begin(), proposed.end(), [](const Composed& a, const Composed& b) {
+                        return a.owned->profile.duration < b.owned->profile.duration;
+                    });
+                    for (auto& c : proposed) {
+                        const auto face = terminal_face(search, *c.owned);
+                        if (std::any_of(landings.begin(), landings.end(), [&](const auto& l) { return l.first == face; })) continue;
+                        const Checked landing = check(search, c, initial_bounds, seen, record.effects);
+                        if ((landing.outcome == "accepted" || landing.outcome == "seen") && c.owned->profile.grounded.back()) {
+                            const auto landed_face = terminal_face(search, *c.owned);
+                            if (std::none_of(landings.begin(), landings.end(), [&](const auto& l) { return l.first == landed_face; }))
+                                landings.emplace_back(landed_face, std::move(*c.owned));
+                        }
+                    }
                 }
-            } else {
-                owned = *full;
+                for (const auto& [face, landing] : landings)
+                    landed.push_back(array({face ? text(*face) : Value{nullptr}, integer_value(landing.profile.duration - start)}));
+                // A jump landing back on its launch face waits unless it naturally fits there (O11).
+                const auto launch = landings.empty() || !child.profile.jump.at(start) ? std::nullopt : launch_face(search, *parent);
+                bool back = launch.has_value();
+                for (const auto& [_, landing] : landings) {
+                    if (!back) break;
+                    const auto faces = program_faces(search, landing);
+                    back = faces.size() == 1 && faces[0].surface == launch->surface;
+                }
+                if (back) {
+                    std::size_t first = 0;
+                    for (std::size_t i = 1; i < landings.size(); ++i)
+                        if (landings[i].second.profile.duration < landings[first].second.profile.duration) first = i;
+                    const Program& landing = landings[first].second;
+                    // dfs.same_face_fit: None without a guide leg or a physics model.
+                    const std::int64_t k = std::min(search.anchors->audit(*parent, f.anchors).reached, f.group_end);
+                    const Array& points = items(at(fields(f.guide_plan), "points"));
+                    std::optional<std::array<double, 2>> leg;
+                    if (k + 1 < static_cast<std::int64_t>(points.size())) {
+                        const Array &a = items(points[k]), &b = items(points[k + 1]);
+                        const double dx = num(b[0]).value - num(a[0]).value, dz = num(b[2]).value - num(a[2]).value;
+                        const double length = python_hypot(dx, dz);
+                        if (length > 1e-12) leg = std::array<double, 2>{dx / length, dz / length};
+                    }
+                    auto analysis = search.gate->analysis(std::make_shared<const Program>(landing));
+                    if (leg && analysis) {
+                        const auto [dx, dz] = *leg;
+                        std::array<double, 2> u;
+                        if (std::min(std::fabs(dx), std::fabs(dz)) <= std::tan(radians(22.5)) * std::max(std::fabs(dx), std::fabs(dz))) {
+                            u = std::fabs(dx) >= std::fabs(dz) ? std::array<double, 2>{std::copysign(1., dx), 0.}
+                                                               : std::array<double, 2>{0., std::copysign(1., dz)};
+                        } else {
+                            u = {std::copysign(std::sqrt(.5), dx), std::copysign(std::sqrt(.5), dz)};
+                        }
+                        const Array& point = items(at(parent->annotations, "decisionPoint"));
+                        const Array& velocity = items(at(parent->annotations, "decisionVelocity"));
+                        const double px = num(point[0]).value, pz = num(point[1]).value;
+                        double room = -INFINITY;
+                        for (const auto& rv : launch->regions) {
+                            const Array& r = items(rv);
+                            for (double x : {num(r[0]).value, num(r[2]).value})
+                                for (double z : {num(r[1]).value, num(r[3]).value}) room = std::max(room, (x - px) * u[0] + (z - pz) * u[1]);
+                        }
+                        const Object& model = fields(analysis->model);
+                        const Array &magnitude = items(at(model, "magnitude")), &friction = items(at(model, "friction"));
+                        double speed = num(velocity[0]).value * dx + num(velocity[1]).value * dz, radius = 0.;
+                        for (std::int64_t t = start; t < landing.profile.duration && t < static_cast<std::int64_t>(magnitude.size()); ++t) {
+                            const double move = speed + num(magnitude[t]).value + 0.;  // travel_radii
+                            radius += move;
+                            speed = num(friction[t]).value * move;
+                        }
+                        fit = object({{"room", real(room)}, {"jump", real(radius)}, {"fits", boolean(room > kSameFaceFitFactor * radius)},
+                                      {"face", text(face_name(*launch, search.gate->owners()))},
+                                      {"total", integer_value(landings[first].second.profile.duration - start)}});
+                    }
+                }
             }
-        }
-        if (owned) {  // assess_proposal
-            Value proof = search.screen(*owned, record.effects);
-            if (is_null(proof) && projected) {
-                auto [full_proof, selection] = search.gate->check_program(std::make_shared<const Program>(*full), Value{nullptr});
-                (void)selection;  // the full program is not kept
-                if (!is_null(full_proof)) exclusions.push_back(exclusion(*full, full_proof, "unused_extension"));
-            }
-            if (!is_null(proof)) {
-                record.screened = 1;
-                exclusions.push_back(exclusion(*owned, proof, "owned_proposal"));
-                record.outcome = "screened";
-                record.exclusions = array(std::move(exclusions));
-                records.push_back(std::move(record));
-                if (emits(records.back().ordinal)) return expansion;
-                continue;
-            }
-        }
-        // accept
-        if (!owned || !entry_possible(owned->profile, initial_bounds)) {
-            record.outcome = "rejected";
-        } else if (!search.eligible(*owned, record.effects)) {
-            record.policy_rejections = 1;
-            exclusions.push_back(object({{"id", text(digest(text(program_search_key(*owned))))},
-                                         {"ticks", integer_value(owned->profile.duration)},
-                                         {"proof", object({{"reason", text("search_policy")}})}}));
-            record.outcome = "rejected";
-        } else if (seen.count(program_search_key(*owned))) {
-            record.outcome = "seen";
-        } else {
-            // link
-            Program child = std::move(*owned);
             record.meaningful = meaningful_choice(choices[ordinal]);
             auto inherited = [&](const char* key) {
                 const Value* v = get(parent->annotations, key);
@@ -395,12 +554,26 @@ Expansion expand_type(const NodeSearch& search, const Program& parent_program, c
                 annotate(child, "decisionNode", record.meaningful ? text(node_identity(child, f.policy_context))
                                                                   : get_or_null(parent->annotations, "decisionNode"));
             if (record.meaningful && !complete(child)) annotate(child, "needsNodeSolve", boolean(true));
-            ready = ready || complete(child);
             seen.insert(program_search_key(child));
-            record.outcome = "queued";
+            const bool held = !is_null(fit) && !py_truthy(at(fields(fit), "fits"));
+            record.outcome = held ? "held" : "queued";
+            if (!held) ready = ready || complete(child);
+            if (ordinary) {
+                Array landings_extend;  // e['landings'] entries: landings on other faces than the decision's
+                if (lands)
+                    for (const auto& l : landed) {
+                        const Value& owner = items(l)[0];
+                        if (!is_null(owner) && !(own_face && as_text(owner) == *own_face))
+                            landings_extend.push_back(object({{"ticks", items(l)[1]}, {"owner", owner}}));
+                    }
+                Value smallest{nullptr};
+                for (const auto& l : landed)
+                    if (is_null(smallest) || as_int(items(l)[1]) < as_int(smallest)) smallest = items(l)[1];
+                record.ordinary = object({{"targets", array(std::move(targets))}, {"landed", smallest},
+                                          {"landings", array(std::move(landings_extend))}, {"fit", fit}});
+            }
             record.child = std::move(child);
         }
-        record.exclusions = array(std::move(exclusions));
         records.push_back(std::move(record));
         if (emits(records.back().ordinal)) return expansion;
     }

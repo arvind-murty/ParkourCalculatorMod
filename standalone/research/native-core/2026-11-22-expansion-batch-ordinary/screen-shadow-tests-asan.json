@@ -1,0 +1,12 @@
+{
+ "stats": {
+  "eligible": 204,
+  "screen": 200,
+  "screen passes": 144,
+  "screen proofs": 56,
+  "screen proof optimistic_remaining_time_exceeds_incumbent": 3,
+  "screen proof elapsed_inputs_exceed_incumbent_finish": 40,
+  "screen proof required_interaction_unreachable": 13
+ },
+ "mismatches": []
+}

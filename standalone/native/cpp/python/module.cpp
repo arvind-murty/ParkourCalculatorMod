@@ -547,10 +547,8 @@ PYBIND11_MODULE(_pkc_native, m) {
             return py::cast(std::make_shared<NativePrepared>(NativePrepared{prepared->program, prepared->result, prepared->key, {}}));
         }, py::arg("program"), py::arg("require_complete") = false, "InteractionGate._prepared on the session cache")
         .def("analysis", [](pkc::InteractionGate& gate, py::handle program) -> py::object {
-            auto typed = program_arg(program);
-            auto analysis = gate.analysis(typed);
+            auto [prepared, analysis] = gate.analyzed(program_arg(program));
             if (!analysis) return py::none();
-            auto prepared = gate.prepared(typed);
             return py::cast(std::make_shared<NativeAnalysis>(NativeAnalysis{
                 std::make_shared<NativePrepared>(NativePrepared{prepared->program, prepared->result, prepared->key, {}}),
                 std::make_shared<NativeCoefficients>(NativeCoefficients{analysis->coefficient, {}}), *analysis, {}}));
@@ -753,12 +751,13 @@ PYBIND11_MODULE(_pkc_native, m) {
         }, "dfs eligible(program, f): (verdict, the program after it, exclusions added)")
         .def("expand_type", [](pkc::NodeSearch& search, py::handle parent, const std::string& kind, std::int64_t cursor,
                                std::vector<std::string> stop_supports, std::array<double, 4> initial_bounds,
-                               std::int64_t max_inputs, std::int64_t choices_per_type, bool ready, py::handle seen,
-                               py::object budget) {
+                               std::int64_t max_inputs, std::int64_t choices_per_type, bool ready, bool ordinary,
+                               py::handle seen, py::object budget) {
             std::set<std::string> keys;
             for (py::handle k : seen) keys.insert(k.cast<std::string>());
             const auto expansion = pkc::expand_type(search, *program_arg(parent), kind, cursor, stop_supports,
-                                                    initial_bounds, max_inputs, choices_per_type, ready, std::move(keys),
+                                                    initial_bounds, max_inputs, choices_per_type, ready, ordinary,
+                                                    std::move(keys),
                                                     [budget] { budget(); });
             py::list out;
             for (const auto& r : expansion.records) {
@@ -782,6 +781,7 @@ PYBIND11_MODULE(_pkc_native, m) {
                 effects["viabilityExcluded"] = r.effects.viability_excluded;
                 effects["comparisonContextUsed"] = r.effects.comparison_context_used;
                 record["effects"] = effects;
+                record["ordinary"] = to_python(r.ordinary);
                 out.append(record);
             }
             return py::make_tuple(out, expansion.finished);

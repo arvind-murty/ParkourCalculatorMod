@@ -18,6 +18,8 @@
 
 namespace pkc {
 
+inline constexpr double kSameFaceFitFactor = .7;  // policy.SAME_FACE_FIT_FACTOR
+
 // The frame and search state dfs reads (dfs.node_frame builds it).
 struct NodeFrame {
     Value scene;  // the frame's target scene
@@ -66,16 +68,19 @@ struct NodeSearch {
 // One proposal's outcome, in ordinal order.
 struct ProposalRecord {
     std::int64_t ordinal = 0;
-    std::string outcome;            // screened | rejected | seen | queued
+    std::string outcome;            // screened | rejected | seen | queued | held (a same-face jump that does not fit)
     std::optional<Program> child;   // the linked child, when queued
     bool meaningful = false;
     Value exclusions;               // frontier exclusions this proposal adds (node set by the caller)
     std::int64_t screened = 0, policy_rejections = 0;
     NodeEffects effects;
+    // An ordinary decision's accepted child: {targets (advantageous keys as JSON), landed (its earliest landing's
+    // ticks after the decision, or null), landings (e['landings'] entries without their node), fit (or null)}.
+    Value ordinary;
 };
 
-// The frontier's loop over the proposals of `kind` from `cursor` for an expansion of `parent` that is not an
-// ordinary decision's (no minimum-run bookkeeping). `seen` holds the queued search keys; `budget` is called per
+// The frontier's loop over the proposals of `kind` from `cursor` for an expansion of `parent`; an `ordinary` decision
+// also finds each accepted child's landings, same-face fit and advantageous targets for its minimum-run bookkeeping. `seen` holds the queued search keys; `budget` is called per
 // proposal and may throw (nothing is returned then). Like the Python loop, it stops after a proposal that brings
 // the cursor to a multiple of `choices_per_type` while a complete program is ready, so the frontier can emit it;
 // `finished` says whether the type's proposals ran out instead.
@@ -85,7 +90,7 @@ struct Expansion {
 };
 Expansion expand_type(const NodeSearch& search, const Program& parent, const std::string& kind, std::int64_t cursor,
                       const std::vector<std::string>& stop_supports, const std::array<double, 4>& initial_bounds,
-                      std::int64_t settings_max_inputs, std::int64_t choices_per_type, bool ready,
+                      std::int64_t settings_max_inputs, std::int64_t choices_per_type, bool ready, bool ordinary,
                       std::set<std::string> seen, const std::function<void()>& budget);
 
 }  // namespace pkc

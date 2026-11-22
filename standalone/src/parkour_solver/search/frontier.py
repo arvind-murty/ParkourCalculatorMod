@@ -646,26 +646,36 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                 state['expansion'] = None
                 iterator, iterator_key = None, None
                 continue
-            if native_node is not None and 'reached' not in e and 'choice' not in e:
+            if native_node is not None and 'choice' not in e:
                 # One native batch per movement type (search/node.hpp): it commits nothing when the budget stops it.
                 # Like the Python loop, it stops where a ready program is emitted (the cursor check above).
                 records, finished = native_node(e['program'], settings['types'][e['kind']], e['cursor'], seen=seen,
                     stop_supports=stop_supports, initial_bounds=initial_bounds, max_inputs=settings['maxInputs'],
-                    choices_per_type=settings['maxChoicesPerType'], ready=bool(state['ready']), budget=budget)
+                    choices_per_type=settings['maxChoicesPerType'], ready=bool(state['ready']), ordinary='reached' in e,
+                    budget=budget)
                 node = e['program'].get('decisionNode')
                 for record in records:
                     state['generated'] += 1
                     e['cursor'] = record['ordinal']+1
                     commit(dict(exclusions=record['exclusions'], screened=record['screened'],
                                 policyRejections=record['policyRejections']), node)
-                    if record['outcome'] == 'queued':
+                    if record['outcome'] in ('queued', 'held'):
                         child = record['child']
                         if record['meaningful']:
                             state['decisionParents'][child['decisionNode']] = child['decisionParent']
                         seen.add(record['identity'])
                         state['seen'].append(record['identity'])
+                    if record['outcome'] == 'held':
+                        # Held, not live: it sets no N and beats no run-tick candidate.
+                        e.setdefault('held', []).append(dict(record['ordinary']['fit'], program=child))
+                    elif record['outcome'] == 'queued':
                         (state['ready'] if complete(child) else state['pending']).append(child)
                         e.setdefault('queuedNodes', []).append(child.get('decisionNode'))
+                        if 'reached' in e:
+                            found = record['ordinary']
+                            for target in found['targets']:
+                                e['reached'].setdefault(target, []).append([child['decisionNode'], found['landed']])
+                            e['landings'].extend(dict(landing, node=child['decisionNode']) for landing in found['landings'])
                 if finished:
                     e.update(kind=e['kind']+1, cursor=0)
                 iterator, iterator_key = None, None
