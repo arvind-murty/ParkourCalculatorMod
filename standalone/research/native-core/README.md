@@ -537,3 +537,27 @@ and gate signatures, which have no producer, are left out; their context digest 
   shadow runs clean under AddressSanitizer with the same counts; its one failure is the known ladder baseline
   ([release](2026-11-22-constraint-variants/fixedwork-replay.txt), [ASan](2026-11-22-constraint-variants/fixedwork-replay-asan.txt),
   [tests ASan](2026-11-22-constraint-variants/tests-shadow-asan.json), [summary](2026-11-22-constraint-variants/tests-asan-summary.txt)).
+
+## The repair loop, 2026-11-22
+
+Source: `ad6ab930` plus `search/repair.hpp` (`solve_contact_branches`: the branch queue in Python's heap order, family
+switch climbs, conflict-driven obstacle growth, repair sources over the full-enumeration generator, the confirmation
+walk, the resume state and its compatibility check, audits with `check_geometry` and the contact conflicts) and
+`search/ordered_route.hpp` (`find_route` and its run-allocation search, with the contradiction screen through the
+native disk screen). The compiler, numerical solves, candidate filter, work budget and progress callback stay Python
+hooks, with Python's TimeoutError, ValueError, RuntimeError and OSError mapped onto the native exceptions the loop
+catches. Routes with passages, wall hits or ladder events stay in Python (production repairs have none). Nothing
+dispatches to it yet.
+
+- A recorder logs every repair call of a solve: its inputs, the generator's state, every hook call in order (arguments
+  fingerprinted without budgets, answers kept, a numerical solve's incumbents with it) and the result. The native loop
+  replays each against that log and must make the same hook calls in the same order and return the same result. Resume
+  twins rerun each recorded call from a mid-run and its final progress snapshot (and, after a solid hit, from the
+  state with only its repair source left), as a restarted session would.
+- Fixed work: 141 calls (47 plus 94 exact resumes) and 2,411 hook events match; the short Real11 control, with its
+  IPOPT finalization: 35 and 736; the test modules: 199 of 213 replayable calls with 2,429 events, the other 14 being
+  ladder routes left to Python, and 62 calls skipped because their tests mock the solver or the generator
+  ([fixed work](2026-11-22-repair-loop/replay-fixed-twins.txt), [short control](2026-11-22-repair-loop/replay-short-twins.txt),
+  [tests](2026-11-22-repair-loop/replay-tests-twins.txt), [coverage](2026-11-22-repair-loop/coverage.json)).
+- The fixed-work and test replays run clean under AddressSanitizer
+  ([fixed work](2026-11-22-repair-loop/replay-fixed-twins-asan.txt), [tests](2026-11-22-repair-loop/replay-tests-twins-asan.txt)).

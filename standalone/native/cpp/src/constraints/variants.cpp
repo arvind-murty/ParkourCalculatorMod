@@ -330,6 +330,8 @@ const Object& ConstraintVariants::profile() const { return fields(inputs_.profil
 
 std::size_t ConstraintVariants::item_count() const { return state_->items.size(); }
 
+bool ConstraintVariants::exhausted() const { return state_->exhausted; }
+
 Value ConstraintVariants::state() const {
     const State& s = *state_;
     Array pending;

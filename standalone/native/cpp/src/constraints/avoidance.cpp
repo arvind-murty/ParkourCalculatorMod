@@ -63,6 +63,30 @@ Num face_clearance(const Object& route, std::int64_t leg, std::int64_t offset, c
     return clearance;
 }
 
+std::vector<std::int64_t> phase_states(std::int64_t tick, const std::string& phase, const std::string& axis) {
+    if (axis == "X") {
+        if (phase == "Y") return {tick};
+        if (phase == "X") return {tick, tick + 1};
+        return {tick + 1};
+    }
+    if (axis == "Z") return phase == "Z" ? std::vector<std::int64_t>{tick, tick + 1} : std::vector<std::int64_t>{tick};
+    return phase == "Y" ? std::vector<std::int64_t>{tick, tick + 1} : std::vector<std::int64_t>{tick + 1};
+}
+
+Value blockage_counts(const Array& chain) {
+    std::int64_t horizontal = 0;
+    for (std::size_t i = 0; i + 1 < chain.size(); ++i)
+        horizontal += as_text(at(fields(chain[i]), "axis")) != "Y" && as_text(at(fields(chain[i + 1]), "axis")) != "Y";
+    const auto total = static_cast<std::int64_t>(chain.size()) - 1;
+    return object({{"horizontal", integer_value(horizontal)}, {"vertical", integer_value(total - horizontal)},
+                   {"total", integer_value(total)}});
+}
+
+std::string passage_kind(const Array& chain) {
+    const auto count = std::get<std::int64_t>(at(fields(blockage_counts(chain)), "horizontal").data);
+    return count == 1 ? "cross_neo" : count == 2 ? "wide_neo" : count == 0 ? "vertical_passage" : "long_neo";
+}
+
 void validate_passages(Object& route) {
     erase(route, "passageCaps");
     const Value& passages = setdefault(route, "passages", array({}));

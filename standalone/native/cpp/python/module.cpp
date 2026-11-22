@@ -31,6 +31,8 @@
 #include "pkc/search/feasibility.hpp"
 #include "pkc/search/goals.hpp"
 #include "pkc/search/node.hpp"
+#include "pkc/search/ordered_route.hpp"
+#include "pkc/search/repair.hpp"
 #include "pkc/reachability/viability.hpp"
 #include "pkc/scene/geometry.hpp"
 #include "pkc/scene/ladders.hpp"
@@ -253,6 +255,76 @@ py::dict visit_state_dict(const pkc::VisitState& state) {  // visit_state's dict
     return out;
 }
 
+
+// Runs a Python hook for native code, mapping the exceptions the Python callers catch onto the native ones: a
+// TimeoutError throws pkc::Timeout, ValueError std::invalid_argument, RuntimeError and OSError std::runtime_error.
+template <class Call>
+auto python_hook(Call&& call) -> decltype(call()) {
+    try {
+        return call();
+    } catch (py::error_already_set& error) {
+        const std::string message = py::str(error.value());
+        if (error.matches(PyExc_TimeoutError)) throw pkc::Timeout(message);
+        if (error.matches(PyExc_ValueError)) throw std::invalid_argument(message);
+        if (error.matches(PyExc_RuntimeError) || error.matches(PyExc_OSError)) throw std::runtime_error(message);
+        throw;
+    }
+}
+
+// A Python numerical callable (numerics.solver.solve's signature) as a native one.
+pkc::NumericalSolve numerical_hook(py::object solve, py::object python_executable, py::object cancel_event) {
+    if (solve.is_none()) return {};
+    return [solve, python_executable, cancel_event](const pkc::Value& problem, double seconds, bool stop_on_feasible,
+                                                     const std::function<void(const pkc::Value&)>& on_incumbent) {
+        return python_hook([&] {
+            py::cpp_function incumbent([&on_incumbent](py::handle candidate) { on_incumbent(convert(candidate)); });
+            return convert(solve(to_python(problem), py::arg("seconds") = seconds,
+                                 py::arg("stop_on_feasible") = stop_on_feasible,
+                                 py::arg("python_executable") = python_executable, py::arg("cancel_event") = cancel_event,
+                                 py::arg("on_incumbent") = incumbent));
+        });
+    };
+}
+
+// The node solve's Python services: the compiler, the default numerical solve, the work budget and the cancel event.
+pkc::SolveHooks solve_hooks(py::object compiler, py::object solve, py::object work, py::object cancel_event,
+                            py::object python_executable) {
+    pkc::SolveHooks hooks;
+    hooks.compile = [compiler](const pkc::Value& route, const pkc::Value& plan, double seconds) {
+        return python_hook([&] { return convert(compiler.attr("compile")(to_python(route), to_python(plan), seconds)); });
+    };
+    if (py::hasattr(compiler, "derive_footprints")) {
+        hooks.derive_footprints = [compiler](const pkc::Value& route, double seconds) {
+            return python_hook([&] { return convert(compiler.attr("derive_footprints")(to_python(route), seconds)); });
+        };
+        hooks.derive_standing_footprints = [compiler](const pkc::Value& route, double seconds) {
+            return python_hook([&] { return convert(compiler.attr("derive_standing_footprints")(to_python(route), seconds)); });
+        };
+    }
+    hooks.check_scene = [compiler](const pkc::Value& geometry, const pkc::Value& positions, const pkc::Value& movement,
+                                   const pkc::Value& ground, double seconds, const pkc::Value& contacts,
+                                   const pkc::Object& contract) {
+        return python_hook([&] {
+            py::dict kwargs;
+            if (!std::holds_alternative<std::nullptr_t>(contacts.data)) kwargs["contacts"] = to_python(contacts);
+            for (const auto& [key, value] : contract) kwargs[py::str(key)] = to_python(value);
+            return convert(compiler.attr("check_scene")(to_python(geometry), to_python(positions), to_python(movement),
+                                                        to_python(ground), seconds, **kwargs));
+        });
+    };
+    hooks.solve = numerical_hook(solve, python_executable, cancel_event);
+    if (!work.is_none()) {
+        hooks.work_check = [work] { python_hook([&] { work.attr("check")(); }); };
+        hooks.work_proposal = [work](const pkc::Value& problem) { python_hook([&] { work.attr("proposal")(to_python(problem)); }); };
+        hooks.work_before_solve = [work](const pkc::Value& problem) {
+            python_hook([&] { work.attr("before_solve")(to_python(problem)); });
+        };
+        hooks.work_accepted = [work](const pkc::Value& best) { python_hook([&] { work.attr("accepted")(to_python(best)); }); };
+    }
+    if (!cancel_event.is_none())
+        hooks.cancelled = [cancel_event] { return python_hook([&] { return cancel_event.attr("is_set")().cast<bool>(); }); };
+    return hooks;
+}
 }  // namespace
 
 PYBIND11_MODULE(_pkc_native, m) {
@@ -587,6 +659,58 @@ PYBIND11_MODULE(_pkc_native, m) {
             return variants.with_obstacles(obstacles);
         })
         .def_property_readonly("item_count", &pkc::ConstraintVariants::item_count);
+    m.def("solve_contact_branches",
+          [](py::handle route, py::handle profiles, py::handle checks, py::object compiler, py::object solve,
+             double seconds, double candidate_seconds, std::int64_t retries, bool improve, bool rank_equal_cost,
+             bool optimize_goal, py::object stop_on_feasible, py::object python_executable, py::object cancel_event,
+             py::handle geometry, py::handle solid_blocks, std::int64_t max_wall_hits, py::object candidate_filter,
+             py::object work, py::handle resume_state, py::handle repair_scope, py::object on_progress,
+             py::handle validation_scope, pkc::ConstraintVariants* initial_variants, bool retry_unresolved,
+             bool oracle_rejection, bool climb_families, py::object numerical, py::object confirm) {
+              if (max_wall_hits) throw pkc::Unsupported("wall-hit repairs run in Python");
+              const pkc::SolveHooks hooks = solve_hooks(compiler, solve, work, cancel_event, python_executable);
+              pkc::RepairOptions options;
+              options.seconds = seconds;
+              options.candidate_seconds = candidate_seconds;
+              options.retries = retries;
+              options.improve = improve;
+              options.rank_equal_cost = rank_equal_cost;
+              options.optimize_goal = optimize_goal;
+              if (!stop_on_feasible.is_none()) options.stop_on_feasible = stop_on_feasible.cast<bool>();
+              options.oracle_rejection = oracle_rejection;
+              options.climb_families = climb_families;
+              options.retry_unresolved = retry_unresolved;
+              options.geometry = convert(geometry);
+              options.solid_blocks = convert(solid_blocks);
+              options.resume_state = convert(resume_state);
+              options.repair_scope = convert(repair_scope);
+              options.validation_scope = convert(validation_scope);
+              options.numerical = numerical_hook(numerical, python_executable, cancel_event);
+              options.confirm = numerical_hook(confirm, python_executable, cancel_event);
+              if (!candidate_filter.is_none())
+                  options.candidate_filter = [candidate_filter](const pkc::Value& plan, const pkc::Value& candidate,
+                                                                const pkc::Value& vertical) {
+                      return python_hook([&] {
+                          return convert(candidate_filter(to_python(plan), to_python(candidate), to_python(vertical)));
+                      });
+                  };
+              if (!on_progress.is_none())
+                  options.on_progress = [on_progress](const pkc::Value& state) {
+                      python_hook([&] { on_progress(to_python(state)); });
+                  };
+              return to_python(pkc::solve_contact_branches(convert(route), convert(profiles), convert(checks), hooks,
+                                                           options, initial_variants));
+          },
+          py::arg("route"), py::arg("profiles"), py::arg("checks"), py::arg("compiler"), py::arg("solve"), py::kw_only(),
+          py::arg("seconds"), py::arg("candidate_seconds"), py::arg("retries"), py::arg("improve") = false,
+          py::arg("rank_equal_cost") = false, py::arg("optimize_goal") = false, py::arg("stop_on_feasible") = py::none(),
+          py::arg("python_executable") = py::none(), py::arg("cancel_event") = py::none(), py::arg("geometry") = py::none(),
+          py::arg("solid_blocks") = py::none(), py::arg("max_wall_hits") = 0, py::arg("candidate_filter") = py::none(),
+          py::arg("work") = py::none(), py::arg("resume_state") = py::none(), py::arg("repair_scope") = py::none(),
+          py::arg("on_progress") = py::none(), py::arg("validation_scope") = py::none(),
+          py::arg("initial_variants") = nullptr, py::arg("retry_unresolved") = true, py::arg("oracle_rejection") = false,
+          py::arg("climb_families") = false, py::arg("numerical") = py::none(), py::arg("confirm") = py::none(),
+          "search/repair.solve_contact_branches; `solve` is numerics.solver.solve, called when `numerical` is None");
     py::class_<pkc::InteractionGate, std::shared_ptr<pkc::InteractionGate>>(m, "InteractionGate")
         .def(py::init([](py::handle scene) { return std::make_shared<pkc::InteractionGate>(convert(scene)); }))
         .def("reachable_faces", [](pkc::InteractionGate& gate, std::optional<std::string> name) {

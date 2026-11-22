@@ -48,6 +48,7 @@ public:
     std::optional<Value> next();
     Value state() const;
     bool conflict_driven() const { return obstacles_.has_value(); }
+    bool exhausted() const;  // state['exhausted']
     const std::optional<Obstacles>& obstacles() const { return obstacles_; }
     std::optional<std::array<std::int64_t, 2>> obstacle_key(std::int64_t solid, std::int64_t tick) const;
     std::unique_ptr<ConstraintVariants> with_obstacles(Obstacles obstacles) const;

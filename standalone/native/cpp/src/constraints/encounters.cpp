@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "pkc/canonical.hpp"
+#include "pkc/constraints/avoidance.hpp"
 #include "pkc/envelopes.hpp"
 #include "../py_math.hpp"
 #include "../value_ops.hpp"
@@ -50,31 +51,6 @@ std::vector<std::int64_t> int_list(const Value& v) {
     std::vector<std::int64_t> out;
     for (const auto& x : items(v)) out.push_back(i64(x));
     return out;
-}
-
-// avoidance.phase_states: state coordinates of an ordinary Y/X/Z collision sweep.
-std::vector<std::int64_t> phase_states(std::int64_t tick, const std::string& phase, const std::string& axis) {
-    if (axis == "X") {
-        if (phase == "Y") return {tick};
-        if (phase == "X") return {tick, tick + 1};
-        return {tick + 1};
-    }
-    if (axis == "Z") return phase == "Z" ? std::vector<std::int64_t>{tick, tick + 1} : std::vector<std::int64_t>{tick};
-    return phase == "Y" ? std::vector<std::int64_t>{tick, tick + 1} : std::vector<std::int64_t>{tick + 1};
-}
-
-Value blockage_counts(const Array& chain) {
-    std::int64_t horizontal = 0;
-    for (std::size_t i = 0; i + 1 < chain.size(); ++i)
-        horizontal += as_text(at(fields(chain[i]), "axis")) != "Y" && as_text(at(fields(chain[i + 1]), "axis")) != "Y";
-    const auto total = static_cast<std::int64_t>(chain.size()) - 1;
-    return object({{"horizontal", integer_value(horizontal)}, {"vertical", integer_value(total - horizontal)},
-                   {"total", integer_value(total)}});
-}
-
-std::string passage_kind(const Array& chain) {
-    const std::int64_t count = i64(at(fields(blockage_counts(chain)), "horizontal"));
-    return count == 1 ? "cross_neo" : count == 2 ? "wide_neo" : count == 0 ? "vertical_passage" : "long_neo";
 }
 
 using Region = std::array<double, 4>;
