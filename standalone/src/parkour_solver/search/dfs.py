@@ -10,7 +10,8 @@ from parkour_solver.search.identity import digest
 from parkour_solver.spatial.checkpoints import retain_prefix
 from parkour_solver.search.goals import goal_key, _landing_prefixes
 from parkour_solver.search.deferrals import POLICY_VERSION
-from parkour_solver.search.anchors.policy import advantageous_candidates, advantageous_targets, launch, next_anchor, owner, semantic_settings
+from parkour_solver.search.anchors.policy import (advantageous_candidates, advantageous_targets, launch, next_anchor,
+                                                  semantic_settings, terminal_face)
 from parkour_solver.constraints.variants import GENERATION_POLICY
 from parkour_solver.search.comparison import comparison_label, compare_candidates, POLICY_VERSION as COMPARISON_POLICY_VERSION
 
@@ -264,34 +265,35 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
         k, points = pair_of(decision, f), adapter.guide_plan['points']
         return unit(points[k+1][0]-points[k][0], points[k+1][2]-points[k][2]) if k+1 < len(points) else None
 
-    def top_faces(program):
-        """The merged top faces (ContactOption) a grounded program stands on at its feet: those of the owner it last
-        visited (landing contacts and case events, so a blip-up without a terminalSupport counts); one, unless
-        solids through the owner's top cut it into pieces. None on a ladder tick."""
-        from parkour_solver.movement.contact_combinations import scene_contact_options
+    def program_faces(program):
+        """The merged top faces (ContactOption) a grounded program stands on at its feet: those named by the face it
+        last visited (landing contacts and case events, so a blip-up without a terminalSupport counts); one, unless
+        solids through it cut it into pieces. None on a ladder tick."""
+        from parkour_solver.movement.contact_combinations import face_name, solid_owners, top_faces
         found = launch(scene, program)
         if found is None:
             return []
-        solids = {b['solidIndex'] for b in scene['blocks'] if owner(scene, b['id']) == found[1]}
-        return [o for o in scene_contact_options(scene, 1, 1)
-                if solids & set(o.members) and o.plane == program['profile']['position'][-1]]
+        owners = solid_owners(scene)
+        return [o for o in top_faces(scene)
+                if o.plane == program['profile']['position'][-1] and face_name(scene, o, owners) == found[1]]
 
     def launch_face(decision):
         """The merged top face an ordinary decision stands on: of its own, the nearest to its validated position; None
         when its feet are on none of them."""
         import math
         x, z = decision['decisionPoint']
-        return min(top_faces(decision), default=None,
+        return min(program_faces(decision), default=None,
                    key=lambda o: min(math.hypot(max(r[0]-x, 0, x-r[2]), max(r[1]-z, 0, z-r[3])) for r in o.regions))
 
     def lands_on_launch_face(decision, landing):
         """Whether a landing is on the decision's launch face; a support cut into several faces never counts."""
         face = launch_face(decision)
-        return face is not None and [o.surface for o in top_faces(landing)] == [face.surface]
+        return face is not None and [o.surface for o in program_faces(landing)] == [face.surface]
 
     def same_face_fit(decision, landing, f):
         """same_face_fit for a jump from an ordinary decision landing back on its launch face (O11), with the face's
-        owners as its name; None when there is no leg or no physics to measure it with."""
+        name; None when there is no leg or no physics to measure it with."""
+        from parkour_solver.movement.contact_combinations import face_name
         from parkour_solver.search.anchors.policy import same_face_fit as fit
         leg, analysis = guide_leg(decision, f), gate.analyze(landing)
         if leg is None or analysis is None:
@@ -300,12 +302,12 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
         start, end, model = decision['profile']['duration'], landing['profile']['duration'], analysis['model']
         result = fit(decision['decisionPoint'], decision['decisionVelocity'], leg, face.regions,
                      model['magnitude'][start:end], model['friction'][start:end])
-        return dict(result, face='+'.join(sorted({owner(scene, b['id']) for b in scene['blocks'] if b['solidIndex'] in face.members})))
+        return dict(result, face=face_name(scene, face))
 
     def configure(ctx, f):
         stage_adapter(f).context(ctx)
         gate.context(ctx)
-        ctx['launchOwner'] = (launch(scene, ctx['program']) or (None, None))[1]
+        ctx['launchFace'] = (launch(scene, ctx['program']) or (None, None))[1]
         ctx['regionItems'] = True
         ctx['frameId'] = f['id']
         decision = ctx.get('decision')
@@ -554,14 +556,14 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
         anchors,task=adapter.anchor_policy['anchors'],adapter.data['task']['block']
         tables={}
         def candidates(p):
-            key=(owner(scene,p['terminalSupport']),p['profile']['position'][-1],next_anchor(scene,p,anchors,task))
+            key=(terminal_face(scene,p),p['profile']['position'][-1],next_anchor(scene,p,anchors,task))
             if key not in tables:
-                tables[key]=advantageous_candidates(scene,gate.reachable_blocks,*key,settings['types'],0.)
+                tables[key]=advantageous_candidates(scene,gate.reachable_faces,*key,settings['types'],0.)
             return tables[key]
         # Outside turnarounds a grounded decision runs only the minimum ticks an advantageous jump needs.
         run_policy=dict(ordinary=lambda p:boundary_state(p)['onGround'] and not p.get('decisionTurnaround',False),
             targets=lambda base,child:advantageous_targets(scene,base,child,next_anchor(scene,base,anchors,task)),
-            candidates=candidates,next=lambda p:next_anchor(scene,p,anchors,task),owner=lambda block:owner(scene,block),
+            candidates=candidates,next=lambda p:next_anchor(scene,p,anchors,task),face=lambda p:terminal_face(scene,p),
             back=lands_on_launch_face,fits=lambda decision,landing:same_face_fit(decision,landing,f))
         node_options=dict(node_evaluator=lambda p,n,x:evaluate_node(p,n,x,f),
             priority_key=lambda p,identity:priority(p,f,identity),

@@ -1,4 +1,4 @@
-from tests.support.anchor_policy import scene, history
+from tests.support.anchor_policy import flush_scene, scene, history
 from tests.support.paths import AUTONOMY_DATA
 import copy
 import json
@@ -83,7 +83,7 @@ class AnchorPolicyTests(unittest.TestCase):
         self.assertTrue(transfer_structure(s,p,0,'start','mid',complete=True,until_arrival=True)['valid'])
 
     def test_group_end_arrival_requires_every_anchor_inside_the_group(self):
-        s=scene((5,0,0,6,2,1));data=build_route_domain(s,dict(kind='landing',block='goal')).to_dict()
+        s=scene((5,0,0,6,2.5,1));data=build_route_domain(s,dict(kind='landing',block='goal')).to_dict()
         adapter=AnchorAdapter(data,build_event_graph(data),settings(dict(anchors=['mid']),s))
         root=history(s,[]);cursor=adapter.initial_cursor([root])
         self.assertEqual((cursor['anchorIndex'],cursor['groupEnd']),(0,1))
@@ -298,6 +298,49 @@ class AnchorPolicyTests(unittest.TestCase):
         self.assertEqual([v for v in visits(s,p) if v[0]==2],[(2,'optional'),(2,'mid'),(2,'mid')])
         self.assertTrue(audit(s,p,['mid'])['accepted'])
 
+    def test_run_ticks_across_a_flush_seam_stay_on_one_face(self):
+        s=flush_scene()
+        p=history(s,['start','A','B','A'])
+        self.assertEqual(visits(s,p),[(0,'start'),(1,'start'),(2,'A+B'),(3,'A+B'),(4,'A+B'),(4,'A+B')])
+        state=visit_state(s,p)
+        self.assertEqual((state['valid'],state['current'],state['departed']),(True,'A+B',['start']))
+        self.assertEqual(audit(s,history(s,['start','A','B','start']),[])['reason'],'departed_owner_return')
+
+    def test_anchors_start_and_goal_must_be_whole_faces(self):
+        s=flush_scene()
+        self.assertEqual(settings({},s)['anchors'],[])
+        with self.assertRaisesRegex(ValueError,'^A shares its top face with B; declare them as one block$'):
+            settings(dict(anchors=['A']),s)
+        for name,box in (('start',[1,0,0,1.5,1,1]),('goal',[7,0,0,8,1,1])):
+            with self.subTest(name), self.assertRaisesRegex(ValueError,'^'+name+' shares its top face with .*pad'):
+                settings({},flush_scene(('pad',box)))
+
+    def test_face_namer_names_one_block_by_its_face_and_cut_pieces_by_their_owner(self):
+        from parkour_solver.search.anchors.policy import face_namer, support_face
+        # wall stands through C's top and cuts it in two; E is flush with C's right piece only.
+        s=flush_scene(('C',[10,0,0,13,1,1]),('W',[11,0,0,12,3,1]),('E',[13,0,0,14,1,1]))
+        solid=lambda name:s['collisionScene']['solids'][next(b['solidIndex'] for b in s['blocks'] if b['id']==name)]
+        name=face_namer(s)
+        self.assertEqual((name([solid('A')]),name([solid('B')]),name([solid('A'),solid('B')])),('A+B',)*3)
+        self.assertEqual((name([solid('C')]),name([solid('E')]),name([solid('C'),solid('E')])),('C','C+E','C+E'))
+        self.assertEqual((name([solid('start')]),name([[50,0,0,51,1,1]])),('start',None))
+        self.assertEqual([support_face(s,b) for b in ('A','B','start','A+B',None)],['A+B','A+B','start','A+B',None])
+
+    def test_a_merged_pair_gives_one_advantageous_entry_and_one_target_key(self):
+        from parkour_solver.reachability.service import face_table
+        from parkour_solver.search.anchors.policy import advantageous_candidates, advantageous_targets
+        # P+Q is a raised merged pair beside start (a step-up or slab boost), C+D a lower one (a run-off).
+        s=flush_scene(('P',[0,0,1,1,1.5,2]),('Q',[0,0,2,1,1.5,3]),('C',[0,0,-2,1,.5,-1]),('D',[0,0,-3,1,.5,-2]))
+        keys=[json.loads(e['key']) for e in advantageous_candidates(s,lambda name:face_table(s,name,{}),'start',1.,'goal',
+                                                                        ['normal','stepping'],0.)]
+        self.assertEqual([k for k in keys if k[1] not in ('A+B','goal')],
+                         [['corner_jump_cancel','P+Q'],['landing','C+D'],['slab_boost','P+Q'],['step','P+Q']])
+        solid=lambda name:s['collisionScene']['solids'][next(b['solidIndex'] for b in s['blocks'] if b['id']==name)]
+        base=history(s,['start']);child=history(s,['start','start'])
+        child['profile']['contactEvents'].pop();child['profile']['grounded'][-1]=False;child['terminalSupport']=None
+        child['profile']['caseEvents']=[dict(input=1,case='slab_boost',boxes=[solid('Q')])]
+        self.assertEqual(advantageous_targets(s,base,child,'goal'),{('slab_boost','P+Q')})
+
     def test_next_anchor_follows_the_required_order_then_the_task_block(self):
         from parkour_solver.search.anchors.policy import next_anchor
         s=scene();anchors=['mid','optional']
@@ -335,7 +378,7 @@ class AnchorPolicyTests(unittest.TestCase):
     def test_advantageous_candidates_match_the_generators_airtimes(self):
         from parkour_solver.movement.generation import generate_choices
         from parkour_solver.movement.program import append_choice, boundary_state
-        from parkour_solver.reachability.service import block_table
+        from parkour_solver.reachability.service import face_table
         from parkour_solver.search.anchors.policy import advantageous_candidates, advantageous_targets
         # From start (top 2): low is a run-off with roof over it, slab a step-up, lid a low ceiling, goal a jump.
         s=prepare_scene(dict(version=1, sceneModel='collision_boxes', geometryBounds=[-10,-8,-10,20,12,10],
@@ -361,7 +404,7 @@ class AnchorPolicyTests(unittest.TestCase):
         def fastest(owner, jump):
             return min(child['profile']['duration'] for c,child in children(root)
                        if c['profile']['jump'][0]==jump and landed(child) and child.get('terminalSupport')==owner)
-        table=lambda owner:block_table(s,owner,{})
+        table=lambda name:face_table(s,name,{})
         entries={e['key']:e for e in advantageous_candidates(s,table,'start',2.,'goal',types,0.)}
         for key,e in entries.items():
             kind,target=json.loads(key)

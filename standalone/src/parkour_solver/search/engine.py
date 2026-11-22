@@ -52,7 +52,7 @@ def segment_solids(scene, program, profile, through, gate):
         found = launch(scene, program, begin, end)
         if found is None:
             continue
-        table = gate.reachable_blocks(found[1])
+        table = gate.reachable_faces(found[1])
         if end-found[0] <= table['ticks']:
             result[begin] = sorted(table['solids'])
     return result

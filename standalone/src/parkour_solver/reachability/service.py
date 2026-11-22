@@ -133,31 +133,33 @@ def walk_off_allowed(context, landing_boxes, *, label):
 
 def candidate_blocks(context, kind='blocks'):
     blocks = context['scene']['blocks']
-    owner = context.get('launchOwner')
-    if owner is None or context['interactionGate'] is None:
+    face = context.get('launchFace')
+    if face is None or context['interactionGate'] is None:
         return blocks
-    kept = context['interactionGate'].reachable_blocks(owner)[kind]
+    kept = context['interactionGate'].reachable_faces(face)[kind]
     return [b for b in blocks if b['id'] in kept]
 
 
 def candidate_option(context, option, kind='solids'):
-    owner = context.get('launchOwner')
-    if owner is None or context['interactionGate'] is None:
+    face = context.get('launchFace')
+    if face is None or context['interactionGate'] is None:
         return True
-    solids = context['interactionGate'].reachable_blocks(owner)[kind]
+    solids = context['interactionGate'].reachable_faces(face)[kind]
     return any(i in solids for i in option.members)
 
 
-def block_table(scene, owner, traces):
-    """Blocks one flight from `owner` can touch, by kind (generous: no route, as-given speed limits).
+def face_table(scene, name, traces):
+    """Blocks one flight from face `name` can touch, by kind (generous: no route, as-given speed limits).
 
-    Heights are relative to the launch piece's top (feet): any block whose raw
-    bottom is within head reach can be hit; `landing` tops are within the game's
+    Reach is measured from every block of the face's owners (contact_combinations.face_owners), so a face of
+    one owner measures from all of that owner's blocks. Heights are relative to each launch block's top
+    (feet): any block whose raw bottom is within head reach can be hit; `landing` tops are within the game's
     jump rise; `ceiling` bottoms lie between head height and head reach.
     `stepping` adds blip secondaries, touched one (air) tick after a landing-block
     primary. `traces` caches threshold-0 jump traces by top height.
     """
     import math
+    from parkour_solver.movement.contact_combinations import face_owners
     from parkour_solver.movement.normal import JUMP_RISE, first_descent, replay
     from parkour_solver.physics.vertical import REST_CARRY, STEP_HEIGHT
     from parkour_solver.scene.geometry import BODY_HEIGHT
@@ -171,6 +173,7 @@ def block_table(scene, owner, traces):
     tops = {b['id']: b['top'] for b in blocks}
     solid_of = {b['id']: b['solidIndex'] for b in blocks}
     kept, landing, ceiling, primaries, ticks = set(), set(), set(), [], None
+    owners = face_owners(scene, name)
 
     def near(box, radius):
         foot = [box[0], box[2], box[3], box[5]]
@@ -182,7 +185,7 @@ def block_table(scene, owner, traces):
                 yield i, other
 
     for block in blocks:
-        if block.get('sourceBlock', block['id']) != owner:
+        if block.get('sourceBlock', block['id']) not in owners:
             continue
         kept.add(block['id'])
         if block['top'] not in traces:
@@ -242,18 +245,19 @@ class InteractionGate:
         self.exclusions = []
         from parkour_solver.numerics.disk import STATS
         self.relaxation_start = {kind: collections.Counter(counts) for kind, counts in STATS.items()}
-        self.block_table, self.jump_traces = {}, {}
+        self.face_tables, self.jump_traces = {}, {}
         self.approaches = {}
 
-    def reachable_blocks(self, owner):
-        if owner in self.block_table:
-            return self.block_table[owner]
+    def reachable_faces(self, name):
+        if name in self.face_tables:
+            return self.face_tables[name]
         import time
         started = time.process_time()
-        self.block_table[owner] = block_table(self.scene, owner, self.jump_traces)
+        self.face_tables[name] = face_table(self.scene, name, self.jump_traces)
+        # Reports and profiling read these metric names.
         self.metrics['blockTableBuilds'] = self.metrics.get('blockTableBuilds', 0)+1
         self.metrics['blockTableSeconds'] = self.metrics.get('blockTableSeconds', 0.)+time.process_time()-started
-        return self.block_table[owner]
+        return self.face_tables[name]
 
     def _cached(self, key, build, kind):
         hit = key in self.cache

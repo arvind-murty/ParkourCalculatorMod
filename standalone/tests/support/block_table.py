@@ -21,15 +21,15 @@ def compiler():
     return PythonCompiler()
 
 
-def generated(scene, program, gate, owner):
+def generated(scene, program, gate, face):
     from parkour_solver.movement.generation import generate_choices
     from parkour_solver.movement.program import boundary_state
     result = []
     for kind in ('normal', 'stepping', 'ceiling'):
         context = dict(mode='open', scene=scene, program=program, state=boundary_state(program), maxInputs=40,
                        threshold=0., interactionGate=gate)
-        if owner is not None:
-            context['launchOwner'] = owner
+        if face is not None:
+            context['launchFace'] = face
         result.append(list(generate_choices(kind, context)))
     return result
 

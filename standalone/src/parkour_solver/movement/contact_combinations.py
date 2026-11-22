@@ -102,6 +102,37 @@ def scene_contact_options(scene, axis, sign, members=None):
         members=[b['solidIndex'] for b in scene['blocks']] if members is None else members)
 
 
+def top_faces(scene):
+    """The scene's merged top faces: one option per connected top surface of the offered blocks."""
+    return scene_contact_options(scene, 1, 1)
+
+
+def solid_owners(scene):
+    """{solid index: owners of the blocks on it}."""
+    result = {}
+    for b in scene['blocks']:
+        result.setdefault(b['solidIndex'], set()).add(b.get('sourceBlock', b['id']))
+    return result
+
+
+def face_name(scene, option, owners=None):
+    """A face's name: its blocks' owners joined, so a face of one owner is named by it (`owners`: solid_owners)."""
+    owners = solid_owners(scene) if owners is None else owners
+    return '+'.join(sorted(set().union(*(owners.get(i, ()) for i in option.members))))
+
+
+def face_owners(scene, name):
+    """The owners of the top faces named `name`; a name no face has is taken as one owner."""
+    if name is None:
+        return set()
+    owners = solid_owners(scene)
+    found = set()
+    for option in top_faces(scene):
+        if face_name(scene, option, owners) == name:
+            found.update(*(owners.get(i, ()) for i in option.members))
+    return found or {name}
+
+
 def contact_event(option, axis, direction, offset, role, **fields):
     return dict(leg=0, offset=offset, axis=axis, direction=direction, plane=option.plane,
                 boxes=[list(b) for b in option.boxes], surface=option.surface,

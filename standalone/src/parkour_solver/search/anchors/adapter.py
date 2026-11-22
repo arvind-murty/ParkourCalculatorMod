@@ -4,7 +4,8 @@ import copy
 
 from parkour_solver.search.identity import digest
 from parkour_solver.search.events.adapter import EventGuideAdapter, EventReference
-from parkour_solver.search.anchors.policy import audit, encounter_groups, owner, visit_state, visits, semantic_settings
+from parkour_solver.search.anchors.policy import (audit, encounter_groups, face_namer, owner, support_face, visit_state,
+                                                  visits, semantic_settings)
 from parkour_solver.spatial.anchor_guides import build_guides, decision_objective, onward_objective
 
 
@@ -74,15 +75,17 @@ class AnchorAdapter(EventGuideAdapter):
         return result
 
     def decision_point(self, program):
-        """The block a program's last movement landed on or, ending airborne, took off from: its guide point
-        when it is the start, an anchor or the task, else its top-face centre."""
+        """The face a program's last movement landed on or, ending airborne, took off from: its guide point
+        when it is the start, an anchor or the task, else the centre of its owners' highest tops."""
+        from parkour_solver.movement.contact_combinations import face_owners
         name=visits(self.scene,program)[-1][1]
         names=self.guide_plan['anchors']
         k=next((k for k,a in enumerate(names) if owner(self.scene,a)==name),None)
         if k is not None:
             return self.guide_plan['points'][k]
+        owners=face_owners(self.scene,name)
         solids=[self.scene['collisionScene']['solids'][b['solidIndex']] for b in self.scene['blocks']
-                if owner(self.scene,b['id'])==name]
+                if owner(self.scene,b['id']) in owners]
         top=max(s[4] for s in solids)
         tops=[s for s in solids if s[4]==top]
         return [(min(s[0] for s in tops)+max(s[3] for s in tops))/2,top,(min(s[2] for s in tops)+max(s[5] for s in tops))/2]
@@ -105,8 +108,8 @@ class AnchorAdapter(EventGuideAdapter):
         forbidden={owner(self.scene,a) for a in self.anchor_policy['anchors'][end+1:]}
         if end<len(self.anchor_policy['anchors']):
             forbidden.add(owner(self.scene,self.data['task']['block']))
-        context['feetAllowed']=lambda block: (owner(self.scene,block['id']) not in state['departed'] and
-                                             owner(self.scene,block['id']) not in forbidden)
+        excluded,name=set(state['departed'])|forbidden,face_namer(self.scene)
+        context['feetAllowed']=lambda block: support_face(self.scene,block['id'],name) not in excluded
 
     def program_allowed(self, program):
         anchors=self.anchor_policy['anchors'];end=self.cursor['groupEnd']

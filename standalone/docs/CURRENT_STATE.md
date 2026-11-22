@@ -103,7 +103,7 @@ everything not being worked on is in the [deferred-work register](DEFERRED_WORK.
 | Numerical queries | Selected meaningful completed decisions at cadence1; anchors/final mandatory. No raw-hold NLP or separate ancestor-probe pass. Every query re-solves from original state with earlier facings free. |
 | Solve intent / outcome | Intermediate configured onward objective plus early feasible stop; final configured optimization. A feasible seed can avoid an intermediate worker. Exact operational oracle rejection, repair exhaustion and suspended/error are distinct; child failure never labels an unqueried ancestor. |
 | Guide / turnaround | Backward nearest-point landing-cover guides, onward E→N objective, no discrete progress/slack score. >110° guide cue; one approach-facing physical/imaginary diagonal edge+0.3-block margin gives one frozen binary mode, with distances and replay flips logged. |
-| Visits / movement scope | Multiple current-owner hops supported; departed-owner returns and repeated mandatory anchors deferred. Intentional wall-hit generation deferred; required named-case contacts remain. Tasks are physical landings; the supplied-corridor, fixed-clock, virtual-goal and blocks searches were removed (2026-11-21). |
+| Visits / movement scope | Visits name merged top faces. Multiple current-face hops supported; departed-face returns and repeated mandatory anchors deferred. Intentional wall-hit generation deferred; required named-case contacts remain. Tasks are physical landings; the supplied-corridor, fixed-clock, virtual-goal and blocks searches were removed (2026-11-21). |
 
 Search needs only Python and the numerical extras: the default movement bridge
 (`bridge.python_compiler`) answers coefficient, footprint and scene requests in

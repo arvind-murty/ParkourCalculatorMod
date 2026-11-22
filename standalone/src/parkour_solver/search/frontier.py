@@ -219,27 +219,27 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
         return {json.dumps(list(target)) for target in run_policy['targets'](base, child)}
 
     def landings_of(child, decision):
-        """{owner: program} of an accepted child's earliest landing on each block (owner None off any block).
+        """{face: program} of an accepted child's earliest landing on each face (None off any face).
 
         A grounded child's is its own. An airborne advantageous jump (its built choice stops at a ceiling hit, or at
-        the jump tick of a grind, slab boost or corner jump cancel) lands in its own child's choices: per block, the
+        the jump tick of a grind, slab boost or corner jump cancel) lands in its own child's choices: per face, the
         earliest of those that passes the screens. Their screens change no frontier state and are not recorded;
         the child's own expansion repeats them.
         """
-        owner_of=lambda p:run_policy['owner'](p['terminalSupport']) if p.get('terminalSupport') else None
+        face_of=run_policy['face']
         p=child['profile']
         if p['grounded'][-1]:
-            return {owner_of(child):child}
+            return {face_of(child):child}
         context_data=expansion_context(child,decision=decision)
         proposed=[proposal for kind in settings['types'] for proposal in proposals(kind,context_data)
                   if proposal['program'] is not None and proposal['program']['profile']['grounded'][-1]]
         found={}
         for proposal in sorted(proposed,key=lambda proposal:proposal['program']['profile']['duration']):
-            if owner_of(proposal['program']) in found:
+            if face_of(proposal['program']) in found:
                 continue
             landed,_,_=check_child(proposal,context_data)
             if landed is not None and landed['profile']['grounded'][-1]:
-                found.setdefault(owner_of(landed),landed)
+                found.setdefault(face_of(landed),landed)
         return found
 
     def lands_later(base, child):
@@ -249,32 +249,32 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
     def minimum_runs(e):
         """Minimum run ticks for advantageous jumps at an ordinary decision P (see run_policy).
 
-        N is P's fastest jump-now landing (on the next anchor first, else on any other block); a ceiling hit,
+        N is P's fastest jump-now landing (on the next anchor first, else on any other face); a ceiling hit,
         grind, slab boost or corner jump cancel lands in its child's choices (landings_of). Candidates come from run_policy['candidates'] (tables
         and vertical replays, nothing built):
-        - k same-block run ticks then an advantageous jump: built when k + airtime < N, cheapest first, unless
+        - k same-face run ticks then an advantageous jump: built when k + airtime < N, cheapest first, unless
           a kept one beats it on both total and airtime. The table airtime only bounds the run ticks; a built
           one beats with its built landing, which may lie past N. Each kept one reserves its next run count;
-          beaten ones wait for their beaters; when N's block dies, N widens to the next landing.
-        - a run-off onto another block B, whose walk-off input is a run tick: the fewest run ticks (1 to 11)
+          beaten ones wait for their beaters; when N's face dies, N widens to the next landing.
+        - a run-off onto another face B, whose walk-off input is a run tick: the fewest run ticks (1 to 11)
           landing before a jump onto B would (run ticks + airborne inputs < the entry's limit, lowered to a
           jump-now landing on B, which may exceed N), only when a jump-now proposal lands on B.
-        - a walking step-up onto another block, whose step input is a run tick: on the first tick, else after
+        - a walking step-up onto another face, whose step input is a run tick: on the first tick, else after
           one run tick (more run-up is a slab boost).
         Run-offs and step-ups take no part in beating and hold no reserve. Without N, run counts are scanned
-        until a block is reached.
+        until a face is reached.
         Everything is computed before frontier state changes, so a deadline inside redoes the step.
         """
         from parkour_solver.search.feasibility import meaningful_choice
         program=e['program']
         search=program.get('minimumRunSearch')
         node=search['node'] if search else program.get('decisionNode')
-        upcoming,here,owner=run_policy['next'](program),run_policy['owner'](program['terminalSupport']),run_policy['owner']
+        upcoming,here,face=run_policy['next'](program),run_policy['face'](program),run_policy['face']
         effects,queued,queued_ids,log,reserves=[],[],set(),[],[]
         levels,bases,checks,keys,peeked=[],[[program]],{},{},{}
 
         def level(k):
-            """Unscreened proposals of every type after k same-block run ticks (bases are never queued)."""
+            """Unscreened proposals of every type after k same-face run ticks (bases are never queued)."""
             while len(levels)<=k:
                 if len(levels)==len(bases):
                     ids,found=set(),[]
@@ -308,7 +308,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             return checks[id(proposal)]
 
         def lands(child):
-            return owner(child['terminalSupport']) if child['profile']['grounded'][-1] and child.get('terminalSupport') else None
+            return face(child) if child['profile']['grounded'][-1] else None
 
         def landing(child):
             """landings_of(child) in ticks after P."""
@@ -362,7 +362,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             reserves.append((dict(node=node,**fields),list(watch)))
 
         def source(landings, dead):
-            """(N, owner) of the fastest landing on the next anchor, else on a live block; None without one."""
+            """(N, face) of the fastest landing on the next anchor, else on a live face; None without one."""
             for allowed in (lambda o:o==upcoming,lambda o:o not in dead):
                 times=[(l['ticks'],l['owner']) for l in landings if allowed(l['owner'])]
                 if times:
@@ -388,7 +388,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             record(entry,None,None,N,0,number,'unreached')
 
         def jumped():
-            """Owners a jump-now proposal lands on: a run-off reaches only blocks close enough to jump onto."""
+            """Faces a jump-now proposal lands on: a run-off reaches only faces close enough to jump onto."""
             return {lands(proposal['program']) for _,_,proposal in level(0) if proposal['choice']['profile']['jump'][0]}
 
         def round_(dead, lower, N, kept, number, landed, landings, widen=True):
@@ -404,7 +404,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                     counts=[0,1]
                 else:
                     # The walk-off input is a run tick too: k run ticks before it, at most 11 in all. A jump-now
-                    # landing on the block (landings_of's included) lowers the vertical replay's bound.
+                    # landing on the face (landings_of's included) lowers the vertical replay's bound.
                     entry=dict(entry,limit=min([entry['limit']]+[l['ticks'] for l in landings if l['owner']==entry['via']]))
                     reachable=jumped() if reachable is None else reachable
                     counts=[k for k in range(MAX_ADVANTAGEOUS_RUN_TICKS) if k+1+entry['A']<entry['limit']] if entry['via'] in reachable else []
@@ -451,10 +451,10 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
 
         def scan(dead, start, lower, kept, number, landed, landings):
             """No N: the first run count whose screened jumps (by their landings, landings_of) or run-offs reach
-            the next anchor, else another block."""
+            the next anchor, else another face."""
             def landers(k, wanted):
-                """(item, child, reason, owner, ticks) of the screened landers after k run ticks, each on its
-                earliest wanted block."""
+                """(item, child, reason, face, ticks) of the screened landers after k run ticks, each on its
+                earliest wanted face."""
                 found=[]
                 for item in level(k):
                     base,_,proposal=item
@@ -701,9 +701,9 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                     for target in target_keys(e['program'],child):
                         e['reached'].setdefault(target,[]).append([child['decisionNode'],min(landed.values(),default=None)])
                     if child['profile']['grounded'][-1] or lands_later(e['program'],child):
-                        # N for minimum_runs: this decision's jump-now landings on other blocks, landings_of's included.
+                        # N for minimum_runs: this decision's jump-now landings on other faces, landings_of's included.
                         e['landings'].extend(dict(ticks=ticks,owner=owner,node=child['decisionNode']) for owner,ticks in landed.items()
-                                             if owner not in (None,run_policy['owner'](e['program']['terminalSupport'])))
+                                             if owner not in (None,run_policy['face'](e['program'])))
             for field in ('choice','child','fullProgram','projected','proposalChecked'):e.pop(field,None)
             update()
         state['exhausted'] = True

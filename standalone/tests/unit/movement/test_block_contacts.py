@@ -398,9 +398,17 @@ class BlockTableTests(unittest.TestCase):
         from parkour_solver.reachability.service import InteractionGate
         scene = box_scene([[0, 0, 0, 1, 1, 1], [1, 0, 3, 2, 1, 4], [100, 0, 0, 101, 1, 1], [0, 30, 0, 1, 31, 1]],
                           [('start', 1), ('near', 1), ('far', 1), ('high', 31)])
-        table = InteractionGate(scene, None).reachable_blocks('start')
+        table = InteractionGate(scene, None).reachable_faces('start')
         self.assertEqual(table['blocks'], {'start', 'near'})
         self.assertEqual(table['solids'], {0, 1})
+
+    def test_a_face_table_measures_from_every_block_of_the_face(self):
+        from parkour_solver.reachability.service import face_table
+        # A and B make one long face; far is out of reach from A alone but next to B's far end.
+        scene = box_scene([[0, 0, 0, 1, 1, 1], [1, 0, 0, 8, 1, 1], [10, 0, 0, 11, 1, 1]], [('A', 1), ('B', 1), ('far', 1)])
+        self.assertIn('far', face_table(scene, 'A+B', {})['blocks'])
+        # No face is named A, so its table is A's own blocks', as before faces.
+        self.assertEqual(face_table(scene, 'A', {})['blocks'], {'A', 'B'})
 
     def test_real11_extended_table_kinds_for_b5(self):
         import json
@@ -409,7 +417,7 @@ class BlockTableTests(unittest.TestCase):
         from parkour_solver.scene.normalize import prepare_scene
         request = json.loads((STANDALONE_ROOT/'cases/real11/extended-anchors.json').read_text())['request']
         scene = prepare_scene(request)
-        table = InteractionGate(scene, None).reachable_blocks('b5')
+        table = InteractionGate(scene, None).reachable_faces('b5')
         solid = {b['id']: b['solidIndex'] for b in scene['blocks']}
         self.assertEqual(table['landing'], {'b5', 'b7', 'b11', 'b12', 'b13a', 'b13b', 'b18'})
         self.assertEqual(table['stepping']-table['landing'], {'b19'})
@@ -431,7 +439,7 @@ class BlockTableTests(unittest.TestCase):
                 tabled = [[(c['profile'], c.get('terminalSupport')) for c in kind]
                           for kind in generated(scene, node, gate, owner)]
                 self.assertEqual(tabled, plain, (owner, node['profile']['duration']))
-                removed += len(scene['blocks'])-len(gate.reachable_blocks(owner)['blocks'])
+                removed += len(scene['blocks'])-len(gate.reachable_faces(owner)['blocks'])
         return removed
 
     def test_table_keeps_every_real11_choice(self):
