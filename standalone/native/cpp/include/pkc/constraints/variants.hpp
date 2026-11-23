@@ -84,8 +84,11 @@ private:
     std::optional<Value> active_envelopes_;  // the expanded node's conditioned envelopes during next()
 };
 
-// encounters.landing_segments(profile, through) and settled_through.
+// encounters.landing_segments(profile, through).
 std::vector<std::pair<std::int64_t, std::int64_t>> landing_segments(const Object& profile, std::int64_t through);
+
+// encounters.settled_through(profile, through).
+std::int64_t settled_through(const Object& profile, std::int64_t through);
 
 // reachability/service.interaction_context_key(context).
 std::string interaction_context_key(const Value& context);

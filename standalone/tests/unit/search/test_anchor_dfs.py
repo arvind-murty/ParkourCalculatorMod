@@ -303,6 +303,7 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertTrue(solve_due(dict(decisionDepth=1,lastSolvedDepth=0),4,forced=True))
         self.assertFalse(solve_due(dict(decisionDepth=1,lastSolvedDepth=1),1))
 
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # stubs evaluate_program, which a native decision check never calls
     def test_decision_check_keeps_settled_rows_and_queues_sibling_choice(self):
         settled=dict(leg=0,offset=3,mode='X',cmp='GE',rhs=.25,name='avoidance')
         unsettled=dict(leg=0,offset=6,mode='Z',cmp='GE',rhs=.1,name='avoidance')
@@ -330,6 +331,7 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertEqual([c['offset'] for c in result['program']['profile']['regionChoices']],[7])
         self.assertEqual(result['alternatives'],[])
 
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # stubs evaluate_program, which a native decision check never calls
     def test_decision_check_holds_other_branch_choices_as_alternatives(self):
         from parkour_solver.search.repair_state import branch_key
         checked=[]
@@ -358,6 +360,7 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertEqual(held.get('decisionParent'),result['program'].get('decisionParent'))
         self.assertNotIn('needsNodeSolve',held)
 
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # stubs evaluate_program, which a native decision check never calls
     def test_interrupted_node_climb_is_suspended_not_decided(self):
         checked=[]
         def probe(node_evaluator,p):

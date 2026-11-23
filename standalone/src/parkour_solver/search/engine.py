@@ -189,6 +189,39 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, s
     return result
 
 
+def solve_services(adapter, program, work, service, numerical, *, seconds, cancel_event):
+    """A native node solve's Python services (search/engine.hpp's hooks): the scoped work, the relaxed dispatch, the
+    gate's analysis and face tables and the adapter's candidate check."""
+    scoped = ScopedWork(work, None, min(work.deadline or math.inf, time.monotonic()+seconds))
+    deadline = scoped.deadline
+    dispatch = None
+    if numerical == 'relaxed':
+        from parkour_solver.numerics.disk import RelaxedDispatch
+        dispatch = RelaxedDispatch(gate=service)
+    views = {}
+    def candidate(plan, value, vertical, solve_scope):
+        if 'view' not in views:  # the adapter scoped to the native solve's scope and bound to the program
+            view = adapter.scoped(solve_scope) if hasattr(adapter, 'scoped') else adapter
+            views['view'] = view.bind_program(program) if hasattr(view, 'bind_program') else view
+        return views['view'].candidate(plan, value, vertical, partial=True)
+    def reachable_faces(name):
+        table = service.reachable_faces(name)
+        return dict(ticks=table['ticks'], solids=sorted(table['solids']))
+    def record_counts(counts):
+        parent_work = work
+        while not hasattr(parent_work, 'counts'):
+            parent_work = parent_work.parent
+        for counter in (parent_work.counts, scoped.local.counts):
+            counter.update(counts)
+    return dict(work=scoped, numerical=dispatch.solve if dispatch is not None else None,
+        confirm=dispatch.confirmed if dispatch is not None else None,
+        analyze_model=lambda route, plan, vertical, scope: service.analyze_model(route, plan, vertical, scope=scope),
+        reachable_faces=reachable_faces, candidate=candidate,
+        check_generation=lambda: check_generation(cancel_event, scoped.check, deadline), record_counts=record_counts,
+        accepted=work.accepted, work_summary=scoped.local.summary, seconds=seconds,
+        adapter_identity=adapter.corridor.to_dict() if hasattr(adapter, 'corridor') else None)
+
+
 def numerical_counts(diagnostics):
     """Work counters for numerical requests; a Clarabel answer is never a worker or a seed."""
     counts = Counter()

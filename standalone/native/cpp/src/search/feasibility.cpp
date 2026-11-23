@@ -1,9 +1,10 @@
-// Port of search/feasibility.node_identity, meaningful_choice and outcome.
+// Port of search/feasibility.policy_spec, node_identity, meaningful_choice, outcome, solve_due and unresolved_only.
 #include "pkc/search/feasibility.hpp"
 
 #include <algorithm>
 
 #include "pkc/canonical.hpp"
+#include "../schema.hpp"
 #include "../value_ops.hpp"
 
 namespace pkc {
@@ -20,6 +21,44 @@ bool meaningful_choice(const MovementChoice& choice) {
     if (std::find(p.jump.begin(), p.jump.end(), true) != p.jump.end() || !p.case_events.empty()) return true;
     return std::any_of(p.contact_events.begin(), p.contact_events.end(),
                        [&](const ContactEvent& e) { return e.axis != "Y" || !p.grounded.at(e.offset); });
+}
+
+Value policy_spec(const Value& value, bool first_witness) {
+    Object defaults{{"version", integer_value(1)}, {"purpose", text(first_witness ? "anchor" : "terminal")},
+                    {"stopOnFeasible", boolean(first_witness)}, {"rankEqualCost", boolean(!first_witness)},
+                    {"oracleRejection", boolean(false)}, {"numerical", text("ipopt")}};
+    if (!is_null(value)) {
+        for (const auto& [key, unused] : fields(value))
+            if (!get(defaults, key)) fail("Unknown solve policy field");
+        for (const auto& [key, field] : fields(value)) put(defaults, key, field);
+    }
+    auto one_of = [&](const char* key, std::initializer_list<const char*> names) {
+        return std::any_of(names.begin(), names.end(), [&](const char* n) { return py_equal(at(defaults, key), text(n)); });
+    };
+    if (!py_equal(at(defaults, "version"), integer_value(1)) || !one_of("purpose", {"node", "anchor", "terminal"}) ||
+        !one_of("numerical", {"ipopt", "relaxed"}))
+        fail("Unsupported solve policy");
+    for (const char* key : {"stopOnFeasible", "rankEqualCost", "oracleRejection"})
+        if (!std::holds_alternative<bool>(at(defaults, key).data)) fail("Solve policy flags must be boolean");
+    if (py_equal(at(defaults, "purpose"), text("terminal")) && std::get<bool>(at(defaults, "stopOnFeasible").data))
+        fail("Terminal optimization cannot stop at the first feasible seed");
+    return object(std::move(defaults));
+}
+
+bool solve_due(const Value& program_value, std::int64_t interval) {
+    const Object& program = fields(program_value);
+    const Value* depth = get(program, "decisionDepth");
+    const Value* solved = get(program, "lastSolvedDepth");
+    return (depth ? as_int(*depth) : 0) - (solved ? as_int(*solved) : 0) >= interval;
+}
+
+bool unresolved_only(const Value& repair_value) {
+    // No runnable repair remains unless the caller explicitly retries unknowns.
+    const Object& repair = fields(repair_value);
+    const Value& generation = get_or_null(repair, "constraintGeneration");
+    return py_truthy(get_or_null(repair, "unresolved")) && !py_truthy(get_or_null(repair, "pending")) &&
+           !py_truthy(get_or_null(repair, "repairSources")) && !py_truthy(get_or_null(repair, "inFlight")) &&
+           (is_null(generation) || py_truthy(get_or_null(fields(generation), "exhausted")));
 }
 
 Value outcome(const Value& result_value, const std::string& model, const Value& policy) {

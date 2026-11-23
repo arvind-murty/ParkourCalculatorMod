@@ -31,6 +31,10 @@ struct RepairOptions {
 Value solve_contact_branches(const Value& route, const Value& profiles, const Value& checks, const SolveHooks& hooks,
                              const RepairOptions& options, ConstraintVariants* initial_variants);
 
+// node_alternatives(accepted, incumbent, objective): a decision check's held alternatives, best first. A null
+// `incumbent` is None.
+Array node_alternatives(const Array& accepted, const Value& incumbent, const Value& objective);
+
 // repair_state.branch_key(rows, passages, hits).
 std::string branch_key(const Array& rows, const Array& passages, const Array& hits);
 

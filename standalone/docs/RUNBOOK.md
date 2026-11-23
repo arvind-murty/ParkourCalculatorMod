@@ -31,8 +31,9 @@ scene) that prepares and analyzes its programs, answers their required-contact s
 and screens whole programs (`check_program`, walk-off faces and the disk relaxation
 included) in its own cache, building Python dicts only for readers that ask; the open
 normal, stepping and ceiling generators run on that gate, with its face tables and query log. The DFS frontier
-expands each decision a movement type at a time, and runs its minimum-run searches, natively, and each node solve runs
-its constraint generator and repair loop natively (see the
+expands each decision a movement type at a time, and runs its minimum-run searches, natively, each decision check
+runs natively after its gate preparation, and anchor-leg and finish solves run their constraint generator and repair
+loop natively (see the
 [execution reference](ANCHOR_SEARCH_EXECUTION_REFERENCE.md#implementation-ownership-and-persistence)).
 Its sequence screens append the choice to a native copy of the context's program and
 screen that child without building it in Python, ladder appends included. The Python bridge replays scene checks and derives footprints natively, and `scene/` normalizes scenes and builds routes and schedules natively for every caller, including scenes with climbable cells and routes with ladder events. The numerical request checks, `validation/numerical` replays and `validation/vertical` schedule checks, `numerical_problem` and the disk relaxation's Clarabel solve with its decided-result cache and counters (`numerics/disk.py`; its spec and small helpers stay in Python) run natively for every caller, `spatial/surfaces.py`'s scene geometry (contact options, clusters, sides, free rectangles) computes natively behind its Python caches, `movement/vertical_profiles.trace_ladder_schedule` traces natively, `spatial/cells.decompose`, `spatial/regions.support_components` and `build_geometry_graph` build the cell decomposition and its geometry graph natively, and `numerics/solver.py` launches the native IPOPT worker (`pkc_numerics_worker`, built beside the module against the casadi of the build's Python) instead of `python -m parkour_solver.numerics.worker`. It compiles their coefficients from the native tables, so the compiler's call counts

@@ -853,8 +853,9 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `ScopedWork.accepted` | [43](../src/parkour_solver/search/engine.py#L43) | function |
 | `segment_solids` | [47](../src/parkour_solver/search/engine.py#L47) | function |
 | `evaluate_program` | [61](../src/parkour_solver/search/engine.py#L61) | function |
-| `numerical_counts` | [192](../src/parkour_solver/search/engine.py#L192) | function |
-| `find_checkpoint_route` | [212](../src/parkour_solver/search/engine.py#L212) | function |
+| `solve_services` | [192](../src/parkour_solver/search/engine.py#L192) | function |
+| `numerical_counts` | [225](../src/parkour_solver/search/engine.py#L225) | function |
+| `find_checkpoint_route` | [245](../src/parkour_solver/search/engine.py#L245) | function |
 
 ## search/events/adapter.py
 

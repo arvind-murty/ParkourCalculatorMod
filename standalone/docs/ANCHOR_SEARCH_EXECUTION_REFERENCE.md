@@ -254,11 +254,15 @@ landings, same-face fit and advantageous targets, and the frontier applies its q
 minimum-run records and DFS state changes in proposal order. The minimum-run search after the types (and each held
 minimum-run search) also runs natively; the frontier commits its exclusions, queues its children and holds its
 reserved run counts as alternatives in the same order as the Python search. A batch stops where the Python loop would emit a ready program and commits nothing when the budget stops it,
-so a resumed expansion redoes it from the saved cursor. Each node solve (`search/engine.evaluate_program`) runs its
-constraint generator and repair loop natively (`constraints/variants.hpp`, `search/repair.hpp`) for routes without
-passages, wall hits or ladder events; the loop calls the compiler, the relaxed or IPOPT numerical solve,
-the candidate filter, the work budget and the progress callback in Python and returns the Python result and repair
-state.
+so a resumed expansion redoes it from the saved cursor. Each decision check (`dfs.evaluate_node`) runs natively
+(`search/dfs.hpp`) once the gate has prepared a route without passages, wall hits or ladder events: its node solve
+(`search/engine.hpp`: scope, floor checks, identity, constraint generator, repair loop, outcome), the branch program it
+commits and the alternatives it holds. The gate's analysis and face tables, the adapter's candidate check, the
+compiler, the relaxed or IPOPT numerical solve and the work budget stay Python callbacks, and the check records into
+the search's node table, checkpoint progress and observations through callbacks. Anchor-leg and finish solves
+(`search/engine.evaluate_program`) run their constraint generator and repair loop natively (`constraints/variants.hpp`,
+`search/repair.hpp`) for the same routes; the loop calls the compiler, the numerical solve, the candidate filter, the
+work budget and the progress callback in Python and returns the Python result and repair state.
 
 The movement continuation also keeps what the [solve report](RESULTS_AND_DEBUGGING.md#solve-reports)
 needs for its search tree; no search decision reads it. Each exclusion (a screen's proof or a

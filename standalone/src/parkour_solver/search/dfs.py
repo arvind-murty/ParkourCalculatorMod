@@ -425,6 +425,62 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
     def final_frame(f):
         return f['goalRequest']['terminal']
 
+    def native_node(program, nodes, f, active, span, start, identity):
+        """evaluate_node natively (search/dfs.hpp), recording into this search's state; None for a route the native
+        node solve leaves to Python."""
+        from parkour_solver.observability.turns import record as observe, replay
+        from parkour_solver.search import ordered_route
+        from parkour_solver.search.engine import solve_services
+        entry={}
+        def begin():
+            entry.update(status='suspended',parent=program.get('decisionParent'),repairState=program.get('repairState'))
+            nodes[identity]=entry
+            begin_repair(program,(entry,))
+        def begin_solve():
+            node_view=active.for_node(program)
+            services=solve_services(node_view,program,work,gate,numerical_backend,
+                seconds=max(.001,min(score_seconds,deadline-time.monotonic())),cancel_event=cancel_event)
+            return dict(services,objective=node_view.objective)
+        def assign(repair):
+            program['repairState']=repair
+        def progress(repair):
+            program['repairState']=repair
+            entry['repairState']=repair
+            repair_progress()
+        def settle(repair):
+            program['repairState']=entry['repairState']=repair
+        def observed(model, status, elapsed, metrics):
+            observe(state['observations'],adapter.guide_plan,program,span=span,start=start,
+                    model=model,status=status,elapsed=elapsed,metrics=metrics,
+                    service=dict(latchRevision=state['latchRevision'],hardLatched=pair_key(span) in state['hardLatches'],
+                        runDeferralEnabled=minimum_run_pruning and not program.get('priorityTurnaround',False) and group_latched(f),
+                        tickDeferralEnabled=minimum_run_pruning and group_latched(f),comparisonPolicy=COMPARISON_POLICY_VERSION))
+        def replayed(positions, model):
+            ancestor=program.get('decisionParent')
+            while ancestor:
+                event=state['observations']['decisions'].get(ancestor)
+                if event is None:break
+                replay(state['observations'],adapter.guide_plan,ancestor,event['span'],positions[event['pointTick']],model)
+                ancestor=event['parent']
+        def store(key, record, node_result, recovery):
+            if recovery is not None:
+                f['recoveryFailure']=recovery
+            nodes[key]=record
+            state['nodeResults'][key]=node_result
+            publish()
+        evaluated=gate.native.evaluate_node(scene,program,compiler,ordered_route.solve,cancel_event=cancel_event,
+            python_executable=python_executable,prepare=lambda _: gate.prepare(program,scene=scene),begin=begin,
+            begin_solve=begin_solve,assign=assign,progress=progress if on_progress else None,settle=settle,
+            observe=observed,replay=replayed,store=store,saved=nodes.get(identity),guide_plan=adapter.guide_plan,
+            span=span,solve_interval=adapter.anchor_policy['solveEveryDecisionLevels'],numerical=numerical_backend,
+            frame=f['id'],candidate_seconds=candidate_seconds,retry_unresolved=retry_unknown)
+        if evaluated is None:
+            return None
+        result,same=evaluated
+        if same:
+            result['program']=program
+        return result
+
     def evaluate_node(program, nodes, unused, f):
         from parkour_solver.search.feasibility import solve_due
         from parkour_solver.spatial.anchor_guides import classify
@@ -433,6 +489,10 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
         span,start=pair_of(program,f),span_info(f)[1]
         identity=program['decisionNode']
         depth=program['decisionDepth']
+        if gate.native is not None:
+            evaluated=native_node(program,nodes,f,active,span,start,identity)
+            if evaluated is not None:
+                return evaluated
         if not solve_due(program,adapter.anchor_policy['solveEveryDecisionLevels']):
             return dict(status='untested',program=program)
         saved=nodes.get(identity)

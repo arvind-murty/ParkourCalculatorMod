@@ -269,6 +269,14 @@ std::vector<std::pair<std::int64_t, std::int64_t>> landing_segments(const Object
     return out;
 }
 
+std::int64_t settled_through(const Object& profile, std::int64_t through) {
+    // `through` when the prefix ends grounded, else the start of its last (airborne) segment.
+    if (const Value* ground = get(profile, "grounded"))
+        if (through < static_cast<std::int64_t>(items(*ground).size()) && py_truthy(items(*ground)[through])) return through;
+    const auto segments = landing_segments(profile, through);
+    return segments.empty() ? 0 : segments.back().first;
+}
+
 Array canonical_rows(const Array& rows) {
     using Key = std::tuple<std::int64_t, std::int64_t, std::string, std::string>;
     std::vector<std::pair<Key, Object>> bounds;

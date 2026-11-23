@@ -28,6 +28,7 @@
 #include "pkc/search/anchors/policy.hpp"
 #include "pkc/search/bounds/remaining.hpp"
 #include "pkc/search/comparison.hpp"
+#include "pkc/search/dfs.hpp"
 #include "pkc/search/engine.hpp"
 #include "pkc/search/feasibility.hpp"
 #include "pkc/search/goals.hpp"
@@ -324,6 +325,44 @@ pkc::SolveHooks solve_hooks(py::object compiler, py::object solve, py::object wo
     }
     if (!cancel_event.is_none())
         hooks.cancelled = [cancel_event] { return python_hook([&] { return cancel_event.attr("is_set")().cast<bool>(); }); };
+    return hooks;
+}
+
+// The node solve's Python services (engine.evaluate_program's): `services` maps work, numerical, confirm,
+// analyze_model, reachable_faces, candidate, check_generation, record_counts, accepted and work_summary to callables
+// (numerical and confirm may be None). on_progress is left to the caller.
+pkc::EvaluateHooks evaluate_hooks(py::object compiler, py::object solve, py::object cancel_event,
+                                  py::object python_executable, const py::object& services) {
+    auto service = [&](const char* name) { return py::object(services[py::str(name)]); };
+    py::object analyze_model = service("analyze_model"), reachable_faces = service("reachable_faces"),
+               candidate = service("candidate"), check_generation = service("check_generation"),
+               record_counts = service("record_counts"), accepted = service("accepted"),
+               work_summary = service("work_summary");
+    pkc::EvaluateHooks hooks;
+    hooks.solve = solve_hooks(compiler, solve, service("work"), cancel_event, python_executable);
+    hooks.numerical = numerical_hook(service("numerical"), python_executable, cancel_event);
+    hooks.confirm = numerical_hook(service("confirm"), python_executable, cancel_event);
+    hooks.analyze_model = [analyze_model](const pkc::Value& route, const pkc::Value& plan, const pkc::Value& vertical,
+                                          const pkc::Value& scope) {
+        return python_hook([&] {
+            return convert(analyze_model(to_python(route), to_python(plan), to_python(vertical), to_python(scope)));
+        });
+    };
+    hooks.reachable_faces = [reachable_faces](const std::string& face) {
+        return python_hook([&] { return convert(reachable_faces(face)); });
+    };
+    hooks.candidate = [candidate](const pkc::Value& plan, const pkc::Value& value, const pkc::Value& vertical,
+                                  const pkc::Value& scope) {
+        return python_hook([&] {
+            return convert(candidate(to_python(plan), to_python(value), to_python(vertical), to_python(scope)));
+        });
+    };
+    hooks.check_generation = [check_generation] { python_hook([&] { check_generation(); }); };
+    hooks.record_counts = [record_counts](const pkc::Value& counts) {
+        python_hook([&] { record_counts(to_python(counts)); });
+    };
+    hooks.accepted = [accepted](const pkc::Value& best) { python_hook([&] { accepted(to_python(best)); }); };
+    hooks.work_summary = [work_summary] { return python_hook([&] { return convert(work_summary()); }); };
     return hooks;
 }
 }  // namespace
@@ -710,68 +749,72 @@ PYBIND11_MODULE(_pkc_native, m) {
           py::arg("initial_variants") = nullptr, py::arg("retry_unresolved") = true, py::arg("oracle_rejection") = false,
           py::arg("climb_families") = false, py::arg("numerical") = py::none(), py::arg("confirm") = py::none(),
           "search/repair.solve_contact_branches; `solve` is numerics.solver.solve, called when `numerical` is None");
-    m.def("evaluate_prepared",
-          [](py::handle scene, py::handle program, py::handle route, py::handle profiles, py::handle vertical,
-             py::object compiler, py::object solve, py::object work, py::object cancel_event, py::object python_executable,
-             py::object numerical, py::object confirm, py::object analyze_model, py::object reachable_faces,
-             py::object candidate, py::object check_generation, py::object on_progress, py::object record_counts,
-             py::object accepted, py::object work_summary, double seconds, double candidate_seconds, py::handle scope,
-             py::handle required_landing, py::handle final_route, py::handle policy, py::handle adapter_identity,
-             bool node_query, bool retry_unresolved, bool climb_families, py::handle timings) {
-              pkc::EvaluateHooks hooks;
-              hooks.solve = solve_hooks(compiler, solve, work, cancel_event, python_executable);
-              hooks.numerical = numerical_hook(numerical, python_executable, cancel_event);
-              hooks.confirm = numerical_hook(confirm, python_executable, cancel_event);
-              hooks.analyze_model = [analyze_model](const pkc::Value& route, const pkc::Value& plan,
-                                                    const pkc::Value& vertical, const pkc::Value& scope) {
+    m.def("evaluate_node",
+          [](py::handle scene, py::handle program, py::object compiler, py::object solve, py::object cancel_event,
+             py::object python_executable, py::object prepare, py::object begin, py::object begin_solve,
+             py::object assign, py::object progress, py::object settle, py::object observe, py::object replay,
+             py::object store, py::handle saved, py::handle guide_plan, std::int64_t span, std::int64_t solve_interval,
+             std::string numerical, py::handle frame, double candidate_seconds, bool retry_unresolved) -> py::object {
+              pkc::NodeHooks hooks;
+              hooks.prepare = [prepare](const pkc::Value& value) {
+                  return python_hook([&] { return convert(prepare(to_python(value))); });
+              };
+              hooks.begin = [begin] { python_hook([&] { begin(); }); };
+              hooks.begin_solve = [=] {
                   return python_hook([&] {
-                      return convert(analyze_model(to_python(route), to_python(plan), to_python(vertical), to_python(scope)));
+                      py::object services = begin_solve();
+                      pkc::NodeSolve out;
+                      out.hooks = evaluate_hooks(compiler, solve, cancel_event, python_executable, services);
+                      out.seconds = services["seconds"].cast<double>();
+                      out.objective = convert(services["objective"]);
+                      out.adapter_identity = convert(services["adapter_identity"]);
+                      return out;
                   });
               };
-              hooks.reachable_faces = [reachable_faces](const std::string& face) {
-                  return python_hook([&] { return convert(reachable_faces(face)); });
-              };
-              hooks.candidate = [candidate](const pkc::Value& plan, const pkc::Value& value, const pkc::Value& vertical,
-                                            const pkc::Value& scope) {
-                  return python_hook([&] {
-                      return convert(candidate(to_python(plan), to_python(value), to_python(vertical), to_python(scope)));
-                  });
-              };
-              hooks.check_generation = [check_generation] { python_hook([&] { check_generation(); }); };
-              if (!on_progress.is_none())
-                  hooks.on_progress = [on_progress](const pkc::Value& state) {
-                      python_hook([&] { on_progress(to_python(state)); });
+              hooks.assign = [assign](const pkc::Value& repair) { python_hook([&] { assign(to_python(repair)); }); };
+              if (!progress.is_none())
+                  hooks.progress = [progress](const pkc::Value& repair) {
+                      python_hook([&] { progress(to_python(repair)); });
                   };
-              hooks.record_counts = [record_counts](const pkc::Value& counts) {
-                  python_hook([&] { record_counts(to_python(counts)); });
+              hooks.settle = [settle](const pkc::Value& repair) { python_hook([&] { settle(to_python(repair)); }); };
+              hooks.observe = [observe](const pkc::Value& model, const std::string& status, double elapsed,
+                                        const pkc::Value& metrics) {
+                  python_hook([&] { observe(to_python(model), status, elapsed, to_python(metrics)); });
               };
-              hooks.accepted = [accepted](const pkc::Value& best) { python_hook([&] { accepted(to_python(best)); }); };
-              hooks.work_summary = [work_summary] { return python_hook([&] { return convert(work_summary()); }); };
-              pkc::EvaluateOptions options;
-              options.seconds = seconds;
+              hooks.replay = [replay](const pkc::Value& positions, const pkc::Value& model) {
+                  python_hook([&] { replay(to_python(positions), to_python(model)); });
+              };
+              hooks.store = [store](const std::string& identity, const pkc::Value& record, const pkc::Value& node_result,
+                                    const pkc::Value& recovery) {
+                  python_hook([&] { store(identity, to_python(record), to_python(node_result), to_python(recovery)); });
+              };
+              pkc::NodeOptions options;
+              options.saved = convert(saved);
+              options.guide_plan = convert(guide_plan);
+              options.span = span;
+              options.solve_interval = solve_interval;
+              options.numerical = numerical;
+              options.frame = convert(frame);
               options.candidate_seconds = candidate_seconds;
-              options.supplied_scope = convert(scope);
-              options.required_landing = convert(required_landing);
-              options.final_route = convert(final_route);
-              options.policy = convert(policy);
-              options.adapter_identity = convert(adapter_identity);
-              options.node_query = node_query;
               options.retry_unresolved = retry_unresolved;
-              options.climb_families = climb_families;
-              options.timings = *std::get<std::shared_ptr<const pkc::Object>>(convert(timings).data);
-              return to_python(pkc::evaluate_prepared(convert(scene), convert(program), convert(route), convert(profiles),
-                                                      convert(vertical), hooks, options));
+              const auto evaluated = pkc::evaluate_node(convert(scene), convert(program), hooks, options);
+              if (!evaluated) return py::none();
+              return py::make_tuple(to_python(evaluated->result), evaluated->input_program);
           },
-          py::arg("scene"), py::arg("program"), py::arg("route"), py::arg("profiles"), py::arg("vertical"),
-          py::arg("compiler"), py::arg("solve"), py::kw_only(), py::arg("work"), py::arg("cancel_event"),
-          py::arg("python_executable"), py::arg("numerical"), py::arg("confirm"), py::arg("analyze_model"),
-          py::arg("reachable_faces"), py::arg("candidate"), py::arg("check_generation"), py::arg("on_progress"),
-          py::arg("record_counts"), py::arg("accepted"), py::arg("work_summary"), py::arg("seconds"),
-          py::arg("candidate_seconds"), py::arg("scope"), py::arg("required_landing"), py::arg("final_route"),
-          py::arg("policy"), py::arg("adapter_identity"), py::arg("node_query"), py::arg("retry_unresolved"),
-          py::arg("climb_families"), py::arg("timings"),
-          "search/engine.evaluate_program after the gate's preparation, with the gate, adapter, relaxed dispatch and "
-          "work budget as Python callables");
+          py::arg("scene"), py::arg("program"), py::arg("compiler"), py::arg("solve"), py::kw_only(),
+          py::arg("cancel_event"), py::arg("python_executable"), py::arg("prepare"), py::arg("begin"),
+          py::arg("begin_solve"), py::arg("assign"), py::arg("progress"), py::arg("settle"), py::arg("observe"),
+          py::arg("replay"), py::arg("store"), py::arg("saved"), py::arg("guide_plan"), py::arg("span"),
+          py::arg("solve_interval"), py::arg("numerical"), py::arg("frame"), py::arg("candidate_seconds"),
+          py::arg("retry_unresolved"),
+          "search/dfs.evaluate_node with the search state it records into as Python callables: (result, whether the "
+          "result's program is the caller's), or None for a route the native node solve leaves to Python");
+    m.def("commit_arrival", [](py::handle program, py::handle best, py::handle source_program, bool keep_region_choices) {
+        return to_python(pkc::commit_arrival(convert(program), convert(best), convert(source_program), keep_region_choices));
+    }, py::arg("program"), py::arg("best"), py::kw_only(), py::arg("source_program") = py::none(),
+       py::arg("keep_region_choices") = false, "search/dfs.commit_arrival");
+    m.def("candidate_key", [](py::handle program) { return pkc::candidate_key(convert(program)); },
+          "search/dfs.candidate_key");
     py::class_<pkc::InteractionGate, std::shared_ptr<pkc::InteractionGate>>(m, "InteractionGate")
         .def(py::init([](py::handle scene) { return std::make_shared<pkc::InteractionGate>(convert(scene)); }))
         .def("reachable_faces", [](pkc::InteractionGate& gate, std::optional<std::string> name) {

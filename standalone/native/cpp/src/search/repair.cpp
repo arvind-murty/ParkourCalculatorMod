@@ -1816,4 +1816,42 @@ Value solve_contact_branches(const Value& route, const Value& profiles, const Va
     return loop.run();
 }
 
+Array node_alternatives(const Array& accepted, const Value& incumbent, const Value& objective) {
+    std::optional<std::string> chosen;
+    if (py_truthy(incumbent)) {
+        const Object& i = fields(incumbent);
+        chosen = branch_key(items(at(i, "rows")), items(at(i, "passages")), items(at(i, "hits")));
+    }
+    std::vector<Object> variants;
+    for (const auto& v : accepted) variants.push_back(fields(v));
+    using Entry = std::pair<Value, Value>;  // (rank, variant)
+    std::vector<std::pair<Value, std::vector<Entry>>> classes;  // keyed by alternativeBranchKey, first seen first
+    for (const auto& variant : usable(variants)) {
+        const Value& best = at(fields(variant), "best");
+        const Value& key = get_or_null(fields(best), "alternativeBranchKey");
+        auto found = std::find_if(classes.begin(), classes.end(), [&](const auto& c) { return py_equal(c.first, key); });
+        if (found == classes.end()) found = classes.insert(classes.end(), {key, {}});
+        found->second.emplace_back(candidate_rank(best, objective), variant);
+    }
+    auto by_rank = [](const Entry& a, const Entry& b) { return rank_less(a.first, b.first); };
+    std::vector<Entry> kept;
+    for (auto& [key, members] : classes) {
+        std::stable_sort(members.begin(), members.end(), by_rank);
+        const Value& top = members[0].first;
+        kept.push_back(members[0]);
+        std::size_t close = 0;
+        for (std::size_t k = 1; k < members.size() && close < kFallbackLimit; ++k)
+            if (py_equal(items(members[k].first)[0], items(top)[0]) &&
+                d(items(members[k].first)[1]) - d(items(top)[1]) <= kFallbackGap) {
+                kept.push_back(members[k]);
+                ++close;
+            }
+    }
+    std::stable_sort(kept.begin(), kept.end(), by_rank);
+    Array out;
+    for (const auto& [rank, variant] : kept)
+        if (!chosen || as_text(at(fields(variant), "branch")) != *chosen) out.push_back(variant);
+    return out;
+}
+
 }  // namespace pkc

@@ -635,3 +635,26 @@ that built it; both modes have that cache, and on fixed work Python mode's 19th 
   before and after the fix, counts 3, so reports are compared from sequential runs.
 - The prepared route's profile copy still carries the building program's `constraintOwners`; nothing reads them
   there (programs own their constraint owners).
+
+## The decision check, 2026-11-22
+
+Source: `24385d46` plus `search/dfs.hpp` (`evaluate_node`: the solve-due and saved-node checks, the gate preparation,
+the native node solve, the interrupted-climb rule, the committed branch program with `commit_arrival` and
+`retain_prefix`, `node_alternatives` and `candidate_key`, the node record) and `dfs.evaluate_node` dispatching to it
+under `PKC_NATIVE_CORE` once the gate has prepared a route without passages, wall hits or ladder events. The check
+records into the node table, checkpoint progress and observations through Python callbacks; anchor-leg and finish
+solves keep `evaluate_program`. The `evaluate_prepared` binding goes: the check calls it natively.
+
+- Reports equal the previous code's except provenance, and transitions match Python
+  ([fixed work](2026-11-22-decision-check/fixed-report-vs-previous.json),
+  [short](2026-11-22-decision-check/short-report-vs-previous.json),
+  [fixed parity](2026-11-22-decision-check/fixed-parity-python-native.json),
+  [short parity](2026-11-22-decision-check/short-parity-python-native.json)). Fixed work's node table holds every
+  outcome (feasible, exhausted, oracle-rejected, suspended) and 10 nodes with held alternatives.
+- Search seconds, alternating one at a time: fixed work 18.1 and 18.4 against 19.8 and 21.4 before; the short control
+  1.71 and 1.63 against 1.73 and 1.72 ([times](2026-11-22-decision-check/search-seconds.txt)).
+- The search and repair test modules run clean under AddressSanitizer with 30 native checks, and fixed work runs clean
+  with a report equal to the release build's except provenance ([summary](2026-11-22-decision-check/asan-summary.txt),
+  [report](2026-11-22-decision-check/fixed-asan-report-vs-release.json)).
+- The milestone test list passes in both modes; the three DFS tests that stub `evaluate_program` run in Python mode
+  ([suites](2026-11-22-decision-check/suites-summary.txt)).
