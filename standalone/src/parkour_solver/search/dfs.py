@@ -74,7 +74,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
     if any(not accepted_program(p) for p in roots):
         raise ValueError('DFS roots violate the decision domain')
     schema = 8
-    context = digest(dict(version=schema, kind='ordered_goal_dfs', movementGenerationPolicy=14,constraintGenerationPolicy=GENERATION_POLICY,
+    context = digest(dict(version=schema, kind='ordered_goal_dfs', movementGenerationPolicy=15,constraintGenerationPolicy=GENERATION_POLICY,
         scene={k:v for k,v in scene.items() if k!='movementSearch'},
         domain={k:v for k,v in cfg.items() if k not in ('maxPrefixes','maxQueuedPrefixes','maxChoicesPerType','expansionsPerProposal')},
         roots=[program_search_key(p) for p in roots], goals=[], terminal=None, corridor=adapter.corridor.to_dict(),

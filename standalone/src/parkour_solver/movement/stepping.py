@@ -81,6 +81,8 @@ def open_stepping_choices(context):
                                     yield choice
                 if (enabled('corner_jump_cancel') and f32(.42) < rise <= f32(.6) and
                         interaction_allowed(context, box, 0, jumping=True, label=dict(owner=block['id'], role='corner_jump_cancel'))):
+                    # Its zero rise is the step's, so a low ceiling over the take-off stops it as it stops a slab boost.
+                    clearances = ceiling_clearances(context, y0, face.plane, jumping=True)
                     for xdir in (-1, 1):
                         for zdir in (-1, 1):
                             # corner_rows enter across the X side facing -xdir; the Z side is only passed.
@@ -88,14 +90,15 @@ def open_stepping_choices(context):
                                     context, 'X', -xdir, bounding_region(face.regions),
                                     label=dict(owner=block['id'], role='corner_jump_cancel')):
                                 continue
-                            rows = corner_rows(box, 0, 1, xdir, zdir, face.boxes)
-                            if not _fresh(made, 'corner_jump_cancel', rows):
-                                continue
-                            event = dict(case='corner_jump_cancel', input=0, plane=y0, higherHeight=face.plane,
-                                         boxes=boxes, anchors={'beforeJump': 0, 'jump': 1})
-                            choice = named_choice(context, 'stepping', initial, event, jumping=True, constraints=rows)
-                            if choice:
-                                yield choice
+                            for clear in clearances:
+                                rows = corner_rows(box, 0, 1, xdir, zdir, face.boxes) + clear
+                                if not _fresh(made, 'corner_jump_cancel', rows):
+                                    continue
+                                event = dict(case='corner_jump_cancel', input=0, plane=y0, higherHeight=face.plane,
+                                             boxes=boxes, anchors={'beforeJump': 0, 'jump': 1})
+                                choice = named_choice(context, 'stepping', initial, event, jumping=True, constraints=rows)
+                                if choice:
+                                    yield choice
     for initial, jumping, trace in choice_approaches(context):
         for lower, name, members in faces:
             if context.get('checkBudget'):

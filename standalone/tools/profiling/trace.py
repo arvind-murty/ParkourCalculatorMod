@@ -265,12 +265,12 @@ def case_text(c):
     corner a corner case passes (it ends beside the block, not on it)."""
     block, side = c.get('block','?').upper(), '/'.join(c['entries'])
     landing = f'lands on {c["lower"].upper()} and ' if c.get('lower') else ''
+    ceilings = ''.join(f', keeping to the {s} side of ceiling {owner.upper()}' for owner,s in c.get('ceilings',[]))
     if c['case'] in ('corner_jump_cancel','corner_blip','corner_blip_up'):
         verb = dict(corner_jump_cancel='corner jump cancel',corner_blip='corner blips',corner_blip_up='corner blips up')[c['case']]
-        return f'{landing}{verb} past {block}\'s {"".join(c["entries"]) or "?"} corner t{c["tick"]}'
+        return f'{landing}{verb} past {block}\'s {"".join(c["entries"]) or "?"} corner t{c["tick"]}{ceilings}'
     verb = dict(grind='grinds under', blip='blips onto', blip_up='blips up onto').get(c['case'],c['case'].replace('_',' ')+' onto')
-    return (f'{landing}{verb} {block} t{c["tick"]}'+(f' from its {side} side' if side else '')+
-            ''.join(f', keeping to the {s} side of ceiling {owner.upper()}' for owner,s in c.get('ceilings',[])))
+    return f'{landing}{verb} {block} t{c["tick"]}'+(f' from its {side} side' if side else '')+ceilings
 
 
 def node_trace(state, scene=None):

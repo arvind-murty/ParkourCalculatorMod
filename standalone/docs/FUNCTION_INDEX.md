@@ -425,7 +425,7 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `_sequence_allowed` | [15](../src/parkour_solver/movement/stepping.py#L15) | function |
 | `_fresh` | [26](../src/parkour_solver/movement/stepping.py#L26) | function |
 | `open_stepping_choices` | [36](../src/parkour_solver/movement/stepping.py#L36) | function |
-| `_open_flight_cases` | [121](../src/parkour_solver/movement/stepping.py#L121) | function |
+| `_open_flight_cases` | [124](../src/parkour_solver/movement/stepping.py#L124) | function |
 
 ## movement/units.py
 

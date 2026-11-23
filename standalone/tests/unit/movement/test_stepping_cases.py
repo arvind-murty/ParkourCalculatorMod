@@ -298,7 +298,7 @@ class ExposureTests(unittest.TestCase):
         # The ceiling's underside at 3 leaves feet 1.2 of room, below the 1.5 top.
         low = [1, 3, 0, 2, 4, 1]
         sides = [[('X', 'GE', 2.3001)], [('X', 'LE', .6999)], [('Z', 'GE', 1.3001)], [('Z', 'LE', -.3001)]]
-        for case in ('normal_step', 'slab_boost'):
+        for case in ('normal_step', 'slab_boost', 'corner_jump_cancel'):
             found = clears([start, target, low], case)
             self.assertTrue(found, case)
             # Every choice keeps to one side of the ceiling; the sides beside the target's approach are offered.
@@ -306,12 +306,19 @@ class ExposureTests(unittest.TestCase):
             self.assertLessEqual({tuple(sides[1]), tuple(sides[2])}, {tuple(rows) for rows in found}, case)
             # An underside at 3.3 leaves room for the 1.5 top: no clearance.
             self.assertEqual({tuple(rows) for rows in clears([start, target, [1, 3.3, 0, 2, 4, 1]], case)}, {()}, case)
-        self.assertEqual({tuple(rows) for rows in clears([start, target, low], 'corner_jump_cancel')}, {()})
-        # Minecraft's step rises from the take-off box: under the ceiling it stops short of the top, beside it it lands.
+        # Minecraft's step rises from the take-off box: under the ceiling a slab boost stops short of the top and a corner
+        # jump cancel stays blocked at the X face; beside the ceiling both work.
         scene = StaticScene(dict(version=1, profile='minecraft-1.8.9', bounds=[-5, -1, -5, 6, 6, 6], solids=[start, target, low]))
         for z, top in ((.5, False), (1.5, True)):
             move = scene.move(scene.start_box((1.6, 1., z)), (.3, .42, 0.), True, False)
             self.assertEqual(move.position[1] == 1.5, top, z)
+        corner = StaticScene(dict(version=1, profile='minecraft-1.8.9', bounds=[-5, -1, -5, 6, 6, 6],
+                                  solids=[start, [2, 0, 0, 3, 1.5, 1], [1, 3, 0, 2, 4, 2]]))
+        cleared = StaticScene(dict(version=1, profile='minecraft-1.8.9', bounds=[-5, -1, -5, 6, 6, 6],
+                                   solids=[start, [2, 0, 0, 3, 1.5, 1], [1, 3.3, 0, 2, 4, 2]]))
+        for scene, cancelled in ((corner, False), (cleared, True)):
+            move = scene.move(scene.start_box((1.6, 1., 1.1)), (.3, .42, .25), True, False)
+            self.assertEqual((move.stepped, move.position[1] == 1.), (cancelled, cancelled))
 
     def test_a_side_flush_against_a_neighbour_offers_no_step(self):
         # wall is flush with target's Z+ side at its height: one merged face, whose seam is no side.

@@ -68,9 +68,9 @@ def top_choices(context, face, owner, state, name='case:region', *, jumping):
 
 
 def ceiling_clearances(context, feet, top, *, jumping):
-    """Row sets keeping the take-off of a step or slab boost from `feet` onto `top` out from under every low ceiling:
-    the step rises from the take-off box, so a ceiling whose expanded underside is below `top` stops it short (user,
-    2026-11-22). Each ceiling the take-off can reach gives one outside row per exposed side; a set takes one per
+    """Row sets keeping the take-off of a step, slab boost or corner jump cancel from `feet` beside a higher block with
+    top `top` out from under every low ceiling: the step rises from the take-off box, so a ceiling leaving no standing
+    room at `top` (expanded underside below it) stops it short, and the move is a normal jump (user, 2026-11-22). Each ceiling the take-off can reach gives one outside row per exposed side; a set takes one per
     ceiling, and a reachable ceiling without an exposed side leaves no set."""
     import itertools
     from parkour_solver.movement.contact_combinations import scene_contact_options
