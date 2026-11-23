@@ -28,6 +28,7 @@
 #include "pkc/search/anchors/policy.hpp"
 #include "pkc/search/bounds/remaining.hpp"
 #include "pkc/search/comparison.hpp"
+#include "pkc/search/engine.hpp"
 #include "pkc/search/feasibility.hpp"
 #include "pkc/search/goals.hpp"
 #include "pkc/search/node.hpp"
@@ -709,6 +710,68 @@ PYBIND11_MODULE(_pkc_native, m) {
           py::arg("initial_variants") = nullptr, py::arg("retry_unresolved") = true, py::arg("oracle_rejection") = false,
           py::arg("climb_families") = false, py::arg("numerical") = py::none(), py::arg("confirm") = py::none(),
           "search/repair.solve_contact_branches; `solve` is numerics.solver.solve, called when `numerical` is None");
+    m.def("evaluate_prepared",
+          [](py::handle scene, py::handle program, py::handle route, py::handle profiles, py::handle vertical,
+             py::object compiler, py::object solve, py::object work, py::object cancel_event, py::object python_executable,
+             py::object numerical, py::object confirm, py::object analyze_model, py::object reachable_faces,
+             py::object candidate, py::object check_generation, py::object on_progress, py::object record_counts,
+             py::object accepted, py::object work_summary, double seconds, double candidate_seconds, py::handle scope,
+             py::handle required_landing, py::handle final_route, py::handle policy, py::handle adapter_identity,
+             bool node_query, bool retry_unresolved, bool climb_families, py::handle timings) {
+              pkc::EvaluateHooks hooks;
+              hooks.solve = solve_hooks(compiler, solve, work, cancel_event, python_executable);
+              hooks.numerical = numerical_hook(numerical, python_executable, cancel_event);
+              hooks.confirm = numerical_hook(confirm, python_executable, cancel_event);
+              hooks.analyze_model = [analyze_model](const pkc::Value& route, const pkc::Value& plan,
+                                                    const pkc::Value& vertical, const pkc::Value& scope) {
+                  return python_hook([&] {
+                      return convert(analyze_model(to_python(route), to_python(plan), to_python(vertical), to_python(scope)));
+                  });
+              };
+              hooks.reachable_faces = [reachable_faces](const std::string& face) {
+                  return python_hook([&] { return convert(reachable_faces(face)); });
+              };
+              hooks.candidate = [candidate](const pkc::Value& plan, const pkc::Value& value, const pkc::Value& vertical,
+                                            const pkc::Value& scope) {
+                  return python_hook([&] {
+                      return convert(candidate(to_python(plan), to_python(value), to_python(vertical), to_python(scope)));
+                  });
+              };
+              hooks.check_generation = [check_generation] { python_hook([&] { check_generation(); }); };
+              if (!on_progress.is_none())
+                  hooks.on_progress = [on_progress](const pkc::Value& state) {
+                      python_hook([&] { on_progress(to_python(state)); });
+                  };
+              hooks.record_counts = [record_counts](const pkc::Value& counts) {
+                  python_hook([&] { record_counts(to_python(counts)); });
+              };
+              hooks.accepted = [accepted](const pkc::Value& best) { python_hook([&] { accepted(to_python(best)); }); };
+              hooks.work_summary = [work_summary] { return python_hook([&] { return convert(work_summary()); }); };
+              pkc::EvaluateOptions options;
+              options.seconds = seconds;
+              options.candidate_seconds = candidate_seconds;
+              options.supplied_scope = convert(scope);
+              options.required_landing = convert(required_landing);
+              options.final_route = convert(final_route);
+              options.policy = convert(policy);
+              options.adapter_identity = convert(adapter_identity);
+              options.node_query = node_query;
+              options.retry_unresolved = retry_unresolved;
+              options.climb_families = climb_families;
+              options.timings = *std::get<std::shared_ptr<const pkc::Object>>(convert(timings).data);
+              return to_python(pkc::evaluate_prepared(convert(scene), convert(program), convert(route), convert(profiles),
+                                                      convert(vertical), hooks, options));
+          },
+          py::arg("scene"), py::arg("program"), py::arg("route"), py::arg("profiles"), py::arg("vertical"),
+          py::arg("compiler"), py::arg("solve"), py::kw_only(), py::arg("work"), py::arg("cancel_event"),
+          py::arg("python_executable"), py::arg("numerical"), py::arg("confirm"), py::arg("analyze_model"),
+          py::arg("reachable_faces"), py::arg("candidate"), py::arg("check_generation"), py::arg("on_progress"),
+          py::arg("record_counts"), py::arg("accepted"), py::arg("work_summary"), py::arg("seconds"),
+          py::arg("candidate_seconds"), py::arg("scope"), py::arg("required_landing"), py::arg("final_route"),
+          py::arg("policy"), py::arg("adapter_identity"), py::arg("node_query"), py::arg("retry_unresolved"),
+          py::arg("climb_families"), py::arg("timings"),
+          "search/engine.evaluate_program after the gate's preparation, with the gate, adapter, relaxed dispatch and "
+          "work budget as Python callables");
     py::class_<pkc::InteractionGate, std::shared_ptr<pkc::InteractionGate>>(m, "InteractionGate")
         .def(py::init([](py::handle scene) { return std::make_shared<pkc::InteractionGate>(convert(scene)); }))
         .def("reachable_faces", [](pkc::InteractionGate& gate, std::optional<std::string> name) {

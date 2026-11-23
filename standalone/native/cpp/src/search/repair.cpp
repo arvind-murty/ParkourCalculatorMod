@@ -15,6 +15,7 @@
 #include "pkc/constraints/avoidance.hpp"
 #include "pkc/constraints/contacts.hpp"
 #include "pkc/envelopes.hpp"
+#include "pkc/search/identity.hpp"
 #include "pkc/scene/static_collision.hpp"
 #include "pkc/validation/vertical.hpp"
 #include "pkc/vertical.hpp"
@@ -305,56 +306,7 @@ Array blockage_usage(const Array& passages) {
     return out;
 }
 
-// identity.validation_prefix(plan, candidate, vertical, through).
-std::tuple<Value, Value, Value> validation_prefix(const Value& plan_value, const Value& candidate_value,
-                                                  const Value& vertical_value, std::int64_t through) {
-    if (through == as_int(at(fields(plan_value), "ticks"))) return {plan_value, candidate_value, vertical_value};
-    auto prefix = [](const Value& list, std::int64_t n) {
-        const Array& a = items(list);
-        return array(Array(a.begin(), a.begin() + std::min<std::int64_t>(n, static_cast<std::int64_t>(a.size()))));
-    };
-    Object p = fields(plan_value), c = fields(candidate_value), v = fields(vertical_value);
-    put(p, "ticks", integer_value(through));
-    for (const char* key : {"jump", "grounded", "sneak"})
-        if (const Value* list = get(p, key)) put(p, key, prefix(*list, through));
-    if (const Value* ladder = get(p, "ladderTicks")) put(p, "ladderTicks", prefix(*ladder, through + 1));
-    Array contacts, checks;
-    for (const auto& e : listed(p, "sceneContacts"))
-        if (as_int(at(fields(e), "offset")) < through) contacts.push_back(e);
-    for (const auto& e : listed(p, "supportChecks"))
-        if (as_int(items(e)[0]) < through) checks.push_back(e);
-    put(p, "sceneContacts", array(std::move(contacts)));
-    put(p, "supportChecks", array(std::move(checks)));
-    for (const char* key : {"positions", "velocity"})
-        if (const Value* list = get(c, key)) put(c, key, prefix(*list, through + 1));
-    for (const char* key : {"yaw", "rawMovement", "movement", "friction"})
-        if (const Value* list = get(c, key)) put(c, key, prefix(*list, through));
-    for (const char* key : {"y", "vy", "onGround"}) put(v, key, prefix(at(v, key), through + 1));
-    if (const Value* vertical = get(v, "vertical")) {
-        Object inner = fields(*vertical);
-        for (const char* key : {"jumpVelocity", "sneak"})
-            if (const Value* list = get(inner, key)) put(inner, key, prefix(*list, through));
-        Array kept;
-        for (const auto& e : listed(inner, "contacts"))
-            if (as_int(at(fields(e), "state")) <= through) kept.push_back(e);
-        put(inner, "contacts", array(std::move(kept)));
-        put(v, "vertical", object(std::move(inner)));
-    }
-    return {object(std::move(p)), object(std::move(c)), object(std::move(v))};
-}
-
-// physics/vertical.vertical_move and clamp.
-Value vertical_move(const Object& config, std::int64_t tick, const Value& velocity, bool on_ladder) {
-    Num value = std::fabs(d(velocity)) < d(at(config, "threshold")) ? flt(0.) : any_num(velocity);
-    const Value& jump = items(at(config, "jumpVelocity")).at(tick);
-    if (!is_null(jump)) value = any_num(jump);
-    if (on_ladder) {
-        value = py_max(value, flt(-0.15));
-        if (py_truthy(items(at(config, "sneak")).at(tick)) && value.value < 0) value = flt(0.);
-    }
-    return pkc::value(value);
-}
-
+// physics/vertical.clamp.
 Value clamp(const Value& v) { return pkc::value(py_max(flt(-kCap), py_min(flt(kCap), any_num(v)))); }
 
 // validation/scene.check_geometry(geometry, plan, candidate, vertical, compiler, seconds).

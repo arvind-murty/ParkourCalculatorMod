@@ -79,6 +79,110 @@ Array avoid_contact_rows(std::int64_t leg, std::int64_t offset, const std::strin
     return out;
 }
 
+Array floor_checks(const Value& scene_value, const std::vector<std::string>& block_ids, const Array& profiles,
+                   const Value* envelopes) {
+    const Object& scene = fields(scene_value);
+    const Array& blocks = items(at(scene, "blocks"));
+    const Value& solids_value = at(fields(at(scene, "collisionScene")), "solids");
+    const Array& solids = items(solids_value);
+    std::optional<SceneGeometry> geometry;
+    auto tops = [&](const Object& block) {
+        if (!geometry) geometry.emplace(solids_value);
+        return exposed_tops(*geometry, block);
+    };
+    auto block_by_id = [&](const std::string& id) -> const Object& {
+        const Object* found = nullptr;  // {b['id']: b}: the last block with the id
+        for (const auto& b : blocks)
+            if (as_text(at(fields(b), "id")) == id) found = &fields(b);
+        if (!found) fail("KeyError: '" + id + "'");
+        return *found;
+    };
+    // block_interaction is pure, so the cheap height and step tests run before it; the checks are the same.
+    Array checks;
+    for (std::size_t leg = 0; leg < profiles.size(); ++leg) {
+        const Object& profile = fields(profiles[leg]);
+        const std::string& target_id = block_ids.at(leg + 1);
+        const double target_top = n(at(block_by_id(target_id), "top"));
+        const std::int64_t duration = as_int(at(profile, "duration"));
+        auto listed_or = [&](const char* key, std::size_t size, bool first) {
+            if (const Value* list = get(profile, key)) return items(*list);
+            Array out(size, boolean(false));
+            if (first && size) out[0] = boolean(true);
+            return out;
+        };
+        const Array jump = listed_or("jump", duration, true);
+        const Array sneak = listed_or("sneak", duration, false);
+        const Array ladder = listed_or("ladderTicks", duration + 1, false);
+        const Value* threshold_value = get(profile, "threshold");
+        const Value threshold = threshold_value ? *threshold_value : real(.005);
+        Array jump_velocity;
+        std::vector<std::optional<Num>> jumps;
+        std::vector<bool> sneaking;
+        for (const auto& j : jump) {
+            jump_velocity.push_back(py_truthy(j) ? real(kJumpVelocity) : kNull);
+            jumps.push_back(py_truthy(j) ? std::optional<Num>(flt(kJumpVelocity)) : std::nullopt);
+        }
+        for (const auto& s : sneak) sneaking.push_back(py_truthy(s));
+        const Object config{{"threshold", threshold}, {"jumpVelocity", array(jump_velocity)}, {"sneak", array(sneak)}};
+        const Array& position = items(at(profile, "position"));
+        const Array& velocity = items(at(profile, "velocity"));
+        const Value* contact_events = get(profile, "contactEvents");
+        const Value* case_events = get(profile, "caseEvents");
+        auto emit = [&](std::int64_t offset, const Value& block, const char* reason) {
+            for (const auto& region : tops(fields(block)))
+                checks.push_back(object({{"leg", integer_value(static_cast<std::int64_t>(leg))},
+                                         {"offset", integer_value(offset)}, {"block", block}, {"region", region},
+                                         {"reason", text(reason)}}));
+        };
+        for (std::int64_t offset = 0; offset < duration; ++offset) {
+            const double y = n(position.at(offset)), next_y = n(position.at(offset + 1));
+            if (n(vertical_move(config, offset, velocity.at(offset), py_truthy(ladder.at(offset)))) >= 0) continue;
+            for (const auto& b : blocks) {
+                const Object& block = fields(b);
+                const Value& top = at(block, "top");
+                const Value& solid = solids.at(as_int(at(block, "solidIndex")));
+                if (!(next_y <= n(top) && n(top) <= y) || (offset + 1 == duration && n(top) == target_top)) continue;
+                bool planned_floor = false;
+                if (contact_events)
+                    for (const auto& e : items(*contact_events)) {
+                        const Object& event = fields(e);
+                        const Value& role = get_or_null(event, "role");
+                        planned_floor |= as_int(at(event, "offset")) == offset &&
+                                         (py_equal(role, text("landing")) || py_equal(role, text("step"))) &&
+                                         py_equal(at(event, "plane"), top) && contains(items(at(event, "boxes")), solid);
+                    }
+                if (planned_floor || (envelopes && ruled_out(*envelopes, solid, offset, {"Y"}))) continue;
+                emit(offset, b, "earlier_floor");
+            }
+        }
+        const Value& kind = get_or_null(profile, "profileKind");
+        for (const auto& b : blocks) {
+            const Object& block = fields(b);
+            const Value& solid = solids.at(as_int(at(block, "solidIndex")));
+            bool selected_step = (py_equal(kind, text("stair")) || py_equal(kind, text("step"))) &&
+                                 as_text(at(block, "id")) == target_id;
+            if (case_events)
+                for (const auto& e : items(*case_events)) {
+                    const Object& event = fields(e);
+                    const Value& movement_case = at(event, "case");
+                    selected_step |= py_equal(at(event, "input"), integer_value(0)) &&
+                                     (py_equal(movement_case, text("normal_step")) ||
+                                      py_equal(movement_case, text("slab_boost"))) &&
+                                     contains(items(at(event, "boxes")), solid);
+                }
+            if (selected_step) continue;
+            VerticalContactRow row{1, -1, num(at(block, "top"))};
+            row.step = true;
+            Array failures;
+            vertical_step({row}, jumps, sneaking, num(threshold), 0, num(position.at(0)), num(velocity.at(0)), false,
+                          true, 0, &failures);
+            if (!failures.empty() || (envelopes && ruled_out(*envelopes, solid, 0, {"Y", "X", "Z"}))) continue;
+            emit(1, b, "unplanned_stair");
+        }
+    }
+    return checks;
+}
+
 std::optional<Value> walk_off_faces(const Value& scene_value, const SceneGeometry& geometry, const Program& program,
                                     std::int64_t cut, const Value& envelopes, const Value& landing_boxes) {
     const Profile& profile = program.profile;

@@ -581,3 +581,36 @@ have none). `constraints/variants.check_generation` is the one generator interru
   ([Python](2026-11-22-repair-dispatch/suite-python-summary.txt), [native](2026-11-22-repair-dispatch/suite-native-summary.txt),
   [live](2026-11-22-repair-dispatch/live-scene-release-summary.json),
   [parity](2026-11-22-repair-dispatch/milestone-parity-python-native.json)).
+
+## The node solve, 2026-11-22
+
+Source: `992dbfef` plus `search/engine.hpp` (`evaluate_prepared`: `evaluate_program` after the gate's preparation,
+with `search/identity`'s solve scope, solve identity and validation prefix, `constraints/contacts`' floor checks,
+`segment_solids`, the native generator and repair loop, `numerical_counts` and `feasibility.outcome`). The gate's
+`analyze_model` and face tables, the adapter's candidate check, the relaxed dispatch, the compiler, the work budget
+and the progress callback stay Python hooks. Routes with passages, wall hits or ladder events stay in Python.
+Nothing dispatches to it: a trial dispatch from `evaluate_program` measured no faster than the previous dispatch
+(generator and repair loop only), so production keeps that one and the port waits for a native `evaluate_node`.
+
+- With the trial dispatch, a recorder logs every `evaluate_program` result in call order. Against the previous native
+  dispatch every result matches, key order included: the short Real11 control's 12 calls (its IPOPT finalization
+  included), fixed work's 47 and the milestone test list's 72 (13 finalizations)
+  ([short](2026-11-22-node-solve/short-base-vs-native.txt), [fixed work](2026-11-22-node-solve/fixed-base-vs-native.txt),
+  [tests](2026-11-22-node-solve/tests-base-vs-native.txt)). Against Python mode the values match except one fixed-work
+  call, in the same way as the previous dispatch and the code before it (`b988b7c7`); key order differs inside the
+  native preparation's routes ([short](2026-11-22-node-solve/short-python-vs-native.txt),
+  [fixed work](2026-11-22-node-solve/fixed-python-vs-native.txt), [tests](2026-11-22-node-solve/tests-python-vs-native.txt)).
+- That call (fixed work's 19th) solves a program whose `guideSeedYaw` comes, in Python mode, from the 13th call's
+  incumbent (73 facings) and, in native mode, from the 15th's (74); both incumbents and the program's search key
+  match. The native frontier keeps a physically identical copy of the program from another solved parent, so the
+  warm yaw, the generator's reference trajectory and the request yaws differ
+  ([paths](2026-11-22-node-solve/fixed-python-vs-native-values.txt)).
+- Reports equal the previous dispatch's except provenance, and transitions match Python
+  ([fixed work](2026-11-22-node-solve/fixed-report-vs-previous-dispatch.json),
+  [short](2026-11-22-node-solve/short-report-vs-previous-dispatch.json),
+  [fixed parity](2026-11-22-node-solve/fixed-parity-python-native.json),
+  [short parity](2026-11-22-node-solve/short-parity-python-native.json)).
+- Search seconds, alternating one at a time: fixed work 20.0 and 20.0 with the previous dispatch against 21.6 and 20.1;
+  the short control 1.69 and 1.69 against 1.68 and 1.64 ([times](2026-11-22-node-solve/search-seconds.txt)).
+- With the trial dispatch, the search and repair test modules run clean under AddressSanitizer, 63 of their 70 node
+  solves natively ([summary](2026-11-22-node-solve/asan-tests-summary.txt)).

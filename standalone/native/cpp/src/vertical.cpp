@@ -36,6 +36,18 @@ std::vector<VerticalContact> merge_vertical(const std::vector<VerticalContact>& 
 
 }  // namespace
 
+Value vertical_move(const Object& config, std::int64_t tick, const Value& velocity, bool on_ladder) {
+    const Num v = num(velocity);
+    Num movement = std::fabs(v.value) < num(at(config, "threshold")).value ? flt(0.) : v;
+    const Value& jump = items(at(config, "jumpVelocity")).at(tick);
+    if (!is_null(jump)) movement = num(jump);
+    if (on_ladder) {
+        movement = py_max(movement, flt(-0.15));
+        if (py_truthy(items(at(config, "sneak")).at(tick)) && movement.value < 0) movement = flt(0.);
+    }
+    return value(movement);
+}
+
 StepResult vertical_step(const std::vector<VerticalContactRow>& contacts, const std::vector<std::optional<Num>>& jumps,
                          const std::vector<bool>& sneak, const Num& threshold, std::int64_t tick, const Num& position,
                          const Num& velocity, bool on_ladder, bool grounded, double tolerance, Array* failures) {

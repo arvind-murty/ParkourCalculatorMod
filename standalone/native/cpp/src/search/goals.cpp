@@ -1,4 +1,4 @@
-// Port of search/goals._landing_prefixes.
+// Port of search/goals.landing_satisfied and _landing_prefixes.
 #include "pkc/search/goals.hpp"
 
 #include <cmath>
@@ -19,6 +19,19 @@ bool holds(const std::vector<Box>& boxes, const Array& box) {  // box in e['boxe
 }
 
 }  // namespace
+
+bool landing_satisfied(const Value& scene, const std::string& block_id, const Value& vertical_value) {
+    const Object* block = nullptr;
+    for (const auto& b : items(at(fields(scene), "blocks")))
+        if (as_text(at(fields(b), "id")) == block_id) {
+            block = &fields(b);
+            break;
+        }
+    if (!block) fail("StopIteration");
+    const Object& vertical = fields(vertical_value);
+    return py_truthy(items(at(vertical, "onGround")).back()) &&
+           std::fabs(num(items(at(vertical, "y")).back()).value - num(at(*block, "top")).value) <= 1e-7;
+}
 
 std::vector<LandingPrefix> landing_prefixes(const Value& scene_value, const Program& program, const std::string& block_id,
                                             bool reuse_full) {

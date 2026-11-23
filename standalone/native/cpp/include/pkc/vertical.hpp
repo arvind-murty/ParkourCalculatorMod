@@ -40,6 +40,9 @@ StepResult vertical_step(const std::vector<VerticalContactRow>& contacts, const 
                          const Num& velocity, bool on_ladder, bool grounded, double tolerance,
                          Array* failures = nullptr);
 
+// vertical_move(config, tick, velocity, on_ladder) on a vertical config's threshold, jumpVelocity and sneak.
+Value vertical_move(const Object& config, std::int64_t tick, const Value& velocity, bool on_ladder);
+
 Num vertical_carry(const Num& movement, bool on_ladder, bool previous_horizontal_collision);
 
 // A vertical config's contacts as vertical_step rows (a case is the truthy `case`

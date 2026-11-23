@@ -3,6 +3,8 @@
 
 #include <cstdint>
 #include <optional>
+#include <string>
+#include <vector>
 
 #include "pkc/program.hpp"
 #include "pkc/spatial/surfaces.hpp"
@@ -12,6 +14,10 @@ namespace pkc {
 
 // exposed_tops(scene, block) for a scene with a collisionScene: [[x0, z0, x1, z1], ...].
 Array exposed_tops(const SceneGeometry& geometry, const Object& block);
+
+// floor_checks(scene, block_ids, profiles, envelopes=envelopes); a null `envelopes` is None.
+Array floor_checks(const Value& scene, const std::vector<std::string>& block_ids, const Array& profiles,
+                   const Value* envelopes);
 
 // avoid_contact_rows(conflict, clearance) for a conflict's leg, offset, reason, block id, region and position.
 Array avoid_contact_rows(std::int64_t leg, std::int64_t offset, const std::string& reason, const std::string& block_id,

@@ -14,6 +14,9 @@ struct LandingPrefix {
     bool reused = false;  // reuse_full gave the program itself back (the Python yields the same object)
 };
 
+// landing_satisfied(scene, block_id, vertical).
+bool landing_satisfied(const Value& scene, const std::string& block_id, const Value& vertical);
+
 // _landing_prefixes(scene, program, block_id, reuse_full=...): each prefix ending on the block's top.
 std::vector<LandingPrefix> landing_prefixes(const Value& scene, const Program& program, const std::string& block_id,
                                             bool reuse_full);
