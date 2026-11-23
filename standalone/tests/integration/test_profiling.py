@@ -173,7 +173,7 @@ class BookkeepingProfileTests(unittest.TestCase):
         self.assertEqual(len(runtime.buckets), 3)
 
     def test_stop_report_links_unknown_requests_to_live_routes(self):
-        from tools.profiling.trace import request_owners, stop_report
+        from tools.profiling.trace import counted_as, request_owners, stop_report
         def record(name, status, node, attempts, unresolved=()):
             return dict(id=name, status=status, nodeFeasibility=dict(status=node),
                         program=dict(repairState=dict(attemptLog=[dict(problemHash=h) for h in attempts],
@@ -186,7 +186,8 @@ class BookkeepingProfileTests(unittest.TestCase):
         owners = request_owners(state)
         requests = [dict(index=1, fingerprint='h1', status='unknown', workerStatus='Infeasible_Problem_Detected'),
                     dict(index=2, fingerprint='h3', status='unknown', workerStatus='Infeasible_Problem_Detected'),
-                    dict(index=3, fingerprint='h4', status='feasible')]
+                    dict(index=3, fingerprint='h4', status='feasible'),
+                    dict(index=4, fingerprint='h5', status='unknown', backend='clarabel', workerStatus='NumericalError')]
         for request in requests:
             request['owners'] = owners.get(request['fingerprint'], [])
         report = stop_report(state, requests)
@@ -194,8 +195,10 @@ class BookkeepingProfileTests(unittest.TestCase):
                                                           pendingBranches=0, deferredNodes=0)])
         self.assertEqual([r['record'] for r in report['oracleRejectedRoutes']], ['a'])
         self.assertEqual([(r['index'], [o['record'] for o in r['owners']]) for r in report['unknownRequests']],
-                         [(1, ['a']), (2, ['b'])])
+                         [(1, ['a']), (2, ['b']), (4, [])])
         self.assertEqual(requests[2]['owners'], [])
+        # Every unsolved Clarabel request is an infeasible verdict, whatever its status.
+        self.assertEqual(counted_as(report['unknownRequests'][2]), 'infeasible (disk relaxation)')
 
     def test_alternatives_without_a_solution_name_the_check_that_proved_them_infeasible(self):
         from tools.profiling.trace import alternative_outcome, repair_trace, solve_text

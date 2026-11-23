@@ -52,8 +52,8 @@ def stop_report(state, requests):
             deferredNodes=len(frame['generation'].get('continuation',{}).get('deferredNodes') or [])))
     rejected = [route(frame,record) for frame in frames(state) for record in frame['records']
                 if (record.get('nodeFeasibility') or {}).get('status') == 'oracle_rejected']
-    unknown = [dict(index=r['index'],fingerprint=r['fingerprint'],workerStatus=r.get('workerStatus'),backend=r.get('backend'),
-                    owners=r.get('owners',[]))
+    unknown = [dict(index=r['index'],fingerprint=r['fingerprint'],status=r['status'],workerStatus=r.get('workerStatus'),
+                    backend=r.get('backend'),owners=r.get('owners',[]))
                for r in requests if r.get('status') == 'unknown']
     return dict(suspendedFrames=suspended,oracleRejectedRoutes=rejected,unknownRequests=unknown)
 
