@@ -26,15 +26,17 @@ Let a be the lower block's height, b the higher block's height, yL the landing-t
 
 ### Normal stepping
 
-Grounded movement rises by at most 0.6. All inputs in this movement are run inputs; there is no invented air tick or jump impulse. Use the appropriate before/after block constraints.
+Grounded movement rises by at most 0.6. All inputs in this movement are run inputs; there is no invented air tick or jump impulse. Use the appropriate before/after block constraints. The take-off is outside every low ceiling (below).
 
 ### Slab boost / stair boost
 
 The position before the jump tick is on the lower level. The jump tick is on the higher level, with the specified rise approximately 0.42 through 0.6. The jump impulse and usual jump horizontal movement apply, while stepping changes the Y outcome. One air input follows the jump, producing the ordinary two-input airtime/cycle before subsequent movement.
 
+**Take-off ceilings (normal step, slab boost, corner jump cancel).** Minecraft's step rises from the take-off box, so a ceiling above it that leaves less than 1.8 of room over the higher top (expanded underside below b) stops the rise short. A slab boost or corner jump cancel is then a normal jump in front of a wall, with that ceiling handled as an ordinary ceiling hit (user, 2026-11-22). The take-off of these cases must be outside every such ceiling: one outside row per exposed side of each one it can reach (`ceiling_clear:<ceiling>`), as grind's outside rows. Grind already enters from outside its ceiling.
+
 ### Blip
 
-The higher block is a standard wall on L. Generate avoidance alternatives and actual retained wall-hit alternatives. A real hit uses the normal finite-wall contact constraints, horizontal velocity cancellation and sprint transition; it does not imply reversal.
+The higher block is a standard wall on L, and the player keeps clear of its exposed sides there. A wall hit is not part of a blip: a hit followed by a blip is modelled as a hit, then a blip, and stays deferred with intentional wall hits (user, 2026-11-22).
 
 The ordinary air schedule lands on the lower level, and the resulting hit tick steps to the higher level. Require 0 <= b-yL <= 0.6. The landing tick satisfies the lower landing constraint; the hit tick additionally satisfies the higher block's X/Z condition and yH=b. The movement producing H is still air movement. Normal grounded movement/jumping follows from the higher level.
 
@@ -52,29 +54,32 @@ This differs from an ordinary ceiling hit: a ceiling hit can leave a positive ri
 
 ### Corner jump cancel
 
-This is an X-facing corner avoidance case. The obstacle is about 0.42-0.6 above the lower level. The position before J is in front of the obstacle's X face; J clears its Z edge. Upward velocity is cancelled as in a grind, with the usual subsequent gravity/carry; on a flat floor the following input lands, the same two-input airtime as a grind or stair boost. Use the successive-state timing of a Z-facing blockage: outside the first face before J and outside the Z edge on J, rather than requiring both clearances at the same state.
+This is an X-facing corner avoidance case. The obstacle is about 0.42-0.6 above the lower level. The position before J is in front of the obstacle's X face; J clears its Z edge. Upward velocity is cancelled as in a grind, with the usual subsequent gravity/carry. It is generated only with a ledge in the cancel's direction: a top face flush with or below the take-off under J's position just past the Z edge (`cases.corner_ledges`; user, 2026-11-22). On a flush ledge the following input lands, the same two-input airtime as a grind or stair boost; on a lower one it is a jump whose airtime adds the fall onto it. Use the successive-state timing of a Z-facing blockage: outside the first face before J and outside the Z edge on J, rather than requiring both clearances at the same state.
 
 It is an avoidance case, not a planned retained X wall hit. Preserve ordinary jump horizontal movement unless another actual contact says otherwise. X-facing describes the geometry, not a camera-facing pin. The Z-facing counterpart is an ordinary jump.
 
 The supported movement family cannot pass straight through the minimum two-pixel obstruction in one input: that would require about 0.725 displacement including the player's width. Generate diagonal corner clearance instead of the earlier unconstrained straight-through proposal.
 
-### Corner blip-up
+### Corner blip and corner blip-up
 
-This is the landing analogue of corner jump cancel. It is X-facing and uses the same Z-blockage-style successive-state conditions, anchored on L and H rather than before-J and J. Keep the ordinary lower landing condition on L. H clears the obstacle's Z edge while retaining yH=yL and becoming grounded.
+These are the landing analogues of corner jump cancel: a blip and a blip-up at a convex corner of the higher block (user, 2026-11-22). They are X-facing and use the same Z-blockage-style successive-state conditions, anchored on L and H rather than before-J and J. Keep the ordinary lower landing condition on L. H crosses the obstacle's X face plane and clears its Z edge.
 
-Use blip-up air movement and the same elevated-jump or normal run-off continuation. Do not blindly impose the ordinary blip-up condition yL>b: the corner case can retain a height below the cleared obstacle's top because H is outside its footprint. The Z-facing counterpart lands normally on the lower level.
+- **Corner blip:** 0 <= b-yL <= 0.6, as for a blip.
+- **Corner blip-up:** yL>b and yFreeH<a, as for a blip-up.
+
+Both retain yH=yL and become grounded, because H is outside the higher block's footprint: Minecraft's step path rises from yL, moves X then Z, and descends by the same rise onto nothing. Use blip-up air movement and the same elevated-jump or normal run-off continuation. The Z-facing counterpart lands normally on the lower level, since X moves first and escapes the edge before Z is blocked (checked on `scene/static_collision.py`).
 
 ## Supported family and rejected proposal
 
-The catalogue now contains normal stepping, slab/stair boost, blip, blip-up, corner jump cancel, corner blip-up and grind, plus ordinary ceiling-hit cases handled by ceiling logic.
+The catalogue now contains normal stepping, slab/stair boost, blip, blip-up, corner jump cancel, corner blip, corner blip-up and grind, plus ordinary ceiling-hit cases handled by ceiling logic.
 
 The earlier partial-rise jump-cancel proposal (1 -> 1.25) is excluded from the supported family. Its synthetic collision probe did not establish a realizable route with the game's block geometry and this movement policy. For the ordinary lower obstacle case, the nominal jump clears an obstacle below its jump rise. Do not add a partial-rise type based on that probe.
 
-The active probe labels are updated to `corner_jump_cancel` and `corner_blip_up`. Probe boxes/displacements are low-level collision inputs, not evidence for an arbitrary block shape, a straight-through route or a new supported type. The example with lower floor 1, obstacle top 1.5 and yL=1.2 is the corner blip-up, not ordinary blip-up.
+The active probe labels are updated to `corner_jump_cancel` and `corner_blip_up`; the probe predates the corner blip/blip-up split. Probe boxes/displacements are low-level collision inputs, not evidence for an arbitrary block shape, a straight-through route or a new supported type. The example with lower floor 1, obstacle top 1.5 and yL=1.2 is the corner blip, not ordinary blip-up.
 
 ## Ceiling classification
 
-Approved organisation, 2026-10-30: the normal-air `ceiling` type generates ordinary ceiling hits and grind. The stepping type generates normal step, slab/stair boost, blip, blip-up and the two corner cases. Grind and corner jump cancel share cancelled-jump Y/control primitives while retaining different geometry.
+Approved organisation, 2026-10-30: the normal-air `ceiling` type generates ordinary ceiling hits and grind. The stepping type generates normal step, slab/stair boost, blip, blip-up and the three corner cases. Grind and corner jump cancel share cancelled-jump Y/control primitives while retaining different geometry.
 
 Inside a ladder, `ladder_ceiling` is local handling within ladder climbing, with the shared primitive helpers. Do not turn a ladder-owned input into a normal ceiling unit. Normal air before, between and after ladders can use the ceiling type. Keep the actual pre/post occupancy masks at entry/exit boundaries and preserve inherited ladder-local contact combinations.
 
@@ -94,14 +99,16 @@ generators alongside normal movement; ordinary jumps are kept beside them.
 | stepping | blip | Air into H | H at higher top, grounded |
 | stepping | blip_up | Air into H | H retains yL, grounded without a fabricated support |
 | stepping | corner_jump_cancel | Ground/jump into J | X-facing approach, next-state Z escape, zero rise, airborne |
-| stepping | corner_blip_up | Air into H | X-facing L/H corner escape, retained yL, grounded |
+| stepping | corner_blip | Air into H | X-facing L/H corner escape, yL at most 0.6 below the higher top, retained yL, grounded |
+| stepping | corner_blip_up | Air into H | X-facing L/H corner escape, yL above the higher top, retained yL, grounded |
 | ceiling | ceiling_hit | Normal upward air, or initial jump | Actual underside plane and zero vertical carry before gravity/drag |
 | ceiling | grind | Ground/jump into J | Outside before J, under low ceiling on J, zero rise; ordinary air follows |
 
-Owners: `movement/cases.py` builds named case constraints on `movement/vertical_profiles.py`;
+Owners: `movement/cases.py` builds named case constraints on `movement/vertical_profiles.py`,
+and the take-off ceiling rows (`ceiling_clearances`);
 `movement/stepping.py` proposes support and corner cases; `movement/ceiling_generation.py`
-proposes ceiling and grind cases (at an ordinary decision, none behind it or entered against its guide leg:
-[O10](ANCHOR_POLICY_DECISIONS.md#o10--no-backward-ceiling-hits-or-grinds-at-ordinary-decisions));
+proposes ceiling and grind cases (at an ordinary decision, none of either behind it or entered by a move its guide
+leg disallows: [O10](ANCHOR_POLICY_DECISIONS.md#o10--no-backward-moves-at-ordinary-decisions));
 `movement/ceiling_profiles.py` holds shared underside and
 sequence helpers. `maxSteppingProfiles` defaults to 128 (`scene/normalize.py`).
 
@@ -119,13 +126,18 @@ members' exposed sides, each side plane once. Exposure never
 rejects a step trigger: the trigger check uses the event's `boxes`, and uncertain probes
 keep the `InteractionGate` unknown path.
 
-On L a blip's higher block is an ordinary finite obstacle: outside-face and real face-hit
-alternatives on its exposed sides, a hit being a standard `role=contact` event. Blip-up also
+A normal step's or slab boost's sides of one move (same face, top and ceiling-clearance
+rows) are tagged `sideVariant` when the decision point already satisfies one of their
+`case:outside` rows: that side is forward and the others wait for it in the frontier
+([O12](ANCHOR_POLICY_DECISIONS.md#o12--other-sides-of-a-step-or-slab-boost-wait-for-the-forward-side)).
+
+On L a blip's higher block is an ordinary finite obstacle: one outside-face alternative per
+exposed side (`blip:wall_avoid`). Blip-up also
 requires being outside the higher block on L, otherwise the Y-first resolver lands on it.
 Corner cases share X-approach and next-state Z-escape constraints.
 
 In the anchor search no stepping case touches a merged top face the route has already
-left: the target, higher, corner and lower blocks of the six stepping cases all go through
+left: the target, higher, corner and lower blocks of the seven stepping cases all go through
 the context's `feetAllowed` predicate (on the face's name) before any reachability
 query, and the emitted-program audit rejects a case event whose `boxes` or `lowerBoxes` stand on
 a departed face. These touches never count as visits, and a touch that matches a visit at the

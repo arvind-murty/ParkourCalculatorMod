@@ -8,6 +8,7 @@ from parkour_solver.movement.contact_combinations import contact_combinations, e
 from parkour_solver.movement.contact_profiles import contact_profile, generate_contact_profiles
 from parkour_solver.bridge.python_compiler import PythonCompiler
 from parkour_solver.movement.ladder.schedules import trace_ladder_schedule
+from parkour_solver.schema import SOLVER_MARGIN
 from parkour_solver.scene.route import HALF_WIDTH, prepare_route, schedule
 from parkour_solver.scene.geometry import BODY_HEIGHT
 from parkour_solver.numerics import prepare, validate
@@ -37,7 +38,7 @@ class CombinationTests(unittest.TestCase):
         walls = [w for w in p['walls'] if w['name']=='blockage:0']
         self.assertEqual(next(w['rhs'] for w in walls if w['t1']==2),h['plane'])
         self.assertTrue(all(w['rhs'] < h['plane'] for w in walls if w['t1']!=2))
-        self.assertEqual(face_clearance(r,0,2,dict(axis='X',direction=-1,plane=h['plane']+.1),1e-6),1e-6)
+        self.assertEqual(face_clearance(r,0,2,dict(axis='X',direction=-1,plane=h['plane']+.1)),SOLVER_MARGIN)
 
     def test_every_same_tick_axis_subset_and_two_tick_pair_is_generated(self):
         pool = [event(a, t) for t in (0, 1) for a in 'XYZ']
@@ -76,7 +77,7 @@ class CombinationTests(unittest.TestCase):
         profile, = generate_contact_profiles(0., 0., opportunities, max_events=1)['profiles']
         event, = profile['contactEvents']
         self.assertEqual((event['offset'], event['boxes']), (4, boxes))
-        self.assertEqual(event['regions'], [expanded_face(boxes[0], 1, -1, 1e-6)[:2] + expanded_face(boxes[1], 1, -1, 1e-6)[2:]])
+        self.assertEqual(event['regions'], [expanded_face(boxes[0], 1, -1, SOLVER_MARGIN)[:2] + expanded_face(boxes[1], 1, -1, SOLVER_MARGIN)[2:]])
 
     def test_same_tick_alternatives_are_never_combined(self):
         pool = [event('Y', 4, box=[0, 3, 0, 1, 4, 1]), event('Y', 4, box=[1, 3, 3, 2, 4, 4])]

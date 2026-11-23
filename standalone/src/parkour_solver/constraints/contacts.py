@@ -1,6 +1,7 @@
 """Physical floor requirements and their alternative constraint rows."""
 import copy
 from parkour_solver.physics.vertical import f32, vertical_move, vertical_step
+from parkour_solver.schema import SOLVER_MARGIN
 from parkour_solver.scene.route import center_bounds
 from parkour_solver.spatial.surfaces import scene_geometry
 
@@ -128,7 +129,7 @@ def walk_off_faces(scene, program, cut, envelopes, landing_boxes):
     members = {b['solidIndex'] for b in blocks.values()}
     midpoint = [sum(envelopes['states'][cut][axis])/2 for axis in ('X', 'Z')]
     rows = avoid_contact_rows(dict(leg=0, offset=cut, reason='walk_off', block=dict(id='+'.join(sorted(blocks))),
-                                   region=region, position=midpoint), scene['supportClearance'])
+                                   region=region, position=midpoint))
     face = {(row['mode'], 1 if row['cmp'] == 'GE' else -1): row for row in rows}
     raw = [solids[i] for i in members]
     low = [min(box[0] for box in raw), min(box[2] for box in raw)]
@@ -169,12 +170,12 @@ def contact_conflicts(checks, plan, candidate):
     return conflicts
 
 
-def avoid_contact_rows(conflict, clearance):
+def avoid_contact_rows(conflict):
     region = conflict['region']
     x, z = conflict['position']
     rows = []
     for axis, coordinate, lo, hi in [('X', x, region[0], region[2]), ('Z', z, region[1], region[3])]:
-        for cmp, edge in [('LE', lo - clearance), ('GE', hi + clearance)]:
+        for cmp, edge in [('LE', lo - SOLVER_MARGIN), ('GE', hi + SOLVER_MARGIN)]:
             rows.append((abs(coordinate - edge), {'leg': conflict['leg'], 'offset': conflict['offset'],
                                                  'mode': axis, 'cmp': cmp, 'rhs': edge,
                                                  'name': conflict['reason'] + ':' + conflict['block']['id']}))

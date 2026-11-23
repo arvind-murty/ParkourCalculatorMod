@@ -56,7 +56,9 @@ class BlockRouteWitnessTests(unittest.TestCase):
                     checked = validate(request, best['candidate']['yaw'])
                     self.assertTrue(checked['feasible'], checked)
                     plan = schedule(best['route'], best['allocation'])
-                    self.assertEqual(fingerprint(prepare(dict(request, walls=plan['walls']))), fingerprint(request))
+                    # Recorded at the source-era 1e-6 margin: the witness must pass the rows the scheduler builds now.
+                    rebuilt = validate(prepare(dict(request, walls=plan['walls'])), best['candidate']['yaw'])
+                    self.assertTrue(rebuilt['feasible'], rebuilt)
                     self.assertEqual(plan['ticks'], summary['ticks'])
                     self.assertEqual(checked['onGround'], plan['grounded'] + [True])
                     self.assertEqual(contact_conflicts(best['contactChecks'], plan, checked), [])

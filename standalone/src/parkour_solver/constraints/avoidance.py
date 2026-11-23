@@ -1,5 +1,7 @@
 import math
 
+from parkour_solver.schema import SOLVER_MARGIN
+
 
 AXES = ('X', 'Y', 'Z')
 ORDER = {'Y': 0, 'X': 1, 'Z': 2}
@@ -119,7 +121,7 @@ def validate_passages(route):
             raise ValueError('Invalid passage block ID')
 
 
-def face_clearance(route, leg, offset, face, clearance):
+def face_clearance(route, leg, offset, face):
     for hit in route.get('hitEvents', []) + route.get('contactEvents', []):
         if hit['leg'] == leg and hit['offset'] + 1 == offset and hit['axis'] == face['axis'] \
                 and hit['plane'] == face['plane'] and hit['direction'] == -face['direction']:
@@ -129,7 +131,7 @@ def face_clearance(route, leg, offset, face, clearance):
         if episode['leg'] == leg and 0 < offset <= len(hits) and hits[offset - 1] \
                 and wall['axis'] == face['axis'] and wall['plane'] == face['plane'] and wall['direction'] == -face['direction']:
             return 0.
-    return clearance
+    return SOLVER_MARGIN
 
 
 def compile_passages(route, events):
@@ -150,7 +152,7 @@ def compile_passages(route, events):
             for offset in range(begin, end + 1):
                 rows.append({'mode': face['axis'], 't1': event['jump'] + offset,
                              'cmp': 'GE' if face['direction'] > 0 else 'LE',
-                             'rhs': face['plane'] + face['direction'] * face_clearance(route, passage['leg'], offset, face, route['supportClearance']),
+                             'rhs': face['plane'] + face['direction'] * face_clearance(route, passage['leg'], offset, face),
                              'name': 'blockage:' + str(passage.get('solidIndex'))})
     return rows, failures
 

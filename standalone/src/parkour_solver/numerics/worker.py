@@ -10,10 +10,12 @@ import numpy as np
 try:
     from parkour_solver.numerics.continuation import run
     from parkour_solver.physics.vertical import CAP
+    from parkour_solver.schema import SOLVER_MARGIN
     from parkour_solver.numerics.constraints import reduce_walls
 except ImportError:
     from parkour_solver.numerics.continuation import run
     from parkour_solver.physics.vertical import CAP
+    from parkour_solver.schema import SOLVER_MARGIN
     from parkour_solver.numerics.constraints import reduce_walls
 
 
@@ -163,7 +165,7 @@ def fixed_phase(problem, yaw, pattern, seconds, stop, on_candidate, kind, seed_n
                 plane = contact['plane'] - problem['position'][a]
                 row(pn[a] - plane, 0, 0)
                 row(vn[a], 0, 0)
-                row(contact['direction'] * (proposed[a] - plane), 1e-7, math.inf)
+                row(contact['direction'] * (proposed[a] - plane), SOLVER_MARGIN, math.inf)
                 row(contact['direction'] * (p[t][a] - plane), -math.inf, 0)
             else:
                 row(pn[a] - proposed[a], 0, 0)

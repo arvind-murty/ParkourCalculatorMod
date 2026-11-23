@@ -2,7 +2,7 @@ import copy
 import math
 
 from parkour_solver.physics.vertical import f32
-from parkour_solver.schema import integer, number
+from parkour_solver.schema import SOLVER_MARGIN, integer, number
 from parkour_solver.scene.objectives import objective_spec
 
 
@@ -123,9 +123,6 @@ def prepare_route(request):
             raise ValueError('Run bounds must be [min,max]')
         integer(bounds[0], 'minimum run ticks', 0, 1000)
         integer(bounds[1], 'maximum run ticks', bounds[0], 1000)
-    clearance = number(route.setdefault('supportClearance', 1e-6), 'supportClearance')
-    if clearance < 0:
-        raise ValueError('Support clearance must be nonnegative')
     if route.get('obstacles'):
         raise ValueError('Obstacle scenes require the integration replay adapter')
     for field in ('ladderTicks', 'ladderPattern', 'contacts', 'vertical'):
@@ -228,13 +225,12 @@ def schedule(route, allocation, stage='jump'):
     if sum(allocation) > route['maxTotalRunTicks']:
         raise ValueError('Allocation exceeds the total run-tick limit')
     walls = []
-    clearance = route['supportClearance']
     for tick, index, kind in sorted(set(supports_at)):
         block = route['blocks'][index]
         bounds = center_bounds(block, kind)
         for axis, lo, hi in [('X', bounds[0], bounds[1]), ('Z', bounds[2], bounds[3])]:
-            lower = math.nextafter(lo, math.inf) + clearance
-            upper = math.nextafter(hi, -math.inf) - clearance
+            lower = math.nextafter(lo, math.inf) + SOLVER_MARGIN
+            upper = math.nextafter(hi, -math.inf) - SOLVER_MARGIN
             walls.extend([{'mode': axis, 't1': tick, 'cmp': 'GE', 'rhs': lower,
                            'name': kind + ':' + str(index) + ':' + axis + ':lo'},
                           {'mode': axis, 't1': tick, 'cmp': 'LE', 'rhs': upper,
@@ -252,7 +248,7 @@ def schedule(route, allocation, stage='jump'):
         k = 0 if axis == 'X' else 2
         edge = source[k + 1] if direction > 0 else source[k]
         walls.append({'mode': axis, 't1': tick, 'cmp': 'GE' if direction > 0 else 'LE',
-                      'rhs': edge + direction * clearance, 'name': 'walk_off:' + str(index)})
+                      'rhs': edge + direction * SOLVER_MARGIN, 'name': 'walk_off:' + str(index)})
     for event in events:
         if event['landing'] is None:
             continue
@@ -265,14 +261,14 @@ def schedule(route, allocation, stage='jump'):
         edge = target[k + 1] if direction > 0 else target[k]
         for offset in range(entry['outsideFrom'], entry['outsideThrough'] + 1):
             walls.append({'mode': axis, 't1': event['jump'] + offset,
-                          'cmp': 'GE' if direction > 0 else 'LE', 'rhs': edge + direction * clearance,
+                          'cmp': 'GE' if direction > 0 else 'LE', 'rhs': edge + direction * SOLVER_MARGIN,
                           'name': 'contact_outside:' + str(event['leg'])})
         tick = event['jump'] + entry['enter']
         supports_at.append((tick, event['leg'] + 1, 'contact'))
         for axis, lo, hi in [('X', target[0], target[1]), ('Z', target[2], target[3])]:
-            walls.extend([{'mode': axis, 't1': tick, 'cmp': 'GE', 'rhs': lo + clearance,
+            walls.extend([{'mode': axis, 't1': tick, 'cmp': 'GE', 'rhs': lo + SOLVER_MARGIN,
                            'name': 'contact_enter:' + str(event['leg'])},
-                          {'mode': axis, 't1': tick, 'cmp': 'LE', 'rhs': hi - clearance,
+                          {'mode': axis, 't1': tick, 'cmp': 'LE', 'rhs': hi - SOLVER_MARGIN,
                            'name': 'contact_enter:' + str(event['leg'])}])
     for row in route['constraints']:
         if row['leg'] >= len(events):

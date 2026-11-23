@@ -1,6 +1,6 @@
 """Independent scalar replay/validation of a fixed continuous request."""
 import math
-from parkour_solver.schema import number, TOLERANCE
+from parkour_solver.schema import number, REPLAY_TOLERANCE
 from parkour_solver.physics.angles import wrap
 from parkour_solver.physics.vertical import CAP, branch as cap_branch, clamp, vertical_carry, vertical_step
 
@@ -44,7 +44,7 @@ def validate_controls(problem, controls):
     # Full-magnitude controls exceed the disk by rounding; only a real excess fails.
     excess = [math.hypot(*c) - m for c, m in zip(controls, problem['magnitude'])]
     worst = max(range(n), key=excess.__getitem__)
-    if excess[worst] > TOLERANCE:
+    if excess[worst] > REPLAY_TOLERANCE:
         result['feasible'] = False
         if excess[worst] > result['violation']:
             result.update(violation=excess[worst], worstConstraint='acceleration_disk@' + str(worst))
@@ -82,9 +82,9 @@ def _replay(problem, yaw, controls):
             tick_caps.append(cap_branch(displacement) if ladder[t] else 0)
             if 'ladderPattern' in problem and ladder[t]:
                 b = problem['ladderPattern'][t][axis]
-                valid = (displacement <= -CAP + TOLERANCE if b == -1
-                         else displacement >= CAP - TOLERANCE if b == 1
-                         else -CAP - TOLERANCE <= displacement <= CAP + TOLERANCE)
+                valid = (displacement <= -CAP + REPLAY_TOLERANCE if b == -1
+                         else displacement >= CAP - REPLAY_TOLERANCE if b == 1
+                         else -CAP - REPLAY_TOLERANCE <= displacement <= CAP + REPLAY_TOLERANCE)
                 if not valid:
                     cap_mismatches.append({'tick': t, 'axis': axis, 'raw': displacement, 'branch': b})
             if ladder[t]:
@@ -95,11 +95,11 @@ def _replay(problem, yaw, controls):
             if contact:
                 approach = contact['direction'] * (positions[t][axis] - contact['plane'])
                 reach = contact['direction'] * (proposed - contact['plane'])
-                if approach > TOLERANCE:
+                if approach > REPLAY_TOLERANCE:
                     wrong_side.append({'state': t + 1, 'axis': axis, 'violation': approach})
                 if reach < 0:
                     missed.append({'state': t + 1, 'axis': axis, 'shortBy': -reach})
-                if approach <= TOLERANCE and reach >= 0:
+                if approach <= REPLAY_TOLERANCE and reach >= 0:
                     hit |= reach > 0
                     proposed, carry = contact['plane'], 0.0
             number(proposed, 'replayed position')
@@ -114,7 +114,7 @@ def _replay(problem, yaw, controls):
             movement_mismatches.append({'state': t + 1, 'reason': 'horizontal_collision_schedule'})
         if vertical:
             yn, ymove, ground, failures = vertical_step(vertical, t, y[t], vy[t], ladder[t],
-                                                       grounded[t], TOLERANCE)
+                                                       grounded[t], REPLAY_TOLERANCE)
             y.append(yn)
             vy.append(vertical_carry(ymove, ladder[t + 1], previous_hits[t + 1]))
             grounded.append(ground)
@@ -161,7 +161,7 @@ def _replay(problem, yaw, controls):
             point = [point[a] - positions[tick - 1][a] for a in range(2)]
         value = -math.sin(angle) * point[0] + math.cos(angle) * point[1]
     number(value, 'objective')
-    result = {'feasible': worst <= TOLERANCE and not missed and not wrong_side and not mismatches
+    result = {'feasible': worst <= REPLAY_TOLERANCE and not missed and not wrong_side and not mismatches
               and not cap_mismatches and not vertical_failures and not movement_mismatches,
             'violation': worst, 'worstConstraint': worst_name, 'objective': value,
             'missedContacts': missed, 'wrongSideContacts': wrong_side, 'patternMismatches': mismatches,

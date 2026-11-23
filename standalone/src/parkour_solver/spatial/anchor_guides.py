@@ -42,6 +42,23 @@ def unit(x,z):
     return None if length<=1e-12 else (x/length,z/length)
 
 
+# The one knob for guide-leg direction classes: a leg within this angle of an axis counts as that axis.
+AXIS_LEG_DEGREES=22.5
+
+
+def leg_class(direction):
+    """(heading, allowed) of a unit horizontal guide leg [dx, dz]: within AXIS_LEG_DEGREES of an axis, heading is
+    that axis and the allowed moves are forward and both sideways; otherwise heading is its quadrant's diagonal and
+    the allowed moves are its two forward axes. Moves are ('X'|'Z', +1|-1)."""
+    dx,dz=direction
+    sx,sz=(1 if math.copysign(1.,dx)>0 else -1),(1 if math.copysign(1.,dz)>0 else -1)
+    if min(abs(dx),abs(dz))<=math.tan(math.radians(AXIS_LEG_DEGREES))*max(abs(dx),abs(dz)):
+        if abs(dx)>=abs(dz):
+            return (float(sx),0.),{('X',sx),('Z',1),('Z',-1)}
+        return (0.,float(sz)),{('Z',sz),('X',1),('X',-1)}
+    return (math.copysign(math.sqrt(.5),dx),math.copysign(math.sqrt(.5),dz)),{('X',sx),('Z',sz)}
+
+
 def build_guides(data, policy):
     scene=data['scene']; names=[scene['startBlock']]+policy['anchors']+[data['task']['block']]
     points=[None]*len(names);points[-1]=terminal_point(data)

@@ -9,7 +9,6 @@ from parkour_solver.validation.numerical import validate_controls
 from parkour_solver.schema import number
 from parkour_solver.scene.route import derive_footprints, initial_guess, prepare_route, schedule, supports
 from parkour_solver.numerics.builders import numerical_problem
-from parkour_solver.reachability.screen import contradiction
 from parkour_solver.search.ranking import objective_seed, passage_seed
 
 
@@ -163,10 +162,6 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
             problem = numerical_problem(route, plan, coefficients, parent)
             if work is not None:
                 work.proposal(problem)
-            impossible = contradiction(problem)
-            if impossible:
-                return {'status': 'blocked', 'plan': plan, 'certificate': impossible,
-                        'problemHash': fingerprint(problem)}
             if route['passages']:
                 problem['yaw'] = passage_seed(problem, route, plan)
             if route['hitEvents']:

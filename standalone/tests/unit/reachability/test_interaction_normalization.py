@@ -15,7 +15,7 @@ def context():
 
 
 def source(state=None):
-    return ConstraintVariants(dict(passageCaps=dict(horizontal=2, vertical=2, total=3), supportClearance=1e-6),
+    return ConstraintVariants(dict(passageCaps=dict(horizontal=2, vertical=2, total=3)),
         dict(position=[1.]*4), dict(events=[dict(jump=0, runTicks=0)]),
         dict(solids=[[1., 0., -.2, 2., 3., .2]]), context()['envelopes'],
         dict(through=3, solidIndices=[0]), state=state)

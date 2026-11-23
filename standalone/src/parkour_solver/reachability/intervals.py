@@ -196,8 +196,6 @@ def interaction_reachability(envelopes, interaction, *, refine=False, objective=
         checked=screen(envelopes['model'],interaction.get('rows',[]),objective)
         if checked is not None and checked['outcome']=='infeasible':
             return dict(ruledOut=True,**checked['proof'])
-        if checked is not None and checked['outcome']=='undecided':
-            return dict(ruledOut=False,reason='relaxation_undecided',status=checked['status'],message=checked['message'])
     return dict(ruledOut=False, reason='not_ruled_out')
 
 

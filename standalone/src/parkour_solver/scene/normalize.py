@@ -75,23 +75,22 @@ def prepare_scene(request):
                                  ('maxRunTicksPerJump', 6, 0, 1000), ('maxTotalRunTicks', 12, 0, 1000),
                                  ('maxFlightInputs', 200, 2, 200)]:
         integer(scene.setdefault(key, default), key, lo, hi)
-    # Accepted only to read source-era scenes; these removed local caps have
-    # no normalized/runtime policy. New cases should omit them.
+    # Accepted only to read source-era scenes; these removed local caps and the
+    # per-scene margin (now schema.SOLVER_MARGIN) have no normalized/runtime
+    # policy. New cases should omit them.
     for key in ('maxContactBranches', 'maxBlockagesPerObstacle', 'maxPassageCandidates',
-                'maxHorizontalBlockagesPerObstacle', 'maxVerticalBlockagesPerObstacle'):
+                'maxHorizontalBlockagesPerObstacle', 'maxVerticalBlockagesPerObstacle', 'supportClearance'):
         scene.pop(key, None)
     ordered = [blocks[ids.index(scene['startBlock'])]] + [b for b in blocks if b['id'] != scene['startBlock']]
     checked = prepare_route({'version': scene.get('version'), 'initial': scene.get('initial'),
                              'blocks': ordered, 'airtimes': [12] * (len(blocks) - 1),
-                             'inputs': scene['inputs'], 'maxTotalRunTicks': scene['maxTotalRunTicks'],
-                             'supportClearance': scene.get('supportClearance', 1e-6)})
+                             'inputs': scene['inputs'], 'maxTotalRunTicks': scene['maxTotalRunTicks']})
     if scene['sceneModel'] == 'coplanar_support_planes' and any(b['top'] != ordered[0]['top'] for b in blocks):
         raise ValueError('Use sceneModel=support_planes for different support heights')
     scene['inputs'] = checked['inputs']
     scene['initial'] = checked['initial']
     if solid_scene and set(scene['initial']) - {'position', 'velocity', 'yaw'}:
         raise ValueError('Collision-box avoidance requires a clear initial input state; additional resume fields need shared movement compilation')
-    scene['supportClearance'] = checked['supportClearance']
     if scene.get('climbableCells'):
         if not solid_scene:
             raise ValueError('Climbable cells require collision_boxes')

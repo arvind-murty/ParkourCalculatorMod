@@ -37,11 +37,3 @@ def condition_envelopes(envelopes, extra_rows=(), *, refine=True, objective=None
     return dict(envelopes=tightened,
                 proof=proof if proof['ruledOut'] else interaction_reachability(tightened, {}, refine=refine,
                                                                                objective=objective))
-
-
-def contradiction(problem, extra_rows=()):
-    if extra_rows:
-        rows=[dict(r,t1=r.get('t1',r.get('offset'))) for r in extra_rows]
-        problem=dict(problem,walls=list(problem.get('walls',[]))+rows)
-    checked=condition_envelopes(reachable_envelopes(problem))['proof']
-    return {k:v for k,v in checked.items() if k!='ruledOut'} if checked['ruledOut'] else None

@@ -1,0 +1,91 @@
+{
+ "sideVariant": {
+  "leg": [
+   0.6,
+   0.8
+  ],
+  "forward": [
+   "X-",
+   "Z-"
+  ],
+  "reserved": [],
+  "note": "target diagonal to start: the decision point is outside both X- and Z-, both forward, nothing reserved"
+ },
+ "request": {
+  "version": 1,
+  "sceneModel": "collision_boxes",
+  "geometryBounds": [
+   -10,
+   -5,
+   -10,
+   20,
+   12,
+   20
+  ],
+  "initial": {
+   "position": [
+    0.5,
+    1,
+    3.0
+   ],
+   "velocity": [
+    0,
+    -0.0784000015258789,
+    0
+   ],
+   "yaw": 0
+  },
+  "startBlock": "start",
+  "goalBlock": "goal",
+  "maxWallHits": 0,
+  "maxContactCombinations": 0,
+  "blocks": [
+   {
+    "id": "start",
+    "boxes": [
+     [
+      0,
+      0,
+      0,
+      1,
+      1,
+      4
+     ]
+    ]
+   },
+   {
+    "id": "target",
+    "boxes": [
+     [
+      1,
+      0,
+      4,
+      2,
+      1.5,
+      5
+     ]
+    ]
+   },
+   {
+    "id": "goal",
+    "boxes": [
+     [
+      4,
+      1,
+      8,
+      5,
+      2,
+      9
+     ]
+    ]
+   }
+  ],
+  "movementSearch": {
+   "types": [
+    "normal",
+    "stepping"
+   ],
+   "maxInputs": 40
+  }
+ }
+}

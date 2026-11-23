@@ -11,7 +11,7 @@ from parkour_solver.reachability.intervals import reachable_envelopes
 def source(n=4, state=None):
     model = dict(ticks=n, position=[-1., 0.], velocity=[0., 0.], magnitude=[1.]*n,
                  friction=[.9]*n, walls=[])
-    return ConstraintVariants(dict(supportClearance=0.), dict(position=[1.]*(n+1)),
+    return ConstraintVariants(dict(), dict(position=[1.]*(n+1)),
         dict(events=[dict(jump=0, runTicks=0)]), dict(solids=[[0., 0., -.2, 1., 3., .2]]),
         reachable_envelopes(model, [1.]*(n+1)), dict(through=n, solidIndices=[0]), state=state)
 

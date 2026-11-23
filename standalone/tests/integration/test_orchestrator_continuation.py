@@ -153,7 +153,7 @@ class PersistentGenerationTests(unittest.TestCase):
 
     def test_constraint_generation_cursor_survives_a_new_facing_guess(self):
         from parkour_solver.constraints.variants import ConstraintVariants
-        route=dict(passageCaps=dict(horizontal=2,vertical=2,total=3),supportClearance=1e-6)
+        route=dict(passageCaps=dict(horizontal=2,vertical=2,total=3))
         profile=dict(duration=4,position=[1.]*5)
         plan=dict(events=[dict(jump=0,landing=4,runTicks=0)])
         geometry=dict(solids=[[0.,0.,-.2,1.,5.,.2]])

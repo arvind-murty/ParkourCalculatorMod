@@ -1,0 +1,94 @@
+{
+ "sideVariant": {
+  "leg": [
+   0.6,
+   0.8
+  ],
+  "forward": [
+   "Z+"
+  ],
+  "reserved": [],
+  "normal": [
+   "X-",
+   "Z-"
+  ],
+  "note": "target just behind (its region within the 0.3 margin): the forward Z+ side is a -Z entry O10 drops; the X- side is queued normally"
+ },
+ "request": {
+  "version": 1,
+  "sceneModel": "collision_boxes",
+  "geometryBounds": [
+   -10,
+   -5,
+   -10,
+   20,
+   12,
+   20
+  ],
+  "initial": {
+   "position": [
+    0.5,
+    1,
+    0.5
+   ],
+   "velocity": [
+    0,
+    -0.0784000015258789,
+    0
+   ],
+   "yaw": 0
+  },
+  "startBlock": "start",
+  "goalBlock": "goal",
+  "maxWallHits": 0,
+  "maxContactCombinations": 0,
+  "blocks": [
+   {
+    "id": "start",
+    "boxes": [
+     [
+      0,
+      0,
+      0,
+      1,
+      1,
+      4
+     ]
+    ]
+   },
+   {
+    "id": "target",
+    "boxes": [
+     [
+      0,
+      0,
+      -2,
+      1,
+      1.5,
+      0
+     ]
+    ]
+   },
+   {
+    "id": "goal",
+    "boxes": [
+     [
+      5,
+      1,
+      8,
+      6,
+      2,
+      9
+     ]
+    ]
+   }
+  ],
+  "movementSearch": {
+   "types": [
+    "normal",
+    "stepping"
+   ],
+   "maxInputs": 40
+  }
+ }
+}

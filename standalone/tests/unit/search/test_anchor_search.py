@@ -254,8 +254,9 @@ class AnchorSearchTests(unittest.TestCase):
         self.assertEqual(rejected['unresolved'],[])
         self.assertFalse(limited['completed'][0]['oracleRejected'])
         self.assertEqual(len(limited['unresolved']),1)
-        # A relaxation-infeasible request excludes the full model.
-        self.assertTrue(invoke('PrimalInfeasible','disk_finished')['repairState']['completed'][0]['oracleRejected'])
+        # Every unsolved relaxed request is an infeasible verdict, a primal-infeasible one or not.
+        for status in ('PrimalInfeasible','NumericalError','MaxIterations'):
+            self.assertTrue(invoke(status,'disk_finished')['repairState']['completed'][0]['oracleRejected'],status)
 
     def test_pre_solve_proofs_complete_an_alternative_without_ipopt(self):
         from parkour_solver.search.feasibility import outcome, policy_spec
@@ -918,3 +919,190 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
 
 
 if __name__=='__main__':unittest.main()
+
+
+class SideVariantFrontierTests(unittest.TestCase):
+    """The frontier holds a move's other sides behind its forward side (sideVariant). Each fixture's root decision is
+    one run tick from its start (a side's keep-outside row binds the take-off, which must not be the fixed start) with
+    the start as its decision point; only its one-tick step or slab boost children are kept, so a forward's branch
+    dies once it is expanded unless `live` keeps it."""
+    def frontier(self, name, outcomes=(), *, case='slab_boost', live=False, evaluate=True, screen=None, drop=None,
+                 continuation=None, alternative=False, max_prefixes=100):
+        from parkour_solver.movement.generation import generate_choices
+        from parkour_solver.movement.program import append_choice, boundary_state
+        from parkour_solver.scene.normalize import prepare_scene
+        from parkour_solver.search.identity import digest
+        from parkour_solver.spatial.anchor_guides import leg_class
+        from tests.support.paths import AUTONOMY_DATA
+        raw = json.loads((AUTONOMY_DATA / 'fixtures/side-variants' / (name + '.json')).read_text())
+        s, outcomes, log, forwards, alternatives, taken = prepare_scene(raw['request']), dict(outcomes), [], [], [], {}
+        start = empty_program(s['initial'], threshold=0.)
+        start['terminalSupport'] = s['startBlock']
+        context = dict(mode='open', scene=s, program=start, state=boundary_state(start), interactionGate=None, threshold=0.,
+                       maxInputs=40, maxEntryInputs=40)
+        root = next(child for choice in generate_choices('normal', context) if choice['profile']['duration'] == 1
+                    and not any(choice['profile']['jump']) for child in [append_choice(start, choice, max_inputs=40)]
+                    if child is not None and child['terminalSupport'] == s['startBlock'])
+        root['decisionPoint'] = s['initial']['position'][::2]
+        def keep(p):
+            cases = [e['case'] for e in p['profile'].get('caseEvents', [])]
+            ok = p['profile']['duration'] == 1 and not cases or p['profile']['duration'] == 2 and cases == [case]
+            if ok and drop and self.side(p) == drop:
+                # Accepted when generated, dropped when taken from the queue.
+                taken[drop] = taken.get(drop, 0) + 1
+                return taken[drop] == 1
+            return ok
+        def evaluator(p, nodes, _):
+            tag = p.get('sideVariant', {})
+            log.append('alternative' if p.get('alternativeOf') else tag.get('side'))
+            # The evaluated program comes back without its tag, as branch_program returns it.
+            program = {k: v for k, v in p.items() if k != 'sideVariant'}
+            if p.get('alternativeOf'):
+                alternatives.append(program)
+            status = outcomes.get(tag.get('side'), 'slack')
+            if tag.get('forward'):
+                # The tag carries the forward's own keep-outside row, shifted onto the child's take-off.
+                self.assertIn(tag['row'], [r for r in p['profile']['positionConstraints'] if r['t1'] == 1])
+                forwards.append(program)
+            if status == 'deferUnknown':
+                return dict(status='suspended', program=program, deferUnknown=True)
+            if status not in ('slack', 'tight'):
+                return dict(status=status, program=program)
+            held = [dict(program, decisionNode=digest([p['decisionNode'], 'alternative', 0]), alternativeOf=p['decisionNode'],
+                         needsNodeSolve=True)] if alternative and tag.get('forward') else []
+            return dict(status='feasible', program=program, alternatives=held,
+                        **(dict(sideOutcome=status) if tag.get('forward') else {}))
+        leg = raw['sideVariant']['leg']
+        point = s['initial']['position'][::2]
+        report = {}
+        source = persistent_programs(s, settings=dict(movement_settings(s), maxPrefixes=max_prefixes), report=report,
+            continuation=continuation, initial_programs=[root], threshold=0., program_filter=keep, screen=screen,
+            node_evaluator=evaluator if evaluate else None, policy_context=dict(version=1, span=0),
+            deadline=time.monotonic()+20,
+            live_programs=lambda: alternatives if live == 'alternative' else forwards if live else [],
+            context_adapter=lambda c: c.update(interactionGate=None,
+                                               forward=dict(point=point, allowed=leg_class(leg)[1], margin=.3)))
+        try:
+            emitted = list(source)
+        finally:
+            source.close()
+        return log, report['continuation'], emitted
+
+    @staticmethod
+    def side(p):
+        """The side a step or slab boost enters by: its last keep-outside row (the tag is set only once queued)."""
+        rows = [r for r in p['profile']['positionConstraints'] if r.get('name') == 'case:outside']
+        return rows[-1]['mode'] + ('-' if rows[-1]['cmp'] == 'LE' else '+') if rows else None
+
+    @staticmethod
+    def held(state):
+        return sorted(h['programs'][0]['sideVariant']['side'] for h in state['alternatives'].values()
+                      if 'side' in h and not h['next'])
+
+    def test_a_slack_forward_holds_its_sides_until_its_branch_dies(self):
+        # corridor-long: the decision point faces the target's Z- side; X- and X+ only gain distance.
+        log, state, _ = self.frontier('corridor-long', live=True)
+        self.assertEqual((log, self.held(state)), (['Z-'], ['X+', 'X-']))
+        record = {r['side']: r for r in state['sideVariants']}
+        self.assertEqual(sorted(record), ['X+', 'X-'])
+        (forward, side), = record['X-']['forwards']
+        self.assertEqual((side, record['X-']['outcomes'], record['X-']['case'], record['X-']['face']),
+                         ('Z-', {forward: 'slack'}, 'slab_boost', 'target'))
+        # Once the forward's branch died, both are restored.
+        log, state, _ = self.frontier('corridor-long')
+        self.assertEqual((log[0], sorted(log[1:]), self.held(state)), ('Z-', ['X+', 'X-'], []))
+        self.assertEqual(state['sideReserves'], [])
+
+    def test_a_tight_failed_or_dropped_forward_promotes_its_sides(self):
+        for outcome in ('tight', 'oracle_rejected', 'exhausted', 'deferUnknown'):
+            log, state, _ = self.frontier('corridor-long', {'Z-': outcome}, live=True)
+            self.assertEqual((log[0], sorted(log[1:]), self.held(state)), ('Z-', ['X+', 'X-'], []), outcome)
+            outcomes = {o for r in state['sideVariants'] for o in r['outcomes'].values()}
+            self.assertEqual(outcomes, {'tight' if outcome == 'tight' else 'failed'}, outcome)
+        # Dropped by the search policy when taken from the queue: never solved, it failed.
+        log, state, _ = self.frontier('corridor-long', drop='Z-', live=True)
+        self.assertEqual(sorted(log), ['X+', 'X-'])
+
+    def test_a_held_side_waits_for_the_forward_node_alternatives(self):
+        # The forward's held alternative sits beside it under the decision, not below it.
+        log, state, _ = self.frontier('corridor-long', alternative=True, live='alternative')
+        self.assertEqual((log, self.held(state)), (['Z-', 'alternative'], ['X+', 'X-']))
+        log, state, _ = self.frontier('corridor-long', alternative=True)
+        self.assertEqual((log[:2], sorted(log[2:])), (['Z-', 'alternative'], ['X+', 'X-']))
+
+    def test_two_forwards_hold_their_side_while_either_is_slack(self):
+        # two-forward-plus-side: the decision point is outside the target's X- and Z- sides.
+        log, state, _ = self.frontier('two-forward-plus-side', {'Z-': 'tight'}, live=True)
+        self.assertEqual((sorted(log), self.held(state)), (['X-', 'Z-'], ['X+']))
+        log, state, _ = self.frontier('two-forward-plus-side', {'X-': 'tight', 'Z-': 'exhausted'}, live=True)
+        self.assertEqual(sorted(log), ['X+', 'X-', 'Z-'])
+
+    def test_a_held_side_survives_a_resume_and_never_restores_below_a_success(self):
+        log, state, _ = self.frontier('corridor-long', live=True)
+        saved = json.loads(json.dumps(state))
+        again, _, _ = self.frontier('corridor-long', continuation=copy.deepcopy(saved))
+        self.assertEqual(sorted(again), ['X+', 'X-'])
+        forward, = {n for r in saved['sideVariants'] for n, _ in r['forwards']}
+        saved['succeededNodes'].append(forward)
+        again, state, _ = self.frontier('corridor-long', continuation=saved)
+        self.assertEqual((again, self.held(state)), ([], ['X+', 'X-']))
+
+    def test_a_side_held_mid_expansion_survives_a_resume(self):
+        def interrupt(p):
+            # The X sides of the slab boost are generated before its Z- forward: stop the expansion there once.
+            if self.side(p) == 'Z-' and p['profile']['caseEvents'][-1]['case'] == 'slab_boost' and not stopped:
+                stopped.append(True)
+                raise TimeoutError('deadline')
+        stopped = []
+        log, state, _ = self.frontier('corridor-long', screen=interrupt, live=True)
+        self.assertEqual(log, [])
+        held = state['expansion']['sides']
+        self.assertEqual(sorted(p['sideVariant']['side'] for move in held.values() for p in move['held']), ['X+', 'X-'])
+        log, state, _ = self.frontier('corridor-long', screen=interrupt, live=True, continuation=json.loads(json.dumps(state)))
+        self.assertEqual((log, self.held(state)), (['Z-'], ['X+', 'X-']))
+
+    def test_sides_are_queued_at_once_without_a_forward_to_wait_for(self):
+        def sides(programs):
+            return sorted(self.side(p) for p in programs if self.side(p))
+        # Without node solves nothing is held.
+        _, state, _ = self.frontier('corridor-long', evaluate=False, max_prefixes=1)
+        self.assertEqual((sides(state['pending']), state.get('sideReserves')), (['X+', 'X-', 'Z-'], None))
+        # With them, the root's expansion reserves its sides behind the queued forward.
+        _, state, _ = self.frontier('corridor-long', max_prefixes=1)
+        (reserve,) = state['sideReserves']
+        self.assertEqual((sides(state['pending']), sides(reserve['programs']), reserve['outcomes']), (['Z-'], ['X+', 'X-'], {}))
+        # A screened forward leaves its sides queued.
+        log, _, _ = self.frontier('corridor-long', live=True,
+                                  screen=lambda p: dict(reason='off') if self.side(p) == 'Z-' else None)
+        self.assertEqual(sorted(log), ['X+', 'X-'])
+        # forward-goal: a normal step onto the goal is complete, has no node solve, and is emitted with its sides.
+        log, state, emitted = self.frontier('forward-goal', case='normal_step', live=True)
+        self.assertEqual((log, sides(emitted), state['sideReserves']), ([], ['X+', 'X-', 'Z-'], []))
+
+    def test_a_held_side_keeps_a_run_tick_reserve_watching_it_waiting(self):
+        from parkour_solver.search.frontier import restore_alternatives
+        def program(node, parent):
+            return dict(decisionNode=node, decisionParent=parent)
+        def state(**fields):
+            # Decision P kept a forward and its side after k run ticks and reserved run count k + 1 ('run'); the side
+            # was then held behind the slack forward ('held').
+            return dict(dict(pending=[], ready=[], expansion=None, deferredNodes=[], succeededNodes=[], sideReserves=[],
+                             decisionParents=dict(forward='P', side='P', run='P', child='forward'),
+                             alternatives=dict(run=dict(programs=[program('run', 'P')], restored=[], next=0, watch=['forward', 'side']),
+                                               held=dict(programs=[program('side', 'P')], restored=[], next=0, watch=['forward'],
+                                                         side=['forward']))), **fields)
+        self.assertFalse(restore_alternatives(state(pending=[program('child', 'forward')])))
+        # A deferred node below the forward keeps its branch alive.
+        self.assertFalse(restore_alternatives(state(deferredNodes=[program('child', 'forward')])))
+        # The forward's branch died: the side is restored and the reserve waits for it, then for its branch.
+        s = state()
+        self.assertTrue(restore_alternatives(s))
+        self.assertEqual([p['decisionNode'] for p in s['pending']], ['side'])
+        self.assertFalse(restore_alternatives(s))
+        s['pending'] = []
+        self.assertTrue(restore_alternatives(s))
+        self.assertEqual([p['decisionNode'] for p in s['pending']], ['run'])
+        # A side still waiting for its forward's outcome is held too.
+        s = state(sideReserves=[dict(programs=[program('side', 'P')], forwards=[['forward', 'Z-']], outcomes={})])
+        del s['alternatives']['held']
+        self.assertFalse(restore_alternatives(s))

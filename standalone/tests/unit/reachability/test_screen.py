@@ -1,25 +1,21 @@
 import random
-import copy
 import math
 import unittest
 from unittest.mock import patch
 
 from parkour_solver.reachability.intervals import (PARENT_WINDOW, interaction_reachability, reachable_envelopes,
                                                     travel_radii)
-from parkour_solver.reachability.screen import contradiction
+from parkour_solver.reachability.screen import condition_envelopes
 from parkour_solver.numerics import disk, prepare, validate
 
 
-class ScreenTests(unittest.TestCase):
-    def test_extra_prefix_rows_use_existing_model_without_mutating_it(self):
-        p=dict(ticks=1,position=[0.,0.],velocity=[0.,0.],magnitude=[1.],friction=[.9],walls=[])
-        before=copy.deepcopy(p)
-        rows=[dict(mode=axis,offset=1,cmp='GE',rhs=.8) for axis in ('X','Z')]
-        self.assertIsNone(contradiction(p,rows[:1]))
-        self.assertEqual(contradiction(p,rows)['reason'],'norm_reach_contradiction')
-        self.assertEqual(p,before)
-        self.assertNotIn('t1',rows[0])
+def ruled_out(problem):
+    """The envelope screen's proof for a fixed problem, or None."""
+    proof = condition_envelopes(reachable_envelopes(problem))['proof']
+    return proof if proof['ruledOut'] else None
 
+
+class ScreenTests(unittest.TestCase):
     def test_travel_pairs_after_the_last_constrained_state_never_fire(self):
         rng = random.Random(1118)
         fired = 0
@@ -94,7 +90,7 @@ class ScreenTests(unittest.TestCase):
     def test_unreachable_wall_is_rejected(self):
         p = {'ticks': 1, 'position': [0, 0], 'velocity': [0, 0], 'magnitude': [.1],
              'friction': [.91], 'walls': [{'mode': 'X', 't1': 1, 'cmp': 'GE', 'rhs': .2}]}
-        self.assertEqual(contradiction(p)['state'], 1)
+        self.assertEqual(ruled_out(p)['state'], 1)
 
     def test_per_axis_zeroing_and_turns_do_not_reject_a_known_witness(self):
         rng = random.Random(163)
@@ -112,15 +108,15 @@ class ScreenTests(unittest.TestCase):
                 for axis, coordinate in zip(('X', 'Z'), point):
                     p['walls'].extend([{'mode': axis, 't1': t, 'cmp': 'GE', 'rhs': coordinate - 1e-5},
                                        {'mode': axis, 't1': t, 'cmp': 'LE', 'rhs': coordinate + 1e-5}])
-            self.assertIsNone(contradiction(p))
+            self.assertIsNone(ruled_out(p))
 
     def test_ladder_cap_cannot_claim_reaching_a_further_contact(self):
         p = {'ticks': 1, 'position': [0, 0], 'velocity': [.8, 0], 'magnitude': [.03],
              'friction': [.91], 'walls': [], 'ladderTicks': [True, True],
              'contacts': [{'state': 1, 'axis': 0, 'plane': .2, 'direction': 1}]}
-        self.assertEqual(contradiction(p)['reason'], 'contact_reach_contradiction')
+        self.assertEqual(ruled_out(p)['reason'], 'contact_reach_contradiction')
         p['ladderTicks'][0] = False
-        self.assertIsNone(contradiction(p))
+        self.assertIsNone(ruled_out(p))
 
     def test_contact_cap_screen_keeps_random_valid_witnesses(self):
         rng = random.Random(75124)
@@ -146,7 +142,7 @@ class ScreenTests(unittest.TestCase):
                 for axis, value in zip(('X', 'Z'), point):
                     p['walls'].extend([{'mode': axis, 't1': t, 'cmp': 'GE', 'rhs': value - 1e-5},
                                        {'mode': axis, 't1': t, 'cmp': 'LE', 'rhs': value + 1e-5}])
-            self.assertIsNone(contradiction(p))
+            self.assertIsNone(ruled_out(p))
 
 
 
@@ -177,17 +173,17 @@ class DiskScreenTests(unittest.TestCase):
         self.assertFalse(interaction_reachability(envelopes,{})['ruledOut'])
         proof = interaction_reachability(envelopes,{},refine=True)
         self.assertEqual((proof['reason'],proof['relaxation']),('disk_control_relaxation_infeasible','acceleration_disk'))
-        self.assertIn(proof['status'],disk.INFEASIBLE)
+        self.assertIn(proof['status'],('PrimalInfeasible','AlmostPrimalInfeasible'))
         self.assertFalse(interaction_reachability(reachable_envelopes(self.model(1.85)),{},refine=True)['ruledOut'])
 
     @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # stubs the Python solve; the native cache has no such seam
-    def test_undecided_results_are_solved_again_and_decided_ones_are_cached(self):
-        undecided = dict(status='MaxIterations',outcome='undecided',controls=None,objective=None,iterations=200)
-        with patch.object(disk,'_solve',side_effect=lambda *a:dict(undecided)) as solved:
+    def test_a_limit_hit_twice_rules_out_and_verdicts_are_cached(self):
+        limit = dict(status='MaxIterations',outcome='limit',controls=None,objective=None,iterations=200)
+        with patch.object(disk,'_solve',side_effect=lambda *a:dict(limit)) as solved:
             for _ in range(2):
                 checked = interaction_reachability(reachable_envelopes(self.model(1.25)),{},refine=True)
-                self.assertEqual((checked['ruledOut'],checked['reason']),(False,'relaxation_undecided'))
-        self.assertEqual(solved.call_count,2)
+                self.assertEqual((checked['ruledOut'],checked['reason']),(True,'disk_control_relaxation_infeasible'))
+        self.assertEqual([c.args[1:] for c in solved.call_args_list],[(disk.CAP,disk.MAX_ITER),(disk.RETRY_CAP,disk.RETRY_MAX_ITER)])
         self.assertTrue(interaction_reachability(reachable_envelopes(self.model(1.7)),{},refine=True)['ruledOut'])
         with patch.object(disk,'_solve',side_effect=AssertionError('cached')):
             self.assertEqual(disk.screen(self.model(1.7))['outcome'],'infeasible')

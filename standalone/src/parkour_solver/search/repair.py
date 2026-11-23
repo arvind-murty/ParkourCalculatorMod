@@ -477,12 +477,12 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
 
         The generator restarts over the larger obstacle set, so families and switch climbs stay joint over
         every obstacle hit so far. The old generator's unsolved branches lack the new obstacle's rows and
-        are dropped (the new generator emits them refined); accepted points stay. A hit on an enumerated
-        obstacle or a settled stretch has no repair."""
+        are dropped (the new generator emits them refined); accepted points stay. A hit on a settled stretch is
+        repaired the same way, keeping the stretch's settled rows. A hit on an enumerated obstacle has no repair."""
         nonlocal variant_source, source_exhausted, generated
         key = variant_source.obstacle_key(collision['solidIndex'], collision['tick'])
-        if key is None or key in variant_source.obstacles:
-            attempts[-1]['termination'] = 'settled_obstacle_hit' if key is None else 'enumerated_obstacle_hit'
+        if key in variant_source.obstacles:
+            attempts[-1]['termination'] = 'enumerated_obstacle_hit'
             return
         attempts[-1]['termination'] = 'obstacle_added'
         variant_source = variant_source.with_obstacles(variant_source.obstacles+[key])
@@ -702,8 +702,8 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                 d.get('status') == 'unknown' and (d.get('termination') == 'worker_finished' and
                 d.get('workerStatus') in ('Infeasible_Problem_Detected','Search_Direction_Becomes_Too_Small',
                                          'Restoration_Failed','Solve_Succeeded','Solved_To_Acceptable_Level')
-                or d.get('termination') == 'disk_finished' and
-                d.get('workerStatus') in ('PrimalInfeasible', 'AlmostPrimalInfeasible'))
+                # Every unsolved disk result is an infeasible verdict (numerics.disk).
+                or d.get('termination') == 'disk_finished')
                 for d in diagnostics)
             completion.update(oracleRejected=bool(oracle_completed), proven=proven, certificates=certificates)
             if result['status'] == 'unknown' and not oracle_completed and not proven:
@@ -771,7 +771,7 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                 reference_yaw = result['best']['candidate']['yaw'][:]
             continue
         conflict = conflicts[0]
-        for row in avoid_contact_rows(conflict, max(route['supportClearance'], 2e-7)):
+        for row in avoid_contact_rows(conflict):
             new_rows = rows + [row]
             delta = abs(conflict['position'][0 if row['mode'] == 'X' else 1] - row['rhs'])
             offer(score + delta, new_rows, passages, hits, proposal_yaw, meta=meta)

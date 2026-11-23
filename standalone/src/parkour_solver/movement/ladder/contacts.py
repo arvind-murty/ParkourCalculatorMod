@@ -1,6 +1,7 @@
 import copy
 from parkour_solver.physics.vertical import f32
-from parkour_solver.movement.contact_combinations import contact_clearance, expanded_face, merge_contacts
+from parkour_solver.schema import SOLVER_MARGIN
+from parkour_solver.movement.contact_combinations import expanded_face, merge_contacts
 from parkour_solver.movement.contact_profiles import contact_profile
 from parkour_solver.movement.ladder.schedules import trace_ladder_schedule
 from parkour_solver.scene.geometry import BODY_HEIGHT
@@ -20,7 +21,7 @@ def climb_contacts(schedule, wall):
         contacts.append({'leg': 0, 'offset': t, 'axis': wall['axis'], 'plane': wall['plane'],
                          'direction': wall['direction'], 'boxes': [part['box']], 'surface': None,
                          'regions': [expanded_face(part['box'], 'XYZ'.index(wall['axis']), -wall['direction'],
-                                                   contact_clearance({}))], 'role': 'climb'})
+                                                   SOLVER_MARGIN)], 'role': 'climb'})
     return contacts
 
 

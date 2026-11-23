@@ -52,8 +52,8 @@ def stop_report(state, requests):
             deferredNodes=len(frame['generation'].get('continuation',{}).get('deferredNodes') or [])))
     rejected = [route(frame,record) for frame in frames(state) for record in frame['records']
                 if (record.get('nodeFeasibility') or {}).get('status') == 'oracle_rejected']
-    unknown = [dict(index=r['index'],fingerprint=r['fingerprint'],workerStatus=r.get('workerStatus'),backend=r.get('backend'),
-                    owners=r.get('owners',[]))
+    unknown = [dict(index=r['index'],fingerprint=r['fingerprint'],status=r['status'],workerStatus=r.get('workerStatus'),
+                    backend=r.get('backend'),owners=r.get('owners',[]))
                for r in requests if r.get('status') == 'unknown']
     return dict(suspendedFrames=suspended,oracleRejectedRoutes=rejected,unknownRequests=unknown)
 
@@ -149,6 +149,15 @@ def block_names(scene):
             for i,box in enumerate(block.get('boxes',[]))}
 
 
+# Rows putting the player beside a case's block before the case, as (row name, ticks after the case input, axes): the
+# side it enters from (a blip keeps clear of it on its landing tick), or a corner's X side then its Z side.
+SIDE_ROWS = dict(grind=[('grind:outside',0,'XZ')], normal_step=[('case:outside',0,'XZ')], slab_boost=[('case:outside',0,'XZ')],
+                 blip=[('blip:wall_avoid',0,'XZ')], blip_up=[('blip_up:outside',0,'XZ')],
+                 corner_jump_cancel=[('case:outside',0,'X'),('case:outside',1,'Z')],
+                 corner_blip=[('case:outside',0,'X'),('case:outside',1,'Z')],
+                 corner_blip_up=[('case:outside',0,'X'),('case:outside',1,'Z')])
+
+
 def movement(profile, names):
     def where(event):
         boxes = event['boxes'] if 'boxes' in event else [event['box']] if 'box' in event else []  # reports before member boxes
@@ -158,14 +167,21 @@ def movement(profile, names):
     events = profile.get('contactEvents',[])
     def case(event):
         tick = event.get('input',event.get('offset'))
-        # A case's `:outside` row puts the player beside the contacted box before the case: the side it enters from.
-        entries = [r['mode']+('+' if r['cmp'] == 'GE' else '-') for r in profile.get('positionConstraints',[])
-                   if r.get('name') == f'{event.get("case")}:outside' and r.get('t1') == tick]
-        return dict(case=event.get('case'),tick=tick,entries=entries,**({'block':where(event)['block']} if 'boxes' in event else {}))
+        entries = [r['mode']+('+' if r['cmp'] == 'GE' else '-') for name,after,axes in SIDE_ROWS.get(event.get('case'),[])
+                   for r in profile.get('positionConstraints',[])
+                   if r.get('name') == name and r.get('t1') == tick+after and r['mode'] in axes]
+        lower = '+'.join(sorted({names.get(tuple(box),'unnamed box') for box in event.get('lowerBoxes',[])}))
+        # A step's take-off keeps out from under each low ceiling (`ceiling_clear:<owner>` rows).
+        ceilings = [(r['name'].split(':',1)[1],r['mode']+('+' if r['cmp'] == 'GE' else '-'))
+                    for r in profile.get('positionConstraints',[])
+                    if r.get('name','').startswith('ceiling_clear:') and r.get('t1') == tick]
+        return dict(case=event.get('case'),tick=tick,entries=entries,ceilings=ceilings,
+                    **({'block':where(event)['block']} if 'boxes' in event else {}),**({'lower':lower} if lower else {}))
     return dict(jumps=[t for t,jump in enumerate(profile.get('jump',[])) if jump],
                 landings=[where(e) for e in events if e.get('role') == 'landing'],
                 ceilings=[where(e) for e in events if e.get('role') == 'ceiling'],
-                walls=[dict(where(e),side=e['axis']+('+' if e['direction'] > 0 else '-'))
+                # A hit moving +X meets the box's X- face.
+                walls=[dict(where(e),face=e['axis']+('-' if e['direction'] > 0 else '+'))
                        for e in events if e.get('role') == 'contact'],
                 cases=[case(e) for e in profile.get('caseEvents',[])])
 
@@ -236,14 +252,25 @@ def steps(profile, start, names, sides=()):
             out.append((t+1,f'walks off {block.upper()} after t{t}'))
         t += 1
     out += [(c['tick'],f'hits the ceiling of {c["block"].upper()} t{c["tick"]}') for c in m['ceilings'] if c['tick'] >= start]
-    out += [(w['tick'],f'touches {w["block"].upper()} {w["side"]} t{w["tick"]}') for w in m['walls'] if w['tick'] >= start]
-    out += [(c['tick'],('grinds under' if c['case'] == 'grind' else c['case'].replace('_',' ')+' onto')+
-             f' {c.get("block","?").upper()} t{c["tick"]}'+(f' from its {"/".join(c["entries"])} side' if c['entries'] else ''))
-            for c in m['cases'] if c['tick'] is not None and c['tick'] >= start]
+    out += [(w['tick'],f'hits {w["block"].upper()}\'s {w["face"]} face t{w["tick"]}') for w in m['walls'] if w['tick'] >= start]
+    out += [(c['tick'],case_text(c)) for c in m['cases'] if c['tick'] is not None and c['tick'] >= start]
     out += [(p['segment'][0],'keeps to '+', then '.join(' and '.join(f'the {face} side of {blocks}' for blocks,face in bounds)
                                                      for bounds in p['faces'])+
              f' (t{p["segment"][0]}-{p["segment"][1]})') for p in sides if p['segment'][1] >= start]
     return ', '.join(text for _,text in sorted(out,key=lambda o:o[0])) or 'no movement of its own'
+
+
+def case_text(c):
+    """A named case with its faces: the lower face a blip lands on, the side entered from or kept clear of, and the
+    corner a corner case passes (it ends beside the block, not on it)."""
+    block, side = c.get('block','?').upper(), '/'.join(c['entries'])
+    landing = f'lands on {c["lower"].upper()} and ' if c.get('lower') else ''
+    ceilings = ''.join(f', keeping to the {s} side of ceiling {owner.upper()}' for owner,s in c.get('ceilings',[]))
+    if c['case'] in ('corner_jump_cancel','corner_blip','corner_blip_up'):
+        verb = dict(corner_jump_cancel='corner jump cancel',corner_blip='corner blips',corner_blip_up='corner blips up')[c['case']]
+        return f'{landing}{verb} past {block}\'s {"".join(c["entries"]) or "?"} corner t{c["tick"]}{ceilings}'
+    verb = dict(grind='grinds under', blip='blips onto', blip_up='blips up onto').get(c['case'],c['case'].replace('_',' ')+' onto')
+    return f'{landing}{verb} {block} t{c["tick"]}'+(f' from its {side} side' if side else '')+ceilings
 
 
 def node_trace(state, scene=None):
@@ -267,6 +294,10 @@ def node_trace(state, scene=None):
             reasons[exclusion['proof'].get('reason')] += 1
         for candidate in source.get('minimumRunCandidates',[]):
             runs.setdefault(solved(candidate['node']),[]).append(candidate)
+        held_sides = {}
+        for record in source.get('sideVariants',[]):
+            restored = bool(source.get('alternatives',{}).get(record.get('alternative'),{}).get('restored'))
+            held_sides.setdefault(solved(record['node']),[]).append(dict(record,restored=restored))
         for program in source.get('pending',[]):
             queued[solved(program.get('decisionParent') if program.get('needsNodeSolve') else program.get('decisionNode'))] += 1
         ends = {key:node['program']['movementUnits'][-1]['end'] for key,node in source['nodes'].items()}
@@ -290,11 +321,13 @@ def node_trace(state, scene=None):
             nodes.append(dict(node=key,parent=parent,status=node['status'],depth=node['depth'],start=start,
                               end=ends[key],steps=steps(program['profile'],start,names,sides),
                               repair=repair_trace(repair) if repair else None,
-                              pruned=dict(pruned.get(key,{})),minimumRuns=runs.get(key,[]),queued=queued[key]))
+                              pruned=dict(pruned.get(key,{})),minimumRuns=runs.get(key,[]),queued=queued[key],
+                              sideVariants=held_sides.get(key,[])))
         generation = frame['generation']
         trees[frame['id']] = dict(goal=frame['goal'].get('block'),nodes=nodes,
             rootPruned=dict(sum((pruned.get(r,Counter()) for r in roots),Counter())),
             rootMinimumRuns=[c for r in roots for c in runs.get(r,[])],rootQueued=sum(queued[r] for r in roots),
+            rootSideVariants=[s for r in roots for s in held_sides.get(r,[])],
             generated=generation.get('generated'),screened=generation.get('screenedPrefixes'),
             policyRejections=generation.get('policyRejections'),expanded=generation.get('totalExpandedPrefixes'),
             generatedPolicyRejections=sum(r.get('search_policy',0) for r in pruned.values()),
@@ -325,8 +358,8 @@ CHECKS = dict(
     elapsed_inputs_exceed_incumbent_finish='time bound (already past the best route\'s finish)',
     global_single_jump_latch='hard-anchor latch',
     higher_ticks_without_structural_advantage='slower than a peer at the anchor (no structural advantage)',
-    behind_decision_point='behind the decision point along its guide leg',
-    entry_against_guide='entered against the decision\'s guide leg')
+    behind_decision_point='reached by a move the decision\'s guide leg disallows',
+    entry_against_guide='entered by a move the decision\'s guide leg disallows')
 OUTCOMES = dict(
     feasible='feasible',
     exhausted='no alternative survived (backtracks)',
@@ -401,7 +434,7 @@ def solver(request):
 
 
 def counted_as(request):
-    if request.get('backend') == 'clarabel' and request.get('workerStatus') in ('PrimalInfeasible', 'AlmostPrimalInfeasible'):
+    if request.get('backend') == 'clarabel' and request.get('status') == 'unknown':
         return 'infeasible (disk relaxation)'
     return 'infeasible (IPOPT local)' if request.get('workerStatus') == 'Infeasible_Problem_Detected' else None
 
@@ -499,7 +532,7 @@ def proof_text(entry):
     if reason == 'disk_control_relaxation_infeasible':
         return 'no input sequence satisfies the dynamics and these rows, even with acceleration relaxed to a disk'
     if reason == 'behind_decision_point':
-        return f'reachable part at most {number(entry["ahead"])} blocks ahead, margin {number(entry["margin"])}'
+        return f'needs {number(entry["need"])} blocks {entry["side"]}, margin {number(entry["margin"])}'
     if reason == 'entry_against_guide':
         return f'enters from its {entry["side"]} side'
     if reason == 'interaction_distance_unreachable':
@@ -535,7 +568,7 @@ def movement_text(m):
     parts.append('hits the ceiling of '+', '.join(f'{c["block"].upper()} t{c["tick"]}' for c in m['ceilings'])
                  if m['ceilings'] else 'no ceiling hit')
     if m['walls']:
-        parts.append('touches '+', '.join(f'{w["block"].upper()} {w["side"]} t{w["tick"]}' for w in m['walls']))
+        parts.append('hits '+', '.join(f'{w["block"].upper()}\'s {w["face"]} face t{w["tick"]}' for w in m['walls']))
     if m['cases']:
         parts.append(', '.join(f'{c["case"]} t{c["tick"]}' for c in m['cases']))
     return '; '.join(parts)
@@ -567,9 +600,13 @@ def repair_lines(repair, goal, request_index):
     """A repaired movement's obstacle checks, decisions, rejected options, solved alternatives and kept choice."""
     lines = []
     prepared = repair['preparedEncounters']
-    interacting = [e for e in prepared if e['possiblePhases']]
+    # Uncertain phases sit at a named case's tick; avoidance leaves them to the scene replay.
+    interacting = [e for e in prepared if e['possiblePhases'] or e['uncertain']]
+    deferred = sum(1 for e in interacting if not e['possiblePhases'])
     lines += [f'Obstacle checks: {len(prepared)}; {len(prepared)-len(interacting)} cannot touch the player anywhere in '
-              f'their segment. A check is repeated when the rows chosen so far change what is reachable.','']
+              f'their segment'+(f'; {deferred} can touch it only at a named step or grind tick, left to scene replay'
+                                if deferred else '')+
+              '. A check is repeated when the rows chosen so far change what is reachable.','']
     lines += table(['Obstacle','Segment ticks','Possible phases','Already clear','Faces ruled out','Vertical clear','Uncertain'],
         [[e['owner'],f'{e["segment"][0]}-{e["segment"][1]}',phases_text(e['possiblePhases']) or 'none',
           len(e['coveredPhases']),
@@ -577,7 +614,7 @@ def repair_lines(repair, goal, request_index):
                     for f in sorted({x['face'] for x in e['excludedFaces']})) or 'none',
           phases_text([x['phase'] for x in e['verticalClear']]) or 'none',
           phases_text(e['uncertain']) or 'none'] for e in interacting])
-    decisions = sorted({(e['owner'],e['segment'][0],e['segment'][1]) for e in interacting})
+    decisions = sorted({(e['owner'],e['segment'][0],e['segment'][1]) for e in interacting if e['possiblePhases']})
     contact_regions = repair.get('contactRegions',[])
     if decisions or contact_regions:
         lines += ['Decisions:','']+[f'- which sides of {o.upper()} to keep (segment t{a}-{b})' for o,a,b in decisions]+[
@@ -634,7 +671,7 @@ def repair_lines(repair, goal, request_index):
 
 
 RUN_CANDIDATES = dict(anchor='jump onto anchor', ceiling='ceiling jump under', grind='grind under',
-                      slab_boost='slab boost onto', corner_jump_cancel='corner jump cancel onto', landing='run-off onto',
+                      slab_boost='slab boost onto', corner_jump_cancel='corner jump cancel past', landing='run-off onto',
                       step='step-up onto', scan='run-tick scan', same_face='jump back onto')
 RUN_OUTCOMES = dict(dominated='beaten by a kept candidate', unreached='no run count below the bound passed the screens',
                     held='held (does not fit its face)', queued='queued at once (does not fit its face; nothing else to wait for)')
@@ -656,6 +693,28 @@ def minimum_run_text(candidates, numbers):
         if c['outcome'] != 'kept':
             others.setdefault(c['outcome'],[]).append(label(c))
     return '; '.join(kept+[f'{RUN_OUTCOMES.get(outcome,outcome)}: '+', '.join(labels) for outcome,labels in others.items()])
+
+
+def side_variant_lines(records, numbers):
+    """A decision's held side variants of a step or slab boost: the forward sides they waited for and how each
+    decided. A side whose forward is not solved yet is left out."""
+    def node(n):
+        return f'node {numbers[n]}' if n in numbers else 'an unsolved node'
+    lines = []
+    for r in records:
+        outcomes = r.get('outcomes')
+        if outcomes is None:
+            continue
+        slack = [(n,side) for n,side in r['forwards'] if outcomes[n] == 'slack']
+        if slack:
+            text = 'reserved behind '+', '.join(f'{node(n)} (its {side} side row was slack)' for n,side in slack)
+            if r['restored']:
+                text += '; restored: '+', '.join(f"{node(n)}'s branch died" for n,_ in slack)
+        else:
+            text = 'promoted: '+', '.join(f"{node(n)}'s {side} side row was tight" if outcomes[n] == 'tight' else
+                                          f'{node(n)} failed' for n,side in r['forwards'])
+        lines.append(f'- {r["case"].replace("_"," ")} onto {r["face"].upper()} from its {r["side"]} side: {text}.')
+    return ['Side variants:','',*lines,''] if lines else []
 
 
 def tree_lines(tree, request_index, numbers):
@@ -681,14 +740,15 @@ def tree_lines(tree, request_index, numbers):
             outline(n['node'],depth+1)
     outline(None,0)
     lines.append('')
-    def expansion(solved, pruned, runs, queued):
+    def expansion(solved, pruned, runs, queued, sides):
         return [f'Solved children: '+(', '.join(f'node {numbers[c["node"]]}' for c in solved) or 'none')+'.',
                 f'Children queued but not yet solved: {queued}.',
                 'Children pruned when generated: '+(', '.join(f'{n} {CHECKS.get(k,k)}' for k,n in
                                                               Counter(pruned).most_common()) or 'none')+'.',
-                *([f'Minimum run ticks: {minimum_run_text(runs,numbers)}.'] if runs else []),'']
+                *([f'Minimum run ticks: {minimum_run_text(runs,numbers)}.'] if runs else []),'',
+                *side_variant_lines(sides,numbers)]
     lines += ['The frame start\'s expansion:','']+expansion(children.get(None,[]),tree['rootPruned'],tree['rootMinimumRuns'],
-                                                                 tree['rootQueued'])
+                                                                 tree['rootQueued'],tree['rootSideVariants'])
     for n in nodes:
         lines += [f'##### Node {numbers[n["node"]]}: {n["steps"]}','',
                   f'From {origin(n["parent"])}. Outcome: {OUTCOMES.get(n["status"],n["status"])}. '
@@ -696,7 +756,7 @@ def tree_lines(tree, request_index, numbers):
         if n['repair']:
             lines += repair_lines(n['repair'],goal,request_index)
         if n['status'] == 'feasible' or n['pruned'] or n['minimumRuns'] or n['queued']:
-            lines += expansion(children.get(n['node'],[]),n['pruned'],n['minimumRuns'],n['queued'])
+            lines += expansion(children.get(n['node'],[]),n['pruned'],n['minimumRuns'],n['queued'],n['sideVariants'])
     return lines
 
 
@@ -771,8 +831,7 @@ def render(report, requests, routes, stop, trees):
     if relaxation is not None:
         screens = relaxation.get('screen', {})
         lines += [f'Disk-relaxation pre-checks: {screens.get("solved", 0)} solved ({screens.get("cacheHits", 0)} more from cache), '
-                  f'{screens.get("infeasible", 0)} proved infeasible, {screens.get("undecided", 0)} undecided by Clarabel and '
-                  f'counted as not ruled out.','']
+                  f'{screens.get("infeasible", 0)} proved infeasible.','']
     blocks = (result.get('effectiveRequest') or {}).get('blocks',[])
     if blocks:
         lines += ['## Blocks','','Collision boxes in world coordinates, exact; a block of several boxes lists each.','']

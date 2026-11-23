@@ -2,27 +2,27 @@ import copy
 
 from parkour_solver.physics.vertical import REST_CARRY, f32
 from parkour_solver.movement.vertical_profiles import trace_ladder_schedule
-from parkour_solver.movement.contact_combinations import (bounding_region, contact_event, finite_rows, reachable_option,
-                                                          region_offset, scene_contact_options)
+from parkour_solver.movement.contact_combinations import bounding_region, finite_rows, reachable_option, region_offset
 from parkour_solver.scene.geometry import expanded_box
 from parkour_solver.spatial.surfaces import scene_geometry
 from parkour_solver.movement.units import profile_program
+from parkour_solver.schema import SOLVER_MARGIN
 from parkour_solver.scene.route import HALF_WIDTH
 
 
-CASES = {'normal_step','slab_boost','blip','blip_up','corner_jump_cancel','corner_blip_up','grind'}
+CASES = {'normal_step','slab_boost','blip','blip_up','corner_jump_cancel','corner_blip','corner_blip_up','grind'}
 
 
-def outside_row(box, axis, sign, state, name='case:outside', margin=1e-6):
+def outside_row(box, axis, sign, state, name='case:outside'):
     a = 0 if axis == 'X' else 2
     return dict(mode=axis,t1=state,cmp='GE' if sign>0 else 'LE',
-                rhs=(box[a+3]+HALF_WIDTH+margin if sign>0 else box[a]-HALF_WIDTH-margin),name=name)
+                rhs=(box[a+3]+HALF_WIDTH+SOLVER_MARGIN if sign>0 else box[a]-HALF_WIDTH-SOLVER_MARGIN),name=name)
 
 
 def tangent_rows(box, axis, state):
     a = 0 if axis == 'X' else 2
     return [dict(mode=axis,t1=state,cmp=cmp,rhs=v,name='case:finite') for cmp,v in
-            [('GE',box[a]-HALF_WIDTH+1e-6),('LE',box[a+3]+HALF_WIDTH-1e-6)]]
+            [('GE',box[a]-HALF_WIDTH+SOLVER_MARGIN),('LE',box[a+3]+HALF_WIDTH-SOLVER_MARGIN)]]
 
 
 def _faces(scene, block, axis, sign):
@@ -67,6 +67,37 @@ def top_choices(context, face, owner, state, name='case:region', *, jumping):
     return [(rows, choices)]
 
 
+def ceiling_clearances(context, feet, top, *, jumping):
+    """Row sets keeping the take-off of a step, slab boost or corner jump cancel from `feet` beside a higher block with
+    top `top` out from under every low ceiling: the step rises from the take-off box, so a ceiling leaving no standing
+    room at `top` (expanded underside below it) stops it short, and the move is a normal jump (user, 2026-11-22). Each ceiling the take-off can reach gives one outside row per exposed side; a set takes one per
+    ceiling, and a reachable ceiling without an exposed side leaves no set."""
+    import itertools
+    from parkour_solver.movement.contact_combinations import scene_contact_options
+    from parkour_solver.reachability.service import bounds_allowed, candidate_option
+    scene = context['scene']
+    blocks = {b['solidIndex']: b for b in scene['blocks']}
+    choices = []
+    for option in scene_contact_options(scene, 1, -1):
+        if not feet <= option.plane < top or not candidate_option(context, option, 'ceilingSolids'):
+            continue
+        owner = '+'.join(sorted(blocks[i]['id'] for i in option.members))
+        if not any(bounds_allowed(context, [r[0], 0, r[1], r[2], 0, r[3]], 0, label=dict(owner=owner, role='take-off ceiling'),
+                                  jumping=jumping, phases=('Y',)) for r in option.regions):
+            continue
+        rows, sides = [], set()
+        for index in option.members:
+            for axis in ('X', 'Z'):
+                for sign in (-1, 1):
+                    if exposed_side(scene, blocks[index], axis, sign, option.plane):
+                        row = outside_row(scene['collisionScene']['solids'][index], axis, sign, 0, 'ceiling_clear:' + owner)
+                        if (axis, sign, row['rhs']) not in sides:
+                            sides.add((axis, sign, row['rhs']))
+                            rows.append(row)
+        choices.append(rows)
+    return [list(rows) for rows in itertools.product(*choices)]
+
+
 def side_run(box, boxes, axis, sign, along):
     """`box` with its `along` extent widened to the connected run of `boxes` whose `axis` side (outward `sign`) lies
     in the same plane as box's, so a merged face's side spans its seams."""
@@ -89,9 +120,23 @@ def corner_rows(box, first, second, x_direction, z_escape, boxes=()):
     boxes = list(boxes) or [box]
     result = [outside_row(box,'X',-x_direction,first),outside_row(box,'Z',z_escape,second)]
     result += tangent_rows(side_run(box,boxes,'X',-x_direction,'Z'),'Z',first)
+    # Flipped from the outside side (face - margin) to the margin past the face.
     r = outside_row(box,'X',-x_direction,second)
-    r.update(cmp='GE' if x_direction>0 else 'LE', rhs=r['rhs']+x_direction*2e-6, name='case:cross_x')
+    r.update(cmp='GE' if x_direction>0 else 'LE', rhs=r['rhs']+x_direction*2*SOLVER_MARGIN, name='case:cross_x')
     return result+[r]+tangent_rows(side_run(box,boxes,'Z',z_escape,'X'),'X',second)
+
+
+def corner_ledges(scene, box, x_direction, z_escape, feet, boxes=()):
+    """Planes of the top faces at or below `feet` under a corner jump cancel's jump tick: on the line just past the
+    obstacle's Z edge, from its X face plane to the far end of its side (corner_rows' state-1 rows). Only such a
+    ledge, flush or below, gives the cancel a landing (user, 2026-11-22)."""
+    from parkour_solver.movement.contact_combinations import top_faces
+    rows = [r for r in corner_rows(box, 0, 1, x_direction, z_escape, boxes) if r['t1'] == 1]
+    lo = max([r['rhs'] for r in rows if r['mode'] == 'X' and r['cmp'] == 'GE'])
+    hi = min([r['rhs'] for r in rows if r['mode'] == 'X' and r['cmp'] == 'LE'])
+    z = next(r['rhs'] for r in rows if r['mode'] == 'Z')
+    return sorted({option.plane for option in top_faces(scene) if option.plane <= feet
+                   for r in option.regions if r[0] <= hi and r[2] >= lo and r[1] <= z <= r[3]})
 
 
 def case_profile(source_y, target_y, event, *, max_inputs=200, jump_at_start=True, jump_after=None,
@@ -125,23 +170,6 @@ def case_profile(source_y, target_y, event, *, max_inputs=200, jump_at_start=Tru
         positionConstraints=list(constraints),contactEvents=list(contacts))
     profile['generatedUnits'] = profile_program(profile)
     return profile
-
-
-def landing_wall_options(scene, block, landing, y):
-    """Avoid or approach each exposed side of the higher block around the lower landing."""
-    if landing < 1:
-        return
-    box = scene['collisionScene']['solids'][block['solidIndex']]
-    for axis in ('X','Z'):
-        a = 0 if axis=='X' else 2
-        lo, hi = (0, 2) if axis == 'X' else (1, 3)
-        for direction in (-1,1):
-            if exposed_side(scene, block, axis, direction, y):
-                yield [outside_row(box,axis,direction,landing,'blip:wall_avoid')], []
-            for option in scene_contact_options(scene, a, -direction, members=[block['solidIndex']]):
-                if any(r[lo] <= _height(scene, block, y) < r[hi] for r in option.regions):
-                    yield ([outside_row(box,axis,-direction,landing-1,'blip:wall_approach')],
-                           [contact_event(option, axis, direction, landing-1, 'contact')])
 
 
 def entry_possible(profile, bounds):

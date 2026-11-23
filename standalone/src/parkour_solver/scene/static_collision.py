@@ -11,7 +11,7 @@ import time
 from parkour_solver.physics.vertical import CAP, GRAVITY, Y_DRAG, f32
 from parkour_solver.scene.geometry import BODY_HEIGHT
 from parkour_solver.scene.route import HALF_WIDTH
-from parkour_solver.schema import TOLERANCE
+from parkour_solver.schema import REPLAY_TOLERANCE
 
 SCENE_FIELDS = {'version', 'profile', 'bounds', 'solids', 'ladders', 'surfaces', 'stepHeight', 'metadata'}
 STEP_HEIGHT = f32(0.6)
@@ -256,7 +256,7 @@ def _contact_mismatch(scene, events, move, before, hit):
             trigger = any(member is not None and any(clip_axis != 1 and obstacle == member
                                                      for obstacle, clip_axis, _, _ in hit.step_triggers)
                           for member in (_member(scene, values) for values in event.get('boxes') or []))
-            if not hit.stepped or not trigger or axis != 1 or abs(hit.position[1] - plane) > TOLERANCE:
+            if not hit.stepped or not trigger or axis != 1 or abs(hit.position[1] - plane) > REPLAY_TOLERANCE:
                 return True
             continue
         if event.get('step', False):
@@ -265,7 +265,7 @@ def _contact_mismatch(scene, events, move, before, hit):
                             and box[5] > member[2] and box[2] < member[5]
                             for member in (_member(scene, values) for values in event.get('boxes') or []))
             if (not hit.stepped or axis != 1 or event.get('direction', 0) != -1 or not supported
-                    or abs(hit.position[1] - plane) > TOLERANCE):
+                    or abs(hit.position[1] - plane) > REPLAY_TOLERANCE):
                 return True
             continue
         last = None
@@ -273,7 +273,7 @@ def _contact_mismatch(scene, events, move, before, hit):
             if clip[1] == axis:
                 last = clip
         if (last is None or last[2] == last[3] or last[2] * event.get('direction', 0) <= 0
-                or abs(hit.position[axis] - plane) > TOLERANCE
+                or abs(hit.position[axis] - plane) > REPLAY_TOLERANCE
                 or not _matches_face(scene, last[0], event, before, hit)):
             return True
     return False
@@ -319,14 +319,14 @@ def check_scene(request, deadline=None):
             velocity_error = max(abs(vx * friction[t] - target[0]), abs((vy - GRAVITY) * Y_DRAG - target[1]),
                                  abs(vz * friction[t] - target[2]))
         mismatch = _contact_mismatch(scene, contacts.get(t + 1, ()), move, body, hit)
-        if mismatch or occupancy or velocity_error > TOLERANCE or error > TOLERANCE or hit.on_ground != ground[t + 1]:
+        if mismatch or occupancy or velocity_error > REPLAY_TOLERANCE or error > REPLAY_TOLERANCE or hit.on_ground != ground[t + 1]:
             diagnostics = hit.step_triggers if hit.stepped else hit.clips
             last = {clip[1]: i for i, clip in enumerate(diagnostics)}
             clips = []
             for i, (obstacle, axis, _, _) in enumerate(diagnostics):
                 if i != last[axis] or hit.stepped and axis == 1:
                     continue
-                if axis == 1 and abs(position[1] - expected[1]) <= TOLERANCE and hit.on_ground == ground[t + 1]:
+                if axis == 1 and abs(position[1] - expected[1]) <= REPLAY_TOLERANCE and hit.on_ground == ground[t + 1]:
                     continue
                 clips.append(dict(box=list(obstacle), axis=axis))
             return dict(feasible=False, tick=t, reason='unplanned_step' if hit.stepped else 'scene_collision',

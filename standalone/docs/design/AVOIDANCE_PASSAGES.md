@@ -115,7 +115,7 @@ Canonicalization includes remaining items and continuation capabilities. A row
 hash alone cannot merge unfinished face walks. Once an encounter is assigned,
 nominal switch counts do not create another branch. Completed stronger covers
 can be omitted only when a weaker cover entails them under the same capabilities.
-Guide preferences, timeouts and undecided relaxation results never establish exclusions.
+Guide preferences and timeouts never establish exclusions.
 
 ## Contact regions
 
@@ -155,13 +155,14 @@ enumerated up front but obstacle clusters are not. A decision check or anchor le
 first solves its program without avoidance rows. When an accepted point's scene
 replay hits a solid, the repair loop (`search/repair.py` `grow`) adds it to the set
 as `[stretch begin, solid]` and restarts the generator over the larger set. The
-stretch is the one holding the state the colliding movement ends in, so a movement
-into a landing belongs to the stretch that landing starts. That stretch's cluster
+stretch is the one whose encounter sweeps the colliding movement (its movements run
+from its begin to one before its end), so a movement into a landing belongs to the
+stretch before the landing, whose rows reach the landing state. That stretch's cluster
 around the solid then gets its passages, families and switch ticks. Families and the
 switch climb therefore stay joint over every obstacle hit so far. The old generator's
 unsolved branches are dropped, since the new one emits them refined, and accepted
-points stay. A hit on a settled stretch, or on an obstacle already in the set, has
-no repair. Obstacles no solve touches never get items: the optimum without them
+points stay. A hit on a settled stretch is repaired the same way and keeps that
+stretch's settled rows; a hit on an obstacle already in the set has no repair. Obstacles no solve touches never get items: the optimum without them
 bounds every variant, so they can be ignored safely (user, 2026-11-20). Partial
 combinations are screened by intervals only, because every branch is solved and the
 solve is the relaxation check. The set and the emitted branches persist
@@ -221,7 +222,7 @@ confirms the kept candidates when the loop ends, and a point it rejected is neve
 saved as a fallback. The family state and held variants persist in the repair
 snapshot (version 3), so a resumed climb solves nothing twice.
 
-Constraint generation uses policy20/state11 and repair avoidancePolicy14 with assembly13. The DFS context
+Constraint generation uses policy23/state11 and repair avoidancePolicy14 with assembly14. The DFS context
 fingerprints the new policy. Old raw generator cursors reject; reproduce an old
 run with its original source and inputs. Source-era scene fields
 `maxContactBranches`, `maxPassageCandidates`, `maxBlockagesPerObstacle`,
@@ -260,10 +261,12 @@ belong to the open stretch, are dropped, and so are `regionChoices` before it.
 The program records `settledThrough`; `append_choice` passes it to children and
 `truncate_program` clamps it. Group-end arrivals already keep every row up to the
 arrival and record `settledThrough` = the arrival tick. Every later solve builds
-`ConstraintVariants(settled=settledThrough)`, which creates no item for an
-obstacle stretch ending at or before the settled tick and no contact-check item
-before it, so a settled stretch is never re-decided; scene validation of every
-solve still covers it, and a collision there becomes a repair source as before.
+`ConstraintVariants(settled=settledThrough)`, which creates no contact-check item
+before the settled tick and no item for an obstacle stretch ending by it, so a
+settled choice is never re-decided. Scene validation of every solve still covers
+those stretches: a re-solve can drift into an obstacle no settled row covers, and
+that obstacle then gets an item on its settled stretch like any conflict-driven
+hit (`obstacle_key`, `grow`).
 The other choices are held, not queued (`search/repair.py` `node_alternatives`):
 accepted variants are grouped by `branchKey` (open stretches are re-decided
 later, so families that differ only there are one choice), and each group keeps

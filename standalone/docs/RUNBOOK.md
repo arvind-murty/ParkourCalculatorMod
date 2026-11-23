@@ -20,7 +20,9 @@ The movement bridge runs in process: coefficients come from tables generated fro
 the Java bridge, and scene and footprint checks are a Python port of its
 finite-scene contract. Commands use the Java bridge only when given an explicit
 `--compiler PATH` or `PKC_RUN_TICKS_COMPILER`; the flag wins. Both bridges return
-identical replies, so request hashes match and checkpoints resume across them.
+identical coefficients, so request hashes match and checkpoints resume across them.
+Scene checks differ only in tolerance: the legacy Java bridge compares at 1e-7, the
+Python port at `REPLAY_TOLERANCE` (1e-4), so production runs use the Python bridge.
 Executable Minecraft replay and export remain Java tools.
 
 `PKC_NATIVE_CORE` opts a solve into the C++ core: set it to a built module
@@ -240,7 +242,7 @@ service budgets. Changing these budgets does not change physical model identitie
 or invalidate compatible checkpoints; it can change work reached before timeout.
 
 Avoidance uses global budgets as well: obsolete local repair/passage fields are
-removed during normalization. Constraint policy17/state11 and repair assembly13
+removed during normalization. Constraint policy23/state11 and repair assembly14
 change the continuation context; old face-generator queues require their original
 source checkout. Current generated descriptions use phase spans and actual rows,
 as described in the [avoidance contract](design/AVOIDANCE_PASSAGES.md).

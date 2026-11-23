@@ -8,10 +8,10 @@ import threading
 import time
 
 if __package__:
-    from parkour_solver.schema import TOLERANCE
+    from parkour_solver.schema import REPLAY_TOLERANCE
     from parkour_solver.numerics.model import fingerprint, prepare; from parkour_solver.validation.numerical import validate
 else:
-    from parkour_solver.schema import TOLERANCE
+    from parkour_solver.schema import REPLAY_TOLERANCE
     from parkour_solver.numerics.model import fingerprint, prepare; from parkour_solver.validation.numerical import validate
 
 
@@ -202,6 +202,6 @@ def solve(request, *, seconds=None, stop_on_feasible=None, python_executable=Non
                         'contacts': len(problem['contacts']), 'threshold': problem['threshold'],
                         'objective': problem['objective'], 'source': problem.get('source')},
             'termination': termination, 'workerStatus': worker_status, 'workerLaunched': process is not None, 'error': error,
-            'tolerance': TOLERANCE, 'phases': phases,
+            'tolerance': REPLAY_TOLERANCE, 'phases': phases,
             'diagnostics': {'rejectedCandidates': rejected, 'lastRejection': last_rejection,
                             'stderr': list(stderr)}}

@@ -1,5 +1,8 @@
+import itertools
+
 from parkour_solver.physics.vertical import f32
-from parkour_solver.movement.cases import convex_corner, corner_rows, exposed_side, landing_wall_options, outside_row, top_choices
+from parkour_solver.movement.cases import (ceiling_clearances, convex_corner, corner_ledges, corner_rows, exposed_side,
+                                           outside_row, top_choices)
 
 
 def box_for(block, context):
@@ -31,11 +34,41 @@ def _fresh(made, *key):
     return True
 
 
+def _satisfies(row, point):
+    value = point[0 if row['mode'] == 'X' else 1]
+    return value <= row['rhs'] if row['cmp'] == 'LE' else value >= row['rhs']
+
+
+def side_variants(context, found, face):
+    """Yield the choices onto `face` (its name), tagging each side of a normal step or slab boost move entered from
+    several sides.
+
+    `found` holds (choice, move key, keep-outside row), the key and row None for other cases. A side whose row the
+    decision point already satisfies is the forward one; the others only gain distance, so the frontier holds them
+    until a forward is tight or fails. A move without a forward side is not tagged.
+    """
+    import hashlib
+    import json
+    point = (context.get('decision') or {}).get('decisionPoint')
+    moves = {}
+    for _, key, row in found:
+        if key is not None:
+            moves.setdefault(key, []).append(row)
+    for choice, key, row in found:
+        rows = moves.get(key, ())
+        if point is not None and len(rows) > 1 and any(_satisfies(r, point) for r in rows):
+            choice['sideVariant'] = dict(key=hashlib.sha256(key.encode()).hexdigest()[:16], forward=_satisfies(row, point),
+                                         row=row, case=json.loads(key)[0], face=face,
+                                         side=row['mode'] + ('-' if row['cmp'] == 'LE' else '+'))
+        yield choice
+
+
 def open_stepping_choices(context):
     """Steps, slab boosts and flight cases onto merged top faces: the side and corner code runs per member block, each
     choice carries its face's boxes and name, and a member repeating another's choice is dropped."""
-    from parkour_solver.movement.contact_combinations import face_name, solid_owners
-    from parkour_solver.reachability.service import candidate_faces, interaction_allowed, walk_off_allowed
+    import json
+    from parkour_solver.movement.contact_combinations import bounding_region, face_name, solid_owners
+    from parkour_solver.reachability.service import candidate_faces, entry_backward, interaction_allowed, walk_off_allowed
     from parkour_solver.movement.program import scalar_initial
     from parkour_solver.movement.normal import choice_approaches, feet_allowed, first_descent, named_choice
     initial = scalar_initial(context['state'])
@@ -51,7 +84,7 @@ def open_stepping_choices(context):
         for face, name, members in faces:
             if not feet_allowed(context, name):
                 continue
-            rise, boxes, made = face.plane - y0, [list(b) for b in face.boxes], set()
+            rise, boxes, made, found = face.plane - y0, [list(b) for b in face.boxes], set(), []
             for block in members:
                 box = box_for(block, context)
                 for case, jumping in [('normal_step', False), ('slab_boost', True)]:
@@ -60,12 +93,15 @@ def open_stepping_choices(context):
                         continue
                     if not interaction_allowed(context, box, 0, jumping=jumping, label=dict(owner=block['id'], role=case)):
                         continue
+                    clearances = ceiling_clearances(context, y0, face.plane, jumping=jumping)
                     for axis in ('X', 'Z'):
                         for direction in (-1, 1):
-                            if not exposed_side(scene, block, axis, -direction, y0):
+                            if not exposed_side(scene, block, axis, -direction, y0) or entry_backward(
+                                    context, axis, -direction, bounding_region(face.regions), label=dict(owner=block['id'], role=case)):
                                 continue
-                            for top, regions in top_choices(context, face, name, 1, jumping=jumping):
-                                rows = [outside_row(box, axis, -direction, 0)] + top
+                            for (top, regions), clear in itertools.product(
+                                    top_choices(context, face, name, 1, jumping=jumping), clearances):
+                                rows = [outside_row(box, axis, -direction, 0)] + clear + top
                                 if not _fresh(made, case, rows):
                                     continue
                                 event = dict(case=case, input=0, plane=face.plane, boxes=boxes,
@@ -73,21 +109,29 @@ def open_stepping_choices(context):
                                 choice = named_choice(context, 'stepping', initial, event, jumping=jumping, constraints=rows,
                                                       support=name if not jumping else None, region_choices=regions)
                                 if choice:
-                                    yield choice
+                                    found.append((choice, json.dumps([case, clear + top], sort_keys=True), rows[0]))
                 if (enabled('corner_jump_cancel') and f32(.42) < rise <= f32(.6) and
                         interaction_allowed(context, box, 0, jumping=True, label=dict(owner=block['id'], role='corner_jump_cancel'))):
+                    # Its zero rise is the step's, so a low ceiling over the take-off stops it as it stops a slab boost.
+                    clearances = ceiling_clearances(context, y0, face.plane, jumping=True)
                     for xdir in (-1, 1):
                         for zdir in (-1, 1):
-                            if not convex_corner(scene, block, xdir, zdir, y0):
+                            # corner_rows enter across the X side facing -xdir; the Z side is only passed.
+                            if (not convex_corner(scene, block, xdir, zdir, y0)
+                                    or not corner_ledges(scene, box, xdir, zdir, y0, face.boxes) or entry_backward(
+                                    context, 'X', -xdir, bounding_region(face.regions),
+                                    label=dict(owner=block['id'], role='corner_jump_cancel'))):
                                 continue
-                            rows = corner_rows(box, 0, 1, xdir, zdir, face.boxes)
-                            if not _fresh(made, 'corner_jump_cancel', rows):
-                                continue
-                            event = dict(case='corner_jump_cancel', input=0, plane=y0, higherHeight=face.plane,
-                                         boxes=boxes, anchors={'beforeJump': 0, 'jump': 1})
-                            choice = named_choice(context, 'stepping', initial, event, jumping=True, constraints=rows)
-                            if choice:
-                                yield choice
+                            for clear in clearances:
+                                rows = corner_rows(box, 0, 1, xdir, zdir, face.boxes) + clear
+                                if not _fresh(made, 'corner_jump_cancel', rows):
+                                    continue
+                                event = dict(case='corner_jump_cancel', input=0, plane=y0, higherHeight=face.plane,
+                                             boxes=boxes, anchors={'beforeJump': 0, 'jump': 1})
+                                choice = named_choice(context, 'stepping', initial, event, jumping=True, constraints=rows)
+                                if choice:
+                                    found.append((choice, None, None))
+            yield from side_variants(context, found, name)
     for initial, jumping, trace in choice_approaches(context):
         for lower, name, members in faces:
             if context.get('checkBudget'):
@@ -111,7 +155,8 @@ def open_stepping_choices(context):
 
 
 def _open_flight_cases(context, initial, jumping, faces, lower, lower_boxes, lower_rows, lower_regions, landing, y, enabled):
-    from parkour_solver.reachability.service import interaction_allowed
+    from parkour_solver.movement.contact_combinations import bounding_region
+    from parkour_solver.reachability.service import entry_backward, interaction_allowed
     from parkour_solver.movement.normal import feet_allowed, named_choice
     import json
     scene = context['scene']
@@ -134,35 +179,42 @@ def _open_flight_cases(context, initial, jumping, faces, lower, lower_boxes, low
                     shared_event=dict(case='blip',input=landing,plane=higher.plane,lowerHeight=lower.plane,
                         higherHeight=higher.plane,boxes=boxes,lowerBoxes=lower_boxes,
                         anchors={'landing':landing,'hit':landing+1})
-                    options = ()
-                    if sequence_allowed(shared_event, lower_rows + top, name):
-                        options = landing_wall_options(scene, block, landing, y) if landing else (
-                            ([outside_row(box, axis, sign, 0, 'blip:wall_avoid')], [])
-                            for axis in ('X', 'Z') for sign in (-1, 1) if exposed_side(scene, block, axis, sign, y))
-                    for rows, finite in options:
-                        if not _fresh(made, 'blip', rows, finite, top):
+                    # On L the player keeps clear of each exposed side of the higher block. A hit on it before the
+                    # blip is a wall hit followed by a blip, deferred with intentional wall hits (user, 2026-11-22).
+                    options = ([[outside_row(box, axis, sign, landing, 'blip:wall_avoid')]
+                                for axis in ('X', 'Z') for sign in (-1, 1) if exposed_side(scene, block, axis, sign, y)]
+                               if sequence_allowed(shared_event, lower_rows + top, name) else [])
+                    for rows in options:
+                        if not _fresh(made, 'blip', rows, top):
                             continue
                         event = dict(case='blip', input=landing, plane=higher.plane, lowerHeight=lower.plane,
                             higherHeight=higher.plane, boxes=boxes, lowerBoxes=lower_boxes,
                             anchors={'landing': landing, 'hit': landing + 1})
                         choice = named_choice(context, 'stepping', initial, event, jumping=jumping,
-                            constraints=lower_rows + rows + top, finite=finite, support=name,
+                            constraints=lower_rows + rows + top, support=name,
                             region_choices=lower_regions + regions)
                         if choice:
                             yield choice
-            for case in ('blip_up', 'corner_blip_up'):
-                if not enabled(case) or not (y > higher.plane if case == 'blip_up' else 0 <= higher.plane - y <= f32(.6)):
+            # A corner blip (landing at most 0.6 below the higher top) and a corner blip-up (landing above it) both keep
+            # the landing height: H ends beside the block, past its corner (user, 2026-11-22).
+            for case in ('blip_up', 'corner_blip', 'corner_blip_up'):
+                if not enabled(case) or not (y > higher.plane if case in ('blip_up', 'corner_blip_up')
+                                             else 0 <= higher.plane - y <= f32(.6)):
                     continue
                 shared_event=dict(case=case,input=landing,plane=y,lowerHeight=lower.plane,higherHeight=higher.plane,
                     boxes=boxes,lowerBoxes=lower_boxes,anchors={'landing':landing,'hit':landing+1})
                 tops = top_choices(context, higher, name, landing + 1, jumping=jumping) if case == 'blip_up' else [([], [])]
                 if not any(sequence_allowed(shared_event, lower_rows + top) for top, _ in tops):
                     continue
+                entered = lambda axis, sign: not entry_backward(context, axis, sign, bounding_region(higher.regions),
+                                                                label=dict(owner=block['id'], role=case))
                 options = ([([outside_row(box, axis, sign, landing, 'blip_up:outside')] + top, regions)
-                            for axis in ('X', 'Z') for sign in (-1, 1) if exposed_side(scene, block, axis, sign, y)
+                            for axis in ('X', 'Z') for sign in (-1, 1)
+                            if exposed_side(scene, block, axis, sign, y) and entered(axis, sign)
                             for top, regions in tops] if case == 'blip_up' else
                            [(corner_rows(box, landing, landing + 1, xdir, zdir, higher.boxes), [])
-                            for xdir in (-1, 1) for zdir in (-1, 1) if convex_corner(scene, block, xdir, zdir, y)])
+                            for xdir in (-1, 1) for zdir in (-1, 1)
+                            if convex_corner(scene, block, xdir, zdir, y) and entered('X', -xdir)])
                 for constraint, regions in options:
                     if not _fresh(made, case, constraint):
                         continue

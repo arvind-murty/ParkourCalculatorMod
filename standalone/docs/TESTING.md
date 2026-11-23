@@ -2,11 +2,12 @@
 
 ## Current gate
 
-`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on the stale-code removal with its
-ported tests, the blip departed-owner fix and the run-off-side fixture removal (`23db5983`): **581 tests, no
-failures, errors or skips**, source unchanged during the run
-([report](../research/stale-code-removal/native-gate-blip-fix/report.json)). The count fell from 842 because the
-removed searches' tests went with them.
+`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on the held side variants of steps and slab boosts
+(O12, `eb58ad02`): **607 tests, no failures, errors or skips**, source unchanged during the run
+([report](../research/encounter-groups/native-gate-side-variants/report.json)). Full discovery on the same source,
+with `PKC_RUN_TICKS_COMPILER` set: 693 tests, one failure, the ladder test
+`test_repeated_ladder_ceiling_events_regenerate_the_complete_schedule`, which fails on main `a7ddc3be` too, and no
+skips.
 Wall-time-bound tests can still fail under heavier load ([deferred P17](DEFERRED_WORK.md)).
 The gate fails on any skip, so it needs `PKC_IPOPT_PYTHON` for the IPOPT tests,
 `PKC_RUN_TICKS_COMPILER` for the Java differential tests and the `numerics` and `reachability` extras
@@ -24,6 +25,9 @@ persistence without the removed 32/128 limits.
 
 | Source | Tests | Evidence |
 | --- | ---: | --- |
+| `89e8dba0` + settled-stretch repair, solver margin and replay tolerance 1e-4, Clarabel verdicts, no pre-solve screen | 593 | [report](../research/encounter-groups/native-gate-settled-repair/report.json) |
+| `513f249f` + no backward moves at ordinary decisions (O10 for every generated move) | 594 | [report](../research/encounter-groups/native-gate-no-backward-moves/report.json) |
+| `73d4489a` + merged faces in visits, launch tables and generation | 590 | [report](../research/stale-code-removal/native-gate-merged-faces/report.json) |
 | `3e4f71d6` stale-code removal: legacy searches, face catalog, ported tests | 580 | [report](../research/stale-code-removal/native-gate/report.json) |
 | `23db5983` + blip departed-owner fix, run-off-side fixture removed | 581 | [report](../research/stale-code-removal/native-gate-blip-fix/report.json) |
 | `b58e2132` follow-ups rebased onto `1013e7ea`, launch face from the visited owner | 842 | [report](../research/encounter-groups/native-gate-rebased-on-pr7/report.json) |
@@ -140,6 +144,7 @@ Use fixture paths under [tests/fixtures/movement](../tests/fixtures/movement). E
 - `blocks-runoff.json`, `blocks-jump-runoff.json`, `blocks-lower-target.json`: run-off, lower goals and airborne continuation.
 - `obstacle-cross-neo.json`, `obstacle-wide-neo.json`, `obstacle-interleaved.json`, `obstacle-under-ceiling.json`, `contact-wide-neo.json`: signed faces, interacting obstacles, Y clearance and passage order.
 - `ceiling-bonk.json`, `appended-air-ceiling.json`, `final-air-ceiling.json`, `generic-repeat-ceiling.json`, `generic-grind-blip.json` and [stepping fixtures](../tests/fixtures/movement/stepping): ceiling regeneration, step/corner/blip variants and phase-changing events.
+- [side-variants fixtures](../tests/fixtures/movement/side-variants): steps and slab boosts onto a block with a forward side and others held behind it (O12). Each `sideVariant` names the leg, the forward, reserved and normally queued sides, an optional decision point and per-case overrides, and for `corridor-diagonal` the measured start whose forward row is slack after 3 run ticks and tight after 5.
 - Existing ladder families remain compatibility coverage, not the target for new movement expansion. Fixes must not remove their current behavior incidentally.
 
 The [experiments](../research) directories contain fixture-specific runbooks/results, rendered trajectories, archived reports and diagnostic scripts. These are evidence, not all unit-test inputs. In particular the old 200/400-input IPOPT Real11 captures are different from the seven-box/state64 autonomous opening.

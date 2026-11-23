@@ -1,6 +1,6 @@
 """Shared test builders extracted from tests.integration.test_repair_resume."""
 def route():
-    return dict(constraints=[], passages=[], hitEvents=[], maxTotalRunTicks=0, supportClearance=1e-6,
+    return dict(constraints=[], passages=[], hitEvents=[], maxTotalRunTicks=0,
                 initial=dict(position=[.5,1,.5],velocity=[0,0,0]), objective=dict(axis='X',sense='MAX'))
 
 def best(value):
