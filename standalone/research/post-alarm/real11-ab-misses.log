@@ -1,0 +1,60 @@
+d71093a17110 ticks 82 has fallbackYaw True request seconds 2
+    confirmation (seed+fallback) unknown worker_finished 0.369 None [('initial', 'Infeasible_Problem_Detected', 0.066), ('fallback', 'Infeasible_Problem_Detected', 0.176)]
+    seed only, 0.2 s unknown worker_finished 0.181 None [('initial', 'Infeasible_Problem_Detected', 0.067)]
+    seed only, request seconds unknown worker_finished 0.171 None [('initial', 'Infeasible_Problem_Detected', 0.065)]
+    fallback only, 0.2 s unknown time_limit 0.26 None []
+288fb8f9985d ticks 82 has fallbackYaw True request seconds 2
+    confirmation (seed+fallback) unknown worker_finished 0.371 None [('initial', 'Infeasible_Problem_Detected', 0.092), ('fallback', 'Infeasible_Problem_Detected', 0.164)]
+    seed only, 0.2 s unknown worker_finished 0.181 None [('initial', 'Infeasible_Problem_Detected', 0.077)]
+    seed only, request seconds unknown worker_finished 0.18 None [('initial', 'Infeasible_Problem_Detected', 0.076)]
+    fallback only, 0.2 s unknown time_limit 0.256 None []
+badc7a0c65d5 ticks 82 has fallbackYaw True request seconds 2
+    confirmation (seed+fallback) unknown worker_finished 0.3 None [('initial', 'Infeasible_Problem_Detected', 0.086), ('fallback', 'Infeasible_Problem_Detected', 0.106)]
+    seed only, 0.2 s unknown worker_finished 0.19 None [('initial', 'Infeasible_Problem_Detected', 0.083)]
+    seed only, request seconds unknown worker_finished 0.189 None [('initial', 'Infeasible_Problem_Detected', 0.083)]
+    fallback only, 0.2 s unknown worker_finished 0.207 None [('initial', 'Infeasible_Problem_Detected', 0.094)]
+a14378739149 ticks 82 has fallbackYaw True request seconds 2
+    confirmation (seed+fallback) unknown worker_finished 0.375 None [('initial', 'Infeasible_Problem_Detected', 0.073), ('fallback', 'Infeasible_Problem_Detected', 0.187)]
+    seed only, 0.2 s unknown worker_finished 0.182 None [('initial', 'Infeasible_Problem_Detected', 0.074)]
+    seed only, request seconds unknown worker_finished 0.183 None [('initial', 'Infeasible_Problem_Detected', 0.072)]
+    fallback only, 0.2 s unknown time_limit 0.269 None []
+d8e743865143 ticks 83 has fallbackYaw True request seconds 2
+    confirmation (seed+fallback) unknown worker_finished 0.4 None [('initial', 'Infeasible_Problem_Detected', 0.186), ('fallback', 'Infeasible_Problem_Detected', 0.099)]
+    seed only, 0.2 s unknown time_limit 0.275 None []
+    seed only, request seconds unknown worker_finished 0.294 None [('initial', 'Infeasible_Problem_Detected', 0.187)]
+    fallback only, 0.2 s unknown worker_finished 0.207 None [('initial', 'Infeasible_Problem_Detected', 0.096)]
+ad6ba1da602c ticks 83 has fallbackYaw True request seconds 2
+    confirmation (seed+fallback) feasible worker_finished 0.242 754.80068 [('initial', 'Infeasible_Problem_Detected', 0.082), ('fallback', 'Solve_Succeeded', 0.049)]
+    seed only, 0.2 s unknown worker_finished 0.199 None [('initial', 'Infeasible_Problem_Detected', 0.081)]
+    seed only, request seconds unknown worker_finished 0.186 None [('initial', 'Infeasible_Problem_Detected', 0.081)]
+    fallback only, 0.2 s feasible worker_finished 0.155 754.80068 [('initial', 'Solve_Succeeded', 0.048)]
+10c55c8db8cd ticks 83 has fallbackYaw True request seconds 2
+    confirmation (seed+fallback) unknown worker_finished 0.366 None [('initial', 'Infeasible_Problem_Detected', 0.192), ('fallback', 'Infeasible_Problem_Detected', 0.063)]
+    seed only, 0.2 s unknown time_limit 0.299 None []
+    seed only, request seconds unknown worker_finished 0.302 None [('initial', 'Infeasible_Problem_Detected', 0.19)]
+    fallback only, 0.2 s unknown worker_finished 0.175 None [('initial', 'Infeasible_Problem_Detected', 0.065)]
+57a9712ff8b0 ticks 83 has fallbackYaw True request seconds 2
+    confirmation (seed+fallback) feasible worker_finished 0.247 754.61375 [('initial', 'Infeasible_Problem_Detected', 0.075), ('fallback', 'Solve_Succeeded', 0.058)]
+    seed only, 0.2 s unknown worker_finished 0.193 None [('initial', 'Infeasible_Problem_Detected', 0.089)]
+    seed only, request seconds unknown worker_finished 0.185 None [('initial', 'Infeasible_Problem_Detected', 0.075)]
+    fallback only, 0.2 s feasible worker_finished 0.169 754.61375 [('initial', 'Solve_Succeeded', 0.059)]
+ae8805224220 ticks 83 has fallbackYaw True request seconds 2
+    confirmation (seed+fallback) feasible worker_finished 0.279 754.61361 [('initial', 'Infeasible_Problem_Detected', 0.111), ('fallback', 'Solve_Succeeded', 0.053)]
+    seed only, 0.2 s unknown worker_finished 0.208 None [('initial', 'Infeasible_Problem_Detected', 0.108)]
+    seed only, request seconds unknown worker_finished 0.236 None [('initial', 'Infeasible_Problem_Detected', 0.123)]
+    fallback only, 0.2 s feasible worker_finished 0.162 754.61361 [('initial', 'Solve_Succeeded', 0.054)]
+fab671bfb906 ticks 84 has fallbackYaw True request seconds 2
+    confirmation (seed+fallback) unknown worker_finished 0.311 None [('initial', 'Infeasible_Problem_Detected', 0.137), ('fallback', 'Infeasible_Problem_Detected', 0.066)]
+    seed only, 0.2 s unknown time_limit 0.222 None []
+    seed only, request seconds unknown worker_finished 0.244 None [('initial', 'Infeasible_Problem_Detected', 0.133)]
+    fallback only, 0.2 s unknown worker_finished 0.187 None [('initial', 'Infeasible_Problem_Detected', 0.065)]
+8026f3348ba6 ticks 84 has fallbackYaw True request seconds 2
+    confirmation (seed+fallback) unknown worker_finished 0.356 None [('initial', 'Infeasible_Problem_Detected', 0.108), ('fallback', 'Infeasible_Problem_Detected', 0.132)]
+    seed only, 0.2 s unknown worker_finished 0.206 None [('initial', 'Infeasible_Problem_Detected', 0.109)]
+    seed only, request seconds unknown worker_finished 0.211 None [('initial', 'Infeasible_Problem_Detected', 0.108)]
+    fallback only, 0.2 s unknown time_limit 0.228 None []
+18af8a279411 ticks 84 has fallbackYaw True request seconds 2
+    confirmation (seed+fallback) unknown worker_finished 0.319 None [('initial', 'Infeasible_Problem_Detected', 0.075), ('fallback', 'Infeasible_Problem_Detected', 0.129)]
+    seed only, 0.2 s unknown worker_finished 0.186 None [('initial', 'Infeasible_Problem_Detected', 0.078)]
+    seed only, request seconds unknown worker_finished 0.185 None [('initial', 'Infeasible_Problem_Detected', 0.077)]
+    fallback only, 0.2 s unknown time_limit 0.214 None []

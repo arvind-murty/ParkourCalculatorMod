@@ -1,0 +1,4 @@
+('today answered lower', 'other', 'probe', 'reversal 83') 1
+('today answered lower', 'other', 'probe', 'reversal at most-short tick') 4
+('today answered lower', 'other', 'race', 'reversal at most-short tick') 3
+('today unanswered', 'tick69 nonjump family', 'race', 'reversal at most-short tick') 12

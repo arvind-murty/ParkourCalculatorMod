@@ -231,9 +231,10 @@ post-alarm pipeline below instead of that IPOPT call; `'ipopt'` is the default.
 
 ### Post-alarm pipeline
 
-`numerics.post_alarm.run` answers an alarmed request with Clarabel first and IPOPT
-last. Every constant was measured on 371 alarmed requests
-([evidence](../../research/post-alarm/README.md)).
+`numerics.post_alarm.run` answers an alarmed request with Clarabel alone; it never
+calls IPOPT. Every constant was measured on 371 study and 482 Real11 alarmed
+requests ([evidence](../../research/post-alarm/README.md)). The first acceptable
+answer ends the search; later steps run only without one.
 
 1. Setup: the request's own disk solve gives the bound (its objective) and the disk
    point; one more solve gives the central point (no objective). Push problems use
@@ -251,28 +252,31 @@ last. Every constant was measured on 371 alarmed requests
    below `G/10` over 3 steps, or at the cap.
 3. An accepted answer more than `G` below the bound gets up to 3 objective-cut
    probes: the row objective >= answer + 1e-2 (MAX; <= answer - 1e-2 for MIN)
-   on a fresh problem, a 5-step push from its central point, and the next probe
-   only after a better answer. No IPOPT runs for an answered request.
+   on a fresh problem, a 5-step decaying push (step 6) from its central point,
+   and the next probe only after a better answer.
 4. Without an answer: the sector check (7 solves) branches on the worst tick's
    direction, 4 quadrants and then halves, each sector relaxed to its chord; all
-   sectors infeasible is a certificate (`quadrant_infeasible`). Then the reversal
-   race: each jump tick within 6 of an alarm tick gets the cut
-   `n.a_t >= 0.5 m_t` against the disk point's direction, 5 push steps, and the
-   best 2 are pushed again with cap 30. Then one IPOPT call from the production
-   seed (`ipopt_seed` of the disk facings) and one from the plain push's last
-   iterate (`stateSeed` = its exact-dynamics states, `ipoptMuInit` 1e-6), both
-   without `fallbackYaw`, `min(0.2 s, time left)` each on the kept-alive worker,
-   the parent waiting to the pipeline deadline (`grace`).
+   sectors infeasible is a certificate (`quadrant_infeasible`).
+5. Reversal race: the candidates are the jump ticks within 6 of an alarm tick and
+   the disk point's most short tick of any kind (at least 1e-3 short). Each gets
+   the cut `n.a_t >= 0.5 m_t` against the disk point's direction; feasible cut
+   problems are screened with 5 push steps in order of their bound, stopping once
+   the answer is at least the next candidate's bound. Only when no screen answers
+   does the best-bound candidate's push go on, to 30 steps in all. A race answer
+   gets the probes of step 3, which are not held by the cut.
+6. Decaying push: the plain push again from the central point, up to `DECAY_CAP`
+   (30) steps, with `w` halved after every step short of full strength until the
+   first full-strength one (at a fixed 0.3 the objective can hold ticks short
+   indefinitely). Its answer gets no probes.
 
-The result has `solve`'s shape: `feasible` with the accepted candidate, `unknown`
-(`quadrant_infeasible`, `post_alarm_none`, `time_limit`) or `cancelled`;
-`termination` names the step that answered (`post_alarm_push`, `_probe`,
-`_race`, `_prod_seed`, `_polish`), and `backend` is `ipopt` only for the two
-IPOPT answers. `confirmation` keeps the IPOPT confirmation's fields
-(`ipoptObjective` is the answer's objective) and adds `method`, `acceptedAs`
-(`full`/`relaxed`), `pushSteps`, `probes`, `reversalTick`, `raced`, `quadrant`,
-`ipoptCalls` and `clarabelSolves`. Answers, certificates and a finished
-`post_alarm_none` are cached like confirmations; a cache hit reports 0 calls.
+The result has `solve`'s shape with `backend` `clarabel`: `feasible` with the
+accepted candidate, `unknown` (`quadrant_infeasible`, `post_alarm_none`,
+`time_limit`) or `cancelled`; `termination` names the step that answered
+(`post_alarm_push`, `_probe`, `_race`, `_decay`). `confirmation` keeps the IPOPT
+confirmation's fields (`ipoptObjective` is the answer's objective, `ipoptCalls`
+is 0) and adds `method`, `acceptedAs` (`full`/`relaxed`), `pushSteps`, `probes`,
+`reversalTick`, `raced`, `quadrant` and `clarabelSolves`. Answers, certificates
+and `post_alarm_none` are cached like confirmations; a cache hit reports 0 solves.
 Problem fields `warmYaw`, `stateSeed` and `ipoptMuInit` are hints: validated by
 `prepare`, left out of `fingerprint`, and read only by the pipeline and the worker
 (the first phase's start states; IPOPT's `mu_init`).

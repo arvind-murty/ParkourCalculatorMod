@@ -1,0 +1,8 @@
+real11 80eafb12713f today polish gap 0.0100 | no-IPOPT decayFallback gap 0.0100
+real11 39d775c59b3d today prodSeed gap 0.0000 | no-IPOPT decayFallback gap 0.0124
+real11 2f83fb71bff2 today prodSeed gap 0.0000 | no-IPOPT decayFallback gap 0.0125
+real11 c0bddda7c143 today polish gap 0.0100 | no-IPOPT decayFallback gap 0.0100
+real11 381fa2f3195f today polish gap 0.0100 | no-IPOPT decayFallback gap 0.0100
+real11 fb46532dd9ac today polish gap 0.0100 | no-IPOPT decayFallback gap 0.0100
+real11 0b586bf8527b today prodSeed gap 0.0100 | no-IPOPT decayFallback gap 0.0100
+real11 90433016e772 today prodSeed gap 0.0000 | no-IPOPT decayFallback gap 0.0442

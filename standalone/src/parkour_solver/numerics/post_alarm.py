@@ -1,10 +1,11 @@
-"""Answer an alarmed relaxed optimum with Clarabel first and IPOPT last (docs/reference/NUMERICAL_SOLVER.md#post-alarm-pipeline).
+"""Answer an alarmed relaxed optimum with Clarabel alone (docs/reference/NUMERICAL_SOLVER.md#post-alarm-pipeline).
 
 The relaxed optimum leaves a jump tick short, so it may be no route at full strength. A penalty push moves the relaxed
 point toward full strength under the request's own rows; a point every tick of which is at most 1% short and that the
-scalar validator accepts answers the request. Without one, a sector check may prove the request infeasible, reversal
-cuts look for the other basin, and two IPOPT calls on a kept-alive worker come last. Every constant was measured on 371
-alarmed requests (research/post-alarm/README.md).
+scalar validator accepts answers the request, and the first such answer ends the search. Without one, a sector check
+may prove the request infeasible, reversal cuts look for a route that turns one tick around, and a push whose objective
+weight decays comes last. Every constant was measured on 371 study and 482 Real11 alarmed requests
+(research/post-alarm/README.md).
 """
 import heapq
 import itertools
@@ -21,11 +22,11 @@ PUSH_CAP = 10
 QUADRANT_BUDGET = 7   # Clarabel solves of the sector check
 QUADRANT_FULL = 1e-7  # a sector solution this little short ends the check open
 LEVEL_STEP, LEVEL_PROBES, PROBE_CAP = 1e-2, 3, 5
-RACE_WINDOW, RACE_CUT, RACE_STEPS, RACE_FINISH, RACE_FINISH_CAP = 6, .5, 5, 2, 30
-IPOPT_CAP = .2        # seconds of one IPOPT call
-POLISH_MU = 1e-6
+RACE_WINDOW, RACE_CUT, RACE_STEPS, RACE_FINISH_CAP = 6, .5, 5, 30
+SHORT = 1e-3          # a tick this short is a reversal candidate whatever its kind
+DECAY_CAP = 30
 TERMINATIONS = dict(push='post_alarm_push', probe='post_alarm_probe', race='post_alarm_race',
-                    prodSeed='post_alarm_prod_seed', polish='post_alarm_polish')
+                    decay='post_alarm_decay')
 
 
 class _Stop(Exception):
@@ -73,16 +74,15 @@ class _Node:
 
 
 class _Pipeline:
-    def __init__(self, problem, relaxed_candidate, relaxed, seconds, python_executable, cancel_event):
+    def __init__(self, problem, relaxed_candidate, relaxed, seconds, cancel_event):
         self.problem, self.relaxed_candidate, self.relaxed = problem, relaxed_candidate, relaxed
-        self.python_executable, self.cancel_event = python_executable, cancel_event
+        self.cancel_event = cancel_event
         self.started = time.monotonic()
         self.deadline = self.started + seconds
         self.sense = 1 if problem['objective']['sense'] == 'MAX' else -1
         self.content = disk.spec(problem, strict=True)
         self.exact = dict(self.content, magnitude=[m-disk.ALLOWANCE for m in self.content['magnitude']])
-        self.clarabel = self.ipopt = 0
-        self.launched, self.ipopt_error, self.ipopt_status, self.phases = False, None, None, []
+        self.clarabel = 0
         # The best answer so far, which a deadline does not discard.
         self.best = None
         self.info = dict(method='none', acceptedAs=None, pushSteps=0, probes=0, reversalTick=None, raced=0,
@@ -122,10 +122,13 @@ class _Pipeline:
                 return 'relaxed', candidate
         return None
 
-    def push(self, node, start, cap):
-        """(best accepted or None, last iterate, steps): the penalty push from `start`, stopped within G of the node's
-        bound, after a gain under G/10 over 3 steps, or at the cap."""
-        y, w, last_full, best, history, u, steps = start, W0, None, None, [], None, 0
+    def push(self, node, start, cap, decaying=False, state=None):
+        """(best accepted or None, last iterate, steps, state): the penalty push from `start`, or continuing an earlier
+        push's `state`, stopped within G of the node's bound, after a gain under G/10 over 3 steps, or at the cap.
+        `decaying` halves w after every step short of full strength until the first full-strength one: at W0 the
+        objective can hold ticks short indefinitely."""
+        y, w, last_full, best, history = state or (start, W0, None, None, [])
+        history, u, steps = list(history), None, 0
         for _ in range(cap):
             point = node.step(self, y, w)
             if point is None:
@@ -151,8 +154,10 @@ class _Pipeline:
             else:
                 if full:
                     last_full = u
+                elif decaying:
+                    w = w/2
                 y = u
-        return best, u, steps
+        return best, u, steps, (y, w, last_full, best, history)
 
     def quadrant(self):
         """'infeasible' when every full-strength completion is excluded, else 'open': branch on the worst tick's
@@ -177,14 +182,14 @@ class _Pipeline:
 
     def probes(self, plain, best):
         """Objective-cut probes: push inside objective >= best+LEVEL_STEP (MAX) while best is more than G below the
-        bound."""
+        bound. The level row holds the objective, so the probe push decays."""
         while self.info['probes'] < LEVEL_PROBES and self.sense*(plain.bound-best[1]['objective']) > G:
             self.info['probes'] += 1
             level = (self.content['objective'], best[1]['objective']+self.sense*LEVEL_STEP)
             node = _Node(self, self.exact, level=level)
             if not node.feasible:
                 break
-            found, _, _ = self.push(node, node.central, PROBE_CAP)
+            found, _, _, _ = self.push(node, node.central, PROBE_CAP, decaying=True)
             if found is None or not self.better(found[1]['objective'], best[1]['objective']):
                 break
             best = self.best = found
@@ -192,61 +197,44 @@ class _Pipeline:
         return best
 
     def race(self, plain):
-        """Reversal race: each jump tick near an alarm tick turned against the disk point's direction, 5 push steps
-        each, the best 2 finished."""
-        from parkour_solver.validation.numerical import validate_controls
+        """Reversal race: each jump tick near an alarm tick, and the disk point's most short tick whatever its kind,
+        turned against the disk point's direction. Candidates are screened with RACE_STEPS push steps in order of
+        their cut node's bound until no remaining bound can beat the answer; only when no screen answers does the
+        best-bound candidate's push go on, to RACE_FINISH_CAP steps."""
         ticks = self.problem['ticks']
         alarms = self.relaxed['alarmTicks']
         jumps = (self.problem.get('vertical') or {}).get('jumpVelocity') or [None]*ticks
-        window = sorted({t for a in alarms for t in range(max(0, a-RACE_WINDOW), min(ticks, a+RACE_WINDOW+1))
-                         if jumps[t] is not None})
-        scored = []
-        for t in window:
+        candidates = {t for a in alarms for t in range(max(0, a-RACE_WINDOW), min(ticks, a+RACE_WINDOW+1))
+                      if jumps[t] is not None}
+        shortfall = disk.deficits(self.problem, plain.disk)[1]
+        top = max(range(ticks), key=shortfall.__getitem__)
+        if shortfall[top] >= SHORT:
+            candidates.add(top)
+        nodes = []
+        for t in sorted(candidates):
             direction = math.atan2(plain.disk[t][1], plain.disk[t][0])+math.pi
             cut = (t, math.cos(direction), math.sin(direction), RACE_CUT*self.problem['magnitude'][t])
             node = _Node(self, self.exact, [cut])
-            if not node.feasible:
-                continue
-            found, last, _ = self.push(node, node.central, RACE_STEPS)
+            if node.feasible:
+                nodes.append((t, node))
+        nodes.sort(key=lambda row: -self.sense*row[1].bound)
+        best, first = None, None
+        for i, (t, node) in enumerate(nodes):
+            found, _, _, state = self.push(node, node.central, RACE_STEPS)
             self.info['raced'] += 1
-            if found is not None:
-                score = (1, self.sense*found[1]['objective'])
-            elif last is not None:
-                score = (0, self.sense*validate_controls(self.problem, last)['objective'])
-            else:
-                score = (0, -math.inf)
-            scored.append((score, t, node))
-        best = None
-        for _, t, node in sorted(scored, key=lambda row: row[0], reverse=True)[:RACE_FINISH]:
-            found, _, _ = self.push(node, node.central, RACE_FINISH_CAP)
+            first = first or state
             if found is not None and (best is None or self.better(found[1]['objective'], best[1]['objective'])):
                 best = self.best = found
                 self.info.update(method='race', acceptedAs=found[0], reversalTick=t)
+            if best is not None and (i+1 == len(nodes) or self.sense*(best[1]['objective']-nodes[i+1][1].bound) >= 0):
+                break
+        if best is None and nodes:
+            t, node = nodes[0]
+            found, _, _, _ = self.push(node, None, RACE_FINISH_CAP-RACE_STEPS, state=first)
+            if found is not None:
+                best = self.best = found
+                self.info.update(method='race', acceptedAs=found[0], reversalTick=t)
         return best
-
-    def ipopt_call(self, request):
-        """One IPOPT call on the kept-alive worker, budget min(IPOPT_CAP, time left); the parent waits until the
-        pipeline deadline for its last messages."""
-        from parkour_solver.numerics.solver import solve as full_solve
-        self.check()
-        left = self.deadline-time.monotonic()
-        budget = min(IPOPT_CAP, left)
-        request = {k: v for k, v in request.items() if k != 'fallbackYaw'}
-        result = full_solve(request, seconds=budget, grace=left-budget, stop_on_feasible=False,
-                            python_executable=self.python_executable, cancel_event=self.cancel_event, keep_alive=True)
-        self.ipopt += 1
-        self.launched |= result['workerLaunched']
-        self.ipopt_status = result['workerStatus']
-        self.phases.extend(result['phases'])
-        if result['status'] == 'cancelled':
-            raise _Stop('cancelled')
-        if result['status'] == 'feasible':
-            return 'full', result['candidate']
-        if result['termination'] == 'time_limit':
-            raise _Stop('time_limit')
-        if result['termination'] != 'worker_finished':
-            self.ipopt_error = result['error'] or result['termination']
-        return None
 
     def answer(self):
         """The best accepted (kind, candidate) or None, and the termination."""
@@ -260,7 +248,7 @@ class _Pipeline:
             # A child starts its shared prefix from the parent's answer at full strength.
             start = [[m*math.cos(b+math.radians(y)), m*math.sin(b+math.radians(y))]
                      for m, b, y in zip(self.problem['magnitude'], self.problem['base'], warm)]+start[len(warm):]
-        best, last, self.info['pushSteps'] = self.push(plain, start, PUSH_CAP)
+        best, _, self.info['pushSteps'], _ = self.push(plain, start, PUSH_CAP)
         if best is not None:
             self.best = best
             self.info.update(method='push', acceptedAs=best[0])
@@ -272,24 +260,22 @@ class _Pipeline:
             return None, 'quadrant_infeasible'
         best = self.race(plain)
         if best is not None:
-            return best, TERMINATIONS['race']
-        best = self.ipopt_call(dict(self.problem, yaw=disk.ipopt_seed(self.relaxed_candidate['yaw'])))
+            # The race answer is held below its cut node's bound; the probes are not.
+            best = self.probes(plain, best)
+            return best, TERMINATIONS[self.info['method']]
+        # A restart, not the first push's state: continuing a stalled push answers fewer requests.
+        best, _, _, _ = self.push(plain, plain.central, DECAY_CAP, decaying=True)
         if best is not None:
-            self.info.update(method='prodSeed', acceptedAs='full')
-            return best, TERMINATIONS['prodSeed']
-        if last is not None:
-            best = self.ipopt_call(dict(self.problem, yaw=disk.ipopt_seed(facings(self.problem, last)),
-                                        stateSeed=states(self.problem, last), ipoptMuInit=POLISH_MU))
-            if best is not None:
-                self.info.update(method='polish', acceptedAs='full')
-                return best, TERMINATIONS['polish']
+            self.best = best
+            self.info.update(method='decay', acceptedAs=best[0])
+            return best, TERMINATIONS['decay']
         return None, 'post_alarm_none'
 
 
-def run(problem, relaxed_candidate, relaxed, *, seconds, python_executable, cancel_event):
+def run(problem, relaxed_candidate, relaxed, *, seconds, cancel_event):
     """A `numerics.solver.solve`-shaped result for an alarmed request with `confirmation`; `relaxed` is the
     dispatch's disk record including the disk solve's own `objective` (the bound) and `alarmTicks`."""
-    pipeline = _Pipeline(problem, relaxed_candidate, relaxed, seconds, python_executable, cancel_event)
+    pipeline = _Pipeline(problem, relaxed_candidate, relaxed, seconds, cancel_event)
     best, termination, cancelled = None, None, False
     try:
         best, termination = pipeline.answer()
@@ -302,14 +288,10 @@ def run(problem, relaxed_candidate, relaxed, *, seconds, python_executable, canc
     status = 'cancelled' if cancelled else 'feasible' if best is not None else 'unknown'
     result = disk._result(problem, pipeline.started, status, None if best is None else best[1], termination,
                           relaxed['status'], relaxed)
-    ipopt_answer = pipeline.info['method'] in ('prodSeed', 'polish')
-    result.update(backend='ipopt' if ipopt_answer else 'clarabel', workerLaunched=pipeline.launched,
-                  error=pipeline.ipopt_error, phases=pipeline.phases)
-    if ipopt_answer or best is None and pipeline.ipopt:
-        result['workerStatus'] = pipeline.ipopt_status
+    # search.engine.numerical_counts counts a confirmation without ipoptCalls as one IPOPT call.
     confirmation = dict(peak=relaxed['peakRelativeDeficit'], tick=relaxed['peakTick'], cached=False,
                         diskObjective=relaxed_candidate['objective'], ipoptObjective=None, gap=None, material=False,
-                        **pipeline.info, ipoptCalls=pipeline.ipopt, clarabelSolves=pipeline.clarabel)
+                        **pipeline.info, ipoptCalls=0, clarabelSolves=pipeline.clarabel)
     if best is not None:
         gap = pipeline.sense*(relaxed_candidate['objective']-best[1]['objective'])
         confirmation.update(ipoptObjective=best[1]['objective'], gap=gap, material=gap > disk.MATERIAL_GAP)
@@ -320,25 +302,6 @@ def run(problem, relaxed_candidate, relaxed, *, seconds, python_executable, canc
 def facings(problem, controls):
     """Facings (degrees) of acceleration vectors."""
     return [math.degrees(math.atan2(c[1], c[0])-b) for c, b in zip(controls, problem['base'])]
-
-
-def states(problem, controls):
-    """Exact-dynamics positions and velocities under acceleration vectors, in numerics.worker.forward's frame."""
-    ticks = problem['ticks']
-    positions, velocities = [[0., 0.]], [list(problem['velocity'])]
-    contacts = {(c['state'], c['axis']): c for c in problem['contacts']}
-    for t in range(ticks):
-        move = [v+a for v, a in zip(velocities[t], controls[t])]
-        position = [p+m for p, m in zip(positions[t], move)]
-        velocity = [problem['friction'][t]*m for m in move]
-        for axis in range(2):
-            contact = contacts.get((t+1, axis))
-            if contact:
-                position[axis] = contact['plane']-problem['position'][axis]
-                velocity[axis] = 0.
-        positions.append(position)
-        velocities.append(velocity)
-    return dict(positions=positions, velocities=velocities)
 
 
 def sector_cuts(sectors, magnitude):

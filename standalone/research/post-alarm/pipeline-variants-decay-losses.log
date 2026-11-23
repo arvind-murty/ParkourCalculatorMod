@@ -1,0 +1,11 @@
+study b5ee67f5dba4 today push gap 0.0000 | variant push post_alarm_push gap 0.1078 ipopt 0 | decay30 push 0.1078
+study 8f2c03b2463d today race gap -0.0012 | variant push post_alarm_push gap 0.2270 ipopt 0 | decay30 push 0.227
+study ea71aa58a393 today race gap -0.0000 | variant push post_alarm_push gap 0.0121 ipopt 0 | decay30 push 0.0121
+real11 acdef751f76b today prodSeed gap 0.0000 | variant push post_alarm_push gap 0.0313 ipopt 0 | decay30 push 0.0313
+real11 0ae7833038f1 today race gap 0.0011 | variant race post_alarm_race gap 0.1277 ipopt 0 | decay30 race 0.1277
+real11 68ed2ae4820e today prodSeed gap 0.0000 | variant push post_alarm_push gap 0.0112 ipopt 0 | decay30 push 0.0112
+real11 9706ddcc69e7 today race gap 0.0047 | variant push post_alarm_push gap 0.0383 ipopt 0 | decay30 push 0.0383
+real11 04f62ce23adc today prodSeed gap 0.0000 | variant push post_alarm_push gap 0.0116 ipopt 0 | decay30 push 0.0116
+real11 39d775c59b3d today prodSeed gap 0.0000 | variant push post_alarm_push gap 0.0124 ipopt 0 | decay30 push 0.0124
+real11 2f83fb71bff2 today prodSeed gap 0.0000 | variant push post_alarm_push gap 0.0124 ipopt 0 | decay30 push 0.0124
+real11 90433016e772 today prodSeed gap 0.0000 | variant push post_alarm_push gap 0.0448 ipopt 0 | decay30 push 0.0448

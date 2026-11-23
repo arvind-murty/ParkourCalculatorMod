@@ -148,7 +148,7 @@ class RelaxedDispatch:
     the relaxed point with its alarm ticks; `confirmed` also re-solves an
     optimization request whose relaxed optimum leaves more than ALARM_FRACTION
     of a jump tick's acceleration unused (alarm_ticks): with IPOPT, or with
-    `post_alarm='pipeline'` through numerics.post_alarm. The repair
+    `post_alarm='pipeline'` through numerics.post_alarm (Clarabel only). The repair
     loop solves with `solve` and confirms its kept candidates once, at its end
     (search/repair.py).
     """
@@ -201,7 +201,8 @@ class RelaxedDispatch:
         return _result(problem, started, 'feasible', candidate, 'disk_finished', solved['status'], relaxed)
 
     def confirm(self, problem, relaxed_candidate, relaxed, *, seconds, python_executable, cancel_event, on_incumbent):
-        """Re-solve an alarmed request with IPOPT, or answer it with the post-alarm pipeline; the outcome governs it."""
+        """Re-solve an alarmed request with IPOPT, or answer it with the post-alarm pipeline (no IPOPT); the outcome
+        governs it."""
         from parkour_solver.numerics.model import fingerprint
         from parkour_solver.numerics.solver import solve as full_solve
         key = ('confirmation', fingerprint(problem))
@@ -209,14 +210,12 @@ class RelaxedDispatch:
         if self.post_alarm == 'pipeline':
             from parkour_solver.numerics import post_alarm
             if cached:
-                result = dict(self.gate.cache[key], workerLaunched=False)
-                result['confirmation'] = dict(result['confirmation'], cached=True, ipoptCalls=0, clarabelSolves=0)
+                result = dict(self.gate.cache[key])
+                result['confirmation'] = dict(result['confirmation'], cached=True, clarabelSolves=0)
             else:
-                result = post_alarm.run(problem, relaxed_candidate, relaxed, seconds=seconds,
-                                        python_executable=python_executable, cancel_event=cancel_event)
-                # Decided: an answer, a sector certificate, or no answer after IPOPT calls that finished.
-                if (result['status'] == 'feasible' or result['error'] is None
-                        and result['termination'] in ('quadrant_infeasible', 'post_alarm_none')):
+                result = post_alarm.run(problem, relaxed_candidate, relaxed, seconds=seconds, cancel_event=cancel_event)
+                # Decided: an answer, a sector certificate, or no answer after every step; a deadline is not.
+                if result['status'] == 'feasible' or result['termination'] in ('quadrant_infeasible', 'post_alarm_none'):
                     self.gate.cache[key] = result
             if result['status'] == 'feasible' and on_incumbent is not None:
                 on_incumbent(json.loads(json.dumps(result['candidate'])))

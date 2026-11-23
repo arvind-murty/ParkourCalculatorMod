@@ -1,0 +1,6 @@
+('today answered lower', 'other', 'probe', None) 5
+('today answered lower', 'other', 'push', None) 3
+('today answered lower', 'other', 'race', None) 1
+('today answered lower', 'tick69 nonjump family', 'push', None) 1
+('today unanswered', 'other', 'push', None) 1
+('today unanswered', 'tick69 nonjump family', 'race', None) 12
