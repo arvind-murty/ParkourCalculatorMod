@@ -62,6 +62,7 @@ struct NodeSearch {
     Value hard_bound(const Program& program) const;
     Value run_bound(Program& program, NodeEffects& effects) const;
     bool eligible(Program& program, NodeEffects& effects) const;
+    bool admitted(const Program& program) const;  // accepted_program and the adapter's program_allowed
     Value screen(Program& program, NodeEffects& effects) const;  // check_program may add a walk-off selection
 };
 

@@ -658,3 +658,33 @@ solves keep `evaluate_program`. The `evaluate_prepared` binding goes: the check 
   [report](2026-11-22-decision-check/fixed-asan-report-vs-release.json)).
 - The milestone test list passes in both modes; the three DFS tests that stub `evaluate_program` run in Python mode
   ([suites](2026-11-22-decision-check/suites-summary.txt)).
+
+## The DFS loop, 2026-11-22
+
+Source: `d60bb7f3` plus `search/dfs_search.hpp` (`DfsSearch`: `search_goals` from its first publish through the main
+loop and finalization, owning the typed state of `search/dfs_state.hpp`; frames, discovery, scoring, selection,
+refinement, recovery, windows, latches, peers and observations, with NodeSearch's bounds and eligibility). The
+adapter's stage views, discovery and advance, anchor-leg and finish solves, the movement frontier (one generation at a
+time, its callbacks reaching the state through the search) and progress saving stay Python hooks. Nothing dispatches
+to it: the trial dispatch in `search_goals` (with its Python refactors, kept outside the repository) measured slower,
+because every publish converts the whole state to a new Python dict and the frontier's generations go through Python.
+The frontier and checkpoint ports remove both.
+
+- With the trial dispatch, every published DFS state and every result state equals the previous native code's by
+  value, in call order: the short Real11 control's 191, fixed work's 438 and the milestone test list's 328. The trial's
+  Python refactors leave Python mode's states unchanged (fixed work 438, tests 328)
+  ([states](2026-11-22-native-loop/state-parity.txt)).
+- Reports equal the previous code's except provenance, and transitions match Python
+  ([fixed work](2026-11-22-native-loop/fixed-report-vs-previous.json),
+  [short](2026-11-22-native-loop/short-report-vs-previous.json),
+  [fixed parity](2026-11-22-native-loop/fixed-parity-python-native.json),
+  [short parity](2026-11-22-native-loop/short-parity-python-native.json)).
+- Search seconds, alternating one at a time: fixed work 60.2 and 60.3 against 17.4 and 17.4 before; the short control
+  5.24 and 5.24 against 1.60 and 1.60 ([times](2026-11-22-native-loop/search-seconds.txt)).
+- A checkpoint saver finds the repair's program and node entry in the published state by identity; the trial publishes
+  the open generation's live Python report inside each state so the saver's incremental repair checkpoints still apply
+  (`test_checkpoint_store`'s native persistence check).
+- The search, checkpoint and native test modules run clean under AddressSanitizer, and fixed work runs clean with a
+  report equal to the release build's except provenance ([summary](2026-11-22-native-loop/asan-summary.txt),
+  [report](2026-11-22-native-loop/fixed-asan-report-vs-release.json)). The milestone test list passes in both modes
+  ([suites](2026-11-22-native-loop/suites-summary.txt)).

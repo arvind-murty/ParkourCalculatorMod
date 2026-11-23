@@ -187,6 +187,10 @@ bool NodeSearch::eligible(Program& program, NodeEffects& effects) const {
         return false;
     }
     if (py_truthy(hard_bound(program)) || !is_null(run_bound(program, effects))) return false;
+    return admitted(program);
+}
+
+bool NodeSearch::admitted(const Program& program) const {
     if (!anchors->within_caps(frame.request, program)) return false;  // accepted_program
     if (const Value* allowed = get(frame.request, "initialJumpInputs"); allowed && !is_null(*allowed)) {  // InitialJumpDomain
         const Profile& p = program.profile;

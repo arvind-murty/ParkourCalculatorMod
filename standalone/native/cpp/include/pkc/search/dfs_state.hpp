@@ -252,7 +252,7 @@ struct DfsState {
     Observations observations;
     std::vector<TimeBoundExclusion> time_bound_exclusions;
     std::vector<MinimumRunExclusion> minimum_run_exclusions;
-    DiscoveryWork discovery_work;
+    std::optional<DiscoveryWork> discovery_work;  // set when a session's loop starts
     std::optional<ComparisonWork> comparison_work;
     std::optional<OrderedMap<Value>> comparison_decisions;
     std::optional<std::vector<LocalSetupAlias>> local_setup_aliases;
@@ -264,6 +264,9 @@ struct DfsState {
 
 DfsState dfs_state_from_value(const Value& value);
 Value to_value(const DfsState& state);
+Value to_value(const Incumbent& incumbent);
+Value to_value(const HardLatch& latch);
+MinimumRunExclusion minimum_run_exclusion_from_value(const Value& value);
 Value to_value(const ObservationQuery& query);
 Value to_value(const ObservationReplay& replay);
 

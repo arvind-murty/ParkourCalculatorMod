@@ -329,7 +329,7 @@ void describe(R& s, V& v, DfsState*) {
     v.req("observations", s.observations);
     v.req("timeBoundExclusions", s.time_bound_exclusions);
     v.req("minimumRunExclusions", s.minimum_run_exclusions);
-    v.req("discoveryWork", s.discovery_work);
+    v.opt("discoveryWork", s.discovery_work);
     v.opt("comparisonWork", s.comparison_work);
     v.opt("comparisonDecisions", s.comparison_decisions);
     v.opt("localSetupAliases", s.local_setup_aliases);
@@ -344,6 +344,11 @@ void describe(R& s, V& v, DfsState*) {
 DfsState dfs_state_from_value(const Value& value) { return codec::from_value<DfsState>(value, "dfs"); }
 
 Value to_value(const DfsState& state) { return codec::encode(state); }
+Value to_value(const Incumbent& incumbent) { return codec::encode(incumbent); }
+Value to_value(const HardLatch& latch) { return codec::encode(latch); }
+MinimumRunExclusion minimum_run_exclusion_from_value(const Value& value) {
+    return codec::from_value<MinimumRunExclusion>(value, "minimumRunExclusion");
+}
 Value to_value(const ObservationQuery& query) { return codec::encode(query); }
 Value to_value(const ObservationReplay& replay) { return codec::encode(replay); }
 
