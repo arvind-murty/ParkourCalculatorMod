@@ -741,7 +741,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/early-passage-screen/evidence/2026-11-15/resume-requests.json](../research/early-passage-screen/evidence/2026-11-15/resume-requests.json) | 2 |
 | [research/early-passage-screen/evidence/2026-11-15/resume-summary.json](../research/early-passage-screen/evidence/2026-11-15/resume-summary.json) | 3840 |
 | [research/early-passage-screen/log_b6_options.py](../research/early-passage-screen/log_b6_options.py) | 20722 |
-| [research/encounter-groups/README.md](../research/encounter-groups/README.md) | 21023 |
+| [research/encounter-groups/README.md](../research/encounter-groups/README.md) | 21053 |
 | [research/encounter-groups/avoidance-ab/ab_calls.py](../research/encounter-groups/avoidance-ab/ab_calls.py) | 3985 |
 | [research/encounter-groups/avoidance-ab/analyze_ab.py](../research/encounter-groups/avoidance-ab/analyze_ab.py) | 2043 |
 | [research/encounter-groups/avoidance-ab/extended-ab-1-off-by-one-analysis.txt](../research/encounter-groups/avoidance-ab/extended-ab-1-off-by-one-analysis.txt) | 2657 |
@@ -1534,7 +1534,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [src/parkour_solver/search/movement.py](../src/parkour_solver/search/movement.py) | 1292 |
 | [src/parkour_solver/search/ordered_route.py](../src/parkour_solver/search/ordered_route.py) | 18813 |
 | [src/parkour_solver/search/ranking.py](../src/parkour_solver/search/ranking.py) | 3304 |
-| [src/parkour_solver/search/repair.py](../src/parkour_solver/search/repair.py) | 45728 |
+| [src/parkour_solver/search/repair.py](../src/parkour_solver/search/repair.py) | 45723 |
 | [src/parkour_solver/search/repair_state.py](../src/parkour_solver/search/repair_state.py) | 3038 |
 | [src/parkour_solver/search/work.py](../src/parkour_solver/search/work.py) | 2518 |
 | [src/parkour_solver/spatial/__init__.py](../src/parkour_solver/spatial/__init__.py) | 0 |
@@ -1701,7 +1701,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/unit/search/__init__.py](../tests/unit/search/__init__.py) | 0 |
 | [tests/unit/search/test_anchor_dfs.py](../tests/unit/search/test_anchor_dfs.py) | 36836 |
 | [tests/unit/search/test_anchor_policy.py](../tests/unit/search/test_anchor_policy.py) | 36866 |
-| [tests/unit/search/test_anchor_search.py](../tests/unit/search/test_anchor_search.py) | 60034 |
+| [tests/unit/search/test_anchor_search.py](../tests/unit/search/test_anchor_search.py) | 60142 |
 | [tests/unit/search/test_anchor_time_bound.py](../tests/unit/search/test_anchor_time_bound.py) | 1920 |
 | [tests/unit/search/test_candidate_comparison.py](../tests/unit/search/test_candidate_comparison.py) | 6044 |
 | [tests/unit/search/test_event_search.py](../tests/unit/search/test_event_search.py) | 8043 |
@@ -1739,6 +1739,6 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tools/profiling/enumeration_compare.py](../tools/profiling/enumeration_compare.py) | 3565 |
 | [tools/profiling/run.py](../tools/profiling/run.py) | 11737 |
 | [tools/profiling/runtime.py](../tools/profiling/runtime.py) | 9204 |
-| [tools/profiling/trace.py](../tools/profiling/trace.py) | 54594 |
+| [tools/profiling/trace.py](../tools/profiling/trace.py) | 54551 |
 | [tools/validate_layout.py](../tools/validate_layout.py) | 1392 |
 | [tools/witness_bound_audit.py](../tools/witness_bound_audit.py) | 2780 |

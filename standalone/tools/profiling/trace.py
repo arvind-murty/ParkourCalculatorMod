@@ -401,7 +401,7 @@ def solver(request):
 
 
 def counted_as(request):
-    if request.get('backend') == 'clarabel' and request.get('workerStatus') in ('PrimalInfeasible', 'AlmostPrimalInfeasible'):
+    if request.get('backend') == 'clarabel' and request.get('status') == 'unknown':
         return 'infeasible (disk relaxation)'
     return 'infeasible (IPOPT local)' if request.get('workerStatus') == 'Infeasible_Problem_Detected' else None
 

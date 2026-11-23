@@ -254,8 +254,9 @@ class AnchorSearchTests(unittest.TestCase):
         self.assertEqual(rejected['unresolved'],[])
         self.assertFalse(limited['completed'][0]['oracleRejected'])
         self.assertEqual(len(limited['unresolved']),1)
-        # A relaxation-infeasible request excludes the full model.
-        self.assertTrue(invoke('PrimalInfeasible','disk_finished')['repairState']['completed'][0]['oracleRejected'])
+        # Every unsolved relaxed request is an infeasible verdict, a primal-infeasible one or not.
+        for status in ('PrimalInfeasible','NumericalError','MaxIterations'):
+            self.assertTrue(invoke(status,'disk_finished')['repairState']['completed'][0]['oracleRejected'],status)
 
     def test_pre_solve_proofs_complete_an_alternative_without_ipopt(self):
         from parkour_solver.search.feasibility import outcome, policy_spec
