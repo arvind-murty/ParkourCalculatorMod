@@ -843,3 +843,34 @@ generator's tags, the frontier's side reserves and held side entries, the decisi
 - Search seconds, alternating Python mode and native mode: fixed work 40.28 and 39.46 against 14.17 and 13.83, the
   short control 3.946 and 3.835 against 1.288 and 1.257; with durable checkpoints fixed work 125.6 and 129.9 against
   55.97 and 55.31, the short control 17.03 and 16.88 against 8.55 and 8.45 ([times](2026-11-23-main-pr10/search-seconds.txt)).
+
+## The anchor adapter, 2026-11-23
+Source: `5f917520` plus the native anchor adapter (`search/anchors/adapter.hpp` on `spatial/event_routes.hpp`):
+initial cursors, goal discovery, stage facts (the guide slice, `onward_objective`, the score context and corridor),
+advance with `observed_route`, and the candidate check (the anchor audit, then the event check with its support
+episodes; its `eventAudits` and `requiredEventRejections` counts join the Python adapter's summary). The native search
+no longer calls Python for them; its node and leg solves take the stage's objective, identity and candidate check
+natively, and only the Python solves of routes with passages, wall hits or ladder events build a Python stage view.
+
+- Every adapter call of a Python-loop search, run both ways, gives the same result: on the short control 1 initial
+  cursor, 7 discoveries, 8 stage views, 19 candidate checks and 6 advances, on fixed work 1, 4, 4, 76 and 3, with equal
+  counts ([short](2026-11-23-anchor-adapter/short-adapter-parity.json),
+  [fixed](2026-11-23-anchor-adapter/fixed-adapter-parity.json)).
+- Python mode is the oracle: every published and result state equals it in call order (short control 191, fixed work
+  454, and the milestone list's searching tests except two `disk.cached` flags that earlier tests' process-wide cache
+  sets) ([states](2026-11-23-anchor-adapter/state-parity.txt)); transitions match
+  ([fixed](2026-11-23-anchor-adapter/fixed-parity-python-native.json),
+  [short](2026-11-23-anchor-adapter/short-parity-python-native.json)) and the reports differ as before
+  ([fixed](2026-11-23-anchor-adapter/fixed-report-python-vs-native.json),
+  [short](2026-11-23-anchor-adapter/short-report-python-vs-native.json)).
+- Reports equal the previous code's except provenance, plain and durable
+  ([fixed](2026-11-23-anchor-adapter/fixed-report-vs-previous.json),
+  [short](2026-11-23-anchor-adapter/short-report-vs-previous.json),
+  [fixed durable](2026-11-23-anchor-adapter/fixed-durable-report-vs-previous.json),
+  [short durable](2026-11-23-anchor-adapter/short-durable-report-vs-previous.json)).
+- The milestone list passes in both modes ([suites](2026-11-23-anchor-adapter/suites-summary.txt)). AddressSanitizer
+  runs clean ([summary](2026-11-23-anchor-adapter/asan-summary.txt),
+  [report](2026-11-23-anchor-adapter/fixed-asan-report-vs-release.json)).
+- Search seconds, alternating against `5f917520` with its own native build: fixed work 14.18 and 14.38 against 14.80
+  and 14.31, the short control 1.297 mean of five against 1.365; durable fixed work 56.68 and 54.67 against 56.50 and
+  56.66 ([times](2026-11-23-anchor-adapter/search-seconds.txt)).

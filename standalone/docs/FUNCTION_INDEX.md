@@ -858,8 +858,8 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `segment_solids` | [47](../src/parkour_solver/search/engine.py#L47) | function |
 | `evaluate_program` | [61](../src/parkour_solver/search/engine.py#L61) | function |
 | `solve_services` | [192](../src/parkour_solver/search/engine.py#L192) | function |
-| `numerical_counts` | [225](../src/parkour_solver/search/engine.py#L225) | function |
-| `find_checkpoint_route` | [245](../src/parkour_solver/search/engine.py#L245) | function |
+| `numerical_counts` | [226](../src/parkour_solver/search/engine.py#L226) | function |
+| `find_checkpoint_route` | [246](../src/parkour_solver/search/engine.py#L246) | function |
 
 ## search/events/adapter.py
 

@@ -201,6 +201,8 @@ ordered options. That is targeted enumeration work, not a whole-solver speedup.
   ([evidence](../research/native-core/README.md)).
 - Native mode after main's PR #10 (merged search, native port): fixed work 14.17 s and 13.83 s against Python mode's
   40.28 s and 39.46 s, and 55.97 s and 55.31 s against 125.6 s and 129.9 s with durable checkpoints
+  ([evidence](../research/native-core/README.md)). With the anchor adapter native too, search time is unchanged:
+  fixed work 14.18 s and 14.38 s against 14.80 s and 14.31 s, the short control 1.297 s against 1.365 s (means of five)
   ([evidence](../research/native-core/README.md)).
 - IPOPT row reduction: final rows fall from 278 to 91 on the benchmark
   ([constraint reduction](IPOPT_CONSTRAINT_REDUCTION.md)).

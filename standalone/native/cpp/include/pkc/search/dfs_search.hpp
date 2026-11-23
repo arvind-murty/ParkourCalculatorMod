@@ -1,8 +1,9 @@
 // The anchor DFS loop: search/dfs.py search_goals from its first publish through the main loop and finalization,
 // owning the typed search state (search/dfs_state.hpp) and running each frame's movement frontier
 // (search/frontier.hpp) with its decision checks. Python keeps the preamble (roots, context digest, resume checks, the
-// gate) and the result dict, and serves what is not ported yet through DfsHooks: the adapter's stage views, discovery
-// and advance, gate preparations, anchor-leg, finish and node solve services, progress saving and the work budget.
+// gate) and the result dict, and serves what is not ported yet through DfsHooks: gate preparations, the Python parts
+// of the anchor-leg, finish and node solve services, progress saving and the work budget. The anchor adapter's stage
+// views, discovery, advance and candidate checks are native (search/anchors/adapter.hpp).
 #pragma once
 
 #include <cstdint>
@@ -16,6 +17,7 @@
 #include <vector>
 
 #include "pkc/reachability/service.hpp"
+#include "pkc/search/anchors/adapter.hpp"
 #include "pkc/search/anchors/policy.hpp"
 #include "pkc/search/dfs.hpp"
 #include "pkc/search/dfs_state.hpp"
@@ -58,34 +60,27 @@ struct DfsHooks {
     std::function<void(const std::string& name)> count;
     std::function<void(const Value& candidate)> accepted;
     std::function<Value()> termination;
-    // The adapter: initial_cursor(parents); next_goals(cursor, parents, continuation, budget) as
-    // {requests, continuation, report}; for_goal(request, cursor)'s facts for a frame as {guide, scoreContext, cursor,
-    // objective, corridor}; advance(cursor, child, observed_route(...), request).
-    std::function<Value(const Value& parents)> initial_cursor;
-    std::function<Value(const Value& cursor, const Value& parents, const Value& continuation, std::int64_t expansions,
-                        std::int64_t materializations)>
-        next_goals;
-    std::function<Value(std::int64_t frame, const Value& request, const Value& cursor)> stage;
-    std::function<Value(std::int64_t frame, const Value& cursor, const Value& child, const Value& witness,
-                        const Value& request)>
-        advance;
     // An anchor-leg or finish solve, evaluate_program(dict(scene, goalBlock=landing), program, ..., the frame's stage
     // view, ...) with `options` {landing, policy, firstWitness, guideObjective, seconds, finalRoute (or absent),
     // progress}, runs natively after the gate's preparation: gate.prepare(program, scene=dict(scene,
-    // goalBlock=landing), require_complete=True) as prepare_leg, then solve_services on the stage view (its numerical
-    // backend and seconds) as begin_leg. `evaluate` is the Python solve for a route the native one leaves there
+    // goalBlock=landing), require_complete=True) as prepare_leg, then solve_services without an adapter (its
+    // numerical backend and seconds) as begin_leg; the native adapter serves the candidate check. `evaluate` is the
+    // Python solve, on the stage view of the frame's goal request and cursor, for a route the native one leaves there
     // (passages, wall hits, ladder events). With progress, the solve reports through DfsSearch::score_progress.
     std::function<Value(const Value& program, const Value& landing)> prepare_leg;
-    std::function<NodeSolve(std::int64_t frame, const Value& program, const std::string& numerical, double seconds)>
-        begin_leg;
-    std::function<Value(std::int64_t frame, const Value& program, const Value& options)> evaluate;
+    std::function<NodeSolve(const Value& program, const std::string& numerical, double seconds)> begin_leg;
+    std::function<Value(std::int64_t frame, const Value& request, const Value& cursor, const Value& program,
+                        const Value& options)>
+        evaluate;
     // bounds/flight.transfer_bounds(scene, guide_plan, motion, gate, saved=..., ...): the saved records after it.
     std::function<Value(const Value& saved)> transfer_bounds;
-    // A decision check's services: gate.prepare(program, scene=scene); solve_services on the frame's node view
-    // (for_node(program)); the Python node solve for a route the native one leaves there (see NodeHooks).
+    // A decision check's services: gate.prepare(program, scene=scene); solve_services without an adapter (the
+    // native adapter serves the node view's objective and candidate check); the Python node solve, on the node view
+    // of the frame's goal request and cursor, for a route the native one leaves there (see NodeHooks).
     std::function<Value(const Value& program)> prepare;
-    std::function<NodeSolve(std::int64_t frame, const Value& program)> begin_solve;
-    std::function<Value(std::int64_t frame, const Value& program, const std::function<void(const Value&)>& progress)>
+    std::function<NodeSolve(const Value& program)> begin_solve;
+    std::function<Value(std::int64_t frame, const Value& request, const Value& cursor, const Value& program,
+                        const std::function<void(const Value&)>& progress)>
         solve_route;
 };
 
@@ -95,7 +90,6 @@ struct DfsOptions {
     Value domain_id;               // adapter.data['domainId']
     std::vector<Value> roots;      // the first frame's parents
     std::string task_block;
-    Value discovery_settings;   // getattr(adapter, 'discovery_settings', {})
     Value initial_jump_inputs;  // program_filter.initial_jump_inputs, or null
     Object caps;                // accepted_program.caps
     bool minimum_run_pruning = false, retry_unknown = false;
@@ -109,7 +103,7 @@ struct DfsOptions {
 class DfsSearch {
 public:
     DfsSearch(DfsState state, DfsOptions options, DfsHooks hooks, std::shared_ptr<InteractionGate> gate,
-              std::shared_ptr<AnchorScene> anchors);
+              std::shared_ptr<AnchorScene> anchors, std::shared_ptr<AnchorAdapter> adapter);
 
     std::string run();      // the main loop; the termination
     void finalize_best();   // finalize=True
@@ -156,7 +150,7 @@ private:
     bool final_frame(const Frame& f) const;
     void generate(Frame& f);
     Object evaluation_args(Frame& f, const Value& program);
-    Value evaluate_leg(std::int64_t frame, const Value& program, const Value& args);  // see DfsHooks::evaluate
+    Value evaluate_leg(Frame& f, const Value& program, const Value& args);  // see DfsHooks::evaluate
     RecordPtr score(Frame& f, const SharedValue& program, const RecordPtr& old);
     void refine(Frame& f, const RecordPtr& pending);
     RecordPtr variant_record(Frame& f, const Record& record, const Value& variant);
@@ -186,6 +180,7 @@ private:
     DfsHooks hooks_;
     std::shared_ptr<InteractionGate> gate_;
     std::shared_ptr<AnchorScene> anchors_;
+    std::shared_ptr<AnchorAdapter> adapter_;
     std::vector<std::string> anchor_names_;  // the anchor policy's anchors
     std::map<std::int64_t, Stage> stages_;
     std::set<std::pair<std::int64_t, std::string>> excluded_runs_;

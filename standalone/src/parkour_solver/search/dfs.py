@@ -982,30 +982,23 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
     from parkour_solver.search.anchors.adapter import AnchorAdapter
     if gate.core is not None and isinstance(adapter, AnchorAdapter) and getattr(accepted_program, 'native', False):
         # The loop runs natively (search/dfs_search.hpp) and owns the state, with each frame's movement frontier, its
-        # decision checks and its leg solves. Python serves it the stage views, discovery, gate preparations and the
-        # solve services; `evaluate` and `solve_route` solve the routes the native generator leaves to Python.
+        # decision checks and its leg solves, and the anchor adapter's stage views, discovery, advance and candidate
+        # checks (search/anchors/adapter.hpp). Python serves it gate preparations and the solve services; `evaluate`
+        # and `solve_route` solve, on the frame's Python stage view, the routes the native generator leaves to Python.
         from parkour_solver.search import ordered_route
         from parkour_solver.search.engine import solve_services
         if 'anchorScene' not in native_scenes:
             native_scenes['anchorScene'] = gate.native.AnchorScene(scene)
+        native_adapter = gate.native.AnchorAdapter(adapter.data, adapter.graph, adapter.anchor_policy, adapter.guide_plan,
+                                                   semantic_settings(adapter.anchor_policy), native_scenes['anchorScene'])
         frames = {}
-        def stage(frame_id, request, cursor):
-            f = frames.setdefault(frame_id, dict(id=frame_id, goalRequest=request, semanticCursor=cursor,
-                                                 goal=request['goal']))
-            view = stage_adapter(f)
-            return dict(guide=view.guide, scoreContext=view.score_context, cursor=view.cursor, objective=view.objective,
-                        corridor=view.corridor.to_dict() if view.corridor is not None else None)
-        def next_goals(cursor, parents, continuation, expansions, materializations):
-            requests, continuation, report = adapter.next_goals(cursor, parents, continuation, budget=dict(
-                check=work.check, expansions=expansions, materializations=materializations))
-            return dict(requests=requests, continuation=continuation, report=report)
-        def advance(frame_id, cursor, child, witness, request):
-            observed = support_episodes_for_child(dict(child=child, witness=witness), frames[frame_id])
-            return adapter.advance(cursor, child, observed, request)
-        def evaluate(frame_id, program, options):
+        def view(frame_id, request, cursor):
+            return stage_adapter(frames.setdefault(frame_id, dict(id=frame_id, goalRequest=request, semanticCursor=cursor,
+                                                                  goal=request['goal'])))
+        def evaluate(frame_id, request, cursor, program, options):
             landing = options['landing']
             final = dict(final_route=options['finalRoute']) if 'finalRoute' in options else {}
-            return evaluate_program(dict(scene,goalBlock=landing),program,compiler,stage_adapter(frames[frame_id]),work,
+            return evaluate_program(dict(scene,goalBlock=landing),program,compiler,view(frame_id,request,cursor),work,
                 motion,seconds=options['seconds'],candidate_seconds=candidate_seconds,python_executable=python_executable,
                 cancel_event=cancel_event,on_progress=native.score_progress if options['progress'] else None,
                 retry_unresolved=retry_unknown,required_landing=landing,first_witness=options['firstWitness'],
@@ -1014,16 +1007,13 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
             from parkour_solver.search.bounds.flight import transfer_bounds
             transfer_bounds(scene, adapter.guide_plan, motion, gate, saved=saved, threshold=0., check=work.check)
             return saved
-        def begin_leg(frame_id, program, numerical, seconds):
-            return dict(solve_services(stage_adapter(frames[frame_id]), program, work, gate, numerical, seconds=seconds,
-                                       cancel_event=cancel_event), objective=None)
-        def begin_solve(frame_id, program):
-            node_view=stage_adapter(frames[frame_id]).for_node(program)
-            services=solve_services(node_view,program,work,gate,numerical_backend,
+        def begin_leg(program, numerical, seconds):
+            return solve_services(None, program, work, gate, numerical, seconds=seconds, cancel_event=cancel_event)
+        def begin_solve(program):
+            return solve_services(None,program,work,gate,numerical_backend,
                 seconds=max(.001,min(score_seconds,deadline-time.monotonic())),cancel_event=cancel_event)
-            return dict(services,objective=node_view.objective)
-        def solve_route(frame_id, program, progress):
-            node_view=stage_adapter(frames[frame_id]).for_node(program)
+        def solve_route(frame_id, request, cursor, program, progress):
+            node_view=view(frame_id,request,cursor).for_node(program)
             policy=dict(purpose='node',stopOnFeasible=False,rankEqualCost=True,oracleRejection=True,numerical=numerical_backend)
             return evaluate_program(scene,program,compiler,node_view,work,motion,
                 seconds=max(.001,min(score_seconds,deadline-time.monotonic())),candidate_seconds=candidate_seconds,
@@ -1049,8 +1039,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
             cancelled=lambda: cancel_event is not None and cancel_event.is_set(),
             publish=on_progress, begin_repair=begun, repair_progress=repaired, check=work.check,
             solver_calls=lambda: work.counts['solverCalls'], count=count, accepted=work.accepted,
-            termination=lambda: work.termination, initial_cursor=adapter.initial_cursor, next_goals=next_goals,
-            stage=stage, advance=advance, evaluate=evaluate, transfer_bounds=bounds, begin_leg=begin_leg,
+            termination=lambda: work.termination, evaluate=evaluate, transfer_bounds=bounds, begin_leg=begin_leg,
             prepare_leg=lambda program, landing: gate.prepare(program, scene=dict(scene, goalBlock=landing),
                                                               require_complete=True),
             prepare=lambda program: gate.prepare(program, scene=scene), begin_solve=begin_solve, solve_route=solve_route,
@@ -1058,18 +1047,22 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
         native = gate.native.DfsSearch(state, dict(scene=scene, cfg=cfg, motion=motion, guidePlan=adapter.guide_plan,
             anchorPolicy=adapter.anchor_policy, policySettings=semantic_settings(adapter.anchor_policy),
             domainId=adapter.data['domainId'], roots=roots,
-            taskBlock=adapter.data['task']['block'], discoverySettings=getattr(adapter,'discovery_settings',{}),
+            taskBlock=adapter.data['task']['block'],
             initialJumpInputs=getattr(program_filter,'initial_jump_inputs',None), caps=accepted_program.caps,
             minimumRunPruning=bool(minimum_run_pruning), retryUnknown=bool(retry_unknown), deadline=deadline,
             started=started, candidateSeconds=candidate_seconds, scoreSeconds=score_seconds, batchSize=batch_size,
             numericalBackend=numerical_backend, priorCalls=prior_calls, initialExpanded=initial_expanded,
-            comparisonPolicy=COMPARISON_POLICY_VERSION), hooks, gate.core, native_scenes['anchorScene'])
-        if finalize:
-            native.finalize_best()
-            state = native.state()
-            return dict(status='feasible' if state['finalization']['best'] else 'unknown',termination='finalization',
-                        best=state['finalization']['best'],searchState=state,work=work.summary())
-        termination = native.run()
+            comparisonPolicy=COMPARISON_POLICY_VERSION), hooks, gate.core, native_scenes['anchorScene'], native_adapter)
+        try:
+            if finalize:
+                native.finalize_best()
+                state = native.state()
+                return dict(status='feasible' if state['finalization']['best'] else 'unknown',termination='finalization',
+                            best=state['finalization']['best'],searchState=state,work=work.summary())
+            termination = native.run()
+        finally:
+            for name, count in native_adapter.counts.items():  # the adapter summary's counts
+                adapter.counts[name] += count
         state = native.state()
         viability_counts.update(native.viability())
         return result(termination)

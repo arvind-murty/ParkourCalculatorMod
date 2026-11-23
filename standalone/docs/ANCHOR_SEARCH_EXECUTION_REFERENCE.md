@@ -249,9 +249,10 @@ because a source-era handoff contains its absolute path.
 Under `PKC_NATIVE_CORE`, an anchor search whose gate has a native core and whose program filter is at most an initial
 jump domain runs `search_goals` natively (`search/dfs_search.hpp`) over the typed state of `search/dfs_state.hpp`: frames,
 scoring, selection, refinement, recovery, windows, latches and finalization, each frame's movement frontier
-(`search/frontier.hpp`) and its decision checks. Python keeps the preamble (roots, context, resume checks, the gate) and
-the result, and serves the adapter's stage views, discovery and advance, gate preparations, solve services and the work
-budget through hooks. Each publish hands `on_progress` a frozen snapshot, read field by field (`to_python()` builds the
+(`search/frontier.hpp`) and its decision checks, and the anchor adapter's stage views, discovery, advance and candidate
+checks (`search/anchors/adapter.hpp`, on `spatial/event_routes.hpp`; its counts join the Python adapter's summary).
+Python keeps the preamble (roots, context, resume checks, the gate) and the result, and serves gate preparations, the
+Python parts of the solve services and the work budget through hooks. Each publish hands `on_progress` a frozen snapshot, read field by field (`to_python()` builds the
 whole dict); the checkpoint store encodes it natively and it names the paths of the repair the saver patches
 ([checkpoint storage](CHECKPOINT_STORAGE.md)). The frontier expands each decision one movement type at a time
 natively (`search/node.hpp`): generation,
@@ -266,10 +267,11 @@ so a resumed expansion redoes it from the saved cursor. Each decision check (`df
 (`search/engine.hpp`: scope, floor checks, identity, constraint generator, repair loop, outcome), the branch program it
 commits and the alternatives it holds. The gate's analysis and face tables and the relaxed dispatch with its IPOPT
 solves run on the gate's native core (`reachability/service.hpp`, `numerics/disk.hpp`, `numerics/solver.hpp`); the
-adapter's candidate check, the compiler and the work budget stay Python callbacks, and the check records into
+compiler and the work budget stay Python callbacks (and, in the Python loop, the adapter's candidate check), and the
+check records into
 the search's node table, checkpoint progress and observations through callbacks. The native search's anchor-leg and
-finish solves run the same way after the gate's preparation of the leg's scene (`DfsSearch::evaluate_leg`, with the
-stage view's solve services); `search/engine.evaluate_program` solves the routes they leave to Python. There, and in the
+finish solves run the same way after the gate's preparation of the leg's scene (`DfsSearch::evaluate_leg`);
+`search/engine.evaluate_program` solves the routes they leave to Python, on the frame's Python stage view. There, and in the
 Python loop, it runs its constraint generator and repair loop natively (`constraints/variants.hpp`,
 `search/repair.hpp`) for the same routes; the loop calls the compiler, the numerical solve, the candidate filter, the
 work budget and the progress callback in Python and returns the Python result and repair state.

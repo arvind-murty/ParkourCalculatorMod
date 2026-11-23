@@ -26,6 +26,7 @@
 #include "pkc/program.hpp"
 #include "pkc/movement/generation.hpp"
 #include "pkc/reachability/service.hpp"
+#include "pkc/search/anchors/adapter.hpp"
 #include "pkc/search/anchors/policy.hpp"
 #include "pkc/search/bounds/remaining.hpp"
 #include "pkc/search/comparison.hpp"
@@ -429,12 +430,13 @@ pkc::EvaluateHooks evaluate_hooks(py::object compiler, py::object solve, py::obj
             return python_hook([&] { return convert(reachable_faces(face)); });
         };
     }
-    hooks.candidate = [candidate](const pkc::Value& plan, const pkc::Value& value, const pkc::Value& vertical,
-                                  const pkc::Value& scope) {
-        return python_hook([&] {
-            return convert(candidate(to_python(plan), to_python(value), to_python(vertical), to_python(scope)));
-        });
-    };
+    if (!candidate.is_none())  // None for the native search, whose adapter checks candidates
+        hooks.candidate = [candidate](const pkc::Value& plan, const pkc::Value& value, const pkc::Value& vertical,
+                                      const pkc::Value& scope) {
+            return python_hook([&] {
+                return convert(candidate(to_python(plan), to_python(value), to_python(vertical), to_python(scope)));
+            });
+        };
     hooks.check_generation = [check_generation] { python_hook([&] { check_generation(); }); };
     hooks.record_counts = [record_counts](const pkc::Value& counts) {
         python_hook([&] { record_counts(to_python(counts)); });
@@ -1002,7 +1004,7 @@ PYBIND11_MODULE(_pkc_native, m) {
            "objects)");
     py::class_<pkc::DfsSearch, std::shared_ptr<pkc::DfsSearch>>(m, "DfsSearch")
         .def(py::init([](py::handle state, py::dict options, py::object hooks, std::shared_ptr<pkc::InteractionGate> gate,
-                         std::shared_ptr<pkc::AnchorScene> anchors) {
+                         std::shared_ptr<pkc::AnchorScene> anchors, std::shared_ptr<pkc::AnchorAdapter> adapter) {
             pkc::DfsOptions o;
             auto value = [&](const char* key) { return convert(options[key]); };
             o.scene = value("scene");
@@ -1014,7 +1016,6 @@ PYBIND11_MODULE(_pkc_native, m) {
             o.domain_id = value("domainId");
             for (py::handle root : options["roots"]) o.roots.push_back(convert(root));
             o.task_block = options["taskBlock"].cast<std::string>();
-            o.discovery_settings = value("discoverySettings");
             o.initial_jump_inputs = value("initialJumpInputs");
             o.caps = *std::get<std::shared_ptr<const pkc::Object>>(value("caps").data);
             o.minimum_run_pruning = options["minimumRunPruning"].cast<bool>();
@@ -1046,28 +1047,11 @@ PYBIND11_MODULE(_pkc_native, m) {
             h.count = [f = hook("count")](const std::string& name) { python_hook([&] { f(name); }); };
             h.accepted = [f = hook("accepted")](const pkc::Value& candidate) { python_hook([&] { f(to_python(candidate)); }); };
             h.termination = [f = hook("termination")] { return python_hook([&] { return convert(f()); }); };
-            h.initial_cursor = [f = hook("initial_cursor")](const pkc::Value& parents) {
-                return python_hook([&] { return convert(f(to_python(parents))); });
-            };
-            h.next_goals = [f = hook("next_goals")](const pkc::Value& cursor, const pkc::Value& parents,
-                                                    const pkc::Value& continuation, std::int64_t expansions,
-                                                    std::int64_t materializations) {
+            h.evaluate = [f = hook("evaluate")](std::int64_t frame, const pkc::Value& request, const pkc::Value& cursor,
+                                                const pkc::Value& program, const pkc::Value& options) {
                 return python_hook([&] {
-                    return convert(f(to_python(cursor), to_python(parents), to_python(continuation), expansions,
-                                     materializations));
+                    return convert(f(frame, to_python(request), to_python(cursor), to_python(program), to_python(options)));
                 });
-            };
-            h.stage = [f = hook("stage")](std::int64_t frame, const pkc::Value& request, const pkc::Value& cursor) {
-                return python_hook([&] { return convert(f(frame, to_python(request), to_python(cursor))); });
-            };
-            h.advance = [f = hook("advance")](std::int64_t frame, const pkc::Value& cursor, const pkc::Value& child,
-                                              const pkc::Value& witness, const pkc::Value& request) {
-                return python_hook([&] {
-                    return convert(f(frame, to_python(cursor), to_python(child), to_python(witness), to_python(request)));
-                });
-            };
-            h.evaluate = [f = hook("evaluate")](std::int64_t frame, const pkc::Value& program, const pkc::Value& options) {
-                return python_hook([&] { return convert(f(frame, to_python(program), to_python(options))); });
             };
             h.transfer_bounds = [f = hook("transfer_bounds")](const pkc::Value& saved) {
                 return python_hook([&] { return convert(f(to_python(saved))); });
@@ -1080,31 +1064,30 @@ PYBIND11_MODULE(_pkc_native, m) {
                 pkc::NodeSolve out;
                 out.hooks = evaluate_hooks(compiler, solve, cancel_event, python_executable, services);
                 out.seconds = services["seconds"].cast<double>();
-                out.objective = convert(services["objective"]);
-                out.adapter_identity = convert(services["adapter_identity"]);
-                return out;
+                return out;  // the search sets the stage's objective, identity and candidate check
             };
-            h.begin_solve = [f = hook("begin_solve"), node_solve](std::int64_t frame, const pkc::Value& program) {
-                return python_hook([&] { return node_solve(f(frame, to_python(program))); });
+            h.begin_solve = [f = hook("begin_solve"), node_solve](const pkc::Value& program) {
+                return python_hook([&] { return node_solve(f(to_python(program))); });
             };
             h.prepare_leg = [f = hook("prepare_leg")](const pkc::Value& program, const pkc::Value& landing) {
                 return python_hook([&] { return convert(f(to_python(program), to_python(landing))); });
             };
-            h.begin_leg = [f = hook("begin_leg"), node_solve](std::int64_t frame, const pkc::Value& program,
-                                                              const std::string& numerical, double seconds) {
-                return python_hook([&] { return node_solve(f(frame, to_python(program), numerical, seconds)); });
+            h.begin_leg = [f = hook("begin_leg"), node_solve](const pkc::Value& program, const std::string& numerical,
+                                                              double seconds) {
+                return python_hook([&] { return node_solve(f(to_python(program), numerical, seconds)); });
             };
-            h.solve_route = [f = hook("solve_route")](std::int64_t frame, const pkc::Value& program,
+            h.solve_route = [f = hook("solve_route")](std::int64_t frame, const pkc::Value& request,
+                                                      const pkc::Value& cursor, const pkc::Value& program,
                                                       const std::function<void(const pkc::Value&)>& progress) {
                 return python_hook([&] {
                     py::object callback = py::none();
                     if (progress)
                         callback = py::cpp_function([progress](py::handle repair) { progress(convert(repair)); });
-                    return convert(f(frame, to_python(program), callback));
+                    return convert(f(frame, to_python(request), to_python(cursor), to_python(program), callback));
                 });
             };
             return std::make_shared<pkc::DfsSearch>(pkc::dfs_state_from_value(convert(state)), std::move(o), std::move(h),
-                                                    std::move(gate), std::move(anchors));
+                                                    std::move(gate), std::move(anchors), std::move(adapter));
         }))
         .def("run", &pkc::DfsSearch::run, "the main loop; its termination")
         .def("finalize_best", &pkc::DfsSearch::finalize_best)
@@ -1186,6 +1169,42 @@ PYBIND11_MODULE(_pkc_native, m) {
         }, "The exclusion log from entry `start` on")
         .def_property_readonly("metrics", [](pkc::InteractionGate& gate) {
             return to_python(pkc::Value{std::make_shared<const pkc::Object>(gate.metrics())});
+        });
+    py::class_<pkc::AnchorAdapter, std::shared_ptr<pkc::AnchorAdapter>>(m, "AnchorAdapter")
+        .def(py::init([](py::handle data, py::handle graph, py::handle anchor_policy, py::handle guide_plan,
+                         py::handle policy_settings, std::shared_ptr<pkc::AnchorScene> scene) {
+            return std::make_shared<pkc::AnchorAdapter>(convert(data), convert(graph), convert(anchor_policy),
+                                                        convert(guide_plan), convert(policy_settings), std::move(scene));
+        }))
+        .def("initial_cursor", [](const pkc::AnchorAdapter& a, py::handle roots) {
+            const pkc::Value listed = convert(roots);
+            return to_python(a.initial_cursor(*std::get<std::shared_ptr<const pkc::Array>>(listed.data)));
+        })
+        .def("next_goals", [](const pkc::AnchorAdapter& a, py::handle cursor, py::handle parents, py::handle continuation) {
+            const pkc::Value listed = convert(parents);
+            py::object reply = to_python(a.next_goals(convert(cursor), *std::get<std::shared_ptr<const pkc::Array>>(listed.data),
+                                                    convert(continuation), [] {}));
+            return py::make_tuple(reply["requests"], reply["continuation"], reply["report"]);
+        })
+        .def("stage", [](const pkc::AnchorAdapter& a, py::handle request, py::handle cursor) {
+            return to_python(a.stage(convert(request), convert(cursor)));
+        })
+        .def("advance", [](const pkc::AnchorAdapter& a, py::handle cursor, py::handle child, py::handle witness,
+                           py::handle request) {
+            return to_python(a.advance(convert(cursor), convert(child), convert(witness), convert(request)));
+        })
+        .def("candidate", [](pkc::AnchorAdapter& a, py::handle program, py::handle request, py::handle cursor,
+                             bool node_query) {
+            auto check = a.candidate(convert(program), convert(request), convert(cursor), node_query);
+            return py::cpp_function([check](py::handle plan, py::handle candidate, py::handle vertical, py::handle scope) {
+                return to_python(check(convert(plan), convert(candidate), convert(vertical), convert(scope)));
+            });
+        }, "the stage view's bound candidate(plan, candidate, vertical, scope) check")
+        .def_property_readonly("counts", [](const pkc::AnchorAdapter& a) {
+            py::dict out;
+            out["eventAudits"] = a.event_audits();
+            out["requiredEventRejections"] = a.required_event_rejections();
+            return out;
         });
     py::class_<pkc::AnchorScene, std::shared_ptr<pkc::AnchorScene>>(m, "AnchorScene")
         .def(py::init([](py::handle scene) { return std::make_shared<pkc::AnchorScene>(convert(scene)); }))

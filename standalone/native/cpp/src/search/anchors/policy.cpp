@@ -389,6 +389,19 @@ LegClass leg_class(double dx, double dz) {
     return {{std::copysign(std::sqrt(.5), dx), std::copysign(std::sqrt(.5), dz)}, {{"X", sx}, {"Z", sz}}};
 }
 
+namespace {
+
+// direction_objective(unit(dx, dz)): the progress objective along the horizontal direction, as a custom-yaw X
+// maximization; `fallback` when the direction has no length.
+Value toward(double dx, double dz, const Value& fallback) {
+    const double length = python_hypot(dx, dz);
+    if (length <= 1e-12) return fallback;
+    return object({{"axis", text("X")}, {"sense", text("MAX")},
+                   {"customYaw", real(degrees(std::atan2(-(dx / length), dz / length)))}});
+}
+
+}  // namespace
+
 Value decision_objective(const Value& guides_value, std::int64_t reached, const Value& point_value, const Value& fallback) {
     const Object& guides = fields(guides_value);
     const Array& point = items(point_value);
@@ -411,11 +424,16 @@ Value decision_objective(const Value& guides_value, std::int64_t reached, const 
     const Array& points = items(at(guides, "points"));
     if (i >= static_cast<std::int64_t>(points.size())) return fallback;
     const Array& target = items(points[i]);
-    const double dx = num(target[0]).value - px, dz = num(target[2]).value - pz, length = python_hypot(dx, dz);
-    if (length <= 1e-12) return fallback;
-    // direction_objective: the progress objective along a unit direction, as a custom-yaw X maximization.
-    return object({{"axis", text("X")}, {"sense", text("MAX")},
-                   {"customYaw", real(degrees(std::atan2(-(dx / length), dz / length)))}});
+    return toward(num(target[0]).value - px, num(target[2]).value - pz, fallback);
+}
+
+Value onward_objective(const Value& guides, std::int64_t span, const Value& fallback) {
+    // At E aim onward to N, rather than back toward E's landing point.
+    const Array& points = items(at(fields(guides), "points"));
+    const std::int64_t i = span + 1;
+    if (i + 1 >= static_cast<std::int64_t>(points.size())) return fallback;
+    const Array &e = items(points[i]), &n = items(points[i + 1]);
+    return toward(num(n[0]).value - num(e[0]).value, num(n[2]).value - num(e[2]).value, fallback);
 }
 
 }  // namespace pkc

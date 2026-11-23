@@ -76,11 +76,13 @@ private:
     std::map<std::int64_t, std::vector<std::pair<std::set<std::int64_t>, std::string>>> faces_;
 };
 
-// spatial/anchor_guides.py: classify(guides, span, point) and decision_objective(guides, reached, point, fallback).
+// spatial/anchor_guides.py: classify(guides, span, point), decision_objective(guides, reached, point, fallback) and
+// onward_objective(guides, span, fallback).
 // `point` keeps its numbers' kinds in the label, as list(point) does.
 Value classify(const Value& guides, std::int64_t span, const Value& point);
 Value classify(const Value& guides, std::int64_t span, double x, double z);
 Value decision_objective(const Value& guides, std::int64_t reached, const Value& point, const Value& fallback);
+Value onward_objective(const Value& guides, std::int64_t span, const Value& fallback);
 
 // spatial/anchor_guides.leg_class(direction): a unit horizontal guide leg's heading and the moves ('X'|'Z', +1|-1)
 // its direction class allows. Within kAxisLegDegrees of an axis: that axis, forward and both sideways; otherwise its

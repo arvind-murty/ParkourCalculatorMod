@@ -96,12 +96,13 @@ Num sum_values(const Value& timings) {
 }  // namespace
 
 DfsSearch::DfsSearch(DfsState state, DfsOptions options, DfsHooks hooks, std::shared_ptr<InteractionGate> gate,
-                     std::shared_ptr<AnchorScene> anchors)
+                     std::shared_ptr<AnchorScene> anchors, std::shared_ptr<AnchorAdapter> adapter)
     : state_(std::move(state)),
       options_(std::move(options)),
       hooks_(std::move(hooks)),
       gate_(std::move(gate)),
-      anchors_(std::move(anchors)) {
+      anchors_(std::move(anchors)),
+      adapter_(std::move(adapter)) {
     for (const Value& name : items(at(fields(options_.anchor_policy), "anchors"))) anchor_names_.push_back(as_text(name));
     for (const auto& r : state_.minimum_run_exclusions) excluded_runs_.insert({r.frame, r.candidate});
 }
@@ -234,7 +235,7 @@ void DfsSearch::transition(const std::string& kind, const Frame& f, Object field
 DfsSearch::FramePtr DfsSearch::frame(std::int64_t index, const std::vector<Value>& parents,
                                      const Nullable<FrameParent>& parent, const std::optional<Value>& cursor_in) {
     Array roots(parents.begin(), parents.end());
-    const Value cursor = cursor_in ? *cursor_in : hooks_.initial_cursor(array(roots));
+    const Value cursor = cursor_in ? *cursor_in : adapter_->initial_cursor(roots);
     Array keys;
     for (const Value& p : parents) keys.push_back(text(candidate_key(p)));
     const std::string owner = digest(object({{"parents", array(std::move(keys))}, {"cursor", cursor},
@@ -279,16 +280,10 @@ DfsSearch::FramePtr DfsSearch::make_frame(std::int64_t index, const std::vector<
 }
 
 void DfsSearch::expand_discovery(Discovery& discovery) {
-    const Object& settings = fields(options_.discovery_settings);
-    const auto limit = [&](const char* key, std::int64_t fallback) {
-        const Value* v = get(settings, key);
-        return v ? as_int(*v) : fallback;
-    };
     DiscoveryWork& used = *state_.discovery_work;
-    const Value reply = hooks_.next_goals(
-        discovery.cursor, array(Array(discovery.parents.begin(), discovery.parents.end())), discovery.continuation,
-        std::max<std::int64_t>(0, limit("maxGraphExpansions", 5000) - used.expansions),
-        std::max<std::int64_t>(0, limit("maxGuideMaterializations", 50) - used.materializations));
+    const Value reply = adapter_->next_goals(
+        discovery.cursor, Array(discovery.parents.begin(), discovery.parents.end()), discovery.continuation,
+        hooks_.check);
     const Object& r = fields(reply);
     const Object& report = fields(at(r, "report"));
     used.expansions += as_int(at(report, "expansions"));
@@ -316,7 +311,7 @@ void DfsSearch::expand_discovery(Discovery& discovery) {
 const DfsSearch::Stage& DfsSearch::stage(Frame& f) {
     auto found = stages_.find(f.id);
     if (found == stages_.end()) {
-        const Value facts_value = hooks_.stage(f.id, f.goal_request, f.semantic_cursor);
+        const Value facts_value = adapter_->stage(f.goal_request, f.semantic_cursor);
         const Object& facts = fields(facts_value);
         Stage s{at(facts, "guide"), at(facts, "scoreContext"), at(facts, "cursor"), at(facts, "objective"),
                 at(facts, "corridor")};
@@ -694,7 +689,7 @@ QueryService query_service(const Object& s) {
 
 }  // namespace
 
-Value DfsSearch::evaluate_leg(std::int64_t frame, const Value& program, const Value& args) {
+Value DfsSearch::evaluate_leg(Frame& f, const Value& program, const Value& args) {
     const Object& a = fields(args);
     const Value& landing = at(a, "landing");
     const double started = hooks_.monotonic();
@@ -711,7 +706,7 @@ Value DfsSearch::evaluate_leg(std::int64_t frame, const Value& program, const Va
         if (!is_null(*r))
             for (const char* key : {"passages", "hitEvents", "ladderEvents"})
                 uncovered = uncovered || py_truthy(get_or_null(fields(*r), key));
-    if (uncovered) return hooks_.evaluate(frame, program, args);
+    if (uncovered) return hooks_.evaluate(f.id, f.goal_request, f.semantic_cursor, program, args);
     if (!get(route, "constraints")) put(route, "constraints", array({}));
     const double prepared_at = hooks_.monotonic();
     const Value& guide = get_or_null(a, "guideObjective");
@@ -720,8 +715,10 @@ Value DfsSearch::evaluate_leg(std::int64_t frame, const Value& program, const Va
         put(route, "guideObjective", guide);
     }
     const double seconds = num(at(a, "seconds")).value;
-    NodeSolve solve = hooks_.begin_leg(frame, program, as_text(at(fields(policy), "numerical")), seconds);
+    NodeSolve solve = hooks_.begin_leg(program, as_text(at(fields(policy), "numerical")), seconds);
+    solve.adapter_identity = stage(f).corridor;
     EvaluateHooks evaluate = solve.hooks;
+    evaluate.candidate = adapter_->candidate(program, f.goal_request, f.semantic_cursor, false);
     if (py_truthy(at(a, "progress"))) evaluate.on_progress = [this](const Value& repair) { score_progress(repair); };
     EvaluateOptions eo;
     eo.seconds = seconds;
@@ -759,7 +756,7 @@ DfsSearch::RecordPtr DfsSearch::score(Frame& f, const SharedValue& program, cons
     scoring_ = &f;
     Value result_value;
     try {
-        result_value = evaluate_leg(f.id, *program, object(std::move(args)));
+        result_value = evaluate_leg(f, *program, object(std::move(args)));
     } catch (...) {
         scoring_ = nullptr;
         throw;
@@ -1134,7 +1131,14 @@ Value DfsSearch::evaluate_node(Value& program, OrderedMap<Value>& nodes, Frame& 
         targets.targets.push_back(std::move(entries));
         begin_repair(std::move(targets), nullptr);
     };
-    h.begin_solve = [&] { return hooks_.begin_solve(f.id, program); };
+    h.begin_solve = [&] {
+        // The frame's node view: for_node(program)'s decision objective and candidate check.
+        NodeSolve solve = hooks_.begin_solve(program);
+        solve.objective = anchors_->program_objective(program_from_value(program), options_.guide_plan, anchor_names_);
+        solve.adapter_identity = stage(f).corridor;
+        solve.hooks.candidate = adapter_->candidate(program, f.goal_request, f.semantic_cursor, true);
+        return solve;
+    };
     h.assign = [&](const Value& repair) { program = set_key(program, "repairState", repair); };
     if (hooks_.progress)
         h.progress = [&](const Value& repair) {
@@ -1172,7 +1176,7 @@ Value DfsSearch::evaluate_node(Value& program, OrderedMap<Value>& nodes, Frame& 
         publish();
     };
     h.solve_route = [&](const Value& p, const std::function<void(const Value&)>& progress) {
-        return hooks_.solve_route(f.id, p, progress);
+        return hooks_.solve_route(f.id, f.goal_request, f.semantic_cursor, p, progress);
     };
     NodeOptions o;
     const Value* saved = nodes.find(identity);
@@ -1259,7 +1263,7 @@ void DfsSearch::finalize_best() {
             scoring_ = f.get();
             Value result_value;
             try {
-                result_value = evaluate_leg(f->id, program, object(std::move(args)));
+                result_value = evaluate_leg(*f, program, object(std::move(args)));
             } catch (...) {
                 scoring_ = nullptr;
                 throw;
@@ -1535,8 +1539,8 @@ std::string DfsSearch::run() {
                 window.generation = f->generation;
                 window.retention.policy = "saved_dfs_siblings_no_cap_eviction";
                 state_.windows.push_back(std::move(window));
-                const Value cursor = hooks_.advance(f->id, f->semantic_cursor, **chosen->child, *chosen->witness,
-                                                    f->goal_request);
+                const Value cursor =
+                    adapter_->advance(f->semantic_cursor, **chosen->child, *chosen->witness, f->goal_request);
                 frame(f->index + 1, {**chosen->child}, Nullable<FrameParent>{FrameParent{f->id, chosen->id}}, cursor);
                 continue;
             }
