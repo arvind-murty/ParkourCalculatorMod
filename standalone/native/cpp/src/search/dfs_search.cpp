@@ -111,14 +111,9 @@ Value DfsSearch::latches_value() const {
     return object(std::move(latches));
 }
 
-Value DfsSearch::state() const {
-    // A generation Python holds open publishes its live report.
-    if (generating_) generating_->generation = hooks_.generation();
-    return to_value(state_);
-}
+Value DfsSearch::state() const { return to_value(state_); }
 
 Frame& DfsSearch::current() {
-    if (generating_) return *generating_;
     if (scoring_) return *scoring_;
     if (state_.stack.empty()) fail("no frame is active");
     return *state_.stack.back();
@@ -189,7 +184,7 @@ DfsSearch::FramePtr DfsSearch::make_frame(std::int64_t index, const std::vector<
     f->parent = parent;
     f->goal = goal;
     f->phase = "generate";
-    f->generation = object({});
+    f->generation = {};
     f->in_flight = {};
     f->goal_request = goal_request;
     f->semantic_cursor = semantic_cursor;
@@ -304,7 +299,7 @@ Value DfsSearch::pair_transfer(const Program& program, Frame& f, std::int64_t k,
 
 // The frame and state a native screen reads; `context_id` gets the frame's comparisonContextId, or the one
 // tick_label would set.
-NodeSearch DfsSearch::node_search(Frame& f, Value* context_id) {
+NodeSearch DfsSearch::node_search(Frame& f, Value* context_id, const Value& policy_context) {
     const Stage& view = stage(f);
     const auto [span, start] = span_info(f);
     NodeSearch search;
@@ -351,6 +346,7 @@ NodeSearch DfsSearch::node_search(Frame& f, Value* context_id) {
     n.request = options_.caps;
     n.max_inputs = as_int(at(fields(options_.cfg), "maxInputs"));
     for (const Value& t : items(at(fields(options_.cfg), "types"))) n.types.push_back(as_text(t));
+    n.policy_context = policy_context;
     for (const auto& [frame_id, candidate] : excluded_runs_)
         if (frame_id == f.id) n.excluded_runs.insert(candidate);
     if (context_id) *context_id = n.comparison_context_id;
@@ -465,13 +461,11 @@ bool DfsSearch::numerical_pending(const Record& r) const {
 
 void DfsSearch::generate(Frame& f) {
     const Value target_scene = set_key(options_.scene, "goalBlock", at(fields(f.goal), "block"));
-    const auto expanded_of = [](const Value& report) -> std::int64_t {
-        const Value* continuation = get(fields(report), "continuation");
-        if (!continuation) return 0;
-        const Value* expanded = get(fields(*continuation), "expanded");
-        return expanded ? as_int(*expanded) : 0;
+    const auto expanded_of = [&f] {
+        const Continuation* continuation = f.generation.continuation();
+        return continuation ? continuation->expanded : 0;
     };
-    const std::int64_t before = expanded_of(f.generation);
+    const std::int64_t before = expanded_of();
     const Object& cfg = fields(options_.cfg);
     const Value settings = set_key(
         options_.cfg, "maxPrefixes",
@@ -497,23 +491,59 @@ void DfsSearch::generate(Frame& f) {
         put(r, "decisionTurnaround", at(fields(classify(options_.guide_plan, span, point)), "isTurnaround"));
         root = object(std::move(r));
     }
+    const Value policy_context = object({{"anchor", options_.policy_settings},
+                                         {"span", integer_value(span)},
+                                         {"guide", at(fields(options_.guide_plan), "id")},
+                                         {"score", stage(f).score_context}});
+    FrontierOptions frontier_options;
+    frontier_options.scene = target_scene;
+    frontier_options.settings = settings;
+    frontier_options.initial_programs = f.parents;
+    if (get(fields(f.goal), "blocks")) frontier_options.stop_supports = goal_blocks(f.goal);
+    frontier_options.policy_context = policy_context;
+    frontier_options.comparison_policy = options_.comparison_policy;
+    FrontierHooks h;
+    h.budget = [this] {
+        if (hooks_.cancelled()) throw Timeout("cancelled");
+        hooks_.check();
+        if (hooks_.monotonic() >= options_.deadline) throw Timeout("deadline");
+    };
+    h.priority = [this, &f](const Value& p, const std::string& identity) { return priority(p, f, identity); };
+    h.eligible = [this, &f](Value& p) {
+        auto shared = std::make_shared<Value>(p);
+        const bool ok = eligible(shared, f);
+        p = *shared;  // run_bound's notes on the frontier's program
+        return ok;
+    };
+    h.live_programs = [this, &f] { return live_programs(f); };
+    h.evaluate_node = [this, &f](Value& p, OrderedMap<Value>& nodes) { return evaluate_node(p, nodes, f); };
+    h.node_search = [this, &f, &policy_context](Value& context_id) {
+        if (state_.best.value)
+            state_.transfer_time_bounds = hooks_.transfer_bounds(
+                state_.transfer_time_bounds ? *state_.transfer_time_bounds : object({}));
+        return node_search(f, &context_id, policy_context);
+    };
+    h.apply = [this, &f](const NodeEffects& effects, const Value& context_id) { apply(effects, f, context_id); };
+    h.ordinary = [](const Value& p) {
+        return boundary_state(program_from_value(p)).on_ground &&
+               !py_truthy(get_or_null(fields(p), "decisionTurnaround"));
+    };
+    h.termination = [this] { return hooks_.termination(); };
     std::set<std::string> seen;
     for (const RecordPtr& r : f.records) seen.insert(r->candidate_key.empty() ? r->id : r->candidate_key);
     for (const SharedValue& p : f.ready) seen.insert(candidate_key(*p));
-    hooks_.open_generation(f.id, target_scene, settings, array(Array(f.parents.begin(), f.parents.end())), f.generation);
-    generating_ = &f;
+    Frontier source(f.generation, std::move(frontier_options), std::move(h));
     try {
         while (static_cast<std::int64_t>(f.ready.size()) < options_.batch_size) {
-            const Value p = hooks_.next_program();
-            if (is_null(p)) {
-                const Value report = hooks_.generation();
-                const Value* continuation = get(fields(report), "continuation");
-                f.source_exhausted = continuation && py_truthy(get_or_null(fields(*continuation), "exhausted"));
+            const std::optional<Value> p = source.next();
+            if (!p) {
+                const Continuation* continuation = f.generation.continuation();
+                f.source_exhausted = continuation && continuation->exhausted;
                 break;
             }
-            const std::string identity = candidate_key(p);
+            const std::string identity = candidate_key(*p);
             if (!seen.count(identity)) {
-                f.ready.push_back(std::make_shared<Value>(p));
+                f.ready.push_back(std::make_shared<Value>(*p));
                 seen.insert(identity);
                 // Score the iterator's first ready arrival immediately. Remaining proposals stay owned by its saved
                 // cursor.
@@ -521,14 +551,12 @@ void DfsSearch::generate(Frame& f) {
             }
         }
     } catch (...) {
-        generating_ = nullptr;
-        f.generation = hooks_.close_generation();
-        state_.expanded += expanded_of(f.generation) - before;
+        source.close();
+        state_.expanded += expanded_of() - before;
         throw;
     }
-    generating_ = nullptr;
-    f.generation = hooks_.close_generation();
-    state_.expanded += expanded_of(f.generation) - before;
+    source.close();
+    state_.expanded += expanded_of() - before;
     std::vector<std::pair<Value, SharedValue>> keyed;
     for (const SharedValue& p : f.ready) keyed.emplace_back(priority(*p, f), p);
     std::stable_sort(keyed.begin(), keyed.end(),
@@ -536,8 +564,7 @@ void DfsSearch::generate(Frame& f) {
     for (std::size_t i = 0; i < keyed.size(); ++i) f.ready[i] = keyed[i].second;
     ++f.batches;
     if (f.ready.empty() && !f.source_exhausted) {
-        const Value& termination = get_or_null(fields(f.generation), "termination");
-        throw Timeout(is_null(termination) ? "generation_suspended" : as_text(termination));
+        throw Timeout(f.generation.report ? f.generation.report->termination : "generation_suspended");
     }
     f.phase = "score";
     transition("generated_batch", f,
@@ -902,16 +929,14 @@ void DfsSearch::close_frame(const FramePtr& f, bool deferred) {
             const Value& repair = get_or_null(fields(*r->program), "repairState");
             pending = numerical_pending(*r) || (is_object(repair) && py_truthy(get_or_null(fields(repair), "unresolved")));
         }
-        const Value* continuation = get(fields(f->generation), "continuation");
-        if (pending || (continuation && py_truthy(get_or_null(fields(*continuation), "deferredNodes"))))
+        const Continuation* continuation = f->generation.continuation();
+        if (pending || (continuation && continuation->deferred_nodes && !continuation->deferred_nodes->empty()))
             state_.suspended.push_back(f);
     }
     transition("backtrack", *f, {{"parent", frame_parent(f->parent)}});
 }
 
-std::vector<Value> DfsSearch::live_programs() { return live_programs_of(current()); }
-
-std::vector<Value> DfsSearch::live_programs_of(Frame& f) {
+std::vector<Value> DfsSearch::live_programs(Frame& f) {
     // Frame programs outside the frontier that can still produce a group-end arrival.
     std::vector<Value> out;
     for (const SharedValue& p : f.ready) out.push_back(*p);
@@ -923,123 +948,104 @@ std::vector<Value> DfsSearch::live_programs_of(Frame& f) {
 
 void DfsSearch::succeed(Frame& f, const Value& program) {
     // A validated group-end arrival: its decision node and every ancestor keep their held alternatives.
-    const Value* continuation_value = get(fields(f.generation), "continuation");
-    if (!continuation_value || is_null(*continuation_value)) return;
-    Object continuation = fields(*continuation_value);
-    const Value* succeeded = get(continuation, "succeededNodes");
-    if (!succeeded) return;
-    Array nodes = items(*succeeded);
-    std::set<std::string> done;
-    for (const Value& n : nodes) done.insert(as_text(n));
-    Value node = get_or_null(fields(program), "decisionNode");
-    const Object& parents = fields(at(continuation, "decisionParents"));
-    bool changed = false;
-    while (py_truthy(node) && !done.count(as_text(node))) {
-        nodes.push_back(node);
-        done.insert(as_text(node));
-        changed = true;
-        node = get_or_null(parents, as_text(node));
+    Continuation* continuation = f.generation.continuation();
+    if (!continuation || !continuation->succeeded_nodes) return;
+    std::vector<std::string>& nodes = *continuation->succeeded_nodes;
+    std::set<std::string> done(nodes.begin(), nodes.end());
+    const Value& first = get_or_null(fields(program), "decisionNode");
+    std::optional<std::string> node;
+    if (py_truthy(first)) node = as_text(first);
+    while (node && !node->empty() && !done.count(*node)) {
+        nodes.push_back(*node);
+        done.insert(*node);
+        const Nullable<std::string>* parent = continuation->decision_parents->find(*node);
+        node = parent ? parent->value : std::nullopt;
     }
-    if (!changed) return;
-    put(continuation, "succeededNodes", array(std::move(nodes)));
-    f.generation = set_key(f.generation, "continuation", object(std::move(continuation)));
 }
 
 bool DfsSearch::restore_alternatives(Frame& f) {
-    const Value* continuation_value = get(fields(f.generation), "continuation");
-    if (!continuation_value || is_null(*continuation_value) || !get(fields(*continuation_value), "alternatives"))
+    Continuation* continuation = f.generation.continuation();
+    if (!continuation || !continuation->alternatives || !pkc::restore_alternatives(*continuation, live_programs(f)))
         return false;
-    Value continuation = *continuation_value;
-    if (!pkc::restore_alternatives(continuation, live_programs_of(f))) return false;
-    continuation = set_key(continuation, "exhausted", boolean(false));
-    f.generation = set_key(f.generation, "continuation", continuation);
+    continuation->exhausted = false;
     f.source_exhausted = false;
     return true;
 }
 
 void DfsSearch::retry_deferred_nodes(Frame& f) {
-    const Value* continuation = get(fields(f.generation), "continuation");
-    Value source = continuation ? *continuation : object({});
-    if (restore_unknown_nodes(source, options_.retry_unknown)) {
-        f.generation = set_key(f.generation, "continuation", source);
-        f.source_exhausted = false;
-    }
+    if (restore_unknown_nodes(f.generation.continuation(), options_.retry_unknown)) f.source_exhausted = false;
 }
 
-// ---- services for the Python generation and its decision checks
+// ---- decision checks
 
-std::pair<bool, Value> DfsSearch::eligible(const Value& program) {
-    auto shared = std::make_shared<Value>(program);
-    const bool ok = eligible(shared, current());
-    return {ok, *shared};
-}
-
-Value DfsSearch::priority(const Value& program, const std::string& identity) {
-    return priority(program, current(), identity);
-}
-
-Value DfsSearch::node_frame() {
-    Frame& f = current();
-    if (state_.best.value)
-        state_.transfer_time_bounds = hooks_.transfer_bounds(
-            state_.transfer_time_bounds ? *state_.transfer_time_bounds : object({}));
-    Value context_id;
-    NodeSearch search = node_search(f, &context_id);
-    const NodeFrame& n = search.frame;
-    Array texts_anchors, texts_types, excluded;
-    for (const auto& a : n.anchors) texts_anchors.push_back(text(a));
-    for (const auto& t : n.types) texts_types.push_back(text(t));
-    for (const auto& c : n.excluded_runs) excluded.push_back(text(c));
-    return object({{"scene", n.scene},
-                   {"frameId", n.frame_id},
-                   {"goal", f.goal},
-                   {"cursor", stage(f).cursor},
-                   {"comparisonContextId", n.comparison_context_id},
-                   {"comparisonContextSet", boolean(n.comparison_context_set)},
-                   {"tickPeers", n.tick_peers},
-                   {"tickPeerRevision", integer_value(n.tick_peer_revision)},
-                   {"incumbent", n.incumbent},
-                   {"hardLatches", n.hard_latches},
-                   {"transfers", n.transfers},
-                   {"latchRevision", integer_value(n.latch_revision)},
-                   {"minimumRunPruning", boolean(n.minimum_run_pruning)},
-                   {"guidePlan", n.guide_plan},
-                   {"motion", n.motion},
-                   {"turnaroundMargin", n.turnaround_margin},
-                   {"anchors", array(std::move(texts_anchors))},
-                   {"taskBlock", text(n.task_block)},
-                   {"caps", object(n.request)},
-                   {"maxInputs", integer_value(n.max_inputs)},
-                   {"types", array(std::move(texts_types))},
-                   {"excludedRuns", array(std::move(excluded))}});
-}
-
-void DfsSearch::apply_effects(const Value& effects_value, const Value& context_id) {
-    const Object& e = fields(effects_value);
-    NodeEffects effects;
-    effects.time_bound_exclusions = items(at(e, "timeBoundExclusions"));
-    effects.comparison_decisions = items(at(e, "comparisonDecisions"));
-    effects.minimum_run_exclusions = items(at(e, "minimumRunExclusions"));
-    effects.assessments = as_int(at(e, "assessments"));
-    effects.cache_hits = as_int(at(e, "cacheHits"));
-    effects.peer_checks = as_int(at(e, "peerChecks"));
-    effects.viability_checked = as_int(at(e, "viabilityChecked"));
-    effects.viability_excluded = as_int(at(e, "viabilityExcluded"));
-    effects.comparison_context_used = py_truthy(at(e, "comparisonContextUsed"));
-    apply(effects, current(), context_id);
-}
-
-std::pair<std::int64_t, std::int64_t> DfsSearch::decision_span(const Value& program) {
-    Frame& f = current();
-    return {pair_of(program_from_value(program), f), span_info(f).second};
-}
-
-Value DfsSearch::service(const Value& program, std::int64_t span) { return object(node_service(program, span, current())); }
-
-void DfsSearch::observe(const Value& program, std::int64_t span, std::int64_t start, const Value& model,
-                        const std::string& status, const Num& elapsed, const Value& metrics) {
-    pkc::observe(state_.observations, options_.guide_plan, program, span, start, model, status, elapsed, "node",
-                 metrics, query_service(node_service(program, span, current())));
+Value DfsSearch::evaluate_node(Value& program, OrderedMap<Value>& nodes, Frame& f) {
+    // evaluate_node natively (search/dfs.hpp), recording into the frame's continuation and this search's state.
+    stage(f);  // the check's adapter
+    const std::int64_t span = pair_of(program_from_value(program), f), start = span_info(f).second;
+    const std::string identity = as_text(at(fields(program), "decisionNode"));
+    Object entry;
+    NodeHooks h;
+    h.prepare = [&](const Value&) { return hooks_.prepare(program); };
+    h.begin = [&] {
+        entry = {{"status", text("suspended")},
+                 {"parent", get_or_null(fields(program), "decisionParent")},
+                 {"repairState", get_or_null(fields(program), "repairState")}};
+        nodes[identity] = object(entry);
+        begin_repair(program, array({object(entry)}));
+    };
+    h.begin_solve = [&] { return hooks_.begin_solve(f.id, program); };
+    h.assign = [&](const Value& repair) { program = set_key(program, "repairState", repair); };
+    if (hooks_.progress)
+        h.progress = [&](const Value& repair) {
+            program = set_key(program, "repairState", repair);
+            put(entry, "repairState", repair);
+            nodes[identity] = object(entry);
+            repair_progress();
+        };
+    h.settle = [&](const Value& repair) {
+        program = set_key(program, "repairState", repair);
+        put(entry, "repairState", repair);
+        nodes[identity] = object(entry);
+    };
+    h.observe = [&](const Value& model, const std::string& status, double elapsed, const Value& metrics) {
+        pkc::observe(state_.observations, options_.guide_plan, program, span, start, model, status, Num{elapsed, false},
+                     "node", metrics, query_service(node_service(program, span, f)));
+    };
+    h.replay = [&](const Value& positions, const Value& model) { replay_ancestors(program, positions, model); };
+    h.store = [&](const std::string& key, const Value& record, const Value& node_result, const Value& recovery) {
+        if (!is_null(recovery)) f.recovery_failure = recovery;
+        nodes[key] = record;
+        NodeResult node;
+        for (const auto& [k, v] : fields(node_result)) {
+            if (k == "parent") {
+                if (!is_null(v)) node.parent.value = as_text(v);
+            } else if (k == "depth") {
+                node.depth = as_int(v);
+            } else if (k == "kind") {
+                node.kind = as_text(v);
+            } else {
+                node.annotations.emplace_back(k, v);
+            }
+        }
+        state_.node_results[key] = std::move(node);
+        publish();
+    };
+    h.solve_route = [&](const Value& p, const std::function<void(const Value&)>& progress) {
+        return hooks_.solve_route(f.id, p, progress);
+    };
+    NodeOptions o;
+    const Value* saved = nodes.find(identity);
+    o.saved = saved ? *saved : Value{nullptr};
+    o.guide_plan = options_.guide_plan;
+    o.span = span;
+    o.solve_interval = as_int(at(fields(options_.anchor_policy), "solveEveryDecisionLevels"));
+    o.numerical = options_.numerical_backend;
+    o.frame = integer_value(f.id);
+    o.candidate_seconds = options_.candidate_seconds;
+    o.retry_unresolved = options_.retry_unknown;
+    // solve_route covers the routes the native node solve leaves to Python.
+    const NodeEvaluation evaluated = *pkc::evaluate_node(options_.scene, program, h, o);
+    return evaluated.input_program ? set_key(evaluated.result, "program", program) : evaluated.result;
 }
 
 void DfsSearch::replay_ancestors(const Value& program, const Value& positions, const Value& model) {
@@ -1053,24 +1059,6 @@ void DfsSearch::replay_ancestors(const Value& program, const Value& positions, c
         pkc::replay(state_.observations, options_.guide_plan, as_text(ancestor), span, point, model);
         ancestor = parent;
     }
-}
-
-void DfsSearch::store_node(const std::string& key, const Value& node_result, const Value& recovery) {
-    if (!is_null(recovery)) current().recovery_failure = recovery;
-    NodeResult node;
-    for (const auto& [k, v] : fields(node_result)) {
-        if (k == "parent") {
-            if (!is_null(v)) node.parent.value = as_text(v);
-        } else if (k == "depth") {
-            node.depth = as_int(v);
-        } else if (k == "kind") {
-            node.kind = as_text(v);
-        } else {
-            node.annotations.emplace_back(k, v);
-        }
-    }
-    state_.node_results[key] = std::move(node);
-    publish();
 }
 
 // ---- finalization and the main loop
@@ -1474,14 +1462,9 @@ std::string DfsSearch::run() {
                     } else if (lands_in(p, goal_blocks(f->goal))) {
                         f->ready.push_back(std::make_shared<Value>(p));
                     } else {
-                        const Value* continuation = get(fields(f->generation), "continuation");
-                        if (continuation && !is_null(*continuation)) {
-                            Object c = fields(*continuation);
-                            Array pending = items(at(c, "pending"));
-                            pending.push_back(p);
-                            put(c, "pending", array(std::move(pending)));
-                            put(c, "exhausted", boolean(false));
-                            f->generation = set_key(f->generation, "continuation", object(std::move(c)));
+                        if (Continuation* continuation = f->generation.continuation()) {
+                            continuation->pending.push_back(p);
+                            continuation->exhausted = false;
                             f->source_exhausted = false;
                         }
                     }

@@ -830,6 +830,7 @@ PYBIND11_MODULE(_pkc_native, m) {
             o.motion = value("motion");
             o.guide_plan = value("guidePlan");
             o.anchor_policy = value("anchorPolicy");
+            o.policy_settings = value("policySettings");
             o.domain_id = value("domainId");
             for (py::handle root : options["roots"]) o.roots.push_back(convert(root));
             o.task_block = options["taskBlock"].cast<std::string>();
@@ -891,14 +892,31 @@ PYBIND11_MODULE(_pkc_native, m) {
             h.transfer_bounds = [f = hook("transfer_bounds")](const pkc::Value& saved) {
                 return python_hook([&] { return convert(f(to_python(saved))); });
             };
-            h.open_generation = [f = hook("open_generation")](std::int64_t frame, const pkc::Value& scene,
-                                                              const pkc::Value& settings, const pkc::Value& parents,
-                                                              const pkc::Value& report) {
-                python_hook([&] { f(frame, to_python(scene), to_python(settings), to_python(parents), to_python(report)); });
+            h.prepare = [f = hook("prepare")](const pkc::Value& program) {
+                return python_hook([&] { return convert(f(to_python(program))); });
             };
-            h.next_program = [f = hook("next_program")] { return python_hook([&] { return convert(f()); }); };
-            h.generation = [f = hook("generation")] { return python_hook([&] { return convert(f()); }); };
-            h.close_generation = [f = hook("close_generation")] { return python_hook([&] { return convert(f()); }); };
+            h.begin_solve = [f = hook("begin_solve"), compiler = hook("compiler"), solve = hook("solve"),
+                             cancel_event = hook("cancel_event"),
+                             python_executable = hook("python_executable")](std::int64_t frame, const pkc::Value& program) {
+                return python_hook([&] {
+                    py::object services = f(frame, to_python(program));
+                    pkc::NodeSolve out;
+                    out.hooks = evaluate_hooks(compiler, solve, cancel_event, python_executable, services);
+                    out.seconds = services["seconds"].cast<double>();
+                    out.objective = convert(services["objective"]);
+                    out.adapter_identity = convert(services["adapter_identity"]);
+                    return out;
+                });
+            };
+            h.solve_route = [f = hook("solve_route")](std::int64_t frame, const pkc::Value& program,
+                                                      const std::function<void(const pkc::Value&)>& progress) {
+                return python_hook([&] {
+                    py::object callback = py::none();
+                    if (progress)
+                        callback = py::cpp_function([progress](py::handle repair) { progress(convert(repair)); });
+                    return convert(f(frame, to_python(program), callback));
+                });
+            };
             return std::make_shared<pkc::DfsSearch>(pkc::dfs_state_from_value(convert(state)), std::move(o), std::move(h),
                                                     std::move(gate), std::move(anchors));
         }))
@@ -911,41 +929,6 @@ PYBIND11_MODULE(_pkc_native, m) {
             out["excluded"] = search.viability_excluded();
             return out;
         })
-        .def("eligible", [](pkc::DfsSearch& search, py::handle program) {
-            const auto [ok, after] = search.eligible(convert(program));
-            return py::make_tuple(ok, to_python(after));
-        }, "dfs eligible(program, f) on the generating frame: (verdict, the program after run_bound's notes)")
-        .def("priority", [](pkc::DfsSearch& search, py::handle program, const std::string& identity) {
-            return to_python(search.priority(convert(program), identity));
-        })
-        .def("live_programs", [](pkc::DfsSearch& search) {
-            py::list out;
-            for (const auto& p : search.live_programs()) out.append(to_python(p));
-            return out;
-        })
-        .def("node_frame", [](pkc::DfsSearch& search) { return to_python(search.node_frame()); })
-        .def("apply_effects", [](pkc::DfsSearch& search, py::handle effects, py::handle context_id) {
-            search.apply_effects(convert(effects), convert(context_id));
-        })
-        .def("decision_span", [](pkc::DfsSearch& search, py::handle program) {
-            return search.decision_span(convert(program));
-        })
-        .def("observe", [](pkc::DfsSearch& search, py::handle program, std::int64_t span, std::int64_t start,
-                           py::handle model, const std::string& status, py::handle elapsed, py::handle metrics) {
-            search.observe(convert(program), span, start, convert(model), status,
-                           pkc::Num{elapsed.cast<double>(), py::isinstance<py::int_>(elapsed)}, convert(metrics));
-        })
-        .def("replay_ancestors", [](pkc::DfsSearch& search, py::handle program, py::handle positions, py::handle model) {
-            search.replay_ancestors(convert(program), convert(positions), convert(model));
-        })
-        .def("store_node", [](pkc::DfsSearch& search, const std::string& key, py::handle node_result, py::handle recovery) {
-            search.store_node(key, convert(node_result), convert(recovery));
-        })
-        .def("publish", &pkc::DfsSearch::publish)
-        .def("begin_repair", [](pkc::DfsSearch& search, py::handle program, py::handle extra) {
-            search.begin_repair(convert(program), convert(extra));
-        })
-        .def("repair_progress", &pkc::DfsSearch::repair_progress)
         .def("score_progress", [](pkc::DfsSearch& search, py::handle repair) { search.score_progress(convert(repair)); });
     py::class_<pkc::InteractionGate, std::shared_ptr<pkc::InteractionGate>>(m, "InteractionGate")
         .def(py::init([](py::handle scene) { return std::make_shared<pkc::InteractionGate>(convert(scene)); }))

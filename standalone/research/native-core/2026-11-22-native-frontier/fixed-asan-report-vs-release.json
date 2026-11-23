@@ -1,0 +1,26 @@
+[
+ [
+  ".provenance.command[0]",
+  "tools.profiling.run != /Users/arvindmurty/CS/pkc-wt/standalone-cpp-benchmark/standalone/tools/profiling/run.py"
+ ],
+ [
+  ".provenance.command[4]",
+  "/private/var/tmp/standalone-cpp-frontier-20261122/fs1-fixed/run != /private/var/tmp/standalone-cpp-frontier-20261122/asan-fixed"
+ ],
+ [
+  ".provenance.command[6]",
+  "900 != 3600"
+ ],
+ [
+  ".provenance.dependencies.numpy",
+  "2.5.4 != 2.0.1"
+ ],
+ [
+  ".provenance.dependencies.scipy",
+  "1.18.1 != 1.16.2"
+ ],
+ [
+  ".provenance.pythonExecutable",
+  "/Users/arvindmurty/CS/pkc-wt/standalone-cpp-benchmark/.venv-guidance/bin/python != /private/tmp/claude-501/-Users-arvindmurty-CS-ParkourCalculatorMod-standalone/f72b07cb-fc7a-4ce8-b89d-345ede25af02/scratchpad/Python-adhoc"
+ ]
+]

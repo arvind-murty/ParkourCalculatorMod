@@ -4,6 +4,7 @@
 #include <algorithm>
 
 #include "pkc/canonical.hpp"
+#include "pkc/search/frontier.hpp"
 #include "../schema.hpp"
 #include "../value_ops.hpp"
 
@@ -97,17 +98,11 @@ Value outcome(const Value& result_value, const std::string& model, const Value& 
                    {"termination", get_or_null(result, "termination")}, {"rejectedAlternatives", array(std::move(alternatives))}});
 }
 
-bool restore_unknown_nodes(Value& source, bool retry_unknown) {
-    if (!retry_unknown || is_null(source)) return false;
-    Object state = fields(source);
-    const Value* deferred = get(state, "deferredNodes");
-    if (!deferred || !py_truthy(*deferred)) return false;
-    Array pending = items(at(state, "pending"));
-    for (const Value& node : items(*deferred)) pending.push_back(node);
-    put(state, "pending", array(std::move(pending)));
-    put(state, "deferredNodes", array({}));
-    put(state, "exhausted", boolean(false));
-    source = object(std::move(state));
+bool restore_unknown_nodes(Continuation* source, bool retry_unknown) {
+    if (!retry_unknown || !source || !source->deferred_nodes || source->deferred_nodes->empty()) return false;
+    source->pending.insert(source->pending.end(), source->deferred_nodes->begin(), source->deferred_nodes->end());
+    source->deferred_nodes->clear();
+    source->exhausted = false;
     return true;
 }
 

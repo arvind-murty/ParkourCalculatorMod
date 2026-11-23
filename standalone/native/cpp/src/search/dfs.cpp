@@ -206,15 +206,24 @@ std::optional<NodeEvaluation> evaluate_node(const Value& scene, const Value& pro
     const double t = monotonic();
     const Value prepared = hooks.prepare(object(program));
     const double prepared_at = monotonic();
+    bool uncovered = false;
     if (!is_null(prepared)) {
         const Object& route = fields(at(fields(prepared), "route"));
         for (const char* key : {"passages", "hitEvents", "ladderEvents"})
-            if (py_truthy(get_or_null(route, key))) return std::nullopt;
+            uncovered = uncovered || py_truthy(get_or_null(route, key));
     }
+    if (uncovered && !hooks.solve_route) return std::nullopt;
     hooks.begin();
-    NodeSolve solve = hooks.begin_solve();
+    std::function<void(const Value&)> on_progress;
+    if (hooks.progress)
+        on_progress = [&](const Value& repair) {
+            put(program, "repairState", repair);
+            hooks.progress(repair);
+        };
     Value result_value;
-    if (is_null(prepared)) {
+    if (uncovered) {
+        result_value = hooks.solve_route(object(program), on_progress);
+    } else if (NodeSolve solve = hooks.begin_solve(); is_null(prepared)) {
         result_value = object({{"status", text("unknown")}, {"termination", text("vertical_schedule")}, {"best", kNull},
                                {"attempts", array({})}, {"contactAttempts", array({})},
                                {"work", object({{"solverCalls", integer_value(0)}})},
@@ -226,11 +235,7 @@ std::optional<NodeEvaluation> evaluate_node(const Value& scene, const Value& pro
             put(route, "guideObjective", solve.objective);
         }
         EvaluateHooks evaluate = solve.hooks;
-        if (hooks.progress)
-            evaluate.on_progress = [&](const Value& repair) {
-                put(program, "repairState", repair);
-                hooks.progress(repair);
-            };
+        evaluate.on_progress = on_progress;
         EvaluateOptions eo;
         eo.seconds = solve.seconds;
         eo.candidate_seconds = options.candidate_seconds;

@@ -1,8 +1,8 @@
 // The anchor DFS loop: search/dfs.py search_goals from its first publish through the main loop and finalization,
-// owning the typed search state (search/dfs_state.hpp). Python keeps the preamble (roots, context digest, resume
-// checks, the gate) and the result dict, and serves what is not ported yet through DfsHooks: the adapter's stage
-// views, discovery and advance, anchor-leg and finish solves, the movement frontier (one generation at a time,
-// calling back into this search), progress saving and the work budget.
+// owning the typed search state (search/dfs_state.hpp) and running each frame's movement frontier
+// (search/frontier.hpp) with its decision checks. Python keeps the preamble (roots, context digest, resume checks, the
+// gate) and the result dict, and serves what is not ported yet through DfsHooks: the adapter's stage views, discovery
+// and advance, gate preparations, anchor-leg, finish and node solve services, progress saving and the work budget.
 #pragma once
 
 #include <cstdint>
@@ -17,6 +17,7 @@
 
 #include "pkc/reachability/service.hpp"
 #include "pkc/search/anchors/policy.hpp"
+#include "pkc/search/dfs.hpp"
 #include "pkc/search/dfs_state.hpp"
 #include "pkc/search/node.hpp"
 #include "pkc/value.hpp"
@@ -56,19 +57,17 @@ struct DfsHooks {
     std::function<Value(std::int64_t frame, const Value& program, const Value& options)> evaluate;
     // bounds/flight.transfer_bounds(scene, guide_plan, motion, gate, saved=..., ...): the saved records after it.
     std::function<Value(const Value& saved)> transfer_bounds;
-    // The frame's movement source (iter_movement_programs), open across one generate(f): open(frame, target scene,
-    // settings, parents, report); next() is the next program or null once it stops; generation() is its live report;
-    // close() closes it and returns the report.
-    std::function<void(std::int64_t frame, const Value& scene, const Value& settings, const Value& parents,
-                       const Value& report)>
-        open_generation;
-    std::function<Value()> next_program;
-    std::function<Value()> generation;
-    std::function<Value()> close_generation;
+    // A decision check's services: gate.prepare(program, scene=scene); solve_services on the frame's node view
+    // (for_node(program)); the Python node solve for a route the native one leaves there (see NodeHooks).
+    std::function<Value(const Value& program)> prepare;
+    std::function<NodeSolve(std::int64_t frame, const Value& program)> begin_solve;
+    std::function<Value(std::int64_t frame, const Value& program, const std::function<void(const Value&)>& progress)>
+        solve_route;
 };
 
 struct DfsOptions {
     Value scene, cfg, motion, guide_plan, anchor_policy;  // anchor_policy: the adapter's
+    Value policy_settings;         // anchors.policy.semantic_settings(anchor_policy)
     Value domain_id;               // adapter.data['domainId']
     std::vector<Value> roots;      // the first frame's parents
     std::string task_block;
@@ -93,22 +92,6 @@ public:
     Value state() const;    // the state as published
     std::int64_t viability_checked() const { return viability_checked_; }
     std::int64_t viability_excluded() const { return viability_excluded_; }
-
-    // Served to the Python generation (the frame being generated) and to its decision checks.
-    std::pair<bool, Value> eligible(const Value& program);  // the verdict and the program run_bound annotated
-    Value priority(const Value& program, const std::string& identity);
-    std::vector<Value> live_programs();
-    Value node_frame();  // the dict search/node.hpp's NodeSearch binding takes, and its comparisonContextId
-    void apply_effects(const Value& effects, const Value& context_id);
-    std::pair<std::int64_t, std::int64_t> decision_span(const Value& program);  // (pair_of, span start)
-    Value service(const Value& program, std::int64_t span);  // turns.record's service for a decision check
-    void observe(const Value& program, std::int64_t span, std::int64_t start, const Value& model,
-                 const std::string& status, const Num& elapsed, const Value& metrics);
-    void replay_ancestors(const Value& program, const Value& positions, const Value& model);
-    void store_node(const std::string& key, const Value& node_result, const Value& recovery);
-    void publish();
-    void begin_repair(const Value& program, const Value& extra_targets);
-    void repair_progress();
     void score_progress(const Value& repair);  // an anchor-leg or finish solve's progress
 
 private:
@@ -157,9 +140,14 @@ private:
     void succeed(Frame& f, const Value& program);
     bool restore_alternatives(Frame& f);
     void retry_deferred_nodes(Frame& f);
+    NodeSearch node_search(Frame& f, Value* context_id, const Value& policy_context = Value{nullptr});
+    Value evaluate_node(Value& program, OrderedMap<Value>& nodes, Frame& f);
     Object node_service(const Value& program, std::int64_t span, Frame& f);
-    NodeSearch node_search(Frame& f, Value* context_id);
-    std::vector<Value> live_programs_of(Frame& f);
+    void replay_ancestors(const Value& program, const Value& positions, const Value& model);
+    void publish();
+    void begin_repair(const Value& program, const Value& extra_targets);
+    void repair_progress();
+    std::vector<Value> live_programs(Frame& f);
     Value latches_value() const;
     void apply(const NodeEffects& effects, Frame& f, const Value& context_id);
     Frame& current();
@@ -173,8 +161,7 @@ private:
     std::map<std::int64_t, Stage> stages_;
     std::set<std::pair<std::int64_t, std::string>> excluded_runs_;
     std::int64_t viability_checked_ = 0, viability_excluded_ = 0;
-    Frame* generating_ = nullptr;  // the frame whose generation Python holds open
-    Frame* scoring_ = nullptr;     // the frame whose anchor-leg or finish solve is running
+    Frame* scoring_ = nullptr;  // the frame whose anchor-leg or finish solve is running
 };
 
 }  // namespace pkc

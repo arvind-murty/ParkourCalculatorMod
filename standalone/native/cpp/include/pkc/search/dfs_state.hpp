@@ -1,5 +1,5 @@
-// The anchor DFS's search state: search/dfs.py search_goals' `state`, typed where the loop owns it. Subtrees other
-// units own (frontier generations, programs, solver results and witnesses, adapter goals and cursors) stay Values.
+// The anchor DFS's search state: search/dfs.py search_goals' `state`, typed where the loop or its frontier owns it.
+// Subtrees other units own (programs, solver results and witnesses, adapter goals and cursors) stay Values.
 // Python aliases some objects across the state (a closed frame sits in `frames` and `suspended`, a final record in a
 // frame's records and `finalAttempts`, a record's child in the incumbent), and mutates them through either path;
 // shared_ptr members keep that aliasing within a session. Decoding, like a JSON round trip, aliases nothing.
@@ -13,6 +13,7 @@
 
 #include "pkc/ordered_map.hpp"
 #include "pkc/program.hpp"
+#include "pkc/search/frontier.hpp"
 #include "pkc/value.hpp"
 
 namespace pkc {
@@ -67,7 +68,7 @@ struct Frame {  // make_frame
     Nullable<FrameParent> parent;
     Value goal;
     std::string phase;
-    Value generation;  // the frontier's report and continuation
+    Generation generation;
     std::vector<SharedValue> ready;
     std::vector<std::shared_ptr<Record>> records;
     Nullable<InFlight> in_flight;
@@ -107,7 +108,7 @@ struct Window {  // a frame's saved siblings when it opens a child
     std::vector<Record> candidates;  // copies
     std::vector<std::string> retained, deferred;
     std::int64_t scored = 0, unknown = 0, heuristic_drops = 0;
-    Value generation;
+    Generation generation;
     Retention retention;
 };
 

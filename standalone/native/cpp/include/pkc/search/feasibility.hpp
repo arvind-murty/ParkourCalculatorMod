@@ -9,6 +9,8 @@
 
 namespace pkc {
 
+struct Continuation;  // search/frontier.hpp
+
 std::string node_identity(const Program& program, const Value& context);  // without its repairState
 bool meaningful_choice(const MovementChoice& choice);
 Value outcome(const Value& result, const std::string& model, const Value& policy);
@@ -17,6 +19,6 @@ Value policy_spec(const Value& value, bool first_witness);
 bool solve_due(const Value& program, std::int64_t interval);
 bool unresolved_only(const Value& repair);
 // restore_unknown_nodes(source, retry_unknown) on a generation's continuation (null when it has none).
-bool restore_unknown_nodes(Value& source, bool retry_unknown);
+bool restore_unknown_nodes(Continuation* source, bool retry_unknown);
 
 }  // namespace pkc

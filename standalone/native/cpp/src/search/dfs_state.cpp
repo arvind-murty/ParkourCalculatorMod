@@ -1,10 +1,20 @@
 #include "pkc/search/dfs_state.hpp"
 
 #include "../codec.hpp"
+#include "../value_ops.hpp"
 
 namespace pkc {
+
+// A generation is {} until its frontier first reports (found by argument-dependent lookup from the codec).
+void decode(const Value& value, Generation& out, const codec::Path& path);
+Value encode(const Generation& generation);
+
 namespace codec {
 
+PKC_RECORD(ExpansionState);
+PKC_RECORD(HeldAlternative);
+PKC_RECORD(Continuation);
+PKC_RECORD(GenerationReport);
 PKC_RECORD(FrameParent);
 PKC_RECORD(InFlight);
 PKC_RECORD(Evaluation);
@@ -32,7 +42,79 @@ PKC_RECORD(Finalization);
 PKC_RECORD(Incumbent);
 PKC_RECORD(DfsState);
 
-// Fields in the order search_goals first writes them.
+// Fields in the order search_goals and persistent_programs first write them.
+
+template <class R, class V>
+void describe(R& e, V& v, ExpansionState*) {
+    v.req("program", e.program);
+    v.req("kind", e.kind);
+    v.req("cursor", e.cursor);
+    v.opt("reached", e.reached);
+    v.opt("landings", e.landings);
+    v.opt("queuedNodes", e.queued_nodes);
+    v.opt("held", e.held);
+    v.opt("choice", e.choice);
+    v.opt("child", e.child);
+    v.opt("fullProgram", e.full_program);
+    v.opt("projected", e.projected);
+    v.opt("proposalChecked", e.proposal_checked);
+}
+
+template <class R, class V>
+void describe(R& h, V& v, HeldAlternative*) {
+    v.req("programs", h.programs);
+    v.req("restored", h.restored);
+    v.req("next", h.next);
+    v.opt("watch", h.watch);
+}
+
+template <class R, class V>
+void describe(R& c, V& v, Continuation*) {
+    v.req("version", c.version);
+    v.req("context", c.context);
+    v.req("pending", c.pending);
+    v.req("ready", c.ready);
+    v.req("expansion", c.expansion);
+    v.req("seen", c.seen);
+    v.req("generated", c.generated);
+    v.req("expanded", c.expanded);
+    v.req("emitted", c.emitted);
+    v.req("screened", c.screened);
+    v.req("policyRejections", c.policy_rejections);
+    v.req("exhausted", c.exhausted);
+    v.req("exclusions", c.exclusions);
+    v.opt("nodes", c.nodes);
+    v.opt("deferredNodes", c.deferred_nodes);
+    v.opt("decisionParents", c.decision_parents);
+    v.opt("alternatives", c.alternatives);
+    v.opt("succeededNodes", c.succeeded_nodes);
+    v.opt("minimumRunCandidates", c.minimum_run_candidates);
+    v.opt("nodeInFlight", c.node_in_flight);
+}
+
+template <class R, class V>
+void describe(R& r, V& v, GenerationReport*) {
+    v.req("termination", r.termination);
+    v.req("expandedPrefixes", r.expanded_prefixes);
+    v.req("totalExpandedPrefixes", r.total_expanded_prefixes);
+    v.req("generated", r.generated);
+    v.req("emittedPrograms", r.emitted_programs);
+    v.req("screenedPrefixes", r.screened_prefixes);
+    v.req("remainingPrefixes", r.remaining_prefixes);
+    v.req("deferredNodes", r.deferred_nodes);
+    v.req("queuedCompletePrograms", r.queued_complete_programs);
+    v.req("queueDrops", r.queue_drops);
+    v.req("partialQueueDrops", r.partial_queue_drops);
+    v.req("completeQueueDrops", r.complete_queue_drops);
+    v.req("policyRejections", r.policy_rejections);
+    v.req("queuePolicy", r.queue_policy);
+    v.req("types", r.types);
+    v.req("explicitProgramPriority", r.explicit_program_priority);
+    v.req("deferredPrefixes", r.deferred_prefixes);
+    v.req("continuation", r.continuation);
+    v.req("minimumTicksProven", r.minimum_ticks_proven);
+}
+
 
 template <class R, class V>
 void describe(R& p, V& v, FrameParent*) {
@@ -340,6 +422,18 @@ void describe(R& s, V& v, DfsState*) {
 }
 
 }  // namespace codec
+
+void decode(const Value& value, Generation& out, const codec::Path& path) {
+    if (codec::as<std::shared_ptr<const Object>>(value, path, "object")->empty()) {
+        out.report.reset();
+    } else {
+        codec::decode(value, out.report.emplace(), path);
+    }
+}
+
+Value encode(const Generation& generation) {
+    return generation.report ? codec::encode(*generation.report) : object({});
+}
 
 DfsState dfs_state_from_value(const Value& value) { return codec::from_value<DfsState>(value, "dfs"); }
 

@@ -688,3 +688,33 @@ The frontier and checkpoint ports remove both.
   report equal to the release build's except provenance ([summary](2026-11-22-native-loop/asan-summary.txt),
   [report](2026-11-22-native-loop/fixed-asan-report-vs-release.json)). The milestone test list passes in both modes
   ([suites](2026-11-22-native-loop/suites-summary.txt)).
+
+## The movement frontier, 2026-11-22
+
+Source: `94f29ba1` plus `search/frontier.hpp` (`Frontier`: `persistent_programs` on the path native expansion takes,
+over a typed continuation that frames and windows now hold) run by `DfsSearch` with its decision checks
+(`search/dfs.hpp`'s `evaluate_node`, whose new `solve_route` hook sends a route the native node solve leaves to Python
+to the Python node solve). Native mode never takes the frontier's Python proposal path, leaves no decision check to
+Python and resumes no Python proposal in flight (short control, fixed work, milestone tests); that path stays
+Python's. Nothing dispatches to it: with the trial dispatch, every publish still converts the whole state to a new
+Python dict, which the checkpoint port removes.
+
+- With the trial dispatch, every published and result state equals the previous native code's by value in call order
+  (short control 191, fixed work 438) and in 44 of the milestone list's 46 searching tests; the other two stub
+  `iter_movement_programs`, which the native frontier does not call. With every decision check's route forced onto
+  the Python node solve, the short control's 191 states and the same 44 tests' states equal the Python fallback's
+  ([states](2026-11-22-native-frontier/state-parity.txt)).
+- Reports equal the previous code's except provenance, and transitions match Python
+  ([fixed work](2026-11-22-native-frontier/fixed-report-vs-previous.json),
+  [short](2026-11-22-native-frontier/short-report-vs-previous.json),
+  [fixed parity](2026-11-22-native-frontier/fixed-parity-python-native.json),
+  [short parity](2026-11-22-native-frontier/short-parity-python-native.json)).
+- Search seconds, alternating one at a time: fixed work 63.6 and 67.4 against 24.3 and 18.5 before; the short control
+  5.29 and 5.42 against 1.69 and 1.69 ([times](2026-11-22-native-frontier/search-seconds.txt)).
+- The search, checkpoint and native test modules run clean under AddressSanitizer with the trial dispatch, and fixed
+  work runs clean with a report equal to the release build's except provenance
+  ([summary](2026-11-22-native-frontier/asan-summary.txt),
+  [report](2026-11-22-native-frontier/fixed-asan-report-vs-release.json)).
+- The milestone test list passes in both modes ([suites](2026-11-22-native-frontier/suites-summary.txt)). The native
+  core's published-state round trip now takes its states from a search with the real frontier: the stubbed one it
+  used published generations `persistent_programs` never writes, which the typed generation rejects.

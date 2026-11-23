@@ -1,6 +1,7 @@
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import random
 import re
@@ -167,12 +168,25 @@ class ProgramModelTests(unittest.TestCase):
                     self.native.round_trip_program(broken)
 
     def test_published_dfs_states_round_trip(self):
-        from tests.unit.search import test_anchor_dfs
+        from parkour_solver.bridge.python_compiler import PythonCompiler
+        from parkour_solver.search.domain import InitialJumpDomain
+        from parkour_solver.search.engine import find_checkpoint_route
+        from tests.support.checkpoint_guidance import flat_scene
         states = []
-        # The checkpoint's JSON form is the contract: Python-mode states hold tuples in opaque data.
-        test_anchor_dfs.AnchorDFSTests().run_tree(finishes=2, on_progress=lambda state: states.append(
-            json.loads(json.dumps(state['dfs']))))
-        self.assertTrue(any(s['windows'] for s in states) and any('finalization' in s for s in states))
+        def progress(state):
+            # The checkpoint's JSON form is the contract: Python-mode states hold tuples in opaque data.
+            states.append(json.loads(json.dumps(state['dfs'])))
+        progress.begin_repair = lambda state, program, extra_targets=(): progress(state)
+        progress.repair_progress = progress
+        # The real movement frontier: a stubbed one publishes generations persistent_programs never writes.
+        scene = flat_scene()
+        scene['movementSearch'].update(maxInputs=28, maxPrefixes=64)
+        with PythonCompiler() as compiler:
+            find_checkpoint_route(scene, compiler, anchor_search={}, seconds=8, max_solver_calls=20,
+                                  program_filter=InitialJumpDomain([0], max_inputs=28),
+                                  python_executable=os.environ['PKC_IPOPT_PYTHON'], on_progress=progress)
+        self.assertTrue(any('finalization' in s for s in states) and
+                        any(f['generation'] for s in states for f in s['frames']))
         for state in states:
             self.assertEqual(canonical(self.native.round_trip_dfs_state(state)), canonical(state))
 

@@ -46,6 +46,9 @@ struct NodeHooks {
     // publish()
     std::function<void(const std::string& identity, const Value& record, const Value& node_result, const Value& recovery)>
         store;
+    // The node solve in Python (evaluate_program with the node view) for a route the native one leaves there, with the
+    // check's progress callback (empty without one); unset, evaluate_node returns nullopt for such a route.
+    std::function<Value(const Value& program, const std::function<void(const Value& repair)>& progress)> solve_route;
 };
 
 struct NodeOptions {
@@ -63,9 +66,9 @@ struct NodeEvaluation {
     bool input_program;  // `program` is the caller's program, with every assign applied
 };
 
-// evaluate_node(program, nodes, unused, f) for a program whose route the native node solve covers; nullopt, before the
-// check begins (only a saved repair state may have been assigned), when the prepared route has passages, wall hits or
-// ladder events.
+// evaluate_node(program, nodes, unused, f). A prepared route with passages, wall hits or ladder events is solved by
+// `hooks.solve_route`, or without it gives nullopt before the check begins (only a saved repair state may have been
+// assigned).
 std::optional<NodeEvaluation> evaluate_node(const Value& scene, const Value& program, const NodeHooks& hooks,
                                             const NodeOptions& options);
 

@@ -1,0 +1,14 @@
+[
+ [
+  ".provenance.command[4]",
+  "/private/var/tmp/standalone-cpp-loop-20261122/st1-fixed-native-base/run != /private/var/tmp/standalone-cpp-frontier-20261122/fs1-fixed/run"
+ ],
+ [
+  ".provenance.sourceHashes.parkour_solver/search/dfs.py",
+  "2c5c8eacb8531916b26ff279f5f3acc8e8b8ba47ddb546c14f593cd9728e96a4 != b2005504551aacff6266963c28c35ddada66dcf578e94ff95022a48c063e7d07"
+ ],
+ [
+  ".provenance.sourceRevision",
+  "d60bb7f3d91f010d98e8177021002f0b1290b733 != 94f29ba1b3d4cf3b2dace04d60240797346ecd54"
+ ]
+]
