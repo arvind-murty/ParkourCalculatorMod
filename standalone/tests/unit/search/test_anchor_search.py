@@ -756,7 +756,7 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
         from parkour_solver.bridge.python_compiler import PythonCompiler
         from parkour_solver.scene.normalize import prepare_scene
         from parkour_solver.validation.witness import replay_witness
-        _, result, _ = self.search()
+        _, result, _ = self.search(post_alarm='ipopt')
         work = result['work']
         self.assertEqual(work['workerLaunches'], work['confirmationIpoptCalls'])
         self.assertGreater(work['conicCandidates'], 0)
@@ -768,7 +768,7 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
         from parkour_solver.bridge.python_compiler import PythonCompiler
         from parkour_solver.scene.normalize import prepare_scene
         from parkour_solver.validation.witness import replay_witness
-        scene, result, _ = self.search(post_alarm='pipeline')
+        scene, result, _ = self.search()
         work = result['work']
         self.assertGreater(work['confirmations'], 0)
         self.assertGreater(work['confirmationClarabelSolves'], 0)
@@ -778,7 +778,7 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
             self.assertTrue(replay_witness(prepare_scene(result['effectiveRequest']), result['best'], compiler)['passed'])
         # The answer to alarms is part of the run's identity: a run never resumes under the other one.
         with self.assertRaises(ValueError):
-            self.search(resume_state=result['searchState'])
+            self.search(resume_state=result['searchState'], post_alarm='ipopt')
         with self.assertRaises(ValueError):
             self.search(post_alarm='race')
 

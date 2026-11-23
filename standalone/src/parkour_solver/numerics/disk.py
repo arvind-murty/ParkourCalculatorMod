@@ -147,12 +147,12 @@ class RelaxedDispatch:
     rejects is infeasible. `solve` returns
     the relaxed point with its alarm ticks; `confirmed` also re-solves an
     optimization request whose relaxed optimum leaves more than ALARM_FRACTION
-    of a jump tick's acceleration unused (alarm_ticks): with IPOPT, or with
-    `post_alarm='pipeline'` through numerics.post_alarm (Clarabel only). The repair
+    of a jump tick's acceleration unused (alarm_ticks): through numerics.post_alarm
+    (Clarabel only), or with `post_alarm='ipopt'` with IPOPT. The repair
     loop solves with `solve` and confirms its kept candidates once, at its end
     (search/repair.py).
     """
-    def __init__(self, *, gate, post_alarm='ipopt'):
+    def __init__(self, *, gate, post_alarm='pipeline'):
         if post_alarm not in ('ipopt', 'pipeline'):
             raise ValueError('post_alarm must be ipopt or pipeline')
         self.gate = gate

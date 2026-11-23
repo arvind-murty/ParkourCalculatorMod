@@ -60,7 +60,8 @@ def search_event_routes(request, compiler, *, task_goal=None, discovery=None, an
         minimumRuns=options['minimum_run_pruning'],
         domain={k:v for k,v in cfg.items() if k not in
             ('maxPrefixes','maxQueuedPrefixes','maxChoicesPerType','expansionsPerProposal')},
-        # Only a non-default answer to alarms enters the identity, so existing continuations keep theirs.
+        # 'ipopt', the default before 2026-11-23, leaves the identity as it was, so continuations saved then resume
+        # with it and never under the pipeline.
         **({} if options['post_alarm']=='ipopt' else dict(postAlarm=options['post_alarm']))))
     schema=2
     if saved is not None and (saved.get('schema')!=schema or saved.get('kind')!='event_route_search' or saved.get('context')!=context):

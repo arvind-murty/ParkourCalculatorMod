@@ -204,11 +204,11 @@ def find_checkpoint_route(request, compiler, *, seconds=30, candidate_seconds=1,
                           max_candidates=24, python_executable=None, cancel_event=None, initial_programs=None,
                           program_filter=None, resume_state=None, on_progress=None, retry_unknown=False,
                           minimum_run_pruning=True, task_goal=None, discovery_settings=None, anchor_search=None,
-                          post_alarm='ipopt'):
+                          post_alarm='pipeline'):
     """Anchor search for a physical landing task over the scene's automatically discovered contact events.
 
-    `post_alarm` answers alarmed relaxed optima with an IPOPT confirmation ('ipopt') or the post-alarm pipeline
-    ('pipeline', numerics/post_alarm.py)."""
+    `post_alarm` answers alarmed relaxed optima with the post-alarm pipeline ('pipeline', numerics/post_alarm.py, the
+    default since 2026-11-23) or an IPOPT confirmation ('ipopt')."""
     if type(minimum_run_pruning) is not bool:raise ValueError('minimum_run_pruning must be boolean')
     if post_alarm not in ('ipopt', 'pipeline'):raise ValueError('post_alarm must be ipopt or pipeline')
     started = time.monotonic()

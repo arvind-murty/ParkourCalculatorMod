@@ -313,7 +313,7 @@ class ConfirmationTests(unittest.TestCase):
         def counted(request, **kwargs):
             calls.append(kwargs['stop_on_feasible'])
             return original(request, **dict(kwargs, python_executable=RUNTIME))
-        dispatch = disk.RelaxedDispatch(gate=gate or SimpleNamespace(cache={}))
+        dispatch = disk.RelaxedDispatch(gate=gate or SimpleNamespace(cache={}), post_alarm='ipopt')
         with mock.patch.object(full, 'solve', side_effect=counted):
             result = dispatch.confirmed(problem, seconds=5., stop_on_feasible=stop_on_feasible,
                                     on_incumbent=incumbents.append)
@@ -379,7 +379,7 @@ class RejectedConfirmationTests(unittest.TestCase):
         rejected = dict(status='unknown', feasible=False, candidate=None, termination='worker_finished',
                         workerLaunched=True, workerStatus='Infeasible_Problem_Detected')
         with mock.patch('parkour_solver.numerics.solver.solve', return_value=rejected):
-            dispatch = disk.RelaxedDispatch(gate=SimpleNamespace(cache={}))
+            dispatch = disk.RelaxedDispatch(gate=SimpleNamespace(cache={}), post_alarm='ipopt')
             result = dispatch.confirmed(analytic('true-gap'), seconds=1., stop_on_feasible=False)
         self.assertEqual((result['status'], result['termination'], result['workerStatus'], result['candidate']),
                          ('unknown', 'worker_finished', 'Infeasible_Problem_Detected', None))

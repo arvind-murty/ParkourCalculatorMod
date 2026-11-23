@@ -226,8 +226,8 @@ A gap describes only its own request. Decided
 confirmations are cached per run in the interaction gate's cache by problem
 fingerprint. Search's use of it is in the
 [execution reference](../ANCHOR_SEARCH_EXECUTION_REFERENCE.md#numerical-backend-and-finalization).
-`RelaxedDispatch(gate=..., post_alarm='pipeline')` answers the alarm with the
-post-alarm pipeline below instead of that IPOPT call; `'ipopt'` is the default.
+`RelaxedDispatch(gate=...)` answers the alarm with the post-alarm pipeline below;
+`post_alarm='ipopt'` makes that IPOPT call instead.
 
 ### Post-alarm pipeline
 

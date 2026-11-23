@@ -113,9 +113,9 @@ Walk-rejected points are never held as alternatives, and confirmed ones are held
 with their IPOPT point. A walk cut off by the budget leaves its candidate in
 flight, so a resume repeats only the walk (`work`: `confirmations`,
 `confirmationIpoptCalls`, `confirmationClarabelSolves`, `materialGaps`). The
-`find_checkpoint_route` setting `post_alarm='pipeline'` answers those alarms with
+`find_checkpoint_route` setting `post_alarm` answers those alarms with
 the [post-alarm pipeline](reference/NUMERICAL_SOLVER.md#post-alarm-pipeline)
-instead (solve policy `numerical: relaxed_pipeline`, recorded in the run and DFS
+by default, `'ipopt'` with the IPOPT confirmation above (solve policy `numerical: relaxed_pipeline`, recorded in the run and DFS
 identities, so neither value resumes the other's state); its answer may be a
 relaxed point at most 1% short, which the finalization then re-solves like any
 relaxed finish. The anchor `feasibilityPolicy` has one value,

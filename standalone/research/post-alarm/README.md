@@ -188,3 +188,18 @@ Where the proposed no-IPOPT pipeline spends Clarabel solves, and leaner versions
 - Decayed-push-first answers differ from race-first ones by under 0.007 on most requests either way, but are 0.22 lower
   on 2 requests (study 8f2c03b2463d, Real11 d7dea8787150) and 0.010-0.018 lower on 3 (`lean-variants-decayfirst-diff.log`);
   the 0.1 guard recovers the 0.22 ones.
+
+## IPOPT on pipeline answers
+
+Does IPOPT find a full-strength route at each answer of the Clarabel-only pipeline (4a2f6315)? `ipopt_check.py`: one
+IPOPT start (2 s, no `fallbackYaw`) from each answer's facings turned by the production seed's 1e-4 rad, on 445 Real11
+and 340 study answers (`ipopt-check-summary.log`); `ipopt_check_failures.py` reruns the unconfirmed ones from the exact
+facings (`ipopt-check-failures.log`).
+
+- Full-strength answers (408 Real11, 320 study): IPOPT from the turned facings ends `Infeasible_Problem_Detected` on 22
+  and 11; from the exact facings it accepts all 33 (the start itself is feasible: validator violations 8e-10 to 1e-7),
+  though its later phases still end infeasible on most. The 1e-4 rad turn alone moves these validated points out of
+  IPOPT's 1e-9 tolerance.
+- Answers with ticks up to 1% short (37 Real11, 20 study): IPOPT confirms 35 and 19 from their facings. Of the other
+  three, the study request is feasible by the study's labels (754.591); on the two Real11 requests (fab671bfb906,
+  a6a2637448b7) no IPOPT start of the seed bench found a route either, so these answers are unconfirmed.
