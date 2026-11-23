@@ -385,6 +385,8 @@ class BookkeepingProfileTests(unittest.TestCase):
         self.assertEqual(text([], [], [hit]), "hits B13B's Z- face t1")
         slab = dict(case='slab_boost', input=1, boxes=[higher])
         self.assertEqual(text([slab], [row('case:outside', 1, 'X', 'GE')]), 'slab boost onto B13B t1 from its X+ side')
+        self.assertEqual(text([slab], [row('case:outside', 1, 'X', 'GE'), row('ceiling_clear:b10+b9a', 1, 'X', 'GE')]),
+                         'slab boost onto B13B t1 from its X+ side, keeping to the X+ side of ceiling B10+B9A')
         # A corner case passes the corner (X side before it, Z side after) and ends beside the block.
         corner = dict(case='corner_blip_up', input=2, boxes=[higher], lowerBoxes=[low])
         self.assertEqual(text([corner], [row('case:outside', 2, 'X', 'LE'), row('case:outside', 3, 'Z', 'LE'),

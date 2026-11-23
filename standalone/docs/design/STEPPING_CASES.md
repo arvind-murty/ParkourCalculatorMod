@@ -26,11 +26,13 @@ Let a be the lower block's height, b the higher block's height, yL the landing-t
 
 ### Normal stepping
 
-Grounded movement rises by at most 0.6. All inputs in this movement are run inputs; there is no invented air tick or jump impulse. Use the appropriate before/after block constraints.
+Grounded movement rises by at most 0.6. All inputs in this movement are run inputs; there is no invented air tick or jump impulse. Use the appropriate before/after block constraints. The take-off is outside every low ceiling (below).
 
 ### Slab boost / stair boost
 
 The position before the jump tick is on the lower level. The jump tick is on the higher level, with the specified rise approximately 0.42 through 0.6. The jump impulse and usual jump horizontal movement apply, while stepping changes the Y outcome. One air input follows the jump, producing the ordinary two-input airtime/cycle before subsequent movement.
+
+**Take-off ceilings (normal step and slab boost).** Minecraft's step rises from the take-off box, so a ceiling above it whose underside leaves less room than the higher top (expanded underside below b) stops the rise short of b. The take-off must be outside every such ceiling: one outside row per exposed side of each one it can reach (`ceiling_clear:<ceiling>`), as grind's outside rows (user, 2026-11-22). Only moves that rise need it: grind already enters from outside its ceiling, and corner jump cancel, which does not rise, is indifferent to ceilings.
 
 ### Blip
 
@@ -102,7 +104,8 @@ generators alongside normal movement; ordinary jumps are kept beside them.
 | ceiling | ceiling_hit | Normal upward air, or initial jump | Actual underside plane and zero vertical carry before gravity/drag |
 | ceiling | grind | Ground/jump into J | Outside before J, under low ceiling on J, zero rise; ordinary air follows |
 
-Owners: `movement/cases.py` builds named case constraints on `movement/vertical_profiles.py`;
+Owners: `movement/cases.py` builds named case constraints on `movement/vertical_profiles.py`,
+and the take-off ceiling rows (`ceiling_clearances`);
 `movement/stepping.py` proposes support and corner cases; `movement/ceiling_generation.py`
 proposes ceiling and grind cases (at an ordinary decision, none of either behind it or entered by a move its guide
 leg disallows: [O10](ANCHOR_POLICY_DECISIONS.md#o10--no-backward-moves-at-ordinary-decisions));

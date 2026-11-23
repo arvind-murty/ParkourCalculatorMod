@@ -1,5 +1,7 @@
+import itertools
+
 from parkour_solver.physics.vertical import f32
-from parkour_solver.movement.cases import convex_corner, corner_rows, exposed_side, outside_row, top_choices
+from parkour_solver.movement.cases import ceiling_clearances, convex_corner, corner_rows, exposed_side, outside_row, top_choices
 
 
 def box_for(block, context):
@@ -60,13 +62,15 @@ def open_stepping_choices(context):
                         continue
                     if not interaction_allowed(context, box, 0, jumping=jumping, label=dict(owner=block['id'], role=case)):
                         continue
+                    clearances = ceiling_clearances(context, y0, face.plane, jumping=jumping)
                     for axis in ('X', 'Z'):
                         for direction in (-1, 1):
                             if not exposed_side(scene, block, axis, -direction, y0) or entry_backward(
                                     context, axis, -direction, bounding_region(face.regions), label=dict(owner=block['id'], role=case)):
                                 continue
-                            for top, regions in top_choices(context, face, name, 1, jumping=jumping):
-                                rows = [outside_row(box, axis, -direction, 0)] + top
+                            for (top, regions), clear in itertools.product(
+                                    top_choices(context, face, name, 1, jumping=jumping), clearances):
+                                rows = [outside_row(box, axis, -direction, 0)] + clear + top
                                 if not _fresh(made, case, rows):
                                     continue
                                 event = dict(case=case, input=0, plane=face.plane, boxes=boxes,

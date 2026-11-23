@@ -209,10 +209,11 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `exposed_side` | [39](../src/parkour_solver/movement/cases.py#L39) | function |
 | `convex_corner` | [48](../src/parkour_solver/movement/cases.py#L48) | function |
 | `top_choices` | [57](../src/parkour_solver/movement/cases.py#L57) | function |
-| `side_run` | [70](../src/parkour_solver/movement/cases.py#L70) | function |
-| `corner_rows` | [86](../src/parkour_solver/movement/cases.py#L86) | function |
-| `case_profile` | [98](../src/parkour_solver/movement/cases.py#L98) | function |
-| `entry_possible` | [131](../src/parkour_solver/movement/cases.py#L131) | function |
+| `ceiling_clearances` | [70](../src/parkour_solver/movement/cases.py#L70) | function |
+| `side_run` | [101](../src/parkour_solver/movement/cases.py#L101) | function |
+| `corner_rows` | [117](../src/parkour_solver/movement/cases.py#L117) | function |
+| `case_profile` | [129](../src/parkour_solver/movement/cases.py#L129) | function |
+| `entry_possible` | [162](../src/parkour_solver/movement/cases.py#L162) | function |
 
 ## movement/ceiling_generation.py
 
@@ -418,13 +419,13 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `box_for` | [5](../src/parkour_solver/movement/stepping.py#L5) | function |
-| `SteppingGenerator` | [9](../src/parkour_solver/movement/stepping.py#L9) | class |
-| `SteppingGenerator.generate` | [10](../src/parkour_solver/movement/stepping.py#L10) | function |
-| `_sequence_allowed` | [13](../src/parkour_solver/movement/stepping.py#L13) | function |
-| `_fresh` | [24](../src/parkour_solver/movement/stepping.py#L24) | function |
-| `open_stepping_choices` | [34](../src/parkour_solver/movement/stepping.py#L34) | function |
-| `_open_flight_cases` | [117](../src/parkour_solver/movement/stepping.py#L117) | function |
+| `box_for` | [7](../src/parkour_solver/movement/stepping.py#L7) | function |
+| `SteppingGenerator` | [11](../src/parkour_solver/movement/stepping.py#L11) | class |
+| `SteppingGenerator.generate` | [12](../src/parkour_solver/movement/stepping.py#L12) | function |
+| `_sequence_allowed` | [15](../src/parkour_solver/movement/stepping.py#L15) | function |
+| `_fresh` | [26](../src/parkour_solver/movement/stepping.py#L26) | function |
+| `open_stepping_choices` | [36](../src/parkour_solver/movement/stepping.py#L36) | function |
+| `_open_flight_cases` | [121](../src/parkour_solver/movement/stepping.py#L121) | function |
 
 ## movement/units.py
 

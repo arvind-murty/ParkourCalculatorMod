@@ -67,6 +67,37 @@ def top_choices(context, face, owner, state, name='case:region', *, jumping):
     return [(rows, choices)]
 
 
+def ceiling_clearances(context, feet, top, *, jumping):
+    """Row sets keeping the take-off of a step or slab boost from `feet` onto `top` out from under every low ceiling:
+    the step rises from the take-off box, so a ceiling whose expanded underside is below `top` stops it short (user,
+    2026-11-22). Each ceiling the take-off can reach gives one outside row per exposed side; a set takes one per
+    ceiling, and a reachable ceiling without an exposed side leaves no set."""
+    import itertools
+    from parkour_solver.movement.contact_combinations import scene_contact_options
+    from parkour_solver.reachability.service import bounds_allowed, candidate_option
+    scene = context['scene']
+    blocks = {b['solidIndex']: b for b in scene['blocks']}
+    choices = []
+    for option in scene_contact_options(scene, 1, -1):
+        if not feet <= option.plane < top or not candidate_option(context, option, 'ceilingSolids'):
+            continue
+        owner = '+'.join(sorted(blocks[i]['id'] for i in option.members))
+        if not any(bounds_allowed(context, [r[0], 0, r[1], r[2], 0, r[3]], 0, label=dict(owner=owner, role='take-off ceiling'),
+                                  jumping=jumping, phases=('Y',)) for r in option.regions):
+            continue
+        rows, sides = [], set()
+        for index in option.members:
+            for axis in ('X', 'Z'):
+                for sign in (-1, 1):
+                    if exposed_side(scene, blocks[index], axis, sign, option.plane):
+                        row = outside_row(scene['collisionScene']['solids'][index], axis, sign, 0, 'ceiling_clear:' + owner)
+                        if (axis, sign, row['rhs']) not in sides:
+                            sides.add((axis, sign, row['rhs']))
+                            rows.append(row)
+        choices.append(rows)
+    return [list(rows) for rows in itertools.product(*choices)]
+
+
 def side_run(box, boxes, axis, sign, along):
     """`box` with its `along` extent widened to the connected run of `boxes` whose `axis` side (outward `sign`) lies
     in the same plane as box's, so a merged face's side spans its seams."""

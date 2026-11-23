@@ -282,6 +282,37 @@ class ExposureTests(unittest.TestCase):
                                           if r['name'] in ('case:outside', 'case:cross_x'))))
         return found
 
+    def test_a_step_or_slab_boost_takes_off_from_outside_a_low_ceiling(self):
+        from parkour_solver.movement.stepping import open_stepping_choices
+        from parkour_solver.physics.vertical import REST_CARRY
+        from parkour_solver.scene.static_collision import StaticScene
+        start, target = [-2, 0, -2, 2, 1, 4], [2, 0, 0, 3, 1.5, 2]
+        def clears(solids, case):
+            scene = dict(collisionScene=dict(solids=solids), blocks=[dict(id='b' + str(i), sourceBlock='b' + str(i),
+                         solidIndex=i, top=b[4]) for i, b in enumerate(solids)])
+            state = dict(position=1., velocity=REST_CARRY, onGround=True, previousHorizontalCollision=False)
+            return [sorted((r['mode'], r['cmp'], round(r['rhs'], 6)) for r in c['profile']['positionConstraints']
+                           if r['name'].startswith('ceiling_clear:'))
+                    for c in open_stepping_choices(dict(scene=scene, state=state, maxInputs=10, threshold=0., cases=[case],
+                                                        interactionGate=None, program=dict(profile=dict(duration=0))))]
+        # The ceiling's underside at 3 leaves feet 1.2 of room, below the 1.5 top.
+        low = [1, 3, 0, 2, 4, 1]
+        sides = [[('X', 'GE', 2.3001)], [('X', 'LE', .6999)], [('Z', 'GE', 1.3001)], [('Z', 'LE', -.3001)]]
+        for case in ('normal_step', 'slab_boost'):
+            found = clears([start, target, low], case)
+            self.assertTrue(found, case)
+            # Every choice keeps to one side of the ceiling; the sides beside the target's approach are offered.
+            self.assertTrue(all(rows in sides for rows in found), case)
+            self.assertLessEqual({tuple(sides[1]), tuple(sides[2])}, {tuple(rows) for rows in found}, case)
+            # An underside at 3.3 leaves room for the 1.5 top: no clearance.
+            self.assertEqual({tuple(rows) for rows in clears([start, target, [1, 3.3, 0, 2, 4, 1]], case)}, {()}, case)
+        self.assertEqual({tuple(rows) for rows in clears([start, target, low], 'corner_jump_cancel')}, {()})
+        # Minecraft's step rises from the take-off box: under the ceiling it stops short of the top, beside it it lands.
+        scene = StaticScene(dict(version=1, profile='minecraft-1.8.9', bounds=[-5, -1, -5, 6, 6, 6], solids=[start, target, low]))
+        for z, top in ((.5, False), (1.5, True)):
+            move = scene.move(scene.start_box((1.6, 1., z)), (.3, .42, 0.), True, False)
+            self.assertEqual(move.position[1] == 1.5, top, z)
+
     def test_a_side_flush_against_a_neighbour_offers_no_step(self):
         # wall is flush with target's Z+ side at its height: one merged face, whose seam is no side.
         start, target, wall = [-2, 0, -2, 2, 1, 4], [2, 0, 0, 3, 1.5, 2], [2, 0, 2, 3, 1.5, 3]

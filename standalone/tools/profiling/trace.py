@@ -171,8 +171,12 @@ def movement(profile, names):
                    for r in profile.get('positionConstraints',[])
                    if r.get('name') == name and r.get('t1') == tick+after and r['mode'] in axes]
         lower = '+'.join(sorted({names.get(tuple(box),'unnamed box') for box in event.get('lowerBoxes',[])}))
-        return dict(case=event.get('case'),tick=tick,entries=entries,**({'block':where(event)['block']} if 'boxes' in event else {}),
-                    **({'lower':lower} if lower else {}))
+        # A step's take-off keeps out from under each low ceiling (`ceiling_clear:<owner>` rows).
+        ceilings = [(r['name'].split(':',1)[1],r['mode']+('+' if r['cmp'] == 'GE' else '-'))
+                    for r in profile.get('positionConstraints',[])
+                    if r.get('name','').startswith('ceiling_clear:') and r.get('t1') == tick]
+        return dict(case=event.get('case'),tick=tick,entries=entries,ceilings=ceilings,
+                    **({'block':where(event)['block']} if 'boxes' in event else {}),**({'lower':lower} if lower else {}))
     return dict(jumps=[t for t,jump in enumerate(profile.get('jump',[])) if jump],
                 landings=[where(e) for e in events if e.get('role') == 'landing'],
                 ceilings=[where(e) for e in events if e.get('role') == 'ceiling'],
@@ -265,7 +269,8 @@ def case_text(c):
         verb = dict(corner_jump_cancel='corner jump cancel',corner_blip='corner blips',corner_blip_up='corner blips up')[c['case']]
         return f'{landing}{verb} past {block}\'s {"".join(c["entries"]) or "?"} corner t{c["tick"]}'
     verb = dict(grind='grinds under', blip='blips onto', blip_up='blips up onto').get(c['case'],c['case'].replace('_',' ')+' onto')
-    return f'{landing}{verb} {block} t{c["tick"]}'+(f' from its {side} side' if side else '')
+    return (f'{landing}{verb} {block} t{c["tick"]}'+(f' from its {side} side' if side else '')+
+            ''.join(f', keeping to the {s} side of ceiling {owner.upper()}' for owner,s in c.get('ceilings',[])))
 
 
 def node_trace(state, scene=None):
