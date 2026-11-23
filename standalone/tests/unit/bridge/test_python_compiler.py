@@ -319,6 +319,7 @@ class JavaOracleTests(unittest.TestCase):
                 self.assertEqual(canonical(self.python._exchange(message, 30)), canonical(expected))
 
     @unittest.skipUnless(RUNTIME, 'Set PKC_IPOPT_PYTHON for checkpoint continuation')
+    @mock.patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # counts requests at RelaxedDispatch.solve, which native node solves bypass
     def test_saved_searches_resume_exactly_on_the_other_bridge(self):
         import threading
         from parkour_solver.io.checkpoint_store import CheckpointStore, read_report
