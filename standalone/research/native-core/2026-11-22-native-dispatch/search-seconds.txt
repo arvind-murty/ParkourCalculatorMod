@@ -1,0 +1,19 @@
+searchSeconds, alternating base (d60bb7f3 Python loop with native expansion) and native loop, one at a time.
+Without checkpoints (the progress printer only):
+fixed-base-1: 17.891913417726755,
+fixed-base-2: 17.861173838377,
+fixed-frontier-1: 17.44560845568776,
+fixed-frontier-2: 17.46866324916482,
+short-base-1: 1.6337129138410091,
+short-base-2: 1.6214937902987003,
+short-frontier-1: 1.6321208365261555,
+short-frontier-2: 1.6268784143030643,
+With durable checkpoints (--durable):
+fixed-base-1: 123.80493303760886,
+fixed-base-2: 125.84607791528106,
+fixed-frontier-1: 58.25529379397631,
+fixed-frontier-2: 59.14194521307945,
+short-base-1: 15.880096416920424,
+short-base-2: 15.76696191728115,
+short-frontier-1: 9.404369331896305,
+short-frontier-2: 9.206415582448244,

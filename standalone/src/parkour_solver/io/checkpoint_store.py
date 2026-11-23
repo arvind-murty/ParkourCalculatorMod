@@ -92,13 +92,20 @@ class CheckpointStore:
                 if value.identity != self.identity:
                     raise ValueError('Reference belongs to another checkpoint store')
                 return _json(['r', value.key])
+            native = getattr(value, 'checkpoint_encode', None)
+            if native is not None:
+                # A native value (a published native search state) encodes itself the same way, skipping objects the
+                # store already holds.
+                data, objects = native(self.known)
+                pending.update(objects)
+                return data
             container = isinstance(value, (dict, list, tuple))
             shared = container or isinstance(value, str) and len(value) >= CHUNK_BYTES
             identity = id(value)
             if shared and identity in memo:
                 return memo[identity][1]
             def flat(item):
-                if isinstance(item, StoredValue):
+                if isinstance(item, StoredValue) or hasattr(item, 'checkpoint_encode'):
                     return False
                 if isinstance(item, dict):
                     children = item.values()

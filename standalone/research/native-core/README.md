@@ -729,3 +729,30 @@ store itself (SQLite, manifest, patches, reading) stays Python.
 - The native encoding equals `CheckpointStore.archive`'s byte for byte: every recorded published state gives the same
   root key, a hash over every chunk below it (short control 191, fixed work 438, milestone tests 325)
   ([parity](2026-11-22-native-checkpoint/encode-parity.txt)).
+
+## The native DFS loop in production, 2026-11-22
+
+Source: `e8010c83` plus the dispatch in `search_goals`: under `PKC_NATIVE_CORE`, an anchor search whose gate has a
+native core and whose program filter is at most an initial jump domain runs `DfsSearch` (loop, frontier, decision
+checks) and publishes its snapshots; `io/search_checkpoint` saves them through the native encoding and the paths they
+name. Measured faster, so it dispatches.
+
+- Every published and result state equals the previous production code's by value in call order (short control 191,
+  fixed work 438) and in 45 of the milestone list's 46 searching tests; the other's search changed in `ebde9131`
+  ([states](2026-11-22-native-dispatch/state-parity.txt)).
+- Reports equal the previous code's except provenance, with and without durable checkpoints, and transitions match
+  Python ([fixed work](2026-11-22-native-dispatch/fixed-report-vs-previous.json),
+  [short](2026-11-22-native-dispatch/short-report-vs-previous.json),
+  [fixed durable](2026-11-22-native-dispatch/fixed-durable-report-vs-previous.json),
+  [short durable](2026-11-22-native-dispatch/short-durable-report-vs-previous.json),
+  [fixed parity](2026-11-22-native-dispatch/fixed-parity-python-native.json),
+  [short parity](2026-11-22-native-dispatch/short-parity-python-native.json)).
+- Search seconds, alternating one at a time: fixed work 17.45 and 17.47 against 17.89 and 17.86 before, the short
+  control 1.632 and 1.627 against 1.634 and 1.621; with durable checkpoints fixed work 58.3 and 59.1 against 123.8 and
+  125.8, the short control 9.40 and 9.21 against 15.88 and 15.77 ([times](2026-11-22-native-dispatch/search-seconds.txt)).
+- `test_checkpoint_store`'s native check compares the store with the live state after every repair patch and passes.
+  The search, checkpoint and native test modules run clean under AddressSanitizer, and durable fixed work runs clean
+  with a report equal to the release build's except provenance
+  ([summary](2026-11-22-native-dispatch/asan-summary.txt), [report](2026-11-22-native-dispatch/fixed-asan-report-vs-release.json)).
+  The milestone test list passes in both modes; two DFS tests that read the Python frontier's arguments run in Python
+  mode ([suites](2026-11-22-native-dispatch/suites-summary.txt)).

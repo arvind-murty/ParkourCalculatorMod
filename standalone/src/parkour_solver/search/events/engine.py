@@ -180,6 +180,7 @@ def search_event_routes(request, compiler, *, task_goal=None, discovery=None, an
             if options.get('on_progress'):
                 options['on_progress'](state)
         final=search(SearchWork(None,deadline=deadline),deadline,on_progress=publish_final,finalize=True)
+        state['dfs']=final['searchState']  # a native search publishes snapshots, not its live state
         finalization=final['searchState']['finalization']
         numerical['finalizationIpoptCalls']+=final['work'].get('workerLaunches',0)
     report=dict(last or {})

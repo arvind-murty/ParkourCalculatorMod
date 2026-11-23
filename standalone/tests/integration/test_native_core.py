@@ -174,8 +174,10 @@ class ProgramModelTests(unittest.TestCase):
         from tests.support.checkpoint_guidance import flat_scene
         states = []
         def progress(state):
-            # The checkpoint's JSON form is the contract: Python-mode states hold tuples in opaque data.
-            states.append(json.loads(json.dumps(state['dfs'])))
+            # The checkpoint's JSON form is the contract: Python-mode states hold tuples in opaque data, and a native
+            # search publishes snapshots, converted on request.
+            dfs = state['dfs']
+            states.append(json.loads(json.dumps(dfs.to_python() if hasattr(dfs, 'to_python') else dfs)))
         progress.begin_repair = lambda state, program, extra_targets=(): progress(state)
         progress.repair_progress = progress
         # The real movement frontier: a stubbed one publishes generations persistent_programs never writes.

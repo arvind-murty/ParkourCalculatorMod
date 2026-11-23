@@ -112,6 +112,7 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertNotIn(15,[t for _,t,_ in purposes])
         self.assertEqual(result['best']['movementProgram']['profile']['duration'],20)
 
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # reads the Python frontier's arguments; the native loop runs its own
     def test_anchor_frontier_gets_the_minimum_run_policy_for_ordinary_decisions(self):
         from parkour_solver.bridge.python_compiler import PythonCompiler
         generated=[]
@@ -142,6 +143,7 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertEqual((fit['room'],fit['face']),(max(r[2] for r in top.regions)-root['decisionPoint'][0],'start'))
         self.assertFalse(fit['fits'])
 
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # reads the Python frontier's arguments; the native loop runs its own
     def test_a_jump_onto_a_block_merged_into_the_launch_face_lands_back_on_that_face(self):
         from parkour_solver.bridge.python_compiler import PythonCompiler
         from parkour_solver.movement.contact_combinations import face_name, top_faces

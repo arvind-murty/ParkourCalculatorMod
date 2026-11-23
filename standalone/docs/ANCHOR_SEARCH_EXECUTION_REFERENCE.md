@@ -246,8 +246,15 @@ an older checkpoint compatible. Old wrong-policy exact continuations reject;
 checkpoint storage format stays version1. Never redirect work to an old checkout
 because a source-era handoff contains its absolute path.
 
-Under `PKC_NATIVE_CORE`, an anchor frame whose gate has a native core and whose program filter is at most an initial
-jump domain expands each decision one movement type at a time natively (`search/node.hpp`): generation,
+Under `PKC_NATIVE_CORE`, an anchor search whose gate has a native core and whose program filter is at most an initial
+jump domain runs `search_goals` natively (`search/dfs_search.hpp`) over the typed state of `search/dfs_state.hpp`: frames,
+scoring, selection, refinement, recovery, windows, latches and finalization, each frame's movement frontier
+(`search/frontier.hpp`) and its decision checks. Python keeps the preamble (roots, context, resume checks, the gate) and
+the result, and serves the adapter's stage views, discovery and advance, gate preparations, solve services and the work
+budget through hooks. Each publish hands `on_progress` a frozen snapshot, read field by field (`to_python()` builds the
+whole dict); the checkpoint store encodes it natively and it names the paths of the repair the saver patches
+([checkpoint storage](CHECKPOINT_STORAGE.md)). The frontier expands each decision one movement type at a time
+natively (`search/node.hpp`): generation,
 composition, owned-endpoint projection, the frame's screen and eligibility (incumbent, hard-latch and run bounds,
 viability, program screen, caps, anchor audit), acceptance and linking run in one call, with an ordinary decision's
 landings, same-face fit and advantageous targets, and the frontier applies its queued and held children, exclusions,

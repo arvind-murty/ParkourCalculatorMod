@@ -175,11 +175,11 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `CheckpointStore.close` | [68](../src/parkour_solver/io/checkpoint_store.py#L68) | function |
 | `CheckpointStore.save` | [71](../src/parkour_solver/io/checkpoint_store.py#L71) | function |
 | `CheckpointStore.archive` | [76](../src/parkour_solver/io/checkpoint_store.py#L76) | function |
-| `CheckpointStore.publish` | [154](../src/parkour_solver/io/checkpoint_store.py#L154) | function |
-| `CheckpointStore.patch` | [161](../src/parkour_solver/io/checkpoint_store.py#L161) | function |
-| `CheckpointStore.compact` | [175](../src/parkour_solver/io/checkpoint_store.py#L175) | function |
-| `read_report` | [210](../src/parkour_solver/io/checkpoint_store.py#L210) | function |
-| `main` | [266](../src/parkour_solver/io/checkpoint_store.py#L266) | function |
+| `CheckpointStore.publish` | [161](../src/parkour_solver/io/checkpoint_store.py#L161) | function |
+| `CheckpointStore.patch` | [168](../src/parkour_solver/io/checkpoint_store.py#L168) | function |
+| `CheckpointStore.compact` | [182](../src/parkour_solver/io/checkpoint_store.py#L182) | function |
+| `read_report` | [217](../src/parkour_solver/io/checkpoint_store.py#L217) | function |
+| `main` | [273](../src/parkour_solver/io/checkpoint_store.py#L273) | function |
 
 ## io/provenance.py
 
@@ -198,13 +198,16 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `SearchCheckpoint` | [8](../src/parkour_solver/io/search_checkpoint.py#L8) | class |
-| `SearchCheckpoint.__init__` | [9](../src/parkour_solver/io/search_checkpoint.py#L9) | function |
-| `SearchCheckpoint.state` | [15](../src/parkour_solver/io/search_checkpoint.py#L15) | function |
-| `SearchCheckpoint.__call__` | [25](../src/parkour_solver/io/search_checkpoint.py#L25) | function |
-| `SearchCheckpoint.begin_repair` | [37](../src/parkour_solver/io/search_checkpoint.py#L37) | function |
-| `SearchCheckpoint.repair_progress` | [40](../src/parkour_solver/io/search_checkpoint.py#L40) | function |
-| `SearchCheckpoint.finish` | [52](../src/parkour_solver/io/search_checkpoint.py#L52) | function |
+| `_NativeState` | [12](../src/parkour_solver/io/search_checkpoint.py#L12) | class |
+| `_NativeState.__init__` | [14](../src/parkour_solver/io/search_checkpoint.py#L14) | function |
+| `_NativeState.checkpoint_encode` | [17](../src/parkour_solver/io/search_checkpoint.py#L17) | function |
+| `SearchCheckpoint` | [21](../src/parkour_solver/io/search_checkpoint.py#L21) | class |
+| `SearchCheckpoint.__init__` | [22](../src/parkour_solver/io/search_checkpoint.py#L22) | function |
+| `SearchCheckpoint.state` | [29](../src/parkour_solver/io/search_checkpoint.py#L29) | function |
+| `SearchCheckpoint.__call__` | [42](../src/parkour_solver/io/search_checkpoint.py#L42) | function |
+| `SearchCheckpoint.begin_repair` | [63](../src/parkour_solver/io/search_checkpoint.py#L63) | function |
+| `SearchCheckpoint.repair_progress` | [66](../src/parkour_solver/io/search_checkpoint.py#L66) | function |
+| `SearchCheckpoint.finish` | [89](../src/parkour_solver/io/search_checkpoint.py#L89) | function |
 
 ## movement/cases.py
 
@@ -826,10 +829,10 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `candidate_key` | [19](../src/parkour_solver/search/dfs.py#L19) | function |
-| `decision_family` | [24](../src/parkour_solver/search/dfs.py#L24) | function |
-| `commit_arrival` | [35](../src/parkour_solver/search/dfs.py#L35) | function |
-| `search_goals` | [60](../src/parkour_solver/search/dfs.py#L60) | function |
+| `candidate_key` | [20](../src/parkour_solver/search/dfs.py#L20) | function |
+| `decision_family` | [25](../src/parkour_solver/search/dfs.py#L25) | function |
+| `commit_arrival` | [36](../src/parkour_solver/search/dfs.py#L36) | function |
+| `search_goals` | [61](../src/parkour_solver/search/dfs.py#L61) | function |
 
 ## search/domain.py
 

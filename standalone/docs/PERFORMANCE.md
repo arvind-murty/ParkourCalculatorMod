@@ -189,6 +189,10 @@ ordered options. That is targeted enumeration work, not a whole-solver speedup.
   equal work on the extended case capped at 100 solver calls, search time is 33.7% lower
   than Python's with identical transitions; building sequence children natively added
   1.7% of that ([evidence](../research/native-core/README.md)).
+- Native anchor DFS loop (`PKC_NATIVE_CORE`): the loop, its frontier and decision checks run in C++ and publish
+  frozen snapshots the checkpoint store encodes natively. Fixed work takes 17.45 s against 17.89 s for the Python loop
+  over the same native expansion, and 58.3 s against 123.8 s with durable checkpoints
+  ([evidence](../research/native-core/README.md)).
 - IPOPT row reduction: final rows fall from 278 to 91 on the benchmark
   ([constraint reduction](IPOPT_CONSTRAINT_REDUCTION.md)).
 - Content-addressed manifest plus SQLite checkpoints
