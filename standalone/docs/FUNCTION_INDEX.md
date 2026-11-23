@@ -501,7 +501,7 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | Symbol | Line | Kind |
 | --- | ---: | --- |
 | `prepare` | [7](../src/parkour_solver/numerics/model.py#L7) | function |
-| `fingerprint` | [208](../src/parkour_solver/numerics/model.py#L208) | function |
+| `fingerprint` | [194](../src/parkour_solver/numerics/model.py#L194) | function |
 
 ## numerics/post_alarm.py
 
@@ -531,16 +531,8 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `_command` | [18](../src/parkour_solver/numerics/solver.py#L18) | function |
-| `_Worker` | [22](../src/parkour_solver/numerics/solver.py#L22) | class |
-| `_Worker.__init__` | [24](../src/parkour_solver/numerics/solver.py#L24) | function |
-| `_Worker.publish` | [39](../src/parkour_solver/numerics/solver.py#L39) | function |
-| `_Worker._read_output` | [52](../src/parkour_solver/numerics/solver.py#L52) | function |
-| `_Worker._read_errors` | [66](../src/parkour_solver/numerics/solver.py#L66) | function |
-| `_Worker.send` | [73](../src/parkour_solver/numerics/solver.py#L73) | function |
-| `_Worker.close` | [86](../src/parkour_solver/numerics/solver.py#L86) | function |
-| `_close_workers` | [106](../src/parkour_solver/numerics/solver.py#L106) | function |
-| `solve` | [111](../src/parkour_solver/numerics/solver.py#L111) | function |
+| `_command` | [17](../src/parkour_solver/numerics/solver.py#L17) | function |
+| `solve` | [21](../src/parkour_solver/numerics/solver.py#L21) | function |
 
 ## numerics/worker.py
 
@@ -558,8 +550,8 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `Monitor.record` | [90](../src/parkour_solver/numerics/worker.py#L90) | function |
 | `Monitor.eval` | [107](../src/parkour_solver/numerics/worker.py#L107) | function |
 | `fixed_phase` | [114](../src/parkour_solver/numerics/worker.py#L114) | function |
-| `phase` | [247](../src/parkour_solver/numerics/worker.py#L247) | function |
-| `main` | [296](../src/parkour_solver/numerics/worker.py#L296) | function |
+| `phase` | [243](../src/parkour_solver/numerics/worker.py#L243) | function |
+| `main` | [292](../src/parkour_solver/numerics/worker.py#L292) | function |
 
 ## observability/turns.py
 

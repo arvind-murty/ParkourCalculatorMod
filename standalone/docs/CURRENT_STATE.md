@@ -16,7 +16,7 @@ everything not being worked on is in the [deferred-work register](DEFERRED_WORK.
   Real11 keeps the replayed T64 with 0 interim IPOPT workers and 1 finalization call,
   median search 3.6 s against 7.5 s on `c9deef42` ([evidence](../research/disk-relaxation/README.md)).
 - Local, `feat/post-alarm-pipeline`: Clarabel iterative refinement off, validator-rejected relaxed
-  points infeasible, a kept-alive IPOPT worker, and the Clarabel-only
+  points infeasible, and the Clarabel-only
   [post-alarm pipeline](reference/NUMERICAL_SOLVER.md#post-alarm-pipeline) behind the case setting
   `post_alarm` (default `ipopt`, today's confirmation; flipping it is the user's decision).
 - Merged as PR #4 (`feat/jvm-free-orchestrator`): search is JVM-free. The

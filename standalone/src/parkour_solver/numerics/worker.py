@@ -115,11 +115,7 @@ def fixed_phase(problem, yaw, pattern, seconds, stop, on_candidate, kind, seed_n
     started = time.monotonic()
     pattern = np.array(pattern, dtype=int)
     n = problem['ticks']
-    if 'stateSeed' in problem and (kind, seed_name, attempt) == ('carry', 'initial', 0):
-        # The request's first phase starts from the given states instead of full-strength ones (post-alarm polish).
-        seed_p, seed_v = np.array(problem['stateSeed']['positions']), np.array(problem['stateSeed']['velocities'])
-    else:
-        seed_p, seed_v, _ = forward(problem, yaw, problem['threshold'], pattern, caps)
+    seed_p, seed_v, _ = forward(problem, yaw, problem['threshold'], pattern, caps)
     ladder = problem.get('ladderTicks', [False] * (n + 1))
     variables, initial, rows, lower, upper = [], [], [], [], []
     contacts = {(c['state'], c['axis']): c for c in problem['contacts']}
@@ -230,7 +226,7 @@ def fixed_phase(problem, yaw, pattern, seconds, stop, on_candidate, kind, seed_n
         'ipopt.print_level': 0, 'ipopt.sb': 'yes', 'ipopt.max_wall_time': max(0.01, seconds),
         'ipopt.max_iter': problem.get('maxIterations', 10000), 'ipopt.tol': 1e-9, 'ipopt.constr_viol_tol': 1e-9,
         'ipopt.acceptable_tol': 1e-8, 'ipopt.acceptable_constr_viol_tol': 1e-9,
-        'ipopt.bound_relax_factor': 0.0, **({'ipopt.mu_init': problem['ipoptMuInit']} if 'ipoptMuInit' in problem else {})})
+        'ipopt.bound_relax_factor': 0.0})
     solution = solver(x0=initial, lbg=lower, ubg=upper)
     monitor.record(solution['x'], solution['g'], float(solution['f']))
     stats = solver.stats()
@@ -294,20 +290,14 @@ def phase(problem, yaw, pattern, seconds, stop, on_candidate, kind, seed_name):
 
 
 def main():
-    """Answers one request per stdin line until stdin closes; a kept-alive worker gets several (numerics/solver.py)."""
-    checked = False
-    for line in sys.stdin:
-        problem = json.loads(line)
-        if problem['version'] != 1:
-            raise ValueError('Unsupported protocol version')
-        if not checked:
-            with contextlib.redirect_stdout(sys.stderr):
-                ca.nlpsol('check_ipopt', 'ipopt', {'x': ca.SX.sym('x'), 'f': 0},
-                          {'print_time': False, 'ipopt.print_level': 0, 'ipopt.sb': 'yes'})
-            checked = True
-        status = run(problem, phase, lambda yaw, problem=problem: forward(problem, yaw, problem['threshold'])[2].tolist(),
-                     send)
-        send({'type': 'done', 'status': status})
+    problem = json.loads(sys.stdin.readline())
+    if problem['version'] != 1:
+        raise ValueError('Unsupported protocol version')
+    with contextlib.redirect_stdout(sys.stderr):
+        ca.nlpsol('check_ipopt', 'ipopt', {'x': ca.SX.sym('x'), 'f': 0},
+                  {'print_time': False, 'ipopt.print_level': 0, 'ipopt.sb': 'yes'})
+    status = run(problem, phase, lambda yaw: forward(problem, yaw, problem['threshold'])[2].tolist(), send)
+    send({'type': 'done', 'status': status})
 
 
 if __name__ == '__main__':

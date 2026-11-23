@@ -1,5 +1,4 @@
 import json
-import os
 import pathlib
 import subprocess
 import sys
@@ -119,75 +118,6 @@ class ProcessTests(unittest.TestCase):
             completed = subprocess.run(command, capture_output=True, text=True, timeout=5)
             self.assertEqual(completed.returncode, 3)
             self.assertIn('Could not write result', json.loads(completed.stdout)['error'])
-
-
-# Answers each request line with `done` after sleeping the request's `seconds` times SLOW.
-LOOPING_WORKER = """import json, sys, time
-for line in sys.stdin:
-    time.sleep(json.loads(line)['seconds']*SLOW)
-    print(json.dumps({'type': 'done', 'status': 'Solve_Succeeded'}), flush=True)
-"""
-
-
-class KeepAliveTests(unittest.TestCase):
-    def tearDown(self):
-        solver._close_workers()
-
-    def run_worker(self, slow, **options):
-        code = LOOPING_WORKER.replace('SLOW', str(slow))
-        with mock.patch.object(solver, '_command', return_value=[sys.executable, '-u', '-c', code]):
-            return solver.solve(problem(), keep_alive=True, **options)
-
-    def pid(self):
-        return solver._WORKERS[sys.executable].process.pid
-
-    def test_a_kept_alive_worker_answers_later_requests(self):
-        first = self.run_worker(0, seconds=1)
-        pid = self.pid()
-        second = self.run_worker(0, seconds=1)
-        self.assertEqual((first['workerLaunched'], first['workerReused']), (True, False))
-        self.assertEqual((second['workerLaunched'], second['workerReused']), (False, True))
-        self.assertEqual((second['termination'], second['workerStatus']), ('worker_finished', 'Solve_Succeeded'))
-        self.assertEqual(self.pid(), pid)
-
-    def test_a_timed_out_worker_is_killed_and_relaunched(self):
-        self.run_worker(10, seconds=.01, grace=1.)
-        process = solver._WORKERS[sys.executable].process
-        late = self.run_worker(10, seconds=.05)
-        self.assertEqual(late['termination'], 'time_limit')
-        self.assertNotIn(sys.executable, solver._WORKERS)
-        self.assertIsNotNone(process.poll())
-        relaunched = self.run_worker(10, seconds=.01, grace=1.)
-        self.assertEqual((relaunched['workerLaunched'], relaunched['workerReused']), (True, False))
-
-    def test_grace_waits_past_the_workers_budget(self):
-        result = self.run_worker(2, seconds=.1, grace=1.)
-        self.assertEqual((result['termination'], result['workerStatus']), ('worker_finished', 'Solve_Succeeded'))
-
-    def test_a_plain_call_keeps_no_worker(self):
-        with mock.patch.object(solver, '_command', return_value=[sys.executable, '-u', '-c', LOOPING_WORKER.replace('SLOW', '0')]):
-            result = solver.solve(problem(), seconds=1)
-        self.assertEqual((result['workerLaunched'], result['workerReused'], result['termination']),
-                         (True, False, 'worker_finished'))
-        self.assertEqual(solver._WORKERS, {})
-
-
-@unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'), 'Set PKC_IPOPT_PYTHON to run the real worker')
-class KeptAliveIpoptTests(unittest.TestCase):
-    def tearDown(self):
-        solver._close_workers()
-
-    def test_a_kept_alive_worker_returns_the_plain_answer(self):
-        runtime = os.environ['PKC_IPOPT_PYTHON']
-        request = problem()
-        request.update(magnitude=[.1, .1], yaw=[180., 180.])
-        plain = solver.solve(request, python_executable=runtime, stop_on_feasible=False)
-        first = solver.solve(request, python_executable=runtime, stop_on_feasible=False, keep_alive=True)
-        second = solver.solve(request, python_executable=runtime, stop_on_feasible=False, keep_alive=True)
-        self.assertEqual(plain['status'], 'feasible')
-        self.assertEqual(first['candidate'], plain['candidate'])
-        self.assertEqual(second['candidate'], plain['candidate'])
-        self.assertEqual((first['workerLaunched'], second['workerLaunched'], second['workerReused']), (True, False, True))
 
 
 if __name__ == '__main__':

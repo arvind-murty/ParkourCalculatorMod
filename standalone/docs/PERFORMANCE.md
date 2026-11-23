@@ -161,9 +161,6 @@ ordered options. That is targeted enumeration work, not a whole-solver speedup.
   (100 solver calls) search time fell from 39.36 s to 37.50 s with identical transitions and
   verdicts, and a 300 s extended run spent 7.92 s instead of 11.43 s in Clarabel requests
   ([evidence](../research/clarabel-refinement/README.md)).
-- Kept-alive IPOPT worker (`numerics.solver.solve(keep_alive=True)`): the confirmation seed on 60 alarmed requests
-  took 0.057 s median per call against 0.172 s with a worker per call, same candidates
-  ([evidence](../research/post-alarm/README.md#kept-alive-worker)).
 - IPOPT row reduction: final rows fall from 278 to 91 on the benchmark
   ([constraint reduction](IPOPT_CONSTRAINT_REDUCTION.md)).
 - Content-addressed manifest plus SQLite checkpoints

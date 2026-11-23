@@ -92,7 +92,7 @@ if result["feasible"]:
     exit_state = candidate["positions"][-1], candidate["velocity"][-1]
 ```
 
-`solve` also accepts `stop_on_feasible`, a `threading.Event` as `cancel_event`, and an `on_incumbent(candidate)` callback. The callback receives a copy; keep it short. It is called for valid objective improvements, allowing a caller to save incumbents while a solve continues. With `keep_alive=True` the call reuses one worker process per Python executable (the worker answers one request per stdin line) and leaves it running when the request ends with the worker's `done`; any other ending (time limit, cancellation, error, first-feasible stop) kills it and the next call launches a new one. `workerLaunched` says the call started the process, `workerReused` that it used a live one. `grace` (seconds, default 0) extends only the parent's wait for the worker's messages; the worker's own budget stays `seconds`. A kept-alive call skips the process launch, CasADi import and IPOPT check: 0.057 s against 0.172 s median per call on 60 alarmed requests ([evidence](../../research/post-alarm/README.md#kept-alive-worker)). Invalid API requests raise `ValueError` before starting a process. Caller orchestration chooses input patterns, stores multiple candidates and splices selected spans.
+`solve` also accepts `stop_on_feasible`, a `threading.Event` as `cancel_event`, and an `on_incumbent(candidate)` callback. The callback receives a copy; keep it short. It is called for valid objective improvements, allowing a caller to save incumbents while a solve continues. Invalid API requests raise `ValueError` before starting a process. Caller orchestration chooses input patterns, stores multiple candidates and splices selected spans.
 
 `from parkour_solver.io.capture import attach_capture` (also `parkour_solver.api.attach_capture`) provides the same capture attachment through `attach_capture(request, capture, start=None)`. It returns a prepared copy without changing either input.
 
@@ -277,9 +277,8 @@ confirmation's fields (`ipoptObjective` is the answer's objective, `ipoptCalls`
 is 0) and adds `method`, `acceptedAs` (`full`/`relaxed`), `pushSteps`, `probes`,
 `reversalTick`, `raced`, `quadrant` and `clarabelSolves`. Answers, certificates
 and `post_alarm_none` are cached like confirmations; a cache hit reports 0 solves.
-Problem fields `warmYaw`, `stateSeed` and `ipoptMuInit` are hints: validated by
-`prepare`, left out of `fingerprint`, and read only by the pipeline and the worker
-(the first phase's start states; IPOPT's `mu_init`).
+The problem field `warmYaw` is a hint: validated by `prepare`, left out of
+`fingerprint`, and read only by the pipeline.
 
 ## Tests
 

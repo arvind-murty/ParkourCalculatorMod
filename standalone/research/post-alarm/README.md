@@ -11,6 +11,8 @@ variant: on all 482 Real11 and 370 study requests it returns the same method and
 
 ## Kept-alive worker
 
+The kept-alive worker was removed with the pipeline's IPOPT calls (no other caller); the script runs at `725648e9`.
+
 `keep_alive_bench.py` (2026-11-23, `2a59b06e` plus the kept-alive worker, load average 2.7 to 3.8): the production
 confirmation seed on the first 60 requests of `population.json`, 20 s budget, a worker per call and a kept-alive worker
 alternated per request ([log](keep-alive-bench.log)). Same candidate on 60 of 60; median 0.172 s per call against
