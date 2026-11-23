@@ -630,7 +630,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
         node_options=dict(node_evaluator=lambda p,n,x:evaluate_node(p,n,x,f),
             priority_key=lambda p,identity:priority(p,f,identity),
             live_programs=lambda:live_programs(f),run_policy=run_policy,
-            policy_context=policy_context,native_node=native_expansion(f,policy_context))
+            policy_context=policy_context)
         source = iter_movement_programs(target_scene,settings=settings,report=report,initial_programs=f['parents'],
             **node_options,
             continuation=report.get('continuation'),
@@ -661,72 +661,6 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
             raise TimeoutError(report.get('termination','generation_suspended'))
         f['phase'] = 'score'
         transition('generated_batch',f,count=len(f['ready']),exhausted=f['sourceExhausted'])
-
-    def native_expansion(f, policy_context):
-        """Under PKC_NATIVE_CORE, the frontier's per-type native batch for this frame (search/node.hpp), which
-        applies the frame's screen, eligibility and configure natively; None keeps the Python loop."""
-        from parkour_solver.search.anchors.adapter import AnchorAdapter
-        if (gate.core is None or not isinstance(stage_adapter(f), AnchorAdapter)
-                or not getattr(accepted_program, 'native', False)):
-            return None
-        if 'anchorScene' not in native_scenes:
-            native_scenes['anchorScene'] = gate.native.AnchorScene(scene)
-        def node_search():
-            """The native screen and eligibility on the frame's current state."""
-            from parkour_solver.search.bounds.flight import transfer_bounds
-            view = stage_adapter(f)
-            incumbent = None
-            if state['best'] is not None:
-                best = state['best']
-                incumbent = dict(T=best.get('T', best.get('plan', {}).get('ticks')))
-                transfer_bounds(scene, adapter.guide_plan, motion, gate, saved=state.setdefault('transferTimeBounds', {}),
-                                threshold=0., check=work.check)
-            span, start = span_info(f)
-            context_id = f.get('comparisonContextId') or digest(dict(roots=[candidate_key(p) for p in f['parents']],
-                span=span, start=start, goal=f['goal'], score=view.score_context))
-            frame = dict(scene=dict(scene, goalBlock=f['goal']['block']), frameId=f['id'], goal=f['goal'],
-                cursor=view.cursor, comparisonContextId=context_id, comparisonContextSet='comparisonContextId' in f,
-                tickPeers=f.get('tickPeers', {}),
-                tickPeerRevision=f.get('tickPeerRevision', 0), incumbent=incumbent, hardLatches=state['hardLatches'],
-                transfers=state.get('transferTimeBounds', {}), latchRevision=state['latchRevision'],
-                minimumRunPruning=bool(minimum_run_pruning), guidePlan=adapter.guide_plan, motion=motion,
-                turnaroundMargin=adapter.anchor_policy['turnaround']['spatialMargin'],
-                anchors=adapter.anchor_policy['anchors'], taskBlock=adapter.data['task']['block'],
-                caps=accepted_program.caps, maxInputs=cfg['maxInputs'], types=cfg['types'],
-                policyContext=policy_context, excludedRuns=[c for frame_id, c in excluded_runs if frame_id == f['id']])
-            return gate.native.NodeSearch(gate.core, native_scenes['anchorScene'], frame), context_id
-        def expand(program, kind, cursor, *, seen, stop_supports, initial_bounds, max_inputs, choices_per_type, ready,
-                   ordinary, budget):
-            search, context_id = node_search()
-            records, finished = search.expand_type(program, kind, cursor, list(stop_supports or ()), list(initial_bounds),
-                                                   max_inputs, choices_per_type, ready, ordinary, seen, budget)
-            for record in records:  # the dfs state changes of each proposal's screen and eligibility, in order
-                apply(record['effects'], context_id)
-            return records, finished
-        def minimum_runs(program, reached, landings, *, seen, stop_supports, initial_bounds, max_inputs, budget):
-            search, context_id = node_search()
-            result = search.minimum_runs(program, reached, landings, list(stop_supports or ()), list(initial_bounds),
-                                         max_inputs, seen, budget)
-            apply(result['effects'], context_id)
-            return result
-        def apply(effects, context_id):
-            """The DFS state changes of the native screens and eligibility, in call order."""
-            state['timeBoundExclusions'].extend(effects['timeBoundExclusions'])
-            if effects['comparisonContextUsed']:
-                f.setdefault('comparisonContextId', context_id)
-                counters = state.setdefault('comparisonWork', dict(assessments=0, cacheHits=0, peerChecks=0))
-                for name in ('assessments', 'cacheHits', 'peerChecks'):
-                    counters[name] += effects[name]
-            for key, decision in effects['comparisonDecisions']:
-                state.setdefault('comparisonDecisions', {})[key] = decision
-            for exclusion in effects['minimumRunExclusions']:
-                excluded_runs.add((f['id'], exclusion['candidate']))
-                state['minimumRunExclusions'].append(exclusion)
-            viability_counts['checked'] += effects['viabilityChecked']
-            viability_counts['excluded'] += effects['viabilityExcluded']
-        expand.node_search = node_search  # parity checks repeat the frame's screens natively
-        expand.minimum_runs = minimum_runs
-        return expand
 
     def evaluation_args(f, program):
         """evaluate_program's frame-dependent arguments, shared by scoring and finalization."""

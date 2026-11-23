@@ -930,7 +930,7 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | Symbol | Line | Kind |
 | --- | ---: | --- |
 | `iter_movement_programs` | [1](../src/parkour_solver/search/movement.py#L1) | function |
-| `screen_program` | [14](../src/parkour_solver/search/movement.py#L14) | function |
+| `screen_program` | [13](../src/parkour_solver/search/movement.py#L13) | function |
 
 ## search/ordered_route.py
 
