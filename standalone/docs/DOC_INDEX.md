@@ -84,6 +84,7 @@ control work; inclusion here is not authorization to implement a historical plan
 | [research/checkpoint-cost/README.md](../research/checkpoint-cost/README.md) | Frozen source-era evidence; use research guide for reproduction: Checkpoint cost and alias paths from the save walk |
 | [research/checkpoint-guidance/README.md](../research/checkpoint-guidance/README.md) | Frozen source-era evidence; use research guide for reproduction: Geometric checkpoint guidance |
 | [research/checkpoint-guidance/RESULTS.md](../research/checkpoint-guidance/RESULTS.md) | Frozen source-era evidence; use research guide for reproduction: Checkpoint guidance results |
+| [research/clarabel-refinement/README.md](../research/clarabel-refinement/README.md) | Frozen source-era evidence; use research guide for reproduction: Clarabel iterative refinement off in the disk solve |
 | [research/contact-combinations/README.md](../research/contact-combinations/README.md) | Frozen source-era evidence; use research guide for reproduction: Coupled contact and ladder evidence |
 | [research/decision-windows/README.md](../research/decision-windows/README.md) | Frozen source-era evidence; use research guide for reproduction: Joint decision windows and objective bands |
 | [research/decision-windows/RESULTS.md](../research/decision-windows/RESULTS.md) | Frozen source-era evidence; use research guide for reproduction: Joint windows: what survives later comparison |

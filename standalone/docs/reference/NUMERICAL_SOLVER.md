@@ -175,8 +175,9 @@ becomes `|a[t]| <= magnitude[t] + 1e-9`. Every other row is the worker's, with
 retained position/velocity/acceleration states: exact dynamics, fixed or interval
 starts, contact resets with the `SOLVER_MARGIN` reach row, and X/Z walls. Equalities go in
 Clarabel's zero cone and each tick's disk in a 3-dimensional second-order cone.
-Settings are QDLDL, one thread, 200 iterations, a 0.1 s cap and `1e-9`
-feasibility/gap tolerances (`1e-8` infeasibility); a run that ends `MaxIterations`
+Settings are QDLDL, one thread, 200 iterations, a 0.1 s cap, `1e-9`
+feasibility/gap tolerances (`1e-8` infeasibility) and iterative refinement off
+(same verdicts, faster solves: [evidence](../../research/clarabel-refinement/README.md)); a run that ends `MaxIterations`
 or `MaxTime` is solved once more with 500 iterations and a 0.5 s cap
 (`retried: true`). Requests with an inertia
 threshold, ladder ticks, an inertia pattern or non-X/Z rows have no spec.

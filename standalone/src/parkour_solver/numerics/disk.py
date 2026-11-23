@@ -315,6 +315,8 @@ def _solve(content, time_limit, max_iter):
     settings.max_iter = max_iter
     settings.tol_feas = settings.tol_gap_abs = settings.tol_gap_rel = TOL
     settings.tol_infeas_abs = settings.tol_infeas_rel = INFEASIBILITY_TOL
+    # Same verdicts and search decisions, faster solves (research/clarabel-refinement/README.md).
+    settings.iterative_refinement_enable = False
     assembled = time.perf_counter()
     solver = clarabel.DefaultSolver(csc_matrix((2*width, 2*width)), cost, matrix, rhs, cones, settings)
     ready = time.perf_counter()

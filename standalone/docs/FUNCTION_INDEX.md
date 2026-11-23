@@ -492,7 +492,7 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `_result` | [213](../src/parkour_solver/numerics/disk.py#L213) | function |
 | `_attempt` | [229](../src/parkour_solver/numerics/disk.py#L229) | function |
 | `_solve` | [237](../src/parkour_solver/numerics/disk.py#L237) | function |
-| `_cost` | [338](../src/parkour_solver/numerics/disk.py#L338) | function |
+| `_cost` | [340](../src/parkour_solver/numerics/disk.py#L340) | function |
 
 ## numerics/model.py
 

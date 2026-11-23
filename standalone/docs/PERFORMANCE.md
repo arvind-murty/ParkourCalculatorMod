@@ -157,6 +157,10 @@ ordered options. That is targeted enumeration work, not a whole-solver speedup.
 - In-process movement bridge: on the extended B22 task at an equal 300 s budget,
   coefficient, scene and footprint calls took 0.72 s against 6.84 s through the Java
   process, with identical requests ([evidence](../research/jvm-free-bridge/README.md)).
+- Clarabel iterative refinement off in every disk solve: on the extended fixed-work control
+  (100 solver calls) search time fell from 39.36 s to 37.50 s with identical transitions and
+  verdicts, and a 300 s extended run spent 7.92 s instead of 11.43 s in Clarabel requests
+  ([evidence](../research/clarabel-refinement/README.md)).
 - IPOPT row reduction: final rows fall from 278 to 91 on the benchmark
   ([constraint reduction](IPOPT_CONSTRAINT_REDUCTION.md)).
 - Content-addressed manifest plus SQLite checkpoints

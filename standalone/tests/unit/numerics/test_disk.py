@@ -106,15 +106,23 @@ class ArchivedReal11Tests(unittest.TestCase):
             self.assertGreaterEqual(sense*candidate['objective'], sense*row['stockObjective']-1e-6, row['problemHash'])
         self.assertEqual((verdicts.count('feasible'), verdicts.count('infeasible')), (14, 4))
 
-    def test_requests_clarabel_never_solved_under_their_objective_are_infeasible(self):
-        # Captured requests that end without a verdict under their objective and are primal infeasible without it.
+    def test_requests_iterative_refinement_left_undecided_are_primal_infeasible(self):
+        # Captured requests that ended NumericalError under their objective with iterative refinement on.
         for row in read('disk-undecided.json.gz')['rows']:
             content = disk.spec(prepare(row['request']), strict=True)
             result = disk.solve(content, seconds=disk.CAP)
-            self.assertNotIn(result['status'], disk.FEASIBLE+PRIMAL_INFEASIBLE, row['capturedId'])
             self.assertEqual(result['outcome'], 'infeasible', row['capturedId'])
+            self.assertIn(result['status'], PRIMAL_INFEASIBLE, row['capturedId'])
             stripped = {k: v for k, v in content.items() if k != 'objective'}
             self.assertIn(disk.solve(stripped, seconds=disk.CAP)['status'], PRIMAL_INFEASIBLE, row['capturedId'])
+
+    def test_a_status_neither_feasible_nor_a_limit_is_infeasible(self):
+        import clarabel
+        content = disk.spec(request(2, .1), strict=True)
+        failed = SimpleNamespace(solve=lambda: SimpleNamespace(status='NumericalError', x=[0.]*16, iterations=3))
+        with mock.patch.object(clarabel, 'DefaultSolver', return_value=failed):
+            result = disk._attempt(content, disk.CAP, disk.MAX_ITER)
+        self.assertEqual((result['status'], result['outcome'], result['controls']), ('NumericalError', 'infeasible', None))
 
 
 @unittest.skipUnless(RUNTIME, 'Set PKC_IPOPT_PYTHON to compare the relaxation with IPOPT')
@@ -128,7 +136,8 @@ class IpoptOracleTests(unittest.TestCase):
         self.assertEqual(full['status'], 'feasible')
         sense = 1 if p['objective']['sense'] == 'MAX' else -1
         self.assertGreaterEqual(sense*candidate['objective'], sense*full['candidate']['objective']-1e-7)
-        self.assertAlmostEqual(result['objective'], candidate['objective'], delta=1e-9)
+        # Without iterative refinement Clarabel's own states carry residuals of a few 1e-9 (research/clarabel-refinement).
+        self.assertAlmostEqual(result['objective'], candidate['objective'], delta=1e-8)
         if disk.deficits(p, result['controls'])[0] <= disk.ALARM_FRACTION:
             self.assertAlmostEqual(candidate['objective'], full['candidate']['objective'], delta=1e-6)
         return candidate
