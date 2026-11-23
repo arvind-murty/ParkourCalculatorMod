@@ -505,8 +505,16 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `_command` | [17](../src/parkour_solver/numerics/solver.py#L17) | function |
-| `solve` | [21](../src/parkour_solver/numerics/solver.py#L21) | function |
+| `_command` | [18](../src/parkour_solver/numerics/solver.py#L18) | function |
+| `_Worker` | [22](../src/parkour_solver/numerics/solver.py#L22) | class |
+| `_Worker.__init__` | [24](../src/parkour_solver/numerics/solver.py#L24) | function |
+| `_Worker.publish` | [39](../src/parkour_solver/numerics/solver.py#L39) | function |
+| `_Worker._read_output` | [52](../src/parkour_solver/numerics/solver.py#L52) | function |
+| `_Worker._read_errors` | [66](../src/parkour_solver/numerics/solver.py#L66) | function |
+| `_Worker.send` | [73](../src/parkour_solver/numerics/solver.py#L73) | function |
+| `_Worker.close` | [86](../src/parkour_solver/numerics/solver.py#L86) | function |
+| `_close_workers` | [106](../src/parkour_solver/numerics/solver.py#L106) | function |
+| `solve` | [111](../src/parkour_solver/numerics/solver.py#L111) | function |
 
 ## numerics/worker.py
 

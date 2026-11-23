@@ -290,14 +290,20 @@ def phase(problem, yaw, pattern, seconds, stop, on_candidate, kind, seed_name):
 
 
 def main():
-    problem = json.loads(sys.stdin.readline())
-    if problem['version'] != 1:
-        raise ValueError('Unsupported protocol version')
-    with contextlib.redirect_stdout(sys.stderr):
-        ca.nlpsol('check_ipopt', 'ipopt', {'x': ca.SX.sym('x'), 'f': 0},
-                  {'print_time': False, 'ipopt.print_level': 0, 'ipopt.sb': 'yes'})
-    status = run(problem, phase, lambda yaw: forward(problem, yaw, problem['threshold'])[2].tolist(), send)
-    send({'type': 'done', 'status': status})
+    """Answers one request per stdin line until stdin closes; a kept-alive worker gets several (numerics/solver.py)."""
+    checked = False
+    for line in sys.stdin:
+        problem = json.loads(line)
+        if problem['version'] != 1:
+            raise ValueError('Unsupported protocol version')
+        if not checked:
+            with contextlib.redirect_stdout(sys.stderr):
+                ca.nlpsol('check_ipopt', 'ipopt', {'x': ca.SX.sym('x'), 'f': 0},
+                          {'print_time': False, 'ipopt.print_level': 0, 'ipopt.sb': 'yes'})
+            checked = True
+        status = run(problem, phase, lambda yaw, problem=problem: forward(problem, yaw, problem['threshold'])[2].tolist(),
+                     send)
+        send({'type': 'done', 'status': status})
 
 
 if __name__ == '__main__':
