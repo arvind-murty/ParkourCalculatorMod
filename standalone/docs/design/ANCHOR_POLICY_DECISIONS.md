@@ -418,8 +418,8 @@ A generated choice is skipped, or loses the rectangles concerned, for:
   a side wall, from outside it moves against that side's outward axis
   (`entry_backward`). It covers grinds (`movement/ceiling_generation.py`), normal steps,
   slab boosts, blip-ups, corner jump cancels and corner blip-ups (`movement/stepping.py`;
-  corner rows cross the X side and only pass the Z side) and the wall approach of blips
-  (`landing_wall_options`, `movement/cases.py`). Wall avoidance rows are not entries.
+  corner rows cross the X side and only pass the Z side). A blip's wall avoidance rows are
+  not entries.
 
 Both skips are logged with the generators' reachability exclusions (reasons
 `behind_decision_point` and `entry_against_guide`), so the solve report lists them per

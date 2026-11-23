@@ -4,9 +4,18 @@ from tests.support.paths import AUTONOMY_DATA
 import json
 
 FIXTURES = AUTONOMY_DATA / 'fixtures/stepping'
+# Recorded fixtures are immutable (tools/layout-migration.json). blip-wall.json records the blip's wall-hit variant,
+# removed on 2026-11-22: a hit then a blip is a wall hit, deferred with intentional wall hits.
+RETIRED = {'blip-wall'}
+
 
 def fixture(name):
     return json.loads((FIXTURES / (name + '.json')).read_text())
+
+
+def fixture_names():
+    """Every stepping fixture production still generates."""
+    return sorted(p.stem for p in FIXTURES.glob('*.json') if p.stem not in RETIRED)
 
 
 def _context(scene, program, gate, **fields):
@@ -63,12 +72,10 @@ def _corner(case, x_cmp, z_cmp):
     return wanted
 
 
-# Which generated variant each fixture names: the blip that approaches a wall, a blip-up or corner blip-up that walks on
-# from the higher top or jumps from it, and the corner each corner fixture recorded (approach from -X; escape -Z for the
-# corner blip-up, +Z for the corner jump cancel).
+# Which generated variant each fixture names: a blip-up or corner blip-up that walks on from the higher top or jumps
+# from it, and the corner each corner fixture recorded (approach from -X; escape -Z for the corner blip-up, +Z for the
+# corner jump cancel).
 VARIANTS = {
-    'blip-wall': lambda case, p: any(e['axis'] != 'Y' for e in p['profile']['contactEvents']),
-    'blip': lambda case, p: not any(e['axis'] != 'Y' for e in p['profile']['contactEvents']),
     'blip_up-jump': lambda case, p: p['profile']['jump'][_hit(p, 'blip_up')],
     'blip_up': lambda case, p: not p['profile']['jump'][_hit(p, 'blip_up')],
     'corner_blip_up': lambda case, p: (not p['profile']['jump'][_hit(p, 'corner_blip_up')]

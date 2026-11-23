@@ -34,7 +34,7 @@ The position before the jump tick is on the lower level. The jump tick is on the
 
 ### Blip
 
-The higher block is a standard wall on L. Generate avoidance alternatives and actual retained wall-hit alternatives. A real hit uses the normal finite-wall contact constraints, horizontal velocity cancellation and sprint transition; it does not imply reversal.
+The higher block is a standard wall on L, and the player keeps clear of its exposed sides there. A wall hit is not part of a blip: a hit followed by a blip is modelled as a hit, then a blip, and stays deferred with intentional wall hits (user, 2026-11-22).
 
 The ordinary air schedule lands on the lower level, and the resulting hit tick steps to the higher level. Require 0 <= b-yL <= 0.6. The landing tick satisfies the lower landing constraint; the hit tick additionally satisfies the higher block's X/Z condition and yH=b. The movement producing H is still air movement. Normal grounded movement/jumping follows from the higher level.
 
@@ -119,8 +119,8 @@ members' exposed sides, each side plane once. Exposure never
 rejects a step trigger: the trigger check uses the event's `boxes`, and uncertain probes
 keep the `InteractionGate` unknown path.
 
-On L a blip's higher block is an ordinary finite obstacle: outside-face and real face-hit
-alternatives on its exposed sides, a hit being a standard `role=contact` event. Blip-up also
+On L a blip's higher block is an ordinary finite obstacle: one outside-face alternative per
+exposed side (`blip:wall_avoid`). Blip-up also
 requires being outside the higher block on L, otherwise the Y-first resolver lands on it.
 Corner cases share X-approach and next-state Z-escape constraints.
 

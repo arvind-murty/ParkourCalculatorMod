@@ -1,8 +1,7 @@
-from tests.support.stepping_cases import FIXTURES, case_programs, fixture, fixture_program
+from tests.support.stepping_cases import case_programs, fixture, fixture_names, fixture_program
 from tests.support.paths import AUTONOMY_DATA
 import copy
 import itertools
-import json
 import os
 import unittest
 
@@ -77,9 +76,9 @@ class SteppingCaseTests(unittest.TestCase):
         self.assertIn((profile['duration'] - 1, 1, 'landing'), schedule(compiled['route'], [0])['supportChecks'])
 
     def test_generated_units_retime_all_case_controls_constraints_and_scene_contacts(self):
-        for path in FIXTURES.glob('*.json'):
-            data = json.loads(path.read_text())
-            scene, _, program = fixture_program(path.stem)
+        for name in fixture_names():
+            data = fixture(name)
+            scene, _, program = fixture_program(name)
             compiled = compile_program(scene, program)
             route = compiled['route']
             route.update(maxTotalRunTicks=2, runBounds=[[0, 2]])
@@ -91,10 +90,10 @@ class SteppingCaseTests(unittest.TestCase):
             self.assertEqual(b['jump'][2:], profile['jump'])
             self.assertEqual([shifted_unit(u, 2) for u in a['movementUnits']], b['movementUnits'][1:])
             self.assertEqual([dict(c, state=c['state'] + 2) for c in a['sceneContacts']], b['sceneContacts'])
-            self.assertTrue(validate_vertical_schedule(route, compiled['profiles'], b)['feasible'], path.name)
+            self.assertTrue(validate_vertical_schedule(route, compiled['profiles'], b)['feasible'], name)
             partial = schedule(route, [2], stage='run')
             self.assertEqual(partial['ticks'], 2)
-            self.assertTrue(validate_vertical_schedule(route, compiled['profiles'], partial)['feasible'], path.name)
+            self.assertTrue(validate_vertical_schedule(route, compiled['profiles'], partial)['feasible'], name)
             typed = [u for u in a['movementUnits'] if u['type'] in ('stepping', 'ceiling')]
             self.assertEqual([u['case'] for u in typed], [data['case']])
             for row in profile.get('positionConstraints', []):
@@ -159,12 +158,12 @@ class SteppingCaseTests(unittest.TestCase):
 @unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'),
                      'Set PKC_IPOPT_PYTHON')
 class SteppingNumericalTests(unittest.TestCase):
-    def test_fresh_original_state_solves_for_every_case_and_both_blip_wall_choices(self):
+    def test_fresh_original_state_solves_for_every_case(self):
         with PythonCompiler() as compiler:
-            for path in sorted(FIXTURES.glob('*.json')):
-                with self.subTest(fixture=path.name):
-                    data = json.loads(path.read_text())
-                    scene, _, program = fixture_program(path.stem)
+            for name in fixture_names():
+                with self.subTest(fixture=name):
+                    data = fixture(name)
+                    scene, _, program = fixture_program(name)
                     _, result = solve(scene, program, compiler)
                     self.assertEqual(result['status'], 'feasible', result)
                     best = result['best']
@@ -174,14 +173,7 @@ class SteppingNumericalTests(unittest.TestCase):
                     missing = copy.deepcopy(best['plan'])
                     missing['sceneContacts'] = [c for c in missing['sceneContacts'] if not c.get('movementCase')]
                     self.assertFalse(check_geometry(scene['collisionScene'], missing, best['candidate'], vertical, compiler, 3)['feasible'])
-                    if path.stem == 'blip-wall':
-                        event = next(e for e in program['profile']['contactEvents'] if e['axis'] != 'Y')
-                        landing = event['offset'] + 1
-                        self.assertEqual(best['candidate']['velocity'][landing]['XZ'.index(event['axis'])], 0)
-                        self.assertTrue(best['candidate']['movement']['horizontalCollision'][landing])
-                        self.assertFalse(best['candidate']['movement']['sprinting'][landing])
-                        self.assertEqual(best['candidate']['y'][landing + 1], 1.5)
-                    elif data['case'] in ('grind', 'corner_jump_cancel'):
+                    if data['case'] in ('grind', 'corner_jump_cancel'):
                         self.assertFalse(any(best['candidate']['movement']['horizontalCollision']))
                     if data['case'] in ('blip_up', 'corner_blip_up'):
                         hit = next(e['anchors']['hit'] for e in program['profile']['caseEvents'] if e['case'] == data['case'])
@@ -315,20 +307,6 @@ class ExposureTests(unittest.TestCase):
         corners = self.sides([start, target], 'corner_jump_cancel', forward=plus_x)
         self.assertEqual(len(corners), 2)
         self.assertTrue(all(('X', 'LE', 1.6999) in corner for corner in corners))
-
-    def test_an_ordinary_decision_approaches_no_wall_by_a_disallowed_move(self):
-        from parkour_solver.movement.cases import landing_wall_options
-        from parkour_solver.spatial.anchor_guides import leg_class
-        solids = [[-3, 0, -3, 6, 1, 3], [0, 1, 0, 1, 2, 1]]
-        scene = dict(collisionScene=dict(solids=solids), blocks=[dict(id=name, sourceBlock=name, solidIndex=i, top=b[4])
-                     for i, (name, b) in enumerate(zip(['floor', 'wall'], solids))])
-        def approaches(**context):
-            return sorted((e['axis'], e['direction']) for _, finite in landing_wall_options(
-                dict(dict(scene=scene, interactionGate=None, program=dict(profile=dict(duration=0))), **context),
-                scene['blocks'][1], 2, 1.) for e in finite)
-        self.assertEqual(approaches(), [('X', -1), ('X', 1), ('Z', -1), ('Z', 1)])
-        self.assertEqual(approaches(forward=dict(point=[0., 0.], allowed=leg_class((1., 0.))[1], margin=.3)),
-                         [('X', 1), ('Z', -1), ('Z', 1)])
 
     def test_a_departed_block_gets_no_feet_case_and_no_reachability_query(self):
         from parkour_solver.movement.ceiling_generation import open_ceiling_choices

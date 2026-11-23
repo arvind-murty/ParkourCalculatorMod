@@ -2,8 +2,7 @@ import copy
 
 from parkour_solver.physics.vertical import REST_CARRY, f32
 from parkour_solver.movement.vertical_profiles import trace_ladder_schedule
-from parkour_solver.movement.contact_combinations import (bounding_region, contact_event, finite_rows, reachable_option,
-                                                          region_offset, scene_contact_options)
+from parkour_solver.movement.contact_combinations import bounding_region, finite_rows, reachable_option, region_offset
 from parkour_solver.scene.geometry import expanded_box
 from parkour_solver.spatial.surfaces import scene_geometry
 from parkour_solver.movement.units import profile_program
@@ -127,28 +126,6 @@ def case_profile(source_y, target_y, event, *, max_inputs=200, jump_at_start=Tru
         positionConstraints=list(constraints),contactEvents=list(contacts))
     profile['generatedUnits'] = profile_program(profile)
     return profile
-
-
-def landing_wall_options(context, block, landing, y):
-    """Avoid or approach each exposed side of the higher block around the lower landing; no approach by a move the
-    decision's guide leg disallows (O10)."""
-    from parkour_solver.reachability.service import entry_backward
-    if landing < 1:
-        return
-    scene = context['scene']
-    box = scene['collisionScene']['solids'][block['solidIndex']]
-    footprint = [expanded_box(box)[k] for k in (0, 2, 3, 5)]
-    for axis in ('X','Z'):
-        a = 0 if axis=='X' else 2
-        lo, hi = (0, 2) if axis == 'X' else (1, 3)
-        for direction in (-1,1):
-            if exposed_side(scene, block, axis, direction, y):
-                yield [outside_row(box,axis,direction,landing,'blip:wall_avoid')], []
-            for option in scene_contact_options(scene, a, -direction, members=[block['solidIndex']]):
-                if any(r[lo] <= _height(scene, block, y) < r[hi] for r in option.regions) and not entry_backward(
-                        context, axis, -direction, footprint, label=dict(owner=block['id'], role='blip')):
-                    yield ([outside_row(box,axis,-direction,landing-1,'blip:wall_approach')],
-                           [contact_event(option, axis, direction, landing-1, 'contact')])
 
 
 def entry_possible(profile, bounds):

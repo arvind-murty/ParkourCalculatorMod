@@ -150,9 +150,9 @@ def block_names(scene):
 
 
 # Rows putting the player beside a case's block before the case, as (row name, ticks after the case input, axes): the
-# side it enters from, the side a blip keeps clear of or hits, or a corner's X side then its Z side.
+# side it enters from (a blip keeps clear of it on its landing tick), or a corner's X side then its Z side.
 SIDE_ROWS = dict(grind=[('grind:outside',0,'XZ')], normal_step=[('case:outside',0,'XZ')], slab_boost=[('case:outside',0,'XZ')],
-                 blip=[('blip:wall_avoid',0,'XZ'),('blip:wall_approach',-1,'XZ')], blip_up=[('blip_up:outside',0,'XZ')],
+                 blip=[('blip:wall_avoid',0,'XZ')], blip_up=[('blip_up:outside',0,'XZ')],
                  corner_jump_cancel=[('case:outside',0,'X'),('case:outside',1,'Z')],
                  corner_blip_up=[('case:outside',0,'X'),('case:outside',1,'Z')])
 

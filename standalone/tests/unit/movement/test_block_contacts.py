@@ -471,10 +471,10 @@ class BlockTableTests(unittest.TestCase):
             self.assertGreater(self.assert_table_keeps_every_choice(scene, roots), 0)
 
     def test_table_keeps_every_stepping_fixture_choice(self):
-        from tests.support.stepping_cases import FIXTURES, fixture
+        from tests.support.stepping_cases import fixture, fixture_names
         from parkour_solver.movement.program import empty_program
         from parkour_solver.scene.normalize import prepare_scene
-        for name in sorted(p.stem for p in FIXTURES.glob('*.json')):
+        for name in fixture_names():
             with self.subTest(name=name):
                 scene = prepare_scene(fixture(name)['request'])
                 self.assert_table_keeps_every_choice(scene, [empty_program(scene['initial'], threshold=0.)])
@@ -495,13 +495,13 @@ class BlockTableTests(unittest.TestCase):
 class RunTickChoiceTests(unittest.TestCase):
     def test_withheld_run_tick_choices_are_exactly_the_grounded_no_jump_ones(self):
         from tests.support.block_table import compiler, nodes, real11_inputs
-        from tests.support.stepping_cases import FIXTURES, fixture
+        from tests.support.stepping_cases import fixture, fixture_names
         from parkour_solver.movement.generation import generate_choices
         from parkour_solver.movement.program import boundary_state, empty_program
         from parkour_solver.reachability.service import InteractionGate
         from parkour_solver.scene.normalize import prepare_scene
         cases = real11_inputs()+[(prepare_scene(fixture(name)['request']), None)
-                                 for name in sorted(p.stem for p in FIXTURES.glob('*.json'))]
+                                 for name in fixture_names()]
         withheld, airborne = set(), 0
         with compiler() as java:
             for scene, roots in cases:

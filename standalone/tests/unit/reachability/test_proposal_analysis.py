@@ -124,8 +124,7 @@ class Real11JointPrerequisiteTests(unittest.TestCase):
             self.assertEqual(cursor['groupEnd'],cursor['anchorIndex'])
             adapter.for_goal(saved['request'],cursor).context(context)
             gate=InteractionGate(scene,compiler);gate.context(context)
-            with patch('parkour_solver.movement.stepping.landing_wall_options',side_effect=AssertionError('late wall fanout')), \
-                 patch('parkour_solver.movement.stepping.corner_rows',side_effect=AssertionError('late corner fanout')):
+            with patch('parkour_solver.movement.stepping.corner_rows',side_effect=AssertionError('late corner fanout')):
                 choices=list(open_stepping_choices(context))
             self.assertEqual(choices,[])
             self.assertGreaterEqual(gate.metrics['sequenceExclusions'],2)

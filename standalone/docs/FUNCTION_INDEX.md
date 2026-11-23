@@ -202,18 +202,17 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `outside_row` | [17](../src/parkour_solver/movement/cases.py#L17) | function |
-| `tangent_rows` | [23](../src/parkour_solver/movement/cases.py#L23) | function |
-| `_faces` | [29](../src/parkour_solver/movement/cases.py#L29) | function |
-| `_height` | [34](../src/parkour_solver/movement/cases.py#L34) | function |
-| `exposed_side` | [40](../src/parkour_solver/movement/cases.py#L40) | function |
-| `convex_corner` | [49](../src/parkour_solver/movement/cases.py#L49) | function |
-| `top_choices` | [58](../src/parkour_solver/movement/cases.py#L58) | function |
-| `side_run` | [71](../src/parkour_solver/movement/cases.py#L71) | function |
-| `corner_rows` | [87](../src/parkour_solver/movement/cases.py#L87) | function |
-| `case_profile` | [99](../src/parkour_solver/movement/cases.py#L99) | function |
-| `landing_wall_options` | [132](../src/parkour_solver/movement/cases.py#L132) | function |
-| `entry_possible` | [154](../src/parkour_solver/movement/cases.py#L154) | function |
+| `outside_row` | [16](../src/parkour_solver/movement/cases.py#L16) | function |
+| `tangent_rows` | [22](../src/parkour_solver/movement/cases.py#L22) | function |
+| `_faces` | [28](../src/parkour_solver/movement/cases.py#L28) | function |
+| `_height` | [33](../src/parkour_solver/movement/cases.py#L33) | function |
+| `exposed_side` | [39](../src/parkour_solver/movement/cases.py#L39) | function |
+| `convex_corner` | [48](../src/parkour_solver/movement/cases.py#L48) | function |
+| `top_choices` | [57](../src/parkour_solver/movement/cases.py#L57) | function |
+| `side_run` | [70](../src/parkour_solver/movement/cases.py#L70) | function |
+| `corner_rows` | [86](../src/parkour_solver/movement/cases.py#L86) | function |
+| `case_profile` | [98](../src/parkour_solver/movement/cases.py#L98) | function |
+| `entry_possible` | [131](../src/parkour_solver/movement/cases.py#L131) | function |
 
 ## movement/ceiling_generation.py
 

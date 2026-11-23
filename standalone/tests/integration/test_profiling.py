@@ -380,10 +380,9 @@ class BookkeepingProfileTests(unittest.TestCase):
         blip = dict(case='blip', input=2, boxes=[higher], lowerBoxes=[lower])
         self.assertEqual(text([blip], [row('blip:wall_avoid', 2, 'Z', 'LE')]),
                          'lands on B13A and blips onto B13B t2 from its Z- side')
-        # A planned hit on the approach input names the face it meets; the blip enters from that side.
+        # A wall hit names the face it meets: moving +Z meets the Z- face.
         hit = dict(offset=1, axis='Z', direction=1, boxes=[higher], role='contact')
-        self.assertEqual(text([blip], [row('blip:wall_approach', 1, 'Z', 'LE')], [hit]),
-                         "hits B13B's Z- face t1, lands on B13A and blips onto B13B t2 from its Z- side")
+        self.assertEqual(text([], [], [hit]), "hits B13B's Z- face t1")
         slab = dict(case='slab_boost', input=1, boxes=[higher])
         self.assertEqual(text([slab], [row('case:outside', 1, 'X', 'GE')]), 'slab boost onto B13B t1 from its X+ side')
         # A corner case passes the corner (X side before it, Z side after) and ends beside the block.

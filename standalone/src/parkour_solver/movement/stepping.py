@@ -1,5 +1,5 @@
 from parkour_solver.physics.vertical import f32
-from parkour_solver.movement.cases import convex_corner, corner_rows, exposed_side, landing_wall_options, outside_row, top_choices
+from parkour_solver.movement.cases import convex_corner, corner_rows, exposed_side, outside_row, top_choices
 
 
 def box_for(block, context):
@@ -139,19 +139,19 @@ def _open_flight_cases(context, initial, jumping, faces, lower, lower_boxes, low
                     shared_event=dict(case='blip',input=landing,plane=higher.plane,lowerHeight=lower.plane,
                         higherHeight=higher.plane,boxes=boxes,lowerBoxes=lower_boxes,
                         anchors={'landing':landing,'hit':landing+1})
-                    options = ()
-                    if sequence_allowed(shared_event, lower_rows + top, name):
-                        options = landing_wall_options(context, block, landing, y) if landing else (
-                            ([outside_row(box, axis, sign, 0, 'blip:wall_avoid')], [])
-                            for axis in ('X', 'Z') for sign in (-1, 1) if exposed_side(scene, block, axis, sign, y))
-                    for rows, finite in options:
-                        if not _fresh(made, 'blip', rows, finite, top):
+                    # On L the player keeps clear of each exposed side of the higher block. A hit on it before the
+                    # blip is a wall hit followed by a blip, deferred with intentional wall hits (user, 2026-11-22).
+                    options = ([[outside_row(box, axis, sign, landing, 'blip:wall_avoid')]
+                                for axis in ('X', 'Z') for sign in (-1, 1) if exposed_side(scene, block, axis, sign, y)]
+                               if sequence_allowed(shared_event, lower_rows + top, name) else [])
+                    for rows in options:
+                        if not _fresh(made, 'blip', rows, top):
                             continue
                         event = dict(case='blip', input=landing, plane=higher.plane, lowerHeight=lower.plane,
                             higherHeight=higher.plane, boxes=boxes, lowerBoxes=lower_boxes,
                             anchors={'landing': landing, 'hit': landing + 1})
                         choice = named_choice(context, 'stepping', initial, event, jumping=jumping,
-                            constraints=lower_rows + rows + top, finite=finite, support=name,
+                            constraints=lower_rows + rows + top, support=name,
                             region_choices=lower_regions + regions)
                         if choice:
                             yield choice
