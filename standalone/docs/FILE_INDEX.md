@@ -59,17 +59,17 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/ANCHOR_SEARCH_EXECUTION_REFERENCE.md](ANCHOR_SEARCH_EXECUTION_REFERENCE.md) | 37603 |
 | [docs/ARCHITECTURE.md](ARCHITECTURE.md) | 16418 |
 | [docs/CHECKPOINT_STORAGE.md](CHECKPOINT_STORAGE.md) | 7541 |
-| [docs/CODE_MAP.md](CODE_MAP.md) | 39746 |
+| [docs/CODE_MAP.md](CODE_MAP.md) | 40046 |
 | [docs/CURRENT_STATE.md](CURRENT_STATE.md) | 12858 |
 | [docs/DECISIONS_AND_PLANS.md](DECISIONS_AND_PLANS.md) | 20981 |
 | [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 36593 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11512 |
 | [docs/DOC_INDEX.md](DOC_INDEX.md) | 28873 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 275135 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 275285 |
 | [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 66117 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
-| [docs/LAYOUT.md](LAYOUT.md) | 12138 |
+| [docs/LAYOUT.md](LAYOUT.md) | 12318 |
 | [docs/MOD_REFERENCES.md](MOD_REFERENCES.md) | 5299 |
 | [docs/PERFORMANCE.md](PERFORMANCE.md) | 20029 |
 | [docs/REAL11_EXTENDED_GEOMETRY.md](REAL11_EXTENDED_GEOMETRY.md) | 12104 |
@@ -138,7 +138,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 
 | File | Bytes |
 | --- | ---: |
-| [native/cpp/CMakeLists.txt](../native/cpp/CMakeLists.txt) | 5210 |
+| [native/cpp/CMakeLists.txt](../native/cpp/CMakeLists.txt) | 5238 |
 | [native/cpp/LICENSE.cpython](../native/cpp/LICENSE.cpython) | 13936 |
 | [native/cpp/include/pkc/canonical.hpp](../native/cpp/include/pkc/canonical.hpp) | 977 |
 | [native/cpp/include/pkc/coefficients.hpp](../native/cpp/include/pkc/coefficients.hpp) | 355 |
@@ -148,6 +148,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/include/pkc/constraints/variants.hpp](../native/cpp/include/pkc/constraints/variants.hpp) | 4225 |
 | [native/cpp/include/pkc/envelopes.hpp](../native/cpp/include/pkc/envelopes.hpp) | 967 |
 | [native/cpp/include/pkc/gate.hpp](../native/cpp/include/pkc/gate.hpp) | 764 |
+| [native/cpp/include/pkc/io/checkpoint_store.hpp](../native/cpp/include/pkc/io/checkpoint_store.hpp) | 1661 |
 | [native/cpp/include/pkc/movement/cases.hpp](../native/cpp/include/pkc/movement/cases.hpp) | 2256 |
 | [native/cpp/include/pkc/movement/contact_combinations.hpp](../native/cpp/include/pkc/movement/contact_combinations.hpp) | 2119 |
 | [native/cpp/include/pkc/movement/generation.hpp](../native/cpp/include/pkc/movement/generation.hpp) | 1930 |
@@ -179,7 +180,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/include/pkc/search/bounds/remaining.hpp](../native/cpp/include/pkc/search/bounds/remaining.hpp) | 595 |
 | [native/cpp/include/pkc/search/comparison.hpp](../native/cpp/include/pkc/search/comparison.hpp) | 1296 |
 | [native/cpp/include/pkc/search/dfs.hpp](../native/cpp/include/pkc/search/dfs.hpp) | 3787 |
-| [native/cpp/include/pkc/search/dfs_search.hpp](../native/cpp/include/pkc/search/dfs_search.hpp) | 9051 |
+| [native/cpp/include/pkc/search/dfs_search.hpp](../native/cpp/include/pkc/search/dfs_search.hpp) | 10409 |
 | [native/cpp/include/pkc/search/dfs_state.hpp](../native/cpp/include/pkc/search/dfs_state.hpp) | 8643 |
 | [native/cpp/include/pkc/search/engine.hpp](../native/cpp/include/pkc/search/engine.hpp) | 2683 |
 | [native/cpp/include/pkc/search/feasibility.hpp](../native/cpp/include/pkc/search/feasibility.hpp) | 989 |
@@ -196,7 +197,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/include/pkc/validation/vertical.hpp](../native/cpp/include/pkc/validation/vertical.hpp) | 353 |
 | [native/cpp/include/pkc/value.hpp](../native/cpp/include/pkc/value.hpp) | 698 |
 | [native/cpp/include/pkc/vertical.hpp](../native/cpp/include/pkc/vertical.hpp) | 2554 |
-| [native/cpp/python/module.cpp](../native/cpp/python/module.cpp) | 82318 |
+| [native/cpp/python/module.cpp](../native/cpp/python/module.cpp) | 87668 |
 | [native/cpp/src/canonical.cpp](../native/cpp/src/canonical.cpp) | 13203 |
 | [native/cpp/src/codec.hpp](../native/cpp/src/codec.hpp) | 11503 |
 | [native/cpp/src/coefficient_tables.inc](../native/cpp/src/coefficient_tables.inc) | 23532 |
@@ -209,6 +210,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/src/constraints/variants.cpp](../native/cpp/src/constraints/variants.cpp) | 35407 |
 | [native/cpp/src/envelopes.cpp](../native/cpp/src/envelopes.cpp) | 22042 |
 | [native/cpp/src/gate.cpp](../native/cpp/src/gate.cpp) | 5073 |
+| [native/cpp/src/io/checkpoint_store.cpp](../native/cpp/src/io/checkpoint_store.cpp) | 5033 |
 | [native/cpp/src/movement/cases.cpp](../native/cpp/src/movement/cases.cpp) | 11200 |
 | [native/cpp/src/movement/contact_combinations.cpp](../native/cpp/src/movement/contact_combinations.cpp) | 17465 |
 | [native/cpp/src/movement/generation.cpp](../native/cpp/src/movement/generation.cpp) | 21683 |
@@ -242,7 +244,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/src/search/bounds/remaining.cpp](../native/cpp/src/search/bounds/remaining.cpp) | 8052 |
 | [native/cpp/src/search/comparison.cpp](../native/cpp/src/search/comparison.cpp) | 8960 |
 | [native/cpp/src/search/dfs.cpp](../native/cpp/src/search/dfs.cpp) | 20688 |
-| [native/cpp/src/search/dfs_search.cpp](../native/cpp/src/search/dfs_search.cpp) | 76899 |
+| [native/cpp/src/search/dfs_search.cpp](../native/cpp/src/search/dfs_search.cpp) | 81972 |
 | [native/cpp/src/search/dfs_state.cpp](../native/cpp/src/search/dfs_state.cpp) | 14396 |
 | [native/cpp/src/search/engine.cpp](../native/cpp/src/search/engine.cpp) | 13637 |
 | [native/cpp/src/search/feasibility.cpp](../native/cpp/src/search/feasibility.cpp) | 6092 |
@@ -1438,6 +1440,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/native-core/2026-11-22-minimum-runs/suite-native-summary.txt](../research/native-core/2026-11-22-minimum-runs/suite-native-summary.txt) | 41 |
 | [research/native-core/2026-11-22-minimum-runs/suite-python-summary.txt](../research/native-core/2026-11-22-minimum-runs/suite-python-summary.txt) | 42 |
 | [research/native-core/2026-11-22-minimum-runs/tests-asan-summary.txt](../research/native-core/2026-11-22-minimum-runs/tests-asan-summary.txt) | 28 |
+| [research/native-core/2026-11-22-native-checkpoint/encode-parity.txt](../research/native-core/2026-11-22-native-checkpoint/encode-parity.txt) | 729 |
 | [research/native-core/2026-11-22-native-frontier/asan-summary.txt](../research/native-core/2026-11-22-native-frontier/asan-summary.txt) | 539 |
 | [research/native-core/2026-11-22-native-frontier/fixed-asan-report-vs-release.json](../research/native-core/2026-11-22-native-frontier/fixed-asan-report-vs-release.json) | 764 |
 | [research/native-core/2026-11-22-native-frontier/fixed-parity-python-native.json](../research/native-core/2026-11-22-native-frontier/fixed-parity-python-native.json) | 176 |
@@ -1557,7 +1560,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/native-core/2026-11-22-validation/replay-sanitize.json](../research/native-core/2026-11-22-validation/replay-sanitize.json) | 105 |
 | [research/native-core/2026-11-22-validation/synthetic-intervals-release.json](../research/native-core/2026-11-22-validation/synthetic-intervals-release.json) | 34 |
 | [research/native-core/2026-11-22-validation/synthetic-intervals-sanitize.json](../research/native-core/2026-11-22-validation/synthetic-intervals-sanitize.json) | 32 |
-| [research/native-core/README.md](../research/native-core/README.md) | 58706 |
+| [research/native-core/README.md](../research/native-core/README.md) | 59440 |
 | [research/obstacle-avoidance/README.md](../research/obstacle-avoidance/README.md) | 3166 |
 | [research/obstacle-avoidance/blocked-result.json](../research/obstacle-avoidance/blocked-result.json) | 52110 |
 | [research/obstacle-avoidance/cross-neo-request.json](../research/obstacle-avoidance/cross-neo-request.json) | 5584 |

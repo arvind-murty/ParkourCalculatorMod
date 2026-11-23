@@ -24,15 +24,33 @@
 
 namespace pkc {
 
+// Where the program of the repair a checkpoint saver follows sits in a published state (paths from the state's root),
+// and where each extra target sits (a decision check's node entry): until the next full save, the saver writes the
+// program's repairState and each target whole there. Mirrors io/search_checkpoint.py's identity search: the active
+// anchor-leg program by default, the program and targets a repair began with.
+struct RepairTargets {
+    std::int64_t token = 0;  // the full save these paths belong to
+    bool patch = false;      // a repair's progress: patch that save rather than saving in full
+    std::vector<Array> program;
+    std::vector<std::vector<Array>> targets;
+};
+
+// A published state, frozen: Python reads it field by field and the checkpoint store encodes it natively.
+struct DfsSnapshot {
+    Value state;
+    RepairTargets repair;
+};
+using Snapshot = std::shared_ptr<const DfsSnapshot>;
+
 struct DfsHooks {
     std::function<double()> monotonic;  // time.monotonic()
     std::function<bool()> cancelled;    // cancel_event is set
-    // Progress saving: on_progress(state), its begin_repair(state, program, extra_targets) and repair_progress(state);
-    // `progress` says whether a saver is attached (on_progress is truthy).
+    // Progress saving: on_progress(state), its begin_repair(state, ...) and repair_progress(state), each given a
+    // snapshot; `progress` says whether a saver is attached (on_progress is truthy).
     bool progress = false;
-    std::function<void(const Value& state)> publish;
-    std::function<void(const Value& state, const Value& program, const Value& extra_targets)> begin_repair;
-    std::function<void(const Value& state)> repair_progress;
+    std::function<void(const Snapshot& state)> publish;
+    std::function<void(const Snapshot& state)> begin_repair;
+    std::function<void(const Snapshot& state)> repair_progress;
     // The work budget: check() (raises TimeoutError), counts['solverCalls'], counts[name] += 1, accepted(candidate),
     // termination (null for None).
     std::function<void()> check;
@@ -145,8 +163,12 @@ private:
     Object node_service(const Value& program, std::int64_t span, Frame& f);
     void replay_ancestors(const Value& program, const Value& positions, const Value& model);
     void publish();
-    void begin_repair(const Value& program, const Value& extra_targets);
+    void begin_repair(RepairTargets targets, const SharedValue& program);
     void repair_progress();
+    Snapshot snapshot(RepairTargets repair) const;
+    std::vector<Array> frame_paths(const Frame& f) const;
+    std::vector<Array> program_paths(const SharedValue& program) const;
+    RepairTargets active_targets();
     std::vector<Value> live_programs(Frame& f);
     Value latches_value() const;
     void apply(const NodeEffects& effects, Frame& f, const Value& context_id);
@@ -162,6 +184,11 @@ private:
     std::set<std::pair<std::int64_t, std::string>> excluded_runs_;
     std::int64_t viability_checked_ = 0, viability_excluded_ = 0;
     Frame* scoring_ = nullptr;  // the frame whose anchor-leg or finish solve is running
+    // The saver's base: the last full save's repair targets, and the program they follow (null for none, the
+    // decision check's flag for a node program).
+    RepairTargets repair_;
+    SharedValue repair_program_;
+    bool repair_node_ = false;
 };
 
 }  // namespace pkc

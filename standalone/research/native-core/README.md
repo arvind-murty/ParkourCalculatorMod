@@ -718,3 +718,14 @@ Python dict, which the checkpoint port removes.
 - The milestone test list passes in both modes ([suites](2026-11-22-native-frontier/suites-summary.txt)). The native
   core's published-state round trip now takes its states from a search with the real frontier: the stubbed one it
   used published generations `persistent_programs` never writes, which the typed generation rejects.
+
+## Native checkpoints, 2026-11-22
+
+Source: `ebde9131` plus `io/checkpoint_store.hpp` (`CheckpointEncoder`: the store's object encoding, tagged objects
+and content keys) and `DfsSearch` publishing frozen snapshots: the state as one immutable value, with the paths of the
+repair program and targets a checkpoint saver patches (by shared program, as the saver finds them by identity). The
+store itself (SQLite, manifest, patches, reading) stays Python.
+
+- The native encoding equals `CheckpointStore.archive`'s byte for byte: every recorded published state gives the same
+  root key, a hash over every chunk below it (short control 191, fixed work 438, milestone tests 325)
+  ([parity](2026-11-22-native-checkpoint/encode-parity.txt)).

@@ -121,19 +121,103 @@ Frame& DfsSearch::current() {
 
 // ---- progress
 
-void DfsSearch::publish() {
-    state_.cumulative_calls = options_.prior_calls + hooks_.solver_calls();
-    if (hooks_.progress) hooks_.publish(state());
+Snapshot DfsSearch::snapshot(RepairTargets repair) const {
+    return std::make_shared<const DfsSnapshot>(DfsSnapshot{to_value(state_), std::move(repair)});
 }
 
-void DfsSearch::begin_repair(const Value& program, const Value& extra_targets) {
+// Every path at which a frame sits: Python's state holds one frame dict in several lists.
+std::vector<Array> DfsSearch::frame_paths(const Frame& f) const {
+    std::vector<Array> out;
+    const std::pair<const char*, const std::vector<FramePtr>*> groups[] = {
+        {"stack", &state_.stack}, {"suspended", &state_.suspended}, {"refinements", &state_.refinements},
+        {"frames", &state_.frames}, {"goalQueue", &state_.goal_queue}};
+    for (const auto& [group, frames] : groups)
+        for (std::size_t i = 0; i < frames->size(); ++i)
+            if ((*frames)[i].get() == &f) out.push_back({text(group), integer_value(static_cast<std::int64_t>(i))});
+    return out;
+}
+
+// Every path at which a program sits, as SearchCheckpoint's identity search finds it.
+std::vector<Array> DfsSearch::program_paths(const SharedValue& program) const {
+    std::vector<Array> out;
+    const auto at_path = [&](Array base, std::initializer_list<Value> rest) {
+        base.insert(base.end(), rest.begin(), rest.end());
+        out.push_back(std::move(base));
+    };
+    const auto record = [&](const Array& base, const Record& r) {
+        if (r.program == program) at_path(base, {text("program")});
+        if (r.child && *r.child == program) at_path(base, {text("child")});
+    };
+    const auto frame = [&](const Array& base, const Frame& f) {
+        if (f.in_flight.value && f.in_flight.value->program == program) at_path(base, {text("inFlight"), text("program")});
+        for (std::size_t k = 0; k < f.ready.size(); ++k)
+            if (f.ready[k] == program) at_path(base, {text("ready"), integer_value(static_cast<std::int64_t>(k))});
+        for (std::size_t j = 0; j < f.records.size(); ++j) {
+            Array path = base;
+            path.push_back(text("records"));
+            path.push_back(integer_value(static_cast<std::int64_t>(j)));
+            record(path, *f.records[j]);
+        }
+    };
+    const std::pair<const char*, const std::vector<FramePtr>*> groups[] = {
+        {"stack", &state_.stack}, {"suspended", &state_.suspended}, {"refinements", &state_.refinements},
+        {"frames", &state_.frames}, {"goalQueue", &state_.goal_queue}};
+    for (const auto& [group, frames] : groups)
+        for (std::size_t i = 0; i < frames->size(); ++i)
+            frame({text(group), integer_value(static_cast<std::int64_t>(i))}, *(*frames)[i]);
+    for (std::size_t j = 0; j < state_.final_attempts.size(); ++j)
+        record({text("finalAttempts"), integer_value(static_cast<std::int64_t>(j))}, *state_.final_attempts[j]);
+    if (state_.best.value && state_.best.value->movement_program == program)
+        out.push_back({text("best"), text("movementProgram")});
+    return out;
+}
+
+// A full save's targets without a repair: the stack top's in-flight program, as the saver's default.
+RepairTargets DfsSearch::active_targets() {
+    RepairTargets targets;
+    targets.token = repair_.token + 1;
+    repair_program_ = nullptr;
+    repair_node_ = false;
+    if (!state_.stack.empty() && state_.stack.back()->in_flight.value) {
+        repair_program_ = state_.stack.back()->in_flight.value->program;
+        targets.program = program_paths(repair_program_);
+    }
+    repair_ = targets;
+    return targets;
+}
+
+void DfsSearch::publish() {
     state_.cumulative_calls = options_.prior_calls + hooks_.solver_calls();
-    if (hooks_.progress) hooks_.begin_repair(state(), program, extra_targets);
+    if (hooks_.progress) hooks_.publish(snapshot(active_targets()));
+}
+
+// `program` is the anchor-leg program the targets follow, or null for a decision check's node program.
+void DfsSearch::begin_repair(RepairTargets targets, const SharedValue& program) {
+    state_.cumulative_calls = options_.prior_calls + hooks_.solver_calls();
+    if (!hooks_.progress) return;
+    targets.token = repair_.token + 1;
+    repair_ = targets;
+    repair_program_ = program;
+    repair_node_ = !program;
+    hooks_.begin_repair(snapshot(std::move(targets)));
 }
 
 void DfsSearch::repair_progress() {
     state_.cumulative_calls = options_.prior_calls + hooks_.solver_calls();
-    if (hooks_.progress) hooks_.repair_progress(state());
+    if (!hooks_.progress) return;
+    // The saver patches its last full save only while that save followed a program the active anchor-leg solve (if
+    // any) still runs; otherwise it saves in full, as a defensive fallback.
+    const InFlight* active = state_.stack.empty() || !state_.stack.back()->in_flight.value
+                                 ? nullptr
+                                 : &*state_.stack.back()->in_flight.value;
+    const bool following = repair_program_ || repair_node_;
+    if (following && !(active && (repair_node_ || active->program != repair_program_))) {
+        RepairTargets targets = repair_;
+        targets.patch = true;
+        hooks_.repair_progress(snapshot(std::move(targets)));
+    } else {
+        hooks_.repair_progress(snapshot(active_targets()));
+    }
 }
 
 void DfsSearch::transition(const std::string& kind, const Frame& f, Object fields_) {
@@ -624,7 +708,7 @@ DfsSearch::RecordPtr DfsSearch::score(Frame& f, const SharedValue& program, cons
     transition("dispatch", f, {{"candidate", text(identity)}, {"goal", f.goal},
                                {"inputs", integer_value(duration_of(*program))}});
     const Stage& active = stage(f);
-    begin_repair(*f.in_flight.value->program, array({}));
+    begin_repair(RepairTargets{0, false, program_paths(f.in_flight.value->program), {}}, f.in_flight.value->program);
     Object args = evaluation_args(f, *program);
     put(args, "seconds", real(std::max(.001, std::min(options_.score_seconds, options_.deadline - hooks_.monotonic()))));
     put(args, "progress", boolean(hooks_.progress));
@@ -991,7 +1075,20 @@ Value DfsSearch::evaluate_node(Value& program, OrderedMap<Value>& nodes, Frame& 
                  {"parent", get_or_null(fields(program), "decisionParent")},
                  {"repairState", get_or_null(fields(program), "repairState")}};
         nodes[identity] = object(entry);
-        begin_repair(program, array({object(entry)}));
+        RepairTargets targets;
+        std::vector<Array> entries;
+        for (const Array& path : frame_paths(f)) {
+            Array continuation = path;
+            for (const char* key : {"generation", "continuation"}) continuation.push_back(text(key));
+            Array in_flight = continuation, node = continuation;
+            in_flight.push_back(text("nodeInFlight"));
+            node.push_back(text("nodes"));
+            node.push_back(text(identity));
+            targets.program.push_back(std::move(in_flight));
+            entries.push_back(std::move(node));
+        }
+        targets.targets.push_back(std::move(entries));
+        begin_repair(std::move(targets), nullptr);
     };
     h.begin_solve = [&] { return hooks_.begin_solve(f.id, program); };
     h.assign = [&](const Value& repair) { program = set_key(program, "repairState", repair); };

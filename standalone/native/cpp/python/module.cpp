@@ -29,6 +29,7 @@
 #include "pkc/search/bounds/remaining.hpp"
 #include "pkc/search/comparison.hpp"
 #include "pkc/search/dfs.hpp"
+#include "pkc/io/checkpoint_store.hpp"
 #include "pkc/search/dfs_search.hpp"
 #include "pkc/search/dfs_state.hpp"
 #include "pkc/search/engine.hpp"
@@ -367,6 +368,63 @@ pkc::EvaluateHooks evaluate_hooks(py::object compiler, py::object solve, py::obj
     hooks.work_summary = [work_summary] { return python_hook([&] { return convert(work_summary()); }); };
     return hooks;
 }
+const pkc::Object& object_fields(const pkc::Value& value) {
+    return *std::get<std::shared_ptr<const pkc::Object>>(value.data);
+}
+
+const pkc::Value* field(const pkc::Object& object, const std::string& key) {
+    for (const auto& [k, v] : object)
+        if (k == key) return &v;
+    return nullptr;
+}
+
+// A published DFS state for Python: fields convert on first read.
+struct NativeSnapshot {
+    pkc::Snapshot snapshot;
+    std::map<std::string, py::object> converted;
+
+    const pkc::Object& fields() const { return object_fields(snapshot->state); }
+    pkc::Value at(py::handle path) const {
+        pkc::Value node = snapshot->state;
+        for (py::handle part : path) {
+            if (py::isinstance<py::int_>(part)) {
+                node = std::get<std::shared_ptr<const pkc::Array>>(node.data)->at(part.cast<std::size_t>());
+            } else {
+                const pkc::Value* child = field(object_fields(node), part.cast<std::string>());
+                if (!child) throw py::key_error(part.cast<std::string>());
+                node = *child;
+            }
+        }
+        return node;
+    }
+    py::object item(const std::string& key) {
+        if (auto found = converted.find(key); found != converted.end()) return found->second;
+        const pkc::Value* value = field(fields(), key);
+        if (!value) throw py::key_error(key);
+        return converted.emplace(key, to_python(*value)).first->second;
+    }
+};
+
+py::list paths_to_python(const std::vector<pkc::Array>& paths) {
+    py::list out;
+    for (const pkc::Array& path : paths) out.append(to_python(pkc::Value{std::make_shared<const pkc::Array>(path)}));
+    return out;
+}
+
+// checkpoint_store's encode for a native value: (its encoding, the new objects [(key, data)]), skipping objects in
+// the store's `known` set.
+py::tuple checkpoint_encode(const std::function<std::string(pkc::CheckpointEncoder&)>& encode, py::handle known) {
+    pkc::CheckpointEncoder encoder([&](const std::string& key) {
+        const int found = PySet_Contains(known.ptr(), py::str(key).ptr());
+        if (found < 0) throw py::error_already_set();
+        return found == 1;
+    });
+    const std::string data = encode(encoder);
+    py::list objects;
+    for (const auto& [key, object] : encoder.pending) objects.append(py::make_tuple(key, py::bytes(object)));
+    return py::make_tuple(py::bytes(data), objects);
+}
+
 }  // namespace
 
 PYBIND11_MODULE(_pkc_native, m) {
@@ -820,6 +878,55 @@ PYBIND11_MODULE(_pkc_native, m) {
     m.def("round_trip_dfs_state", [](py::handle state) {
         return to_python(pkc::to_value(pkc::dfs_state_from_value(convert(state))));
     }, "search_goals' state through its typed form (search/dfs_state.hpp)");
+    m.def("checkpoint_encode", [](py::handle value, py::handle known) {
+        const pkc::Value v = convert(value);
+        return checkpoint_encode([&](pkc::CheckpointEncoder& e) { return e.encode(v); }, known);
+    }, "io/checkpoint_store's encode of a JSON value: (its encoding, new objects [(key, data)] not in `known`)");
+    py::class_<NativeSnapshot, std::shared_ptr<NativeSnapshot>>(m, "DfsSnapshot")
+        .def("__getitem__", &NativeSnapshot::item)
+        .def("get", [](NativeSnapshot& s, const std::string& key, py::object fallback) {
+            return field(s.fields(), key) ? s.item(key) : fallback;
+        }, py::arg("key"), py::arg("default") = py::none())
+        .def("__contains__", [](const NativeSnapshot& s, const std::string& key) { return field(s.fields(), key) != nullptr; })
+        .def("keys", [](const NativeSnapshot& s) {
+            py::list out;
+            for (const auto& [key, _] : s.fields()) out.append(key);
+            return out;
+        })
+        .def("__iter__", [](const NativeSnapshot& s) {
+            py::list out;
+            for (const auto& [key, _] : s.fields()) out.append(key);
+            return py::iter(out);
+        })
+        .def("__len__", [](const NativeSnapshot& s) { return s.fields().size(); })
+        .def("to_python", [](const NativeSnapshot& s) { return to_python(s.snapshot->state); },
+             "the whole state as a new dict")
+        .def("value", [](const NativeSnapshot& s, py::handle path) { return to_python(s.at(path)); },
+             "the value at a path of keys and indexes")
+        .def("length", [](const NativeSnapshot& s, py::handle path) {
+            const pkc::Value node = s.at(path);
+            if (const auto* list = std::get_if<std::shared_ptr<const pkc::Array>>(&node.data)) return (*list)->size();
+            return object_fields(node).size();
+        }, "len() of the list or dict at a path")
+        .def_property_readonly("repair", [](const NativeSnapshot& s) {
+            const pkc::RepairTargets& r = s.snapshot->repair;
+            py::list targets;
+            for (const auto& paths : r.targets) targets.append(paths_to_python(paths));
+            py::dict out;
+            out["token"] = r.token;
+            out["patch"] = r.patch;
+            out["program"] = paths_to_python(r.program);
+            out["targets"] = targets;
+            return out;
+        }, "where the saver's repair program and extra targets sit (see search/dfs_search.hpp RepairTargets)")
+        .def("checkpoint_encode", [](const NativeSnapshot& s, py::handle known,
+                                     std::optional<std::vector<std::string>> windows) {
+            return checkpoint_encode([&](pkc::CheckpointEncoder& e) {
+                return windows ? e.encode_replacing(s.snapshot->state, "windows", *windows) : e.encode(s.snapshot->state);
+            }, known);
+        }, py::arg("known"), py::arg("windows") = py::none(),
+           "checkpoint_store's encode of the state, or of dict(state, windows=[stored windows by key]): (encoding, new "
+           "objects)");
     py::class_<pkc::DfsSearch, std::shared_ptr<pkc::DfsSearch>>(m, "DfsSearch")
         .def(py::init([](py::handle state, py::dict options, py::object hooks, std::shared_ptr<pkc::InteractionGate> gate,
                          std::shared_ptr<pkc::AnchorScene> anchors) {
@@ -853,14 +960,14 @@ PYBIND11_MODULE(_pkc_native, m) {
             h.monotonic = [f = hook("monotonic")] { return python_hook([&] { return f().cast<double>(); }); };
             h.cancelled = [f = hook("cancelled")] { return python_hook([&] { return f().cast<bool>(); }); };
             h.progress = hooks.attr("progress").cast<bool>();
-            h.publish = [f = hook("publish")](const pkc::Value& state) { python_hook([&] { f(to_python(state)); }); };
-            h.begin_repair = [f = hook("begin_repair")](const pkc::Value& state, const pkc::Value& program,
-                                                        const pkc::Value& extra) {
-                python_hook([&] { f(to_python(state), to_python(program), to_python(extra)); });
+            const auto snapshot_hook = [](py::object f) {
+                return [f](const pkc::Snapshot& state) {
+                    python_hook([&] { f(std::make_shared<NativeSnapshot>(NativeSnapshot{state, {}})); });
+                };
             };
-            h.repair_progress = [f = hook("repair_progress")](const pkc::Value& state) {
-                python_hook([&] { f(to_python(state)); });
-            };
+            h.publish = snapshot_hook(hook("publish"));
+            h.begin_repair = snapshot_hook(hook("begin_repair"));
+            h.repair_progress = snapshot_hook(hook("repair_progress"));
             h.check = [f = hook("check")] { python_hook([&] { f(); }); };
             h.solver_calls = [f = hook("solver_calls")] { return python_hook([&] { return f().cast<std::int64_t>(); }); };
             h.count = [f = hook("count")](const std::string& name) { python_hook([&] { f(name); }); };
