@@ -369,6 +369,29 @@ class BookkeepingProfileTests(unittest.TestCase):
                       'or minimum-run bound).\nMinimum run ticks: no run count below the bound passed the screens: step-up '
                       'onto B2.', markdown)
 
+    def test_case_steps_name_their_faces_and_wall_hits_their_face(self):
+        from tools.profiling.trace import steps
+        lower, higher, low = [0, 6, 0, 1, 6.5, 1], [0, 6, 1, 1, 7, 2], [0, 0, 0, 1, 6, 1]
+        names = {tuple(lower): 'b13a', tuple(higher): 'b13b', tuple(low): 'b12'}
+        def row(name, t, mode, cmp):
+            return dict(name=name, t1=t, mode=mode, cmp=cmp, rhs=0.)
+        def text(cases, rows, events=()):
+            return steps(dict(jump=[False]*4, caseEvents=cases, positionConstraints=rows, contactEvents=list(events)), 0, names)
+        blip = dict(case='blip', input=2, boxes=[higher], lowerBoxes=[lower])
+        self.assertEqual(text([blip], [row('blip:wall_avoid', 2, 'Z', 'LE')]),
+                         'lands on B13A and blips onto B13B t2 from its Z- side')
+        # A planned hit on the approach input names the face it meets; the blip enters from that side.
+        hit = dict(offset=1, axis='Z', direction=1, boxes=[higher], role='contact')
+        self.assertEqual(text([blip], [row('blip:wall_approach', 1, 'Z', 'LE')], [hit]),
+                         "hits B13B's Z- face t1, lands on B13A and blips onto B13B t2 from its Z- side")
+        slab = dict(case='slab_boost', input=1, boxes=[higher])
+        self.assertEqual(text([slab], [row('case:outside', 1, 'X', 'GE')]), 'slab boost onto B13B t1 from its X+ side')
+        # A corner case passes the corner (X side before it, Z side after) and ends beside the block.
+        corner = dict(case='corner_blip_up', input=2, boxes=[higher], lowerBoxes=[low])
+        self.assertEqual(text([corner], [row('case:outside', 2, 'X', 'LE'), row('case:outside', 3, 'Z', 'LE'),
+                                         row('case:cross_x', 3, 'X', 'GE')]),
+                         "lands on B12 and corner blips up past B13B's X-Z- corner t2")
+
     def test_contact_region_items_and_chosen_rectangles_are_named(self):
         import json
         from tools.profiling.trace import family_sides, item_label, repair_trace

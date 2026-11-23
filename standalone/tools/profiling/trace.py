@@ -149,6 +149,14 @@ def block_names(scene):
             for i,box in enumerate(block.get('boxes',[]))}
 
 
+# Rows putting the player beside a case's block before the case, as (row name, ticks after the case input, axes): the
+# side it enters from, the side a blip keeps clear of or hits, or a corner's X side then its Z side.
+SIDE_ROWS = dict(grind=[('grind:outside',0,'XZ')], normal_step=[('case:outside',0,'XZ')], slab_boost=[('case:outside',0,'XZ')],
+                 blip=[('blip:wall_avoid',0,'XZ'),('blip:wall_approach',-1,'XZ')], blip_up=[('blip_up:outside',0,'XZ')],
+                 corner_jump_cancel=[('case:outside',0,'X'),('case:outside',1,'Z')],
+                 corner_blip_up=[('case:outside',0,'X'),('case:outside',1,'Z')])
+
+
 def movement(profile, names):
     def where(event):
         boxes = event['boxes'] if 'boxes' in event else [event['box']] if 'box' in event else []  # reports before member boxes
@@ -158,14 +166,17 @@ def movement(profile, names):
     events = profile.get('contactEvents',[])
     def case(event):
         tick = event.get('input',event.get('offset'))
-        # A case's `:outside` row puts the player beside the contacted box before the case: the side it enters from.
-        entries = [r['mode']+('+' if r['cmp'] == 'GE' else '-') for r in profile.get('positionConstraints',[])
-                   if r.get('name') == f'{event.get("case")}:outside' and r.get('t1') == tick]
-        return dict(case=event.get('case'),tick=tick,entries=entries,**({'block':where(event)['block']} if 'boxes' in event else {}))
+        entries = [r['mode']+('+' if r['cmp'] == 'GE' else '-') for name,after,axes in SIDE_ROWS.get(event.get('case'),[])
+                   for r in profile.get('positionConstraints',[])
+                   if r.get('name') == name and r.get('t1') == tick+after and r['mode'] in axes]
+        lower = '+'.join(sorted({names.get(tuple(box),'unnamed box') for box in event.get('lowerBoxes',[])}))
+        return dict(case=event.get('case'),tick=tick,entries=entries,**({'block':where(event)['block']} if 'boxes' in event else {}),
+                    **({'lower':lower} if lower else {}))
     return dict(jumps=[t for t,jump in enumerate(profile.get('jump',[])) if jump],
                 landings=[where(e) for e in events if e.get('role') == 'landing'],
                 ceilings=[where(e) for e in events if e.get('role') == 'ceiling'],
-                walls=[dict(where(e),side=e['axis']+('+' if e['direction'] > 0 else '-'))
+                # A hit moving +X meets the box's X- face.
+                walls=[dict(where(e),face=e['axis']+('-' if e['direction'] > 0 else '+'))
                        for e in events if e.get('role') == 'contact'],
                 cases=[case(e) for e in profile.get('caseEvents',[])])
 
@@ -236,14 +247,24 @@ def steps(profile, start, names, sides=()):
             out.append((t+1,f'walks off {block.upper()} after t{t}'))
         t += 1
     out += [(c['tick'],f'hits the ceiling of {c["block"].upper()} t{c["tick"]}') for c in m['ceilings'] if c['tick'] >= start]
-    out += [(w['tick'],f'touches {w["block"].upper()} {w["side"]} t{w["tick"]}') for w in m['walls'] if w['tick'] >= start]
-    out += [(c['tick'],('grinds under' if c['case'] == 'grind' else c['case'].replace('_',' ')+' onto')+
-             f' {c.get("block","?").upper()} t{c["tick"]}'+(f' from its {"/".join(c["entries"])} side' if c['entries'] else ''))
-            for c in m['cases'] if c['tick'] is not None and c['tick'] >= start]
+    out += [(w['tick'],f'hits {w["block"].upper()}\'s {w["face"]} face t{w["tick"]}') for w in m['walls'] if w['tick'] >= start]
+    out += [(c['tick'],case_text(c)) for c in m['cases'] if c['tick'] is not None and c['tick'] >= start]
     out += [(p['segment'][0],'keeps to '+', then '.join(' and '.join(f'the {face} side of {blocks}' for blocks,face in bounds)
                                                      for bounds in p['faces'])+
              f' (t{p["segment"][0]}-{p["segment"][1]})') for p in sides if p['segment'][1] >= start]
     return ', '.join(text for _,text in sorted(out,key=lambda o:o[0])) or 'no movement of its own'
+
+
+def case_text(c):
+    """A named case with its faces: the lower face a blip lands on, the side entered from or kept clear of, and the
+    corner a corner case passes (it ends beside the block, not on it)."""
+    block, side = c.get('block','?').upper(), '/'.join(c['entries'])
+    landing = f'lands on {c["lower"].upper()} and ' if c.get('lower') else ''
+    if c['case'] in ('corner_jump_cancel','corner_blip_up'):
+        verb = 'corner jump cancel' if c['case'] == 'corner_jump_cancel' else 'corner blips up'
+        return f'{landing}{verb} past {block}\'s {"".join(c["entries"]) or "?"} corner t{c["tick"]}'
+    verb = dict(grind='grinds under', blip='blips onto', blip_up='blips up onto').get(c['case'],c['case'].replace('_',' ')+' onto')
+    return f'{landing}{verb} {block} t{c["tick"]}'+(f' from its {side} side' if side else '')
 
 
 def node_trace(state, scene=None):
@@ -535,7 +556,7 @@ def movement_text(m):
     parts.append('hits the ceiling of '+', '.join(f'{c["block"].upper()} t{c["tick"]}' for c in m['ceilings'])
                  if m['ceilings'] else 'no ceiling hit')
     if m['walls']:
-        parts.append('touches '+', '.join(f'{w["block"].upper()} {w["side"]} t{w["tick"]}' for w in m['walls']))
+        parts.append('hits '+', '.join(f'{w["block"].upper()}\'s {w["face"]} face t{w["tick"]}' for w in m['walls']))
     if m['cases']:
         parts.append(', '.join(f'{c["case"]} t{c["tick"]}' for c in m['cases']))
     return '; '.join(parts)
@@ -567,9 +588,13 @@ def repair_lines(repair, goal, request_index):
     """A repaired movement's obstacle checks, decisions, rejected options, solved alternatives and kept choice."""
     lines = []
     prepared = repair['preparedEncounters']
-    interacting = [e for e in prepared if e['possiblePhases']]
+    # Uncertain phases sit at a named case's tick; avoidance leaves them to the scene replay.
+    interacting = [e for e in prepared if e['possiblePhases'] or e['uncertain']]
+    deferred = sum(1 for e in interacting if not e['possiblePhases'])
     lines += [f'Obstacle checks: {len(prepared)}; {len(prepared)-len(interacting)} cannot touch the player anywhere in '
-              f'their segment. A check is repeated when the rows chosen so far change what is reachable.','']
+              f'their segment'+(f'; {deferred} can touch it only at a named step or grind tick, left to scene replay'
+                                if deferred else '')+
+              '. A check is repeated when the rows chosen so far change what is reachable.','']
     lines += table(['Obstacle','Segment ticks','Possible phases','Already clear','Faces ruled out','Vertical clear','Uncertain'],
         [[e['owner'],f'{e["segment"][0]}-{e["segment"][1]}',phases_text(e['possiblePhases']) or 'none',
           len(e['coveredPhases']),
@@ -577,7 +602,7 @@ def repair_lines(repair, goal, request_index):
                     for f in sorted({x['face'] for x in e['excludedFaces']})) or 'none',
           phases_text([x['phase'] for x in e['verticalClear']]) or 'none',
           phases_text(e['uncertain']) or 'none'] for e in interacting])
-    decisions = sorted({(e['owner'],e['segment'][0],e['segment'][1]) for e in interacting})
+    decisions = sorted({(e['owner'],e['segment'][0],e['segment'][1]) for e in interacting if e['possiblePhases']})
     contact_regions = repair.get('contactRegions',[])
     if decisions or contact_regions:
         lines += ['Decisions:','']+[f'- which sides of {o.upper()} to keep (segment t{a}-{b})' for o,a,b in decisions]+[
@@ -634,7 +659,7 @@ def repair_lines(repair, goal, request_index):
 
 
 RUN_CANDIDATES = dict(anchor='jump onto anchor', ceiling='ceiling jump under', grind='grind under',
-                      slab_boost='slab boost onto', corner_jump_cancel='corner jump cancel onto', landing='run-off onto',
+                      slab_boost='slab boost onto', corner_jump_cancel='corner jump cancel past', landing='run-off onto',
                       step='step-up onto', scan='run-tick scan', same_face='jump back onto')
 RUN_OUTCOMES = dict(dominated='beaten by a kept candidate', unreached='no run count below the bound passed the screens',
                     held='held (does not fit its face)', queued='queued at once (does not fit its face; nothing else to wait for)')

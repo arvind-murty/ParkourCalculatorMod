@@ -1630,7 +1630,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/integration/test_movement_contacts.py](../tests/integration/test_movement_contacts.py) | 11263 |
 | [tests/integration/test_orchestrator_continuation.py](../tests/integration/test_orchestrator_continuation.py) | 12629 |
 | [tests/integration/test_package_layout.py](../tests/integration/test_package_layout.py) | 5628 |
-| [tests/integration/test_profiling.py](../tests/integration/test_profiling.py) | 32666 |
+| [tests/integration/test_profiling.py](../tests/integration/test_profiling.py) | 34839 |
 | [tests/integration/test_repair_resume.py](../tests/integration/test_repair_resume.py) | 22874 |
 | [tests/integration/test_shared_contacts.py](../tests/integration/test_shared_contacts.py) | 4080 |
 | [tests/research/__init__.py](../tests/research/__init__.py) | 0 |
@@ -1739,6 +1739,6 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tools/profiling/enumeration_compare.py](../tools/profiling/enumeration_compare.py) | 3565 |
 | [tools/profiling/run.py](../tools/profiling/run.py) | 11737 |
 | [tools/profiling/runtime.py](../tools/profiling/runtime.py) | 9204 |
-| [tools/profiling/trace.py](../tools/profiling/trace.py) | 54551 |
+| [tools/profiling/trace.py](../tools/profiling/trace.py) | 56401 |
 | [tools/validate_layout.py](../tools/validate_layout.py) | 1392 |
 | [tools/witness_bound_audit.py](../tools/witness_bound_audit.py) | 2780 |
