@@ -65,8 +65,8 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 36593 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11512 |
 | [docs/DOC_INDEX.md](DOC_INDEX.md) | 28873 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 266119 |
-| [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 66137 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 266492 |
+| [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 66032 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
 | [docs/LAYOUT.md](LAYOUT.md) | 10962 |
@@ -1829,9 +1829,9 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [src/parkour_solver/search/deferrals.py](../src/parkour_solver/search/deferrals.py) | 1228 |
 | [src/parkour_solver/search/dfs.py](../src/parkour_solver/search/dfs.py) | 72906 |
 | [src/parkour_solver/search/domain.py](../src/parkour_solver/search/domain.py) | 960 |
-| [src/parkour_solver/search/engine.py](../src/parkour_solver/search/engine.py) | 15132 |
+| [src/parkour_solver/search/engine.py](../src/parkour_solver/search/engine.py) | 15010 |
 | [src/parkour_solver/search/events/__init__.py](../src/parkour_solver/search/events/__init__.py) | 0 |
-| [src/parkour_solver/search/events/adapter.py](../src/parkour_solver/search/events/adapter.py) | 9534 |
+| [src/parkour_solver/search/events/adapter.py](../src/parkour_solver/search/events/adapter.py) | 9469 |
 | [src/parkour_solver/search/events/engine.py](../src/parkour_solver/search/events/engine.py) | 14149 |
 | [src/parkour_solver/search/feasibility.py](../src/parkour_solver/search/feasibility.py) | 4131 |
 | [src/parkour_solver/search/frontier.py](../src/parkour_solver/search/frontier.py) | 45216 |

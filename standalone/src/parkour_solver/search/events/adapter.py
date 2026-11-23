@@ -134,9 +134,6 @@ class EventGuideAdapter:
         result=copy.copy(self);result.program=program
         return result
 
-    def eligible(self, envelopes, through):
-        return self
-
     def candidate(self, plan, candidate, vertical, *, partial=False):
         if self.program is None or self.request is None:
             raise ValueError('Event validation requires a physical program and goal request')

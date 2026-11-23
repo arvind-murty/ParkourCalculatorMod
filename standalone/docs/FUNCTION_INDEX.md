@@ -853,8 +853,8 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `ScopedWork.accepted` | [43](../src/parkour_solver/search/engine.py#L43) | function |
 | `segment_solids` | [47](../src/parkour_solver/search/engine.py#L47) | function |
 | `evaluate_program` | [61](../src/parkour_solver/search/engine.py#L61) | function |
-| `numerical_counts` | [194](../src/parkour_solver/search/engine.py#L194) | function |
-| `find_checkpoint_route` | [214](../src/parkour_solver/search/engine.py#L214) | function |
+| `numerical_counts` | [192](../src/parkour_solver/search/engine.py#L192) | function |
+| `find_checkpoint_route` | [212](../src/parkour_solver/search/engine.py#L212) | function |
 
 ## search/events/adapter.py
 
@@ -871,9 +871,8 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `EventGuideAdapter.program_allowed` | [126](../src/parkour_solver/search/events/adapter.py#L126) | function |
 | `EventGuideAdapter.scoped` | [129](../src/parkour_solver/search/events/adapter.py#L129) | function |
 | `EventGuideAdapter.bind_program` | [133](../src/parkour_solver/search/events/adapter.py#L133) | function |
-| `EventGuideAdapter.eligible` | [137](../src/parkour_solver/search/events/adapter.py#L137) | function |
-| `EventGuideAdapter.candidate` | [140](../src/parkour_solver/search/events/adapter.py#L140) | function |
-| `EventGuideAdapter.summary` | [167](../src/parkour_solver/search/events/adapter.py#L167) | function |
+| `EventGuideAdapter.candidate` | [137](../src/parkour_solver/search/events/adapter.py#L137) | function |
+| `EventGuideAdapter.summary` | [164](../src/parkour_solver/search/events/adapter.py#L164) | function |
 
 ## search/events/engine.py
 

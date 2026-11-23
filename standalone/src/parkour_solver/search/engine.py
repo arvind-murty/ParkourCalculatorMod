@@ -111,8 +111,6 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, s
         threshold=route.get('physicsThreshold', .005), vertical=vertical['vertical'], objective=dict(route.get('guideObjective', route['objective']), tick=plan['ticks']))
     envelopes=analysis['envelopes']
     mark('reachability')
-    if hasattr(scoped_adapter, 'eligible'):
-        scoped_adapter = scoped_adapter.eligible(envelopes, scope['through'])
     from parkour_solver.search.ordered_route import initial_guess
     from parkour_solver.numerics import prepare, validate
     reference_yaw = initial_guess(route, plan, None)
