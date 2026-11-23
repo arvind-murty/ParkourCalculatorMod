@@ -35,6 +35,7 @@ Use [current state](docs/CURRENT_STATE.md) for ongoing work and [decisions and p
 - Run focused standalone checks and widen according to the affected scope. See the runbook and testing guide for commands and native dependencies. Rebuild helpers only when needed; launch Minecraft or run mod checks only when the task calls for them.
 - Distinguish numerical feasibility, scene validation and executable replay. A timeout, cap or local solver failure is not an infeasibility or optimality certificate.
 - Answer any question about a solve with a detailed, human-readable Markdown report file. Run the solve, or regenerate the report for an existing one, with the [solve report commands](docs/RUNBOOK.md#run-a-solve-and-report-it) ([what it contains](docs/RESULTS_AND_DEBUGGING.md#solve-reports)), then reply with the report's absolute path and a short summary.
+- Solve artifacts are huge: never print `report.md`, `report.json.gz`, `nodes.json`, `requests.json` or fixture JSON whole. Grep `report.md` for the node or line in question, and read the others with a small script that prints only the fields you need ([safe inspection](docs/RESULTS_AND_DEBUGGING.md#report-layout-and-safe-inspection)).
 - Preserve historical evidence and write new experiment runs to new output paths. Record source revision, settings and validation scope when reporting measurements.
 
 ## Keeping docs current

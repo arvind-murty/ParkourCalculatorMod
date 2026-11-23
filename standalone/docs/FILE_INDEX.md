@@ -20,13 +20,13 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 
 | File | Bytes |
 | --- | ---: |
-| [AGENTS.md](../AGENTS.md) | 6545 |
+| [AGENTS.md](../AGENTS.md) | 6883 |
 
 ## CLAUDE.md
 
 | File | Bytes |
 | --- | ---: |
-| [CLAUDE.md](../CLAUDE.md) | 6545 |
+| [CLAUDE.md](../CLAUDE.md) | 6883 |
 
 ## README.md
 
@@ -65,7 +65,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 35770 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11512 |
 | [docs/DOC_INDEX.md](DOC_INDEX.md) | 28532 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 224493 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 224786 |
 | [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 64569 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
