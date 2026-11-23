@@ -564,14 +564,10 @@ class MinimumRunTickTests(unittest.TestCase):
         emitted,state=self.frontier(scene=s,screen=late)
         self.assertEqual((lands(state,False),self.candidates(state,key=key),self.reserves(state)),([],[(key,None,'unreached')],[]))
         # A block no jump-now reaches is not run off onto either.
-        allowed,allowed_many=service.bounds_allowed,service.bounds_allowed_many
+        allowed=service.bounds_allowed
         def unjumpable(context, bounds, tick, *, label, jumping=False, **options):
             return not (jumping and label.get('owner')=='low') and allowed(context,bounds,tick,label=label,jumping=jumping,**options)
-        def unjumpable_many(context, bounds, tick, *, label, jumping=False, **options):
-            # Landing regions go through the batched entry point (movement.contact_combinations.reachable_option).
-            blocked=jumping and label.get('owner')=='low'
-            return [not blocked and a for a in allowed_many(context,bounds,tick,label=label,jumping=jumping,**options)]
-        with patch.object(service,'bounds_allowed',unjumpable),patch.object(service,'bounds_allowed_many',unjumpable_many):
+        with patch.object(service,'bounds_allowed',unjumpable):
             emitted,state=self.frontier(scene=s)
         self.assertEqual((lands(state,True),lands(state,False),self.candidates(state,key=key)),([],[],[]))
 

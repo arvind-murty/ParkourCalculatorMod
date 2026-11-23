@@ -24,9 +24,9 @@ Use the rows, finite contact footprint and swept phase conditions from the exist
 of independent queries against the same unchanged bounds. It returns the full
 scalar proofs in input order and performs no numerical refinement. Encounter
 preparation batches the active members of each phase, then that phase's candidate
-face rows. Contact-region generation uses `bounds_allowed_many` and
-`InteractionGate.query_many`; per-query approach/fallback accounting and exclusion
-order remain the same as scalar queries. A later batch must observe any intervening
+face rows. Contact-region generation queries each region through `bounds_allowed`
+(a one-box `InteractionGate.query_many`), then that region's O10 check; per-query
+approach/fallback accounting and exclusion order remain the same as scalar queries. A later batch must observe any intervening
 Python bound mutation. No native handle is serialized with those bounds. The
 [C++ experiment](../../research/cpp-pruning-pilot/README.md) supplies an optional
 research replacement; ordinary execution continues to use Python.

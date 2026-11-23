@@ -88,16 +88,6 @@ def bounds_allowed(context, bounds, tick, *, label, jumping=False, phases=('Y', 
     return gate is None or not gate.query(context, bounds, tick, label=label, jumping=jumping, phases=phases)['ruledOut']
 
 
-def bounds_allowed_many(context, bounds, tick, *, label, jumping=False, phases=('Y', 'X', 'Z')):
-    if not bounds:
-        return []
-    if 'interactionGate' not in context:
-        raise ValueError('Generation needs an interactionGate; set it to None to run without reachability')
-    gate = context['interactionGate']
-    return ([True]*len(bounds) if gate is None else [not proof['ruledOut'] for proof in
-            gate.query_many(context, bounds, tick, label=label, jumping=jumping, phases=phases)])
-
-
 def behind_decision(context, region, tick, *, jumping, label):
     """At an ordinary decision (`context['forward']`), whether reaching the reachable part of this player-centre region
     ([x0, z0, x1, z1]) at input `tick` needs more than the margin of travel in a move its guide leg disallows."""
