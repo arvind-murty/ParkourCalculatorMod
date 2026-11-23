@@ -68,7 +68,36 @@ std::string utf8(PyObject* text) {
     return std::string(data, size);
 }
 
-pkc::Value convert(PyObject* object) {
+// `shared`, when given, maps each container already converted in this call to its value, so a container the tree
+// holds in several places converts once and stays one value (the checkpoint encoder memoizes by that identity).
+using Shared = std::unordered_map<PyObject*, pkc::Value>;
+
+pkc::Value convert(PyObject* object, Shared* shared = nullptr);
+
+pkc::Value convert_container(PyObject* object, Shared* shared) {
+    if (PyList_Check(object) || PyTuple_Check(object)) {
+        bool list = PyList_Check(object);
+        Py_ssize_t size = list ? PyList_GET_SIZE(object) : PyTuple_GET_SIZE(object);
+        auto array = std::make_shared<pkc::Array>();
+        array->reserve(size);
+        for (Py_ssize_t i = 0; i < size; ++i)
+            array->push_back(convert(list ? PyList_GET_ITEM(object, i) : PyTuple_GET_ITEM(object, i), shared));
+        return {std::shared_ptr<const pkc::Array>(std::move(array))};
+    }
+    auto map = std::make_shared<pkc::Object>();
+    map->reserve(PyDict_GET_SIZE(object));
+    PyObject *key, *item;
+    Py_ssize_t position = 0;
+    while (PyDict_Next(object, &position, &key, &item)) {
+        // json.dumps would stringify non-str keys after sorting them by their
+        // own type; canonical identity only uses str keys, so reject the rest.
+        if (!PyUnicode_Check(key)) throw py::type_error("canonical keys must be str");
+        map->emplace_back(utf8(key), convert(item, shared));
+    }
+    return {std::shared_ptr<const pkc::Object>(std::move(map))};
+}
+
+pkc::Value convert(PyObject* object, Shared* shared) {
     if (object == Py_None) return {nullptr};
     if (PyBool_Check(object)) return {object == Py_True};
     if (PyLong_Check(object)) {
@@ -79,27 +108,12 @@ pkc::Value convert(PyObject* object) {
     }
     if (PyFloat_Check(object)) return {PyFloat_AS_DOUBLE(object)};
     if (PyUnicode_Check(object)) return {utf8(object)};
-    if (PyList_Check(object) || PyTuple_Check(object)) {
-        bool list = PyList_Check(object);
-        Py_ssize_t size = list ? PyList_GET_SIZE(object) : PyTuple_GET_SIZE(object);
-        auto array = std::make_shared<pkc::Array>();
-        array->reserve(size);
-        for (Py_ssize_t i = 0; i < size; ++i)
-            array->push_back(convert(list ? PyList_GET_ITEM(object, i) : PyTuple_GET_ITEM(object, i)));
-        return {std::shared_ptr<const pkc::Array>(std::move(array))};
-    }
-    if (PyDict_Check(object)) {
-        auto map = std::make_shared<pkc::Object>();
-        map->reserve(PyDict_GET_SIZE(object));
-        PyObject *key, *item;
-        Py_ssize_t position = 0;
-        while (PyDict_Next(object, &position, &key, &item)) {
-            // json.dumps would stringify non-str keys after sorting them by their
-            // own type; canonical identity only uses str keys, so reject the rest.
-            if (!PyUnicode_Check(key)) throw py::type_error("canonical keys must be str");
-            map->emplace_back(utf8(key), convert(item));
-        }
-        return {std::shared_ptr<const pkc::Object>(std::move(map))};
+    if (PyList_Check(object) || PyTuple_Check(object) || PyDict_Check(object)) {
+        if (!shared) return convert_container(object, nullptr);
+        if (auto found = shared->find(object); found != shared->end()) return found->second;
+        pkc::Value value = convert_container(object, shared);
+        shared->emplace(object, value);
+        return value;
     }
     throw py::type_error(std::string("Object of type ") + Py_TYPE(object)->tp_name + " is not canonical JSON");
 }
@@ -983,7 +997,8 @@ PYBIND11_MODULE(_pkc_native, m) {
         return to_python(pkc::to_value(pkc::dfs_state_from_value(convert(state))));
     }, "search_goals' state through its typed form (search/dfs_state.hpp)");
     m.def("checkpoint_encode", [](py::handle value, py::handle known) {
-        const pkc::Value v = convert(value);
+        Shared shared;  // the objects stay alive for the call, so their addresses stay unique
+        const pkc::Value v = convert(value.ptr(), &shared);
         return checkpoint_encode([&](pkc::CheckpointEncoder& e) { return e.encode(v); }, known);
     }, "io/checkpoint_store's encode of a JSON value: (its encoding, new objects [(key, data)] not in `known`)");
     py::class_<NativeSnapshot, std::shared_ptr<NativeSnapshot>>(m, "DfsSnapshot")

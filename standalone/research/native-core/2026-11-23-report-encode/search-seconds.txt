@@ -1,0 +1,7 @@
+Alternating sequential runs: base = d9519289 with its own native build, new = the working tree (native mode); searchSeconds (summary.json) and wallSeconds (profile.json, the whole run with the final save)
+ab5 fixed search base 13.572164166718721 13.50948566943407 new 13.394851207733154 13.527153167873621; wall base 16.15369537472725 16.0763422511518 new 15.00113170593977 15.12861891835928
+ab5 short search base 1.2473720014095306 1.2868953756988049 new 1.2218163311481476 1.247313167899847; wall base 2.226671915501356 2.282533708959818 new 1.7907299995422363 1.8141892068088055
+ab5d fixed search base 53.40032924711704 53.02835237234831 new 42.555953707545996 42.498491540551186; wall base 57.70266304537654 57.31101783365011 new 47.4734714590013 47.590759709477425
+ab5d short search base 8.118492748588324 8.140617460012436 new 5.6824866235256195 5.934958752244711; wall base 9.39612391591072 9.463670957833529 new 6.438742581754923 6.745106291025877
+(ab5d = --durable). Reports of the first round equal the base reports except provenance, plain and durable.
+Final report save alone (setup_times.py, fixed work, one run each): 2.481 s before, 1.826 s with native encoding, 1.359 s with shared containers kept as one value.

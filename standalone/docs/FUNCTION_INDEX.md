@@ -175,11 +175,11 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `CheckpointStore.close` | [68](../src/parkour_solver/io/checkpoint_store.py#L68) | function |
 | `CheckpointStore.save` | [71](../src/parkour_solver/io/checkpoint_store.py#L71) | function |
 | `CheckpointStore.archive` | [76](../src/parkour_solver/io/checkpoint_store.py#L76) | function |
-| `CheckpointStore.publish` | [161](../src/parkour_solver/io/checkpoint_store.py#L161) | function |
-| `CheckpointStore.patch` | [168](../src/parkour_solver/io/checkpoint_store.py#L168) | function |
-| `CheckpointStore.compact` | [182](../src/parkour_solver/io/checkpoint_store.py#L182) | function |
-| `read_report` | [217](../src/parkour_solver/io/checkpoint_store.py#L217) | function |
-| `main` | [273](../src/parkour_solver/io/checkpoint_store.py#L273) | function |
+| `CheckpointStore.publish` | [173](../src/parkour_solver/io/checkpoint_store.py#L173) | function |
+| `CheckpointStore.patch` | [180](../src/parkour_solver/io/checkpoint_store.py#L180) | function |
+| `CheckpointStore.compact` | [194](../src/parkour_solver/io/checkpoint_store.py#L194) | function |
+| `read_report` | [229](../src/parkour_solver/io/checkpoint_store.py#L229) | function |
+| `main` | [285](../src/parkour_solver/io/checkpoint_store.py#L285) | function |
 
 ## io/provenance.py
 

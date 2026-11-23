@@ -907,3 +907,26 @@ dispatch: on the fixed-work input the others cost more as native calls than in P
 - Search seconds, alternating against `2060b2ee` with its own native build: fixed work 14.38 and 14.04 against 15.05 and
   14.47, the short control 1.356 and 1.316 against 1.289 and 1.306; durable fixed work 54.14 and 54.05 against 54.59
   and 53.80 ([times](2026-11-23-setup/search-seconds.txt)).
+
+## Native report encoding, 2026-11-23
+Source: `d9519289` plus `CheckpointStore.archive` handing each plain JSON container to the native encoder
+(`io/checkpoint_store.hpp`, already used for native snapshots) when it has no targets, walking in Python only the
+levels that hold stored references or native values. The conversion keeps a container the tree holds in several
+places as one value, so the encoder's identity memo reuses its encoding as the Python walk's does.
+
+- Python mode is the oracle: every published and result state equals it in call order (short control 191, fixed work
+  454, the milestone list's searching tests except the two `disk.cached` flags) ([states](2026-11-23-report-encode/state-parity.txt));
+  transitions match ([fixed](2026-11-23-report-encode/fixed-parity-python-native.json),
+  [short](2026-11-23-report-encode/short-parity-python-native.json)), and reports equal the previous code's except
+  provenance, plain and durable ([fixed](2026-11-23-report-encode/fixed-report-vs-previous.json),
+  [short](2026-11-23-report-encode/short-report-vs-previous.json),
+  [fixed durable](2026-11-23-report-encode/fixed-durable-report-vs-previous.json),
+  [short durable](2026-11-23-report-encode/short-durable-report-vs-previous.json)).
+- The milestone list passes in both modes ([suites](2026-11-23-report-encode/suites-summary.txt)). AddressSanitizer runs
+  clean ([summary](2026-11-23-report-encode/asan-summary.txt),
+  [report](2026-11-23-report-encode/fixed-asan-report-vs-release.json)).
+- Alternating against `d9519289` with its own native build: durable fixed work searches in 42.56 and 42.50 s against
+  53.40 and 53.03 s, the durable short control in 5.68 and 5.93 s against 8.12 and 8.14 s; without durable saves the
+  whole run (its final save included) takes 15.00 and 15.13 s against 16.15 and 16.08 s on fixed work and 1.79 and
+  1.81 s against 2.23 and 2.28 s on the short control. Fixed work's final save alone falls from 2.48 s to 1.36 s
+  ([times](2026-11-23-report-encode/search-seconds.txt)).

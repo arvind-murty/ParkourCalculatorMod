@@ -80,6 +80,10 @@ class CheckpointStore:
         target_ids = {}
         for i, target in enumerate(targets):
             target_ids.setdefault(id(target), []).append(i)
+        # The native core encodes plain JSON containers the same way (io/checkpoint_store.hpp); paths to targets are
+        # found by identity here, so an archive with targets walks in Python.
+        from parkour_solver import native_core
+        native = native_core.from_environment() if not target_ids else None
 
         def remember(data):
             key = hashlib.sha256(data).hexdigest()
@@ -92,14 +96,22 @@ class CheckpointStore:
                 if value.identity != self.identity:
                     raise ValueError('Reference belongs to another checkpoint store')
                 return _json(['r', value.key])
-            native = getattr(value, 'checkpoint_encode', None)
-            if native is not None:
+            encode_self = getattr(value, 'checkpoint_encode', None)
+            if encode_self is not None:
                 # A native value (a published native search state) encodes itself the same way, skipping objects the
                 # store already holds.
-                data, objects = native(self.known)
+                data, objects = encode_self(self.known)
                 pending.update(objects)
                 return data
             container = isinstance(value, (dict, list, tuple))
+            if native is not None and container:
+                try:
+                    data, objects = native.checkpoint_encode(value, self.known)
+                except (TypeError, ValueError):
+                    pass  # holds a stored reference, a native value or a non-JSON value: walk this level here
+                else:
+                    pending.update(objects)
+                    return data
             shared = container or isinstance(value, str) and len(value) >= CHUNK_BYTES
             identity = id(value)
             if shared and identity in memo:

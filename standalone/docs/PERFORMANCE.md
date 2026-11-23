@@ -206,6 +206,10 @@ ordered options. That is targeted enumeration work, not a whole-solver speedup.
   ([evidence](../research/native-core/README.md)). Of the setup builders only the event domain (84.1 ms against
   91.9 ms on fixed work) and the encounter groups (2.3 ms against 6.7 ms) run faster natively, so only they dispatch
   ([evidence](../research/native-core/README.md)).
+- Native report encoding (`PKC_NATIVE_CORE`): checkpoint saves hand plain JSON containers to the native encoder.
+  Durable fixed work searches in 42.56 s and 42.50 s against 53.40 s and 53.03 s, the durable short control in 5.68 s
+  and 5.93 s against 8.12 s and 8.14 s, and fixed work's final report save falls from 2.48 s to 1.36 s
+  ([evidence](../research/native-core/README.md)).
 - IPOPT row reduction: final rows fall from 278 to 91 on the benchmark
   ([constraint reduction](IPOPT_CONSTRAINT_REDUCTION.md)).
 - Content-addressed manifest plus SQLite checkpoints
