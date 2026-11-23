@@ -2,11 +2,13 @@
 
 ## Current gate
 
-`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on settled-stretch repair, one solver margin
-and Clarabel verdicts (`89e8dba0`): **593 tests, no failures, errors or skips**, source unchanged during the run
-([report](../research/encounter-groups/native-gate-settled-repair/report.json)). Full discovery on the same
-source: 679 tests, one failure, the ladder test
-`test_repeated_ladder_ceiling_events_regenerate_the_complete_schedule`, which fails on main `a7ddc3be` too.
+`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on the stepping-case changes (blips without a wall
+hit, corner blip and corner blip-up, take-off ceilings, corner jump cancel ledges; `77738297`): **594 tests, no
+failures, errors or skips**, source unchanged during the run
+([report](../research/encounter-groups/native-gate-stepping-cases/report.json)). Full discovery on the same
+source: 680 tests, one failure, the ladder test
+`test_repeated_ladder_ceiling_events_regenerate_the_complete_schedule`, which fails on main `a7ddc3be` too, and
+10 skips, the Java differential module, which needs `PKC_RUN_TICKS_COMPILER` (the gate runs it).
 Wall-time-bound tests can still fail under heavier load ([deferred P17](DEFERRED_WORK.md)).
 The gate fails on any skip, so it needs `PKC_IPOPT_PYTHON` for the IPOPT tests,
 `PKC_RUN_TICKS_COMPILER` for the Java differential tests and the `numerics` and `reachability` extras

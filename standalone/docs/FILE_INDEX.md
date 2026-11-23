@@ -65,7 +65,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 35770 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11512 |
 | [docs/DOC_INDEX.md](DOC_INDEX.md) | 28532 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 224492 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 224493 |
 | [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 64569 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
@@ -76,7 +76,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/REAL11_GUIDE.md](REAL11_GUIDE.md) | 20426 |
 | [docs/RESULTS_AND_DEBUGGING.md](RESULTS_AND_DEBUGGING.md) | 18996 |
 | [docs/RUNBOOK.md](RUNBOOK.md) | 13113 |
-| [docs/TESTING.md](TESTING.md) | 20146 |
+| [docs/TESTING.md](TESTING.md) | 20313 |
 | [docs/design/ANCHOR_POLICY_DECISIONS.md](design/ANCHOR_POLICY_DECISIONS.md) | 44073 |
 | [docs/design/AVOIDANCE_PASSAGES.md](design/AVOIDANCE_PASSAGES.md) | 21309 |
 | [docs/design/BRANCH_SCHEDULING_INVESTIGATION.md](design/BRANCH_SCHEDULING_INVESTIGATION.md) | 34072 |
@@ -775,6 +775,8 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/encounter-groups/native-gate-same-face-fit/tests.log](../research/encounter-groups/native-gate-same-face-fit/tests.log) | 157967 |
 | [research/encounter-groups/native-gate-settled-repair/report.json](../research/encounter-groups/native-gate-settled-repair/report.json) | 15606 |
 | [research/encounter-groups/native-gate-settled-repair/tests.log](../research/encounter-groups/native-gate-settled-repair/tests.log) | 111019 |
+| [research/encounter-groups/native-gate-stepping-cases/report.json](../research/encounter-groups/native-gate-stepping-cases/report.json) | 15605 |
+| [research/encounter-groups/native-gate-stepping-cases/tests.log](../research/encounter-groups/native-gate-stepping-cases/tests.log) | 111141 |
 | [research/encounter-groups/native-gate-walkoff-followups/report.json](../research/encounter-groups/native-gate-walkoff-followups/report.json) | 19246 |
 | [research/encounter-groups/native-gate-walkoff-followups/tests.log](../research/encounter-groups/native-gate-walkoff-followups/tests.log) | 155869 |
 | [research/enumeration-attribution/README.md](../research/enumeration-attribution/README.md) | 8250 |
