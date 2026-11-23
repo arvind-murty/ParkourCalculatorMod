@@ -1,4 +1,4 @@
-// Port of search/goals.landing_satisfied and _landing_prefixes.
+// Port of search/goals.goal_spec, landing_satisfied and _landing_prefixes.
 #include "pkc/search/goals.hpp"
 
 #include <cmath>
@@ -20,6 +20,28 @@ bool holds(const std::vector<Box>& boxes, const Array& box) {  // box in e['boxe
 }
 
 }  // namespace
+
+Value goal_spec(const Value& scene, const Value& spec_value) {
+    const Value spec = py_truthy(spec_value)
+                           ? spec_value
+                           : object({{"kind", text("landing")}, {"block", at(fields(scene), "goalBlock")}});
+    const Object& s = fields(spec);
+    const Value* kind = get(s, "kind");
+    if (!kind || !py_equal(*kind, text("landing"))) fail("A task goal is a landing on a scene block");
+    Array ids;
+    for (const auto& b : items(at(fields(scene), "blocks"))) ids.push_back(at(fields(b), "id"));
+    for (const auto& [k, v] : s)
+        if (k != "kind" && k != "block" && k != "blocks" && k != "surface") fail("Landing comparison requires a scene block");
+    const Value block = get_or_null(s, "block");
+    if (!contains(ids, block)) fail("Landing comparison requires a scene block");
+    if (const Value* blocks = get(s, "blocks")) {
+        bool valid = is_list(*blocks) && !items(*blocks).empty() && contains(items(*blocks), block);
+        if (valid)
+            for (const auto& b : items(*blocks)) valid = valid && contains(ids, b);
+        if (!valid) fail("Landing surface requires its physical support alternatives");
+    }
+    return spec;
+}
 
 std::string goal_key(const Value& scene, const Value& spec, const Value& corridor) {
     return dumps(object({{"goal", spec}, {"route", corridor}, {"initial", at(fields(scene), "initial")}}), true, false);

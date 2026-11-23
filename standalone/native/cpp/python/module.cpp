@@ -26,6 +26,8 @@
 #include "pkc/program.hpp"
 #include "pkc/movement/generation.hpp"
 #include "pkc/reachability/service.hpp"
+#include "pkc/spatial/event_routes.hpp"
+#include "pkc/movement/settings.hpp"
 #include "pkc/search/anchors/adapter.hpp"
 #include "pkc/search/anchors/policy.hpp"
 #include "pkc/search/bounds/remaining.hpp"
@@ -710,6 +712,33 @@ PYBIND11_MODULE(_pkc_native, m) {
     m.def("build_geometry_graph", [](py::handle scene, py::handle decomposition, py::handle supports, py::handle task_goal) {
         return to_python(pkc::build_geometry_graph(convert(scene), convert(decomposition), convert(supports), convert(task_goal)));
     }, "spatial/regions.build_geometry_graph on decompose() and support_components() rows");
+    m.def("build_route_domain", [](py::handle scene, py::handle task, py::handle seconds, std::int64_t max_cells,
+                                   std::vector<std::string> registered) {
+        std::optional<double> budget;
+        if (!seconds.is_none()) budget = seconds.cast<double>();
+        return pkc::dumps(pkc::build_route_domain(convert(scene), convert(task), budget, max_cells, registered), true, true);
+    }, "spatial/event_routes.build_route_domain(...)'s payload, the domain's canonical JSON; `seconds` is the deadline's "
+       "remaining budget");
+    m.def("build_event_graph", [](py::handle data) { return to_python(pkc::build_event_graph(convert(data))); },
+          "spatial/event_routes.build_event_graph");
+    m.def("movement_settings", [](py::handle scene, std::vector<std::string> registered) {
+        return to_python(pkc::movement_settings(convert(scene), registered));
+    }, "movement/settings.movement_settings with GENERATORS' names");
+    m.def("goal_spec", [](py::handle scene, py::handle spec) { return to_python(pkc::goal_spec(convert(scene), convert(spec))); },
+          "search/goals.goal_spec");
+    m.def("anchor_settings", [](py::handle value, py::handle scene) {
+        return to_python(pkc::anchor_settings(convert(value), convert(scene)));
+    }, "search/anchors/policy.settings");
+    m.def("semantic_settings", [](py::handle policy) { return to_python(pkc::semantic_settings(convert(policy))); },
+          "search/anchors/policy.semantic_settings");
+    m.def("build_guides", [](py::handle data, py::handle policy) {
+        return to_python(pkc::build_guides(convert(data), convert(policy)));
+    }, "spatial/anchor_guides.build_guides");
+    m.def("encounter_groups", [](py::handle scene, std::vector<std::string> names) {
+        const pkc::Value value = convert(scene);
+        pkc::InteractionGate gate(value);  // its face tables only
+        return to_python(pkc::encounter_groups(value, names, gate, pkc::AnchorScene(value)));
+    }, "search/anchors/policy.encounter_groups");
     m.def("free_rectangles", [](py::handle boxes) {
         return to_python(pkc::free_rectangles(convert(boxes)));
     }, "spatial/surfaces.free_rectangles as lists");

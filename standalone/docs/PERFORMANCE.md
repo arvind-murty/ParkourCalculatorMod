@@ -203,6 +203,8 @@ ordered options. That is targeted enumeration work, not a whole-solver speedup.
   40.28 s and 39.46 s, and 55.97 s and 55.31 s against 125.6 s and 129.9 s with durable checkpoints
   ([evidence](../research/native-core/README.md)). With the anchor adapter native too, search time is unchanged:
   fixed work 14.18 s and 14.38 s against 14.80 s and 14.31 s, the short control 1.297 s against 1.365 s (means of five)
+  ([evidence](../research/native-core/README.md)). Of the setup builders only the event domain (84.1 ms against
+  91.9 ms on fixed work) and the encounter groups (2.3 ms against 6.7 ms) run faster natively, so only they dispatch
   ([evidence](../research/native-core/README.md)).
 - IPOPT row reduction: final rows fall from 278 to 91 on the benchmark
   ([constraint reduction](IPOPT_CONSTRAINT_REDUCTION.md)).

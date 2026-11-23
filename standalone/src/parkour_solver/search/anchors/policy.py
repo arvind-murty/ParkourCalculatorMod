@@ -368,6 +368,10 @@ def encounter_groups(scene, names):
     landing block's table measures from its whole face. The group runs through
     the last later anchor among the landing blocks.
     """
+    from parkour_solver import native_core
+    native = native_core.from_environment()
+    if native is not None:
+        return native.encounter_groups(scene, list(names))
     from parkour_solver.reachability.service import face_table
     from parkour_solver.spatial.surfaces import scene_geometry
     geometry = scene_geometry(scene['collisionScene'])

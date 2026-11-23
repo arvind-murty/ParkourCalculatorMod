@@ -781,10 +781,10 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `advantageous_candidates` | [241](../src/parkour_solver/search/anchors/policy.py#L241) | function |
 | `same_face_fit` | [344](../src/parkour_solver/search/anchors/policy.py#L344) | function |
 | `encounter_groups` | [361](../src/parkour_solver/search/anchors/policy.py#L361) | function |
-| `local_counts` | [411](../src/parkour_solver/search/anchors/policy.py#L411) | function |
-| `priority` | [416](../src/parkour_solver/search/anchors/policy.py#L416) | function |
-| `within_caps` | [420](../src/parkour_solver/search/anchors/policy.py#L420) | function |
-| `transfer_structure` | [434](../src/parkour_solver/search/anchors/policy.py#L434) | function |
+| `local_counts` | [415](../src/parkour_solver/search/anchors/policy.py#L415) | function |
+| `priority` | [420](../src/parkour_solver/search/anchors/policy.py#L420) | function |
+| `within_caps` | [424](../src/parkour_solver/search/anchors/policy.py#L424) | function |
+| `transfer_structure` | [438](../src/parkour_solver/search/anchors/policy.py#L438) | function |
 
 ## search/application.py
 
@@ -1014,21 +1014,21 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `_json` | [22](../src/parkour_solver/spatial/event_routes.py#L22) | function |
-| `SurfaceGroup` | [27](../src/parkour_solver/spatial/event_routes.py#L27) | class |
-| `surface_groups` | [36](../src/parkour_solver/spatial/event_routes.py#L36) | function |
-| `RouteDomain` | [76](../src/parkour_solver/spatial/event_routes.py#L76) | class |
-| `RouteDomain.id` | [85](../src/parkour_solver/spatial/event_routes.py#L85) | function |
-| `RouteDomain.to_dict` | [88](../src/parkour_solver/spatial/event_routes.py#L88) | function |
-| `RouteDomain.from_dict` | [92](../src/parkour_solver/spatial/event_routes.py#L92) | function |
-| `build_route_domain` | [102](../src/parkour_solver/spatial/event_routes.py#L102) | function |
-| `support_episodes` | [135](../src/parkour_solver/spatial/event_routes.py#L135) | function |
-| `build_event_graph` | [172](../src/parkour_solver/spatial/event_routes.py#L172) | function |
-| `initial_cursor` | [201](../src/parkour_solver/spatial/event_routes.py#L201) | function |
-| `next_goals` | [219](../src/parkour_solver/spatial/event_routes.py#L219) | function |
-| `semantic_prefix` | [283](../src/parkour_solver/spatial/event_routes.py#L283) | function |
-| `advance_cursor` | [296](../src/parkour_solver/spatial/event_routes.py#L296) | function |
-| `observed_route` | [308](../src/parkour_solver/spatial/event_routes.py#L308) | function |
+| `_json` | [23](../src/parkour_solver/spatial/event_routes.py#L23) | function |
+| `SurfaceGroup` | [28](../src/parkour_solver/spatial/event_routes.py#L28) | class |
+| `surface_groups` | [37](../src/parkour_solver/spatial/event_routes.py#L37) | function |
+| `RouteDomain` | [77](../src/parkour_solver/spatial/event_routes.py#L77) | class |
+| `RouteDomain.id` | [86](../src/parkour_solver/spatial/event_routes.py#L86) | function |
+| `RouteDomain.to_dict` | [89](../src/parkour_solver/spatial/event_routes.py#L89) | function |
+| `RouteDomain.from_dict` | [93](../src/parkour_solver/spatial/event_routes.py#L93) | function |
+| `build_route_domain` | [103](../src/parkour_solver/spatial/event_routes.py#L103) | function |
+| `support_episodes` | [143](../src/parkour_solver/spatial/event_routes.py#L143) | function |
+| `build_event_graph` | [180](../src/parkour_solver/spatial/event_routes.py#L180) | function |
+| `initial_cursor` | [209](../src/parkour_solver/spatial/event_routes.py#L209) | function |
+| `next_goals` | [227](../src/parkour_solver/spatial/event_routes.py#L227) | function |
+| `semantic_prefix` | [291](../src/parkour_solver/spatial/event_routes.py#L291) | function |
+| `advance_cursor` | [304](../src/parkour_solver/spatial/event_routes.py#L304) | function |
+| `observed_route` | [316](../src/parkour_solver/spatial/event_routes.py#L316) | function |
 
 ## spatial/guides.py
 

@@ -13,12 +13,14 @@
 
 #include "pkc/movement/contact_combinations.hpp"
 #include "pkc/program.hpp"
+#include "pkc/reachability/service.hpp"
 #include "pkc/spatial/surfaces.hpp"
 #include "pkc/value.hpp"
 
 namespace pkc {
 
 inline constexpr std::int64_t kHardJumpPolicyVersion = 5;  // policy.HARD_JUMP_POLICY_VERSION
+inline constexpr std::int64_t kSearchPolicyVersion = 22;   // semantic_settings' searchPolicyVersion
 
 using Visit = std::pair<std::int64_t, std::string>;  // (tick, face name)
 
@@ -94,5 +96,16 @@ struct LegClass {
     std::set<Move> allowed;
 };
 LegClass leg_class(double dx, double dz);
+
+// spatial/anchor_guides.build_guides(data, policy): the guide plan over the start, the anchors and the task.
+Value build_guides(const Value& data, const Value& policy);
+
+// policy.settings(value, scene): the anchor policy, or std::invalid_argument with the Python's message.
+Value anchor_settings(const Value& value, const Value& scene);
+// policy.semantic_settings(policy).
+Value semantic_settings(const Value& policy);
+// policy.encounter_groups(scene, names), its face tables read from `gate` (a gate of the same scene).
+Value encounter_groups(const Value& scene, const std::vector<std::string>& names, InteractionGate& gate,
+                       const AnchorScene& anchors);
 
 }  // namespace pkc

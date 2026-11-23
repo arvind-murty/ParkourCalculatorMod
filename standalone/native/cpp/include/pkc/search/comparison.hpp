@@ -11,6 +11,8 @@
 
 namespace pkc {
 
+inline constexpr std::int64_t kComparisonPolicyVersion = 1;  // comparison.POLICY_VERSION
+
 // comparison_label(program, start=..., through=..., identity=..., mode=..., context=..., evidence=...);
 // `mode` is 'ordinary' or 'turnaround'.
 Value comparison_label(const Program& program, std::int64_t start, std::optional<std::int64_t> through,

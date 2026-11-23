@@ -1,0 +1,13 @@
+{
+ "calls": {
+  "movement_settings": 3,
+  "goal_spec": 1,
+  "settings": 1,
+  "semantic_settings": 4,
+  "build_route_domain": 1,
+  "build_event_graph": 1,
+  "build_guides": 1,
+  "encounter_groups": 1
+ },
+ "mismatches": []
+}

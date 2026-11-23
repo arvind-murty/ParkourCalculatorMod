@@ -855,7 +855,10 @@ natively, and only the Python solves of routes with passages, wall hits or ladde
 - Every adapter call of a Python-loop search, run both ways, gives the same result: on the short control 1 initial
   cursor, 7 discoveries, 8 stage views, 19 candidate checks and 6 advances, on fixed work 1, 4, 4, 76 and 3, with equal
   counts ([short](2026-11-23-anchor-adapter/short-adapter-parity.json),
-  [fixed](2026-11-23-anchor-adapter/fixed-adapter-parity.json)).
+  [fixed](2026-11-23-anchor-adapter/fixed-adapter-parity.json)). Across the milestone list: 57, 118, 148, 127 and 62
+  calls, plus 2,292 perturbed candidate checks (other events' goals, shifted cursors, both node modes) reaching 454
+  `missing_prior_anchor` and 492 `required_event_not_observed` rejections, all equal, with equal counts
+  ([tests](2026-11-23-anchor-adapter/tests-adapter-parity.json)).
 - Python mode is the oracle: every published and result state equals it in call order (short control 191, fixed work
   454, and the milestone list's searching tests except two `disk.cached` flags that earlier tests' process-wide cache
   sets) ([states](2026-11-23-anchor-adapter/state-parity.txt)); transitions match
@@ -874,3 +877,33 @@ natively, and only the Python solves of routes with passages, wall hits or ladde
 - Search seconds, alternating against `5f917520` with its own native build: fixed work 14.18 and 14.38 against 14.80
   and 14.31, the short control 1.297 mean of five against 1.365; durable fixed work 56.68 and 54.67 against 56.50 and
   56.66 ([times](2026-11-23-anchor-adapter/search-seconds.txt)).
+
+## The setup builders, 2026-11-23
+Source: `2060b2ee` plus native ports of the anchor search's setup: `movement/settings.hpp` (`movement_settings`),
+`search/goals.hpp` (`goal_spec`), `spatial/event_routes.hpp` (`surface_groups`, `build_route_domain`,
+`build_event_graph`) and `search/anchors/policy.hpp` (the anchor policy's `settings` and `semantic_settings`,
+`build_guides`, `encounter_groups` on a native gate's face tables); `py_math.hpp`'s `python_norm` is CPython's
+`vector_norm` for `math.dist`. Only `build_route_domain` (handing back its canonical payload) and `encounter_groups`
+dispatch: on the fixed-work input the others cost more as native calls than in Python, their conversions included.
+
+- Every builder call, run both ways, gives the same result or the same error message: across the milestone list 66
+  goal specs, 94 anchor policies, 322 movement settings, 605 semantic settings, 84 route domains, 76 event graphs, 79
+  guide plans and 80 encounter-group partitions, and on the short control and fixed work, except one semantic settings
+  call in a test that patches `HARD_JUMP_POLICY_VERSION` ([tests](2026-11-23-setup/tests-setup-parity.json),
+  [short](2026-11-23-setup/short-setup-parity.json), [fixed](2026-11-23-setup/fixed-setup-parity.json)).
+- Builder medians on the fixed-work input: the route domain 84.1 ms dispatched against 91.9 ms, encounter groups 2.3 ms
+  against 6.7 ms; the event graph, guides and anchor policy take 3.4, 3.3 and 0.66 ms natively against 0.18, 0.14 and
+  0.08 ms in Python ([times](2026-11-23-setup/builder-times.txt)).
+- Python mode is the oracle: every published and result state equals it in call order (short control 191, fixed work
+  454, the milestone list's searching tests except the two `disk.cached` flags) ([states](2026-11-23-setup/state-parity.txt));
+  transitions match ([fixed](2026-11-23-setup/fixed-parity-python-native.json),
+  [short](2026-11-23-setup/short-parity-python-native.json)), and reports equal the previous code's except provenance,
+  plain and durable ([fixed](2026-11-23-setup/fixed-report-vs-previous.json),
+  [short](2026-11-23-setup/short-report-vs-previous.json),
+  [fixed durable](2026-11-23-setup/fixed-durable-report-vs-previous.json),
+  [short durable](2026-11-23-setup/short-durable-report-vs-previous.json)).
+- The milestone list passes in both modes ([suites](2026-11-23-setup/suites-summary.txt)). AddressSanitizer runs clean
+  ([summary](2026-11-23-setup/asan-summary.txt), [report](2026-11-23-setup/fixed-asan-report-vs-release.json)).
+- Search seconds, alternating against `2060b2ee` with its own native build: fixed work 14.38 and 14.04 against 15.05 and
+  14.47, the short control 1.356 and 1.316 against 1.289 and 1.306; durable fixed work 54.14 and 54.05 against 54.59
+  and 53.80 ([times](2026-11-23-setup/search-seconds.txt)).

@@ -1,0 +1,12 @@
+Python vs native setup builders on the fixed-work input, each called on its first call's captured arguments, alternating, 7 rounds (setup_bench.py; the route domain native as its payload parsed by json.loads)
+build_route_domain   python median    86.493 ms  native median    82.237 ms
+build_event_graph    python median     0.184 ms  native median     3.390 ms
+settings             python median     0.076 ms  native median     0.658 ms
+build_guides         python median     0.144 ms  native median     3.330 ms
+encounter_groups     python median     6.729 ms  native median     2.252 ms
+movement_settings    python median     0.003 ms  native median     0.020 ms
+goal_spec            python median     0.003 ms  native median     0.018 ms
+earlier runs with a binding returning the dict: build_route_domain   python median    96.564 ms  native median    73.506 ms
+earlier runs with a binding returning the dict: build_route_domain   python median    90.524 ms  native median    77.545 ms
+Dispatched build_route_domain (native payload string into RouteDomain, then to_dict, against the Python build then to_dict):
+route domain dispatched: python median    91.863 ms  native+wrap median    84.056 ms

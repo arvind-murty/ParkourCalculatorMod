@@ -1,0 +1,13 @@
+Working tree (2060b2ee + the setup builders, route domain and encounter groups dispatched): published states in Python mode (the oracle) vs native mode (pm.sh s4)
+recorded 191 states
+recorded 191 states
+== short states: {"a": 191, "b": 191, "compared": 191, "equal": 191, "differing": 0}
+recorded 454 states
+recorded 454 states
+== fixed states: {"a": 454, "b": 454, "compared": 454, "equal": 454, "differing": 0}
+recorded 325 states
+recorded 325 states
+== tests per test: {"tests": 49, "equal": 47, "differing": 2}
+differs tests.unit.search.test_anchor_search.RelaxedAutomaticSearchTests.test_relaxed_route_runs_off_the_start_and_jumps_from_the_lower_block 4 4
+differs tests.unit.search.test_anchor_search.RelaxedAutomaticSearchTests.test_search_runs_on_the_relaxation_and_publishes_one_physical_finalization 4 4
+The two per-test differences are disk.cached flags only (.frames and .finalAttempts), as before this step.
