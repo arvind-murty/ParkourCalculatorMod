@@ -87,6 +87,44 @@ std::string candidate_key(const Value& program) {
     return digest(text(program_search_key(program_from_value(object(std::move(physical))))));
 }
 
+std::string decision_family(const Value& program, const std::vector<Value>& parents) {
+    std::int64_t start = 0;
+    for (std::size_t i = 0; i < parents.size(); ++i) {
+        const std::int64_t duration = as_int(at(fields(at(fields(parents[i]), "profile")), "duration"));
+        start = i == 0 ? duration : std::min(start, duration);
+    }
+    const Object& p = fields(at(fields(program), "profile"));
+    const Array &jump = items(at(p, "jump")), &grounded = items(at(p, "grounded"));
+    Value first_jump = kNull;
+    for (std::int64_t t = start, n = as_int(at(p, "duration")); t < n; ++t) {
+        if (py_truthy(jump.at(t)) && py_truthy(grounded.at(t))) {
+            first_jump = integer_value(t);
+            break;
+        }
+    }
+    // min(events, key=lambda e: e[0]): the first of equal offsets.
+    Value first = kNull;
+    const auto consider = [&](Value event) {
+        if (is_null(first) || py_compare(items(event)[0], items(first)[0]) < 0) first = std::move(event);
+    };
+    if (const Value* contacts = get(p, "contactEvents")) {
+        for (const Value& row : items(*contacts)) {
+            const Object& e = fields(row);
+            const std::int64_t offset = as_int(at(e, "offset"));
+            if (offset < start) continue;
+            if (as_text(at(e, "axis")) == "Y" && py_truthy(grounded.at(offset)) && !py_truthy(jump.at(offset))) continue;
+            consider(array({at(e, "offset"), at(e, "axis"), get_or_null(e, "role"), at(e, "boxes")}));
+        }
+    }
+    if (const Value* cases = get(p, "caseEvents")) {
+        for (const Value& row : items(*cases)) {
+            const Object& e = fields(row);
+            if (as_int(at(e, "input")) >= start) consider(array({at(e, "input"), at(e, "case"), get_or_null(e, "boxes")}));
+        }
+    }
+    return digest(array({first_jump, first}));
+}
+
 Value commit_arrival(const Value& program_value, const Value& best_value, const Value& source_program,
                      bool keep_region_choices) {
     const Object& program = fields(program_value);

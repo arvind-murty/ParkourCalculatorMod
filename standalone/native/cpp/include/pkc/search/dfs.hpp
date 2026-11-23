@@ -6,6 +6,7 @@
 #include <functional>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "pkc/search/engine.hpp"
 #include "pkc/value.hpp"
@@ -14,6 +15,9 @@ namespace pkc {
 
 // dfs.candidate_key(program).
 std::string candidate_key(const Value& program);
+
+// dfs.decision_family(program, parents).
+std::string decision_family(const Value& program, const std::vector<Value>& parents);
 
 // dfs.commit_arrival(program, best, source_program=..., keep_region_choices=...); a null `source_program` is None.
 Value commit_arrival(const Value& program, const Value& best, const Value& source_program, bool keep_region_choices);

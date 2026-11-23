@@ -5,6 +5,7 @@
 #include <set>
 
 #include "../schema.hpp"
+#include "pkc/canonical.hpp"
 
 namespace pkc {
 namespace {
@@ -19,6 +20,10 @@ bool holds(const std::vector<Box>& boxes, const Array& box) {  // box in e['boxe
 }
 
 }  // namespace
+
+std::string goal_key(const Value& scene, const Value& spec, const Value& corridor) {
+    return dumps(object({{"goal", spec}, {"route", corridor}, {"initial", at(fields(scene), "initial")}}), true, false);
+}
 
 bool landing_satisfied(const Value& scene, const std::string& block_id, const Value& vertical_value) {
     const Object* block = nullptr;

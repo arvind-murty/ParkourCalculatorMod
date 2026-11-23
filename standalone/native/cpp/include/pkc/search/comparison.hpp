@@ -21,5 +21,7 @@ Value priority_key(const Value& label);  // [T, -J, tickCost, id]
 Value compare_candidates(const Value& candidate, const Value& peer, const Object& context, const Value& incumbent);
 // deferrals.assess(label, peers, context): `peers` is the peer index dict.
 Value assess(const Value& label, const Value& peers, const Object& context);
+// deferrals.remember_peer(peers, label): keeps the label in the peer index; whether its entry changed.
+bool remember_peer(Value& peers, const Value& label);
 
 }  // namespace pkc

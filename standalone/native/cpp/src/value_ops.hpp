@@ -132,6 +132,24 @@ inline bool contains(const Array& values, const Value& value) {
     return std::any_of(values.begin(), values.end(), [&](const Value& item) { return py_equal(item, value); });
 }
 
+// Python ordering of JSON scalars and lists as tuple members: numbers by value, strings bytewise.
+inline int py_compare(const Value& a, const Value& b) {
+    double x, y;
+    if (numeric(a, x) && numeric(b, y)) return x < y ? -1 : y < x ? 1 : 0;
+    if (auto* s = std::get_if<std::string>(&a.data)) {
+        const std::string& t = as_text(b);
+        return *s < t ? -1 : t < *s ? 1 : 0;
+    }
+    if (is_list(a)) {
+        const Array &l = items(a), &r = items(b);
+        for (std::size_t i = 0; i < std::min(l.size(), r.size()); ++i)
+            if (int c = py_compare(l[i], r[i])) return c;
+        return l.size() < r.size() ? -1 : r.size() < l.size() ? 1 : 0;
+    }
+    if (is_null(a) && is_null(b)) return 0;
+    fail("TypeError: unorderable values");
+}
+
 // ---- numbers with Python int/float kinds: int op int stays int, anything else is float.
 
 inline Value value(const Num& num) {

@@ -344,5 +344,7 @@ void describe(R& s, V& v, DfsState*) {
 DfsState dfs_state_from_value(const Value& value) { return codec::from_value<DfsState>(value, "dfs"); }
 
 Value to_value(const DfsState& state) { return codec::encode(state); }
+Value to_value(const ObservationQuery& query) { return codec::encode(query); }
+Value to_value(const ObservationReplay& replay) { return codec::encode(replay); }
 
 }  // namespace pkc

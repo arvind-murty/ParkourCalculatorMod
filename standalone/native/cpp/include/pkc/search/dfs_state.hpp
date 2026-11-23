@@ -264,5 +264,7 @@ struct DfsState {
 
 DfsState dfs_state_from_value(const Value& value);
 Value to_value(const DfsState& state);
+Value to_value(const ObservationQuery& query);
+Value to_value(const ObservationReplay& replay);
 
 }  // namespace pkc

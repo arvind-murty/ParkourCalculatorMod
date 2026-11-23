@@ -352,8 +352,9 @@ Value AnchorScene::program_objective(const Program& program, const Value& guides
                               at(fields(scene_), "objective"));
 }
 
-Value classify(const Value& guides_value, std::int64_t span, double x, double z) {
+Value classify(const Value& guides_value, std::int64_t span, const Value& point_value) {
     const Object& guides = fields(guides_value);
+    const Array& point = items(point_value);
     Array distances;
     bool turnaround = false;
     for (const auto& tv : items(at(guides, "turns"))) {
@@ -361,16 +362,22 @@ Value classify(const Value& guides_value, std::int64_t span, double x, double z)
         bool listed = false;
         for (const auto& s : items(at(turn, "spans"))) listed = listed || as_int(s) == span;
         if (!listed) continue;
+        // sum(a*b for a,b in zip(normal, point)) - offset, keeping Python's int/float kinds.
         const Array& normal = items(at(turn, "normal"));
-        const double raw = python_sum({num(normal[0]).value * x, num(normal[1]).value * z}) - num(at(turn, "offset")).value;
-        const double shifted = raw + num(at(turn, "margin")).value;
-        turnaround = turnaround || shifted >= 0;
-        distances.push_back(object({{"boundary", at(turn, "id")}, {"rawDistance", real(raw)},
-                                    {"shiftedDistance", real(shifted)}, {"inside", boolean(shifted >= 0)}}));
+        const Num a = mul(num(normal[0]), num(point.at(0))), b = mul(num(normal[1]), num(point.at(1)));
+        const Num total = a.integral && b.integral ? add(a, b) : flt(python_sum({a.value, b.value}));
+        const Num raw = sub(total, num(at(turn, "offset"))), shifted = add(raw, num(at(turn, "margin")));
+        turnaround = turnaround || shifted.value >= 0;
+        distances.push_back(object({{"boundary", at(turn, "id")}, {"rawDistance", value(raw)},
+                                    {"shiftedDistance", value(shifted)}, {"inside", boolean(shifted.value >= 0)}}));
     }
     return object({{"version", integer_value(1)}, {"guide", at(guides, "id")}, {"span", integer_value(span)},
-                   {"point", array({real(x), real(z)})}, {"isTurnaround", boolean(turnaround)},
+                   {"point", array(point)}, {"isTurnaround", boolean(turnaround)},
                    {"distances", array(std::move(distances))}});
+}
+
+Value classify(const Value& guides, std::int64_t span, double x, double z) {
+    return classify(guides, span, array({real(x), real(z)}));
 }
 
 Value decision_objective(const Value& guides_value, std::int64_t reached, const Value& point_value, const Value& fallback) {

@@ -76,6 +76,8 @@ private:
 };
 
 // spatial/anchor_guides.py: classify(guides, span, point) and decision_objective(guides, reached, point, fallback).
+// `point` keeps its numbers' kinds in the label, as list(point) does.
+Value classify(const Value& guides, std::int64_t span, const Value& point);
 Value classify(const Value& guides, std::int64_t span, double x, double z);
 Value decision_objective(const Value& guides, std::int64_t reached, const Value& point, const Value& fallback);
 

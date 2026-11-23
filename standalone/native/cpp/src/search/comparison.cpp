@@ -2,6 +2,8 @@
 #include "pkc/search/comparison.hpp"
 
 #include "../schema.hpp"
+#include "../value_ops.hpp"
+#include "pkc/canonical.hpp"
 
 namespace pkc {
 namespace {
@@ -149,6 +151,26 @@ Value assess(const Value& label, const Value& peers, const Object& context) {
         if (py_equal(action, text("keep_protected"))) protected_decision = checked;
     }
     return object(with(fields(protected_decision ? *protected_decision : decision), "peerChecks", integer_value(checks)));
+}
+
+bool remember_peer(Value& peers, const Value& label_value) {
+    const Object& label = fields(label_value);
+    Array parts;
+    for (const char* key : {"comparisonContext", "mode", "landingPhase", "J", "tickCost"})
+        parts.push_back(get_or_null(label, key));
+    const std::string key = dumps(array(std::move(parts)), false, false);
+    Object index = fields(peers);
+    const Value* old = get(index, key);
+    // min((old, label), key=priority_key) keeps old unless the label orders strictly first.
+    const Value& chosen = !old || py_compare(priority_key(label_value), priority_key(*old)) < 0 ? label_value : *old;
+    Object kept;
+    for (const auto& [name, value] : fields(chosen))
+        if (name != "schedule") kept.emplace_back(name, value);
+    Value stored = object(std::move(kept));
+    const bool changed = !old || !py_equal(stored, *old);
+    put(index, key, std::move(stored));
+    peers = object(std::move(index));
+    return changed;
 }
 
 }  // namespace pkc
