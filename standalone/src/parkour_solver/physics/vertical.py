@@ -63,20 +63,21 @@ def vertical_step(config, tick, position, velocity, on_ladder, grounded, toleran
                 valid = grounded and not jumping and 0 < delta <= STEP_HEIGHT+tolerance
             elif kind == 'slab_boost':
                 valid = grounded and jumping and movement < delta <= STEP_HEIGHT+tolerance
-            elif kind in ('blip','blip_up','corner_blip_up'):
+            elif kind in ('blip','blip_up','corner_blip','corner_blip_up'):
                 valid = not grounded and movement < 0 and position >= lower and proposed < lower
                 if kind == 'blip':
                     valid = valid and 0 <= delta <= STEP_HEIGHT+tolerance
                 else:
                     valid = valid and plane == position
-                    valid = valid and (position > upper if kind=='blip_up' else 0 <= upper-position <= STEP_HEIGHT+tolerance)
+                    valid = valid and (position > upper if kind in ('blip_up','corner_blip_up')
+                                       else 0 <= upper-position <= STEP_HEIGHT+tolerance)
             elif kind == 'corner_jump_cancel':
                 valid = grounded and jumping and f32(.42) < upper-position <= STEP_HEIGHT+tolerance and plane==position
             elif kind == 'grind':
                 valid = grounded and jumping and 0 <= contact.get('clearance',-1) < movement and plane==position
             if valid:
                 proposed, carry = plane, 0.0
-                ground = kind in ('normal_step','blip','blip_up','corner_blip_up')
+                ground = kind in ('normal_step','blip','blip_up','corner_blip','corner_blip_up')
             else:
                 failures.append({'state':tick+1,'reason':'invalid_movement_case','case':kind})
         elif contact.get('step', False):

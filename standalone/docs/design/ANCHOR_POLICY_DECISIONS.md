@@ -417,7 +417,7 @@ A generated choice is skipped, or loses the rectangles concerned, for:
 - **an entry by a disallowed move**: a move that crosses a block's side, or contacts
   a side wall, from outside it moves against that side's outward axis
   (`entry_backward`). It covers grinds (`movement/ceiling_generation.py`), normal steps,
-  slab boosts, blip-ups, corner jump cancels and corner blip-ups (`movement/stepping.py`;
+  slab boosts, blip-ups, corner jump cancels, corner blips and corner blip-ups (`movement/stepping.py`;
   corner rows cross the X side and only pass the Z side). A blip's wall avoidance rows are
   not entries.
 
@@ -440,7 +440,7 @@ it is natural; on B4 the natural jump overshoots, and landing back needs braking
 the B4 hop waits while the 3-run-tick jump onto B5 lives.
 
 A program stands on the merged top faces, at its feet, named by the face it last visited
-(`launch`: landing contacts and case events, so a blip-up or corner blip-up that sets no
+(`launch`: landing contacts and case events, so a blip-up or corner blip(-up) that sets no
 `terminalSupport` counts). P's launch face is the one of those nearest its validated
 position; with none (feet on no top with that name, or a ladder tick) nothing is held.
 A child of P lands back on it when it jumps on its first input and every landing

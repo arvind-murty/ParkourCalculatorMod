@@ -146,7 +146,7 @@ def prepare(request):
             if contact.get('case'):
                 if contact['direction'] != -1 or contact.get('step'):
                     raise ValueError('A movement case requires its own lower contact')
-                if contact['case'] not in ('normal_step','slab_boost','blip','blip_up','corner_jump_cancel','corner_blip_up','grind'):
+                if contact['case'] not in ('normal_step','slab_boost','blip','blip_up','corner_jump_cancel','corner_blip','corner_blip_up','grind'):
                     raise ValueError('Unsupported vertical movement case')
                 for key in ('lowerHeight','higherHeight','clearance'):
                     if key in contact:

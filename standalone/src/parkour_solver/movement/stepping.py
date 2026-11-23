@@ -155,8 +155,11 @@ def _open_flight_cases(context, initial, jumping, faces, lower, lower_boxes, low
                             region_choices=lower_regions + regions)
                         if choice:
                             yield choice
-            for case in ('blip_up', 'corner_blip_up'):
-                if not enabled(case) or not (y > higher.plane if case == 'blip_up' else 0 <= higher.plane - y <= f32(.6)):
+            # A corner blip (landing at most 0.6 below the higher top) and a corner blip-up (landing above it) both keep
+            # the landing height: H ends beside the block, past its corner (user, 2026-11-22).
+            for case in ('blip_up', 'corner_blip', 'corner_blip_up'):
+                if not enabled(case) or not (y > higher.plane if case in ('blip_up', 'corner_blip_up')
+                                             else 0 <= higher.plane - y <= f32(.6)):
                     continue
                 shared_event=dict(case=case,input=landing,plane=y,lowerHeight=lower.plane,higherHeight=higher.plane,
                     boxes=boxes,lowerBoxes=lower_boxes,anchors={'landing':landing,'hit':landing+1})

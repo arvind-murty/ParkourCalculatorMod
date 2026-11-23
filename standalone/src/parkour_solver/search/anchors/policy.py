@@ -138,7 +138,7 @@ def launch(scene, program, begin=None, end=None):
     return None if any(ladder) else (tick, name)
 
 
-FEET_CASES = frozenset(('normal_step', 'slab_boost', 'blip', 'blip_up', 'corner_jump_cancel', 'corner_blip_up'))
+FEET_CASES = frozenset(('normal_step', 'slab_boost', 'blip', 'blip_up', 'corner_jump_cancel', 'corner_blip', 'corner_blip_up'))
 
 
 def feet_touches(scene, program):

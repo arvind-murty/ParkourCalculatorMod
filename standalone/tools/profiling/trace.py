@@ -154,6 +154,7 @@ def block_names(scene):
 SIDE_ROWS = dict(grind=[('grind:outside',0,'XZ')], normal_step=[('case:outside',0,'XZ')], slab_boost=[('case:outside',0,'XZ')],
                  blip=[('blip:wall_avoid',0,'XZ')], blip_up=[('blip_up:outside',0,'XZ')],
                  corner_jump_cancel=[('case:outside',0,'X'),('case:outside',1,'Z')],
+                 corner_blip=[('case:outside',0,'X'),('case:outside',1,'Z')],
                  corner_blip_up=[('case:outside',0,'X'),('case:outside',1,'Z')])
 
 
@@ -260,8 +261,8 @@ def case_text(c):
     corner a corner case passes (it ends beside the block, not on it)."""
     block, side = c.get('block','?').upper(), '/'.join(c['entries'])
     landing = f'lands on {c["lower"].upper()} and ' if c.get('lower') else ''
-    if c['case'] in ('corner_jump_cancel','corner_blip_up'):
-        verb = 'corner jump cancel' if c['case'] == 'corner_jump_cancel' else 'corner blips up'
+    if c['case'] in ('corner_jump_cancel','corner_blip','corner_blip_up'):
+        verb = dict(corner_jump_cancel='corner jump cancel',corner_blip='corner blips',corner_blip_up='corner blips up')[c['case']]
         return f'{landing}{verb} past {block}\'s {"".join(c["entries"]) or "?"} corner t{c["tick"]}'
     verb = dict(grind='grinds under', blip='blips onto', blip_up='blips up onto').get(c['case'],c['case'].replace('_',' ')+' onto')
     return f'{landing}{verb} {block} t{c["tick"]}'+(f' from its {side} side' if side else '')

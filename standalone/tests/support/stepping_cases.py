@@ -5,17 +5,21 @@ import json
 
 FIXTURES = AUTONOMY_DATA / 'fixtures/stepping'
 # Recorded fixtures are immutable (tools/layout-migration.json). blip-wall.json records the blip's wall-hit variant,
-# removed on 2026-11-22: a hit then a blip is a wall hit, deferred with intentional wall hits.
-RETIRED = {'blip-wall'}
+# removed on 2026-11-22: a hit then a blip is a wall hit, deferred with intentional wall hits. corner_blip_up.json lands
+# 0.3 below the higher top, which became the corner blip when corner cases split by height that day; the corner
+# blip-up, landing above the top, is corner_blip_up-low.json.
+FILES = {'corner_blip': 'corner_blip_up', 'corner_blip_up': 'corner_blip_up-low'}
+RETIRED = {'blip-wall'} | set(FILES.values())
 
 
 def fixture(name):
-    return json.loads((FIXTURES / (name + '.json')).read_text())
+    data = json.loads((FIXTURES / (FILES.get(name, name) + '.json')).read_text())
+    return dict(data, case='corner_blip') if name == 'corner_blip' else data
 
 
 def fixture_names():
     """Every stepping fixture production still generates."""
-    return sorted(p.stem for p in FIXTURES.glob('*.json') if p.stem not in RETIRED)
+    return sorted([p.stem for p in FIXTURES.glob('*.json') if p.stem not in RETIRED] + list(FILES))
 
 
 def _context(scene, program, gate, **fields):
@@ -72,12 +76,14 @@ def _corner(case, x_cmp, z_cmp):
     return wanted
 
 
-# Which generated variant each fixture names: a blip-up or corner blip-up that walks on from the higher top or jumps
-# from it, and the corner each corner fixture recorded (approach from -X; escape -Z for the corner blip-up, +Z for the
+# Which generated variant each fixture names: a blip-up or corner blip(-up) that walks on from the higher top or jumps
+# from it, and the corner each corner fixture recorded (approach from -X; escape -Z for the corner blips, +Z for the
 # corner jump cancel).
 VARIANTS = {
     'blip_up-jump': lambda case, p: p['profile']['jump'][_hit(p, 'blip_up')],
     'blip_up': lambda case, p: not p['profile']['jump'][_hit(p, 'blip_up')],
+    'corner_blip': lambda case, p: (not p['profile']['jump'][_hit(p, 'corner_blip')]
+                                    and _corner('corner_blip', 'LE', 'LE')(case, p)),
     'corner_blip_up': lambda case, p: (not p['profile']['jump'][_hit(p, 'corner_blip_up')]
                                        and _corner('corner_blip_up', 'LE', 'LE')(case, p)),
     'corner_jump_cancel': _corner('corner_jump_cancel', 'LE', 'GE'),

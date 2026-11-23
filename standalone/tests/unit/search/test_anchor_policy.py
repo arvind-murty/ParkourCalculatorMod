@@ -372,7 +372,7 @@ class AnchorPolicyTests(unittest.TestCase):
         self.assertEqual(targets(child(contactEvents=ceiling('optional',offset=0))),set())
         for case in ('grind','slab_boost','corner_jump_cancel'):
             self.assertEqual(targets(child(caseEvents=[dict(input=1,case=case,boxes=[solid('optional')])])),{(case,'optional')})
-        for case in ('normal_step','blip','blip_up','corner_blip_up'):
+        for case in ('normal_step','blip','blip_up','corner_blip','corner_blip_up'):
             self.assertEqual(targets(child(caseEvents=[dict(input=1,case=case,boxes=[solid('optional')])])),set())
 
     def test_advantageous_candidates_match_the_generators_airtimes(self):

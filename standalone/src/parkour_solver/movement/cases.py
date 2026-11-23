@@ -10,7 +10,7 @@ from parkour_solver.schema import SOLVER_MARGIN
 from parkour_solver.scene.route import HALF_WIDTH
 
 
-CASES = {'normal_step','slab_boost','blip','blip_up','corner_jump_cancel','corner_blip_up','grind'}
+CASES = {'normal_step','slab_boost','blip','blip_up','corner_jump_cancel','corner_blip','corner_blip_up','grind'}
 
 
 def outside_row(box, axis, sign, state, name='case:outside'):

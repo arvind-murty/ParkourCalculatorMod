@@ -58,23 +58,26 @@ It is an avoidance case, not a planned retained X wall hit. Preserve ordinary ju
 
 The supported movement family cannot pass straight through the minimum two-pixel obstruction in one input: that would require about 0.725 displacement including the player's width. Generate diagonal corner clearance instead of the earlier unconstrained straight-through proposal.
 
-### Corner blip-up
+### Corner blip and corner blip-up
 
-This is the landing analogue of corner jump cancel. It is X-facing and uses the same Z-blockage-style successive-state conditions, anchored on L and H rather than before-J and J. Keep the ordinary lower landing condition on L. H clears the obstacle's Z edge while retaining yH=yL and becoming grounded.
+These are the landing analogues of corner jump cancel: a blip and a blip-up at a convex corner of the higher block (user, 2026-11-22). They are X-facing and use the same Z-blockage-style successive-state conditions, anchored on L and H rather than before-J and J. Keep the ordinary lower landing condition on L. H crosses the obstacle's X face plane and clears its Z edge.
 
-Use blip-up air movement and the same elevated-jump or normal run-off continuation. Do not blindly impose the ordinary blip-up condition yL>b: the corner case can retain a height below the cleared obstacle's top because H is outside its footprint. The Z-facing counterpart lands normally on the lower level.
+- **Corner blip:** 0 <= b-yL <= 0.6, as for a blip.
+- **Corner blip-up:** yL>b and yFreeH<a, as for a blip-up.
+
+Both retain yH=yL and become grounded, because H is outside the higher block's footprint: Minecraft's step path rises from yL, moves X then Z, and descends by the same rise onto nothing. Use blip-up air movement and the same elevated-jump or normal run-off continuation. The Z-facing counterpart lands normally on the lower level, since X moves first and escapes the edge before Z is blocked (checked on `scene/static_collision.py`).
 
 ## Supported family and rejected proposal
 
-The catalogue now contains normal stepping, slab/stair boost, blip, blip-up, corner jump cancel, corner blip-up and grind, plus ordinary ceiling-hit cases handled by ceiling logic.
+The catalogue now contains normal stepping, slab/stair boost, blip, blip-up, corner jump cancel, corner blip, corner blip-up and grind, plus ordinary ceiling-hit cases handled by ceiling logic.
 
 The earlier partial-rise jump-cancel proposal (1 -> 1.25) is excluded from the supported family. Its synthetic collision probe did not establish a realizable route with the game's block geometry and this movement policy. For the ordinary lower obstacle case, the nominal jump clears an obstacle below its jump rise. Do not add a partial-rise type based on that probe.
 
-The active probe labels are updated to `corner_jump_cancel` and `corner_blip_up`. Probe boxes/displacements are low-level collision inputs, not evidence for an arbitrary block shape, a straight-through route or a new supported type. The example with lower floor 1, obstacle top 1.5 and yL=1.2 is the corner blip-up, not ordinary blip-up.
+The active probe labels are updated to `corner_jump_cancel` and `corner_blip_up`; the probe predates the corner blip/blip-up split. Probe boxes/displacements are low-level collision inputs, not evidence for an arbitrary block shape, a straight-through route or a new supported type. The example with lower floor 1, obstacle top 1.5 and yL=1.2 is the corner blip, not ordinary blip-up.
 
 ## Ceiling classification
 
-Approved organisation, 2026-10-30: the normal-air `ceiling` type generates ordinary ceiling hits and grind. The stepping type generates normal step, slab/stair boost, blip, blip-up and the two corner cases. Grind and corner jump cancel share cancelled-jump Y/control primitives while retaining different geometry.
+Approved organisation, 2026-10-30: the normal-air `ceiling` type generates ordinary ceiling hits and grind. The stepping type generates normal step, slab/stair boost, blip, blip-up and the three corner cases. Grind and corner jump cancel share cancelled-jump Y/control primitives while retaining different geometry.
 
 Inside a ladder, `ladder_ceiling` is local handling within ladder climbing, with the shared primitive helpers. Do not turn a ladder-owned input into a normal ceiling unit. Normal air before, between and after ladders can use the ceiling type. Keep the actual pre/post occupancy masks at entry/exit boundaries and preserve inherited ladder-local contact combinations.
 
@@ -94,7 +97,8 @@ generators alongside normal movement; ordinary jumps are kept beside them.
 | stepping | blip | Air into H | H at higher top, grounded |
 | stepping | blip_up | Air into H | H retains yL, grounded without a fabricated support |
 | stepping | corner_jump_cancel | Ground/jump into J | X-facing approach, next-state Z escape, zero rise, airborne |
-| stepping | corner_blip_up | Air into H | X-facing L/H corner escape, retained yL, grounded |
+| stepping | corner_blip | Air into H | X-facing L/H corner escape, yL at most 0.6 below the higher top, retained yL, grounded |
+| stepping | corner_blip_up | Air into H | X-facing L/H corner escape, yL above the higher top, retained yL, grounded |
 | ceiling | ceiling_hit | Normal upward air, or initial jump | Actual underside plane and zero vertical carry before gravity/drag |
 | ceiling | grind | Ground/jump into J | Outside before J, under low ceiling on J, zero rise; ordinary air follows |
 
@@ -125,7 +129,7 @@ requires being outside the higher block on L, otherwise the Y-first resolver lan
 Corner cases share X-approach and next-state Z-escape constraints.
 
 In the anchor search no stepping case touches a merged top face the route has already
-left: the target, higher, corner and lower blocks of the six stepping cases all go through
+left: the target, higher, corner and lower blocks of the seven stepping cases all go through
 the context's `feetAllowed` predicate (on the face's name) before any reachability
 query, and the emitted-program audit rejects a case event whose `boxes` or `lowerBoxes` stand on
 a departed face. These touches never count as visits, and a touch that matches a visit at the

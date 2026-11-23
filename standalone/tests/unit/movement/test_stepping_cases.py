@@ -35,7 +35,8 @@ class SteppingCaseTests(unittest.TestCase):
             ('slab_boost', 1, REST_CARRY, True, f32(.42), 1.5, {}, 1.5, False),
             ('blip', 1.2, -.4, False, None, 1.5, {'lowerHeight': 1, 'higherHeight': 1.5}, 1.5, True),
             ('blip_up', 1.6, -.8, False, None, 1.6, {'lowerHeight': 1, 'higherHeight': 1.5}, 1.6, True),
-            ('corner_blip_up', 1.2, -.4, False, None, 1.2, {'lowerHeight': 1, 'higherHeight': 1.5}, 1.2, True),
+            ('corner_blip', 1.2, -.4, False, None, 1.2, {'lowerHeight': 1, 'higherHeight': 1.5}, 1.2, True),
+            ('corner_blip_up', 1.2, -.4, False, None, 1.2, {'lowerHeight': 1, 'higherHeight': 1.125}, 1.2, True),
             ('corner_jump_cancel', 1, REST_CARRY, True, f32(.42), 1, {'higherHeight': 1.5}, 1, False),
             ('grind', 1, REST_CARRY, True, f32(.42), 1, {'clearance': .1}, 1, False)]
         for kind, y, vy, ground, jump, plane, metadata, expected_y, expected_ground in cases:
@@ -62,7 +63,8 @@ class SteppingCaseTests(unittest.TestCase):
             ('blip_up', 1.5, -.8, 1.5, {'lowerHeight': 1, 'higherHeight': 1.5}),
             ('corner_jump_cancel', 1, REST_CARRY, 1, {'higherHeight': 1 + f32(.42)}),
             ('grind', 1, REST_CARRY, 1, {'clearance': .42}),
-            ('corner_blip_up', 1.2, -.4, 1.2, {'lowerHeight': 1, 'higherHeight': 1.9})]:
+            ('corner_blip', 1.2, -.4, 1.2, {'lowerHeight': 1, 'higherHeight': 1.9}),
+            ('corner_blip_up', 1.2, -.4, 1.2, {'lowerHeight': 1, 'higherHeight': 1.2})]:
             jump = f32(.42) if kind in ('grind', 'corner_jump_cancel') else None
             config = dict(threshold=.005, jumpVelocity=[jump], sneak=[False],
                           contacts=[dict(state=1, direction=-1, plane=plane, case=kind, **metadata)])
@@ -104,10 +106,10 @@ class SteppingCaseTests(unittest.TestCase):
                 prepare_route(broken)
 
     def test_elevated_ground_hands_off_to_jump_or_ground_then_air(self):
-        for name in ['blip_up', 'blip_up-jump', 'corner_blip_up']:
+        for name in ['blip_up', 'blip_up-jump', 'corner_blip', 'corner_blip_up']:
             _, _, program = fixture_program(name)
             p = program['profile']
-            hit = next(e['anchors']['hit'] for e in p['caseEvents'] if e['case'] in ('blip_up', 'corner_blip_up'))
+            hit = next(e['anchors']['hit'] for e in p['caseEvents'] if e['case'] in ('blip_up', 'corner_blip', 'corner_blip_up'))
             self.assertEqual(p['position'][hit], p['position'][hit - 1])
             self.assertTrue(p['grounded'][hit])
             self.assertEqual(p['velocity'][hit], REST_CARRY)
@@ -175,7 +177,7 @@ class SteppingNumericalTests(unittest.TestCase):
                     self.assertFalse(check_geometry(scene['collisionScene'], missing, best['candidate'], vertical, compiler, 3)['feasible'])
                     if data['case'] in ('grind', 'corner_jump_cancel'):
                         self.assertFalse(any(best['candidate']['movement']['horizontalCollision']))
-                    if data['case'] in ('blip_up', 'corner_blip_up'):
+                    if data['case'] in ('blip_up', 'corner_blip', 'corner_blip_up'):
                         hit = next(e['anchors']['hit'] for e in program['profile']['caseEvents'] if e['case'] == data['case'])
                         self.assertEqual(best['candidate']['y'][hit], best['candidate']['y'][hit - 1])
                         self.assertTrue(best['candidate']['onGround'][hit])
@@ -184,7 +186,7 @@ class SteppingNumericalTests(unittest.TestCase):
         def swap_box(box):
             return [box[2], box[1], box[0], box[5], box[4], box[3]]
         with PythonCompiler() as compiler:
-            for name in ['corner_jump_cancel', 'corner_blip_up']:
+            for name in ['corner_jump_cancel', 'corner_blip', 'corner_blip_up']:
                 scene, _, program = fixture_program(name)
                 _, result = solve(scene, program, compiler, seconds=8)
                 self.assertEqual(result['status'], 'feasible', result)
@@ -232,7 +234,7 @@ class SteppingNumericalTests(unittest.TestCase):
         self.assertGreater(result['best']['plan']['ticks'], 2)
 
     def test_open_generation_covers_the_catalogue_and_allows_composite_height_gain(self):
-        for name in ['blip', 'blip_up', 'corner_blip_up', 'corner_jump_cancel', 'grind']:
+        for name in ['blip', 'blip_up', 'corner_blip', 'corner_blip_up', 'corner_jump_cancel', 'grind']:
             self.assertTrue(case_programs(fixture(name))[1], name)
         data = fixture('blip_up')
         data['request']['blocks'] = [dict(id='start', boxes=[[-2, 1, -1, 1, 2, 1]]),
@@ -340,9 +342,11 @@ class ExposureTests(unittest.TestCase):
             return touched, gate.owners
 
         for name, block, cases in [
-                ('blip', 'goal', {'normal_step', 'slab_boost', 'corner_jump_cancel', 'blip', 'corner_blip_up'}),
-                ('blip_up', 'higher', {'blip_up'}), ('blip_up', 'goal', {'blip_up'}),
-                ('corner_blip_up', 'higher', {'blip', 'corner_blip_up'})]:
+                ('blip', 'goal', {'normal_step', 'slab_boost', 'corner_jump_cancel', 'blip', 'corner_blip'}),
+                # The blip-up's higher block lands 0.1 above its top, so its exposed corners give corner blip-ups too.
+                ('blip_up', 'higher', {'blip_up', 'corner_blip_up'}), ('blip_up', 'goal', {'blip_up', 'corner_blip_up'}),
+                ('corner_blip', 'higher', {'blip', 'corner_blip'}),
+                ('corner_blip_up', 'higher', {'blip_up', 'corner_blip_up'})]:
             self.assertEqual(run(name, block, False)[0], cases)
             touched, owners = run(name, block, True)
             self.assertEqual(touched, set())
