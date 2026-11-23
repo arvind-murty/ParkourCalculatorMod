@@ -600,11 +600,10 @@ Nothing dispatches to it: a trial dispatch from `evaluate_program` measured no f
   call, in the same way as the previous dispatch and the code before it (`b988b7c7`); key order differs inside the
   native preparation's routes ([short](2026-11-22-node-solve/short-python-vs-native.txt),
   [fixed work](2026-11-22-node-solve/fixed-python-vs-native.txt), [tests](2026-11-22-node-solve/tests-python-vs-native.txt)).
-- That call (fixed work's 19th) solves a program whose `guideSeedYaw` comes, in Python mode, from the 13th call's
-  incumbent (73 facings) and, in native mode, from the 15th's (74); both incumbents and the program's search key
-  match. The native frontier keeps a physically identical copy of the program from another solved parent, so the
-  warm yaw, the generator's reference trajectory and the request yaws differ
-  ([paths](2026-11-22-node-solve/fixed-python-vs-native-values.txt)).
+- That call (fixed work's 19th) receives the same program in both modes, but Python mode's preparation carries the
+  warm yaw of an earlier, physically identical program: the gate caches preparations by physics key, which leaves out
+  `guideSeedYaw`. The warm yaw, the generator's reference trajectory and the request yaws differ
+  ([paths](2026-11-22-node-solve/fixed-python-vs-native-values.txt)); the next entry fixes it.
 - Reports equal the previous dispatch's except provenance, and transitions match Python
   ([fixed work](2026-11-22-node-solve/fixed-report-vs-previous-dispatch.json),
   [short](2026-11-22-node-solve/short-report-vs-previous-dispatch.json),
@@ -614,3 +613,25 @@ Nothing dispatches to it: a trial dispatch from `evaluate_program` measured no f
   the short control 1.69 and 1.69 against 1.68 and 1.64 ([times](2026-11-22-node-solve/search-seconds.txt)).
 - With the trial dispatch, the search and repair test modules run clean under AddressSanitizer, 63 of their 70 node
   solves natively ([summary](2026-11-22-node-solve/asan-tests-summary.txt)).
+
+## Preparations with the program's own warm yaw, 2026-11-22
+
+Source: `9158d69b` plus `InteractionGate.prepare` returning a cached preparation with the asking program's own
+`guideSeedYaw` as its route's `warmYaw`. The cache key is physical, so a cached route carried the seed of the program
+that built it; both modes have that cache, and on fixed work Python mode's 19th node solve hit it.
+
+- Recording every `evaluate_program` result in both modes, values now match in every call: fixed work 47 of 47, the
+  short Real11 control 12 of 12, the milestone test list 72 of 72; key order still differs inside the native
+  preparation's routes ([fixed work](2026-11-22-seed-yaw/fixed-python-vs-native.txt),
+  [short](2026-11-22-seed-yaw/short-python-vs-native.txt), [tests](2026-11-22-seed-yaw/tests-python-vs-native.txt)).
+- In Python mode the fix changes only that call ([fixed work](2026-11-22-seed-yaw/fixed-python-before-after.txt),
+  [short](2026-11-22-seed-yaw/short-python-before-after.txt), [tests](2026-11-22-seed-yaw/tests-python-before-after.txt)).
+  A sequential native fixed-work report equals the one before the fix except provenance, and transitions match Python
+  ([report](2026-11-22-seed-yaw/fixed-native-report-vs-before.json),
+  [fixed parity](2026-11-22-seed-yaw/fixed-parity-python-native.json),
+  [short parity](2026-11-22-seed-yaw/short-parity-python-native.json)).
+- The relaxation screens' undecided counts depend on load (Clarabel's time cap): the fixed-work recordings before the
+  fix, run three at a time, counted 5 (Python mode) and 7 (native) undecided screens where every sequential run,
+  before and after the fix, counts 3, so reports are compared from sequential runs.
+- The prepared route's profile copy still carries the building program's `constraintOwners`; nothing reads them
+  there (programs own their constraint owners).

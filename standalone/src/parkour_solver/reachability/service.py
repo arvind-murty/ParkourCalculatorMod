@@ -312,8 +312,16 @@ class InteractionGate:
         return value
 
     def prepare(self, program, *, scene=None, require_complete=False):
+        """The preparation with this program's own warm yaw: the cache key is physical, so a cached route carries
+        the guideSeedYaw of the program that built it."""
         prepared=self._prepared(program,scene=scene,require_complete=require_complete)
-        return prepared if prepared is None or isinstance(prepared,dict) else prepared.to_python()
+        if prepared is None:
+            return None
+        prepared=prepared if isinstance(prepared,dict) else prepared.to_python()
+        route={k:v for k,v in prepared['route'].items() if k!='warmYaw'}
+        if 'guideSeedYaw' in program:
+            route['warmYaw']=program['guideSeedYaw'][:]
+        return dict(prepared,route=route)
 
     def _prepared(self, program, *, scene=None, require_complete=False):
         """The cached preparation: a dict, or under PKC_NATIVE_CORE a native one for the routes it covers

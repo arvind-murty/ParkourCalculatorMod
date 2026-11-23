@@ -194,6 +194,8 @@ const FaceTable& InteractionGate::reachable_faces(const std::optional<std::strin
     return face_tables_.emplace(name, std::move(table)).first->second;
 }
 
+// Keyed by physics, so the cached route's warmYaw is the seed of the program that built it; a caller that solves
+// from the route sets the asking program's own, as InteractionGate.prepare does.
 std::shared_ptr<const GatePrepared> InteractionGate::prepared(const std::shared_ptr<const Program>& program,
                                                               bool require_complete) {
     const std::string physics = program_physics_key(*program);

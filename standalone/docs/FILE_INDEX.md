@@ -65,7 +65,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 36593 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11512 |
 | [docs/DOC_INDEX.md](DOC_INDEX.md) | 28873 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 266119 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 268568 |
 | [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 66032 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
@@ -89,7 +89,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/design/MIXED_MOVEMENT_CONTACTS.md](design/MIXED_MOVEMENT_CONTACTS.md) | 5966 |
 | [docs/design/MOVEMENT_UNITS.md](design/MOVEMENT_UNITS.md) | 13672 |
 | [docs/design/OBSTACLES_AND_BLOCKAGES.md](design/OBSTACLES_AND_BLOCKAGES.md) | 25624 |
-| [docs/design/OBSTACLE_RELEVANCE.md](design/OBSTACLE_RELEVANCE.md) | 23113 |
+| [docs/design/OBSTACLE_RELEVANCE.md](design/OBSTACLE_RELEVANCE.md) | 23301 |
 | [docs/design/OBSTACLE_SEARCH.md](design/OBSTACLE_SEARCH.md) | 11808 |
 | [docs/design/ORCHESTRATOR_CONTRACT.md](design/ORCHESTRATOR_CONTRACT.md) | 2449 |
 | [docs/design/PRUNING_IMPROVEMENTS_BACKLOG.md](design/PRUNING_IMPROVEMENTS_BACKLOG.md) | 3528 |
@@ -220,7 +220,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/src/program.cpp](../native/cpp/src/program.cpp) | 62537 |
 | [native/cpp/src/py_math.hpp](../native/cpp/src/py_math.hpp) | 2748 |
 | [native/cpp/src/reachability/screen.cpp](../native/cpp/src/reachability/screen.cpp) | 3501 |
-| [native/cpp/src/reachability/service.cpp](../native/cpp/src/reachability/service.cpp) | 30135 |
+| [native/cpp/src/reachability/service.cpp](../native/cpp/src/reachability/service.cpp) | 30331 |
 | [native/cpp/src/reachability/viability.cpp](../native/cpp/src/reachability/viability.cpp) | 4965 |
 | [native/cpp/src/scene/geometry.cpp](../native/cpp/src/scene/geometry.cpp) | 12019 |
 | [native/cpp/src/scene/ladders.cpp](../native/cpp/src/scene/ladders.cpp) | 21611 |
@@ -1491,6 +1491,15 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/native-core/2026-11-22-scene-routes/scenes-sanitize.json](../research/native-core/2026-11-22-scene-routes/scenes-sanitize.json) | 52 |
 | [research/native-core/2026-11-22-scene-routes/synthetic-release.json](../research/native-core/2026-11-22-scene-routes/synthetic-release.json) | 106 |
 | [research/native-core/2026-11-22-scene-routes/synthetic-sanitize.json](../research/native-core/2026-11-22-scene-routes/synthetic-sanitize.json) | 106 |
+| [research/native-core/2026-11-22-seed-yaw/fixed-native-report-vs-before.json](../research/native-core/2026-11-22-seed-yaw/fixed-native-report-vs-before.json) | 526 |
+| [research/native-core/2026-11-22-seed-yaw/fixed-parity-python-native.json](../research/native-core/2026-11-22-seed-yaw/fixed-parity-python-native.json) | 176 |
+| [research/native-core/2026-11-22-seed-yaw/fixed-python-before-after.txt](../research/native-core/2026-11-22-seed-yaw/fixed-python-before-after.txt) | 62257 |
+| [research/native-core/2026-11-22-seed-yaw/fixed-python-vs-native.txt](../research/native-core/2026-11-22-seed-yaw/fixed-python-vs-native.txt) | 3860 |
+| [research/native-core/2026-11-22-seed-yaw/short-parity-python-native.json](../research/native-core/2026-11-22-seed-yaw/short-parity-python-native.json) | 176 |
+| [research/native-core/2026-11-22-seed-yaw/short-python-before-after.txt](../research/native-core/2026-11-22-seed-yaw/short-python-before-after.txt) | 0 |
+| [research/native-core/2026-11-22-seed-yaw/short-python-vs-native.txt](../research/native-core/2026-11-22-seed-yaw/short-python-vs-native.txt) | 3860 |
+| [research/native-core/2026-11-22-seed-yaw/tests-python-before-after.txt](../research/native-core/2026-11-22-seed-yaw/tests-python-before-after.txt) | 0 |
+| [research/native-core/2026-11-22-seed-yaw/tests-python-vs-native.txt](../research/native-core/2026-11-22-seed-yaw/tests-python-vs-native.txt) | 4252 |
 | [research/native-core/2026-11-22-surfaces/parity-python-native.json](../research/native-core/2026-11-22-surfaces/parity-python-native.json) | 176 |
 | [research/native-core/2026-11-22-surfaces/surfaces-release.json](../research/native-core/2026-11-22-surfaces/surfaces-release.json) | 89 |
 | [research/native-core/2026-11-22-surfaces/surfaces-sanitize.json](../research/native-core/2026-11-22-surfaces/surfaces-sanitize.json) | 89 |
@@ -1510,7 +1519,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/native-core/2026-11-22-validation/replay-sanitize.json](../research/native-core/2026-11-22-validation/replay-sanitize.json) | 105 |
 | [research/native-core/2026-11-22-validation/synthetic-intervals-release.json](../research/native-core/2026-11-22-validation/synthetic-intervals-release.json) | 34 |
 | [research/native-core/2026-11-22-validation/synthetic-intervals-sanitize.json](../research/native-core/2026-11-22-validation/synthetic-intervals-sanitize.json) | 32 |
-| [research/native-core/README.md](../research/native-core/README.md) | 49907 |
+| [research/native-core/README.md](../research/native-core/README.md) | 51706 |
 | [research/obstacle-avoidance/README.md](../research/obstacle-avoidance/README.md) | 3166 |
 | [research/obstacle-avoidance/blocked-result.json](../research/obstacle-avoidance/blocked-result.json) | 52110 |
 | [research/obstacle-avoidance/cross-neo-request.json](../research/obstacle-avoidance/cross-neo-request.json) | 5584 |
@@ -1824,7 +1833,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [src/parkour_solver/reachability/__init__.py](../src/parkour_solver/reachability/__init__.py) | 0 |
 | [src/parkour_solver/reachability/intervals.py](../src/parkour_solver/reachability/intervals.py) | 12208 |
 | [src/parkour_solver/reachability/screen.py](../src/parkour_solver/reachability/screen.py) | 2297 |
-| [src/parkour_solver/reachability/service.py](../src/parkour_solver/reachability/service.py) | 36736 |
+| [src/parkour_solver/reachability/service.py](../src/parkour_solver/reachability/service.py) | 37152 |
 | [src/parkour_solver/reachability/viability.py](../src/parkour_solver/reachability/viability.py) | 2511 |
 | [src/parkour_solver/scene/__init__.py](../src/parkour_solver/scene/__init__.py) | 0 |
 | [src/parkour_solver/scene/geometry.py](../src/parkour_solver/scene/geometry.py) | 7562 |
@@ -2021,7 +2030,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/unit/numerics/test_worker_bounds.py](../tests/unit/numerics/test_worker_bounds.py) | 5510 |
 | [tests/unit/reachability/__init__.py](../tests/unit/reachability/__init__.py) | 0 |
 | [tests/unit/reachability/test_interaction_normalization.py](../tests/unit/reachability/test_interaction_normalization.py) | 6335 |
-| [tests/unit/reachability/test_proposal_analysis.py](../tests/unit/reachability/test_proposal_analysis.py) | 8331 |
+| [tests/unit/reachability/test_proposal_analysis.py](../tests/unit/reachability/test_proposal_analysis.py) | 8850 |
 | [tests/unit/reachability/test_screen.py](../tests/unit/reachability/test_screen.py) | 12803 |
 | [tests/unit/search/__init__.py](../tests/unit/search/__init__.py) | 0 |
 | [tests/unit/search/test_anchor_dfs.py](../tests/unit/search/test_anchor_dfs.py) | 36836 |

@@ -31,6 +31,15 @@ class ProposalAnalysisTests(unittest.TestCase):
         self.assertNotEqual(first['key'],other['key'])
         self.assertEqual(compiler.calls,1)
 
+    def test_a_cached_preparation_carries_the_asking_programs_warm_yaw(self):
+        import copy
+        scene=flat_scene();p=flight(scene,0);compiler=Coefficients();gate=InteractionGate(scene,compiler)
+        n=p['profile']['duration']
+        seeded=[dict(copy.deepcopy(p),guideSeedYaw=[float(k)]*n) for k in (1,2)]
+        for program in seeded+[p]:
+            self.assertEqual(gate.prepare(program),InteractionGate(scene,compiler).prepare(program))
+        self.assertEqual(gate.metrics['preparationMisses'],1)
+
     def test_compatibility_screen_reuses_the_exact_proposal_and_reports_real_contradiction(self):
         scene=flat_scene();p=flight(scene,0);compiler=Coefficients();gate=InteractionGate(scene,compiler)
         p['profile']['positionConstraints'].append(dict(mode='X',t1=1,cmp='GE',rhs=10000.))
