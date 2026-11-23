@@ -131,8 +131,9 @@ def alarm_ticks(problem, shortfall):
 class RelaxedDispatch:
     """`find_route`'s numerical callable: Clarabel unless IPOPT must decide.
 
-    IPOPT runs, with stock semantics, on requests outside the supported class
-    and relaxed points the scalar validator rejects. Every other request is solved relaxed. `solve` returns
+    IPOPT runs, with stock semantics, on requests outside the supported class.
+    Every other request is solved relaxed; a relaxed point the scalar validator
+    rejects is infeasible. `solve` returns
     the relaxed point with its alarm ticks; `confirmed` also re-solves an
     optimization request whose relaxed optimum leaves more than ALARM_FRACTION
     of a jump tick's acceleration unused (alarm_ticks) with IPOPT. The repair
@@ -171,7 +172,8 @@ class RelaxedDispatch:
             return _result(problem, started, 'unknown', None, 'disk_finished', solved['status'], relaxed)
         candidate = validate_controls(problem, solved['controls'])
         if not candidate['feasible']:
-            return full('rejected_relaxed_point')
+            # The replay only fails a solved point by numerical error; it is not worth an IPOPT call (user, 2026-11-23).
+            return _result(problem, started, 'unknown', None, 'disk_rejected', solved['status'], relaxed)
         peak, shortfall, tick = deficits(problem, solved['controls'])
         alarmed = alarm_ticks(problem, shortfall)
         relaxed.update(peakRelativeDeficit=peak, peakTick=tick, alarmTicks=alarmed)

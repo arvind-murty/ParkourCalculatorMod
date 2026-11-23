@@ -237,7 +237,7 @@ class DispatchTests(unittest.TestCase):
                          ('unknown', 'disk_finished', None, []))
         self.assertIn(result['workerStatus'], PRIMAL_INFEASIBLE)
 
-    def test_ipopt_decides_only_unsupported_and_rejected_requests(self):
+    def test_ipopt_decides_only_unsupported_requests(self):
         result, calls, _ = self.dispatch(request(2, .1, threshold=.005))
         self.assertEqual((result['backend'], result['fallback'], calls), ('ipopt', 'unsupported', [False]))
         with mock.patch.object(disk, 'MAX_ITER', 1), mock.patch.object(disk, 'RETRY_MAX_ITER', 1):
@@ -249,7 +249,8 @@ class DispatchTests(unittest.TestCase):
                        cached=False)
         with mock.patch.object(disk, 'solve', return_value=outside):
             result, calls, _ = self.dispatch(request(2, .1))
-        self.assertEqual((result['backend'], result['fallback'], calls), ('ipopt', 'rejected_relaxed_point', [False]))
+        self.assertEqual((result['status'], result['backend'], result['termination'], result['candidate'], calls),
+                         ('unknown', 'clarabel', 'disk_rejected', None, []))
 
 
 def jumping(problem):

@@ -198,10 +198,10 @@ shape and is what automatic discovery hands `find_route`. A feasible relaxed poi
 that passes `validate_controls` returns `status: feasible` with the candidate
 (`model: relaxed_disk`, `controls`, derived facings as a seed), `backend:
 clarabel`, `termination: disk_finished` and `workerLaunched: false`; an infeasible
-request returns `unknown` with the Clarabel status in `workerStatus`. IPOPT
-answers, with `backend: ipopt` and a `fallback` reason, requests with no spec
-(`unsupported`) and relaxed points
-the validator rejects (`rejected_relaxed_point`). Every relaxed result lists its
+request returns `unknown` with the Clarabel status in `workerStatus`, and so does
+a relaxed point the validator rejects (`termination: disk_rejected`; the replay
+only fails a solved point by numerical error, user 2026-11-23). IPOPT answers, with
+`backend: ipopt` and `fallback: unsupported`, only requests with no spec. Every relaxed result lists its
 alarm ticks in `disk.alarmTicks`: jump ticks (`vertical.jumpVelocity`;
 `alarm_ticks`; a request without that schedule never alarms) with a relative
 acceleration shortfall above 10%. `solve` never confirms; the repair loop's

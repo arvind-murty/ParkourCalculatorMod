@@ -689,8 +689,8 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                 d.get('status') == 'unknown' and (d.get('termination') == 'worker_finished' and
                 d.get('workerStatus') in ('Infeasible_Problem_Detected','Search_Direction_Becomes_Too_Small',
                                          'Restoration_Failed','Solve_Succeeded','Solved_To_Acceptable_Level')
-                # Every unsolved disk result is an infeasible verdict (numerics.disk).
-                or d.get('termination') == 'disk_finished')
+                # Every unsolved or validator-rejected disk result is an infeasible verdict (numerics.disk).
+                or d.get('termination') in ('disk_finished', 'disk_rejected'))
                 for d in diagnostics)
             completion.update(oracleRejected=bool(oracle_completed), proven=proven, certificates=certificates)
             if result['status'] == 'unknown' and not oracle_completed and not proven:
