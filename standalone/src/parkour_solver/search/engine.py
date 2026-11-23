@@ -191,7 +191,7 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, s
 
 def solve_services(adapter, program, work, service, numerical, *, seconds, cancel_event):
     """A native node solve's Python services (search/engine.hpp's hooks): the scoped work, the relaxed dispatch, the
-    gate's analysis and face tables and the adapter's candidate check."""
+    gate's analysis and face tables (served by its native core when it has one) and the adapter's candidate check."""
     scoped = ScopedWork(work, None, min(work.deadline or math.inf, time.monotonic()+seconds))
     deadline = scoped.deadline
     dispatch = None
@@ -218,7 +218,7 @@ def solve_services(adapter, program, work, service, numerical, *, seconds, cance
         analyze_model=lambda route, plan, vertical, scope: service.analyze_model(route, plan, vertical, scope=scope),
         reachable_faces=reachable_faces, candidate=candidate,
         check_generation=lambda: check_generation(cancel_event, scoped.check, deadline), record_counts=record_counts,
-        accepted=work.accepted, work_summary=scoped.local.summary, seconds=seconds,
+        accepted=work.accepted, work_summary=scoped.local.summary, seconds=seconds, gate=service.core,
         adapter_identity=adapter.corridor.to_dict() if hasattr(adapter, 'corridor') else None)
 
 

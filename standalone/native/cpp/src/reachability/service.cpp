@@ -11,6 +11,7 @@
 #include "pkc/canonical.hpp"
 #include "pkc/coefficients.hpp"
 #include "pkc/constraints/contacts.hpp"
+#include "pkc/constraints/variants.hpp"
 #include "pkc/envelopes.hpp"
 #include "pkc/gate.hpp"
 #include "pkc/movement/normal.hpp"
@@ -100,18 +101,32 @@ std::shared_ptr<const T> InteractionGate::cached(const std::string& key, const s
                                                  const std::function<std::shared_ptr<const T>()>& build) {
     auto found = index_.find(key);
     count(kind + (found != index_.end() ? "Hits" : "Misses"));
+    std::shared_ptr<const T> value;
     if (found != index_.end()) {
         cache_.splice(cache_.end(), cache_, found->second);
-        return std::any_cast<std::shared_ptr<const T>>(found->second->second);
+        value = std::any_cast<std::shared_ptr<const T>>(found->second->second);
+    } else {
+        value = build();  // a timeout never commits a result
+        cache_.emplace_back(key, value);
+        index_[key] = std::prev(cache_.end());
     }
-    std::shared_ptr<const T> value = build();  // a timeout never commits a result
-    cache_.emplace_back(key, value);
-    index_[key] = std::prev(cache_.end());
     while (cache_.size() > 512) {
         index_.erase(cache_.front().first);
         cache_.pop_front();
     }
     return value;
+}
+
+const Value* InteractionGate::confirmation(const std::string& fingerprint) const {
+    auto found = index_.find("confirmation:" + fingerprint);
+    if (found == index_.end()) return nullptr;
+    return std::any_cast<const std::shared_ptr<const Value>&>(found->second->second).get();
+}
+
+void InteractionGate::remember_confirmation(const std::string& fingerprint, const Value& result) {
+    const std::string key = "confirmation:" + fingerprint;
+    cache_.emplace_back(key, std::make_shared<const Value>(result));
+    index_[key] = std::prev(cache_.end());
 }
 
 const FaceTable& InteractionGate::reachable_faces(const std::optional<std::string>& name) {
@@ -235,6 +250,28 @@ std::pair<std::shared_ptr<const GatePrepared>, std::shared_ptr<const GateAnalysi
             prepared->result, *coefficient, true,
             program->parent_ticks ? std::optional<std::int64_t>(*program->parent_ticks) : std::nullopt, key));
     })};
+}
+
+Value InteractionGate::analyze_model(const Value& route, const Value& plan, const Value& vertical,
+                                     const Value& scope) {
+    const Value prepared = object({{"route", route}, {"plan", plan}, {"vertical", vertical}});
+    const Value request = coefficient_request(prepared);
+    auto coefficient = cached<Value>("coefficients:" + digest(request), "coefficient",
+                                     [&]() -> std::shared_ptr<const Value> {
+        return std::make_shared<const Value>(compile_coefficients(request));
+    });
+    const Value model = analysis_model(prepared, *coefficient, false);
+    const Value& y = at(fields(vertical), "y");
+    const std::string key = interaction_context_key(
+        object({{"model", model}, {"y", y}, {"scope", scope}, {"parentTicks", kNull}}));
+    return *cached<Value>("analysis:" + key, "analysis", [&]() -> std::shared_ptr<const Value> {
+        Object envelopes = fields(reachable_envelopes(model, y, std::nullopt));
+        envelopes.emplace_back("model", model);  // the Python result aliases its model
+        envelopes.emplace_back("modelKey", text(digest(*coefficient)));
+        return std::make_shared<const Value>(object({{"key", text(key)}, {"model", model},
+                                                     {"envelopes", object(std::move(envelopes))},
+                                                     {"coefficient", *coefficient}, {"y", y}}));
+    });
 }
 
 Value InteractionGate::required(const std::shared_ptr<const Program>& program) {

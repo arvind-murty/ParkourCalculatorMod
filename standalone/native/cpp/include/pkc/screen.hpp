@@ -17,6 +17,8 @@ inline constexpr std::int64_t kProofPolicy = 5;  // service.PROOF_POLICY
 // bridge/compiler.coefficient_request for a gate_prepare result.
 Value coefficient_request(const Value& prepared);
 
+// InteractionGate.analyze_model's model for a preparation ({route, plan, vertical}) and its coefficients.
+Value analysis_model(const Value& prepared, const Value& coefficient, bool open_terminal);
 // InteractionGate.analyze_model's build for a prepared program: `key` is the
 // analysis key the gate computed from the preparation key.
 struct GateAnalysis {

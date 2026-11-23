@@ -756,3 +756,38 @@ name. Measured faster, so it dispatches.
   ([summary](2026-11-22-native-dispatch/asan-summary.txt), [report](2026-11-22-native-dispatch/fixed-asan-report-vs-release.json)).
   The milestone test list passes in both modes; two DFS tests that read the Python frontier's arguments run in Python
   mode ([suites](2026-11-22-native-dispatch/suites-summary.txt)).
+
+## The node solve's services, 2026-11-22
+Source: `41163279` plus the node solve's gate analysis and face tables on the gate's native core
+(`InteractionGate::analyze_model`: the coefficient and analysis caches under Python's keys), the relaxed dispatch
+(`numerics/disk.hpp` `relaxed_dispatch`, its confirmations in the core's cache as Python keeps them in `gate.cache`;
+the Python `RelaxedDispatch` hands a gate with a core to it) and the IPOPT driver (`numerics/solver.hpp`
+`solve_numerical`: worker lifecycle, deadline, cancellation, protocol and validation). A native node solve now calls
+Python only for the adapter's candidate check, the compiler and the work budget.
+
+- The IPOPT driver equals `numerics.solver.solve` on the Python suite's scripted workers (timeouts, cancellation,
+  malformed output, a missing worker, exit codes, stderr, first-feasible stops, seeds) and 21 captured production
+  requests: 38 of 38 ([cases](2026-11-22-node-services/solver-parity.json)). The native JSON parser's error message now
+  has Python's `line L column C (char N)` form.
+- The relaxed dispatch equals Python's on the 144 captured candidate requests, each as `solve` and as `confirmed`,
+  each side in its own process: 288 of 288, with 61 confirmations (20 cached) and 4 IPOPT fallbacks
+  ([cases](2026-11-22-node-services/dispatch-parity.json)).
+- Every published and result state equals the previous production code's by value in call order (short control 191,
+  fixed work 438) and in all 46 of the milestone list's searching tests ([states](2026-11-22-node-services/state-parity.txt)).
+- Reports equal the previous code's except provenance and two counters, with and without durable checkpoints, and
+  transitions match Python: node-solve coefficient compiles now go through the native gate's cache, so the Python
+  compiler's `compile` count falls (52 to 49 on the short control) and some coefficient misses become hits, as in
+  Python mode's single gate cache ([fixed work](2026-11-22-node-services/fixed-report-vs-previous.json),
+  [short](2026-11-22-node-services/short-report-vs-previous.json),
+  [fixed durable](2026-11-22-node-services/fixed-durable-report-vs-previous.json),
+  [short durable](2026-11-22-node-services/short-durable-report-vs-previous.json),
+  [fixed parity](2026-11-22-node-services/fixed-parity-python-native.json),
+  [short parity](2026-11-22-node-services/short-parity-python-native.json)).
+- Search seconds, alternating one at a time against `41163279` with its own native build: fixed work 17.03 and 16.52
+  against 18.33 and 18.09, the short control 1.677 and 1.593 against 1.668 and 1.602; with durable checkpoints fixed
+  work 58.1 and 57.7 against 57.7 and 58.3, the short control 9.29 and 9.05 against 9.40 and 9.15
+  ([times](2026-11-22-node-services/search-seconds.txt)).
+- The milestone test list passes in both modes ([suites](2026-11-22-node-services/suites-summary.txt)). Under
+  AddressSanitizer the search, checkpoint, native, disk, solver and proposal-analysis modules, durable fixed work and the
+  driver cases run with no reports, and durable fixed work's report equals the release build's except provenance
+  ([summary](2026-11-22-node-services/asan-summary.txt), [report](2026-11-22-node-services/fixed-asan-report-vs-release.json)).

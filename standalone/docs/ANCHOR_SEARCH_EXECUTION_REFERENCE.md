@@ -264,8 +264,9 @@ reserved run counts as alternatives in the same order as the Python search. A ba
 so a resumed expansion redoes it from the saved cursor. Each decision check (`dfs.evaluate_node`) runs natively
 (`search/dfs.hpp`) once the gate has prepared a route without passages, wall hits or ladder events: its node solve
 (`search/engine.hpp`: scope, floor checks, identity, constraint generator, repair loop, outcome), the branch program it
-commits and the alternatives it holds. The gate's analysis and face tables, the adapter's candidate check, the
-compiler, the relaxed or IPOPT numerical solve and the work budget stay Python callbacks, and the check records into
+commits and the alternatives it holds. The gate's analysis and face tables and the relaxed dispatch with its IPOPT
+solves run on the gate's native core (`reachability/service.hpp`, `numerics/disk.hpp`, `numerics/solver.hpp`); the
+adapter's candidate check, the compiler and the work budget stay Python callbacks, and the check records into
 the search's node table, checkpoint progress and observations through callbacks. Anchor-leg and finish solves
 (`search/engine.evaluate_program`) run their constraint generator and repair loop natively (`constraints/variants.hpp`,
 `search/repair.hpp`) for the same routes; the loop calls the compiler, the numerical solve, the candidate filter, the

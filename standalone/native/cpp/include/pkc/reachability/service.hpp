@@ -57,6 +57,9 @@ public:
     std::pair<std::shared_ptr<const GatePrepared>, std::shared_ptr<const GateAnalysis>> analyzed(
         const std::shared_ptr<const Program>& program);
     Value required(const std::shared_ptr<const Program>& program);  // a proof or null
+    // analyze_model(route, plan, vertical, scope=scope) for a node solve's own route: the analysis dict, keyed by its
+    // model's content, with the Python result's model alias in its envelopes.
+    Value analyze_model(const Value& route, const Value& plan, const Value& vertical, const Value& scope);
     // approach's envelopes, or null when unknown.
     Value approach(const GenerationContext& context, std::int64_t tick, bool jumping);
     // query_many(context, bounds, tick, label=label, jumping=jumping, phases=phases): one proof per box.
@@ -75,6 +78,10 @@ public:
     // walk_off(context, landing_boxes, label=label): whether a no-jump run-off can leave its launch support.
     bool walk_off(const GenerationContext& context, const Value& landing_boxes, const Object& label);
 
+    // RelaxedDispatch's IPOPT confirmations, kept in this cache as Python keeps them in gate.cache: a read neither
+    // counts nor refreshes, and an insert is trimmed by the next cached lookup.
+    const Value* confirmation(const std::string& fingerprint) const;
+    void remember_confirmation(const std::string& fingerprint, const Value& result);
     void count(const std::string& metric, std::int64_t by = 1);
     const Object& metrics() const { return metrics_; }
     std::int64_t checked = 0;

@@ -193,6 +193,10 @@ ordered options. That is targeted enumeration work, not a whole-solver speedup.
   frozen snapshots the checkpoint store encodes natively. Fixed work takes 17.45 s against 17.89 s for the Python loop
   over the same native expansion, and 58.3 s against 123.8 s with durable checkpoints
   ([evidence](../research/native-core/README.md)).
+- Native node-solve services (`PKC_NATIVE_CORE`): the gate's analysis and face tables, the relaxed dispatch and its
+  IPOPT driver run on the gate's native core. Fixed work takes 17.03 s and 16.52 s against 18.33 s and 18.09 s with
+  them as Python callbacks; the short control and durable runs are unchanged
+  ([evidence](../research/native-core/README.md)).
 - IPOPT row reduction: final rows fall from 278 to 91 on the benchmark
   ([constraint reduction](IPOPT_CONSTRAINT_REDUCTION.md)).
 - Content-addressed manifest plus SQLite checkpoints

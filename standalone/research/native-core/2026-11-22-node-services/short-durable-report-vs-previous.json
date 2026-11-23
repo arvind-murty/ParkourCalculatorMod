@@ -1,0 +1,26 @@
+[
+ [
+  ".provenance.command[4]",
+  "/private/var/tmp/standalone-cpp-next-20261122/abd/short-base-1 != /private/var/tmp/standalone-cpp-next-20261122/abd/short-new-1"
+ ],
+ [
+  ".provenance.sourceHashes.parkour_solver/numerics/disk.py",
+  "de5b81e40634e338effe27f07ac19cdce885517c33efe601e80aaee59751dc80 != 89f66da9b4d94cba36b27f2c30f690c2e79c57f1b1b1ce713c718f7f48542a50"
+ ],
+ [
+  ".provenance.sourceHashes.parkour_solver/search/engine.py",
+  "5a212e90bcd24d2cd8c174641063c52f869c3bf2f92fd1c0feb4544f8273b88e != 3b9b037d45a942efbcffc168954a9c3efa760140a1ff4b3350f2ffffa22fec54"
+ ],
+ [
+  ".result.compiler.calls.compile",
+  "52 != 49"
+ ],
+ [
+  ".result.interactionGate.metrics.coefficientHits",
+  "missing on left"
+ ],
+ [
+  ".result.interactionGate.metrics.coefficientMisses",
+  "159 != 156"
+ ]
+]

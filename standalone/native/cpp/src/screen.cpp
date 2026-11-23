@@ -90,8 +90,7 @@ Value coefficient_request(const Value& prepared) {
     return object(std::move(message));
 }
 
-GateAnalysis analyze_prepared(const Value& prepared, const Value& coefficient, bool open_terminal,
-                              std::optional<std::int64_t> parent_ticks, std::string key) {
+Value analysis_model(const Value& prepared, const Value& coefficient, bool open_terminal) {
     const Object& result = fields(prepared);
     const Object& route = fields(at(result, "route"));
     const Object& plan = fields(at(result, "plan"));
@@ -125,7 +124,13 @@ GateAnalysis analyze_prepared(const Value& prepared, const Value& coefficient, b
     put(model, "threshold", threshold ? *threshold : real(.005));
     put(model, "vertical", at(vertical, "vertical"));
     put(model, "ladderTicks", ladder);
-    GateAnalysis analysis{std::move(key), object(std::move(model)), kNull, coefficient, at(vertical, "y")};
+    return object(std::move(model));
+}
+
+GateAnalysis analyze_prepared(const Value& prepared, const Value& coefficient, bool open_terminal,
+                              std::optional<std::int64_t> parent_ticks, std::string key) {
+    GateAnalysis analysis{std::move(key), analysis_model(prepared, coefficient, open_terminal), kNull, coefficient,
+                          at(fields(at(fields(prepared), "vertical")), "y")};
     Object envelopes = fields(reachable_envelopes(analysis.model, analysis.y, parent_ticks));
     envelopes.emplace_back("modelKey", text(digest(coefficient)));
     analysis.envelopes = object(std::move(envelopes));

@@ -21,6 +21,7 @@
 #include "pkc/numerics/builders.hpp"
 #include "pkc/numerics/constraints.hpp"
 #include "pkc/numerics/disk.hpp"
+#include "pkc/numerics/solver.hpp"
 #include "pkc/numerics/model.hpp"
 #include "pkc/program.hpp"
 #include "pkc/movement/generation.hpp"
@@ -277,12 +278,37 @@ auto python_hook(Call&& call) -> decltype(call()) {
 }
 
 // A Python numerical callable (numerics.solver.solve's signature) as a native one.
+// numerics.solver._command's native worker, built beside this module.
+const std::string& worker_path() {
+    static const std::string path = [] {
+        const std::string file = py::module_::import("_pkc_native").attr("__file__").cast<std::string>();
+        return file.substr(0, file.rfind('/') + 1) + "pkc_numerics_worker";
+    }();
+    return path;
+}
+
+std::function<bool()> cancelled_hook(py::object cancel_event) {
+    if (cancel_event.is_none()) return {};
+    return [cancel_event] { return python_hook([&] { return cancel_event.attr("is_set")().cast<bool>(); }); };
+}
+
+// numerics.solver.solve natively: python_executable only chose the Python worker.
+pkc::NumericalSolve native_solve(py::object cancel_event) {
+    return [cancelled = cancelled_hook(cancel_event)](const pkc::Value& problem, double seconds, bool stop_on_feasible,
+                                                       const std::function<void(const pkc::Value&)>& on_incumbent) {
+        return pkc::solve_numerical(problem, seconds, stop_on_feasible, worker_path(), cancelled, on_incumbent);
+    };
+}
+
 pkc::NumericalSolve numerical_hook(py::object solve, py::object python_executable, py::object cancel_event) {
     if (solve.is_none()) return {};
+    if (solve.is(py::module_::import("parkour_solver.numerics.solver").attr("solve"))) return native_solve(cancel_event);
     return [solve, python_executable, cancel_event](const pkc::Value& problem, double seconds, bool stop_on_feasible,
                                                      const std::function<void(const pkc::Value&)>& on_incumbent) {
         return python_hook([&] {
-            py::cpp_function incumbent([&on_incumbent](py::handle candidate) { on_incumbent(convert(candidate)); });
+            py::object incumbent = py::none();
+            if (on_incumbent)
+                incumbent = py::cpp_function([&on_incumbent](py::handle candidate) { on_incumbent(convert(candidate)); });
             return convert(solve(to_python(problem), py::arg("seconds") = seconds,
                                  py::arg("stop_on_feasible") = stop_on_feasible,
                                  py::arg("python_executable") = python_executable, py::arg("cancel_event") = cancel_event,
@@ -326,14 +352,33 @@ pkc::SolveHooks solve_hooks(py::object compiler, py::object solve, py::object wo
         };
         hooks.work_accepted = [work](const pkc::Value& best) { python_hook([&] { work.attr("accepted")(to_python(best)); }); };
     }
-    if (!cancel_event.is_none())
-        hooks.cancelled = [cancel_event] { return python_hook([&] { return cancel_event.attr("is_set")().cast<bool>(); }); };
+    hooks.cancelled = cancelled_hook(cancel_event);
     return hooks;
+}
+
+// RelaxedDispatch's services for a gate's native core: the native IPOPT solve, the core's confirmations and
+// numerics/disk's settings in force.
+pkc::RelaxedServices relaxed_services(std::shared_ptr<pkc::InteractionGate> core, py::object python_executable,
+                                      py::object cancel_event) {
+    py::module_ disk = py::module_::import("parkour_solver.numerics.disk");
+    pkc::RelaxedServices services;
+    services.full = native_solve(cancel_event);
+    services.cancelled = cancelled_hook(cancel_event);
+    services.confirmation = [core](const std::string& fingerprint) { return core->confirmation(fingerprint); };
+    services.remember_confirmation = [core](const std::string& fingerprint, const pkc::Value& result) {
+        core->remember_confirmation(fingerprint, result);
+    };
+    services.cap = disk.attr("CAP").cast<double>();
+    services.max_iter = disk.attr("MAX_ITER").cast<unsigned>();
+    services.alarm_fraction = disk.attr("ALARM_FRACTION").cast<double>();
+    services.material_gap = disk.attr("MATERIAL_GAP").cast<double>();
+    return services;
 }
 
 // The node solve's Python services (engine.evaluate_program's): `services` maps work, numerical, confirm,
 // analyze_model, reachable_faces, candidate, check_generation, record_counts, accepted and work_summary to callables
-// (numerical and confirm may be None). on_progress is left to the caller.
+// (numerical and confirm may be None), and gate to the gate's native core or None; a core replaces analyze_model,
+// reachable_faces and the relaxed dispatch. on_progress is left to the caller.
 pkc::EvaluateHooks evaluate_hooks(py::object compiler, py::object solve, py::object cancel_event,
                                   py::object python_executable, const py::object& services) {
     auto service = [&](const char* name) { return py::object(services[py::str(name)]); };
@@ -345,15 +390,40 @@ pkc::EvaluateHooks evaluate_hooks(py::object compiler, py::object solve, py::obj
     hooks.solve = solve_hooks(compiler, solve, service("work"), cancel_event, python_executable);
     hooks.numerical = numerical_hook(service("numerical"), python_executable, cancel_event);
     hooks.confirm = numerical_hook(service("confirm"), python_executable, cancel_event);
-    hooks.analyze_model = [analyze_model](const pkc::Value& route, const pkc::Value& plan, const pkc::Value& vertical,
-                                          const pkc::Value& scope) {
-        return python_hook([&] {
-            return convert(analyze_model(to_python(route), to_python(plan), to_python(vertical), to_python(scope)));
-        });
-    };
-    hooks.reachable_faces = [reachable_faces](const std::string& face) {
-        return python_hook([&] { return convert(reachable_faces(face)); });
-    };
+    if (py::object gate = service("gate"); !gate.is_none()) {  // the gate's native core serves its own caches
+        auto core = gate.cast<std::shared_ptr<pkc::InteractionGate>>();
+        if (hooks.numerical) {  // the relaxed dispatch, with its confirmations in the core
+            const pkc::RelaxedServices relaxed = relaxed_services(core, python_executable, cancel_event);
+            hooks.numerical = [relaxed](const pkc::Value& problem, double seconds, bool stop_on_feasible,
+                                        const std::function<void(const pkc::Value&)>& on_incumbent) {
+                return pkc::relaxed_dispatch(problem, seconds, stop_on_feasible, false, on_incumbent, relaxed);
+            };
+            hooks.confirm = [relaxed](const pkc::Value& problem, double seconds, bool stop_on_feasible,
+                                      const std::function<void(const pkc::Value&)>& on_incumbent) {
+                return pkc::relaxed_dispatch(problem, seconds, stop_on_feasible, true, on_incumbent, relaxed);
+            };
+        }
+        hooks.analyze_model = [core](const pkc::Value& route, const pkc::Value& plan, const pkc::Value& vertical,
+                                     const pkc::Value& scope) { return core->analyze_model(route, plan, vertical, scope); };
+        hooks.reachable_faces = [core](const std::string& face) {
+            const pkc::FaceTable& table = core->reachable_faces(face);
+            pkc::Array solids;
+            for (std::int64_t solid : table.solids) solids.push_back(pkc::Value{solid});
+            return pkc::Value{std::make_shared<const pkc::Object>(pkc::Object{
+                {"ticks", table.ticks ? pkc::Value{*table.ticks} : pkc::Value{nullptr}},
+                {"solids", pkc::Value{std::make_shared<const pkc::Array>(std::move(solids))}}})};
+        };
+    } else {
+        hooks.analyze_model = [analyze_model](const pkc::Value& route, const pkc::Value& plan,
+                                              const pkc::Value& vertical, const pkc::Value& scope) {
+            return python_hook([&] {
+                return convert(analyze_model(to_python(route), to_python(plan), to_python(vertical), to_python(scope)));
+            });
+        };
+        hooks.reachable_faces = [reachable_faces](const std::string& face) {
+            return python_hook([&] { return convert(reachable_faces(face)); });
+        };
+    }
     hooks.candidate = [candidate](const pkc::Value& plan, const pkc::Value& value, const pkc::Value& vertical,
                                   const pkc::Value& scope) {
         return python_hook([&] {
@@ -1214,6 +1284,35 @@ PYBIND11_MODULE(_pkc_native, m) {
     m.def("disk_cached_solve", [](py::handle content, double seconds, const std::string& kind, double cap, unsigned max_iter) {
         return to_python(pkc::disk_cached_solve(convert(content), seconds, kind, cap, max_iter));
     }, "numerics/disk.solve on the native decided-result cache the native gate's screens share");
+    m.def("solve_numerical",
+          [](py::handle request, std::optional<double> seconds, std::optional<bool> stop_on_feasible,
+             py::object cancel_event, py::object on_incumbent, std::optional<std::string> worker) {
+              std::function<void(const pkc::Value&)> incumbent;
+              if (!on_incumbent.is_none())
+                  incumbent = [on_incumbent](const pkc::Value& candidate) {
+                      python_hook([&] { on_incumbent(to_python(candidate)); });
+                  };
+              return to_python(pkc::solve_numerical(convert(request), seconds, stop_on_feasible,
+                                                    worker ? *worker : worker_path(), cancelled_hook(cancel_event),
+                                                    incumbent));
+          },
+          py::arg("request"), py::kw_only(), py::arg("seconds") = py::none(), py::arg("stop_on_feasible") = py::none(),
+          py::arg("cancel_event") = py::none(), py::arg("on_incumbent") = py::none(), py::arg("worker") = py::none(),
+          "numerics.solver.solve with the native worker (or `worker`)");
+    m.def("relaxed_dispatch",
+          [](std::shared_ptr<pkc::InteractionGate> core, py::handle problem, double seconds, bool stop_on_feasible,
+             bool confirming, py::object python_executable, py::object cancel_event, py::object on_incumbent) {
+              std::function<void(const pkc::Value&)> incumbent;
+              if (!on_incumbent.is_none())
+                  incumbent = [on_incumbent](const pkc::Value& candidate) {
+                      python_hook([&] { on_incumbent(to_python(candidate)); });
+                  };
+              return to_python(pkc::relaxed_dispatch(convert(problem), seconds, stop_on_feasible, confirming, incumbent,
+                                                     relaxed_services(core, python_executable, cancel_event)));
+          },
+          py::arg("core"), py::arg("problem"), py::kw_only(), py::arg("seconds"), py::arg("stop_on_feasible"),
+          py::arg("confirming"), py::arg("python_executable"), py::arg("cancel_event"), py::arg("on_incumbent"),
+          "numerics/disk.RelaxedDispatch's dispatch with its confirmations in the gate's native core");
     m.def("disk_stats", [] { return to_python(pkc::disk_stats()); }, "numerics/disk.STATS of the native decided cache");
     m.def("float_repr", &pkc::float_repr, "repr(float) for a finite float");
     m.def("sha256_hex", [](py::bytes data) { return pkc::sha256_hex(std::string(data)); });

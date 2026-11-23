@@ -161,7 +161,8 @@ class RelaxedDispatch:
     optimization request whose relaxed optimum leaves more than ALARM_FRACTION
     of a jump tick's acceleration unused (alarm_ticks) with IPOPT. The repair
     loop solves with `solve` and confirms its kept candidates once, at its end
-    (search/repair.py).
+    (search/repair.py). A gate with a native core (PKC_NATIVE_CORE) dispatches natively
+    (numerics/disk.hpp) and keeps the confirmations in the core's cache.
     """
     def __init__(self, *, gate):
         self.gate = gate
@@ -176,6 +177,11 @@ class RelaxedDispatch:
                   on_incumbent=None, confirming):
         from parkour_solver.numerics.solver import solve as full_solve
         from parkour_solver.validation.numerical import validate_controls
+        core = getattr(self.gate, 'core', None)
+        if core is not None:  # native node solves dispatch there too, so both share the core's confirmations
+            return _native().relaxed_dispatch(core, problem, seconds=seconds, stop_on_feasible=stop_on_feasible,
+                confirming=confirming, python_executable=python_executable, cancel_event=cancel_event,
+                on_incumbent=on_incumbent)
 
         def full(reason, request=problem):
             result = full_solve(request, seconds=seconds, stop_on_feasible=stop_on_feasible,

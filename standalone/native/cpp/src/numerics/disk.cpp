@@ -1,5 +1,5 @@
-// Port of numerics/disk.py's spec, _solve/_cost, deficits, ipopt_seed and
-// alarm_ticks. The constraint matrix is built in scipy's coo -> csc layout
+// Port of numerics/disk.py's spec, _solve/_cost, deficits, ipopt_seed,
+// alarm_ticks and RelaxedDispatch. The constraint matrix is built in scipy's coo -> csc layout
 // (column-major, rows ascending, explicit zeros kept) so Clarabel factors the
 // same pattern.
 #include "pkc/numerics/disk.hpp"
@@ -23,6 +23,8 @@ extern "C" {
 #include "../py_math.hpp"
 #include "../schema.hpp"
 #include "pkc/canonical.hpp"
+#include "pkc/numerics/model.hpp"
+#include "pkc/validation/numerical.hpp"
 
 namespace pkc {
 namespace {
@@ -495,6 +497,107 @@ Value disk_screen(const Value& model, const Value& extra_rows, const Value* obje
         checked.emplace_back("message", message ? *message : at(r, "status"));
     }
     return object(std::move(checked));
+}
+
+namespace {
+
+// _result: a numerics.solver.solve-shaped result for an answer Clarabel decided.
+Value decided_result(const Value& problem, double started, const char* status, const Value& candidate,
+                     const char* termination, const Value& solver_status, const Value& relaxed) {
+    const Object& p = fields(problem);
+    const double elapsed = seconds_now() - started;
+    return object({{"version", integer_value(1)}, {"status", text(status)}, {"feasible", boolean(!is_null(candidate))},
+                   {"candidate", candidate}, {"objectiveMode", at(p, "objectiveMode")},
+                   {"problemHash", text(fingerprint(problem))}, {"elapsedSeconds", real(elapsed)},
+                   {"firstFeasibleSeconds", is_null(candidate) ? kNull : real(seconds_now() - started)},
+                   {"problem", object({{"ticks", at(p, "ticks")},
+                                       {"constraints", integer_value(static_cast<std::int64_t>(items(at(p, "walls")).size()))},
+                                       {"contacts", integer_value(static_cast<std::int64_t>(items(at(p, "contacts")).size()))},
+                                       {"threshold", at(p, "threshold")}, {"objective", at(p, "objective")},
+                                       {"source", get_or_null(p, "source")}})},
+                   {"termination", text(termination)}, {"workerStatus", solver_status},
+                   {"workerLaunched", boolean(false)}, {"error", kNull}, {"tolerance", real(kTolerance)},
+                   {"phases", array({})}, {"backend", text("clarabel")}, {"disk", relaxed},
+                   {"diagnostics", object({{"rejectedCandidates", integer_value(0)}, {"lastRejection", kNull},
+                                           {"stderr", array({})}})}});
+}
+
+// RelaxedDispatch.confirm: re-solve an alarmed request with IPOPT, whose outcome then governs it.
+Value confirm(const Value& problem, const Value& relaxed_candidate, const Object& relaxed, double seconds,
+              const std::function<void(const Value&)>& on_incumbent, const RelaxedServices& services) {
+    const std::string key = fingerprint(problem);
+    const Value* stored = services.confirmation(key);
+    const bool cached = stored != nullptr;
+    Value result;
+    if (cached) {
+        result = object(with(fields(*stored), "workerLaunched", boolean(false)));
+    } else {
+        // Assumption (measured, research/disk-relaxation/README.md): the disk directions are the most accurate
+        // single-attempt seed. The request's fallback stays.
+        result = services.full(object(with(fields(problem), "yaw", ipopt_seed(at(fields(relaxed_candidate), "yaw")))),
+                               seconds, false, {});
+        const Object& r = fields(result);
+        const std::string& status = as_text(at(r, "status"));
+        if (status == "feasible" || (status == "unknown" && as_text(at(r, "termination")) == "worker_finished"))
+            services.remember_confirmation(key, result);
+    }
+    const Value& disk_objective = at(fields(relaxed_candidate), "objective");
+    Object confirmation = {{"peak", at(relaxed, "peakRelativeDeficit")}, {"tick", at(relaxed, "peakTick")},
+                           {"cached", boolean(cached)}, {"diskObjective", disk_objective},
+                           {"ipoptObjective", kNull}, {"gap", kNull}, {"material", boolean(false)}};
+    const Object& r = fields(result);
+    if (as_text(at(r, "status")) == "feasible") {
+        const Value& ipopt_objective = at(fields(at(r, "candidate")), "objective");
+        const double sense = as_text(at(fields(at(fields(problem), "objective")), "sense")) == "MAX" ? 1 : -1;
+        const double gap = sense * (num(disk_objective).value - num(ipopt_objective).value);
+        put(confirmation, "ipoptObjective", ipopt_objective);
+        put(confirmation, "gap", real(gap));
+        put(confirmation, "material", boolean(gap > services.material_gap));
+        if (on_incumbent) on_incumbent(at(r, "candidate"));
+    }
+    return object(with(with(with(r, "backend", text("ipopt")), "disk", object(relaxed)), "confirmation",
+                       object(std::move(confirmation))));
+}
+
+}  // namespace
+
+Value relaxed_dispatch(const Value& problem, double seconds, bool stop_on_feasible, bool confirming,
+                       const std::function<void(const Value& candidate)>& on_incumbent,
+                       const RelaxedServices& services) {
+    auto full = [&](const char* reason) {
+        return object(with(with(fields(services.full(problem, seconds, stop_on_feasible, on_incumbent)), "backend",
+                                text("ipopt")),
+                           "fallback", text(reason)));
+    };
+    const Value content = disk_spec(problem, array({}), nullptr, true);
+    if (is_null(content)) return full("unsupported");
+    const double started = seconds_now();
+    if (services.cancelled && services.cancelled())
+        return decided_result(problem, started, "cancelled", kNull, "cancelled", kNull, kNull);
+    const Value solved_value = disk_cached_solve(content, seconds, "candidate", services.cap, services.max_iter);
+    const Object& solved = fields(solved_value);
+    Object relaxed;
+    for (const char* key : {"status", "outcome", "iterations", "cached"}) relaxed.emplace_back(key, at(solved, key));
+    const std::string& outcome = as_text(at(solved, "outcome"));
+    if (outcome == "infeasible")
+        return decided_result(problem, started, "unknown", kNull, "disk_finished", at(solved, "status"),
+                              object(std::move(relaxed)));
+    if (outcome == "undecided") return full("relaxed_undecided");
+    Object candidate = fields(validate_controls(problem, at(solved, "controls")));
+    if (!py_truthy(at(candidate, "feasible"))) return full("rejected_relaxed_point");
+    const Value deficit_value = disk_deficits(problem, at(solved, "controls"));
+    const Array& deficit = items(deficit_value);
+    const Value alarmed = alarm_ticks(problem, deficit.at(1), services.alarm_fraction);
+    put(relaxed, "peakRelativeDeficit", deficit.at(0));
+    put(relaxed, "peakTick", deficit.at(2));
+    put(relaxed, "alarmTicks", alarmed);
+    put(candidate, "model", text("relaxed_disk"));
+    const Value candidate_value = object(std::move(candidate));
+    if (confirming && !items(alarmed).empty() && !stop_on_feasible)
+        return confirm(problem, candidate_value, relaxed, seconds, on_incumbent, services);
+    if (on_incumbent) on_incumbent(candidate_value);
+    return decided_result(problem, started, "feasible", candidate_value, "disk_finished", at(solved, "status"),
+                          object(std::move(relaxed)));
 }
 
 }  // namespace pkc

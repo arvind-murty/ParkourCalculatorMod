@@ -1,0 +1,42 @@
+[
+ [
+  ".provenance.command[4]",
+  "/private/var/tmp/standalone-cpp-frontier-20261122/fs2-short/run != /private/var/tmp/standalone-cpp-next-20261122/n2-short/run"
+ ],
+ [
+  ".provenance.sourceHashes.parkour_solver/numerics/disk.py",
+  "de5b81e40634e338effe27f07ac19cdce885517c33efe601e80aaee59751dc80 != 89f66da9b4d94cba36b27f2c30f690c2e79c57f1b1b1ce713c718f7f48542a50"
+ ],
+ [
+  ".provenance.sourceHashes.parkour_solver/search/dfs.py",
+  "a13b31672eb80146ca3a828c9ad5e6efe1d16e4199e74dce78fa3cdaee8769ae != fbabc75b7a29a409b7c04a960478fc4573cb66cca2c6d4b8bebf84e8b0ec4180"
+ ],
+ [
+  ".provenance.sourceHashes.parkour_solver/search/engine.py",
+  "5a212e90bcd24d2cd8c174641063c52f869c3bf2f92fd1c0feb4544f8273b88e != 3b9b037d45a942efbcffc168954a9c3efa760140a1ff4b3350f2ffffa22fec54"
+ ],
+ [
+  ".provenance.sourceHashes.parkour_solver/search/frontier.py",
+  "47234929ce71327b821f9a8ecc136fabf3621c8341f9f30e44fe3a92194cc1b8 != fc743d7f3e66c477adc377b9da1b6b94625c72132c7cf9673f4961901391722c"
+ ],
+ [
+  ".provenance.sourceHashes.parkour_solver/search/movement.py",
+  "d991bf47f0724a0ec04abf49b1d0cfab49106aedf74bcc7032cf272708a08a2c != 891901719bd293f78647b135e367b390bda51053e978ecc6d71ef8e7a92aa417"
+ ],
+ [
+  ".provenance.sourceRevision",
+  "ebde9131082037e33540c8d91610a5989ee40583 != 41163279c05788c1a3eb5be8a141653c472a84ba"
+ ],
+ [
+  ".result.compiler.calls.compile",
+  "52 != 49"
+ ],
+ [
+  ".result.interactionGate.metrics.coefficientHits",
+  "missing on left"
+ ],
+ [
+  ".result.interactionGate.metrics.coefficientMisses",
+  "159 != 156"
+ ]
+]

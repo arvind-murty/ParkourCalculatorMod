@@ -1,0 +1,272 @@
+{
+ "cases": 38,
+ "equal": 38,
+ "records": [
+  {
+   "case": "never_reads_large_request",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "cancel_discards_candidate",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "timeout_keeps_incumbent",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "rejected_then_done",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "malformed_output",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "missing_worker",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "first_feasible_stop",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "seed_survives_timeout",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "seed_satisfies_without_worker",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "weaker_worker_candidate",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "missing_worker_keeps_seed",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "worker_error_message",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "unknown_type",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "missing_type",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "exit_code",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "phase_then_done",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "stderr_lines",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "captured_0",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "captured_1",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "captured_2",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "captured_3",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "captured_4",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "captured_5",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "captured_6",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "captured_7",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "captured_8",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "captured_9",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "captured_10",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "captured_11",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "captured_12",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "captured_13",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "captured_14",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "captured_15",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "captured_16",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "captured_17",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "captured_18",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "captured_19",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  },
+  {
+   "case": "captured_20",
+   "equal": true,
+   "differing": [],
+   "python": {},
+   "native": {}
+  }
+ ]
+}

@@ -225,7 +225,11 @@ feasible requests. The result carries `confirmation`: the shortfall peak and
 tick, both objectives, `gap = sense*(disk - ipopt)` and `material` (`gap > 1e-4`).
 A gap describes only its own request. Decided
 confirmations are cached per run in the interaction gate's cache by problem
-fingerprint. Search's use of it is in the
+fingerprint. Under `PKC_NATIVE_CORE`, a gate with a native core dispatches natively
+(`numerics/disk.hpp`) for Python and native callers alike, keeping its confirmations
+in the core's cache, and its IPOPT solves run through the native driver
+(`numerics/solver.hpp`: the same worker protocol, deadline, cancellation and
+validation as `solve`). Search's use of it is in the
 [execution reference](../ANCHOR_SEARCH_EXECUTION_REFERENCE.md#numerical-backend-and-finalization).
 
 ## Tests

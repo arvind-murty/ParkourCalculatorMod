@@ -111,8 +111,13 @@ private:
     std::string_view text_;
     std::size_t at_ = 0;
 
-    [[noreturn]] void error(const char* message) {
-        throw std::invalid_argument(std::string(message) + ": char " + std::to_string(at_));
+    [[noreturn]] void error(const char* message) {  // JSONDecodeError's message (positions in bytes)
+        const std::string_view before = text_.substr(0, at_);
+        const std::size_t line = static_cast<std::size_t>(std::count(before.begin(), before.end(), '\n')) + 1;
+        const std::size_t newline = before.rfind('\n');
+        const std::size_t column = newline == std::string_view::npos ? at_ + 1 : at_ - newline;
+        throw std::invalid_argument(std::string(message) + ": line " + std::to_string(line) + " column " +
+                                    std::to_string(column) + " (char " + std::to_string(at_) + ")");
     }
     void space() {
         while (at_ < text_.size() && (text_[at_] == ' ' || text_[at_] == '\t' || text_[at_] == '\n' || text_[at_] == '\r'))
