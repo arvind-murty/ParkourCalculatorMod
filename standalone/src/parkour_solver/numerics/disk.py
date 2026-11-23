@@ -73,7 +73,8 @@ def solve(content, *, seconds, kind='candidate'):
         return dict(_DECIDED[encoded], cached=True)
     stats['solved'] += 1
     result, _ = decide(content, seconds)
-    stats['retried'] += result.get('retried', False)
+    if result.get('retried'):
+        stats['retried'] += 1
     stats[result['outcome']] += 1
     _DECIDED[encoded] = result
     while len(_DECIDED) > 1024:
@@ -367,7 +368,7 @@ def _build(content, time_limit, max_iter, cuts=(), level=None):
     assembled = time.perf_counter()
     solver = clarabel.DefaultSolver(csc_matrix((2*width, 2*width)), cost, matrix, rhs, cones, settings)
     ready = time.perf_counter()
-    return dict(solver=solver, cost=cost, offset=offset, sense=sense, ticks=n,
+    return dict(solver=solver, cost=cost, offset=offset, sense=sense,
                 columns=[[control(axis, t) for axis in range(2)] for t in range(n)],
                 assemblySeconds=assembled-started, setupSeconds=ready-assembled)
 
