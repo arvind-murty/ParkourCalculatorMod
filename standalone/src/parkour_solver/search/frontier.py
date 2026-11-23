@@ -20,7 +20,8 @@ def restore_alternatives(state, extra_live=()):
     """Queue a decision node's next held alternative once its branch died: no live program descends
     from the node (or from every node the entry watches) or from an alternative already restored for
     it, this pass's restorations included. A branch with a validated group-end arrival below it never
-    restores. Returns whether anything was queued."""
+    restores. A side variant still held (sideReserves, or a side entry not yet restored) is live, so what
+    watches it or its decision waits until the side variants are exhausted. Returns whether anything was queued."""
     succeeded = set(state.get('succeededNodes', []))
     waiting = [(node, held) for node, held in state.get('alternatives', {}).items()
                if held['next'] < len(held['programs']) and node not in succeeded]
@@ -34,8 +35,10 @@ def restore_alternatives(state, extra_live=()):
         while node and node not in alive:
             alive.add(node)
             node = parents.get(node)
+    held_sides = [p for reserve in state.get('sideReserves', []) for p in reserve['programs']] + [
+        held['programs'][0] for held in state['alternatives'].values() if 'side' in held and not held['next']]
     for program in [*state['pending'], *state['ready'], *state.get('deferredNodes', []), state.get('nodeInFlight'),
-                    expansion.get('program'), *extra_live]:
+                    expansion.get('program'), *extra_live, *held_sides]:
         live(program)
     restored = False
     for node, held in waiting:
@@ -82,6 +85,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
         state.setdefault('decisionParents', {})
         state.setdefault('alternatives', {})
         state.setdefault('succeededNodes', [])
+        state.setdefault('sideReserves', [])
     seen = set(state['seen'])
     expanded = 0
     iterator, iterator_key = None, None
@@ -210,7 +214,20 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
 
     def queue_child(parent, choice, child):
         register(parent, choice, child)
-        (state['ready'] if complete(child) else state['pending']).append(child)
+        tag = choice.get('sideVariant') if node_evaluator is not None and state['expansion'] is not None else None
+        if tag is not None:
+            # A move's sides wait for the expansion's end (hold_sides): its forward ones may come later.
+            child['sideVariant'] = dict(tag, row=dict(tag['row'], t1=parent['profile']['duration']+tag['row']['t1']))
+            move = state['expansion'].setdefault('sides', {}).setdefault(
+                json.dumps([program_search_key(parent), tag['key']]), dict(forwards=[], held=[], complete=False))
+            if not tag['forward']:
+                move['held'].append(child)
+            elif complete(child):
+                move['complete'] = True
+            else:
+                move['forwards'].append([child['decisionNode'], tag['side']])
+        if tag is None or tag['forward']:
+            (state['ready'] if complete(child) else state['pending']).append(child)
         if state['expansion'] is not None:
             # What a held jump back onto the launch face of this expansion waits for (hold_same_face).
             state['expansion'].setdefault('queuedNodes',[]).append(child.get('decisionNode'))
@@ -562,6 +579,48 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                 node=node,key=json.dumps(['same_face',held['face']]),k=0,total=held['total'],A=None,N=None,lower=0,round=0,
                 outcome='held' if others else 'queued',nodes=[child['decisionNode']],room=held['room'],jump=held['jump']))
 
+    def hold_sides(e):
+        """Reserve each move's held sides behind its forward nodes until those are solved (settle_sides). Without a
+        forward queued here (screened, already seen) or with a complete one (no node solve), queue them now."""
+        for move in e.pop('sides', {}).values():
+            if move['forwards'] and not move['complete']:
+                if move['held']:
+                    state['sideReserves'].append(dict(programs=move['held'], forwards=move['forwards'], outcomes={}))
+                    state.setdefault('sideVariants', []).extend(
+                        dict(node=e['program'].get('decisionNode'), child=p['decisionNode'], case=p['sideVariant']['case'],
+                             face=p['sideVariant']['face'], side=p['sideVariant']['side'], forwards=move['forwards'])
+                        for p in move['held'])
+                continue
+            for child in move['held']:
+                (state['ready'] if complete(child) else state['pending']).append(child)
+
+    def settle_sides(node, result=None):
+        """Record a forward node's outcome: 'failed' without a result, else its sideOutcome. Once a reserve's forwards all
+        have one, queue its sides when none is slack; otherwise hold each behind the slack forwards and their node
+        alternatives until those branches die, like a node's alternatives (restore_alternatives)."""
+        for reserve in [r for r in state['sideReserves'] if any(n == node for n, _ in r['forwards'])]:
+            reserve['outcomes'][node] = 'failed' if result is None else result['sideOutcome']
+            if len(reserve['outcomes']) < len(reserve['forwards']):
+                continue
+            state['sideReserves'].remove(reserve)
+            for record in state['sideVariants']:
+                if record['child'] in {p['decisionNode'] for p in reserve['programs']}:
+                    record['outcomes'] = reserve['outcomes']
+            slack = [n for n, _ in reserve['forwards'] if reserve['outcomes'][n] == 'slack']
+            if not slack:
+                for child in reserve['programs']:
+                    (state['ready'] if complete(child) else state['pending']).append(child)
+                continue
+            # A forward's held node alternatives sit beside it, not below it, so they are watched too. Entries
+            # restore in insertion order, so these come after the forward's own alternatives.
+            watch = slack + [p['decisionNode'] for n in slack for p in state['alternatives'].get(n, {}).get('programs', [])]
+            for child in reserve['programs']:
+                key = digest([child['decisionNode'], 'sideVariant'])
+                state['alternatives'][key] = dict(programs=[child], restored=[], next=0, watch=watch, side=slack)
+                for record in state['sideVariants']:
+                    if record['child'] == child['decisionNode']:
+                        record['alternative'] = key
+
     def update(reason='running'):
         report.update(termination=reason, expandedPrefixes=expanded, totalExpandedPrefixes=state['expanded'],
             generated=state['generated'], emittedPrograms=state['emitted'], screenedPrefixes=state['screened'],
@@ -597,12 +656,16 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                 if program_filter is not None and not program_filter(program):
                     state['policyRejections'] += 1
                     state.pop('nodeInFlight',None)
+                    if node_evaluator is not None:
+                        settle_sides(program.get('decisionNode'))
                     continue
                 if complete(program):
                     state['ready'].append(program)
                     continue
                 if program['profile']['duration'] >= settings['maxInputs'] or program['interactions'] >= settings['maxInteractions']:
                     state.pop('nodeInFlight',None)
+                    if node_evaluator is not None:
+                        settle_sides(program.get('decisionNode'))
                     continue
                 if node_evaluator is not None and program.get('needsNodeSolve'):
                     # Query a decision when it is selected for descent. Merely
@@ -614,6 +677,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                     if result.get('deferUnknown'):
                         state['deferredNodes'].append(program)
                         state.pop('nodeInFlight',None)
+                        settle_sides(program['decisionNode'])
                         update()
                         continue
                     if result['status'] in ('suspended','error'):
@@ -621,6 +685,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                         return
                     state.pop('nodeInFlight',None)
                     if result['status'] in ('oracle_rejected','exhausted'):
+                        settle_sides(program['decisionNode'])
                         update()
                         continue
                     # Other branch choices at this node wait until this branch dies (restore_alternatives).
@@ -629,6 +694,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                         state['alternatives'][program['decisionNode']]=dict(programs=held,restored=[],next=0)
                         for p in held:
                             state['decisionParents'][p['decisionNode']]=p.get('decisionParent')
+                    settle_sides(program['decisionNode'],result)
                     program.pop('needsNodeSolve',None)
                 search = program.get('minimumRunSearch')
                 e = dict(program=program, kind=len(settings['types']) if search else 0, cursor=0)
@@ -642,6 +708,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                 if 'reached' in e or e['program'].get('minimumRunSearch'):
                     minimum_runs(e)
                 hold_same_face(e)
+                hold_sides(e)
                 state['expansion'] = None
                 iterator, iterator_key = None, None
                 continue

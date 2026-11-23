@@ -2,7 +2,7 @@
 
 Avoidance follow-up: [geometry-driven phase covers](design/AVOIDANCE_PASSAGES.md)
 replace full-horizon permutations and local repair/passage caps, carrying tightened
-bounds into downstream generation. Constraint policy17/state11 and repair assembly13
+bounds into downstream generation. Constraint policy23/state11 and repair assembly14
 are current. The measured source-era tables below retain their original settings;
 [replacement evidence](../research/geometry-passages/README.md) records the new run.
 
@@ -93,9 +93,9 @@ candidate tagged `model='relaxed_disk'` with its acceleration `controls` and is
 checked, repaired, ranked and adopted exactly like an IPOPT candidate; a
 relaxation-infeasible request counts as oracle-rejected (`termination
 'disk_finished'`, Clarabel status in `workerStatus`). IPOPT answers, with stock
-semantics, requests outside the supported class (threshold, ladder, non-X/Z rows),
-requests the relaxation leaves undecided even after its zero-cost retry, and
-relaxed points the scalar validator rejects. Every repair-loop solve of a
+semantics, requests outside the supported class (threshold, ladder, non-X/Z rows)
+and relaxed points the scalar validator rejects; every other Clarabel status is a
+verdict ([mapping](reference/NUMERICAL_SOLVER.md#disk-relaxation)). Every repair-loop solve of a
 decision check, anchor leg or finish stays relaxed, and the switch-tick climb
 compares relaxed objectives. When the loop ends, a confirmation walk
 (`search/repair.py` `walk`) takes each side family's best accepted point plus a
@@ -227,7 +227,7 @@ keys or adding a pose constraint. No mixed or uncertainty mode exists.
 | [`anchor_policy`](../src/parkour_solver/search/anchors/policy.py) | Owner visits, required order/caps, source preparation versus hard transfer, encounter groups; hard policy4, search policy6. |
 | [`search.comparison`](../src/parkour_solver/search/comparison.py) | Sole intermediate count/key, OR-protection, peer verdict and strict-incumbent predicate owner; comparison policy1. |
 | [`depth_first`](../src/parkour_solver/search/dfs.py), [`search.deferrals`](../src/parkour_solver/search/deferrals.py) | Traversal, validated peer index, single `minimumRunExclusions` compatibility table, selected-only checks and recovery. Generator contexts set `regionItems`, so a contact on a face of several rectangles keeps the rectangle open as a `regionChoices` entry; a kept leg closes the entries it solved (their rows become retained constraints), a decision check closes the entries it commits (siblings take the other rectangles), and a restored fallback keeps its own rectangle. The run-tick deferral (`compat/minimum_runs`, policy3) never defers across an open entry in the ground hold and keys entries after takeoff into the pattern. Every landing, step and named case onto the goal block carries the goal block's exposed top itself; there is no separate goal-region item, so decision checks apply it too. |
-| [`movement.generation`](../src/parkour_solver/movement/generation.py), [`search.frontier`](../src/parkour_solver/search/frontier.py) | Shared composition/assessment, owned endpoints, raw ordinals, projected flag, queued nodes and `nodeInFlight`. At an ordinary decision the expansion withholds run-tick choices and `minimum_runs` adds the minimum run ticks per advantageous-jump target after the types finish; it computes every level before changing frontier state, so a deadline inside it redoes the step on resume. Its reserves are `alternatives` entries with a `watch` list and a `minimumRunSearch` program, restored by `restore_alternatives` like held branch choices. A jump-now child landing back on the merged launch face (`run_policy['back']`) that does not fit it (`run_policy['fits']`, O11) is held in the expansion and, when it ends, reserved the same way (watching the decision's node and everything it queued or reserved) or queued at once if nothing else was; a program `restore_alternatives` restores counts as alive for the entries after it in the same pass. |
+| [`movement.generation`](../src/parkour_solver/movement/generation.py), [`search.frontier`](../src/parkour_solver/search/frontier.py) | Shared composition/assessment, owned endpoints, raw ordinals, projected flag, queued nodes and `nodeInFlight`. At an ordinary decision the expansion withholds run-tick choices and `minimum_runs` adds the minimum run ticks per advantageous-jump target after the types finish; it computes every level before changing frontier state, so a deadline inside it redoes the step on resume. Its reserves are `alternatives` entries with a `watch` list and a `minimumRunSearch` program, restored by `restore_alternatives` like held branch choices. A jump-now child landing back on the merged launch face (`run_policy['back']`) that does not fit it (`run_policy['fits']`, O11) is held in the expansion and, when it ends, reserved the same way (watching the decision's node and everything it queued or reserved) or queued at once if nothing else was; a program `restore_alternatives` restores counts as alive for the entries after it in the same pass. The non-forward sides of a step or slab boost (`sideVariant`, O12) are held in the expansion (`sides`), reserved behind its queued forward nodes when it ends (`sideReserves`), and queued once every forward is tight or failed, or else held as one `alternatives` entry each (`side`, watching the slack forwards and their node alternatives); a held side counts as alive in `restore_alternatives`. |
 | [`reachability.service`](../src/parkour_solver/reachability/service.py), [`bridge.compiler`](../src/parkour_solver/bridge/compiler.py) | Disposable bounded session cache for preparation, canonical coefficient payloads, exact envelopes/screens and common-case eligibility; proof policy 3. |
 | [`reachability.intervals`](../src/parkour_solver/reachability/intervals.py), [`numerics.disk`](../src/parkour_solver/numerics/disk.py) | Conservative phase envelopes and the disk-relaxation screen; named internal probe uncertainty retained. |
 | [`transfer_time_bounds`](../src/parkour_solver/search/bounds/flight.py), [`anchor_time_bound`](../src/parkour_solver/search/bounds/remaining.py) | Conditional duration certificates, phase-correct state covers, H/V and paid-input residuals; transfer-bound policy1. |
@@ -238,7 +238,7 @@ keys or adding a pose constraint. No mixed or uncertainty mode exists.
 | [`numerics.disk`](../src/parkour_solver/numerics/disk.py) `RelaxedDispatch` | Relaxed candidate requests and their IPOPT fallbacks; the finalization lives in `search_goals(finalize=True)`. |
 
 Physical automatic continuation is outer schema2 / DFS8 / movement context4 /
-repair assembly13. Hard3/search5/comparison1/guide2/proposal1 semantics, event
+repair assembly14. Hard3/search5/comparison1/guide2/proposal1 semantics, event
 constraint policy15 and numerical policy1, the DFS `numericalBackend`, the solve
 policy's `numerical` field, reachability proof policy3 and constraint generation
 policy14 participate in the relevant context fingerprints. Matching schema numbers alone do not make

@@ -14,7 +14,7 @@ Start with [architecture](ARCHITECTURE.md) for call flow, [runbook](RUNBOOK.md) 
 | Prefix inputs | Number and identities of already modeled **input ticks**, not estimated arrival at a common spatial goal. Old priority incorrectly favored shorter prefixes. |
 | Program | Concrete discrete movement/input/contact history, scalar vertical trace, constraints and provenance; horizontal facings are still variables. |
 | Duration | A profile's `duration`: its number of input ticks, run ticks included. Evidence and checkpoints written at or before `9ab3ec9c` store the same count as `airtime`. |
-| Airtime | A jump's jump input plus its air inputs through the landing: 12 for a flat jump, 3 under a ceiling 2 blocks above the feet, 2 for a grind, slab boost or corner jump cancel. A request's per-leg `route['airtimes']` keeps that name. |
+| Airtime | A jump's jump input plus its air inputs through the landing: 12 for a flat jump, 3 under a ceiling 2 blocks above the feet, 2 for a grind or slab boost, and for a corner jump cancel 2 onto a flush ledge or more onto a lower one. A request's per-leg `route['airtimes']` keeps that name. |
 | Passage description | The phase cover chosen for one box encounter within a landing segment (`constraints/encounters.py`) and the clearance rows it implies. Many descriptions can yield one effective row set. |
 | Constraint variant | One concrete hard row/contact alternative for a fixed program. A schedule can require many such trials. |
 | Branch | One handled constraint alternative. It may be screened or stopped before worker dispatch. |
@@ -64,7 +64,7 @@ objective, model) appears whenever the published route differs from it.
 `finalization` lists the attempts and stage. In `work`, `workerLaunches` and
 `feasibleSeedReturns` count interim IPOPT only; `conicCandidates`,
 `relaxedFallbacks` (and `relaxedFallback:<reason>`: `unsupported`,
-`relaxed_undecided`, `rejected_relaxed_point`) describe relaxed requests, and
+`rejected_relaxed_point`) describe relaxed requests, and
 `finalizationIpoptCalls` the finalization's worker launches. The solve report
 labels each request's status with its solver and adds a `Finalization` row.
 
@@ -140,7 +140,10 @@ disk-relaxation and bound proofs, and the search policy's rejections), and its
 minimum-run candidates (each kept one with its run ticks, built landing, bound and
 children; the others grouped as beaten by a kept candidate or not reached below the
 bound, and jumps back onto the launch face held because they do not fit it, with their
-room and natural jump). The frame start's own expansion comes first.
+room and natural jump), and its held side variants of steps and slab boosts (each reserved
+behind a forward node whose side row was slack, and restored once that node's branch died,
+or promoted because every forward was tight or failed; one whose forward is not solved yet
+is left out). The frame start's own expansion comes first.
 
 A request's `owners` are the routes whose repair log holds its problem hash; an
 empty list means no saved route kept that solve. The `stop` report lists suspended
@@ -149,8 +152,7 @@ every alternative is infeasible, and the owners of every request without a solut
 (its routes, or the search-tree nodes whose alternatives sent it).
 The `Disk-relaxation pre-checks` line under it counts the run's disk-relaxation screens
 (`interactionGate.relaxation.screen`, also `summary.json` `relaxationChecks`, which also
-holds the `candidate` counts): solved, served from cache, proved infeasible, and undecided
-by Clarabel (counted as not ruled out). The trace is a pure
+holds the `candidate` counts): solved, served from cache and infeasible. The trace is a pure
 function of the saved search state, so regenerating it never changes a run.
 
 ## Failure investigation workflow

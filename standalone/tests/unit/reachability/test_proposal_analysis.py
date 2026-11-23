@@ -59,8 +59,8 @@ class ProposalAnalysisTests(unittest.TestCase):
             result=find_route(route,compiler,seconds=5,candidate_seconds=1,retries=0,stop_on_feasible=False,
                               numerical=disk.RelaxedDispatch(gate=gate).solve)
         self.assertEqual(result['status'],'feasible')
-        # The creation screen, find_route's pre-screen and the candidate solve share one content.
-        self.assertEqual((len(contents),len(set(contents))),(3,1))
+        # The creation screen and the candidate solve share one content.
+        self.assertEqual((len(contents),len(set(contents))),(2,1))
 
 
 class ProposalOwnershipTests(unittest.TestCase):
@@ -124,8 +124,7 @@ class Real11JointPrerequisiteTests(unittest.TestCase):
             self.assertEqual(cursor['groupEnd'],cursor['anchorIndex'])
             adapter.for_goal(saved['request'],cursor).context(context)
             gate=InteractionGate(scene,compiler);gate.context(context)
-            with patch('parkour_solver.movement.stepping.landing_wall_options',side_effect=AssertionError('late wall fanout')), \
-                 patch('parkour_solver.movement.stepping.corner_rows',side_effect=AssertionError('late corner fanout')):
+            with patch('parkour_solver.movement.stepping.corner_rows',side_effect=AssertionError('late corner fanout')):
                 choices=list(open_stepping_choices(context))
             self.assertEqual(choices,[])
             self.assertGreaterEqual(gate.metrics['sequenceExclusions'],2)

@@ -3,19 +3,25 @@
 Each tick's horizontal acceleration ``|a[t]| == magnitude[t]`` becomes
 ``|a[t]| <= magnitude[t]``. Every other row is the IPOPT worker's: exact
 dynamics, fixed starts, contact resets and EQ walls in the zero cone, contact
-approach/reach and LE/GE walls as nonnegative rows. Infeasibility therefore
-excludes the full request; a feasible point is a relaxed candidate.
+approach/reach and LE/GE walls as nonnegative rows. A primal-infeasible status
+therefore excludes the full request; a feasible point is a relaxed candidate.
+Every other status, and a limit hit twice, is also infeasible: the relaxation
+never leaves a request undecided.
 """
 import collections
 import json
 import math
 import time
 
+from parkour_solver.schema import SOLVER_MARGIN
+
 MODEL_VERSION = 1
 ALLOWANCE = 1e-9
-PENETRATION = 1e-7
 CAP = 0.1
 MAX_ITER = 200
+# A run that hits a limit is solved once more with these; a second limit is infeasible.
+RETRY_CAP = 0.5
+RETRY_MAX_ITER = 500
 TOL = 1e-9
 INFEASIBILITY_TOL = 1e-8
 ALARM_FRACTION = 0.1
@@ -23,7 +29,7 @@ SEED_TILT = 1e-4
 MATERIAL_GAP = 1e-4
 
 FEASIBLE = ('Solved', 'AlmostSolved')
-INFEASIBLE = ('PrimalInfeasible', 'AlmostPrimalInfeasible')
+LIMIT = ('MaxIterations', 'MaxTime')
 
 STATS = dict(screen=collections.Counter(), candidate=collections.Counter())
 _DECIDED = {}
@@ -59,27 +65,23 @@ def spec(problem, extra_rows=(), objective=None, *, strict):
 
 
 def solve(content, *, seconds, kind='candidate'):
-    """Solve a spec; decided results are cached process-wide by content."""
+    """Solve a spec to a feasible or infeasible verdict, cached process-wide by content."""
     encoded = json.dumps(content, sort_keys=True)
     stats = STATS[kind]
     if encoded in _DECIDED:
         stats['cacheHits'] += 1
         return dict(_DECIDED[encoded], cached=True)
     stats['solved'] += 1
-    result = _attempt(content, min(CAP, seconds))
-    if result['outcome'] == 'undecided' and 'objective' in content:
-        # Infeasibility does not depend on the cost, and some infeasible requests
-        # end NumericalError only under their objective. A feasible retry is not
-        # the optimum, so only its infeasibility is kept.
+    result = _attempt(content, min(CAP, seconds), MAX_ITER)
+    if result['outcome'] == 'limit':
         stats['retried'] += 1
-        retry = _attempt({k: v for k, v in content.items() if k != 'objective'}, min(CAP, seconds))
-        if retry['outcome'] == 'infeasible':
-            result = dict(retry, retried=True)
+        result = dict(_attempt(content, min(RETRY_CAP, seconds), RETRY_MAX_ITER), retried=True)
+        if result['outcome'] == 'limit':
+            result['outcome'] = 'infeasible'
     stats[result['outcome']] += 1
-    if result['outcome'] != 'undecided':
-        _DECIDED[encoded] = result
-        while len(_DECIDED) > 1024:
-            _DECIDED.pop(next(iter(_DECIDED)))
+    _DECIDED[encoded] = result
+    while len(_DECIDED) > 1024:
+        _DECIDED.pop(next(iter(_DECIDED)))
     return dict(result, cached=False)
 
 
@@ -88,13 +90,11 @@ def screen(model, extra_rows=(), objective=None):
     content = spec(model, extra_rows, objective, strict=False)
     if content is None or not content['rows'] and not content['contacts']:
         return None
-    result = solve(content, seconds=CAP, kind='screen')
+    result = solve(content, seconds=RETRY_CAP, kind='screen')
     checked = dict(outcome=result['outcome'], status=result['status'])
     if result['outcome'] == 'infeasible':
         checked['proof'] = dict(reason='disk_control_relaxation_infeasible', relaxation='acceleration_disk',
                                 status=result['status'])
-    elif result['outcome'] == 'undecided':
-        checked['message'] = result.get('message', result['status'])
     return checked
 
 
@@ -131,9 +131,8 @@ def alarm_ticks(problem, shortfall):
 class RelaxedDispatch:
     """`find_route`'s numerical callable: Clarabel unless IPOPT must decide.
 
-    IPOPT runs, with stock semantics, on requests outside the supported class,
-    requests the relaxation leaves undecided, and relaxed points the scalar
-    validator rejects. Every other request is solved relaxed. `solve` returns
+    IPOPT runs, with stock semantics, on requests outside the supported class
+    and relaxed points the scalar validator rejects. Every other request is solved relaxed. `solve` returns
     the relaxed point with its alarm ticks; `confirmed` also re-solves an
     optimization request whose relaxed optimum leaves more than ALARM_FRACTION
     of a jump tick's acceleration unused (alarm_ticks) with IPOPT. The repair
@@ -170,8 +169,6 @@ class RelaxedDispatch:
         relaxed = {k: solved[k] for k in ('status', 'outcome', 'iterations', 'cached')}
         if solved['outcome'] == 'infeasible':
             return _result(problem, started, 'unknown', None, 'disk_finished', solved['status'], relaxed)
-        if solved['outcome'] == 'undecided':
-            return full('relaxed_undecided')
         candidate = validate_controls(problem, solved['controls'])
         if not candidate['feasible']:
             return full('rejected_relaxed_point')
@@ -216,7 +213,7 @@ class RelaxedDispatch:
 def _result(problem, started, status, candidate, termination, solver_status, relaxed):
     """A `numerics.solver.solve`-shaped result for an answer Clarabel decided."""
     from parkour_solver.numerics.model import fingerprint
-    from parkour_solver.schema import TOLERANCE
+    from parkour_solver.schema import REPLAY_TOLERANCE
     return {'version': 1, 'status': status, 'feasible': candidate is not None, 'candidate': candidate,
             'objectiveMode': problem['objectiveMode'], 'problemHash': fingerprint(problem),
             'elapsedSeconds': time.monotonic()-started,
@@ -225,19 +222,19 @@ def _result(problem, started, status, candidate, termination, solver_status, rel
                         'contacts': len(problem['contacts']), 'threshold': problem['threshold'],
                         'objective': problem['objective'], 'source': problem.get('source')},
             'termination': termination, 'workerStatus': solver_status, 'workerLaunched': False, 'error': None,
-            'tolerance': TOLERANCE, 'phases': [], 'backend': 'clarabel', 'disk': relaxed,
+            'tolerance': REPLAY_TOLERANCE, 'phases': [], 'backend': 'clarabel', 'disk': relaxed,
             'diagnostics': {'rejectedCandidates': 0, 'lastRejection': None, 'stderr': []}}
 
 
-def _attempt(content, time_limit):
+def _attempt(content, time_limit, max_iter):
     try:
-        return _solve(content, time_limit)
+        return _solve(content, time_limit, max_iter)
     except (ValueError, RuntimeError) as error:
-        return dict(status='exception', outcome='undecided', controls=None, objective=None,
+        return dict(status='exception', outcome='infeasible', controls=None, objective=None,
                     iterations=0, message=repr(error))
 
 
-def _solve(content, time_limit):
+def _solve(content, time_limit, max_iter):
     import clarabel
     import numpy as np
     from scipy.sparse import coo_matrix, csc_matrix
@@ -280,7 +277,7 @@ def _solve(content, time_limit):
                 row(equalities, {pos(axis, t+1): 1.}, plane)
                 row(equalities, {vel(axis, t+1): 1.}, 0.)
                 row(inequalities, {pos(axis, t): d}, d*plane)
-                row(inequalities, {pos(axis, t): -d, vel(axis, t): -d, control(axis, t): -d}, -d*plane-PENETRATION)
+                row(inequalities, {pos(axis, t): -d, vel(axis, t): -d, control(axis, t): -d}, -d*plane-SOLVER_MARGIN)
     for mode, t, t2, op, cmp, rhs in content['rows']:
         axis = 0 if mode == 'X' else 1
         entries, offset = {pos(axis, t): 1.}, content['position'][axis]
@@ -315,7 +312,7 @@ def _solve(content, time_limit):
     settings.max_threads = 1
     settings.direct_solve_method = 'qdldl'
     settings.time_limit = time_limit
-    settings.max_iter = MAX_ITER
+    settings.max_iter = max_iter
     settings.tol_feas = settings.tol_gap_abs = settings.tol_gap_rel = TOL
     settings.tol_infeas_abs = settings.tol_infeas_rel = INFEASIBILITY_TOL
     assembled = time.perf_counter()
@@ -331,7 +328,8 @@ def _solve(content, time_limit):
         controls = [[float(x[control(axis, t)]) for axis in range(2)] for t in range(n)]
         objective = offset+sense*float(cost@x) if sense else None
     else:
-        outcome = 'infeasible' if status in INFEASIBLE else 'undecided'
+        # Every status but a limit is a verdict: no undecided result reaches IPOPT (user, 2026-11-22).
+        outcome = 'limit' if status in LIMIT else 'infeasible'
     return dict(status=status, outcome=outcome, controls=controls, objective=objective,
                 iterations=int(solution.iterations), assemblySeconds=assembled-started,
                 setupSeconds=ready-assembled, solveSeconds=finished-ready)

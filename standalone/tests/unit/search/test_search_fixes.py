@@ -24,7 +24,7 @@ class SearchFixTests(unittest.TestCase):
 
     def exercise_incumbent(self, valid_seed=True, repair=False, error=False, cancel=False):
         route = dict(constraints=[], passages=[], hitEvents=[], maxTotalRunTicks=0,
-                     supportClearance=1e-6, objective=dict(axis='X', sense='MAX'))
+                     objective=dict(axis='X', sense='MAX'))
         def best(value):
             return dict(allocation=[0], cost=0, plan=dict(ticks=2, events=[]),
                         candidate=dict(yaw=[value, value], positions=[[0, 0]]*3, objective=value))

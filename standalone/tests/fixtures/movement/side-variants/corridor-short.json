@@ -1,0 +1,93 @@
+{
+ "sideVariant": {
+  "leg": [
+   0,
+   1
+  ],
+  "forward": [
+   "Z-"
+  ],
+  "reserved": [
+   "X-",
+   "X+"
+  ],
+  "note": "target 0.5 deep: the landing region binds first, the forward row may stay slack"
+ },
+ "request": {
+  "version": 1,
+  "sceneModel": "collision_boxes",
+  "geometryBounds": [
+   -10,
+   -5,
+   -10,
+   20,
+   12,
+   20
+  ],
+  "initial": {
+   "position": [
+    0.5,
+    1,
+    3.0
+   ],
+   "velocity": [
+    0,
+    -0.0784000015258789,
+    0
+   ],
+   "yaw": 0
+  },
+  "startBlock": "start",
+  "goalBlock": "goal",
+  "maxWallHits": 0,
+  "maxContactCombinations": 0,
+  "blocks": [
+   {
+    "id": "start",
+    "boxes": [
+     [
+      0,
+      0,
+      0,
+      1,
+      1,
+      4
+     ]
+    ]
+   },
+   {
+    "id": "target",
+    "boxes": [
+     [
+      0,
+      0,
+      4,
+      1,
+      1.5,
+      4.5
+     ]
+    ]
+   },
+   {
+    "id": "goal",
+    "boxes": [
+     [
+      0,
+      1,
+      7,
+      1,
+      2,
+      8
+     ]
+    ]
+   }
+  ],
+  "movementSearch": {
+   "types": [
+    "normal",
+    "stepping"
+   ],
+   "maxInputs": 40
+  }
+ }
+}

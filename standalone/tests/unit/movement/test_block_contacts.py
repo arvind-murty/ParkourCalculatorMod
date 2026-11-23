@@ -4,6 +4,7 @@ import unittest
 
 from parkour_solver.constraints.contacts import avoid_contact_rows, contact_conflicts, floor_checks
 from parkour_solver.movement.profiles import ordinary_jump_profile
+from parkour_solver.schema import SOLVER_MARGIN
 from parkour_solver.scene.normalize import prepare_scene
 from parkour_solver.scene.route import HALF_WIDTH, schedule
 from tests.support.checkpoint_guidance import landing_programs
@@ -92,7 +93,7 @@ def box_scene(solids, tops):
         conflicts = contact_conflicts(checks, plan, {'positions': positions})
         self.assertEqual(len(conflicts), 1)
         self.assertEqual(conflicts[0]['state'], 13)
-        rows = avoid_contact_rows(conflicts[0], 1e-6)
+        rows = avoid_contact_rows(conflicts[0])
         self.assertEqual({(r['mode'], r['cmp']) for r in rows}, {('X', 'LE'), ('X', 'GE'), ('Z', 'LE'), ('Z', 'GE')})
         self.assertTrue(all(r['leg'] == 0 and r['offset'] == 11 for r in rows))
         positions[13] = [2, .5]
@@ -128,6 +129,20 @@ class ExposedTopTests(unittest.TestCase):
             self.assertEqual((entry['owner'], len(entry['options'])), ('floor', 2))
             self.assertEqual(choice['profile']['positionConstraints'], [])
         self.assertTrue(all('regionChoices' not in c['profile'] for c in self.landings(scene)))
+
+    def test_an_ordinary_decision_keeps_only_the_rectangles_it_reaches_without_going_back(self):
+        from parkour_solver.spatial.anchor_guides import leg_class
+        scene = box_scene([[0, 0, 0, 2, 1, 2], [2, 0, 1, 3, 3, 2]], [('floor', 1), ('pillar', 3)])
+        regions = [c['profile']['contactEvents'][0]['regions'] for c in self.landings(scene)]
+        self.assertTrue(regions and all(len(r) == 2 for r in regions))
+        # The leg runs +Z; the L's short rectangle ends at z 0.7, 0.8 behind a decision point at z 1.5.
+        forward = dict(point=[1., 1.5], allowed=leg_class((0., 1.))[1], margin=.3)
+        program = dict(profile=dict(duration=0))
+        walk = self.landings(scene, forward=forward, program=program, regionItems=True)
+        self.assertEqual([c['profile']['contactEvents'][0]['regions'] for c in walk], [r[:1] for r in regions])
+        self.assertTrue(all('regionChoices' not in c['profile'] for c in walk))
+        # At z 3 the whole face is more than 0.3 behind.
+        self.assertEqual(self.landings(scene, forward=dict(forward, point=[1., 3.]), program=program), [])
 
     def test_generation_without_a_gate_key_is_an_error_and_none_opts_out(self):
         from parkour_solver.movement.normal import normal_choices
@@ -239,11 +254,11 @@ class ExposedTopTests(unittest.TestCase):
         self.assertEqual(len(contact_conflicts(checks, plan, inside)), 1)
         self.assertEqual(contact_conflicts(checks, plan, notch), [])
         conflict, = contact_conflicts(checks, plan, inside)
-        rows = avoid_contact_rows(conflict, 1e-6)
+        rows = avoid_contact_rows(conflict)
         region = conflict['region']
         self.assertEqual({(r['mode'], r['cmp'], r['rhs']) for r in rows},
-                         {('X', 'LE', region[0] - 1e-6), ('X', 'GE', region[2] + 1e-6),
-                          ('Z', 'LE', region[1] - 1e-6), ('Z', 'GE', region[3] + 1e-6)})
+                         {('X', 'LE', region[0] - SOLVER_MARGIN), ('X', 'GE', region[2] + SOLVER_MARGIN),
+                          ('Z', 'LE', region[1] - SOLVER_MARGIN), ('Z', 'GE', region[3] + SOLVER_MARGIN)})
 
 
 def boxes_request(initial, velocity, yaw, **blocks):
@@ -456,10 +471,10 @@ class BlockTableTests(unittest.TestCase):
             self.assertGreater(self.assert_table_keeps_every_choice(scene, roots), 0)
 
     def test_table_keeps_every_stepping_fixture_choice(self):
-        from tests.support.stepping_cases import FIXTURES, fixture
+        from tests.support.stepping_cases import fixture, fixture_names
         from parkour_solver.movement.program import empty_program
         from parkour_solver.scene.normalize import prepare_scene
-        for name in sorted(p.stem for p in FIXTURES.glob('*.json')):
+        for name in fixture_names():
             with self.subTest(name=name):
                 scene = prepare_scene(fixture(name)['request'])
                 self.assert_table_keeps_every_choice(scene, [empty_program(scene['initial'], threshold=0.)])
@@ -480,13 +495,13 @@ class BlockTableTests(unittest.TestCase):
 class RunTickChoiceTests(unittest.TestCase):
     def test_withheld_run_tick_choices_are_exactly_the_grounded_no_jump_ones(self):
         from tests.support.block_table import compiler, nodes, real11_inputs
-        from tests.support.stepping_cases import FIXTURES, fixture
+        from tests.support.stepping_cases import fixture, fixture_names
         from parkour_solver.movement.generation import generate_choices
         from parkour_solver.movement.program import boundary_state, empty_program
         from parkour_solver.reachability.service import InteractionGate
         from parkour_solver.scene.normalize import prepare_scene
         cases = real11_inputs()+[(prepare_scene(fixture(name)['request']), None)
-                                 for name in sorted(p.stem for p in FIXTURES.glob('*.json'))]
+                                 for name in fixture_names()]
         withheld, airborne = set(), 0
         with compiler() as java:
             for scene, roots in cases:

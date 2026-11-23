@@ -1,5 +1,6 @@
 import copy
 import json
+import os
 import threading
 import time
 import unittest
@@ -85,6 +86,7 @@ class AnchorDFSTests(unittest.TestCase):
                 extra=hook(n)
                 best['plan'].update(walls=extra['walls'],events=extra['events'])
                 best.update({k:v for k,v in extra.items() if k.startswith('alternative')})
+                candidate.update({k:v for k,v in extra.items() if k=='positions'})
             return dict(status='feasible',termination='done',best=best,work=dict(solverCalls=requests_per_evaluation),
                         fullSceneValidated=True,nodeFeasibility=dict(status='feasible',model=str(n)),
                         **({'repairState':extra['repairState']} if 'repairState' in extra else {}))
@@ -374,6 +376,38 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertNotIn('settledThrough',result['program'])
         self.assertEqual(result['program']['repairState']['pending'],[dict(rows=[],passages=[],hits=[],score=0.)])
 
+    def test_a_forward_side_variant_reads_its_keep_outside_row_at_its_tick(self):
+        checked,nodes={},{}
+        def probe(node_evaluator,p):
+            for t1,cmp,rhs in ((3,'LE',1.),(4,'LE',1.),(5,'LE',1.),(4,'GE',.9992)):
+                q=copy.deepcopy(p);q['decisionNode']=f'node:{t1}{cmp}'
+                q['sideVariant']=dict(forward=True,row=dict(mode='Z',t1=t1,cmp=cmp,rhs=rhs,name='case:outside'))
+                checked[t1,cmp]=node_evaluator(q,nodes,None)
+            # A solved node answers from its saved outcome.
+            checked['again']=node_evaluator(q,nodes,None)
+            q=copy.deepcopy(p);q['decisionNode']='node:held'
+            q['sideVariant']=dict(forward=False,row=dict(mode='Z',t1=4,cmp='LE',rhs=1.,name='case:outside'))
+            checked['held']=node_evaluator(q,nodes,None)
+        def node_best(n):
+            # Z is 0.5 except 0.9997 at state 4: 0.0003 below the 1.0 row, 0.0005 above the 0.9992 one.
+            positions=[[.5,.5]]*(n+1);positions[4]=[.5,.9997]
+            return dict(walls=[],events=[dict(jump=0,landed=0,landing=n,runTicks=0)],positions=positions)
+        self.run_tree(node_probe=probe,node_best=node_best)
+        self.assertEqual({k:r['sideOutcome'] for k,r in checked.items() if k!='held'},
+                         {(3,'LE'):'slack',(4,'LE'):'tight',(5,'LE'):'slack',(4,'GE'):'tight','again':'tight'})
+        self.assertEqual(nodes['node:4GE']['sideOutcome'],'tight')
+        self.assertEqual(checked['held']['status'],'feasible')
+        self.assertNotIn('sideOutcome',checked['held'])
+
+    def test_an_unsolved_forward_side_variant_is_tight(self):
+        checked=[]
+        def probe(node_evaluator,p):
+            q=copy.deepcopy(p);q['decisionNode']='node:forward'
+            q['sideVariant']=dict(forward=True,row=dict(mode='Z',t1=4,cmp='LE',rhs=1.,name='case:outside'))
+            checked.append(node_evaluator(q,{},None))
+        self.run_tree(node_probe=probe,interval=2)
+        self.assertEqual((checked[0]['status'],checked[0]['sideOutcome']),('untested','tight'))
+
     def test_group_end_arrival_keeps_avoidance_rows_and_settles_through_arrival(self):
         def leg_best(n):
             return dict(walls=[dict(mode='X',t1=n-2,cmp='GE',rhs=.25,name='avoidance')],
@@ -559,6 +593,51 @@ class AnchorDFSTests(unittest.TestCase):
         before=copy.deepcopy(saved)
         self.run_tree(resume=saved)
         self.assertEqual(saved,before)
+
+
+
+@unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'),'Set PKC_IPOPT_PYTHON')
+class SideOutcomeNodeSolveTests(unittest.TestCase):
+    def test_the_forward_slab_boost_row_is_slack_after_three_run_ticks_and_tight_after_five(self):
+        # corridor-diagonal's measured state: on the start block's X- edge, moving -X+Z, before the target's Z- side.
+        from parkour_solver.bridge.python_compiler import PythonCompiler
+        from parkour_solver.movement.generation import generate_choices
+        from parkour_solver.movement.program import append_choice, boundary_state
+        from parkour_solver.scene.normalize import prepare_scene
+        from tests.support.paths import AUTONOMY_DATA
+        raw=json.loads((AUTONOMY_DATA/'fixtures/side-variants/corridor-diagonal.json').read_text())
+        solved=raw['sideVariant']['solved']
+        request=copy.deepcopy(raw['request']);request['initial'].update(position=solved['position'],velocity=solved['velocity'])
+        s=prepare_scene(request)
+        def context(p,**fields):
+            return dict(mode='open',scene=s,program=p,state=boundary_state(p),interactionGate=None,threshold=0.,maxInputs=40,
+                        maxEntryInputs=40,**fields)
+        def forward(root,k):
+            # k same-face run ticks, then the slab boost entering the target's Z- side, as the frontier queues it.
+            p=root
+            for _ in range(k):
+                p,=[q for c in generate_choices('normal',context(p)) if c['profile']['duration']==1 and not any(c['profile']['jump'])
+                    for q in [append_choice(p,c,max_inputs=40)] if q is not None and q.get('terminalSupport')=='start']
+            choice,=[c for c in generate_choices('stepping',context(p,decision=root))
+                     if c['profile']['caseEvents'][-1]['case']=='slab_boost' and (c.get('sideVariant') or {}).get('forward')]
+            child=append_choice(p,choice,max_inputs=40)
+            child.update({f:copy.deepcopy(root[f]) for f in ('decisionPoint','decisionVelocity','decisionPointTick') if f in root})
+            tag=choice['sideVariant']
+            child.update(decisionNode=f'forward:{k}',decisionParent=root.get('decisionNode'),decisionDepth=1,lastSolvedDepth=0,
+                         needsNodeSolve=True,sideVariant=dict(tag,row=dict(tag['row'],t1=p['profile']['duration'])))
+            return child
+        found={}
+        def generate(target_scene,*,report,initial_programs,node_evaluator,**kwargs):
+            report['continuation']=dict(exhausted=True)
+            for k in (3,5):
+                result=node_evaluator(forward(initial_programs[0],k),{},None)
+                found[k]=(result['status'],result['sideOutcome'])
+            yield from ()
+        with PythonCompiler() as compiler,patch('parkour_solver.search.dfs.iter_movement_programs',side_effect=generate):
+            find_checkpoint_route(s,compiler,anchor_search=dict(anchors=[]),seconds=60,
+                                  python_executable=os.environ['PKC_IPOPT_PYTHON'])
+        # Measured in the production search: the row is 0.3309 clear after 3 run ticks and binds after 5.
+        self.assertEqual(found,{3:('feasible','slack'),5:('feasible','tight')})
 
 
 if __name__=='__main__':unittest.main()

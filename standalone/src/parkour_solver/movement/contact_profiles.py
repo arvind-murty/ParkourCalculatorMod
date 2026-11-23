@@ -1,7 +1,8 @@
 import copy
 
 from parkour_solver.physics.vertical import REST_CARRY, f32
-from parkour_solver.movement.contact_combinations import contact_clearance, contact_combinations, contact_event, wall_heights
+from parkour_solver.schema import SOLVER_MARGIN
+from parkour_solver.movement.contact_combinations import contact_combinations, contact_event, wall_heights
 from parkour_solver.movement.vertical_profiles import trace_ladder_schedule
 
 
@@ -54,7 +55,7 @@ def contact_opportunities(solids, horizon, *, block_ids=None, ceilings=True, hor
     geometry = scene_geometry(dict(solids=list(solids)))
     faces = [(a, d) for d in (1, -1) for a in ('X', 'Z', 'Y') if (a != 'Y' and horizontal) or a == 'Y' and ceilings and d > 0]
     options = [(axis, direction, option) for axis, direction in faces
-               for option in geometry.contact_options('XYZ'.index(axis), -direction, clearance=contact_clearance({}),
+               for option in geometry.contact_options('XYZ'.index(axis), -direction, clearance=SOLVER_MARGIN,
                                                       members=range(len(solids)))]
     for tick in range(horizon):
         for axis, direction, option in options:

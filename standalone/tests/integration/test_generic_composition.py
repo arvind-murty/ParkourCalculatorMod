@@ -72,7 +72,7 @@ class GenericOpenGenerationTests(unittest.TestCase):
     def test_all_stepping_cases_end_at_their_event_instead_of_a_forced_landing_tail(self):
         from tests.support.stepping_cases import fixture
         from parkour_solver.scene.normalize import prepare_scene
-        for name in ['normal_step', 'slab_boost', 'blip', 'blip_up', 'corner_blip_up', 'corner_jump_cancel', 'grind']:
+        for name in ['normal_step', 'slab_boost', 'blip', 'blip_up', 'corner_blip', 'corner_blip_up', 'corner_jump_cancel', 'grind']:
             data = fixture(name)
             scene = prepare_scene(data['request'])
             program = empty_program(scene['initial'])
@@ -84,7 +84,7 @@ class GenericOpenGenerationTests(unittest.TestCase):
             event = choice['profile']['caseEvents'][0]
             self.assertEqual(choice['profile']['duration'], event['input'] + 1)
             self.assertIsNotNone(append_choice(program, choice))
-            if name in ('blip_up', 'corner_blip_up'):
+            if name in ('blip_up', 'corner_blip', 'corner_blip_up'):
                 self.assertTrue(choice['profile']['grounded'][-1])
                 self.assertIsNone(choice['terminalSupport'])
             if name in ('slab_boost', 'grind', 'corner_jump_cancel'):

@@ -2,7 +2,7 @@ from parkour_solver.physics.vertical import f32
 from parkour_solver.movement.cases import exposed_side, outside_row
 from parkour_solver.movement.contact_combinations import (bounding_region, contact_event, finite_rows, reachable_option,
                                                           region_choices, scene_contact_options)
-from parkour_solver.reachability.service import behind_decision, candidate_option, entry_backward
+from parkour_solver.reachability.service import candidate_option, entry_backward
 
 
 def grind_options(context, feet, allowed=None):
@@ -20,7 +20,7 @@ def grind_options(context, feet, allowed=None):
         if not 0 <= clearance < f32(.42) or allowed is not None and not any(allowed(list(box), owner) for box in option.boxes):
             continue
         option = reachable_option(context, option, 1, jumping=True, label=dict(owner=owner, role='grind'))
-        if option is None or behind_decision(context, option.regions, 1, jumping=True, label=dict(owner=owner, role='grind')):
+        if option is None:
             continue
         under = [dict(r, name='case:finite') for r in finite_rows(1, bounding_region(option.regions), t1=1)]
         regions = [dict(offset=1, surface=option.surface, owner=owner,
@@ -67,8 +67,7 @@ def open_ceiling_choices(context):
             if hit is None:
                 continue
             reached = reachable_option(context, option, hit, jumping=jumping, label=dict(owner=owner, role='ceiling'))
-            if reached is None or behind_decision(context, reached.regions, hit, jumping=jumping,
-                                                  label=dict(owner=owner, role='ceiling')):
+            if reached is None:
                 continue
             event = contact_event(reached, 'Y', 1, hit, 'ceiling', blockId=owner)
             choice = event_choice(context, 'ceiling', state, hit + 1, jumping=jumping, finite=[event],

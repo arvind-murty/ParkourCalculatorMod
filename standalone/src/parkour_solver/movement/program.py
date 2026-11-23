@@ -443,8 +443,7 @@ def compile_program(scene, program, *, require_complete=True):
                            'landingPhases': [profile.get('landingPhase', 'pre')],
                            'contactEntries': [None], 'walkOffExits': [None],
                            'maxTotalRunTicks': scene['maxTotalRunTicks'],
-                           'runBounds': [[0, scene['maxRunTicksPerJump']]],
-                           'supportClearance': scene['supportClearance']})
+                           'runBounds': [[0, scene['maxRunTicksPerJump']]]})
     route['profileDerivation'] = {'kind': 'selected_height_profiles', 'suppliedAirtimes': False,
                                   'verticalModel': 'parkour_solver.physics.vertical', 'solidSideFaces': False}
     route.update(sharedMovement=True, ceilingEvents=[], verticalProfiles=[profile],

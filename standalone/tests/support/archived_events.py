@@ -1,6 +1,7 @@
 """Archived programs predate member boxes, landing regions, floor-check regions and the profile's `duration` name;
 convert them to the current fields."""
-from parkour_solver.movement.contact_combinations import contact_clearance, expanded_face
+from parkour_solver.schema import SOLVER_MARGIN
+from parkour_solver.movement.contact_combinations import expanded_face
 from parkour_solver.scene.route import center_bounds
 
 
@@ -18,7 +19,7 @@ def current_events(value, clearance=None):
             value['boxes'] = [box]
             if 'case' not in value:
                 value.update(surface=None, regions=[expanded_face(box, 'XYZ'.index(value['axis']), -value['direction'],
-                                                                  contact_clearance({}) if clearance is None else clearance)])
+                                                                  SOLVER_MARGIN if clearance is None else clearance)])
         if (value.get('reason') in ('earlier_floor', 'unplanned_stair') and 'region' not in value
                 and any(k in value.get('block', {}) for k in ('bounds', 'centerBounds', '_derivedFootprint'))):
             bounds = center_bounds(value['block'])

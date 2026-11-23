@@ -1,0 +1,110 @@
+{
+ "sideVariant": {
+  "leg": [
+   0.6,
+   0.8
+  ],
+  "forward": [
+   "Z-"
+  ],
+  "reserved": [
+   "X-"
+  ],
+  "note": "diagonal +X+Z leg: the X+ side (a -X entry) is dropped by O10; one reserve",
+  "solved": {
+   "position": [
+    -0.25,
+    1,
+    2.6
+   ],
+   "velocity": [
+    -0.15,
+    -0.0784000015258789,
+    0.2
+   ],
+   "case": "slab_boost",
+   "side": "Z-",
+   "slackAfterRunTicks": 3,
+   "tightAfterRunTicks": 6,
+   "tightAlsoAfterRunTicks": 5,
+   "source": "production DFS, 2026-11-22 (bd0ef08d), the forward node itself (T = case tick + 1): slack 0.3309 after 3 run ticks, slack 0.0 after 5 and after 6; node objectives F 2.9019 vs X- 2.8197 after 3 (critic2 pairs.txt)"
+  }
+ },
+ "request": {
+  "version": 1,
+  "sceneModel": "collision_boxes",
+  "geometryBounds": [
+   -10,
+   -5,
+   -10,
+   20,
+   12,
+   20
+  ],
+  "initial": {
+   "position": [
+    0.5,
+    1,
+    3.0
+   ],
+   "velocity": [
+    0,
+    -0.0784000015258789,
+    0
+   ],
+   "yaw": 0
+  },
+  "startBlock": "start",
+  "goalBlock": "goal",
+  "maxWallHits": 0,
+  "maxContactCombinations": 0,
+  "blocks": [
+   {
+    "id": "start",
+    "boxes": [
+     [
+      0,
+      0,
+      0,
+      1,
+      1,
+      4
+     ]
+    ]
+   },
+   {
+    "id": "target",
+    "boxes": [
+     [
+      0,
+      0,
+      4,
+      1,
+      1.5,
+      4.5
+     ]
+    ]
+   },
+   {
+    "id": "goal",
+    "boxes": [
+     [
+      4,
+      1,
+      8,
+      5,
+      2,
+      9
+     ]
+    ]
+   }
+  ],
+  "movementSearch": {
+   "types": [
+    "normal",
+    "stepping"
+   ],
+   "maxInputs": 40
+  }
+ }
+}

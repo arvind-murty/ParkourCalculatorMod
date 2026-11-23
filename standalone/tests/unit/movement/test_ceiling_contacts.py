@@ -98,7 +98,10 @@ class OpenCeilingTests(unittest.TestCase):
                 if c['profile']['contactEvents']]
 
     def test_an_ordinary_decision_offers_nothing_behind_it_and_no_grind_entered_against_its_leg(self):
+        import math
         from parkour_solver.movement.ceiling_generation import open_ceiling_choices
+        from parkour_solver.spatial.anchor_guides import leg_class
+        leg = lambda degrees: leg_class((math.cos(math.radians(degrees)), math.sin(math.radians(degrees))))[1]
         def offered(**context):
             scene = dict(collisionScene=dict(solids=[[0, 3, 0, 1, 4, 1]]), ceilingHits=True, blocks=[dict(id='c0', solidIndex=0)])
             state = dict(position=1., velocity=REST_CARRY, onGround=True, previousHorizontalCollision=False)
@@ -111,11 +114,20 @@ class OpenCeilingTests(unittest.TestCase):
             return sorted(kinds)
         self.assertEqual(offered(), ['ceiling', 'grind X+', 'grind X-', 'grind Z+', 'grind Z-'])
         # The leg runs +Z: a grind entered from Z+ moves backwards; X entries move sideways.
-        ahead = dict(point=[.5, .5], direction=(0., 1.), margin=.3)
+        ahead = dict(point=[.5, .5], allowed=leg(90), margin=.3)
         self.assertEqual(offered(forward=ahead), ['ceiling', 'grind X+', 'grind X-', 'grind Z-'])
         # The ceiling's player-centre region ends at z 1.3, 0.7 behind a decision point at z 2.
         self.assertEqual(offered(forward=dict(ahead, point=[.5, 2.])), [])
         self.assertEqual(offered(forward=dict(ahead, point=[.5, 1.5])), ['ceiling', 'grind X+', 'grind X-', 'grind Z-'])
+        # 10 degrees off +Z is still the +Z class.
+        self.assertEqual(offered(forward=dict(ahead, allowed=leg(80))), ['ceiling', 'grind X+', 'grind X-', 'grind Z-'])
+        # 20 degrees off +X: only -X is back, so a ceiling 1.7 blocks -Z of the decision point is sideways and stays.
+        self.assertEqual(offered(forward=dict(point=[.5, 3.], allowed=leg(20), margin=.3)),
+                         ['ceiling', 'grind X-', 'grind Z+', 'grind Z-'])
+        # A +X+Z diagonal allows only +X and +Z: both facing entries go, and 0.5 back on Z is behind, 0.2 is not.
+        diagonal = dict(point=[.5, 1.5], allowed=leg(45), margin=.3)
+        self.assertEqual(offered(forward=diagonal), ['ceiling', 'grind X-', 'grind Z-'])
+        self.assertEqual(offered(forward=dict(diagonal, point=[.5, 1.8])), [])
 
     def test_touching_coplanar_ceilings_are_one_choice_with_both_members(self):
         boxes = [[0, 3, 0, 1, 4, 1], [1, 3, 0, 2, 4, 1]]

@@ -58,8 +58,8 @@ The scene producer must not encode unsupported block behavior as an inert box an
   inputs L to L+r-1 and input L+r is the next jump; with r=0 the player jumps at input L.
 - Legacy support uses half-width `(double) (0.6F / 2.0F)` = 0.30000001192092896 with
   strict overlap on both axes (`center + halfWidth > a` and `center - halfWidth < b`);
-  exact edge touch is not support. IPOPT row residuals up to 1e-7 exceed a one-ULP
-  support adjustment, so check the support predicate independently.
+  exact edge touch is not support. Row residuals up to the replay tolerance (1e-4) exceed a
+  one-ULP support adjustment, so check the support predicate independently.
 - Movement resolves Y, then X, then Z: a floor collision during input t is evaluated at
   the pre-horizontal X/Z p[t], so constraining only p[t+1] over a top can claim a
   landing that arrived too late.

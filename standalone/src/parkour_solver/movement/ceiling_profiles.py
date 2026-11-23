@@ -5,10 +5,10 @@ from parkour_solver.physics.vertical import vertical_move, vertical_step, vertic
 
 def ceiling_options(solids, members=None, *, clearance=None):
     """Merged undersides of the member solids (all by default), clipped by every solid."""
-    from parkour_solver.movement.contact_combinations import contact_clearance
+    from parkour_solver.schema import SOLVER_MARGIN
     from parkour_solver.spatial.surfaces import scene_geometry
     return scene_geometry(dict(solids=list(solids))).contact_options(
-        1, -1, clearance=contact_clearance({}) if clearance is None else clearance,
+        1, -1, clearance=SOLVER_MARGIN if clearance is None else clearance,
         members=range(len(solids)) if members is None else members)
 
 

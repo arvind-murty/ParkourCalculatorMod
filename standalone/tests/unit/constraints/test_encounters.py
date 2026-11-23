@@ -22,7 +22,7 @@ def source(n=3, *, y=None, position=(-1., 0.), walls=(), box=(0., 0., -.2, 1., 3
     model = dict(ticks=n, position=list(position), velocity=[0., 0.], magnitude=[magnitude]*n,
                  friction=[friction]*n, walls=list(walls), threshold=0.)
     profile = dict(position=y, **(profile or {}))
-    return ConstraintVariants(dict(supportClearance=0.), profile,
+    return ConstraintVariants(dict(), profile,
         dict(events=[dict(jump=0, runTicks=0)]), dict(solids=[list(b) for b in boxes]), reachable_envelopes(model, y),
         dict(through=n, solidIndices=list(range(len(boxes)))), state=state, settled=settled, segment_solids=segment_solids,
         obstacles=obstacles, walk_offs=walk_offs)
@@ -317,6 +317,9 @@ class EncounterTests(unittest.TestCase):
             return {(i['begin'], i['end']) for i in source(4, profile=airborne, settled=settled).items if 'clusterId' in i}
         self.assertEqual(stretches(0), {(0, 2), (2, 4)})
         self.assertEqual(stretches(2), {(2, 4)})
+        # A conflict-driven obstacle a re-solve hit on a settled stretch gets its item there.
+        hit = source(4, profile=airborne, settled=2, obstacles=[[0, 0]])
+        self.assertEqual({(i['begin'], i['end']) for i in hit.items if 'clusterId' in i}, {(0, 2)})
 
     def test_conflict_driven_generator_enumerates_only_hit_obstacles(self):
         boxes = [(0., 0., -.2, 1., 3., .2), (0., 0., 4., 1., 3., 5.)]
@@ -330,13 +333,17 @@ class EncounterTests(unittest.TestCase):
         resumed = source(3, boxes=boxes, obstacles=[], state=json.loads(json.dumps(hit.state)))
         self.assertEqual(resumed.obstacles, [[0, 1]])
 
-    def test_a_hit_belongs_to_the_stretch_of_the_state_its_movement_ends_in(self):
-        # Landing at state 2: the movement from state 1 ends on the landing, the stretch from 2.
+    def test_a_hit_belongs_to_the_stretch_whose_encounter_sweeps_its_movement(self):
+        # Landing at state 2: the movement from state 1 ends on the landing and is swept by the stretch before it.
         airborne = dict(grounded=[False, False, True, False, False])
-        owner = source(4, profile=airborne, obstacles=[])
-        self.assertEqual((owner.obstacle_key(0, 0), owner.obstacle_key(0, 1), owner.obstacle_key(0, 3)),
-                         ([0, 0], [2, 0], [2, 0]))
-        self.assertIsNone(source(4, profile=airborne, obstacles=[], settled=2).obstacle_key(0, 0))
+        owner = source(4, profile=airborne, obstacles=[], magnitude=1., friction=0.)
+        self.assertEqual((owner.obstacle_key(0, 0), owner.obstacle_key(0, 1), owner.obstacle_key(0, 2),
+                          owner.obstacle_key(0, 3)), ([0, 0], [0, 0], [2, 0], [2, 0]))
+        hit = owner.with_obstacles([owner.obstacle_key(0, 1)])
+        item = next(i for i in hit.items if 'clusterId' in i)
+        hit.prepare_item(item)
+        self.assertIn(1, {p['at']//3 for p in item['phases']})
+        self.assertEqual(source(4, profile=airborne, obstacles=[], settled=2).obstacle_key(0, 0), [0, 0])
 
     def test_a_hit_obstacle_gets_the_passages_full_enumeration_gives_it(self):
         whole = list(source(4, magnitude=1., friction=0.))

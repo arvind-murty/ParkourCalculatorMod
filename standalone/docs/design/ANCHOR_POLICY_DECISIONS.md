@@ -311,7 +311,8 @@ time (user, 2026-11-19/20):
 
 - **Airtime** counts the jump input and the air inputs after it through the
   landing input: 12 for a flat jump, 3 for a jump under a ceiling 2 blocks above
-  the feet, 2 for a grind, slab boost or corner jump cancel. A run-off has no jump
+  the feet, 2 for a grind or slab boost, and for a corner jump cancel 2 onto a flush
+  ledge or the jump input plus the fall onto a lower one. A run-off has no jump
   input, so its airtime is its air inputs. (The comparison counts' A is different:
   air inputs only, with the jump input counted in J; a profile's `duration` counts
   all of its inputs, run ticks included.)
@@ -328,8 +329,9 @@ time (user, 2026-11-19/20):
   is kept (user, 2026-11-21).
 - **Candidates** come from `advantageous_candidates` (`search/anchors/policy.py`)
   without building anything: the launch tables (`face_table`, measured from every block of P's face) give the blocks and
-  undersides, vertical replays give each move's airtime A (A = 2 for slab boosts
-  and corner jump cancels; a ceiling or grind A is the earliest descent through any
+  undersides, vertical replays give each move's airtime A (A = 2 for slab boosts;
+  a corner jump cancel's is its fastest landing on a ledge past one of the block's
+  convex corners; a ceiling or grind A is the earliest descent through any
   landing top of the launch table, a lower bound since it ignores where the player
   can be after the hit). There are three kinds (user, 2026-11-20):
   1. **Advantageous jump**: k same-face run ticks then the jump, built while
@@ -385,33 +387,48 @@ minimum run ticks for hard jumps (`run_bound`, O7), which is unchanged.
 Turnaround decisions generate run ticks as before and still prefer them
 (`(T,-J,A)`). `searchPolicyVersion` 17 carried this, the decision objectives, O10 and O11; 18 adds the
 same-tick arrival exemption of the departed-owner audit (O6, above); 19 makes visits, the launch tables and the
-candidate keys face-based (O6), with `HARD_JUMP_POLICY_VERSION` 5 for the latch that reads those visits.
+candidate keys face-based (O6), with `HARD_JUMP_POLICY_VERSION` 5 for the latch that reads those visits; 20 widens
+O10 to every generated move; 21 takes a corner jump cancel's airtime from its ledges; 22 holds the other sides of
+steps and slab boosts behind their forward side (O12).
 
-## O10 — No backward ceiling hits or grinds at ordinary decisions
+## O10 — No backward moves at ordinary decisions
 
-**Settled (user, 2026-11-21):** an ordinary decision (not a turnaround) generates no
-ceiling hit or grind that sends the player backwards along its guide leg; turnarounds
-are where backward moves belong (O5, O7). The DFS gives the generator context the
-decision's validated point, the unit direction of its current guide leg (the span's
-guide point to the next, horizontal) and the turnaround margin (0.3 blocks). A leg of
-zero horizontal length gives no direction and no filter. The ceiling generator
-(`open_ceiling_choices`, `movement/ceiling_generation.py`) then skips:
+**Settled (user, 2026-11-21; widened to every generated move 2026-11-22):** an ordinary
+decision (not a turnaround) generates no move that makes backward progress along its
+guide leg; turnarounds are where backward moves belong (O5, O7). The DFS gives the
+generator context the decision's validated point, the moves its current guide leg (the
+span's guide point to the next, horizontal) allows, and the turnaround margin (0.3
+blocks). A leg of zero horizontal length gives no filter.
 
-- a **ceiling hit or grind behind the decision**: its contact's player-centre regions,
-  clipped to the reachable envelope at the contact input, end more than the margin
-  behind the decision point along the leg (`behind_decision`,
-  `reachability/service.py`). Real11's ceiling hit under B22 from B11 (the B7→B20 leg
-  runs +X+Z, B22 lies at the B11 landing's −Z edge) is one;
-- a **grind entered against the leg**: a grind starts outside one exposed face of the
-  low ceiling and enters under it on the jump tick, so entering from a face whose
-  outward axis points along the leg moves backwards on that axis (`entry_backward`).
-  With a leg running +X+Z, grinds entered from X+ or Z+ are skipped; along a leg that
-  is exactly axis-aligned, the two side faces are kept.
+The allowed moves come from the leg's direction class (`leg_class`,
+`spatial/anchor_guides.py`, shared with O11; its one knob is `AXIS_LEG_DEGREES`, 22.5°).
+Within 22.5° of an axis the leg is that axis and allows moving forward and both ways
+sideways, so only straight back is disallowed; otherwise it is its quadrant's diagonal
+and allows only its two forward axis directions. This is a heuristic for when the
+landing is not known; run-off avoidance, which knows its landing, keeps its own
+beyond-on-both-axes test (`walk_off_faces`, `constraints/contacts.py`).
+
+A generated choice is skipped, or loses the rectangles concerned, for:
+
+- **a region behind the decision**: a rectangle the move must reach (a landing, lower
+  landing, step or flight-case top, ceiling underside or grind underside), clipped to the
+  reachable envelope at its input, that lies more than the margin beyond the decision
+  point in a disallowed direction (`behind_decision`, `reachability/service.py`). The
+  check runs in `reachable_option` (`movement/contact_combinations.py`), which every
+  region-carrying generator already calls, so a behind rectangle is dropped like an
+  unreachable one and a move goes only when none is left;
+- **an entry by a disallowed move**: a move that crosses a block's side, or contacts
+  a side wall, from outside it moves against that side's outward axis
+  (`entry_backward`). It covers grinds (`movement/ceiling_generation.py`), normal steps,
+  slab boosts, blip-ups, corner jump cancels, corner blips and corner blip-ups (`movement/stepping.py`;
+  corner rows cross the X side and only pass the Z side). A blip's wall avoidance rows are
+  not entries.
 
 Both skips are logged with the generators' reachability exclusions (reasons
 `behind_decision_point` and `entry_against_guide`), so the solve report lists them per
 frame. Run-tick bases and the peeked children of `landings_of` use their decision's
-point and leg, so minimum-run candidates are filtered the same way.
+point and leg, so minimum-run candidates are filtered the same way. Run ticks are not
+generated moves and are not filtered. `searchPolicyVersion` 20 carries the widening.
 
 ## O11 — Jumps back onto the launch face must fit it
 
@@ -426,7 +443,7 @@ it is natural; on B4 the natural jump overshoots, and landing back needs braking
 the B4 hop waits while the 3-run-tick jump onto B5 lives.
 
 A program stands on the merged top faces, at its feet, named by the face it last visited
-(`launch`: landing contacts and case events, so a blip-up or corner blip-up that sets no
+(`launch`: landing contacts and case events, so a blip-up or corner blip(-up) that sets no
 `terminalSupport` counts). P's launch face is the one of those nearest its validated
 position; with none (feet on no top with that name, or a ladder tick) nothing is held.
 A child of P lands back on it when it jumps on its first input and every landing
@@ -437,9 +454,9 @@ is unknown.
 Minimum-run candidates (O9) keep their own reserves and are not tested. The test
 (`same_face_fit`, `search/anchors/policy.py`):
 
-- **Direction:** the unit horizontal direction d of P's current guide leg (the leg O10
-  uses). Within 22.5° of an axis it is that axis; otherwise it is the diagonal of its
-  quadrant. A leg of zero length gives no test.
+- **Direction:** the heading of the direction class of P's current guide leg d (the class
+  O10 uses, `leg_class`): within 22.5° of an axis it is that axis; otherwise it is the
+  diagonal of its quadrant. A leg of zero length gives no test.
 - **Room R:** from P's validated position to the face's farthest corner along that
   direction. In Real11, B12's face is only 0.4 deep (z −1091.7 to −1091.3) because the
   higher B11 and B13A wall it in.
@@ -456,6 +473,52 @@ Each held jump is logged in `minimumRunCandidates` (key `["same_face", <face
 name>]`) with outcome `held` (or `queued`), its room and its jump. Restoring it
 earlier, once the run ticks spent below P reach its airtime, is deferred
 ([S9](../DEFERRED_WORK.md)).
+
+## O12 — Other sides of a step or slab boost wait for the forward side
+
+**Settled (user, 2026-11-22):** a normal step or slab boost onto a block is generated once
+per exposed side its decision allows (O10). The side the decision faces moves forward over
+the block; entering another side gains only distance, and needs moving one way then back.
+So the forward side is queued as usual and the others are held until it is limited.
+Grinds, stair boosts, blips, blip-ups and corner cases are unchanged: an edge grind or
+stair boost is a real option.
+
+- **Move and sides** (`side_variants`, `movement/stepping.py`): one move is a case onto one
+  merged face with one set of top and ceiling-clearance rows; its sides differ only in
+  their `case:outside` row. A side is **forward** when the decision point already
+  satisfies that row. A move with a forward side and at least one other side tags each
+  choice `sideVariant` (`forward`, the row, the case, face and side). A move without a
+  forward side (it is covered, or O10 dropped it) or with one side is not tagged.
+- **Hold** (`queue_child`, `search/frontier.py`): at the end of the expansion
+  (`hold_sides`) a move's other sides are reserved behind its queued forward nodes
+  (`state['sideReserves']`, one per parent program and move). They are queued at once
+  when no forward was queued (screened, or already queued elsewhere), when a forward is
+  complete (it lands on the goal and has no node solve) or when the search has no node
+  solves.
+- **Forward outcome** (`side_outcome`, `search/dfs.py`): once the forward node is fully
+  solved, its kept solution's distance from its own row at the take-off is read; within
+  1e-3 (`SIDE_SLACK`) it is `tight`, else `slack`. A node that is not solved (solve
+  interval) counts as tight. An oracle-rejected, exhausted or deferred (numerically
+  unknown) node, or one dropped when taken from the queue, has failed.
+- **Promote or reserve**: once every forward of the move has an outcome, its sides are
+  queued when none is slack. Otherwise each is held like a node's alternatives
+  (`state['alternatives']`, watching the slack forwards and their held node alternatives):
+  restored once those branches died, never below a validated group-end arrival, with
+  deferred nodes counted live.
+- **Run ticks**: a held side counts live in `restore_alternatives`, so a run-tick reserve
+  or held jump watching it, or its decision, waits until the side variants are exhausted.
+  A held side otherwise counts as a queued child of its decision: its landings set N and
+  it can beat run-tick candidates (O9).
+
+Why a slack forward may wait: the forward and another side are the same program but for
+one row, so for the convex disk relaxation of one avoidance family, a forward whose row is
+inactive has the optimum of the program with neither row, which bounds the other side's
+node objective. The node keeps the best of several families and the bound covers the
+node, not its subtree; restoring when the forward's branch dies covers the subtree.
+
+Each held side is logged in `state['sideVariants']` (its decision, case, face, side,
+forwards, their outcomes and its alternative entry); the solve report lists them under the
+decision's expansion.
 
 ## Settled versus remaining implementation choices
 

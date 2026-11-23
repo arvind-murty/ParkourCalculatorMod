@@ -173,7 +173,7 @@ class BookkeepingProfileTests(unittest.TestCase):
         self.assertEqual(len(runtime.buckets), 3)
 
     def test_stop_report_links_unknown_requests_to_live_routes(self):
-        from tools.profiling.trace import request_owners, stop_report
+        from tools.profiling.trace import counted_as, request_owners, stop_report
         def record(name, status, node, attempts, unresolved=()):
             return dict(id=name, status=status, nodeFeasibility=dict(status=node),
                         program=dict(repairState=dict(attemptLog=[dict(problemHash=h) for h in attempts],
@@ -186,7 +186,8 @@ class BookkeepingProfileTests(unittest.TestCase):
         owners = request_owners(state)
         requests = [dict(index=1, fingerprint='h1', status='unknown', workerStatus='Infeasible_Problem_Detected'),
                     dict(index=2, fingerprint='h3', status='unknown', workerStatus='Infeasible_Problem_Detected'),
-                    dict(index=3, fingerprint='h4', status='feasible')]
+                    dict(index=3, fingerprint='h4', status='feasible'),
+                    dict(index=4, fingerprint='h5', status='unknown', backend='clarabel', workerStatus='NumericalError')]
         for request in requests:
             request['owners'] = owners.get(request['fingerprint'], [])
         report = stop_report(state, requests)
@@ -194,8 +195,10 @@ class BookkeepingProfileTests(unittest.TestCase):
                                                           pendingBranches=0, deferredNodes=0)])
         self.assertEqual([r['record'] for r in report['oracleRejectedRoutes']], ['a'])
         self.assertEqual([(r['index'], [o['record'] for o in r['owners']]) for r in report['unknownRequests']],
-                         [(1, ['a']), (2, ['b'])])
+                         [(1, ['a']), (2, ['b']), (4, [])])
         self.assertEqual(requests[2]['owners'], [])
+        # Every unsolved Clarabel request is an infeasible verdict, whatever its status.
+        self.assertEqual(counted_as(report['unknownRequests'][2]), 'infeasible (disk relaxation)')
 
     def test_alternatives_without_a_solution_name_the_check_that_proved_them_infeasible(self):
         from tools.profiling.trace import alternative_outcome, repair_trace, solve_text
@@ -295,12 +298,11 @@ class BookkeepingProfileTests(unittest.TestCase):
                          ('p', [dict(avoid, t2=2)], True))
         from tools.profiling.trace import render, stop_report
         requests = [dict(index=1, fingerprint='h1', status='feasible', workerStatus='Solve_Succeeded', seconds=.25)]
-        relaxation = dict(screen=dict(solved=5, cacheHits=4, infeasible=1, undecided=1), candidate=dict(solved=7))
+        relaxation = dict(screen=dict(solved=5, cacheHits=4, infeasible=1), candidate=dict(solved=7))
         report = dict(result=dict(best=None, termination='exhausted', elapsedSeconds=1., work=dict(solverCalls=1, workerLaunches=1),
                                   expandedPrefixes=2, searchState=state, interactionGate=dict(relaxation=relaxation)))
         markdown = render(report, requests, list(routes.values()), stop_report(state, requests), {})
-        self.assertIn('Disk-relaxation pre-checks: 5 solved (4 more from cache), 1 proved infeasible, 1 undecided by '
-                      'Clarabel and counted as not ruled out.', markdown)
+        self.assertIn('Disk-relaxation pre-checks: 5 solved (4 more from cache), 1 proved infeasible.', markdown)
         self.assertIn('- Frame 0 → B2: 2 routes (2 feasible)\n  - Frame 1 → B3: 1 route (1 feasible), from route 0.1 (lands B2 t3)', markdown)
         self.assertIn('#### Movement: jumps at t0; lands B2 t3; no ceiling hit', markdown)
         self.assertIn('| 0.2 | feasible | 4 | -2.000 | no obstacle in reach | Z ≤ -2.000 at t2 |', markdown)
@@ -337,7 +339,14 @@ class BookkeepingProfileTests(unittest.TestCase):
                             pending=[dict(needsNodeSolve=True, decisionParent='reserve')], exclusions=[
             dict(node='a', proof=dict(reason='search_policy')), dict(node='root', proof=dict(reason='disk_control_relaxation_infeasible'))],
             minimumRunCandidates=[dict(node='root', key='["ceiling", "b3"]', k=1, total=9, N=12, outcome='kept', nodes=['a']),
-                                  dict(node='a', key='["step", "b2"]', k=None, total=None, N=None, outcome='unreached', nodes=[])])
+                                  dict(node='a', key='["step", "b2"]', k=None, total=None, N=None, outcome='unreached', nodes=[])],
+            # Node a's held side variants: one restored behind its slack forward b, one promoted, one still waiting.
+            sideVariants=[dict(node='a', child='s1', case='slab_boost', face='b2', side='X-', forwards=[['b', 'Z-']],
+                               outcomes=dict(b='slack'), alternative='held'),
+                          dict(node='a', child='s2', case='normal_step', face='b2', side='X+', forwards=[['b', 'Z-'], ['x', 'X-']],
+                               outcomes=dict(b='tight', x='failed')),
+                          dict(node='a', child='s3', case='slab_boost', face='b2', side='X+', forwards=[['b', 'Z-']])],
+            alternatives=dict(held=dict(programs=[dict(decisionNode='s1')], restored=['s1'], next=1, watch=['b'], side=['b'])))
         frame = dict(id=3, goal=dict(block='b2'), parents=[dict(decisionNode='root')], goalRequest=dict(afterTick=0), records=[],
                      generation=dict(generated=9, screenedPrefixes=1, policyRejections=2, totalExpandedPrefixes=2,
                                      continuation=continuation))
@@ -365,7 +374,33 @@ class BookkeepingProfileTests(unittest.TestCase):
         self.assertIn('Solved children: node 3.2.\nChildren queued but not yet solved: 0.\nChildren pruned when generated: 1 '
                       'search policy (time, hard-anchor latch '
                       'or minimum-run bound).\nMinimum run ticks: no run count below the bound passed the screens: step-up '
-                      'onto B2.', markdown)
+                      'onto B2.\n\nSide variants:\n\n- slab boost onto B2 from its X- side: reserved behind node 3.2 (its Z- '
+                      "side row was slack); restored: node 3.2's branch died.\n- normal step onto B2 from its X+ side: promoted: "
+                      "node 3.2's Z- side row was tight, an unsolved node failed.\n\n", markdown)
+
+    def test_case_steps_name_their_faces_and_wall_hits_their_face(self):
+        from tools.profiling.trace import steps
+        lower, higher, low = [0, 6, 0, 1, 6.5, 1], [0, 6, 1, 1, 7, 2], [0, 0, 0, 1, 6, 1]
+        names = {tuple(lower): 'b13a', tuple(higher): 'b13b', tuple(low): 'b12'}
+        def row(name, t, mode, cmp):
+            return dict(name=name, t1=t, mode=mode, cmp=cmp, rhs=0.)
+        def text(cases, rows, events=()):
+            return steps(dict(jump=[False]*4, caseEvents=cases, positionConstraints=rows, contactEvents=list(events)), 0, names)
+        blip = dict(case='blip', input=2, boxes=[higher], lowerBoxes=[lower])
+        self.assertEqual(text([blip], [row('blip:wall_avoid', 2, 'Z', 'LE')]),
+                         'lands on B13A and blips onto B13B t2 from its Z- side')
+        # A wall hit names the face it meets: moving +Z meets the Z- face.
+        hit = dict(offset=1, axis='Z', direction=1, boxes=[higher], role='contact')
+        self.assertEqual(text([], [], [hit]), "hits B13B's Z- face t1")
+        slab = dict(case='slab_boost', input=1, boxes=[higher])
+        self.assertEqual(text([slab], [row('case:outside', 1, 'X', 'GE')]), 'slab boost onto B13B t1 from its X+ side')
+        self.assertEqual(text([slab], [row('case:outside', 1, 'X', 'GE'), row('ceiling_clear:b10+b9a', 1, 'X', 'GE')]),
+                         'slab boost onto B13B t1 from its X+ side, keeping to the X+ side of ceiling B10+B9A')
+        # A corner case passes the corner (X side before it, Z side after) and ends beside the block.
+        corner = dict(case='corner_blip_up', input=2, boxes=[higher], lowerBoxes=[low])
+        self.assertEqual(text([corner], [row('case:outside', 2, 'X', 'LE'), row('case:outside', 3, 'Z', 'LE'),
+                                         row('case:cross_x', 3, 'X', 'GE')]),
+                         "lands on B12 and corner blips up past B13B's X-Z- corner t2")
 
     def test_contact_region_items_and_chosen_rectangles_are_named(self):
         import json
@@ -418,7 +453,7 @@ class EnumerationProfileTests(unittest.TestCase):
         from parkour_solver.reachability.intervals import reachable_envelopes
         model=dict(ticks=4,position=[-1.,0.],velocity=[0.,0.],magnitude=[1.]*4,friction=[.9]*4,walls=[])
         return ConstraintVariants(dict(passageCaps=dict(horizontal=2,vertical=2,total=3),
-            supportClearance=0.,contactEvents=[]),dict(position=[1.]*5),
+            contactEvents=[]),dict(position=[1.]*5),
             dict(events=[dict(jump=0,runTicks=0)]),dict(solids=[[0.,0.,-.2,1.,3.,.2]]),
             reachable_envelopes(model,[1.]*5),dict(through=4,solidIndices=[0]),state=state)
 
