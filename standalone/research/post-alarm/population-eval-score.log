@@ -1,0 +1,13 @@
+
+development: 184 feasible, 17 infeasible, 1 undecided
+| config | answered | within 1e-3 | within 1e-2 | > 1e-2 below (requests) | above best full-strength by > 1e-3 | answers on infeasible | mean / median / p90 ms | under 50 ms | IPOPT calls (requests calling) | production estimate mean ms | worker estimate mean ms | persistent-worker estimate mean ms | changed vs first |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| pipeline | 184 | 67 | 184 | 0 () | 1 (max 0.0014) | 0 | 35 / 9 / 54 | 90% | 28 (19) | 82 | 52 | 35 | 0 |
+  undecided 3.344 {'pipeline': 'none'}
+
+held-out: 157 feasible, 10 infeasible, 2 undecided
+| config | answered | within 1e-3 | within 1e-2 | > 1e-2 below (requests) | above best full-strength by > 1e-3 | answers on infeasible | mean / median / p90 ms | under 50 ms | IPOPT calls (requests calling) | production estimate mean ms | worker estimate mean ms | persistent-worker estimate mean ms | changed vs first |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| pipeline | 157 | 59 | 157 | 0 () | 2 (max 0.0028) | 0 | 35 / 9 / 49 | 91% | 18 (12) | 71 | 48 | 35 | 0 |
+  undecided 3.744 {'pipeline': 'quadrant'}
+  undecided 3.1060 {'pipeline': 'quadrant'}

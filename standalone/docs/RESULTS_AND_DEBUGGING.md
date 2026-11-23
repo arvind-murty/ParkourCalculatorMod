@@ -63,7 +63,9 @@ incumbent stays in `searchState.dfs.best`, and `provisionalBest` (ticks,
 objective, model) appears whenever the published route differs from it.
 `finalization` lists the attempts and stage. In `work`, `workerLaunches` and
 `feasibleSeedReturns` count interim IPOPT only; `conicCandidates`,
-`relaxedFallbacks` (and `relaxedFallback:unsupported`) describe relaxed requests, and
+`relaxedFallbacks` (and `relaxedFallback:unsupported`) describe relaxed requests,
+`confirmations`, `confirmationIpoptCalls` and `confirmationClarabelSolves` the
+answers to alarms, and
 `finalizationIpoptCalls` the finalization's worker launches. The solve report
 labels each request's status with its solver and adds a `Finalization` row.
 

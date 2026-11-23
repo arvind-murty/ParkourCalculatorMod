@@ -87,7 +87,9 @@ class ModelTests(unittest.TestCase):
     def test_malformed_requests_fail_before_starting_worker(self):
         mutations = [('ticks', True), ('magnitude', [-1, 0]), ('friction', [1.1, 0.5]),
                      ('threshold', -0.1), ('walls', 'wrong'), ('contacts', [None]), ('seconds', float('inf')),
-                     ('fallbackYaw', [0]), ('fallbackYaw', [0, float('nan')])]
+                     ('fallbackYaw', [0]), ('fallbackYaw', [0, float('nan')]), ('warmYaw', []), ('warmYaw', [0, 0, 0]),
+                     ('stateSeed', dict(positions=[[0, 0]]*3)), ('stateSeed', dict(positions=[[0, 0]]*2, velocities=[[0, 0]]*3)),
+                     ('ipoptMuInit', 0.)]
         for key, value in mutations:
             request = problem()
             request[key] = value
@@ -100,7 +102,9 @@ class ModelTests(unittest.TestCase):
         ready = prepare(original)
         self.assertEqual(original, snapshot)
         other = copy.deepcopy(ready)
-        other.update(seconds=8, yaw=[20, 30], fallbackYaw=[10, 15], stopOnFeasible=True)
+        other.update(seconds=8, yaw=[20, 30], fallbackYaw=[10, 15], stopOnFeasible=True, warmYaw=[20],
+                     stateSeed=dict(positions=[[0, 0]]*3, velocities=[[0, 0]]*3), ipoptMuInit=1e-6)
+        prepare(other)
         self.assertEqual(fingerprint(ready), fingerprint(other))
         other['threshold'] = 0.005
         self.assertNotEqual(fingerprint(ready), fingerprint(other))

@@ -115,7 +115,11 @@ def fixed_phase(problem, yaw, pattern, seconds, stop, on_candidate, kind, seed_n
     started = time.monotonic()
     pattern = np.array(pattern, dtype=int)
     n = problem['ticks']
-    seed_p, seed_v, _ = forward(problem, yaw, problem['threshold'], pattern, caps)
+    if 'stateSeed' in problem and (kind, seed_name, attempt) == ('carry', 'initial', 0):
+        # The request's first phase starts from the given states instead of full-strength ones (post-alarm polish).
+        seed_p, seed_v = np.array(problem['stateSeed']['positions']), np.array(problem['stateSeed']['velocities'])
+    else:
+        seed_p, seed_v, _ = forward(problem, yaw, problem['threshold'], pattern, caps)
     ladder = problem.get('ladderTicks', [False] * (n + 1))
     variables, initial, rows, lower, upper = [], [], [], [], []
     contacts = {(c['state'], c['axis']): c for c in problem['contacts']}
@@ -226,7 +230,7 @@ def fixed_phase(problem, yaw, pattern, seconds, stop, on_candidate, kind, seed_n
         'ipopt.print_level': 0, 'ipopt.sb': 'yes', 'ipopt.max_wall_time': max(0.01, seconds),
         'ipopt.max_iter': problem.get('maxIterations', 10000), 'ipopt.tol': 1e-9, 'ipopt.constr_viol_tol': 1e-9,
         'ipopt.acceptable_tol': 1e-8, 'ipopt.acceptable_constr_viol_tol': 1e-9,
-        'ipopt.bound_relax_factor': 0.0})
+        'ipopt.bound_relax_factor': 0.0, **({'ipopt.mu_init': problem['ipoptMuInit']} if 'ipoptMuInit' in problem else {})})
     solution = solver(x0=initial, lbg=lower, ubg=upper)
     monitor.record(solution['x'], solution['g'], float(solution['f']))
     stats = solver.stats()

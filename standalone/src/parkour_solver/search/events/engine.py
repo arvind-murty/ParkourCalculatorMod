@@ -17,7 +17,7 @@ from parkour_solver.search.work import SearchWork
 
 # Per-session work counters the event report sums across allocation sessions.
 NUMERICAL_COUNTS = ('workerLaunches', 'feasibleSeedReturns', 'conicCandidates', 'relaxedFallbacks',
-                    'confirmations', 'confirmationIpoptCalls', 'materialGaps')
+                    'confirmations', 'confirmationIpoptCalls', 'confirmationClarabelSolves', 'materialGaps')
 
 
 def discovery_settings(settings=None):
@@ -59,7 +59,9 @@ def search_event_routes(request, compiler, *, task_goal=None, discovery=None, an
         task=task,roots=roots,filter=getattr(policy,'checkpoint_identity',None),
         minimumRuns=options['minimum_run_pruning'],
         domain={k:v for k,v in cfg.items() if k not in
-            ('maxPrefixes','maxQueuedPrefixes','maxChoicesPerType','expansionsPerProposal')}))
+            ('maxPrefixes','maxQueuedPrefixes','maxChoicesPerType','expansionsPerProposal')},
+        # Only a non-default answer to alarms enters the identity, so existing continuations keep theirs.
+        **({} if options['post_alarm']=='ipopt' else dict(postAlarm=options['post_alarm']))))
     schema=2
     if saved is not None and (saved.get('schema')!=schema or saved.get('kind')!='event_route_search' or saved.get('context')!=context):
         raise ValueError('Incompatible automatic event continuation; cell-walk/schema6 states require their source-era runner')
@@ -111,7 +113,8 @@ def search_event_routes(request, compiler, *, task_goal=None, discovery=None, an
             candidate_seconds=options['candidate_seconds'],
             score_seconds=options['seconds'],batch_size=options['max_candidates'],
             python_executable=options.get('python_executable'),cancel_event=options.get('cancel_event'),
-            minimum_run_pruning=options['minimum_run_pruning'],numerical_backend='relaxed',_owned_state=True,**extra)
+            minimum_run_pruning=options['minimum_run_pruning'],
+            numerical_backend='relaxed' if options['post_alarm']=='ipopt' else 'relaxed_pipeline',_owned_state=True,**extra)
     while time.monotonic()<search_deadline and calls<options['max_solver_calls'] and expanded<cfg['maxPrefixes']:
         if options.get('cancel_event') is not None and options['cancel_event'].is_set():
             termination='cancelled';break

@@ -238,6 +238,7 @@ class AnchorSearchTests(unittest.TestCase):
         relaxed=invoke('relaxed')
         self.assertTrue(invoke('relaxed',relaxed['repairState'])['repairResume']['compatible'])
         self.assertFalse(invoke('ipopt',relaxed['repairState'])['repairResume']['compatible'])
+        self.assertFalse(invoke('relaxed_pipeline',relaxed['repairState'])['repairResume']['compatible'])
         with self.assertRaises(ValueError):
             policy_spec(dict(numerical='gurobi'))
 
@@ -762,6 +763,24 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
         self.assertNotIn('model', result['best']['candidate'])
         with PythonCompiler() as compiler:
             self.assertTrue(replay_witness(prepare_scene(result['effectiveRequest']), result['best'], compiler)['passed'])
+
+    def test_the_post_alarm_pipeline_answers_alarms_with_clarabel(self):
+        from parkour_solver.bridge.python_compiler import PythonCompiler
+        from parkour_solver.scene.normalize import prepare_scene
+        from parkour_solver.validation.witness import replay_witness
+        scene, result, _ = self.search(post_alarm='pipeline')
+        work = result['work']
+        self.assertGreater(work['confirmations'], 0)
+        self.assertGreater(work['confirmationClarabelSolves'], 0)
+        self.assertEqual((work['confirmationIpoptCalls'], work['workerLaunches']), (0, 0))
+        self.assertNotIn('model', result['best']['candidate'])
+        with PythonCompiler() as compiler:
+            self.assertTrue(replay_witness(prepare_scene(result['effectiveRequest']), result['best'], compiler)['passed'])
+        # The answer to alarms is part of the run's identity: a run never resumes under the other one.
+        with self.assertRaises(ValueError):
+            self.search(resume_state=result['searchState'])
+        with self.assertRaises(ValueError):
+            self.search(post_alarm='race')
 
     def test_search_runs_on_the_relaxation_and_publishes_one_physical_finalization(self):
         from parkour_solver.bridge.python_compiler import PythonCompiler

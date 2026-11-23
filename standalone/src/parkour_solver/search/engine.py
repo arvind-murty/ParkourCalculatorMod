@@ -141,9 +141,10 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, s
         if hasattr(scoped_adapter,'constraint_guards') else None)
     mark('eligibilityAndVariantConstruction')
     dispatch = None
-    if policy['numerical'] == 'relaxed':
+    if policy['numerical'] in ('relaxed', 'relaxed_pipeline'):
         from parkour_solver.numerics.disk import RelaxedDispatch
-        dispatch = RelaxedDispatch(gate=service)
+        dispatch = RelaxedDispatch(gate=service,
+                                   post_alarm='pipeline' if policy['numerical'] == 'relaxed_pipeline' else 'ipopt')
     # Finalization re-solves a relaxed witness's own branch route with IPOPT.
     result = solve_contact_branches(route if final_route is None else final_route, profiles, checks,
         compiler, seconds=seconds, candidate_seconds=candidate_seconds, retries=0,
@@ -189,7 +190,9 @@ def numerical_counts(diagnostics):
         counts['conicCandidates'] += not ipopt and d.get('status') == 'feasible'
         if confirmation is not None:
             counts['confirmations'] += 1
-            counts['confirmationIpoptCalls'] += not confirmation['cached']
+            # A pipeline confirmation counts its own IPOPT calls (none when cached); an IPOPT one is one call.
+            counts['confirmationIpoptCalls'] += confirmation.get('ipoptCalls', not confirmation['cached'])
+            counts['confirmationClarabelSolves'] += confirmation.get('clarabelSolves', 0)
             counts['materialGaps'] += confirmation['material']
         if d.get('fallback'):
             counts['relaxedFallbacks'] += 1
@@ -200,9 +203,14 @@ def numerical_counts(diagnostics):
 def find_checkpoint_route(request, compiler, *, seconds=30, candidate_seconds=1, max_solver_calls=128,
                           max_candidates=24, python_executable=None, cancel_event=None, initial_programs=None,
                           program_filter=None, resume_state=None, on_progress=None, retry_unknown=False,
-                          minimum_run_pruning=True, task_goal=None, discovery_settings=None, anchor_search=None):
-    """Anchor search for a physical landing task over the scene's automatically discovered contact events."""
+                          minimum_run_pruning=True, task_goal=None, discovery_settings=None, anchor_search=None,
+                          post_alarm='ipopt'):
+    """Anchor search for a physical landing task over the scene's automatically discovered contact events.
+
+    `post_alarm` answers alarmed relaxed optima with an IPOPT confirmation ('ipopt') or the post-alarm pipeline
+    ('pipeline', numerics/post_alarm.py)."""
     if type(minimum_run_pruning) is not bool:raise ValueError('minimum_run_pruning must be boolean')
+    if post_alarm not in ('ipopt', 'pipeline'):raise ValueError('post_alarm must be ipopt or pipeline')
     started = time.monotonic()
     for name, value in [('seconds', seconds), ('candidate_seconds', candidate_seconds)]:
         if number(value, name) <= 0:
@@ -231,6 +239,6 @@ def find_checkpoint_route(request, compiler, *, seconds=30, candidate_seconds=1,
             max_solver_calls=max_solver_calls, max_candidates=max_candidates, python_executable=python_executable,
             cancel_event=cancel_event, initial_programs=initial_programs, program_filter=program_filter,
             resume_state=resume_state, on_progress=on_progress, retry_unknown=retry_unknown,
-            minimum_run_pruning=minimum_run_pruning)
+            minimum_run_pruning=minimum_run_pruning, post_alarm=post_alarm)
     except TimeoutError as error:
         return unfinished(str(error))

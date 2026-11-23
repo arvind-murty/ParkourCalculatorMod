@@ -479,27 +479,55 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | --- | ---: | --- |
 | `spec` | [38](../src/parkour_solver/numerics/disk.py#L38) | function |
 | `solve` | [67](../src/parkour_solver/numerics/disk.py#L67) | function |
-| `screen` | [88](../src/parkour_solver/numerics/disk.py#L88) | function |
-| `deficits` | [101](../src/parkour_solver/numerics/disk.py#L101) | function |
-| `ipopt_seed` | [108](../src/parkour_solver/numerics/disk.py#L108) | function |
-| `alarm_ticks` | [120](../src/parkour_solver/numerics/disk.py#L120) | function |
-| `RelaxedDispatch` | [131](../src/parkour_solver/numerics/disk.py#L131) | class |
-| `RelaxedDispatch.__init__` | [143](../src/parkour_solver/numerics/disk.py#L143) | function |
-| `RelaxedDispatch.solve` | [146](../src/parkour_solver/numerics/disk.py#L146) | function |
-| `RelaxedDispatch.confirmed` | [149](../src/parkour_solver/numerics/disk.py#L149) | function |
-| `RelaxedDispatch._dispatch` | [152](../src/parkour_solver/numerics/disk.py#L152) | function |
-| `RelaxedDispatch.confirm` | [188](../src/parkour_solver/numerics/disk.py#L188) | function |
-| `_result` | [215](../src/parkour_solver/numerics/disk.py#L215) | function |
-| `_attempt` | [231](../src/parkour_solver/numerics/disk.py#L231) | function |
-| `_solve` | [239](../src/parkour_solver/numerics/disk.py#L239) | function |
-| `_cost` | [342](../src/parkour_solver/numerics/disk.py#L342) | function |
+| `decide` | [84](../src/parkour_solver/numerics/disk.py#L84) | function |
+| `screen` | [98](../src/parkour_solver/numerics/disk.py#L98) | function |
+| `deficits` | [111](../src/parkour_solver/numerics/disk.py#L111) | function |
+| `ipopt_seed` | [118](../src/parkour_solver/numerics/disk.py#L118) | function |
+| `alarm_ticks` | [130](../src/parkour_solver/numerics/disk.py#L130) | function |
+| `RelaxedDispatch` | [141](../src/parkour_solver/numerics/disk.py#L141) | class |
+| `RelaxedDispatch.__init__` | [154](../src/parkour_solver/numerics/disk.py#L154) | function |
+| `RelaxedDispatch.solve` | [160](../src/parkour_solver/numerics/disk.py#L160) | function |
+| `RelaxedDispatch.confirmed` | [163](../src/parkour_solver/numerics/disk.py#L163) | function |
+| `RelaxedDispatch._dispatch` | [166](../src/parkour_solver/numerics/disk.py#L166) | function |
+| `RelaxedDispatch.confirm` | [202](../src/parkour_solver/numerics/disk.py#L202) | function |
+| `_result` | [244](../src/parkour_solver/numerics/disk.py#L244) | function |
+| `_attempt` | [260](../src/parkour_solver/numerics/disk.py#L260) | function |
+| `_build` | [269](../src/parkour_solver/numerics/disk.py#L269) | function |
+| `_run` | [375](../src/parkour_solver/numerics/disk.py#L375) | function |
+| `_cost` | [395](../src/parkour_solver/numerics/disk.py#L395) | function |
 
 ## numerics/model.py
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
 | `prepare` | [7](../src/parkour_solver/numerics/model.py#L7) | function |
-| `fingerprint` | [187](../src/parkour_solver/numerics/model.py#L187) | function |
+| `fingerprint` | [208](../src/parkour_solver/numerics/model.py#L208) | function |
+
+## numerics/post_alarm.py
+
+| Symbol | Line | Kind |
+| --- | ---: | --- |
+| `_Stop` | [31](../src/parkour_solver/numerics/post_alarm.py#L31) | class |
+| `_Node` | [35](../src/parkour_solver/numerics/post_alarm.py#L35) | class |
+| `_Node.__init__` | [37](../src/parkour_solver/numerics/post_alarm.py#L37) | function |
+| `_Node.step` | [57](../src/parkour_solver/numerics/post_alarm.py#L57) | function |
+| `_Pipeline` | [75](../src/parkour_solver/numerics/post_alarm.py#L75) | class |
+| `_Pipeline.__init__` | [76](../src/parkour_solver/numerics/post_alarm.py#L76) | function |
+| `_Pipeline.check` | [91](../src/parkour_solver/numerics/post_alarm.py#L91) | function |
+| `_Pipeline.decide` | [97](../src/parkour_solver/numerics/post_alarm.py#L97) | function |
+| `_Pipeline.better` | [106](../src/parkour_solver/numerics/post_alarm.py#L106) | function |
+| `_Pipeline.accept` | [109](../src/parkour_solver/numerics/post_alarm.py#L109) | function |
+| `_Pipeline.push` | [125](../src/parkour_solver/numerics/post_alarm.py#L125) | function |
+| `_Pipeline.quadrant` | [157](../src/parkour_solver/numerics/post_alarm.py#L157) | function |
+| `_Pipeline.probes` | [178](../src/parkour_solver/numerics/post_alarm.py#L178) | function |
+| `_Pipeline.race` | [194](../src/parkour_solver/numerics/post_alarm.py#L194) | function |
+| `_Pipeline.ipopt_call` | [227](../src/parkour_solver/numerics/post_alarm.py#L227) | function |
+| `_Pipeline.answer` | [251](../src/parkour_solver/numerics/post_alarm.py#L251) | function |
+| `run` | [289](../src/parkour_solver/numerics/post_alarm.py#L289) | function |
+| `facings` | [320](../src/parkour_solver/numerics/post_alarm.py#L320) | function |
+| `states` | [325](../src/parkour_solver/numerics/post_alarm.py#L325) | function |
+| `sector_cuts` | [344](../src/parkour_solver/numerics/post_alarm.py#L344) | function |
+| `sector_children` | [350](../src/parkour_solver/numerics/post_alarm.py#L350) | function |
 
 ## numerics/solver.py
 
@@ -532,8 +560,8 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `Monitor.record` | [90](../src/parkour_solver/numerics/worker.py#L90) | function |
 | `Monitor.eval` | [107](../src/parkour_solver/numerics/worker.py#L107) | function |
 | `fixed_phase` | [114](../src/parkour_solver/numerics/worker.py#L114) | function |
-| `phase` | [243](../src/parkour_solver/numerics/worker.py#L243) | function |
-| `main` | [292](../src/parkour_solver/numerics/worker.py#L292) | function |
+| `phase` | [247](../src/parkour_solver/numerics/worker.py#L247) | function |
+| `main` | [296](../src/parkour_solver/numerics/worker.py#L296) | function |
 
 ## observability/turns.py
 
@@ -837,8 +865,8 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `ScopedWork.accepted` | [43](../src/parkour_solver/search/engine.py#L43) | function |
 | `segment_solids` | [47](../src/parkour_solver/search/engine.py#L47) | function |
 | `evaluate_program` | [61](../src/parkour_solver/search/engine.py#L61) | function |
-| `numerical_counts` | [180](../src/parkour_solver/search/engine.py#L180) | function |
-| `find_checkpoint_route` | [200](../src/parkour_solver/search/engine.py#L200) | function |
+| `numerical_counts` | [181](../src/parkour_solver/search/engine.py#L181) | function |
+| `find_checkpoint_route` | [203](../src/parkour_solver/search/engine.py#L203) | function |
 
 ## search/events/adapter.py
 
@@ -922,7 +950,7 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `search_allocations` | [14](../src/parkour_solver/search/ordered_route.py#L14) | function |
 | `derive_footprints` | [128](../src/parkour_solver/search/ordered_route.py#L128) | function |
 | `numerical_problem` | [145](../src/parkour_solver/search/ordered_route.py#L145) | function |
-| `find_route` | [163](../src/parkour_solver/search/ordered_route.py#L163) | function |
+| `find_route` | [166](../src/parkour_solver/search/ordered_route.py#L166) | function |
 
 ## search/ranking.py
 

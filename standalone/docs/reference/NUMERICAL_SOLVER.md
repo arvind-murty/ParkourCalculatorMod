@@ -226,6 +226,56 @@ A gap describes only its own request. Decided
 confirmations are cached per run in the interaction gate's cache by problem
 fingerprint. Search's use of it is in the
 [execution reference](../ANCHOR_SEARCH_EXECUTION_REFERENCE.md#numerical-backend-and-finalization).
+`RelaxedDispatch(gate=..., post_alarm='pipeline')` answers the alarm with the
+post-alarm pipeline below instead of that IPOPT call; `'ipopt'` is the default.
+
+### Post-alarm pipeline
+
+`numerics.post_alarm.run` answers an alarmed request with Clarabel first and IPOPT
+last. Every constant was measured on 371 alarmed requests
+([evidence](../../research/post-alarm/README.md)).
+
+1. Setup: the request's own disk solve gives the bound (its objective) and the disk
+   point; one more solve gives the central point (no objective). Push problems use
+   the exact disk `|a| <= magnitude`. Setup solves follow `disk.solve`'s limits
+   (`decide`); a limit the deadline cut short is no verdict.
+2. Push: up to `PUSH_CAP` (10) solves of `w*cost - sum_t y_t.a_t` updated through
+   `solver.update(q=...)`, from the central point (a child's warm prefix,
+   `warmYaw`, starts at full strength along the parent's facings). `w` starts at
+   0.3; after a full-strength step that follows another, `w` grows by 1.2 (to
+   1e3) and `y` moves on with momentum 0.5; a short step after one halves `w` and
+   returns `y` to the last full-strength point. A point is accepted when every
+   tick is full strength (shortfall below 1e-6) and `validate` passes, else when
+   every tick is at most 1% short and `validate_controls` passes (`model:
+   relaxed_disk`). The push stops within `G` (1e-2) of its bound, after a gain
+   below `G/10` over 3 steps, or at the cap.
+3. An accepted answer more than `G` below the bound gets up to 3 objective-cut
+   probes: the row objective >= answer + 1e-2 (MAX; <= answer - 1e-2 for MIN)
+   on a fresh problem, a 5-step push from its central point, and the next probe
+   only after a better answer. No IPOPT runs for an answered request.
+4. Without an answer: the sector check (7 solves) branches on the worst tick's
+   direction, 4 quadrants and then halves, each sector relaxed to its chord; all
+   sectors infeasible is a certificate (`quadrant_infeasible`). Then the reversal
+   race: each jump tick within 6 of an alarm tick gets the cut
+   `n.a_t >= 0.5 m_t` against the disk point's direction, 5 push steps, and the
+   best 2 are pushed again with cap 30. Then one IPOPT call from the production
+   seed (`ipopt_seed` of the disk facings) and one from the plain push's last
+   iterate (`stateSeed` = its exact-dynamics states, `ipoptMuInit` 1e-6), both
+   without `fallbackYaw`, `min(0.2 s, time left)` each on the kept-alive worker,
+   the parent waiting to the pipeline deadline (`grace`).
+
+The result has `solve`'s shape: `feasible` with the accepted candidate, `unknown`
+(`quadrant_infeasible`, `post_alarm_none`, `time_limit`) or `cancelled`;
+`termination` names the step that answered (`post_alarm_push`, `_probe`,
+`_race`, `_prod_seed`, `_polish`), and `backend` is `ipopt` only for the two
+IPOPT answers. `confirmation` keeps the IPOPT confirmation's fields
+(`ipoptObjective` is the answer's objective) and adds `method`, `acceptedAs`
+(`full`/`relaxed`), `pushSteps`, `probes`, `reversalTick`, `raced`, `quadrant`,
+`ipoptCalls` and `clarabelSolves`. Answers, certificates and a finished
+`post_alarm_none` are cached like confirmations; a cache hit reports 0 calls.
+Problem fields `warmYaw`, `stateSeed` and `ipoptMuInit` are hints: validated by
+`prepare`, left out of `fingerprint`, and read only by the pipeline and the worker
+(the first phase's start states; IPOPT's `mu_init`).
 
 ## Tests
 

@@ -121,7 +121,7 @@ class ArchivedReal11Tests(unittest.TestCase):
         content = disk.spec(request(2, .1), strict=True)
         failed = SimpleNamespace(solve=lambda: SimpleNamespace(status='NumericalError', x=[0.]*16, iterations=3))
         with mock.patch.object(clarabel, 'DefaultSolver', return_value=failed):
-            result = disk._attempt(content, disk.CAP, disk.MAX_ITER)
+            result, _ = disk._attempt(content, disk.CAP, disk.MAX_ITER)
         self.assertEqual((result['status'], result['outcome'], result['controls']), ('NumericalError', 'infeasible', None))
 
 
@@ -191,6 +191,20 @@ class StartAndStatusTests(unittest.TestCase):
             limited = disk.solve(other, seconds=disk.CAP)
         self.assertEqual((limited['outcome'], limited['status'], limited['retried']), ('infeasible', 'MaxIterations', True))
         self.assertTrue(disk.solve(copy.deepcopy(other), seconds=disk.CAP)['cached'])
+
+    def test_cut_and_level_rows(self):
+        content = disk.spec(request(1, .1), strict=True)
+        free, _ = disk._attempt(content, disk.CAP, disk.MAX_ITER)
+        self.assertAlmostEqual(free['controls'][0][0], .1, delta=1e-7)
+        # -a_x >= .05 excludes the free optimum's direction; the tick ends on the cut.
+        cut, _ = disk._attempt(content, disk.CAP, disk.MAX_ITER, cuts=[(0, -1., 0., .05)])
+        self.assertAlmostEqual(cut['controls'][0][0], -.05, delta=1e-7)
+        stripped = {k: v for k, v in content.items() if k != 'objective'}
+        for sense, value, outcome in (('MAX', free['objective']+.01, 'infeasible'), ('MAX', free['objective']-.01, 'feasible'),
+                                      ('MIN', free['objective']-.3, 'infeasible'), ('MIN', free['objective']-.1, 'feasible')):
+            level = (dict(content['objective'], sense=sense), value)
+            result, _ = disk._attempt(stripped, disk.CAP, disk.MAX_ITER, level=level)
+            self.assertEqual(result['outcome'], outcome, (sense, value))
 
     def test_unsupported_requests_have_no_spec(self):
         self.assertIsNone(disk.spec(request(2, .1, threshold=.005), strict=True))
