@@ -764,6 +764,7 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
         with PythonCompiler() as compiler:
             self.assertTrue(replay_witness(prepare_scene(result['effectiveRequest']), result['best'], compiler)['passed'])
 
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # records engine.solve_contact_branches, which a native leg solve never calls
     def test_search_runs_on_the_relaxation_and_publishes_one_physical_finalization(self):
         from parkour_solver.bridge.python_compiler import PythonCompiler
         from parkour_solver.numerics import disk

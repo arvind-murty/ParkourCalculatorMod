@@ -1,0 +1,22 @@
+[
+ [
+  ".provenance.command[4]",
+  "/private/var/tmp/standalone-cpp-next-20261122/ab2d/fixed-base-1 != /private/var/tmp/standalone-cpp-next-20261122/ab2d/fixed-new-1"
+ ],
+ [
+  ".provenance.sourceHashes.parkour_solver/search/dfs.py",
+  "fbabc75b7a29a409b7c04a960478fc4573cb66cca2c6d4b8bebf84e8b0ec4180 != c56d12a365e6cd78628fe649ca42d4070377903d0b97e0f34ae8c1da3246702d"
+ ],
+ [
+  ".result.compiler.calls.compile",
+  "114 != 111"
+ ],
+ [
+  ".result.interactionGate.metrics.coefficientHits",
+  "1088 != 1091"
+ ],
+ [
+  ".result.interactionGate.metrics.coefficientMisses",
+  "1739 != 1736"
+ ]
+]

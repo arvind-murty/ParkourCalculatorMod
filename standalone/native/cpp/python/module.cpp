@@ -1072,18 +1072,24 @@ PYBIND11_MODULE(_pkc_native, m) {
             h.prepare = [f = hook("prepare")](const pkc::Value& program) {
                 return python_hook([&] { return convert(f(to_python(program))); });
             };
-            h.begin_solve = [f = hook("begin_solve"), compiler = hook("compiler"), solve = hook("solve"),
-                             cancel_event = hook("cancel_event"),
-                             python_executable = hook("python_executable")](std::int64_t frame, const pkc::Value& program) {
-                return python_hook([&] {
-                    py::object services = f(frame, to_python(program));
-                    pkc::NodeSolve out;
-                    out.hooks = evaluate_hooks(compiler, solve, cancel_event, python_executable, services);
-                    out.seconds = services["seconds"].cast<double>();
-                    out.objective = convert(services["objective"]);
-                    out.adapter_identity = convert(services["adapter_identity"]);
-                    return out;
-                });
+            auto node_solve = [compiler = hook("compiler"), solve = hook("solve"), cancel_event = hook("cancel_event"),
+                               python_executable = hook("python_executable")](py::object services) {
+                pkc::NodeSolve out;
+                out.hooks = evaluate_hooks(compiler, solve, cancel_event, python_executable, services);
+                out.seconds = services["seconds"].cast<double>();
+                out.objective = convert(services["objective"]);
+                out.adapter_identity = convert(services["adapter_identity"]);
+                return out;
+            };
+            h.begin_solve = [f = hook("begin_solve"), node_solve](std::int64_t frame, const pkc::Value& program) {
+                return python_hook([&] { return node_solve(f(frame, to_python(program))); });
+            };
+            h.prepare_leg = [f = hook("prepare_leg")](const pkc::Value& program, const pkc::Value& landing) {
+                return python_hook([&] { return convert(f(to_python(program), to_python(landing))); });
+            };
+            h.begin_leg = [f = hook("begin_leg"), node_solve](std::int64_t frame, const pkc::Value& program,
+                                                              const std::string& numerical, double seconds) {
+                return python_hook([&] { return node_solve(f(frame, to_python(program), numerical, seconds)); });
             };
             h.solve_route = [f = hook("solve_route")](std::int64_t frame, const pkc::Value& program,
                                                       const std::function<void(const pkc::Value&)>& progress) {

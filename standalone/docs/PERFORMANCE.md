@@ -195,7 +195,9 @@ ordered options. That is targeted enumeration work, not a whole-solver speedup.
   ([evidence](../research/native-core/README.md)).
 - Native node-solve services (`PKC_NATIVE_CORE`): the gate's analysis and face tables, the relaxed dispatch and its
   IPOPT driver run on the gate's native core. Fixed work takes 17.03 s and 16.52 s against 18.33 s and 18.09 s with
-  them as Python callbacks; the short control and durable runs are unchanged
+  them as Python callbacks; the short control and durable runs are unchanged. Running the anchor-leg and finish solves
+  the same way then takes the short control to 1.258 s and 1.312 s against 1.643 s and 1.613 s, and durable fixed work
+  to 54.98 s and 55.03 s against 56.10 s and 55.99 s, with fixed work unchanged
   ([evidence](../research/native-core/README.md)).
 - IPOPT row reduction: final rows fall from 278 to 91 on the benchmark
   ([constraint reduction](IPOPT_CONSTRAINT_REDUCTION.md)).

@@ -56,7 +56,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | File | Bytes |
 | --- | ---: |
 | [docs/AGENT_SETUP.md](AGENT_SETUP.md) | 3797 |
-| [docs/ANCHOR_SEARCH_EXECUTION_REFERENCE.md](ANCHOR_SEARCH_EXECUTION_REFERENCE.md) | 38465 |
+| [docs/ANCHOR_SEARCH_EXECUTION_REFERENCE.md](ANCHOR_SEARCH_EXECUTION_REFERENCE.md) | 38688 |
 | [docs/ARCHITECTURE.md](ARCHITECTURE.md) | 16418 |
 | [docs/CHECKPOINT_STORAGE.md](CHECKPOINT_STORAGE.md) | 7946 |
 | [docs/CODE_MAP.md](CODE_MAP.md) | 40330 |
@@ -65,11 +65,11 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 36593 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11512 |
 | [docs/DOC_INDEX.md](DOC_INDEX.md) | 28873 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 277492 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 279783 |
 | [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 66409 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
-| [docs/LAYOUT.md](LAYOUT.md) | 12564 |
+| [docs/LAYOUT.md](LAYOUT.md) | 12647 |
 | [docs/MOD_REFERENCES.md](MOD_REFERENCES.md) | 5299 |
 | [docs/PERFORMANCE.md](PERFORMANCE.md) | 20757 |
 | [docs/REAL11_EXTENDED_GEOMETRY.md](REAL11_EXTENDED_GEOMETRY.md) | 12104 |
@@ -181,7 +181,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/include/pkc/search/bounds/remaining.hpp](../native/cpp/include/pkc/search/bounds/remaining.hpp) | 595 |
 | [native/cpp/include/pkc/search/comparison.hpp](../native/cpp/include/pkc/search/comparison.hpp) | 1296 |
 | [native/cpp/include/pkc/search/dfs.hpp](../native/cpp/include/pkc/search/dfs.hpp) | 3787 |
-| [native/cpp/include/pkc/search/dfs_search.hpp](../native/cpp/include/pkc/search/dfs_search.hpp) | 10409 |
+| [native/cpp/include/pkc/search/dfs_search.hpp](../native/cpp/include/pkc/search/dfs_search.hpp) | 11131 |
 | [native/cpp/include/pkc/search/dfs_state.hpp](../native/cpp/include/pkc/search/dfs_state.hpp) | 8643 |
 | [native/cpp/include/pkc/search/engine.hpp](../native/cpp/include/pkc/search/engine.hpp) | 2683 |
 | [native/cpp/include/pkc/search/feasibility.hpp](../native/cpp/include/pkc/search/feasibility.hpp) | 989 |
@@ -198,7 +198,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/include/pkc/validation/vertical.hpp](../native/cpp/include/pkc/validation/vertical.hpp) | 353 |
 | [native/cpp/include/pkc/value.hpp](../native/cpp/include/pkc/value.hpp) | 698 |
 | [native/cpp/include/pkc/vertical.hpp](../native/cpp/include/pkc/vertical.hpp) | 2554 |
-| [native/cpp/python/module.cpp](../native/cpp/python/module.cpp) | 85339 |
+| [native/cpp/python/module.cpp](../native/cpp/python/module.cpp) | 85907 |
 | [native/cpp/src/canonical.cpp](../native/cpp/src/canonical.cpp) | 13694 |
 | [native/cpp/src/codec.hpp](../native/cpp/src/codec.hpp) | 11503 |
 | [native/cpp/src/coefficient_tables.inc](../native/cpp/src/coefficient_tables.inc) | 23532 |
@@ -246,7 +246,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/src/search/bounds/remaining.cpp](../native/cpp/src/search/bounds/remaining.cpp) | 8052 |
 | [native/cpp/src/search/comparison.cpp](../native/cpp/src/search/comparison.cpp) | 8960 |
 | [native/cpp/src/search/dfs.cpp](../native/cpp/src/search/dfs.cpp) | 20688 |
-| [native/cpp/src/search/dfs_search.cpp](../native/cpp/src/search/dfs_search.cpp) | 81972 |
+| [native/cpp/src/search/dfs_search.cpp](../native/cpp/src/search/dfs_search.cpp) | 84498 |
 | [native/cpp/src/search/dfs_state.cpp](../native/cpp/src/search/dfs_state.cpp) | 14396 |
 | [native/cpp/src/search/engine.cpp](../native/cpp/src/search/engine.cpp) | 13637 |
 | [native/cpp/src/search/feasibility.cpp](../native/cpp/src/search/feasibility.cpp) | 6092 |
@@ -1586,7 +1586,18 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/native-core/2026-11-22-validation/replay-sanitize.json](../research/native-core/2026-11-22-validation/replay-sanitize.json) | 105 |
 | [research/native-core/2026-11-22-validation/synthetic-intervals-release.json](../research/native-core/2026-11-22-validation/synthetic-intervals-release.json) | 34 |
 | [research/native-core/2026-11-22-validation/synthetic-intervals-sanitize.json](../research/native-core/2026-11-22-validation/synthetic-intervals-sanitize.json) | 32 |
-| [research/native-core/README.md](../research/native-core/README.md) | 65014 |
+| [research/native-core/2026-11-23-leg-solves/asan-summary.txt](../research/native-core/2026-11-23-leg-solves/asan-summary.txt) | 378 |
+| [research/native-core/2026-11-23-leg-solves/fixed-asan-report-vs-release.json](../research/native-core/2026-11-23-leg-solves/fixed-asan-report-vs-release.json) | 612 |
+| [research/native-core/2026-11-23-leg-solves/fixed-durable-report-vs-previous.json](../research/native-core/2026-11-23-leg-solves/fixed-durable-report-vs-previous.json) | 589 |
+| [research/native-core/2026-11-23-leg-solves/fixed-parity-python-native.json](../research/native-core/2026-11-23-leg-solves/fixed-parity-python-native.json) | 176 |
+| [research/native-core/2026-11-23-leg-solves/fixed-report-vs-previous.json](../research/native-core/2026-11-23-leg-solves/fixed-report-vs-previous.json) | 708 |
+| [research/native-core/2026-11-23-leg-solves/search-seconds.txt](../research/native-core/2026-11-23-leg-solves/search-seconds.txt) | 500 |
+| [research/native-core/2026-11-23-leg-solves/short-durable-report-vs-previous.json](../research/native-core/2026-11-23-leg-solves/short-durable-report-vs-previous.json) | 580 |
+| [research/native-core/2026-11-23-leg-solves/short-parity-python-native.json](../research/native-core/2026-11-23-leg-solves/short-parity-python-native.json) | 176 |
+| [research/native-core/2026-11-23-leg-solves/short-report-vs-previous.json](../research/native-core/2026-11-23-leg-solves/short-report-vs-previous.json) | 699 |
+| [research/native-core/2026-11-23-leg-solves/state-parity.txt](../research/native-core/2026-11-23-leg-solves/state-parity.txt) | 755 |
+| [research/native-core/2026-11-23-leg-solves/suites-summary.txt](../research/native-core/2026-11-23-leg-solves/suites-summary.txt) | 469 |
+| [research/native-core/README.md](../research/native-core/README.md) | 67468 |
 | [research/obstacle-avoidance/README.md](../research/obstacle-avoidance/README.md) | 3166 |
 | [research/obstacle-avoidance/blocked-result.json](../research/obstacle-avoidance/blocked-result.json) | 52110 |
 | [research/obstacle-avoidance/cross-neo-request.json](../research/obstacle-avoidance/cross-neo-request.json) | 5584 |
@@ -1920,7 +1931,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [src/parkour_solver/search/bounds/remaining.py](../src/parkour_solver/search/bounds/remaining.py) | 4009 |
 | [src/parkour_solver/search/comparison.py](../src/parkour_solver/search/comparison.py) | 4860 |
 | [src/parkour_solver/search/deferrals.py](../src/parkour_solver/search/deferrals.py) | 1228 |
-| [src/parkour_solver/search/dfs.py](../src/parkour_solver/search/dfs.py) | 78387 |
+| [src/parkour_solver/search/dfs.py](../src/parkour_solver/search/dfs.py) | 78992 |
 | [src/parkour_solver/search/domain.py](../src/parkour_solver/search/domain.py) | 960 |
 | [src/parkour_solver/search/engine.py](../src/parkour_solver/search/engine.py) | 17128 |
 | [src/parkour_solver/search/events/__init__.py](../src/parkour_solver/search/events/__init__.py) | 0 |
@@ -2102,7 +2113,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/unit/search/__init__.py](../tests/unit/search/__init__.py) | 0 |
 | [tests/unit/search/test_anchor_dfs.py](../tests/unit/search/test_anchor_dfs.py) | 37460 |
 | [tests/unit/search/test_anchor_policy.py](../tests/unit/search/test_anchor_policy.py) | 36216 |
-| [tests/unit/search/test_anchor_search.py](../tests/unit/search/test_anchor_search.py) | 60642 |
+| [tests/unit/search/test_anchor_search.py](../tests/unit/search/test_anchor_search.py) | 60776 |
 | [tests/unit/search/test_anchor_time_bound.py](../tests/unit/search/test_anchor_time_bound.py) | 1920 |
 | [tests/unit/search/test_candidate_comparison.py](../tests/unit/search/test_candidate_comparison.py) | 5313 |
 | [tests/unit/search/test_event_search.py](../tests/unit/search/test_event_search.py) | 8043 |

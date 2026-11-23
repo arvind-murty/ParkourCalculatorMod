@@ -791,3 +791,30 @@ Python only for the adapter's candidate check, the compiler and the work budget.
   AddressSanitizer the search, checkpoint, native, disk, solver and proposal-analysis modules, durable fixed work and the
   driver cases run with no reports, and durable fixed work's report equals the release build's except provenance
   ([summary](2026-11-22-node-services/asan-summary.txt), [report](2026-11-22-node-services/fixed-asan-report-vs-release.json)).
+
+## The leg solves, 2026-11-23
+Source: `cd3100ce` plus `DfsSearch::evaluate_leg`: the native search's anchor-leg and finish solves run as its decision
+checks' node solves do, after the gate's preparation of the leg's scene (`prepare_leg`), through the stage view's
+solve services (`begin_leg`) and `search/engine.hpp`'s `evaluate_prepared`. A route with passages, wall hits or ladder
+events still goes to the Python `evaluate` hook.
+
+- Every published and result state equals the previous production code's by value in call order (short control 191,
+  fixed work 438) and in all 46 of the milestone list's searching tests, also with every leg solve sent to the Python
+  hook as an uncovered route (9, 3 and 38 solves diverted) ([states](2026-11-23-leg-solves/state-parity.txt)).
+- Reports equal `cd3100ce`'s except provenance and the same two counters as before: leg-solve coefficient compiles now
+  share the native gate's cache, so the Python compiler's `compile` count falls (49 to 41 on the short control, 114 to
+  111 on fixed work); transitions match Python ([fixed work](2026-11-23-leg-solves/fixed-report-vs-previous.json),
+  [short](2026-11-23-leg-solves/short-report-vs-previous.json),
+  [fixed durable](2026-11-23-leg-solves/fixed-durable-report-vs-previous.json),
+  [short durable](2026-11-23-leg-solves/short-durable-report-vs-previous.json),
+  [fixed parity](2026-11-23-leg-solves/fixed-parity-python-native.json),
+  [short parity](2026-11-23-leg-solves/short-parity-python-native.json)).
+- Search seconds, alternating one at a time against `cd3100ce` with its own native build: fixed work 16.40 and 16.75
+  against 16.59 and 16.28, the short control 1.258 and 1.312 against 1.643 and 1.613; with durable checkpoints fixed
+  work 54.98 and 55.03 against 56.10 and 55.99, the short control 7.81 and 7.74 against 8.98 and 8.96
+  ([times](2026-11-23-leg-solves/search-seconds.txt)).
+- One test records `engine.solve_contact_branches`, which a native leg solve never calls; it runs in Python mode. The
+  milestone test list passes in both modes ([suites](2026-11-23-leg-solves/suites-summary.txt)). Under AddressSanitizer
+  the search, checkpoint, native, disk, solver and proposal-analysis modules and durable fixed work run with no reports,
+  and durable fixed work's report equals the release build's except provenance
+  ([summary](2026-11-23-leg-solves/asan-summary.txt), [report](2026-11-23-leg-solves/fixed-asan-report-vs-release.json)).

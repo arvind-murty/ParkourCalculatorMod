@@ -13,6 +13,7 @@
 #include "pkc/search/bounds/remaining.hpp"
 #include "pkc/search/comparison.hpp"
 #include "pkc/search/dfs.hpp"
+#include "pkc/search/engine.hpp"
 #include "pkc/search/feasibility.hpp"
 #include "pkc/search/frontier.hpp"
 #include "pkc/search/goals.hpp"
@@ -693,6 +694,49 @@ QueryService query_service(const Object& s) {
 
 }  // namespace
 
+Value DfsSearch::evaluate_leg(std::int64_t frame, const Value& program, const Value& args) {
+    const Object& a = fields(args);
+    const Value& landing = at(a, "landing");
+    const double started = hooks_.monotonic();
+    const Value policy = policy_spec(at(a, "policy"), py_truthy(at(a, "firstWitness")));
+    const Value prepared = hooks_.prepare_leg(program, landing);
+    if (is_null(prepared))
+        return object({{"status", text("unknown")}, {"termination", text("vertical_schedule")}, {"best", kNull},
+                       {"attempts", array({})}, {"contactAttempts", array({})},
+                       {"work", object({{"solverCalls", integer_value(0)}})}, {"fullSceneValidated", boolean(false)}});
+    Object route = fields(at(fields(prepared), "route"));
+    const Value& final_route = get_or_null(a, "finalRoute");
+    bool uncovered = false;
+    for (const Value* r : {&at(fields(prepared), "route"), &final_route})
+        if (!is_null(*r))
+            for (const char* key : {"passages", "hitEvents", "ladderEvents"})
+                uncovered = uncovered || py_truthy(get_or_null(fields(*r), key));
+    if (uncovered) return hooks_.evaluate(frame, program, args);
+    if (!get(route, "constraints")) put(route, "constraints", array({}));
+    const double prepared_at = hooks_.monotonic();
+    const Value& guide = get_or_null(a, "guideObjective");
+    if (!is_null(guide)) {
+        put(route, "objective", object({{"axis", text("X")}, {"sense", text("MAX")}}));
+        put(route, "guideObjective", guide);
+    }
+    const double seconds = num(at(a, "seconds")).value;
+    NodeSolve solve = hooks_.begin_leg(frame, program, as_text(at(fields(policy), "numerical")), seconds);
+    EvaluateHooks evaluate = solve.hooks;
+    if (py_truthy(at(a, "progress"))) evaluate.on_progress = [this](const Value& repair) { score_progress(repair); };
+    EvaluateOptions eo;
+    eo.seconds = seconds;
+    eo.candidate_seconds = options_.candidate_seconds;
+    eo.required_landing = landing;
+    eo.final_route = final_route;
+    eo.policy = policy;
+    eo.adapter_identity = solve.adapter_identity;
+    eo.retry_unresolved = options_.retry_unknown;
+    eo.climb_families = true;
+    eo.timings = {{"programCompilation", real(prepared_at - started)}};
+    return evaluate_prepared(object(with(fields(options_.scene), "goalBlock", landing)), program, object(std::move(route)),
+                             at(fields(prepared), "profiles"), at(fields(prepared), "vertical"), evaluate, eo);
+}
+
 void DfsSearch::score_progress(const Value& repair) {
     Frame& f = current();
     annotate(f.in_flight.value->program, "repairState", repair);
@@ -715,7 +759,7 @@ DfsSearch::RecordPtr DfsSearch::score(Frame& f, const SharedValue& program, cons
     scoring_ = &f;
     Value result_value;
     try {
-        result_value = hooks_.evaluate(f.id, *program, object(std::move(args)));
+        result_value = evaluate_leg(f.id, *program, object(std::move(args)));
     } catch (...) {
         scoring_ = nullptr;
         throw;
@@ -1215,7 +1259,7 @@ void DfsSearch::finalize_best() {
             scoring_ = f.get();
             Value result_value;
             try {
-                result_value = hooks_.evaluate(f->id, program, object(std::move(args)));
+                result_value = evaluate_leg(f->id, program, object(std::move(args)));
             } catch (...) {
                 scoring_ = nullptr;
                 throw;

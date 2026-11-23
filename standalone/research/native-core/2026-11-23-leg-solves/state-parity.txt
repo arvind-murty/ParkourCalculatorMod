@@ -1,0 +1,14 @@
+Published states vs 41163279's production path (ns.sh n3)
+== short states: {"a": 191, "b": 191, "compared": 191, "equal": 191, "differing": 0}
+== fixed states: {"a": 438, "b": 438, "compared": 438, "equal": 438, "differing": 0}
+== tests per test: {"tests": 46, "equal": 46, "differing": 0}
+With every leg solve's route marked uncovered (inject_leg.py), so each goes to the Python evaluate hook:
+recorded 191 states
+inject {"diverted": 9}
+== short states: {"a": 191, "b": 191, "compared": 191, "equal": 191, "differing": 0}
+recorded 438 states
+inject {"diverted": 3}
+== fixed states: {"a": 438, "b": 438, "compared": 438, "equal": 438, "differing": 0}
+recorded 316 states
+inject {"diverted": 38}
+== tests states: {"tests": 46, "equal": 46, "differing": 0}

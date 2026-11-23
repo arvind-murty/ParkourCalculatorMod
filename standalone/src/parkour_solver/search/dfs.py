@@ -964,8 +964,9 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
 
     from parkour_solver.search.anchors.adapter import AnchorAdapter
     if gate.core is not None and isinstance(adapter, AnchorAdapter) and getattr(accepted_program, 'native', False):
-        # The loop runs natively (search/dfs_search.hpp) and owns the state, with each frame's movement frontier and
-        # its decision checks. Python serves it the stage views, discovery, gate preparations and solves.
+        # The loop runs natively (search/dfs_search.hpp) and owns the state, with each frame's movement frontier, its
+        # decision checks and its leg solves. Python serves it the stage views, discovery, gate preparations and the
+        # solve services; `evaluate` and `solve_route` solve the routes the native generator leaves to Python.
         from parkour_solver.search import ordered_route
         from parkour_solver.search.engine import solve_services
         if 'anchorScene' not in native_scenes:
@@ -996,6 +997,9 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
             from parkour_solver.search.bounds.flight import transfer_bounds
             transfer_bounds(scene, adapter.guide_plan, motion, gate, saved=saved, threshold=0., check=work.check)
             return saved
+        def begin_leg(frame_id, program, numerical, seconds):
+            return dict(solve_services(stage_adapter(frames[frame_id]), program, work, gate, numerical, seconds=seconds,
+                                       cancel_event=cancel_event), objective=None)
         def begin_solve(frame_id, program):
             node_view=stage_adapter(frames[frame_id]).for_node(program)
             services=solve_services(node_view,program,work,gate,numerical_backend,
@@ -1029,7 +1033,9 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
             publish=on_progress, begin_repair=begun, repair_progress=repaired, check=work.check,
             solver_calls=lambda: work.counts['solverCalls'], count=count, accepted=work.accepted,
             termination=lambda: work.termination, initial_cursor=adapter.initial_cursor, next_goals=next_goals,
-            stage=stage, advance=advance, evaluate=evaluate, transfer_bounds=bounds,
+            stage=stage, advance=advance, evaluate=evaluate, transfer_bounds=bounds, begin_leg=begin_leg,
+            prepare_leg=lambda program, landing: gate.prepare(program, scene=dict(scene, goalBlock=landing),
+                                                              require_complete=True),
             prepare=lambda program: gate.prepare(program, scene=scene), begin_solve=begin_solve, solve_route=solve_route,
             compiler=compiler, solve=ordered_route.solve, cancel_event=cancel_event, python_executable=python_executable)
         native = gate.native.DfsSearch(state, dict(scene=scene, cfg=cfg, motion=motion, guidePlan=adapter.guide_plan,

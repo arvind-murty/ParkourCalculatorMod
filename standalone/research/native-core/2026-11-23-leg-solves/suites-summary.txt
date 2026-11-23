@@ -1,0 +1,10 @@
+Milestone test list (tools/native-suite.json modules + extras), both modes
+native (before the one Python-mode test change):
+Ran 843 tests in 91.235s
+FAILED (errors=1, skipped=10)
+  the error: test_search_runs_on_the_relaxation_and_publishes_one_physical_finalization records engine.solve_contact_branches; it now runs in Python mode, and RelaxedAutomaticSearchTests then passes in native mode:
+Ran 7 tests in 2.226s
+OK
+python:
+Ran 843 tests in 103.374s
+OK (skipped=10)

@@ -69,9 +69,15 @@ struct DfsHooks {
     std::function<Value(std::int64_t frame, const Value& cursor, const Value& child, const Value& witness,
                         const Value& request)>
         advance;
-    // evaluate_program(dict(scene, goalBlock=landing), program, ..., the frame's stage view, ...) with `options`
-    // {landing, policy, firstWitness, guideObjective, seconds, finalRoute (or absent), progress}; with progress, the
-    // solve reports through DfsSearch::score_progress.
+    // An anchor-leg or finish solve, evaluate_program(dict(scene, goalBlock=landing), program, ..., the frame's stage
+    // view, ...) with `options` {landing, policy, firstWitness, guideObjective, seconds, finalRoute (or absent),
+    // progress}, runs natively after the gate's preparation: gate.prepare(program, scene=dict(scene,
+    // goalBlock=landing), require_complete=True) as prepare_leg, then solve_services on the stage view (its numerical
+    // backend and seconds) as begin_leg. `evaluate` is the Python solve for a route the native one leaves there
+    // (passages, wall hits, ladder events). With progress, the solve reports through DfsSearch::score_progress.
+    std::function<Value(const Value& program, const Value& landing)> prepare_leg;
+    std::function<NodeSolve(std::int64_t frame, const Value& program, const std::string& numerical, double seconds)>
+        begin_leg;
     std::function<Value(std::int64_t frame, const Value& program, const Value& options)> evaluate;
     // bounds/flight.transfer_bounds(scene, guide_plan, motion, gate, saved=..., ...): the saved records after it.
     std::function<Value(const Value& saved)> transfer_bounds;
@@ -150,6 +156,7 @@ private:
     bool final_frame(const Frame& f) const;
     void generate(Frame& f);
     Object evaluation_args(Frame& f, const Value& program);
+    Value evaluate_leg(std::int64_t frame, const Value& program, const Value& args);  // see DfsHooks::evaluate
     RecordPtr score(Frame& f, const SharedValue& program, const RecordPtr& old);
     void refine(Frame& f, const RecordPtr& pending);
     RecordPtr variant_record(Frame& f, const Record& record, const Value& variant);
