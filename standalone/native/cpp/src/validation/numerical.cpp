@@ -117,9 +117,9 @@ Object replay(const Object& problem, const Array& yaw_values, const std::vector<
             if (ladder_pattern && ladder[t]) {
                 const std::int64_t b = as_int(items(items(*ladder_pattern)[t])[axis]);
                 const double d = displacement.value;
-                const bool valid = b == -1  ? d <= -kCap + kTolerance
-                                   : b == 1 ? d >= kCap - kTolerance
-                                            : -kCap - kTolerance <= d && d <= kCap + kTolerance;
+                const bool valid = b == -1  ? d <= -kCap + kReplayTolerance
+                                   : b == 1 ? d >= kCap - kReplayTolerance
+                                            : -kCap - kReplayTolerance <= d && d <= kCap + kReplayTolerance;
                 if (!valid)
                     cap_mismatches.push_back(object({{"tick", integer_value(t)}, {"axis", integer_value(axis)},
                                                      {"raw", value(displacement)}, {"branch", integer_value(b)}}));
@@ -132,13 +132,13 @@ Object replay(const Object& problem, const Array& yaw_values, const std::vector<
                 const Num direction = num(at(contact, "direction")), plane = num(at(contact, "plane"));
                 const Num approach = mul(direction, sub(positions[t][axis], plane));
                 const Num reach = mul(direction, sub(proposed, plane));
-                if (approach.value > kTolerance)
+                if (approach.value > kReplayTolerance)
                     wrong_side.push_back(object({{"state", integer_value(t + 1)}, {"axis", integer_value(axis)},
                                                  {"violation", value(approach)}}));
                 if (reach.value < 0)
                     missed.push_back(object({{"state", integer_value(t + 1)}, {"axis", integer_value(axis)},
                                              {"shortBy", value(neg(reach))}}));
-                if (approach.value <= kTolerance && reach.value >= 0) {
+                if (approach.value <= kReplayTolerance && reach.value >= 0) {
                     hit |= reach.value > 0;
                     proposed = plane;
                     carry = flt(0.0);
@@ -158,7 +158,7 @@ Object replay(const Object& problem, const Array& yaw_values, const std::vector<
                 object({{"state", integer_value(t + 1)}, {"reason", text("horizontal_collision_schedule")}}));
         if (vertical) {
             StepResult step = vertical_step(rows, jumps, sneak, vertical_threshold, t, y[t], vy[t], ladder[t],
-                                            grounded[t], kTolerance, &vertical_failures);
+                                            grounded[t], kReplayTolerance, &vertical_failures);
             y.push_back(step.proposed);
             vy.push_back(vertical_carry(step.carry, ladder[t + 1], previous_hits[t + 1]));
             grounded.push_back(step.ground);
@@ -226,7 +226,7 @@ Object replay(const Object& problem, const Array& yaw_values, const std::vector<
         score = flt(-std::sin(angle) * point[0].value + std::cos(angle) * point[1].value);
     }
     finite(score, "objective");
-    const bool feasible = worst.value <= kTolerance && missed.empty() && wrong_side.empty() && mismatches.empty() &&
+    const bool feasible = worst.value <= kReplayTolerance && missed.empty() && wrong_side.empty() && mismatches.empty() &&
                           cap_mismatches.empty() && vertical_failures.empty() && movement_mismatches.empty();
     Array position_values, velocity_values;
     for (const auto& p : positions) position_values.push_back(pair(p));
@@ -308,7 +308,7 @@ Value validate_controls(const Value& problem_value, const Value& controls_value)
         excess.push_back(python_hypot(controls[t][0].value, controls[t][1].value) - magnitude[t].value);
         if (excess[t] > excess[worst]) worst = t;
     }
-    if (excess[worst] > kTolerance) {
+    if (excess[worst] > kReplayTolerance) {
         put(result, "feasible", boolean(false));
         if (excess[worst] > num(at(result, "violation")).value) {
             put(result, "violation", real(excess[worst]));

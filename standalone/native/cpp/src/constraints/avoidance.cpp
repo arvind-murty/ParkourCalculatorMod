@@ -39,8 +39,7 @@ Array listed(const Object& route, const char* key) {
 
 }  // namespace
 
-Num face_clearance(const Object& route, std::int64_t leg, std::int64_t offset, const Object& face,
-                   const Num& clearance) {
+Num face_clearance(const Object& route, std::int64_t leg, std::int64_t offset, const Object& face) {
     Array hits = listed(route, "hitEvents");
     for (const auto& e : listed(route, "contactEvents")) hits.push_back(e);
     for (const auto& hit_value : hits) {
@@ -60,7 +59,7 @@ Num face_clearance(const Object& route, std::int64_t leg, std::int64_t offset, c
             num(at(wall, "direction")).value == -num(at(face, "direction")).value)
             return flt(0.);
     }
-    return clearance;
+    return flt(kSolverMargin);
 }
 
 std::vector<std::int64_t> phase_states(std::int64_t tick, const std::string& phase, const std::string& axis) {
@@ -131,7 +130,6 @@ void validate_passages(Object& route) {
 
 std::pair<Array, Array> compile_passages(const Object& route, const Array& events) {
     Array rows, failures;
-    Num clearance = num(at(route, "supportClearance"));
     for (const auto& passage_value : items(at(route, "passages"))) {
         const Object& passage = fields(passage_value);
         std::int64_t leg = as_int(at(passage, "leg"));
@@ -155,7 +153,7 @@ std::pair<Array, Array> compile_passages(const Object& route, const Array& event
             std::int64_t direction = as_int(at(face, "direction"));
             for (std::int64_t offset = (*ranges)[i].first; offset <= (*ranges)[i].second; ++offset) {
                 Num rhs = add(num(at(face, "plane")),
-                              mul(whole(direction), face_clearance(route, leg, offset, face, clearance)));
+                              mul(whole(direction), face_clearance(route, leg, offset, face)));
                 rows.push_back(object({{"mode", text(axis)}, {"t1", integer_value(jump + offset)},
                                        {"cmp", text(direction > 0 ? "GE" : "LE")}, {"rhs", value(rhs)},
                                        {"name", text(name)}}));

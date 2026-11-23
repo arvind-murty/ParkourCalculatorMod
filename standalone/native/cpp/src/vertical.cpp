@@ -81,14 +81,15 @@ StepResult vertical_step(const std::vector<VerticalContactRow>& contacts, const 
                 valid = grounded && !jumping && 0 < delta && delta <= kStepHeight + tolerance;
             } else if (kind == "slab_boost") {
                 valid = grounded && jumping && m < delta && delta <= kStepHeight + tolerance;
-            } else if (kind == "blip" || kind == "blip_up" || kind == "corner_blip_up") {
+            } else if (kind == "blip" || kind == "blip_up" || kind == "corner_blip" || kind == "corner_blip_up") {
                 valid = !grounded && m < 0 && y >= lower && proposed.value < lower;
                 if (kind == "blip") {
                     valid = valid && 0 <= delta && delta <= kStepHeight + tolerance;
                 } else {
                     valid = valid && plane.value == y;
                     double gap = upper - y;
-                    valid = valid && (kind == "blip_up" ? y > upper : 0 <= gap && gap <= kStepHeight + tolerance);
+                    valid = valid && (kind == "blip_up" || kind == "corner_blip_up" ? y > upper
+                                                                                : 0 <= gap && gap <= kStepHeight + tolerance);
                 }
             } else if (kind == "corner_jump_cancel") {
                 double gap = upper - y;
@@ -101,7 +102,8 @@ StepResult vertical_step(const std::vector<VerticalContactRow>& contacts, const 
             if (valid) {
                 proposed = plane;
                 carry = flt(0.0);
-                ground = kind == "normal_step" || kind == "blip" || kind == "blip_up" || kind == "corner_blip_up";
+                ground = kind == "normal_step" || kind == "blip" || kind == "blip_up" || kind == "corner_blip" ||
+                         kind == "corner_blip_up";
             } else {
                 failed = true;
                 failure(tick + 1, "invalid_movement_case", {{"case", text(kind)}});

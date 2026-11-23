@@ -201,7 +201,7 @@ Value evaluate_prepared(const Value& scene_value, const Value& program_value, co
     repair.solid_blocks = array(owners);
     repair.resume_state = get_or_null(program, "repairState");
     repair.repair_scope = object({{"solveIdentity", text(identity)}, {"scope", scope_value}, {"solvePolicy", policy},
-                                  {"assemblyVersion", integer_value(13)}});
+                                  {"assemblyVersion", integer_value(14)}});
     repair.validation_scope = scope_value;
     repair.numerical = hooks.numerical;
     repair.confirm = hooks.confirm;

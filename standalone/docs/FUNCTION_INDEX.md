@@ -510,11 +510,11 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `RelaxedDispatch.solve` | [169](../src/parkour_solver/numerics/disk.py#L169) | function |
 | `RelaxedDispatch.confirmed` | [172](../src/parkour_solver/numerics/disk.py#L172) | function |
 | `RelaxedDispatch._dispatch` | [175](../src/parkour_solver/numerics/disk.py#L175) | function |
-| `RelaxedDispatch.confirm` | [215](../src/parkour_solver/numerics/disk.py#L215) | function |
-| `_result` | [242](../src/parkour_solver/numerics/disk.py#L242) | function |
-| `_attempt` | [258](../src/parkour_solver/numerics/disk.py#L258) | function |
-| `_solve` | [266](../src/parkour_solver/numerics/disk.py#L266) | function |
-| `_cost` | [370](../src/parkour_solver/numerics/disk.py#L370) | function |
+| `RelaxedDispatch.confirm` | [214](../src/parkour_solver/numerics/disk.py#L214) | function |
+| `_result` | [241](../src/parkour_solver/numerics/disk.py#L241) | function |
+| `_attempt` | [257](../src/parkour_solver/numerics/disk.py#L257) | function |
+| `_solve` | [265](../src/parkour_solver/numerics/disk.py#L265) | function |
+| `_cost` | [369](../src/parkour_solver/numerics/disk.py#L369) | function |
 
 ## numerics/model.py
 

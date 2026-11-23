@@ -8,6 +8,7 @@
 #include "../py_math.hpp"
 #include "../schema.hpp"
 #include "pkc/canonical.hpp"
+#include "pkc/movement/cases.hpp"
 #include "pkc/movement/generation.hpp"
 #include "pkc/reachability/viability.hpp"
 #include "pkc/search/bounds/remaining.hpp"
@@ -273,6 +274,7 @@ GenerationContext expansion_context(const NodeSearch& search, const std::shared_
     context.gate = search.gate;
     context.check_budget = budget;
     context.frame_id = f.frame_id;
+    context.decision_point = get_or_null(decision.annotations, "decisionPoint");
     context.region_items = true;
     if (auto launch = search.anchors->launch(*program)) context.launch_face = launch->second;
     std::set<std::string> excluded;
@@ -290,8 +292,8 @@ GenerationContext expansion_context(const NodeSearch& search, const std::shared_
             const double length = python_hypot(dx, dz);
             if (length > 1e-12) {
                 const Array& point = items(at(decision.annotations, "decisionPoint"));
-                context.forward = Forward{{num(point[0]).value, num(point[1]).value}, {dx / length, dz / length},
-                                          num(f.turnaround_margin)};
+                context.forward = Forward{{num(point[0]).value, num(point[1]).value},
+                                          leg_class(dx / length, dz / length).allowed, num(f.turnaround_margin)};
             }
         }
     }
@@ -544,13 +546,7 @@ Expansion expand_type(const NodeSearch& search, const Program& parent_program, c
                     auto analysis = search.gate->analysis(std::make_shared<const Program>(landing));
                     if (leg && analysis) {
                         const auto [dx, dz] = *leg;
-                        std::array<double, 2> u;
-                        if (std::min(std::fabs(dx), std::fabs(dz)) <= std::tan(radians(22.5)) * std::max(std::fabs(dx), std::fabs(dz))) {
-                            u = std::fabs(dx) >= std::fabs(dz) ? std::array<double, 2>{std::copysign(1., dx), 0.}
-                                                               : std::array<double, 2>{0., std::copysign(1., dz)};
-                        } else {
-                            u = {std::copysign(std::sqrt(.5), dx), std::copysign(std::sqrt(.5), dz)};
-                        }
+                        const std::array<double, 2> u = leg_class(dx, dz).heading;
                         const Array& point = items(at(parent->annotations, "decisionPoint"));
                         const Array& velocity = items(at(parent->annotations, "decisionVelocity"));
                         const double px = num(point[0]).value, pz = num(point[1]).value;
@@ -575,6 +571,7 @@ Expansion expand_type(const NodeSearch& search, const Program& parent_program, c
                 }
             }
             record.meaningful = meaningful_choice(choices[ordinal]);
+            record.side_variant = choices[ordinal].side_variant;
             link(search, *parent, record.meaningful, child, complete(child));
             seen.insert(program_search_key(child));
             const bool held = !is_null(fit) && !py_truthy(at(fields(fit), "fits"));
@@ -700,11 +697,52 @@ Array advantageous_candidates(InteractionGate& gate, const AnchorScene& anchors,
             add_jump("grind", text(names), best);
         }
     }
+    // corner_airtime(name, t): the fastest corner jump cancel past a convex corner of block `name` onto a ledge at or
+    // below the feet: case_profile(top, ledge, the cancel at input 0)'s duration.
+    auto corner_airtime = [&](const std::string& name) {
+        GenerationContext context;
+        context.gate = &gate;
+        std::optional<std::int64_t> best;
+        for (const auto& b : items(at(scene, "blocks"))) {
+            const Object& block = fields(b);
+            if (as_text(at(block, "id")) != name) continue;
+            const std::int64_t index = as_int(at(block, "solidIndex"));
+            Array boxes;
+            for (const auto& option : gate.top_faces())
+                if (std::count(option.members.begin(), option.members.end(), index)) {
+                    boxes = option.boxes;
+                    break;
+                }
+            for (std::int64_t xdir : {-1, 1})
+                for (std::int64_t zdir : {-1, 1}) {
+                    if (!convex_corner(context, block, xdir, zdir, top.value)) continue;
+                    for (double u : corner_ledges(context, items(solids.at(index)), xdir, zdir, top.value, boxes)) {
+                        Array jump(200, Value{nullptr});
+                        jump[0] = real(kJumpVelocity);
+                        const Value contact = object({{"case", text("corner_jump_cancel")}, {"plane", value(top)},
+                                                      {"higherHeight", at(block, "top")}, {"state", integer_value(1)},
+                                                      {"direction", integer_value(-1)}});
+                        const Value t = trace_ladder_schedule(
+                            object({{"position", value(top)}, {"velocity", real(-kGravity * kYDrag)}, {"onGround", boolean(true)}}),
+                            array(Array(201, boolean(false))), array(Array(200, boolean(false))),
+                            array(Array(200, boolean(false))), array(std::move(jump)), real(u), integer_value(2),
+                            array({contact}), Value{nullptr}, true, value(threshold));
+                        const Object& tr = fields(t);
+                        if (as_text(at(tr, "status")) == "invalid" || !py_truthy(items(at(tr, "onGround")).back()) ||
+                            std::fabs(num(items(at(tr, "position")).back()).value - u) > 1e-8)
+                            continue;
+                        const std::int64_t duration = as_int(at(tr, "ticks"));
+                        if (!best || duration < *best) best = duration;
+                    }
+                }
+        }
+        return best;
+    };
     if (enabled("stepping"))
         for (const auto& b : kinds.stepping)
             if (f32(.42) < tops.at(b).value - top.value && tops.at(b).value - top.value <= f32(.6)) {
                 add_jump("slab_boost", text(anchors.support_face(b)), 2);
-                add_jump("corner_jump_cancel", text(anchors.support_face(b)), 2);
+                add_jump("corner_jump_cancel", text(anchors.support_face(b)), corner_airtime(b));
             }
     std::map<std::string, Object> entries;  // sorted by key, as the Python returns them
     auto add = [&](const Value& key_list, std::int64_t airtime, Value via, Object bound) {
@@ -857,7 +895,7 @@ MinimumRuns minimum_runs(const NodeSearch& search, const Program& program, const
         const Program& child = *item.proposal.owned;
         const std::string key = program_search_key(child);
         if (item.reason.empty() && !queued_ids.count(key)) {
-            out.queued.push_back({child, meaningful_choice(item.choice), key});
+            out.queued.push_back({child, meaningful_choice(item.choice), key, item.base, item.choice.side_variant});
             queued_ids.insert(key);
         }
         if (child.profile.grounded.back() || lands_later(*item.base, child))

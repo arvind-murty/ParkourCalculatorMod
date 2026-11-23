@@ -9,7 +9,10 @@
 
 namespace pkc {
 
-inline constexpr double kTolerance = 1e-7;  // schema.TOLERANCE
+// schema.SOLVER_MARGIN: how far inside what they plan the solver's rows keep; schema.REPLAY_TOLERANCE: the slack of
+// every replay comparison against the plan.
+inline constexpr double kSolverMargin = 1e-4;
+inline constexpr double kReplayTolerance = 1e-4;
 
 inline Num number(const Value& value, const std::string& name) {  // schema.number
     if (auto* integer = std::get_if<std::int64_t>(&value.data)) return {static_cast<double>(*integer), true};

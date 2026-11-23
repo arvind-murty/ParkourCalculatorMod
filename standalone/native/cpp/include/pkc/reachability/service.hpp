@@ -117,7 +117,9 @@ std::vector<bool> bounds_allowed_many(const GenerationContext& context, const st
                                       const std::vector<std::string>& phases);
 bool interaction_allowed(const GenerationContext& context, const Value& box, std::int64_t tick, const Object& label,
                          bool jumping);
-bool behind_decision(const GenerationContext& context, const Array& regions, std::int64_t tick, bool jumping,
+// behind_decision(context, region, tick, ...): whether reaching the reachable part of this player-centre region
+// needs more than the margin of travel in a move the decision's guide leg disallows (O10).
+bool behind_decision(const GenerationContext& context, const Array& region, std::int64_t tick, bool jumping,
                      const Object& label);
 bool entry_backward(const GenerationContext& context, const std::string& axis, std::int64_t sign, const Array& region,
                     const Object& label);

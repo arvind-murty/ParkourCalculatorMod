@@ -17,8 +17,9 @@ namespace pkc {
 
 class InteractionGate;
 
-struct Forward {  // context['forward']: an ordinary decision's guide leg
-    std::array<double, 2> point, direction;
+struct Forward {  // context['forward']: an ordinary decision's point and the moves its guide leg allows (leg_class)
+    std::array<double, 2> point;
+    std::set<std::pair<std::string, std::int64_t>> allowed;
     Num margin;
 };
 
@@ -33,6 +34,7 @@ struct GenerationContext {
     std::function<void()> check_budget;                        // checkBudget (unset: no budget)
     std::optional<std::set<std::string>> cases;           // context['cases'] (None: every case)
     std::optional<Forward> forward;
+    Value decision_point;  // context['decision'].get('decisionPoint'): null without a decision or its point
     Value frame_id;  // context.get('frameId'), null when absent
     bool region_items = false;
     InteractionGate* gate = nullptr;  // None: no reachability gate

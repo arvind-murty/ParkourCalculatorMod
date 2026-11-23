@@ -109,8 +109,6 @@ CompiledLadders compile_ladder_events(const Object& route, const Array& events, 
     const Array profiles = profiles_value ? items(*profiles_value) : Array{};
     const Value* ladder_events = get(route, "ladderEvents");
     if (!ladder_events) return out;
-    const Num clearance = num(at(route, "supportClearance"));
-    const Value margin = value(clearance.value < 2e-7 ? flt(2e-7) : clearance);  // max(clearance, 2e-7)
     for (const auto& selected_value : items(*ladder_events)) {
         const Object& selected = fields(selected_value);
         const std::int64_t leg = as_int(at(selected, "leg"));
@@ -140,7 +138,7 @@ CompiledLadders compile_ladder_events(const Object& route, const Array& events, 
         out.sneak.insert(out.sneak.begin() + lo, replacement.begin(), replacement.end());
         const Array built = items(schedule_constraints(at(selected, "schedule"), at(selected, "column"), at(selected, "wall"),
                                                        at(selected, "entryFace"), at(selected, "exitFace"),
-                                                       integer_value(offset), margin));
+                                                       integer_value(offset)));
         for (const auto& r : items(built[0])) out.rows.push_back(r);
         for (const auto& c : items(built[1])) out.contacts.push_back(c);
         for (const auto& c : items(built[2])) out.scene_contacts.push_back(c);
@@ -148,13 +146,14 @@ CompiledLadders compile_ladder_events(const Object& route, const Array& events, 
             for (std::int64_t state = as_int(at(event, "landed")); state < offset; ++state) {
                 out.ladder.at(state) = true;
                 const Value y0 = items(at(fields(at(s, "trace")), "position"))[0];
-                const Array& bounds = items(items(region_rectangles(at(selected, "column"), y0)).at(0));
+                const Value rectangles = region_rectangles(at(selected, "column"), y0);
+                const Array& bounds = items(items(rectangles).at(0));
                 for (const auto& [axis, lo_v, hi_v] : {std::tuple<const char*, Value, Value>{"X", bounds[0], bounds[1]},
                                                        std::tuple<const char*, Value, Value>{"Z", bounds[2], bounds[3]}}) {
                     out.rows.push_back(object({{"mode", text(axis)}, {"t1", integer_value(state)}, {"cmp", text("GE")},
-                                               {"rhs", value(add(num(lo_v), flt(1e-6)))}, {"name", text("ladder:run_inside")}}));
+                                               {"rhs", value(add(num(lo_v), flt(kSolverMargin)))}, {"name", text("ladder:run_inside")}}));
                     out.rows.push_back(object({{"mode", text(axis)}, {"t1", integer_value(state)}, {"cmp", text("LE")},
-                                               {"rhs", value(sub(num(hi_v), flt(1e-6)))}, {"name", text("ladder:run_inside")}}));
+                                               {"rhs", value(sub(num(hi_v), flt(kSolverMargin)))}, {"name", text("ladder:run_inside")}}));
                 }
             }
         }

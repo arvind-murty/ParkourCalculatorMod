@@ -375,13 +375,10 @@ Value interaction_reachability(const Value& envelopes_value, const Value& intera
     }
     if (const Value* model = get(envelopes, "model"); refine && model && !is_null(*model)) {
         const Value* rows = get(interaction, "rows");
-        const Value checked = disk_screen(*model, rows ? *rows : array({}), objective, kDiskCap, kDiskMaxIter);
+        const Value checked = disk_screen(*model, rows ? *rows : array({}), objective, DiskLimits{});
         if (!is_null(checked)) {
             const Object& c = fields(checked);
             if (as_text(at(c, "outcome")) == "infeasible") return ruled_out(fields(at(c, "proof")));
-            if (as_text(at(c, "outcome")) == "undecided")
-                return object({{"ruledOut", boolean(false)}, {"reason", text("relaxation_undecided")},
-                               {"status", at(c, "status")}, {"message", at(c, "message")}});
         }
     }
     return not_ruled_out;

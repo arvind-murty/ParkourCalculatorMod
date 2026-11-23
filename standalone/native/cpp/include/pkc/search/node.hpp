@@ -77,6 +77,8 @@ struct MinimumRuns {
         Program child;
         bool meaningful = false;
         std::string identity;
+        std::shared_ptr<const Program> parent;  // the program the child was appended to
+        std::optional<Value> side_variant;      // its choice's side-variant tag
     };
     std::vector<Queued> queued;
     Array log, reserves;
@@ -101,6 +103,7 @@ struct ProposalRecord {
     Value exclusions;               // frontier exclusions this proposal adds (node set by the caller)
     std::int64_t screened = 0, policy_rejections = 0;
     NodeEffects effects;
+    std::optional<Value> side_variant;  // the queued child's choice's side-variant tag
     // An ordinary decision's accepted child: {targets (advantageous keys as JSON), landed (its earliest landing's
     // ticks after the decision, or null), landings (e['landings'] entries without their node), fit (or null)}.
     Value ordinary;

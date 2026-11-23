@@ -1103,21 +1103,21 @@ void RepairLoop::walk() {
 void RepairLoop::grow(const Object& collision) {
     // Conflict-driven avoidance: a solve hit an obstacle, which the generator enumerates from now on. It restarts
     // over the larger obstacle set; the old generator's unsolved branches lack the new obstacle's rows and are
-    // dropped (the new one emits them refined); accepted points stay. A hit on an enumerated obstacle or a settled
-    // stretch has no repair.
+    // dropped (the new one emits them refined); accepted points stay. A hit on a settled stretch is repaired the same
+    // way, keeping the stretch's settled rows. A hit on an enumerated obstacle has no repair.
     ConstraintVariants* generator = source();
     const auto key = generator->obstacle_key(as_int(at(collision, "solidIndex")), as_int(at(collision, "tick")));
     auto set_termination = [&](const char* termination) {
         attempts_.back() = object(with(fields(attempts_.back()), "termination", text(termination)));
     };
     const Obstacles& enumerated = *generator->obstacles();
-    if (!key || std::find(enumerated.begin(), enumerated.end(), *key) != enumerated.end()) {
-        set_termination(key ? "enumerated_obstacle_hit" : "settled_obstacle_hit");
+    if (std::find(enumerated.begin(), enumerated.end(), key) != enumerated.end()) {
+        set_termination("enumerated_obstacle_hit");
         return;
     }
     set_termination("obstacle_added");
     Obstacles grown = enumerated;
-    grown.push_back(*key);
+    grown.push_back(key);
     owned_ = generator->with_obstacles(std::move(grown));
     source_exhausted_ = false;
     std::vector<Entry> kept;
@@ -1336,7 +1336,6 @@ Value RepairLoop::run() {
     }
 
     std::string termination = "contact_search_exhausted";
-    const double clearance = std::max(d(at(route_, "supportClearance")), 2e-7);
     while (!queue_.empty() || !source_exhausted_ || !repair_sources_.empty()) {
         if (settling_) {
             const Object done = std::move(*settling_);
@@ -1634,7 +1633,8 @@ Value RepairLoop::run() {
                     ((py_equal(t, text("worker_finished")) &&
                       in({"Infeasible_Problem_Detected", "Search_Direction_Becomes_Too_Small", "Restoration_Failed",
                           "Solve_Succeeded", "Solved_To_Acceptable_Level"})) ||
-                     (py_equal(t, text("disk_finished")) && in({"PrimalInfeasible", "AlmostPrimalInfeasible"})));
+                     // Every unsolved disk result is an infeasible verdict (numerics/disk).
+                     py_equal(t, text("disk_finished")));
             }
             put(completion, "oracleRejected", boolean(oracle_completed));
             put(completion, "proven", boolean(proven));
@@ -1756,7 +1756,7 @@ Value RepairLoop::run() {
         const Array& position = items(at(conflict, "position"));
         for (const auto& row : avoid_contact_rows(as_int(at(conflict, "leg")), as_int(at(conflict, "offset")),
                                                   as_text(at(conflict, "reason")), as_text(at(fields(at(conflict, "block")), "id")),
-                                                  items(at(conflict, "region")), d(position[0]), d(position[1]), clearance)) {
+                                                  items(at(conflict, "region")), d(position[0]), d(position[1]))) {
             const Object& r = fields(row);
             const double delta = std::fabs(d(position[as_text(at(r, "mode")) == "X" ? 0 : 1]) - d(at(r, "rhs")));
             offer(value(add(any_num(score), flt(delta))), joined(rows, {row}), passages, hits, proposal_yaw, nullptr, meta);

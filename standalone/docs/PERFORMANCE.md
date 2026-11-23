@@ -199,6 +199,9 @@ ordered options. That is targeted enumeration work, not a whole-solver speedup.
   the same way then takes the short control to 1.258 s and 1.312 s against 1.643 s and 1.613 s, and durable fixed work
   to 54.98 s and 55.03 s against 56.10 s and 55.99 s, with fixed work unchanged
   ([evidence](../research/native-core/README.md)).
+- Native mode after main's PR #10 (merged search, native port): fixed work 14.17 s and 13.83 s against Python mode's
+  40.28 s and 39.46 s, and 55.97 s and 55.31 s against 125.6 s and 129.9 s with durable checkpoints
+  ([evidence](../research/native-core/README.md)).
 - IPOPT row reduction: final rows fall from 278 to 91 on the benchmark
   ([constraint reduction](IPOPT_CONSTRAINT_REDUCTION.md)).
 - Content-addressed manifest plus SQLite checkpoints

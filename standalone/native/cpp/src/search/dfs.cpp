@@ -179,19 +179,27 @@ std::optional<NodeEvaluation> evaluate_node(const Value& scene, const Value& pro
     Object program = fields(program_in);
     const std::string identity = as_text(at(program, "decisionNode"));
     const Value depth = at(program, "decisionDepth");
+    // A forward side variant reports whether its keep-outside row is tight (sideOutcome); an unsolved one is.
+    const Value side_variant = get_or_null(program, "sideVariant");  // a copy: `program` is edited below
+    const bool forward = py_truthy(side_variant) && py_truthy(get_or_null(fields(side_variant), "forward"));
     auto unchanged = [&](const char* status) {
         return NodeEvaluation{object({{"status", text(status)}, {"program", object(program)}}), true};
     };
-    if (!solve_due(program_in, options.solve_interval)) return unchanged("untested");
+    if (!solve_due(program_in, options.solve_interval)) {
+        NodeEvaluation untested = unchanged("untested");
+        if (forward) untested.result = object(with(fields(untested.result), "sideOutcome", text("tight")));
+        return untested;
+    }
     if (py_truthy(options.saved)) {
         const Object& saved = fields(options.saved);
         const Value& status = get_or_null(saved, "status");
         if (py_equal(status, text("oracle_rejected"))) return unchanged("oracle_rejected");
-        if (py_equal(status, text("feasible")))
-            // The saved program carries physical rows and a free-yaw seed.
-            return NodeEvaluation{object({{"status", text("feasible")}, {"program", at(saved, "program")},
-                                          {"alternatives", get_or(saved, "alternatives", array({}))}}),
-                                  false};
+        if (py_equal(status, text("feasible"))) {  // the saved program carries physical rows and a free-yaw seed
+            Object out{{"status", text("feasible")}, {"program", at(saved, "program")},
+                       {"alternatives", get_or(saved, "alternatives", array({}))}};
+            if (forward) out.emplace_back("sideOutcome", at(saved, "sideOutcome"));
+            return NodeEvaluation{object(std::move(out)), false};
+        }
         const Value& repair = get_or_null(saved, "repairState");
         if (!is_null(repair)) {
             put(program, "repairState", repair);
@@ -273,8 +281,17 @@ std::optional<NodeEvaluation> evaluate_node(const Value& scene, const Value& pro
     hooks.observe(get_or_null(query, "model"), status, monotonic() - t, at(result, "work"));
     Array alternatives;
     bool input_program = true;
-    Value record_repair;
+    Value record_repair, side_outcome;
     if (status == "feasible") {
+        if (forward) {  // dfs.side_outcome: within SIDE_SLACK of binding is tight
+            const Object& row = fields(at(fields(side_variant), "row"));
+            const Array& positions = items(at(fields(at(fields(at(result, "best")), "candidate")), "positions"));
+            const double value = num(items(positions.at(as_int(at(row, "t1"))))
+                                         .at(as_text(at(row, "mode")) == "X" ? 0 : 1)).value;
+            const double rhs = num(at(row, "rhs")).value;
+            side_outcome = text((as_text(at(row, "cmp")) == "LE" ? rhs - value : value - rhs) <= kSideSlack ? "tight"
+                                                                                                         : "slack");
+        }
         const Object& profile = fields(at(program, "profile"));
         const std::int64_t duration = as_int(at(profile, "duration"));
         const std::int64_t settled = std::max(settled_through(profile, duration),
@@ -365,11 +382,13 @@ std::optional<NodeEvaluation> evaluate_node(const Value& scene, const Value& pro
     if (!alternatives.empty()) record.emplace_back("alternatives", array(alternatives));
     // The committed program drops its repair; the solve report reads the node's alternatives from it.
     if (status == "feasible") record.emplace_back("repairState", record_repair);
+    if (!is_null(side_outcome)) record.emplace_back("sideOutcome", side_outcome);
     hooks.store(identity, object(std::move(record)), object(with(with(query, "parent", parent), "depth", depth)), recovery);
     const bool defer = status == "suspended" && unresolved_only(get_or(program, "repairState", object({})));
-    return NodeEvaluation{object({{"status", text(status)}, {"program", object(program)},
-                                  {"alternatives", array(std::move(alternatives))}, {"deferUnknown", boolean(defer)}}),
-                          input_program};
+    Object out{{"status", text(status)}, {"program", object(program)},
+               {"alternatives", array(std::move(alternatives))}, {"deferUnknown", boolean(defer)}};
+    if (!is_null(side_outcome)) out.emplace_back("sideOutcome", side_outcome);
+    return NodeEvaluation{object(std::move(out)), input_program};
 }
 
 }  // namespace pkc

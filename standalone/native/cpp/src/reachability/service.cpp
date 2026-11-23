@@ -456,7 +456,7 @@ Value InteractionGate::relaxation(const std::shared_ptr<const Program>& program,
     Object plan = fields(schedule(route_value, {0}));
     put(plan, "vertical", at(fields(at(fields(prepared->result), "plan")), "vertical"));
     const Value problem = numerical_problem(route_value, object(std::move(plan)), analysis.coefficient, nullptr);
-    return disk_screen(problem, array({}), nullptr, kDiskCap, kDiskMaxIter);
+    return disk_screen(problem, array({}), nullptr, DiskLimits{});
 }
 
 std::pair<Value, Value> InteractionGate::check_program(const std::shared_ptr<const Program>& program,
@@ -468,12 +468,9 @@ std::pair<Value, Value> InteractionGate::check_program(const std::shared_ptr<con
     const std::string key = "screen:" + analysis->key + ":" + digest(objective) + ":" +
                             (cut ? std::to_string(*cut) : std::string("None"));
     const bool wall_hits = py_truthy(get_or_null(fields(scene_), "maxWallHits"));
-    bool undecided = false;
     auto relax = [&](const Array& rows) {
         count("relaxationChecks");
-        Value checked = relaxation(program, *analysis, objective, rows);
-        undecided = undecided || (!is_null(checked) && as_text(at(fields(checked), "outcome")) == "undecided");
-        return checked;
+        return relaxation(program, *analysis, objective, rows);
     };
     auto infeasible = [](const Value& checked) {
         return !is_null(checked) && as_text(at(fields(checked), "outcome")) == "infeasible";
@@ -514,11 +511,6 @@ std::pair<Value, Value> InteractionGate::check_program(const std::shared_ptr<con
         return made(Value{nullptr}, object({{"offset", integer_value(*cut)}, {"solids", at(f, "solids")},
                                             {"options", array(std::move(kept))}}));
     });
-    if (undecided) {
-        auto found = index_.find(key);
-        cache_.erase(found->second);
-        index_.erase(found);
-    }
     return *verdict;
 }
 
@@ -527,15 +519,6 @@ namespace {
 InteractionGate& gate_of(const GenerationContext& context) {
     if (!context.gate) fail("Native generation needs an interactionGate");
     return *context.gate;
-}
-
-Value first_extreme(const Array& regions, std::size_t k, bool lowest) {  // min()/max() keep the first of equals
-    Value best = items(regions.front())[k];
-    for (const auto& r : regions) {
-        const double v = num(items(r)[k]).value;
-        if (lowest ? v < num(best).value : v > num(best).value) best = items(r)[k];
-    }
-    return best;
 }
 
 }  // namespace
@@ -582,7 +565,7 @@ bool interaction_allowed(const GenerationContext& context, const Value& box, std
     return bounds_allowed_many(context, {expanded}, tick, label, jumping, {"Y", "X", "Z"})[0];
 }
 
-bool behind_decision(const GenerationContext& context, const Array& regions, std::int64_t tick, bool jumping,
+bool behind_decision(const GenerationContext& context, const Array& region, std::int64_t tick, bool jumping,
                      const Object& label) {
     if (!context.forward) return false;
     const Forward& forward = *context.forward;
@@ -594,36 +577,39 @@ bool behind_decision(const GenerationContext& context, const Array& regions, std
         const Array& states = items(at(fields(envelope), "states"));
         if (at_tick < static_cast<std::int64_t>(states.size())) reach = &fields(states[at_tick]);
     }
-    const double px = forward.point[0], pz = forward.point[1], dx = forward.direction[0], dz = forward.direction[1];
-    double ahead = -std::numeric_limits<double>::infinity();
-    for (const auto& r : regions) {
-        const Array& region = items(r);
-        double x0 = num(region[0]).value, z0 = num(region[1]).value, x1 = num(region[2]).value, z1 = num(region[3]).value;
-        if (reach) {
-            const Array &rx = items(at(*reach, "X")), &rz = items(at(*reach, "Z"));
-            x0 = std::max(x0, num(rx[0]).value);
-            x1 = std::min(x1, num(rx[1]).value);
-            z0 = std::max(z0, num(rz[0]).value);
-            z1 = std::min(z1, num(rz[1]).value);
-            if (x0 > x1 || z0 > z1) continue;
-        }
-        ahead = std::max(ahead, std::max(dx * (x0 - px), dx * (x1 - px)) + std::max(dz * (z0 - pz), dz * (z1 - pz)));
+    double x0 = num(region[0]).value, z0 = num(region[1]).value, x1 = num(region[2]).value, z1 = num(region[3]).value;
+    if (reach) {
+        const Array &rx = items(at(*reach, "X")), &rz = items(at(*reach, "Z"));
+        x0 = std::max(x0, num(rx[0]).value);
+        x1 = std::min(x1, num(rx[1]).value);
+        z0 = std::max(z0, num(rz[0]).value);
+        z1 = std::min(z1, num(rz[1]).value);
+        if (x0 > x1 || z0 > z1) return false;
     }
-    if (ahead >= -forward.margin.value) return false;
+    // max((need, side)) over the disallowed moves: the larger need, then the larger side name.
+    std::optional<std::pair<double, std::string>> worst;
+    for (const std::string axis : {"X", "Z"})
+        for (std::int64_t sign : {-1, 1}) {
+            if (forward.allowed.count({axis, sign})) continue;
+            const double point = forward.point[axis == "X" ? 0 : 1];
+            const double need = sign < 0 ? point - (axis == "X" ? x1 : z1) : (axis == "X" ? x0 : z0) - point;
+            std::pair<double, std::string> candidate{need, axis + (sign > 0 ? "+" : "-")};
+            if (!worst || candidate > *worst) worst = std::move(candidate);
+        }
+    if (worst->first <= forward.margin.value) return false;
     Object exclusion = label;
     exclusion.emplace_back("frame", context.frame_id);
-    exclusion.emplace_back("horizontal", array({first_extreme(regions, 0, true), first_extreme(regions, 1, true),
-                                                first_extreme(regions, 2, false), first_extreme(regions, 3, false)}));
+    exclusion.emplace_back("horizontal", array(region));
     exclusion.emplace_back("input", integer_value(at_tick));
-    exclusion.emplace_back("proof", object({{"reason", text("behind_decision_point")}, {"ahead", real(ahead)},
-                                            {"margin", value(forward.margin)}}));
+    exclusion.emplace_back("proof", object({{"reason", text("behind_decision_point")}, {"side", text(worst->second)},
+                                            {"need", real(worst->first)}, {"margin", value(forward.margin)}}));
     gate.exclusions.push_back(object(std::move(exclusion)));
     return true;
 }
 
 bool entry_backward(const GenerationContext& context, const std::string& axis, std::int64_t sign, const Array& region,
                     const Object& label) {
-    if (!context.forward || sign * context.forward->direction[axis == "X" ? 0 : 1] <= 0) return false;
+    if (!context.forward || context.forward->allowed.count({axis, -sign})) return false;
     Object exclusion = label;
     exclusion.emplace_back("frame", context.frame_id);
     exclusion.emplace_back("horizontal", array(region));

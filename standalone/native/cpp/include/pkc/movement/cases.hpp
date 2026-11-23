@@ -16,7 +16,7 @@
 namespace pkc {
 
 Value outside_row(const Array& box, const std::string& axis, std::int64_t sign, std::int64_t state,
-                  const std::string& name = "case:outside", double margin = 1e-6);
+                  const std::string& name = "case:outside");
 bool exposed_side(const GenerationContext& context, const Object& block, const std::string& axis, std::int64_t sign,
                   double y);
 bool convex_corner(const GenerationContext& context, const Object& block, std::int64_t x_direction,
@@ -28,9 +28,13 @@ Array corner_rows(const Array& box, std::int64_t first, std::int64_t second, std
 std::vector<std::pair<Array, Array>> top_choices(const GenerationContext& context, const FaceOption& face,
                                                  const std::string& owner, std::int64_t state,
                                                  const std::string& name, bool jumping);
-// landing_wall_options: (rows, finite contact events) per exposed or approachable side.
-std::vector<std::pair<Array, Array>> landing_wall_options(const GenerationContext& context, const Object& block,
-                                                          std::int64_t landing, double y);
+// ceiling_clearances(context, feet, top, jumping=...): row sets keeping a step's, slab boost's or corner jump cancel's
+// take-off from `feet` out from under every low ceiling below `top` (one outside row per exposed side per ceiling).
+std::vector<Array> ceiling_clearances(const GenerationContext& context, double feet, double top, bool jumping);
+// corner_ledges(scene, box, x_direction, z_escape, feet, boxes): the planes, ascending, of the top faces at or below
+// `feet` under a corner jump cancel's jump tick.
+std::vector<double> corner_ledges(const GenerationContext& context, const Array& box, std::int64_t x_direction,
+                                  std::int64_t z_escape, double feet, const Array& boxes);
 
 Value contact_event(const FaceOption& option, const std::string& axis, std::int64_t direction, std::int64_t offset,
                     const std::string& role, Object fields = {});

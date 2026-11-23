@@ -21,7 +21,7 @@ NATIVE_TYPES = ('normal', 'stepping', 'ceiling')
 def _shares_geometry(scene, gate_scene):
     """Whether a context scene is the gate's up to fields the generators do not read (the DFS sets goalBlock)."""
     return all(scene.get(k) is gate_scene.get(k) or scene.get(k) == gate_scene.get(k)
-               for k in ('blocks', 'collisionScene', 'ceilingHits', 'supportClearance', 'initial'))
+               for k in ('blocks', 'collisionScene', 'ceilingHits', 'initial'))
 
 
 def generate_choices(kind, context, **options):

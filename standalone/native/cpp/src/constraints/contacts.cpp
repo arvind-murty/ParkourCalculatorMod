@@ -63,7 +63,8 @@ Array exposed_tops(const SceneGeometry& geometry, const Object& block) {
 }
 
 Array avoid_contact_rows(std::int64_t leg, std::int64_t offset, const std::string& reason, const std::string& block_id,
-                         const Array& region, double x, double z, double clearance) {
+                         const Array& region, double x, double z) {
+    const double clearance = kSolverMargin;
     std::vector<std::pair<double, Value>> rows;
     const std::tuple<const char*, double, double, double> axes[] = {{"X", x, n(region[0]), n(region[2])},
                                                                     {"Z", z, n(region[1]), n(region[3])}};
@@ -282,7 +283,7 @@ std::optional<Value> walk_off_faces(const Value& scene_value, const SceneGeometr
     std::string id;
     for (const auto& [name, _] : blocks) id += (id.empty() ? "" : "+") + name;
     const Array rows = avoid_contact_rows(0, cut, "walk_off", id, region, (0. + n(sx[0]) + n(sx[1])) / 2,
-                                          (0. + n(sz[0]) + n(sz[1])) / 2, n(at(scene, "supportClearance")));
+                                          (0. + n(sz[0]) + n(sz[1])) / 2);
     std::map<std::pair<std::string, int>, Value> face;
     for (const auto& row : rows) {
         const Object& r = fields(row);

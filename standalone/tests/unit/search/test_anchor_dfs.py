@@ -381,6 +381,7 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertNotIn('settledThrough',result['program'])
         self.assertEqual(result['program']['repairState']['pending'],[dict(rows=[],passages=[],hits=[],score=0.)])
 
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # stubs evaluate_program, which a native decision check never calls
     def test_a_forward_side_variant_reads_its_keep_outside_row_at_its_tick(self):
         checked,nodes={},{}
         def probe(node_evaluator,p):
@@ -603,6 +604,7 @@ class AnchorDFSTests(unittest.TestCase):
 
 @unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'),'Set PKC_IPOPT_PYTHON')
 class SideOutcomeNodeSolveTests(unittest.TestCase):
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # patches the Python frontier; the native loop runs its own
     def test_the_forward_slab_boost_row_is_slack_after_three_run_ticks_and_tight_after_five(self):
         # corridor-diagonal's measured state: on the start block's X- edge, moving -X+Z, before the target's Z- side.
         from parkour_solver.bridge.python_compiler import PythonCompiler

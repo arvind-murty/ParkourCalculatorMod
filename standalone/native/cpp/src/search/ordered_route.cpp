@@ -9,11 +9,9 @@
 
 #include "../py_math.hpp"
 #include "../schema.hpp"
-#include "pkc/envelopes.hpp"
 #include "pkc/numerics/builders.hpp"
 #include "pkc/numerics/model.hpp"
 #include "pkc/program.hpp"
-#include "pkc/reachability/screen.hpp"
 #include "pkc/scene/route.hpp"
 #include "pkc/scene/static_collision.hpp"
 #include "pkc/validation/numerical.hpp"
@@ -59,18 +57,6 @@ std::int64_t step_kinds(const Object& route) {
     std::int64_t count = 0;
     for (const auto& kind : listed(route, "kinds")) count += as_text(kind) == "step";
     return count;
-}
-
-// reachability/screen.contradiction(problem): the proof without ruledOut, or null.
-Value contradiction(const Value& problem) {
-    Object envelopes = fields(reachable_envelopes(problem, Value{nullptr}, std::nullopt));
-    envelopes.emplace_back("model", problem);
-    const Value checked = at(fields(condition_envelopes(object(std::move(envelopes)), {}, true, nullptr)), "proof");
-    if (!py_truthy(at(fields(checked), "ruledOut"))) return Value{nullptr};
-    Object out;
-    for (const auto& field : fields(checked))
-        if (field.first != "ruledOut") out.push_back(field);
-    return object(std::move(out));
 }
 
 // ranking.objective_seed(problem).
@@ -325,10 +311,6 @@ Value find_route(const Value& request, const SolveHooks& hooks, const RouteSearc
             Object problem = fields(numerical_problem(route_value, plan_value, coefficients,
                                                       is_null(parent) ? nullptr : &parent_candidate));
             if (hooks.work_proposal) hooks.work_proposal(object(problem));
-            const Value impossible = contradiction(object(problem));
-            if (!is_null(impossible))
-                return object({{"status", text("blocked")}, {"plan", plan_value}, {"certificate", impossible},
-                               {"problemHash", text(fingerprint(object(problem)))}});
             const bool polish = search.optimize_goal && stage == "jump" && allocation.size() == legs;
             const bool early_stop = search.stop_on_feasible ? *search.stop_on_feasible : !polish;
             const Value fallback = polish ? objective_seed(problem) : initial_guess(route_value, plan_value, nullptr);

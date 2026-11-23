@@ -269,7 +269,8 @@ ConstraintVariants::ConstraintVariants(VariantInputs inputs, std::optional<Obsta
     };
     for (const auto& segment : landing_segments(profile, through_)) {
         const std::int64_t begin = segment.first, end = segment.second;
-        if (end <= inputs_.settled) continue;
+        // A settled stretch keeps its rows, but a re-solve can still hit an obstacle they never covered.
+        if (end <= inputs_.settled && !obstacles_) continue;
         // The obstacle is built from the solids this stretch can reach: an unreachable member's space is free for the
         // stretch, and dropping it can split a touching cluster.
         std::vector<std::int64_t> basis = scope_indices;
@@ -363,15 +364,10 @@ Value ConstraintVariants::state() const {
     return object(std::move(out));
 }
 
-std::optional<std::array<std::int64_t, 2>> ConstraintVariants::obstacle_key(std::int64_t solid, std::int64_t tick) const {
-    // Rows constrain states, and the movement ends in state tick+1 (a landing's first state when it lands).
-    const std::int64_t state = tick + 1;
+std::array<std::int64_t, 2> ConstraintVariants::obstacle_key(std::int64_t solid, std::int64_t tick) const {
     for (const auto& [begin, end] : landing_segments(profile(), through_))
-        if ((begin <= state && state < end) || (state == end && end == through_)) {
-            if (end > inputs_.settled) return std::array<std::int64_t, 2>{begin, solid};
-            return std::nullopt;
-        }
-    return std::nullopt;
+        if (begin <= tick && tick < end) return {begin, solid};
+    fail("No stretch holds movement " + std::to_string(tick));
 }
 
 std::unique_ptr<ConstraintVariants> ConstraintVariants::with_obstacles(Obstacles obstacles) const {
@@ -403,9 +399,7 @@ Num ConstraintVariants::coordinate(const std::string& axis, std::int64_t tick, c
 
 Value ConstraintVariants::face_row(const Object& face, std::int64_t t) const {
     const Object& route = fields(inputs_.route);
-    const Value& support = at(route, "supportClearance");
-    const Num clearance = std::holds_alternative<std::int64_t>(support.data) ? whole(i64(support)) : flt(d(support));
-    const Num margin = face_clearance(route, 0, t, face, clearance);
+    const Num margin = face_clearance(route, 0, t, face);
     const std::int64_t direction = i64(at(face, "direction"));
     const Value& plane_value = at(face, "plane");
     const Num plane = std::holds_alternative<std::int64_t>(plane_value.data) ? whole(i64(plane_value)) : flt(d(plane_value));
@@ -485,8 +479,7 @@ Value ConstraintVariants::prepare_item(Value item_value) {
                 z = (d(r[1]) + d(r[3])) / 2;
             }
             for (const auto& row : avoid_contact_rows(i64(at(c, "leg")), t, as_text(at(c, "reason")),
-                                                      as_text(at(fields(at(c, "block")), "id")), r, x, z,
-                                                      d(at(fields(inputs_.route), "supportClearance"))))
+                                                      as_text(at(fields(at(c, "block")), "id")), r, x, z))
                 if (!ruled_out(interaction_reachability(envelopes, array({row})))) rows.push_back(array({row}));
         }
         Object item = fields(item_value);

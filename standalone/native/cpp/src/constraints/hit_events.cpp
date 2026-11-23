@@ -95,7 +95,7 @@ void validate_hits(Object& route) {
 
 CompiledHits compile_hits(const Object& route, const Array& events) {
     CompiledHits out;
-    Num margin = py_max(num(at(route, "supportClearance")), flt(2e-7));
+    const Num margin = flt(kSolverMargin);
     const Array& airtimes = items(at(route, "airtimes"));
     for (const auto& hit_value : listed(route, "hitEvents")) {
         const Object& hit = fields(hit_value);

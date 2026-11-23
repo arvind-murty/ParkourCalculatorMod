@@ -19,9 +19,9 @@ Array exposed_tops(const SceneGeometry& geometry, const Object& block);
 Array floor_checks(const Value& scene, const std::vector<std::string>& block_ids, const Array& profiles,
                    const Value* envelopes);
 
-// avoid_contact_rows(conflict, clearance) for a conflict's leg, offset, reason, block id, region and position.
+// avoid_contact_rows(conflict) for a conflict's leg, offset, reason, block id, region and position.
 Array avoid_contact_rows(std::int64_t leg, std::int64_t offset, const std::string& reason, const std::string& block_id,
-                         const Array& region, double x, double z, double clearance);
+                         const Array& region, double x, double z);
 
 // walk_off_faces(scene, program, cut, envelopes, landing_boxes): nullopt is None, else
 // {solids, region, diagonal, options}. A null `landing_boxes` is None.

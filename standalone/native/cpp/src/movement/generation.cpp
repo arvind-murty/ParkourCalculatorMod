@@ -3,11 +3,14 @@
 #include "pkc/movement/generation.hpp"
 
 #include <algorithm>
+#include <map>
+#include <optional>
 #include <set>
 
 #include "../schema.hpp"
 #include "pkc/canonical.hpp"
 #include "pkc/movement/cases.hpp"
+#include "pkc/movement/contact_combinations.hpp"
 #include "pkc/movement/normal.hpp"
 #include "pkc/reachability/service.hpp"
 #include "pkc/vertical.hpp"
@@ -104,38 +107,38 @@ void flight_cases(const GenerationContext& context, bool jumping, const std::vec
                           {"lowerBoxes", array(lower_boxes)},
                           {"anchors", object({{"landing", integer_value(landing)}, {"hit", integer_value(landing + 1)}})}};
         };
+        const Array bounding = items(bounding_region(higher.regions));
         for (const Object* block : members) {
             const Value& box_value = items(at(fields(at(fields(context.gate->scene()), "collisionScene")), "solids"))
                                          .at(as_int(at(*block, "solidIndex")));
             const Array& box = items(box_value);
-            if (!interaction_allowed(context, box_value, landing, label(as_text(at(*block, "id")), "flight case"), jumping))
-                continue;
+            const std::string id = as_text(at(*block, "id"));
+            if (!interaction_allowed(context, box_value, landing, label(id, "flight case"), jumping)) continue;
             if (enabled(context, "blip") && 0 <= n(higher.plane) - y && n(higher.plane) - y <= f32(.6)) {
                 for (const auto& [top, regions] : top_choices(context, higher, name, landing + 1, "case:region", jumping)) {
-                    const Object shared = event_of("blip", higher.plane);
-                    std::vector<std::pair<Array, Array>> options;
-                    if (sequence_allowed(shared, concat(lower_rows, top), name)) {
-                        if (landing) {
-                            options = landing_wall_options(context, *block, landing, y);
-                        } else {
-                            for (const std::string axis : {"X", "Z"})
-                                for (std::int64_t sign : {-1, 1})
-                                    if (exposed_side(context, *block, axis, sign, y))
-                                        options.push_back({{outside_row(box, axis, sign, 0, "blip:wall_avoid")}, {}});
-                        }
-                    }
-                    for (const auto& [rows, finite] : options) {
-                        if (!fresh(made, {text("blip"), array(rows), array(finite), array(top)})) continue;
+                    // On the lower landing the player keeps clear of each exposed side of the higher block; a hit on
+                    // it before the blip is a wall hit followed by a blip.
+                    std::vector<Array> options;
+                    if (sequence_allowed(event_of("blip", higher.plane), concat(lower_rows, top), name))
+                        for (const std::string axis : {"X", "Z"})
+                            for (std::int64_t sign : {-1, 1})
+                                if (exposed_side(context, *block, axis, sign, y))
+                                    options.push_back({outside_row(box, axis, sign, landing, "blip:wall_avoid")});
+                    for (const auto& rows : options) {
+                        if (!fresh(made, {text("blip"), array(rows), array(top)})) continue;
                         if (auto choice = named(context, "stepping", event_of("blip", higher.plane), jumping,
-                                                concat(concat(lower_rows, rows), top), finite, name,
+                                                concat(concat(lower_rows, rows), top), {}, name,
                                                 concat(lower_regions, regions)))
                             out.push_back(std::move(*choice));
                     }
                 }
             }
-            for (const std::string c : {"blip_up", "corner_blip_up"}) {
+            // A corner blip (landing at most 0.6 below the higher top) and a corner blip-up (landing above it) keep
+            // the landing height: the player ends beside the block, past its corner.
+            for (const std::string c : {"blip_up", "corner_blip", "corner_blip_up"}) {
                 const double gap = n(higher.plane) - y;
-                if (!enabled(context, c) || !(c == "blip_up" ? y > n(higher.plane) : 0 <= gap && gap <= f32(.6))) continue;
+                const bool above = c == "blip_up" || c == "corner_blip_up";
+                if (!enabled(context, c) || !(above ? y > n(higher.plane) : 0 <= gap && gap <= f32(.6))) continue;
                 const Object shared = event_of(c, y_value);
                 const auto tops = c == "blip_up" ? top_choices(context, higher, name, landing + 1, "case:region", jumping)
                                                  : std::vector<std::pair<Array, Array>>{{{}, {}}};
@@ -146,18 +149,21 @@ void flight_cases(const GenerationContext& context, bool jumping, const std::vec
                         break;
                     }
                 if (!any) continue;
+                auto entered = [&](const std::string& axis, std::int64_t sign) {
+                    return !entry_backward(context, axis, sign, bounding, label(id, c));
+                };
                 std::vector<std::pair<Array, Array>> options;
                 if (c == "blip_up") {
                     for (const std::string axis : {"X", "Z"})
                         for (std::int64_t sign : {-1, 1})
-                            if (exposed_side(context, *block, axis, sign, y))
+                            if (exposed_side(context, *block, axis, sign, y) && entered(axis, sign))
                                 for (const auto& [top, regions] : tops)
                                     options.push_back(
                                         {concat({outside_row(box, axis, sign, landing, "blip_up:outside")}, top), regions});
                 } else {
                     for (std::int64_t xdir : {-1, 1})
                         for (std::int64_t zdir : {-1, 1})
-                            if (convex_corner(context, *block, xdir, zdir, y))
+                            if (convex_corner(context, *block, xdir, zdir, y) && entered("X", -xdir))
                                 options.push_back({corner_rows(box, landing, landing + 1, xdir, zdir, higher.boxes), {}});
                 }
                 for (const auto& [constraint, regions] : options) {
@@ -169,6 +175,45 @@ void flight_cases(const GenerationContext& context, bool jumping, const std::vec
                 }
             }
         }
+    }
+}
+
+// A choice onto a face with its side_variants move key (the case and its rows beyond the side; none for other
+// cases) and its keep-outside row.
+struct Found {
+    MovementChoice choice;
+    std::optional<std::string> key, move_case;
+    Value row;
+};
+
+bool satisfies(const Object& row, const Array& point) {  // _satisfies
+    const double value = num(point.at(as_text(at(row, "mode")) == "X" ? 0 : 1)).value;
+    return as_text(at(row, "cmp")) == "LE" ? value <= n(at(row, "rhs")) : value >= n(at(row, "rhs"));
+}
+
+// side_variants: tag each side of a normal step or slab boost move entered from several sides. A side whose row
+// the decision point already satisfies is the forward one; the others only gain distance, so the frontier holds them
+// until a forward is tight or fails. A move without a forward side is not tagged.
+void side_variants(const GenerationContext& context, std::vector<Found>& found, const std::string& face,
+                   std::vector<MovementChoice>& out) {
+    std::map<std::string, std::vector<const Object*>> moves;
+    for (const auto& f : found)
+        if (f.key) moves[*f.key].push_back(&fields(f.row));
+    for (auto& f : found) {
+        if (!is_null(context.decision_point) && f.key) {
+            const Array& point = items(context.decision_point);
+            const auto& rows = moves.at(*f.key);
+            const bool forward_exists =
+                std::any_of(rows.begin(), rows.end(), [&](const Object* r) { return satisfies(*r, point); });
+            if (rows.size() > 1 && forward_exists) {
+                const Object& row = fields(f.row);
+                f.choice.side_variant = object(
+                    {{"key", text(sha256_hex(*f.key).substr(0, 16))}, {"forward", boolean(satisfies(row, point))},
+                     {"row", f.row}, {"case", text(*f.move_case)}, {"face", text(face)},
+                     {"side", text(as_text(at(row, "mode")) + (as_text(at(row, "cmp")) == "LE" ? "-" : "+"))}});
+            }
+        }
+        out.push_back(std::move(f.choice));
     }
 }
 
@@ -189,7 +234,9 @@ std::vector<MovementChoice> stepping_choices(const GenerationContext& context) {
         for (const auto& [face, name, members] : faces) {
             if (!context.feet_allowed(name)) continue;
             const double rise = n(face.plane) - y0;
+            const Array bounding = items(bounding_region(face.regions));
             std::set<std::string> made;
+            std::vector<Found> found;
             for (const Object* block : members) {
                 const Value& box_value = solids.at(as_int(at(*block, "solidIndex")));
                 const Array& box = items(box_value);
@@ -199,39 +246,55 @@ std::vector<MovementChoice> stepping_choices(const GenerationContext& context) {
                         (!jumping && !context.run_tick_choices))
                         continue;
                     if (!interaction_allowed(context, box_value, 0, label(id, c), jumping)) continue;
+                    const std::vector<Array> clearances = ceiling_clearances(context, y0, n(face.plane), jumping);
                     for (const std::string axis : {"X", "Z"})
                         for (std::int64_t direction : {-1, 1}) {
-                            if (!exposed_side(context, *block, axis, -direction, y0)) continue;
-                            for (const auto& [top, regions] : top_choices(context, face, name, 1, "case:region", jumping)) {
-                                const Array rows = concat({outside_row(box, axis, -direction, 0)}, top);
-                                if (!fresh(made, {text(c), array(rows)})) continue;
-                                const Object event{
-                                    {"case", text(c)}, {"input", integer_value(0)}, {"plane", face.plane},
-                                    {"boxes", array(face.boxes)},
-                                    {"anchors", object({{jumping ? "beforeJump" : "beforeStep", integer_value(0)},
-                                                        {jumping ? "jump" : "hit", integer_value(1)}})}};
-                                if (auto choice = named(context, "stepping", event, jumping, rows, {},
-                                                        jumping ? std::nullopt : std::optional<std::string>(name), regions))
-                                    out.push_back(std::move(*choice));
-                            }
+                            if (!exposed_side(context, *block, axis, -direction, y0) ||
+                                entry_backward(context, axis, -direction, bounding, label(id, c)))
+                                continue;
+                            for (const auto& [top, regions] : top_choices(context, face, name, 1, "case:region", jumping))
+                                for (const Array& clear : clearances) {
+                                    const Array rows = concat(concat({outside_row(box, axis, -direction, 0)}, clear), top);
+                                    if (!fresh(made, {text(c), array(rows)})) continue;
+                                    const Object event{
+                                        {"case", text(c)}, {"input", integer_value(0)}, {"plane", face.plane},
+                                        {"boxes", array(face.boxes)},
+                                        {"anchors", object({{jumping ? "beforeJump" : "beforeStep", integer_value(0)},
+                                                            {jumping ? "jump" : "hit", integer_value(1)}})}};
+                                    if (auto choice = named(context, "stepping", event, jumping, rows, {},
+                                                            jumping ? std::nullopt : std::optional<std::string>(name),
+                                                            regions))
+                                        found.push_back({std::move(*choice),
+                                                         dumps(array({text(c), array(concat(clear, top))}), true, false),
+                                                         c, rows[0]});
+                                }
                         }
                 }
                 if (enabled(context, "corner_jump_cancel") && f32(.42) < rise && rise <= f32(.6) &&
                     interaction_allowed(context, box_value, 0, label(id, "corner_jump_cancel"), true)) {
+                    // Its zero rise is the step's, so a low ceiling over the take-off stops it as it stops a slab boost.
+                    const std::vector<Array> clearances = ceiling_clearances(context, y0, n(face.plane), true);
                     for (std::int64_t xdir : {-1, 1})
                         for (std::int64_t zdir : {-1, 1}) {
-                            if (!convex_corner(context, *block, xdir, zdir, y0)) continue;
-                            const Array rows = corner_rows(box, 0, 1, xdir, zdir, face.boxes);
-                            if (!fresh(made, {text("corner_jump_cancel"), array(rows)})) continue;
-                            const Object event{{"case", text("corner_jump_cancel")}, {"input", integer_value(0)},
-                                               {"plane", value(context.state.position)}, {"higherHeight", face.plane},
-                                               {"boxes", array(face.boxes)},
-                                               {"anchors", object({{"beforeJump", integer_value(0)}, {"jump", integer_value(1)}})}};
-                            if (auto choice = named(context, "stepping", event, true, rows, {}, std::nullopt, {}))
-                                out.push_back(std::move(*choice));
+                            // corner_rows enter across the X side facing -xdir; the Z side is only passed.
+                            if (!convex_corner(context, *block, xdir, zdir, y0) ||
+                                corner_ledges(context, box, xdir, zdir, y0, face.boxes).empty() ||
+                                entry_backward(context, "X", -xdir, bounding, label(id, "corner_jump_cancel")))
+                                continue;
+                            for (const Array& clear : clearances) {
+                                const Array rows = concat(corner_rows(box, 0, 1, xdir, zdir, face.boxes), clear);
+                                if (!fresh(made, {text("corner_jump_cancel"), array(rows)})) continue;
+                                const Object event{{"case", text("corner_jump_cancel")}, {"input", integer_value(0)},
+                                                   {"plane", value(context.state.position)}, {"higherHeight", face.plane},
+                                                   {"boxes", array(face.boxes)},
+                                                   {"anchors", object({{"beforeJump", integer_value(0)}, {"jump", integer_value(1)}})}};
+                                if (auto choice = named(context, "stepping", event, true, rows, {}, std::nullopt, {}))
+                                    found.push_back({std::move(*choice), std::nullopt, std::nullopt, kNull});
+                            }
                         }
                 }
             }
+            side_variants(context, found, name, out);
         }
     }
     for (const auto& [jumping, trace] : choice_approaches(context)) {
@@ -295,7 +358,7 @@ std::vector<MovementChoice> ceiling_choices(const GenerationContext& context) { 
                 }
             if (!hit) continue;
             const auto reached = reachable_option(context, option, *hit, jumping, label(owner, "ceiling"));
-            if (!reached || behind_decision(context, reached->regions, *hit, jumping, label(owner, "ceiling"))) continue;
+            if (!reached) continue;
             const Value event = contact_event(*reached, "Y", 1, *hit, "ceiling", {{"blockId", text(owner)}});
             ChoiceParts parts;
             VerticalContact contact;
@@ -326,7 +389,7 @@ std::vector<MovementChoice> ceiling_choices(const GenerationContext& context) { 
             }
         if (!allowed) continue;
         const auto option = reachable_option(context, underside, 1, true, label(owner, "grind"));
-        if (!option || behind_decision(context, option->regions, 1, true, label(owner, "grind"))) continue;
+        if (!option) continue;
         const Array bounding = items(bounding_region(option->regions));
         Array under;
         for (const auto& r : finite_rows(1, bounding, {{"t1", integer_value(1)}}))

@@ -184,6 +184,8 @@ struct MovementChoice {  // movement_choice() output, consumed by append_choice
     std::vector<Value> ladder_events;
     Nullable<std::string> terminal_support;
     bool interaction = false;
+    // stepping.side_variants' tag on a normal step's or slab boost's side; append_choice ignores it.
+    std::optional<Value> side_variant;
 };
 
 // Throw std::invalid_argument naming the offending path.

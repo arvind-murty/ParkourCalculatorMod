@@ -395,7 +395,7 @@ Value solve_numerical(const Value& request, std::optional<double> seconds, std::
                                        {"threshold", at(p, "threshold")}, {"objective", at(p, "objective")},
                                        {"source", get_or_null(p, "source")}})},
                    {"termination", text(termination)}, {"workerStatus", worker_status},
-                   {"workerLaunched", boolean(launched)}, {"error", error}, {"tolerance", real(kTolerance)},
+                   {"workerLaunched", boolean(launched)}, {"error", error}, {"tolerance", real(kReplayTolerance)},
                    {"phases", array(std::move(phases))},
                    {"diagnostics", object({{"rejectedCandidates", integer_value(rejected)},
                                            {"lastRejection", last_rejection},

@@ -242,6 +242,7 @@ void describe(R& c, V& v, MovementChoice*) {
     v.req("ladderEvents", c.ladder_events);
     v.req("terminalSupport", c.terminal_support);
     v.req("interaction", c.interaction);
+    v.opt("sideVariant", c.side_variant);
 }
 
 }  // namespace codec

@@ -230,12 +230,18 @@ pkc::GenerationContext generation_context(py::dict context) {
     }
     if (context.contains("forward") && !context["forward"].is_none()) {
         py::dict f = context["forward"];
-        auto point = f["point"].cast<std::vector<double>>(), direction = f["direction"].cast<std::vector<double>>();
+        auto point = f["point"].cast<std::vector<double>>();
+        std::set<std::pair<std::string, std::int64_t>> allowed;
+        for (py::handle move : f["allowed"]) allowed.insert(move.cast<std::pair<std::string, std::int64_t>>());
         py::handle margin = f["margin"];
-        out.forward = pkc::Forward{{point.at(0), point.at(1)}, {direction.at(0), direction.at(1)},
+        out.forward = pkc::Forward{{point.at(0), point.at(1)}, std::move(allowed),
                                    {margin.cast<double>(), py::isinstance<py::int_>(margin)}};
     }
     if (context.contains("frameId")) out.frame_id = convert(context["frameId"]);
+    if (context.contains("decision") && !context["decision"].is_none()) {
+        py::object point = context["decision"].attr("get")("decisionPoint");
+        if (!point.is_none()) out.decision_point = convert(point);
+    }
     if (context.contains("regionItems")) out.region_items = context["regionItems"].cast<bool>();
     if (context.contains("feetAllowed") && !context["feetAllowed"].is_none()) {
         py::object allowed = context["feetAllowed"];
@@ -358,8 +364,7 @@ pkc::SolveHooks solve_hooks(py::object compiler, py::object solve, py::object wo
 
 // RelaxedDispatch's services for a gate's native core: the native IPOPT solve, the core's confirmations and
 // numerics/disk's settings in force.
-pkc::RelaxedServices relaxed_services(std::shared_ptr<pkc::InteractionGate> core, py::object python_executable,
-                                      py::object cancel_event) {
+pkc::RelaxedServices relaxed_services(std::shared_ptr<pkc::InteractionGate> core, py::object cancel_event) {
     py::module_ disk = py::module_::import("parkour_solver.numerics.disk");
     pkc::RelaxedServices services;
     services.full = native_solve(cancel_event);
@@ -368,8 +373,8 @@ pkc::RelaxedServices relaxed_services(std::shared_ptr<pkc::InteractionGate> core
     services.remember_confirmation = [core](const std::string& fingerprint, const pkc::Value& result) {
         core->remember_confirmation(fingerprint, result);
     };
-    services.cap = disk.attr("CAP").cast<double>();
-    services.max_iter = disk.attr("MAX_ITER").cast<unsigned>();
+    services.limits = pkc::DiskLimits{disk.attr("CAP").cast<double>(), disk.attr("MAX_ITER").cast<unsigned>(),
+                                      disk.attr("RETRY_CAP").cast<double>(), disk.attr("RETRY_MAX_ITER").cast<unsigned>()};
     services.alarm_fraction = disk.attr("ALARM_FRACTION").cast<double>();
     services.material_gap = disk.attr("MATERIAL_GAP").cast<double>();
     return services;
@@ -393,7 +398,7 @@ pkc::EvaluateHooks evaluate_hooks(py::object compiler, py::object solve, py::obj
     if (py::object gate = service("gate"); !gate.is_none()) {  // the gate's native core serves its own caches
         auto core = gate.cast<std::shared_ptr<pkc::InteractionGate>>();
         if (hooks.numerical) {  // the relaxed dispatch, with its confirmations in the core
-            const pkc::RelaxedServices relaxed = relaxed_services(core, python_executable, cancel_event);
+            const pkc::RelaxedServices relaxed = relaxed_services(core, cancel_event);
             hooks.numerical = [relaxed](const pkc::Value& problem, double seconds, bool stop_on_feasible,
                                         const std::function<void(const pkc::Value&)>& on_incumbent) {
                 return pkc::relaxed_dispatch(problem, seconds, stop_on_feasible, false, on_incumbent, relaxed);
@@ -755,17 +760,16 @@ PYBIND11_MODULE(_pkc_native, m) {
     m.def("entry_channels", [](py::handle column, py::handle wall) {
         return to_python(pkc::entry_channels(convert(column), convert(wall)));
     });
-    m.def("outside_row", [](py::handle face, py::handle state, py::handle margin, py::handle name) {
-        return to_python(pkc::outside_row(convert(face), convert(state), convert(margin), convert(name)));
+    m.def("outside_row", [](py::handle face, py::handle state, py::handle name) {
+        return to_python(pkc::outside_row(convert(face), convert(state), convert(name)));
     });
     m.def("schedule_constraints", [](py::handle schedule, py::handle column, py::handle wall, py::handle entry_face,
-                                     py::handle exit_face, py::handle start, py::handle margin) {
+                                     py::handle exit_face, py::handle start) {
         py::list v = to_python(pkc::schedule_constraints(convert(schedule), convert(column), convert(wall),
-                                                         convert(entry_face), convert(exit_face), convert(start),
-                                                         convert(margin)));
+                                                         convert(entry_face), convert(exit_face), convert(start)));
         return py::tuple(v);
     }, py::arg("schedule"), py::arg("column"), py::arg("wall"), py::arg("entry_face"), py::arg("exit_face"),
-       py::kw_only(), py::arg("start") = 0, py::arg("margin") = 1e-6);
+       py::kw_only(), py::arg("start") = 0);
     m.def("exit_faces", [](py::handle column, py::handle target) {
         return to_python(pkc::exit_faces(convert(column), convert(target)));
     });
@@ -818,10 +822,9 @@ PYBIND11_MODULE(_pkc_native, m) {
             for (const auto& [begin, solid] : *variants.obstacles()) out.append(py::make_tuple(begin, solid));
             return out;
         })
-        .def("obstacle_key", [](const pkc::ConstraintVariants& variants, std::int64_t solid, std::int64_t tick) -> py::object {
-            auto key = variants.obstacle_key(solid, tick);
-            if (!key) return py::none();
-            return py::make_tuple((*key)[0], (*key)[1]);
+        .def("obstacle_key", [](const pkc::ConstraintVariants& variants, std::int64_t solid, std::int64_t tick) {
+            const auto key = variants.obstacle_key(solid, tick);
+            return py::make_tuple(key[0], key[1]);
         })
         .def("with_obstacles", [](const pkc::ConstraintVariants& variants, const pkc::Obstacles& obstacles) {
             return variants.with_obstacles(obstacles);
@@ -1287,8 +1290,10 @@ PYBIND11_MODULE(_pkc_native, m) {
         return to_python(pkc::Value{std::make_shared<const pkc::Array>(
             pkc::advantageous_candidates(*gate, *anchors, launch, number(top), next_owner, types, number(threshold)))});
     }, "anchors/policy.advantageous_candidates on the gate's face tables");
-    m.def("disk_cached_solve", [](py::handle content, double seconds, const std::string& kind, double cap, unsigned max_iter) {
-        return to_python(pkc::disk_cached_solve(convert(content), seconds, kind, cap, max_iter));
+    m.def("disk_cached_solve", [](py::handle content, double seconds, const std::string& kind, double cap,
+                                  unsigned max_iter, double retry_cap, unsigned retry_max_iter) {
+        return to_python(pkc::disk_cached_solve(convert(content), seconds, kind,
+                                                pkc::DiskLimits{cap, max_iter, retry_cap, retry_max_iter}));
     }, "numerics/disk.solve on the native decided-result cache the native gate's screens share");
     m.def("solve_numerical",
           [](py::handle request, std::optional<double> seconds, std::optional<bool> stop_on_feasible,
@@ -1307,17 +1312,17 @@ PYBIND11_MODULE(_pkc_native, m) {
           "numerics.solver.solve with the native worker (or `worker`)");
     m.def("relaxed_dispatch",
           [](std::shared_ptr<pkc::InteractionGate> core, py::handle problem, double seconds, bool stop_on_feasible,
-             bool confirming, py::object python_executable, py::object cancel_event, py::object on_incumbent) {
+             bool confirming, py::object cancel_event, py::object on_incumbent) {
               std::function<void(const pkc::Value&)> incumbent;
               if (!on_incumbent.is_none())
                   incumbent = [on_incumbent](const pkc::Value& candidate) {
                       python_hook([&] { on_incumbent(to_python(candidate)); });
                   };
               return to_python(pkc::relaxed_dispatch(convert(problem), seconds, stop_on_feasible, confirming, incumbent,
-                                                     relaxed_services(core, python_executable, cancel_event)));
+                                                     relaxed_services(core, cancel_event)));
           },
           py::arg("core"), py::arg("problem"), py::kw_only(), py::arg("seconds"), py::arg("stop_on_feasible"),
-          py::arg("confirming"), py::arg("python_executable"), py::arg("cancel_event"), py::arg("on_incumbent"),
+          py::arg("confirming"), py::arg("cancel_event"), py::arg("on_incumbent"),
           "numerics/disk.RelaxedDispatch's dispatch with its confirmations in the gate's native core");
     m.def("disk_stats", [] { return to_python(pkc::disk_stats()); }, "numerics/disk.STATS of the native decided cache");
     m.def("float_repr", &pkc::float_repr, "repr(float) for a finite float");

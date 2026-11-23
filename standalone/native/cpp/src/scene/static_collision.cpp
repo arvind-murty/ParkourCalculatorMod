@@ -26,7 +26,7 @@ using Cell = std::array<std::int64_t, 3>;
 
 const double kHalfWidth = f32(0.6) / 2;  // scene/route.HALF_WIDTH
 const double kBodyHeight = f32(1.8);     // scene/geometry.BODY_HEIGHT
-constexpr double kTolerance = 1e-7;      // schema.TOLERANCE
+constexpr double kReplayTolerance = 1e-4;  // schema.REPLAY_TOLERANCE
 const char* const kSceneFields[] = {"version", "profile", "bounds", "solids", "ladders", "surfaces", "stepHeight",
                                     "metadata"};
 
@@ -342,7 +342,7 @@ bool contact_mismatch(const StaticScene& scene, const std::vector<const Object*>
             for (const Aabb* m : members(scene, event))
                 if (m)
                     for (const auto& c : hit.step_triggers) trigger = trigger || (c.axis != 1 && c.obstacle == *m);
-            if (!hit.stepped || !trigger || axis != 1 || std::abs(hit.position[1] - plane) > kTolerance) return true;
+            if (!hit.stepped || !trigger || axis != 1 || std::abs(hit.position[1] - plane) > kReplayTolerance) return true;
             continue;
         }
         if (truthy(event, "step")) {
@@ -352,7 +352,7 @@ bool contact_mismatch(const StaticScene& scene, const std::vector<const Object*>
                 supported = supported || (m && (*m)[4] == plane && box[3] > (*m)[0] && box[0] < (*m)[3] &&
                                           box[5] > (*m)[2] && box[2] < (*m)[5]);
             if (!hit.stepped || axis != 1 || field(event, "direction", 0) != -1 || !supported ||
-                std::abs(hit.position[1] - plane) > kTolerance)
+                std::abs(hit.position[1] - plane) > kReplayTolerance)
                 return true;
             continue;
         }
@@ -360,7 +360,7 @@ bool contact_mismatch(const StaticScene& scene, const std::vector<const Object*>
         for (const auto& c : hit.clips)
             if (c.axis == axis) last = &c;
         if (!last || last->requested == last->value || last->requested * field(event, "direction", 0) <= 0 ||
-            std::abs(hit.position.at(axis) - plane) > kTolerance ||
+            std::abs(hit.position.at(axis) - plane) > kReplayTolerance ||
             !matches_face(scene, last->obstacle, event, before, hit))
             return true;
     }
@@ -441,7 +441,7 @@ Value check_scene(const Value& request_value, std::optional<double> seconds) {
         bool mismatch = contact_mismatch(scene, found == contacts.end() ? kNone : found->second,
                                          num(items(move)[1]), body, hit);
         bool ground_differs = !py_equal(boolean(hit.on_ground), expected_ground[t + 1]);
-        if (mismatch || occupancy || velocity_error > kTolerance || error > kTolerance || ground_differs) {
+        if (mismatch || occupancy || velocity_error > kReplayTolerance || error > kReplayTolerance || ground_differs) {
             const std::vector<Clip>& diagnostics = hit.stepped ? hit.step_triggers : hit.clips;
             std::map<int, std::size_t> last;
             for (std::size_t i = 0; i < diagnostics.size(); ++i) last[diagnostics[i].axis] = i;
@@ -449,7 +449,7 @@ Value check_scene(const Value& request_value, std::optional<double> seconds) {
             for (std::size_t i = 0; i < diagnostics.size(); ++i) {
                 int axis = diagnostics[i].axis;
                 if (i != last[axis] || (hit.stepped && axis == 1)) continue;
-                if (axis == 1 && std::abs(position[1] - expected[1]) <= kTolerance && !ground_differs) continue;
+                if (axis == 1 && std::abs(position[1] - expected[1]) <= kReplayTolerance && !ground_differs) continue;
                 clips.push_back(object({{"box", box_value(diagnostics[i].obstacle)}, {"axis", integer_value(axis)}}));
             }
             return object({{"feasible", boolean(false)},

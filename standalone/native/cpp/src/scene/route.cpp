@@ -197,8 +197,6 @@ Value prepare_route(const Value& request) {
         std::int64_t lo = integer(items(bounds)[0], "minimum run ticks", 0, 1000);
         integer(items(bounds)[1], "maximum run ticks", lo, 1000);
     }
-    if (number(setdefault(route, "supportClearance", real(1e-6)), "supportClearance").value < 0)
-        fail("Support clearance must be nonnegative");
     if (py_truthy(get_or_null(route, "obstacles"))) fail("Obstacle scenes require the integration replay adapter");
     for (const char* field : {"ladderTicks", "ladderPattern", "contacts", "vertical"})
         if (get(route, field))
@@ -292,7 +290,7 @@ Value schedule(const Value& route_value, const std::vector<std::int64_t>& alloca
     for (auto a : allocation) allocated += a;
     if (allocated > as_int(at(route, "maxTotalRunTicks"))) fail("Allocation exceeds the total run-tick limit");
     Array walls;
-    const Num clearance = num(at(route, "supportClearance"));
+    const Num clearance = flt(kSolverMargin);
     std::set<std::tuple<std::int64_t, std::int64_t, std::string>> checked(supports_at.begin(), supports_at.end());
     for (const auto& [tick, index, kind] : checked) {
         auto bounds = center_bounds(fields(blocks.at(index)), kind);

@@ -113,7 +113,8 @@ Value prepare_scene(const Value& request) {
                                          std::tuple{"maxFlightInputs", 200, 2, 200}})
         integer(setdefault(scene, key, integer_value(fallback)), key, lo, hi);
     for (const char* key : {"maxContactBranches", "maxBlockagesPerObstacle", "maxPassageCandidates",
-                            "maxHorizontalBlockagesPerObstacle", "maxVerticalBlockagesPerObstacle"})
+                            "maxHorizontalBlockagesPerObstacle", "maxVerticalBlockagesPerObstacle",
+                            "supportClearance"})
         erase(scene, key);
     Array ordered;
     for (std::size_t i = 0; i < blocks.size(); ++i)
@@ -123,12 +124,10 @@ Value prepare_scene(const Value& request) {
         }
     for (std::size_t i = 0; i < blocks.size(); ++i)
         if (ids[i] != start_id) ordered.push_back(blocks[i]);
-    const Value* clearance = get(scene, "supportClearance");
     Object checked = fields(prepare_route(object(
         {{"version", get_or_null(scene, "version")}, {"initial", get_or_null(scene, "initial")},
          {"blocks", array(ordered)}, {"airtimes", array(Array(blocks.size() - 1, integer_value(12)))},
-         {"inputs", object(inputs)}, {"maxTotalRunTicks", at(scene, "maxTotalRunTicks")},
-         {"supportClearance", clearance ? *clearance : real(1e-6)}})));
+         {"inputs", object(inputs)}, {"maxTotalRunTicks", at(scene, "maxTotalRunTicks")}})));
     if (scene_model == "coplanar_support_planes")
         for (const auto& block : blocks)
             if (!py_equal(at(fields(block), "top"), at(fields(ordered[0]), "top")))
@@ -140,7 +139,6 @@ Value prepare_scene(const Value& request) {
             if (field.first != "position" && field.first != "velocity" && field.first != "yaw")
                 fail("Collision-box avoidance requires a clear initial input state; additional resume fields need "
                      "shared movement compilation");
-    put(scene, "supportClearance", at(checked, "supportClearance"));
     if (py_truthy(get_or_null(scene, "climbableCells"))) {
         if (!solid_scene) fail("Climbable cells require collision_boxes");
         put(scene, "ladderSearch", ladder_settings(scene));

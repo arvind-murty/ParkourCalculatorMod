@@ -19,11 +19,6 @@ constexpr int kTangentAxes[3][2] = {{1, 2}, {0, 2}, {0, 1}};  // spatial/surface
 
 int axis_index(const std::string& axis) { return axis == "X" ? 0 : axis == "Y" ? 1 : 2; }
 
-Num contact_clearance(const Object& route) {
-    const Value* clearance = get(route, "supportClearance");
-    return py_max(clearance ? num(*clearance) : flt(1e-6), flt(2e-7));
-}
-
 Value expanded_face(const Array& box, int axis, const Num& clearance) {
     Num half = flt(kHalfWidth);
     std::array<Num, 6> expanded = {sub(num(box[0]), half), sub(num(box[1]), flt(kBodyHeight)), sub(num(box[2]), half),
@@ -112,7 +107,7 @@ void validate_contact_events(Object& route) {
             erase(event, "box");
             put(event, "boxes", array({held}));
             put(event, "surface", kNull);
-            put(event, "regions", array({expanded_face(items(held), axis, contact_clearance(route))}));
+            put(event, "regions", array({expanded_face(items(held), axis, flt(kSolverMargin))}));
         }
         const Value* boxes = get(event, "boxes");
         if (!boxes || !is_list(*boxes) || items(*boxes).empty()) fail("A contact needs its actual finite collision boxes");
@@ -207,7 +202,7 @@ Array finite_rows(int axis, const Array& region, const Object& at) {
 
 CompiledContacts compile_contact_events(const Object& route, const Array& events, std::int64_t ticks) {
     CompiledContacts out;
-    Num margin = py_max(num(at(route, "supportClearance")), flt(2e-7));
+    const Num margin = flt(kSolverMargin);
     for (const auto& event_value : listed(route, "contactEvents")) {
         const Object& event = fields(event_value);
         std::int64_t leg = as_int(at(event, "leg"));
@@ -265,9 +260,7 @@ std::vector<FaceOption> scene_contact_options(const Value& scene_value, const Sc
         members.emplace();
         for (const auto& b : items(at(scene, "blocks"))) members->push_back(as_int(at(fields(b), "solidIndex")));
     }
-    double clearance = 1e-6;  // contact_clearance(scene)
-    if (const Value* given = get(scene, "supportClearance")) clearance = num(*given).value;
-    clearance = std::max(clearance, 2e-7);
+    const double clearance = kSolverMargin;
     const Array& solids = items(at(fields(at(scene, "collisionScene")), "solids"));
     std::vector<FaceOption> out;
     const Value options = geometry.contact_options(axis, sign, real(clearance), *members);

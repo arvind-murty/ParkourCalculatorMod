@@ -1,0 +1,1 @@
+Pre-merge Python-mode (st1-fixed-python-base) vs native-mode (fs2-fixed) fixed-work reports: 3532 exclusions each, the same multiset, order first differing at index 1368 (the Python gate's log and the native core's are concatenated). Post-port: 3425 each, same multiset, first difference at 1579.

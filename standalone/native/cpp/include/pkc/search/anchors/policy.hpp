@@ -2,6 +2,7 @@
 // AnchorScene holds what face_namer and owner derive from one scene.
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <map>
 #include <optional>
@@ -80,5 +81,16 @@ private:
 Value classify(const Value& guides, std::int64_t span, const Value& point);
 Value classify(const Value& guides, std::int64_t span, double x, double z);
 Value decision_objective(const Value& guides, std::int64_t reached, const Value& point, const Value& fallback);
+
+// spatial/anchor_guides.leg_class(direction): a unit horizontal guide leg's heading and the moves ('X'|'Z', +1|-1)
+// its direction class allows. Within kAxisLegDegrees of an axis: that axis, forward and both sideways; otherwise its
+// quadrant's diagonal and its two forward axes.
+inline constexpr double kAxisLegDegrees = 22.5;  // anchor_guides.AXIS_LEG_DEGREES
+using Move = std::pair<std::string, std::int64_t>;
+struct LegClass {
+    std::array<double, 2> heading;
+    std::set<Move> allowed;
+};
+LegClass leg_class(double dx, double dz);
 
 }  // namespace pkc

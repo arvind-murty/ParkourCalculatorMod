@@ -296,7 +296,7 @@ PhaseOutcome fixed_phase(const Problem& problem, const Value& yaw_value, const R
                 const SX direction(contact->direction.value);
                 row(pn(a) - plane, 0, 0);
                 row(vn(a), 0, 0);
-                row(direction * (proposed(a) - plane), 1e-7, kInf);
+                row(direction * (proposed(a) - plane), kSolverMargin, kInf);
                 row(direction * (p[t](a) - plane), -kInf, 0);
             } else {
                 row(pn(a) - proposed(a), 0, 0);

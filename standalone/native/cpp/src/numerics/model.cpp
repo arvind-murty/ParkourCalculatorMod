@@ -85,7 +85,7 @@ Value check_vertical(const Value& config_value, std::int64_t n) {
             if (as_int(direction) != -1 || truthy_get(contact, "step"))
                 fail("A movement case requires its own lower contact");
             if (!is_one_of(at(contact, "case"), {"normal_step", "slab_boost", "blip", "blip_up",
-                                                 "corner_jump_cancel", "corner_blip_up", "grind"}))
+                                                 "corner_jump_cancel", "corner_blip", "corner_blip_up", "grind"}))
                 fail("Unsupported vertical movement case");
             for (const char* key : {"lowerHeight", "higherHeight", "clearance"})
                 if (const Value* value = get(contact, key)) number(*value, std::string("vertical case ") + key);

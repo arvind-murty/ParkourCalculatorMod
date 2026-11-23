@@ -19,6 +19,12 @@
 
 namespace pkc {
 
+struct SideMove {  // expansion['sides'][key]: one step's or slab boost's sides queued by this expansion (queue_child)
+    std::vector<Value> forwards;  // [decision node, side] of each forward side that waits for a node solve
+    std::vector<Value> held;      // the other sides' children
+    bool complete = false;        // a forward side is a complete program, which no node solve settles
+};
+
 struct ExpansionState {  // continuation['expansion']: one decision's expansion, a movement type at a time
     Value program;
     std::int64_t kind = 0, cursor = 0;  // kind == len(types): the types are done
@@ -30,6 +36,7 @@ struct ExpansionState {  // continuation['expansion']: one decision's expansion,
     std::optional<std::vector<Value>> held;                          // same-face fits with their program
     std::optional<Value> choice, child, full_program, projected;     // the Python proposal path's proposal
     std::optional<bool> proposal_checked;
+    std::optional<OrderedMap<SideMove>> sides;  // hold_sides reserves them at the expansion's end
 };
 
 struct HeldAlternative {  // continuation['alternatives'][node]
@@ -37,6 +44,13 @@ struct HeldAlternative {  // continuation['alternatives'][node]
     std::vector<std::string> restored;  // decision nodes of the programs restored so far
     std::int64_t next = 0;
     std::optional<std::vector<Nullable<std::string>>> watch;  // the nodes whose branches must die first (else the key)
+    std::optional<std::vector<std::string>> side;  // a held side variant's slack forward nodes (settle_sides)
+};
+
+struct SideReserve {  // continuation['sideReserves'] entry: held sides waiting for their forwards' node solves
+    std::vector<Value> programs;
+    std::vector<Value> forwards;  // [decision node, side]
+    OrderedMap<Value> outcomes;   // forward node -> 'failed' | 'tight' | 'slack'
 };
 
 struct Continuation {  // persistent_programs' state
@@ -57,6 +71,8 @@ struct Continuation {  // persistent_programs' state
     std::optional<std::vector<std::string>> succeeded_nodes;
     std::optional<std::vector<Value>> minimum_run_candidates;
     std::optional<Value> node_in_flight;
+    std::optional<std::vector<SideReserve>> side_reserves;
+    std::optional<std::vector<Value>> side_variants;  // the solve report's record of each reserved side
 };
 
 struct GenerationReport {  // persistent_programs' update()
@@ -127,6 +143,9 @@ private:
     void minimum_runs(ExpansionState& e);
     void hold_minimum_runs(ExpansionState& e, const Value& node, const Array& log, const Array& reserves);
     void hold_same_face(ExpansionState& e);
+    void queue_child(ExpansionState& e, const Program& parent, const std::optional<Value>& tag, Value child);
+    void hold_sides(ExpansionState& e);
+    void settle_sides(const Value& node, const Value* result = nullptr);
     void expand(ExpansionState& e);
     void update(const std::string& reason = "running");
     std::optional<Value> run();

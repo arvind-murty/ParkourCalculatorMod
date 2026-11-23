@@ -11,8 +11,10 @@ Value encode(const Generation& generation);
 
 namespace codec {
 
+PKC_RECORD(SideMove);
 PKC_RECORD(ExpansionState);
 PKC_RECORD(HeldAlternative);
+PKC_RECORD(SideReserve);
 PKC_RECORD(Continuation);
 PKC_RECORD(GenerationReport);
 PKC_RECORD(FrameParent);
@@ -45,6 +47,13 @@ PKC_RECORD(DfsState);
 // Fields in the order search_goals and persistent_programs first write them.
 
 template <class R, class V>
+void describe(R& m, V& v, SideMove*) {
+    v.req("forwards", m.forwards);
+    v.req("held", m.held);
+    v.req("complete", m.complete);
+}
+
+template <class R, class V>
 void describe(R& e, V& v, ExpansionState*) {
     v.req("program", e.program);
     v.req("kind", e.kind);
@@ -58,6 +67,7 @@ void describe(R& e, V& v, ExpansionState*) {
     v.opt("fullProgram", e.full_program);
     v.opt("projected", e.projected);
     v.opt("proposalChecked", e.proposal_checked);
+    v.opt("sides", e.sides);
 }
 
 template <class R, class V>
@@ -66,6 +76,14 @@ void describe(R& h, V& v, HeldAlternative*) {
     v.req("restored", h.restored);
     v.req("next", h.next);
     v.opt("watch", h.watch);
+    v.opt("side", h.side);
+}
+
+template <class R, class V>
+void describe(R& r, V& v, SideReserve*) {
+    v.req("programs", r.programs);
+    v.req("forwards", r.forwards);
+    v.req("outcomes", r.outcomes);
 }
 
 template <class R, class V>
@@ -90,6 +108,8 @@ void describe(R& c, V& v, Continuation*) {
     v.opt("succeededNodes", c.succeeded_nodes);
     v.opt("minimumRunCandidates", c.minimum_run_candidates);
     v.opt("nodeInFlight", c.node_in_flight);
+    v.opt("sideReserves", c.side_reserves);
+    v.opt("sideVariants", c.side_variants);
 }
 
 template <class R, class V>

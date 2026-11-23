@@ -1,6 +1,7 @@
 #include "pkc/search/frontier.hpp"
 
 #include <algorithm>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -60,6 +61,13 @@ bool restore_alternatives(Continuation& state, const std::vector<Value>& extra_l
     if (state.node_in_flight) live(*state.node_in_flight);
     if (state.expansion.value) live(state.expansion.value->program);
     for (const Value& program : extra_live) live(program);
+    // A side variant still held (a reserve, or a side entry not yet restored) is live, so what watches it or its
+    // decision waits until the side variants are exhausted.
+    if (state.side_reserves)
+        for (const SideReserve& reserve : *state.side_reserves)
+            for (const Value& program : reserve.programs) live(program);
+    for (const auto& [_, held] : state.alternatives->items)
+        if (held.side && held.next == 0) live(held.programs.at(0));
     bool restored = false;
     for (std::size_t i : waiting) {
         auto& [node, held] = state.alternatives->items[i];
@@ -127,6 +135,7 @@ Frontier::Frontier(Generation& generation, FrontierOptions options, FrontierHook
     if (!state_->decision_parents) state_->decision_parents.emplace();
     if (!state_->alternatives) state_->alternatives.emplace();
     if (!state_->succeeded_nodes) state_->succeeded_nodes.emplace();
+    if (!state_->side_reserves) state_->side_reserves.emplace();
     seen_.insert(state_->seen.begin(), state_->seen.end());
     const Array& position = items(at(fields(at(fields(options_.scene), "initial")), "position"));
     const double x = num(position.at(0)).value, z = num(position.at(2)).value;
@@ -234,9 +243,7 @@ void Frontier::minimum_runs(ExpansionState& e) {
             (*state_->decision_parents)[as_text(node_of(child))] = nullable_text(at(fields(child), "decisionParent"));
         seen_.insert(queued.identity);
         state_->seen.push_back(queued.identity);
-        (complete(child) ? state_->ready : state_->pending).push_back(child);
-        if (!e.queued_nodes) e.queued_nodes.emplace();
-        e.queued_nodes->push_back(nullable_text(node_of(child)));
+        queue_child(e, *queued.parent, queued.side_variant, child);
     }
     hold_minimum_runs(e, node, result.log, result.reserves);
 }
@@ -281,6 +288,113 @@ void Frontier::hold_same_face(ExpansionState& e) {
     }
 }
 
+void Frontier::queue_child(ExpansionState& e, const Program& parent, const std::optional<Value>& tag, Value child) {
+    // A tagged side of a step or slab boost waits for the expansion's end (hold_sides): its forward ones may come later.
+    bool forward = true;
+    if (tag) {
+        const Object& t = fields(*tag);
+        const Object& row = fields(at(t, "row"));
+        child = set_key(child, "sideVariant",
+                        object(with(t, "row", object(with(row, "t1", integer_value(parent.profile.duration +
+                                                                                    as_int(at(row, "t1"))))))));
+        if (!e.sides) e.sides.emplace();
+        SideMove& move = (*e.sides)[dumps(array({text(program_search_key(parent)), at(t, "key")}), false, false)];
+        forward = py_truthy(at(t, "forward"));
+        if (!forward) {
+            move.held.push_back(child);
+        } else if (complete(child)) {
+            move.complete = true;
+        } else {
+            move.forwards.push_back(array({node_of(child), at(t, "side")}));
+        }
+    }
+    if (forward) (complete(child) ? state_->ready : state_->pending).push_back(child);
+    // What a held jump back onto the launch face of this expansion waits for (hold_same_face).
+    if (!e.queued_nodes) e.queued_nodes.emplace();
+    e.queued_nodes->push_back(nullable_text(node_of(child)));
+}
+
+void Frontier::hold_sides(ExpansionState& e) {
+    // Reserve each move's held sides behind its forward nodes until those are solved (settle_sides). Without a forward
+    // queued here (screened, already seen) or with a complete one (no node solve), queue them now.
+    if (!e.sides) return;
+    const OrderedMap<SideMove> sides = std::move(*e.sides);
+    e.sides.reset();
+    for (const auto& [_, move] : sides.items) {
+        if (!move.forwards.empty() && !move.complete) {
+            if (!move.held.empty()) {
+                state_->side_reserves->push_back(SideReserve{move.held, move.forwards, {}});
+                if (!state_->side_variants) state_->side_variants.emplace();
+                for (const Value& p : move.held) {
+                    const Object& tag = fields(at(fields(p), "sideVariant"));
+                    state_->side_variants->push_back(
+                        object({{"node", get_or_null(fields(e.program), "decisionNode")}, {"child", node_of(p)},
+                                {"case", at(tag, "case")}, {"face", at(tag, "face")}, {"side", at(tag, "side")},
+                                {"forwards", array(move.forwards)}}));
+                }
+            }
+            continue;
+        }
+        for (const Value& child : move.held) (complete(child) ? state_->ready : state_->pending).push_back(child);
+    }
+}
+
+void Frontier::settle_sides(const Value& node, const Value* result) {
+    // Record a forward node's outcome: 'failed' without a result, else its sideOutcome. Once a reserve's forwards all
+    // have one, queue its sides when none is slack; otherwise hold each behind the slack forwards and their node
+    // alternatives until those branches die, like a node's alternatives (restore_alternatives).
+    std::vector<SideReserve>& reserves = *state_->side_reserves;
+    auto matches = [&](const SideReserve& r) {
+        return std::any_of(r.forwards.begin(), r.forwards.end(),
+                           [&](const Value& f) { return py_equal(items(f).at(0), node); });
+    };
+    std::vector<std::size_t> settling;
+    for (std::size_t i = 0; i < reserves.size(); ++i)
+        if (matches(reserves[i])) settling.push_back(i);
+    std::vector<std::size_t> removed;
+    for (std::size_t i : settling) {
+        SideReserve& reserve = reserves[i];
+        reserve.outcomes[as_text(node)] = result ? at(fields(*result), "sideOutcome") : text("failed");
+        if (reserve.outcomes.items.size() < reserve.forwards.size()) continue;
+        removed.push_back(i);
+        Object outcomes;
+        for (const auto& [n, outcome] : reserve.outcomes.items) outcomes.emplace_back(n, outcome);
+        std::set<std::string> children;
+        for (const Value& p : reserve.programs) children.insert(as_text(node_of(p)));
+        for (Value& record : *state_->side_variants)
+            if (children.count(as_text(at(fields(record), "child"))))
+                record = object(with(fields(record), "outcomes", object(outcomes)));
+        std::vector<std::string> slack;
+        for (const Value& f : reserve.forwards) {
+            const std::string n = as_text(items(f).at(0));
+            if (as_text(*reserve.outcomes.find(n)) == "slack") slack.push_back(n);
+        }
+        if (slack.empty()) {
+            for (const Value& child : reserve.programs) (complete(child) ? state_->ready : state_->pending).push_back(child);
+            continue;
+        }
+        // A forward's held node alternatives sit beside it, not below it, so they are watched too. Entries restore in
+        // insertion order, so these come after the forward's own alternatives.
+        std::vector<Nullable<std::string>> watch;
+        for (const std::string& n : slack) watch.push_back(Nullable<std::string>{n});
+        for (const std::string& n : slack)
+            if (const HeldAlternative* held = state_->alternatives->find(n))
+                for (const Value& p : held->programs) watch.push_back(nullable_text(node_of(p)));
+        for (const Value& child : reserve.programs) {
+            const std::string key = digest(array({node_of(child), text("sideVariant")}));
+            HeldAlternative alternative;
+            alternative.programs = {child};
+            alternative.watch = watch;
+            alternative.side = slack;
+            (*state_->alternatives)[key] = std::move(alternative);
+            for (Value& record : *state_->side_variants)
+                if (py_equal(at(fields(record), "child"), node_of(child)))
+                    record = object(with(fields(record), "alternative", text(key)));
+        }
+    }
+    for (auto it = removed.rbegin(); it != removed.rend(); ++it) reserves.erase(reserves.begin() + static_cast<std::ptrdiff_t>(*it));
+}
+
 void Frontier::expand(ExpansionState& e) {
     // One native batch per movement type (search/node.hpp): it commits nothing when the budget stops it. Like the
     // Python loop, it stops where a ready program is emitted (the cursor check in run()).
@@ -310,9 +424,7 @@ void Frontier::expand(ExpansionState& e) {
             if (!e.held) e.held.emplace();
             e.held->push_back(set_key(at(fields(record.ordinary), "fit"), "program", child));
         } else if (record.outcome == "queued") {
-            (complete(child) ? state_->ready : state_->pending).push_back(child);
-            if (!e.queued_nodes) e.queued_nodes.emplace();
-            e.queued_nodes->push_back(nullable_text(node_of(child)));
+            queue_child(e, program_from_value(e.program), record.side_variant, child);
             if (e.reached) {
                 const Object& found = fields(record.ordinary);
                 for (const Value& target : items(at(found, "targets")))
@@ -401,6 +513,7 @@ std::optional<Value> Frontier::run() {
                 if (!allowed) {
                     ++s.policy_rejections;
                     s.node_in_flight.reset();
+                    settle_sides(node_of(program));
                     continue;
                 }
                 if (complete(program)) {
@@ -411,6 +524,7 @@ std::optional<Value> Frontier::run() {
                 if (num(at(profile_of(program), "duration")).value >= max_inputs_ ||
                     num(at(p, "interactions")).value >= max_interactions_) {
                     s.node_in_flight.reset();
+                    settle_sides(node_of(program));
                     continue;
                 }
                 if (py_truthy(get_or_null(p, "needsNodeSolve"))) {
@@ -425,6 +539,7 @@ std::optional<Value> Frontier::run() {
                     if (py_truthy(get_or_null(r, "deferUnknown"))) {
                         s.deferred_nodes->push_back(program);
                         s.node_in_flight.reset();
+                        settle_sides(node_of(program));
                         update();
                         continue;
                     }
@@ -435,6 +550,7 @@ std::optional<Value> Frontier::run() {
                     }
                     s.node_in_flight.reset();
                     if (status == "oracle_rejected" || status == "exhausted") {
+                        settle_sides(node_of(program));
                         update();
                         continue;
                     }
@@ -448,6 +564,7 @@ std::optional<Value> Frontier::run() {
                             (*s.decision_parents)[as_text(at(fields(h), "decisionNode"))] =
                                 nullable_text(get_or_null(fields(h), "decisionParent"));
                     }
+                    settle_sides(node_of(program), &result);
                     Object updated = fields(program);
                     erase(updated, "needsNodeSolve");
                     program = object(std::move(updated));
@@ -469,6 +586,7 @@ std::optional<Value> Frontier::run() {
             if (e.kind == static_cast<std::int64_t>(types_.size())) {
                 if (e.reached || py_truthy(get_or_null(fields(e.program), "minimumRunSearch"))) minimum_runs(e);
                 hold_same_face(e);
+                hold_sides(e);
                 s.expansion.value.reset();
                 continue;
             }

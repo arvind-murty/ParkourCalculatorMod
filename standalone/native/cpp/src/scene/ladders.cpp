@@ -288,21 +288,20 @@ Value entry_channels(const Value& column_value, const Value& wall_value) {
     return array(std::move(result));
 }
 
-Value outside_row(const Value& face_value, const Value& state, const Value& margin, const Value& name) {
+Value outside_row(const Value& face_value, const Value& state, const Value& name) {
     const Object& face = fields(face_value);
     const std::int64_t direction = as_int(at(face, "direction"));
     return object({{"mode", at(face, "axis")}, {"t1", state}, {"cmp", text(direction > 0 ? "GE" : "LE")},
-                   {"rhs", value(add(n_of(at(face, "plane")), mul(whole(direction), n_of(margin))))}, {"name", name}});
+                   {"rhs", value(add(n_of(at(face, "plane")), mul(whole(direction), flt(kSolverMargin))))}, {"name", name}});
 }
 
 Value schedule_constraints(const Value& schedule_value, const Value& column_value, const Value& wall_value,
-                           const Value& entry_face, const Value& exit_face, const Value& start_value,
-                           const Value& margin_value) {
+                           const Value& entry_face, const Value& exit_face, const Value& start_value) {
     const Object& schedule = fields(schedule_value);
     const Object& column = fields(column_value);
     const Object& wall = fields(wall_value);
     const std::int64_t start = as_int(start_value);
-    const Num margin = n_of(margin_value);
+    const Num margin = flt(kSolverMargin);
     Array rows, contacts, scene_contacts;
     const Array& ys = items(at(fields(at(schedule, "trace")), "position"));
     const Array& ladder = items(at(schedule, "ladderTicks"));
@@ -339,9 +338,9 @@ Value schedule_constraints(const Value& schedule_value, const Value& column_valu
                 row(axis, at_state, "LE", sub(hi, margin), "ladder:inside");
             }
         } else if (s < as_int(at(schedule, "entryState"))) {
-            rows.push_back(outside_row(entry_face, integer_value(at_state), value(margin), text("ladder:before_entry")));
+            rows.push_back(outside_row(entry_face, integer_value(at_state), text("ladder:before_entry")));
         } else if (n_of(at(column, "minY")).value <= y.value && y.value < n_of(at(column, "maxY")).value && !is_null(exit_face)) {
-            rows.push_back(outside_row(exit_face, integer_value(at_state), value(margin), text("ladder:after_exit")));
+            rows.push_back(outside_row(exit_face, integer_value(at_state), text("ladder:after_exit")));
         }
         if (std::any_of(parts.begin(), parts.end(), [&](const Value& part) {
                 const Array& box = part_box(part);

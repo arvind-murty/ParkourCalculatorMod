@@ -20,7 +20,7 @@ namespace pkc {
 struct VariantCursor;
 struct VariantNode;
 
-inline constexpr std::int64_t kGenerationPolicy = 20;  // variants.GENERATION_POLICY
+inline constexpr std::int64_t kGenerationPolicy = 23;  // variants.GENERATION_POLICY
 inline constexpr std::int64_t kVariantStateVersion = 11;  // variants.STATE_VERSION
 
 using Obstacles = std::vector<std::array<std::int64_t, 2>>;  // [stretch begin, solid index]
@@ -49,7 +49,9 @@ public:
     bool conflict_driven() const { return obstacles_.has_value(); }
     bool exhausted() const;  // state['exhausted']
     const std::optional<Obstacles>& obstacles() const { return obstacles_; }
-    std::optional<std::array<std::int64_t, 2>> obstacle_key(std::int64_t solid, std::int64_t tick) const;
+    // [stretch begin, solid] for a solve that hit `solid` on movement `tick` (< through): a stretch's encounter
+    // sweeps its movements begin..end-1, so a movement into a landing belongs to the stretch before it.
+    std::array<std::int64_t, 2> obstacle_key(std::int64_t solid, std::int64_t tick) const;
     std::unique_ptr<ConstraintVariants> with_obstacles(Obstacles obstacles) const;
     std::size_t item_count() const;
 

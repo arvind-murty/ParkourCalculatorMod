@@ -84,8 +84,8 @@ def stats():
 def solve(content, *, seconds, kind='candidate'):
     """Solve a spec to a feasible or infeasible verdict, cached process-wide by content."""
     native = _native()
-    if native is not None:  # the native gate's screens share this cache; CAP and MAX_ITER are read here
-        return native.disk_cached_solve(content, seconds, kind, CAP, MAX_ITER)
+    if native is not None:  # the native gate's screens share this cache; the module's limits are read here
+        return native.disk_cached_solve(content, seconds, kind, CAP, MAX_ITER, RETRY_CAP, RETRY_MAX_ITER)
     encoded = json.dumps(content, sort_keys=True)
     stats = STATS[kind]
     if encoded in _DECIDED:
@@ -179,8 +179,7 @@ class RelaxedDispatch:
         core = getattr(self.gate, 'core', None)
         if core is not None:  # native node solves dispatch there too, so both share the core's confirmations
             return _native().relaxed_dispatch(core, problem, seconds=seconds, stop_on_feasible=stop_on_feasible,
-                confirming=confirming, python_executable=python_executable, cancel_event=cancel_event,
-                on_incumbent=on_incumbent)
+                confirming=confirming, cancel_event=cancel_event, on_incumbent=on_incumbent)
 
         def full(reason, request=problem):
             result = full_solve(request, seconds=seconds, stop_on_feasible=stop_on_feasible,

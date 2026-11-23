@@ -31,7 +31,6 @@ namespace {
 
 const int kModelVersion = 1;
 const double kAllowance = 1e-9;
-const double kPenetration = 1e-7;
 const double kTol = 1e-9;
 const double kInfeasibilityTol = 1e-8;
 const double kSeedTilt = 1e-4;
@@ -138,7 +137,7 @@ Value disk_solve(const Value& content_value, double time_limit, unsigned max_ite
                 equalities.row({{pos(axis, t + 1), 1.}}, plane);
                 equalities.row({{vel(axis, t + 1), 1.}}, 0.);
                 inequalities.row({{pos(axis, t), d}}, d * plane);
-                inequalities.row({{pos(axis, t), -d}, {vel(axis, t), -d}, {control(axis, t), -d}}, -d * plane - kPenetration);
+                inequalities.row({{pos(axis, t), -d}, {vel(axis, t), -d}, {control(axis, t), -d}}, -d * plane - kSolverMargin);
             }
         }
     }
@@ -278,7 +277,8 @@ Value disk_solve(const Value& content_value, double time_limit, unsigned max_ite
             score = real(score_offset + sign * dot);
         }
     } else {
-        outcome = status == "PrimalInfeasible" || status == "AlmostPrimalInfeasible" ? "infeasible" : "undecided";
+        // Every status but a limit is a verdict: no undecided result reaches IPOPT.
+        outcome = status == "MaxIterations" || status == "MaxTime" ? "limit" : "infeasible";
     }
     return object({{"status", text(status)},
                    {"outcome", text(outcome)},
@@ -434,7 +434,7 @@ Value attempt(const Value& content, double time_limit, unsigned max_iter) {  // 
     try {
         return disk_solve(content, time_limit, max_iter);
     } catch (const std::exception& error) {
-        return object({{"status", text("exception")}, {"outcome", text("undecided")}, {"controls", Value{nullptr}},
+        return object({{"status", text("exception")}, {"outcome", text("infeasible")}, {"controls", Value{nullptr}},
                        {"objective", Value{nullptr}}, {"iterations", integer_value(0)},
                        {"message", text(std::string("ValueError('") + error.what() + "')")}});
     }
@@ -442,7 +442,7 @@ Value attempt(const Value& content, double time_limit, unsigned max_iter) {  // 
 
 }  // namespace
 
-Value disk_cached_solve(const Value& content, double seconds, const std::string& kind, double cap, unsigned max_iter) {
+Value disk_cached_solve(const Value& content, double seconds, const std::string& kind, const DiskLimits& limits) {
     DecidedCache& cache = decided();
     const std::string encoded = dumps(content, true, false);
     Object& stats = cache.stats[kind];
@@ -451,26 +451,20 @@ Value disk_cached_solve(const Value& content, double seconds, const std::string&
         return object(with(fields(hit->second->second), "cached", boolean(true)));
     }
     bump(stats, "solved");
-    Value result = attempt(content, std::min(cap, seconds), max_iter);
-    if (as_text(at(fields(result), "outcome")) == "undecided" && get(fields(content), "objective")) {
-        // Infeasibility does not depend on the cost, and some infeasible requests end NumericalError only
-        // under their objective. A feasible retry is not the optimum, so only its infeasibility is kept.
+    Value result = attempt(content, std::min(limits.cap, seconds), limits.max_iter);
+    if (as_text(at(fields(result), "outcome")) == "limit") {
         bump(stats, "retried");
-        Object without = fields(content);
-        erase(without, "objective");
-        Value retry = attempt(object(std::move(without)), std::min(cap, seconds), max_iter);
-        if (as_text(at(fields(retry), "outcome")) == "infeasible")
-            result = object(with(fields(retry), "retried", boolean(true)));
+        Object retry = with(fields(attempt(content, std::min(limits.retry_cap, seconds), limits.retry_max_iter)),
+                            "retried", boolean(true));
+        if (as_text(at(retry, "outcome")) == "limit") put(retry, "outcome", text("infeasible"));
+        result = object(std::move(retry));
     }
-    const std::string outcome = as_text(at(fields(result), "outcome"));
-    bump(stats, outcome);
-    if (outcome != "undecided") {
-        cache.order.emplace_back(encoded, result);
-        cache.index[encoded] = std::prev(cache.order.end());
-        while (cache.order.size() > 1024) {
-            cache.index.erase(cache.order.front().first);
-            cache.order.pop_front();
-        }
+    bump(stats, as_text(at(fields(result), "outcome")));
+    cache.order.emplace_back(encoded, result);
+    cache.index[encoded] = std::prev(cache.order.end());
+    while (cache.order.size() > 1024) {
+        cache.index.erase(cache.order.front().first);
+        cache.order.pop_front();
     }
     return object(with(fields(result), "cached", boolean(false)));
 }
@@ -481,20 +475,17 @@ Value disk_stats() {
     return object(std::move(out));
 }
 
-Value disk_screen(const Value& model, const Value& extra_rows, const Value* objective, double cap, unsigned max_iter) {
+Value disk_screen(const Value& model, const Value& extra_rows, const Value* objective, const DiskLimits& limits) {
     const Value content = disk_spec(model, extra_rows, objective, false);
     if (is_null(content) ||
         (items(at(fields(content), "rows")).empty() && !py_truthy(get_or_null(fields(content), "contacts"))))
         return Value{nullptr};
-    const Value result = disk_cached_solve(content, cap, "screen", cap, max_iter);
+    const Value result = disk_cached_solve(content, limits.retry_cap, "screen", limits);
     const Object& r = fields(result);
     Object checked{{"outcome", at(r, "outcome")}, {"status", at(r, "status")}};
     if (as_text(at(r, "outcome")) == "infeasible") {
         checked.emplace_back("proof", object({{"reason", text("disk_control_relaxation_infeasible")},
                                               {"relaxation", text("acceleration_disk")}, {"status", at(r, "status")}}));
-    } else if (as_text(at(r, "outcome")) == "undecided") {
-        const Value* message = get(r, "message");
-        checked.emplace_back("message", message ? *message : at(r, "status"));
     }
     return object(std::move(checked));
 }
@@ -516,7 +507,7 @@ Value decided_result(const Value& problem, double started, const char* status, c
                                        {"threshold", at(p, "threshold")}, {"objective", at(p, "objective")},
                                        {"source", get_or_null(p, "source")}})},
                    {"termination", text(termination)}, {"workerStatus", solver_status},
-                   {"workerLaunched", boolean(false)}, {"error", kNull}, {"tolerance", real(kTolerance)},
+                   {"workerLaunched", boolean(false)}, {"error", kNull}, {"tolerance", real(kReplayTolerance)},
                    {"phases", array({})}, {"backend", text("clarabel")}, {"disk", relaxed},
                    {"diagnostics", object({{"rejectedCandidates", integer_value(0)}, {"lastRejection", kNull},
                                            {"stderr", array({})}})}});
@@ -574,7 +565,7 @@ Value relaxed_dispatch(const Value& problem, double seconds, bool stop_on_feasib
     const double started = seconds_now();
     if (services.cancelled && services.cancelled())
         return decided_result(problem, started, "cancelled", kNull, "cancelled", kNull, kNull);
-    const Value solved_value = disk_cached_solve(content, seconds, "candidate", services.cap, services.max_iter);
+    const Value solved_value = disk_cached_solve(content, seconds, "candidate", services.limits);
     const Object& solved = fields(solved_value);
     Object relaxed;
     for (const char* key : {"status", "outcome", "iterations", "cached"}) relaxed.emplace_back(key, at(solved, key));
@@ -582,7 +573,6 @@ Value relaxed_dispatch(const Value& problem, double seconds, bool stop_on_feasib
     if (outcome == "infeasible")
         return decided_result(problem, started, "unknown", kNull, "disk_finished", at(solved, "status"),
                               object(std::move(relaxed)));
-    if (outcome == "undecided") return full("relaxed_undecided");
     Object candidate = fields(validate_controls(problem, at(solved, "controls")));
     if (!py_truthy(at(candidate, "feasible"))) return full("rejected_relaxed_point");
     const Value deficit_value = disk_deficits(problem, at(solved, "controls"));

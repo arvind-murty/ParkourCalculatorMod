@@ -46,8 +46,7 @@ std::optional<Value> gate_prepare(const Value& scene_value, const Program& progr
                     {"contactEntries", array({kNull})},
                     {"walkOffExits", array({kNull})},
                     {"maxTotalRunTicks", at(scene, "maxTotalRunTicks")},
-                    {"runBounds", array({array({integer_value(0), at(scene, "maxRunTicksPerJump")})})},
-                    {"supportClearance", at(scene, "supportClearance")}};
+                    {"runBounds", array({array({integer_value(0), at(scene, "maxRunTicksPerJump")})})}};
     route = fields(prepare_route(object(std::move(route))));
     put(route, "profileDerivation",
         object({{"kind", text("selected_height_profiles")}, {"suppliedAirtimes", boolean(false)},

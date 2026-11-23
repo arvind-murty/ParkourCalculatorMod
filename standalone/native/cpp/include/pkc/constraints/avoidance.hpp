@@ -11,8 +11,8 @@
 
 namespace pkc {
 
-// face_clearance(route, leg, offset, face, clearance): no clearance against a face the route hits there.
-Num face_clearance(const Object& route, std::int64_t leg, std::int64_t offset, const Object& face, const Num& clearance);
+// face_clearance(route, leg, offset, face): no clearance against a face the route hits there, else the solver margin.
+Num face_clearance(const Object& route, std::int64_t leg, std::int64_t offset, const Object& face);
 // phase_states(tick, phase, axis): state coordinates of an ordinary Y/X/Z collision sweep.
 std::vector<std::int64_t> phase_states(std::int64_t tick, const std::string& phase, const std::string& axis);
 // blockage_counts(chain) and passage_kind(chain) over a passage's faces.

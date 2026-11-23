@@ -41,7 +41,7 @@ std::string joined(const std::set<std::string>& names) {
 }
 
 const std::set<std::string> kFeetCases{"normal_step", "slab_boost", "blip", "blip_up", "corner_jump_cancel",
-                                       "corner_blip_up"};
+                                       "corner_blip", "corner_blip_up"};
 const std::set<std::string> kAdvantageCases{"grind", "slab_boost", "corner_jump_cancel"};
 
 }  // namespace
@@ -378,6 +378,15 @@ Value classify(const Value& guides_value, std::int64_t span, const Value& point_
 
 Value classify(const Value& guides, std::int64_t span, double x, double z) {
     return classify(guides, span, array({real(x), real(z)}));
+}
+
+LegClass leg_class(double dx, double dz) {
+    const std::int64_t sx = std::copysign(1., dx) > 0 ? 1 : -1, sz = std::copysign(1., dz) > 0 ? 1 : -1;
+    if (std::min(std::fabs(dx), std::fabs(dz)) <= std::tan(radians(kAxisLegDegrees)) * std::max(std::fabs(dx), std::fabs(dz))) {
+        if (std::fabs(dx) >= std::fabs(dz)) return {{static_cast<double>(sx), 0.}, {{"X", sx}, {"Z", 1}, {"Z", -1}}};
+        return {{0., static_cast<double>(sz)}, {{"Z", sz}, {"X", 1}, {"X", -1}}};
+    }
+    return {{std::copysign(std::sqrt(.5), dx), std::copysign(std::sqrt(.5), dz)}, {{"X", sx}, {"Z", sz}}};
 }
 
 Value decision_objective(const Value& guides_value, std::int64_t reached, const Value& point_value, const Value& fallback) {

@@ -818,3 +818,28 @@ events still goes to the Python `evaluate` hook.
   the search, checkpoint, native, disk, solver and proposal-analysis modules and durable fixed work run with no reports,
   and durable fixed work's report equals the release build's except provenance
   ([summary](2026-11-23-leg-solves/asan-summary.txt), [report](2026-11-23-leg-solves/fixed-asan-report-vs-release.json)).
+
+## Main's PR #10 in the native core, 2026-11-23
+Source: the merge of main at PR #10 (`a6d67405`) plus the native port of its behaviour: O10 for every move (the
+direction class `leg_class`, `behind_decision` per region with the need in a disallowed move, `entry_backward` on the
+allowed moves, the checks in steps, slab boosts, corner cases and blip-ups), one solver margin and one replay tolerance
+(`schema.hpp`'s `kSolverMargin`/`kReplayTolerance`; scenes and routes no longer carry `supportClearance`), Clarabel
+verdicts (a limit retried once at `RETRY_CAP`/`RETRY_MAX_ITER`, every other unsolved status infeasible, no undecided
+screen, dispatch or route pre-solve check), settled-stretch obstacle repairs, the stepping cases (corner blip,
+take-off ceilings, corner ledges and the corner jump cancel's airtime) and the held side variants (O12: the
+generator's tags, the frontier's side reserves and held side entries, the decision check's `sideOutcome`).
+
+- Python mode is the oracle on the merged tree: every published and result state equals it in call order (short
+  control 191, fixed work 454) ([states](2026-11-23-main-pr10/state-parity.txt)), transitions match
+  ([fixed](2026-11-23-main-pr10/fixed-parity-python-native.json), [short](2026-11-23-main-pr10/short-parity-python-native.json)),
+  and the reports differ in cache and compiler counters and in the order of the gate's exclusion log, which held the
+  same entries before the merge too ([order](2026-11-23-main-pr10/exclusion-order.txt)).
+- Every open generator call of a Python-loop search, run both ways, gives the same choices and exclusions: 141 calls on
+  the short control and 543 on fixed work, with 638 corner blips, 168 side-variant tags and 671 O10 exclusions
+  ([short](2026-11-23-main-pr10/g1-short-generators.json), [fixed](2026-11-23-main-pr10/g2-fixed-generators.json)).
+- The milestone list passes in both modes; two side-variant tests that stub Python seams run in Python mode
+  ([suites](2026-11-23-main-pr10/suites-summary.txt)). AddressSanitizer runs clean
+  ([summary](2026-11-23-main-pr10/asan-summary.txt), [report](2026-11-23-main-pr10/fixed-asan-report-vs-release.json)).
+- Search seconds, alternating Python mode and native mode: fixed work 40.28 and 39.46 against 14.17 and 13.83, the
+  short control 3.946 and 3.835 against 1.288 and 1.257; with durable checkpoints fixed work 125.6 and 129.9 against
+  55.97 and 55.31, the short control 17.03 and 16.88 against 8.55 and 8.45 ([times](2026-11-23-main-pr10/search-seconds.txt)).
