@@ -53,7 +53,7 @@ def settings(value, scene):
 
 def semantic_settings(policy):
     return dict({k:v for k,v in policy.items() if k!='observability'},
-                hardJumpPolicyVersion=HARD_JUMP_POLICY_VERSION,searchPolicyVersion=20,comparisonPolicyVersion=COMPARISON_POLICY_VERSION)
+                hardJumpPolicyVersion=HARD_JUMP_POLICY_VERSION,searchPolicyVersion=21,comparisonPolicyVersion=COMPARISON_POLICY_VERSION)
 
 
 def owner(scene, block):
@@ -244,7 +244,8 @@ def advantageous_candidates(scene, table, launch, top, next_owner, types, thresh
 
     Each entry is dict(key, A, via). A jump-now move (via None) has the key advantageous_targets
     gives as a JSON list and its airtime A: the jump input plus its air inputs through the landing (12 for a
-    flat jump, 3 under a ceiling 2 blocks above the feet, 2 for a grind, slab boost or corner jump cancel).
+    flat jump, 3 under a ceiling 2 blocks above the feet, 2 for a grind or slab boost; a corner jump cancel's is
+    the jump input plus its fall onto the nearest ledge past one of the block's corners, 2 when flush).
     A ceiling or grind A is the earliest descent through any landing top of the launch table, a lower bound
     (the built choice stops at the hit, and the table ignores where the player can be after it); the
     frontier uses it only to bound run ticks and takes built landings for the rest. A run-off onto another
@@ -256,8 +257,8 @@ def advantageous_candidates(scene, table, launch, top, next_owner, types, thresh
     """
     import json
     import math
-    from parkour_solver.movement.cases import case_profile
-    from parkour_solver.movement.contact_combinations import scene_contact_options
+    from parkour_solver.movement.cases import case_profile, convex_corner, corner_ledges
+    from parkour_solver.movement.contact_combinations import scene_contact_options, top_faces
     from parkour_solver.movement.normal import first_descent, replay
     from parkour_solver.physics.vertical import REST_CARRY, f32
     blocks = {b['id']: b for b in scene['blocks']}
@@ -268,6 +269,18 @@ def advantageous_candidates(scene, table, launch, top, next_owner, types, thresh
 
     def rest(y):
         return dict(position=y, velocity=REST_CARRY, onGround=True, previousHorizontalCollision=False)
+
+    def corner_airtime(name, t):
+        """The fastest corner jump cancel past a convex corner of block `name` onto a ledge at or below t."""
+        found = []
+        for block in (b for b in scene['blocks'] if b['id'] == name):
+            box = scene['collisionScene']['solids'][block['solidIndex']]
+            boxes = next((o.boxes for o in top_faces(scene) if block['solidIndex'] in o.members), ())
+            event = dict(case='corner_jump_cancel', input=0, plane=t, higherHeight=block['top'])
+            found += [p['duration'] for xdir in (-1, 1) for zdir in (-1, 1) if convex_corner(scene, block, xdir, zdir, t)
+                      for u in corner_ledges(scene, box, xdir, zdir, t, boxes)
+                      for p in [case_profile(t, u, event, threshold=threshold)] if p]
+        return min(found, default=None)
 
     def landing(trace, tops):
         return min((t+1 for u in tops for t in [first_descent(trace, u)] if t is not None), default=None)
@@ -301,7 +314,7 @@ def advantageous_candidates(scene, table, launch, top, next_owner, types, thresh
             for b in kinds['stepping']:
                 if f32(.42) < blocks[b]['top']-t <= f32(.6):
                     add(('slab_boost', face(b)), 2)
-                    add(('corner_jump_cancel', face(b)), 2)
+                    add(('corner_jump_cancel', face(b)), corner_airtime(b, t))
         return found
 
     entries = {}

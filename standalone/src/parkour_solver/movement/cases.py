@@ -126,6 +126,19 @@ def corner_rows(box, first, second, x_direction, z_escape, boxes=()):
     return result+[r]+tangent_rows(side_run(box,boxes,'Z',z_escape,'X'),'X',second)
 
 
+def corner_ledges(scene, box, x_direction, z_escape, feet, boxes=()):
+    """Planes of the top faces at or below `feet` under a corner jump cancel's jump tick: on the line just past the
+    obstacle's Z edge, from its X face plane to the far end of its side (corner_rows' state-1 rows). Only such a
+    ledge, flush or below, gives the cancel a landing (user, 2026-11-22)."""
+    from parkour_solver.movement.contact_combinations import top_faces
+    rows = [r for r in corner_rows(box, 0, 1, x_direction, z_escape, boxes) if r['t1'] == 1]
+    lo = max([r['rhs'] for r in rows if r['mode'] == 'X' and r['cmp'] == 'GE'])
+    hi = min([r['rhs'] for r in rows if r['mode'] == 'X' and r['cmp'] == 'LE'])
+    z = next(r['rhs'] for r in rows if r['mode'] == 'Z')
+    return sorted({option.plane for option in top_faces(scene) if option.plane <= feet
+                   for r in option.regions if r[0] <= hi and r[2] >= lo and r[1] <= z <= r[3]})
+
+
 def case_profile(source_y, target_y, event, *, max_inputs=200, jump_at_start=True, jump_after=None,
                  initial_velocity=REST_CARRY, initial_ground=True, constraints=(), contacts=(), finish_at=None,
                  threshold=.005):

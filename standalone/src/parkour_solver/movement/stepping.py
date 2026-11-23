@@ -1,7 +1,8 @@
 import itertools
 
 from parkour_solver.physics.vertical import f32
-from parkour_solver.movement.cases import ceiling_clearances, convex_corner, corner_rows, exposed_side, outside_row, top_choices
+from parkour_solver.movement.cases import (ceiling_clearances, convex_corner, corner_ledges, corner_rows, exposed_side,
+                                           outside_row, top_choices)
 
 
 def box_for(block, context):
@@ -86,9 +87,10 @@ def open_stepping_choices(context):
                     for xdir in (-1, 1):
                         for zdir in (-1, 1):
                             # corner_rows enter across the X side facing -xdir; the Z side is only passed.
-                            if not convex_corner(scene, block, xdir, zdir, y0) or entry_backward(
+                            if (not convex_corner(scene, block, xdir, zdir, y0)
+                                    or not corner_ledges(scene, box, xdir, zdir, y0, face.boxes) or entry_backward(
                                     context, 'X', -xdir, bounding_region(face.regions),
-                                    label=dict(owner=block['id'], role='corner_jump_cancel')):
+                                    label=dict(owner=block['id'], role='corner_jump_cancel'))):
                                 continue
                             for clear in clearances:
                                 rows = corner_rows(box, 0, 1, xdir, zdir, face.boxes) + clear

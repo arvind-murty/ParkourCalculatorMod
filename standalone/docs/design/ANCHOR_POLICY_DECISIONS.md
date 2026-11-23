@@ -311,7 +311,8 @@ time (user, 2026-11-19/20):
 
 - **Airtime** counts the jump input and the air inputs after it through the
   landing input: 12 for a flat jump, 3 for a jump under a ceiling 2 blocks above
-  the feet, 2 for a grind, slab boost or corner jump cancel. A run-off has no jump
+  the feet, 2 for a grind or slab boost, and for a corner jump cancel 2 onto a flush
+  ledge or the jump input plus the fall onto a lower one. A run-off has no jump
   input, so its airtime is its air inputs. (The comparison counts' A is different:
   air inputs only, with the jump input counted in J; a profile's `duration` counts
   all of its inputs, run ticks included.)
@@ -328,8 +329,9 @@ time (user, 2026-11-19/20):
   is kept (user, 2026-11-21).
 - **Candidates** come from `advantageous_candidates` (`search/anchors/policy.py`)
   without building anything: the launch tables (`face_table`, measured from every block of P's face) give the blocks and
-  undersides, vertical replays give each move's airtime A (A = 2 for slab boosts
-  and corner jump cancels; a ceiling or grind A is the earliest descent through any
+  undersides, vertical replays give each move's airtime A (A = 2 for slab boosts;
+  a corner jump cancel's is its fastest landing on a ledge past one of the block's
+  convex corners; a ceiling or grind A is the earliest descent through any
   landing top of the launch table, a lower bound since it ignores where the player
   can be after the hit). There are three kinds (user, 2026-11-20):
   1. **Advantageous jump**: k same-face run ticks then the jump, built while
@@ -386,7 +388,7 @@ Turnaround decisions generate run ticks as before and still prefer them
 (`(T,-J,A)`). `searchPolicyVersion` 17 carried this, the decision objectives, O10 and O11; 18 adds the
 same-tick arrival exemption of the departed-owner audit (O6, above); 19 makes visits, the launch tables and the
 candidate keys face-based (O6), with `HARD_JUMP_POLICY_VERSION` 5 for the latch that reads those visits; 20 widens
-O10 to every generated move.
+O10 to every generated move; 21 takes a corner jump cancel's airtime from its ledges.
 
 ## O10 — No backward moves at ordinary decisions
 

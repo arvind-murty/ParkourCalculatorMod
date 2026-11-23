@@ -212,8 +212,9 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `ceiling_clearances` | [70](../src/parkour_solver/movement/cases.py#L70) | function |
 | `side_run` | [101](../src/parkour_solver/movement/cases.py#L101) | function |
 | `corner_rows` | [117](../src/parkour_solver/movement/cases.py#L117) | function |
-| `case_profile` | [129](../src/parkour_solver/movement/cases.py#L129) | function |
-| `entry_possible` | [162](../src/parkour_solver/movement/cases.py#L162) | function |
+| `corner_ledges` | [129](../src/parkour_solver/movement/cases.py#L129) | function |
+| `case_profile` | [142](../src/parkour_solver/movement/cases.py#L142) | function |
+| `entry_possible` | [175](../src/parkour_solver/movement/cases.py#L175) | function |
 
 ## movement/ceiling_generation.py
 
@@ -419,13 +420,13 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `box_for` | [7](../src/parkour_solver/movement/stepping.py#L7) | function |
-| `SteppingGenerator` | [11](../src/parkour_solver/movement/stepping.py#L11) | class |
-| `SteppingGenerator.generate` | [12](../src/parkour_solver/movement/stepping.py#L12) | function |
-| `_sequence_allowed` | [15](../src/parkour_solver/movement/stepping.py#L15) | function |
-| `_fresh` | [26](../src/parkour_solver/movement/stepping.py#L26) | function |
-| `open_stepping_choices` | [36](../src/parkour_solver/movement/stepping.py#L36) | function |
-| `_open_flight_cases` | [124](../src/parkour_solver/movement/stepping.py#L124) | function |
+| `box_for` | [8](../src/parkour_solver/movement/stepping.py#L8) | function |
+| `SteppingGenerator` | [12](../src/parkour_solver/movement/stepping.py#L12) | class |
+| `SteppingGenerator.generate` | [13](../src/parkour_solver/movement/stepping.py#L13) | function |
+| `_sequence_allowed` | [16](../src/parkour_solver/movement/stepping.py#L16) | function |
+| `_fresh` | [27](../src/parkour_solver/movement/stepping.py#L27) | function |
+| `open_stepping_choices` | [37](../src/parkour_solver/movement/stepping.py#L37) | function |
+| `_open_flight_cases` | [126](../src/parkour_solver/movement/stepping.py#L126) | function |
 
 ## movement/units.py
 
@@ -745,12 +746,12 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `next_anchor` | [205](../src/parkour_solver/search/anchors/policy.py#L205) | function |
 | `advantageous_targets` | [215](../src/parkour_solver/search/anchors/policy.py#L215) | function |
 | `advantageous_candidates` | [241](../src/parkour_solver/search/anchors/policy.py#L241) | function |
-| `same_face_fit` | [331](../src/parkour_solver/search/anchors/policy.py#L331) | function |
-| `encounter_groups` | [348](../src/parkour_solver/search/anchors/policy.py#L348) | function |
-| `local_counts` | [398](../src/parkour_solver/search/anchors/policy.py#L398) | function |
-| `priority` | [403](../src/parkour_solver/search/anchors/policy.py#L403) | function |
-| `within_caps` | [407](../src/parkour_solver/search/anchors/policy.py#L407) | function |
-| `transfer_structure` | [421](../src/parkour_solver/search/anchors/policy.py#L421) | function |
+| `same_face_fit` | [344](../src/parkour_solver/search/anchors/policy.py#L344) | function |
+| `encounter_groups` | [361](../src/parkour_solver/search/anchors/policy.py#L361) | function |
+| `local_counts` | [411](../src/parkour_solver/search/anchors/policy.py#L411) | function |
+| `priority` | [416](../src/parkour_solver/search/anchors/policy.py#L416) | function |
+| `within_caps` | [420](../src/parkour_solver/search/anchors/policy.py#L420) | function |
+| `transfer_structure` | [434](../src/parkour_solver/search/anchors/policy.py#L434) | function |
 
 ## search/application.py
 

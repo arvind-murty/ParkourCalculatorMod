@@ -380,13 +380,17 @@ class AnchorPolicyTests(unittest.TestCase):
         from parkour_solver.movement.program import append_choice, boundary_state
         from parkour_solver.reachability.service import face_table
         from parkour_solver.search.anchors.policy import advantageous_candidates, advantageous_targets
-        # From start (top 2): low is a run-off with roof over it, slab a step-up, lid a low ceiling, goal a jump.
-        s=prepare_scene(dict(version=1, sceneModel='collision_boxes', geometryBounds=[-10,-8,-10,20,12,10],
-            initial=dict(position=[1,2,1], velocity=[0,-.0784000015258789,0], yaw=-90),
-            startBlock='start', goalBlock='goal', maxWallHits=0, maxContactCombinations=0,
-            blocks=[dict(id='start', boxes=[[0,1,0,2,2,2]]), dict(id='low', boxes=[[2,0,0,3,1.5,4]]),
-                    dict(id='roof', boxes=[[2,3.5,2,3,4.5,4]]), dict(id='slab', boxes=[[-1,1,0,0,2.5,2]]),
-                    dict(id='lid', boxes=[[0,3.9,0,1,4.9,1]]), dict(id='goal', boxes=[[6,2,0,7,3,2]])]))
+        # From start (top 2): low is a run-off with roof over it, slab a step-up, lid a low ceiling, goal a jump;
+        # ledge, flush with start past slab's Z- edge, lets a corner jump cancel land.
+        def course(ledge_top):
+            return prepare_scene(dict(version=1, sceneModel='collision_boxes', geometryBounds=[-10,-8,-10,20,12,10],
+                initial=dict(position=[1,2,1], velocity=[0,-.0784000015258789,0], yaw=-90),
+                startBlock='start', goalBlock='goal', maxWallHits=0, maxContactCombinations=0,
+                blocks=[dict(id='start', boxes=[[0,1,0,2,2,2]]), dict(id='low', boxes=[[2,0,0,3,1.5,4]]),
+                        dict(id='roof', boxes=[[2,3.5,2,3,4.5,4]]), dict(id='slab', boxes=[[-1,1,0,0,2.5,2]]),
+                        dict(id='lid', boxes=[[0,3.9,0,1,4.9,1]]), dict(id='goal', boxes=[[6,2,0,7,3,2]])]+
+                       ([dict(id='ledge', boxes=[[-2,1,-2,0,ledge_top,0]])] if ledge_top else [])))
+        s=course(2)
         types=['normal','ceiling','stepping']
         root=empty_program(s['initial'],threshold=0.);root['terminalSupport']='start'
         def children(p):
@@ -417,9 +421,24 @@ class AnchorPolicyTests(unittest.TestCase):
                     self.assertEqual((e['A'],'limit' in e,e['via']),(fastest(target,False)-1,False,target))
                 else:
                     self.assertEqual(e['via'],None)
-                    self.assertEqual(e['A'],2 if kind in ('slab_boost','corner_jump_cancel') else built(root,[kind,target]))
+                    self.assertEqual(e['A'],2 if kind=='slab_boost' else built(root,[kind,target]))
         self.assertEqual(set(entries),{'["anchor", "goal"]','["ceiling", "lid"]','["grind", "lid"]','["slab_boost", "slab"]',
                                        '["corner_jump_cancel", "slab"]','["landing", "low"]','["step", "slab"]'})
+        self.assertEqual(entries['["corner_jump_cancel", "slab"]']['A'],2)
+        # A ledge below the take-off adds its fall to the airtime: the generators' fastest cancel landing on it.
+        s=course(1.5)
+        entries={e['key']:e for e in advantageous_candidates(s,table,'start',2.,'goal',types,0.)}
+        cancels=[child for c,child in children(root) if c['profile']['jump'][0] and
+                 ('corner_jump_cancel','slab') in advantageous_targets(s,root,child,'goal')]
+        on_ledge=min(c['profile']['duration'] for m in cancels for _,c in children(m) if landed(c) and c['terminalSupport']=='ledge')
+        self.assertEqual(entries['["corner_jump_cancel", "slab"]']['A'],on_ledge)
+        self.assertGreater(on_ledge,2)
+        # With no ledge there is no corner jump cancel.
+        s=course(None)
+        self.assertNotIn('["corner_jump_cancel", "slab"]',[e['key'] for e in advantageous_candidates(s,table,'start',2.,'goal',types,0.)])
+        self.assertFalse([c for kind in types for c in generate_choices(kind,dict(mode='open',scene=s,program=root,
+                          state=boundary_state(root),maxInputs=40,threshold=0.,interactionGate=None))
+                          if any(e['case']=='corner_jump_cancel' for e in c['profile']['caseEvents'])])
         self.assertEqual({json.loads(e['key'])[0] for e in advantageous_candidates(s,table,'start',2.,'goal',['normal'],0.)},
                          {'anchor','landing'})
 
