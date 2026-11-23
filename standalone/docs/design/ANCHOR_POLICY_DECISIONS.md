@@ -388,7 +388,8 @@ Turnaround decisions generate run ticks as before and still prefer them
 (`(T,-J,A)`). `searchPolicyVersion` 17 carried this, the decision objectives, O10 and O11; 18 adds the
 same-tick arrival exemption of the departed-owner audit (O6, above); 19 makes visits, the launch tables and the
 candidate keys face-based (O6), with `HARD_JUMP_POLICY_VERSION` 5 for the latch that reads those visits; 20 widens
-O10 to every generated move; 21 takes a corner jump cancel's airtime from its ledges.
+O10 to every generated move; 21 takes a corner jump cancel's airtime from its ledges; 22 holds the other sides of
+steps and slab boosts behind their forward side (O12).
 
 ## O10 — No backward moves at ordinary decisions
 
@@ -472,6 +473,52 @@ Each held jump is logged in `minimumRunCandidates` (key `["same_face", <face
 name>]`) with outcome `held` (or `queued`), its room and its jump. Restoring it
 earlier, once the run ticks spent below P reach its airtime, is deferred
 ([S9](../DEFERRED_WORK.md)).
+
+## O12 — Other sides of a step or slab boost wait for the forward side
+
+**Settled (user, 2026-11-22):** a normal step or slab boost onto a block is generated once
+per exposed side its decision allows (O10). The side the decision faces moves forward over
+the block; entering another side gains only distance, and needs moving one way then back.
+So the forward side is queued as usual and the others are held until it is limited.
+Grinds, stair boosts, blips, blip-ups and corner cases are unchanged: an edge grind or
+stair boost is a real option.
+
+- **Move and sides** (`side_variants`, `movement/stepping.py`): one move is a case onto one
+  merged face with one set of top and ceiling-clearance rows; its sides differ only in
+  their `case:outside` row. A side is **forward** when the decision point already
+  satisfies that row. A move with a forward side and at least one other side tags each
+  choice `sideVariant` (`forward`, the row, the case, face and side). A move without a
+  forward side (it is covered, or O10 dropped it) or with one side is not tagged.
+- **Hold** (`queue_child`, `search/frontier.py`): at the end of the expansion
+  (`hold_sides`) a move's other sides are reserved behind its queued forward nodes
+  (`state['sideReserves']`, one per parent program and move). They are queued at once
+  when no forward was queued (screened, or already queued elsewhere), when a forward is
+  complete (it lands on the goal and has no node solve) or when the search has no node
+  solves.
+- **Forward outcome** (`side_outcome`, `search/dfs.py`): once the forward node is fully
+  solved, its kept solution's distance from its own row at the take-off is read; within
+  1e-3 (`SIDE_SLACK`) it is `tight`, else `slack`. A node that is not solved (solve
+  interval) counts as tight. An oracle-rejected, exhausted or deferred (numerically
+  unknown) node, or one dropped when taken from the queue, has failed.
+- **Promote or reserve**: once every forward of the move has an outcome, its sides are
+  queued when none is slack. Otherwise each is held like a node's alternatives
+  (`state['alternatives']`, watching the slack forwards and their held node alternatives):
+  restored once those branches died, never below a validated group-end arrival, with
+  deferred nodes counted live.
+- **Run ticks**: a held side counts live in `restore_alternatives`, so a run-tick reserve
+  or held jump watching it, or its decision, waits until the side variants are exhausted.
+  A held side otherwise counts as a queued child of its decision: its landings set N and
+  it can beat run-tick candidates (O9).
+
+Why a slack forward may wait: the forward and another side are the same program but for
+one row, so for the convex disk relaxation of one avoidance family, a forward whose row is
+inactive has the optimum of the program with neither row, which bounds the other side's
+node objective. The node keeps the best of several families and the bound covers the
+node, not its subtree; restoring when the forward's branch dies covers the subtree.
+
+Each held side is logged in `state['sideVariants']` (its decision, case, face, side,
+forwards, their outcomes and its alternative entry); the solve report lists them under the
+decision's expansion.
 
 ## Settled versus remaining implementation choices
 

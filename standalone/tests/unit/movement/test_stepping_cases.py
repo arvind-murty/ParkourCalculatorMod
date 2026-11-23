@@ -424,3 +424,72 @@ class ExposureTests(unittest.TestCase):
         rows = [(r['mode'], r['cmp'], round(r['rhs'], 6)) for _, constraints, _ in
                 grind_options(dict(scene=scene, interactionGate=None), 1.) for r in constraints if r['name'] == 'grind:outside']
         self.assertEqual(sorted(rows), [('X', 'GE', 4.3001), ('X', 'LE', -0.3001), ('Z', 'GE', 2.3001), ('Z', 'LE', -2.3001)])
+
+
+class SideVariantTests(unittest.TestCase):
+    """Each side-variants fixture's sideVariant meta names the forward sides, the sides held behind them ('reserved',
+    and 'normal' sides of a move that still has a forward) and the untagged ones ('normal' without a forward)."""
+    def choices(self, name):
+        import json
+        from parkour_solver.movement.generation import generate_choices
+        from parkour_solver.movement.program import boundary_state, empty_program
+        from parkour_solver.spatial.anchor_guides import leg_class
+        raw = json.loads((AUTONOMY_DATA / 'fixtures/side-variants' / (name + '.json')).read_text())
+        meta, scene = raw['sideVariant'], prepare_scene(raw['request'])
+        program = empty_program(scene['initial'], threshold=0.)
+        point = meta.get('decisionPoint', scene['initial']['position'][::2])
+        context = dict(mode='open', scene=scene, program=program, state=boundary_state(program), maxInputs=40,
+                       maxEntryInputs=40, threshold=0., interactionGate=None, decision=dict(decisionPoint=point),
+                       forward=dict(point=point, allowed=leg_class(meta['leg'])[1], margin=.3))
+        return meta, list(generate_choices('stepping', context))
+
+    @staticmethod
+    def side(choice):
+        row, = [r for r in choice['profile']['positionConstraints'] if r['name'] == 'case:outside']
+        return row['mode'] + ('-' if row['cmp'] == 'LE' else '+')
+
+    def test_every_fixture_tags_its_forward_and_held_sides(self):
+        names = sorted(p.stem for p in (AUTONOMY_DATA / 'fixtures/side-variants').glob('*.json'))
+        self.assertEqual(len(names), 18)
+        for name in names:
+            meta, choices = self.choices(name)
+            for case in ('normal_step', 'slab_boost'):
+                expected = dict(meta, **meta.get('byCase', {}).get(case, {}))
+                found = {}
+                for choice in choices:
+                    if choice['profile']['caseEvents'][-1]['case'] != case:
+                        continue
+                    tag = choice.get('sideVariant')
+                    found.setdefault(self.side(choice), set()).add(None if tag is None else tag['forward'])
+                # forward-behind's forward side is dropped by O10, so it has no forward choice.
+                forward = {s for s in expected['forward'] if s in found}
+                held = set(expected['reserved']) | (set(expected.get('normal', [])) if forward else set())
+                untagged = set() if forward else set(expected.get('normal', []))
+                if len(forward | held) == 1:
+                    # single-side: a move entered from one side only is not tagged.
+                    forward, held, untagged = set(), set(), forward | held
+                self.assertEqual(found, {**{s: {True} for s in forward}, **{s: {False} for s in held},
+                                         **{s: {None} for s in untagged}}, (name, case))
+            for choice in choices:
+                if choice['profile']['caseEvents'][-1]['case'] not in ('normal_step', 'slab_boost'):
+                    self.assertNotIn('sideVariant', choice, name)
+
+    def test_moves_key_on_the_rows_besides_the_side(self):
+        # forward-ceiling: each of the three ceiling-clearance sets is its own move with a Z- forward.
+        _, choices = self.choices('forward-ceiling')
+        moves = {}
+        for choice in choices:
+            if choice['profile']['caseEvents'][-1]['case'] == 'slab_boost':
+                tag = choice['sideVariant']
+                moves.setdefault(tag['key'], {})[self.side(choice)] = tag['forward']
+        self.assertEqual(list(moves.values()), [{'X-': False, 'X+': False, 'Z-': True}] * 3)
+        # offset-members (targetA x 0..0.5 z 4..6, targetB x 0.5..1 z 5..7, decision point (0.5, 3)): one merged face,
+        # each member's exposed sides in one move, both Z- sides forward.
+        _, choices = self.choices('offset-members')
+        rows = {}
+        for choice in choices:
+            if choice['profile']['caseEvents'][-1]['case'] == 'normal_step':
+                tag = choice['sideVariant']
+                rows.setdefault(tag['key'], set()).add((self.side(choice), round(tag['row']['rhs'], 6), tag['forward']))
+        self.assertEqual(list(rows.values()), [{('X-', -0.3001, False), ('X-', 0.1999, False), ('X+', 0.8001, False),
+                                                ('X+', 1.3001, False), ('Z-', 3.6999, True), ('Z-', 4.6999, True)}])

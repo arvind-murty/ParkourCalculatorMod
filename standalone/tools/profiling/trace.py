@@ -294,6 +294,10 @@ def node_trace(state, scene=None):
             reasons[exclusion['proof'].get('reason')] += 1
         for candidate in source.get('minimumRunCandidates',[]):
             runs.setdefault(solved(candidate['node']),[]).append(candidate)
+        held_sides = {}
+        for record in source.get('sideVariants',[]):
+            restored = bool(source.get('alternatives',{}).get(record.get('alternative'),{}).get('restored'))
+            held_sides.setdefault(solved(record['node']),[]).append(dict(record,restored=restored))
         for program in source.get('pending',[]):
             queued[solved(program.get('decisionParent') if program.get('needsNodeSolve') else program.get('decisionNode'))] += 1
         ends = {key:node['program']['movementUnits'][-1]['end'] for key,node in source['nodes'].items()}
@@ -317,11 +321,13 @@ def node_trace(state, scene=None):
             nodes.append(dict(node=key,parent=parent,status=node['status'],depth=node['depth'],start=start,
                               end=ends[key],steps=steps(program['profile'],start,names,sides),
                               repair=repair_trace(repair) if repair else None,
-                              pruned=dict(pruned.get(key,{})),minimumRuns=runs.get(key,[]),queued=queued[key]))
+                              pruned=dict(pruned.get(key,{})),minimumRuns=runs.get(key,[]),queued=queued[key],
+                              sideVariants=held_sides.get(key,[])))
         generation = frame['generation']
         trees[frame['id']] = dict(goal=frame['goal'].get('block'),nodes=nodes,
             rootPruned=dict(sum((pruned.get(r,Counter()) for r in roots),Counter())),
             rootMinimumRuns=[c for r in roots for c in runs.get(r,[])],rootQueued=sum(queued[r] for r in roots),
+            rootSideVariants=[s for r in roots for s in held_sides.get(r,[])],
             generated=generation.get('generated'),screened=generation.get('screenedPrefixes'),
             policyRejections=generation.get('policyRejections'),expanded=generation.get('totalExpandedPrefixes'),
             generatedPolicyRejections=sum(r.get('search_policy',0) for r in pruned.values()),
@@ -689,6 +695,28 @@ def minimum_run_text(candidates, numbers):
     return '; '.join(kept+[f'{RUN_OUTCOMES.get(outcome,outcome)}: '+', '.join(labels) for outcome,labels in others.items()])
 
 
+def side_variant_lines(records, numbers):
+    """A decision's held side variants of a step or slab boost: the forward sides they waited for and how each
+    decided. A side whose forward is not solved yet is left out."""
+    def node(n):
+        return f'node {numbers[n]}' if n in numbers else 'an unsolved node'
+    lines = []
+    for r in records:
+        outcomes = r.get('outcomes')
+        if outcomes is None:
+            continue
+        slack = [(n,side) for n,side in r['forwards'] if outcomes[n] == 'slack']
+        if slack:
+            text = 'reserved behind '+', '.join(f'{node(n)} (its {side} side row was slack)' for n,side in slack)
+            if r['restored']:
+                text += '; restored: '+', '.join(f"{node(n)}'s branch died" for n,_ in slack)
+        else:
+            text = 'promoted: '+', '.join(f"{node(n)}'s {side} side row was tight" if outcomes[n] == 'tight' else
+                                          f'{node(n)} failed' for n,side in r['forwards'])
+        lines.append(f'- {r["case"].replace("_"," ")} onto {r["face"].upper()} from its {r["side"]} side: {text}.')
+    return ['Side variants:','',*lines,''] if lines else []
+
+
 def tree_lines(tree, request_index, numbers):
     """A frame's decision nodes: an outline, then each node's movement, alternatives and expansion."""
     nodes = tree['nodes']
@@ -712,14 +740,15 @@ def tree_lines(tree, request_index, numbers):
             outline(n['node'],depth+1)
     outline(None,0)
     lines.append('')
-    def expansion(solved, pruned, runs, queued):
+    def expansion(solved, pruned, runs, queued, sides):
         return [f'Solved children: '+(', '.join(f'node {numbers[c["node"]]}' for c in solved) or 'none')+'.',
                 f'Children queued but not yet solved: {queued}.',
                 'Children pruned when generated: '+(', '.join(f'{n} {CHECKS.get(k,k)}' for k,n in
                                                               Counter(pruned).most_common()) or 'none')+'.',
-                *([f'Minimum run ticks: {minimum_run_text(runs,numbers)}.'] if runs else []),'']
+                *([f'Minimum run ticks: {minimum_run_text(runs,numbers)}.'] if runs else []),'',
+                *side_variant_lines(sides,numbers)]
     lines += ['The frame start\'s expansion:','']+expansion(children.get(None,[]),tree['rootPruned'],tree['rootMinimumRuns'],
-                                                                 tree['rootQueued'])
+                                                                 tree['rootQueued'],tree['rootSideVariants'])
     for n in nodes:
         lines += [f'##### Node {numbers[n["node"]]}: {n["steps"]}','',
                   f'From {origin(n["parent"])}. Outcome: {OUTCOMES.get(n["status"],n["status"])}. '
@@ -727,7 +756,7 @@ def tree_lines(tree, request_index, numbers):
         if n['repair']:
             lines += repair_lines(n['repair'],goal,request_index)
         if n['status'] == 'feasible' or n['pruned'] or n['minimumRuns'] or n['queued']:
-            lines += expansion(children.get(n['node'],[]),n['pruned'],n['minimumRuns'],n['queued'])
+            lines += expansion(children.get(n['node'],[]),n['pruned'],n['minimumRuns'],n['queued'],n['sideVariants'])
     return lines
 
 

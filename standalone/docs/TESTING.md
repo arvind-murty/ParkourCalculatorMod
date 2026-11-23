@@ -131,6 +131,7 @@ Use fixture paths under [tests/fixtures/movement](../tests/fixtures/movement). E
 - `blocks-runoff.json`, `blocks-jump-runoff.json`, `blocks-lower-target.json`: run-off, lower goals and airborne continuation.
 - `obstacle-cross-neo.json`, `obstacle-wide-neo.json`, `obstacle-interleaved.json`, `obstacle-under-ceiling.json`, `contact-wide-neo.json`: signed faces, interacting obstacles, Y clearance and passage order.
 - `ceiling-bonk.json`, `appended-air-ceiling.json`, `final-air-ceiling.json`, `generic-repeat-ceiling.json`, `generic-grind-blip.json` and [stepping fixtures](../tests/fixtures/movement/stepping): ceiling regeneration, step/corner/blip variants and phase-changing events.
+- [side-variants fixtures](../tests/fixtures/movement/side-variants): steps and slab boosts onto a block with a forward side and others held behind it (O12). Each `sideVariant` names the leg, the forward, reserved and normally queued sides, an optional decision point and per-case overrides, and for `corridor-diagonal` the measured start whose forward row is slack after 3 run ticks and tight after 5.
 - Existing ladder families remain compatibility coverage, not the target for new movement expansion. Fixes must not remove their current behavior incidentally.
 
 The [experiments](../research) directories contain fixture-specific runbooks/results, rendered trajectories, archived reports and diagnostic scripts. These are evidence, not all unit-test inputs. In particular the old 200/400-input IPOPT Real11 captures are different from the seven-box/state64 autonomous opening.

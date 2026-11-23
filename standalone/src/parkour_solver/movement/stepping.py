@@ -34,9 +34,39 @@ def _fresh(made, *key):
     return True
 
 
+def _satisfies(row, point):
+    value = point[0 if row['mode'] == 'X' else 1]
+    return value <= row['rhs'] if row['cmp'] == 'LE' else value >= row['rhs']
+
+
+def side_variants(context, found, face):
+    """Yield the choices onto `face` (its name), tagging each side of a normal step or slab boost move entered from
+    several sides.
+
+    `found` holds (choice, move key, keep-outside row), the key and row None for other cases. A side whose row the
+    decision point already satisfies is the forward one; the others only gain distance, so the frontier holds them
+    until a forward is tight or fails. A move without a forward side is not tagged.
+    """
+    import hashlib
+    import json
+    point = (context.get('decision') or {}).get('decisionPoint')
+    moves = {}
+    for _, key, row in found:
+        if key is not None:
+            moves.setdefault(key, []).append(row)
+    for choice, key, row in found:
+        rows = moves.get(key, ())
+        if point is not None and len(rows) > 1 and any(_satisfies(r, point) for r in rows):
+            choice['sideVariant'] = dict(key=hashlib.sha256(key.encode()).hexdigest()[:16], forward=_satisfies(row, point),
+                                         row=row, case=json.loads(key)[0], face=face,
+                                         side=row['mode'] + ('-' if row['cmp'] == 'LE' else '+'))
+        yield choice
+
+
 def open_stepping_choices(context):
     """Steps, slab boosts and flight cases onto merged top faces: the side and corner code runs per member block, each
     choice carries its face's boxes and name, and a member repeating another's choice is dropped."""
+    import json
     from parkour_solver.movement.contact_combinations import bounding_region, face_name, solid_owners
     from parkour_solver.reachability.service import candidate_faces, entry_backward, interaction_allowed, walk_off_allowed
     from parkour_solver.movement.program import scalar_initial
@@ -54,7 +84,7 @@ def open_stepping_choices(context):
         for face, name, members in faces:
             if not feet_allowed(context, name):
                 continue
-            rise, boxes, made = face.plane - y0, [list(b) for b in face.boxes], set()
+            rise, boxes, made, found = face.plane - y0, [list(b) for b in face.boxes], set(), []
             for block in members:
                 box = box_for(block, context)
                 for case, jumping in [('normal_step', False), ('slab_boost', True)]:
@@ -79,7 +109,7 @@ def open_stepping_choices(context):
                                 choice = named_choice(context, 'stepping', initial, event, jumping=jumping, constraints=rows,
                                                       support=name if not jumping else None, region_choices=regions)
                                 if choice:
-                                    yield choice
+                                    found.append((choice, json.dumps([case, clear + top], sort_keys=True), rows[0]))
                 if (enabled('corner_jump_cancel') and f32(.42) < rise <= f32(.6) and
                         interaction_allowed(context, box, 0, jumping=True, label=dict(owner=block['id'], role='corner_jump_cancel'))):
                     # Its zero rise is the step's, so a low ceiling over the take-off stops it as it stops a slab boost.
@@ -100,7 +130,8 @@ def open_stepping_choices(context):
                                              boxes=boxes, anchors={'beforeJump': 0, 'jump': 1})
                                 choice = named_choice(context, 'stepping', initial, event, jumping=True, constraints=rows)
                                 if choice:
-                                    yield choice
+                                    found.append((choice, None, None))
+            yield from side_variants(context, found, name)
     for initial, jumping, trace in choice_approaches(context):
         for lower, name, members in faces:
             if context.get('checkBudget'):

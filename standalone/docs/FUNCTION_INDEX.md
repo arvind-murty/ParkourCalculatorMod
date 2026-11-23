@@ -425,8 +425,10 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `SteppingGenerator.generate` | [13](../src/parkour_solver/movement/stepping.py#L13) | function |
 | `_sequence_allowed` | [16](../src/parkour_solver/movement/stepping.py#L16) | function |
 | `_fresh` | [27](../src/parkour_solver/movement/stepping.py#L27) | function |
-| `open_stepping_choices` | [37](../src/parkour_solver/movement/stepping.py#L37) | function |
-| `_open_flight_cases` | [126](../src/parkour_solver/movement/stepping.py#L126) | function |
+| `_satisfies` | [37](../src/parkour_solver/movement/stepping.py#L37) | function |
+| `side_variants` | [42](../src/parkour_solver/movement/stepping.py#L42) | function |
+| `open_stepping_choices` | [66](../src/parkour_solver/movement/stepping.py#L66) | function |
+| `_open_flight_cases` | [157](../src/parkour_solver/movement/stepping.py#L157) | function |
 
 ## movement/units.py
 
@@ -799,10 +801,11 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `candidate_key` | [19](../src/parkour_solver/search/dfs.py#L19) | function |
-| `decision_family` | [24](../src/parkour_solver/search/dfs.py#L24) | function |
-| `commit_arrival` | [35](../src/parkour_solver/search/dfs.py#L35) | function |
-| `search_goals` | [60](../src/parkour_solver/search/dfs.py#L60) | function |
+| `side_outcome` | [23](../src/parkour_solver/search/dfs.py#L23) | function |
+| `candidate_key` | [30](../src/parkour_solver/search/dfs.py#L30) | function |
+| `decision_family` | [35](../src/parkour_solver/search/dfs.py#L35) | function |
+| `commit_arrival` | [46](../src/parkour_solver/search/dfs.py#L46) | function |
+| `search_goals` | [71](../src/parkour_solver/search/dfs.py#L71) | function |
 
 ## search/domain.py
 
@@ -873,7 +876,7 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | --- | ---: | --- |
 | `take_first` | [13](../src/parkour_solver/search/frontier.py#L13) | function |
 | `restore_alternatives` | [19](../src/parkour_solver/search/frontier.py#L19) | function |
-| `persistent_programs` | [55](../src/parkour_solver/search/frontier.py#L55) | function |
+| `persistent_programs` | [58](../src/parkour_solver/search/frontier.py#L58) | function |
 
 ## search/goals.py
 

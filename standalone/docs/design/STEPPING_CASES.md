@@ -126,6 +126,11 @@ members' exposed sides, each side plane once. Exposure never
 rejects a step trigger: the trigger check uses the event's `boxes`, and uncertain probes
 keep the `InteractionGate` unknown path.
 
+A normal step's or slab boost's sides of one move (same face, top and ceiling-clearance
+rows) are tagged `sideVariant` when the decision point already satisfies one of their
+`case:outside` rows: that side is forward and the others wait for it in the frontier
+([O12](ANCHOR_POLICY_DECISIONS.md#o12--other-sides-of-a-step-or-slab-boost-wait-for-the-forward-side)).
+
 On L a blip's higher block is an ordinary finite obstacle: one outside-face alternative per
 exposed side (`blip:wall_avoid`). Blip-up also
 requires being outside the higher block on L, otherwise the Y-first resolver lands on it.

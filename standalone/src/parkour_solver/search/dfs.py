@@ -16,6 +16,17 @@ from parkour_solver.constraints.variants import GENERATION_POLICY
 from parkour_solver.search.comparison import comparison_label, compare_candidates, POLICY_VERSION as COMPARISON_POLICY_VERSION
 
 
+# A forward side's keep-outside row within this of binding is tight: its held sides may then reach further.
+SIDE_SLACK = 1e-3
+
+
+def side_outcome(program, best):
+    """'tight' or 'slack': the kept solution's distance from the forward side's keep-outside row (sideVariant)."""
+    row = program['sideVariant']['row']
+    value = best['candidate']['positions'][row['t1']][0 if row['mode'] == 'X' else 1]
+    return 'tight' if (row['rhs']-value if row['cmp'] == 'LE' else value-row['rhs']) <= SIDE_SLACK else 'slack'
+
+
 def candidate_key(program):
     physical = {k:v for k,v in program.items() if k != 'repairState'}
     return digest(program_search_key(physical))
@@ -74,7 +85,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
     if any(not accepted_program(p) for p in roots):
         raise ValueError('DFS roots violate the decision domain')
     schema = 8
-    context = digest(dict(version=schema, kind='ordered_goal_dfs', movementGenerationPolicy=16,constraintGenerationPolicy=GENERATION_POLICY,
+    context = digest(dict(version=schema, kind='ordered_goal_dfs', movementGenerationPolicy=17,constraintGenerationPolicy=GENERATION_POLICY,
         scene={k:v for k,v in scene.items() if k!='movementSearch'},
         domain={k:v for k,v in cfg.items() if k not in ('maxPrefixes','maxQueuedPrefixes','maxChoicesPerType','expansionsPerProposal')},
         roots=[program_search_key(p) for p in roots], goals=[], terminal=None, corridor=adapter.corridor.to_dict(),
@@ -434,15 +445,18 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
         span,start=pair_of(program,f),span_info(f)[1]
         identity=program['decisionNode']
         depth=program['decisionDepth']
+        # A forward side variant reports whether its keep-outside row is tight (sideOutcome); an unsolved one is.
+        forward=(program.get('sideVariant') or {}).get('forward',False)
         if not solve_due(program,adapter.anchor_policy['solveEveryDecisionLevels']):
-            return dict(status='untested',program=program)
+            return dict(status='untested',program=program,**(dict(sideOutcome='tight') if forward else {}))
         saved=nodes.get(identity)
         if saved and saved['status']=='oracle_rejected':
             return dict(status='oracle_rejected',program=program)
         if saved and saved['status']=='feasible':
             # The saved program carries physical rows and a free-yaw seed.
             return dict(status='feasible',program=copy.deepcopy(saved['program']),
-                        alternatives=copy.deepcopy(saved.get('alternatives',[])))
+                        alternatives=copy.deepcopy(saved.get('alternatives',[])),
+                        **({'sideOutcome':saved['sideOutcome']} if forward else {}))
         if saved and saved.get('repairState') is not None:
             program['repairState']=saved['repairState']
         # Climb every side family and keep the best, as at a group end: families are compared here.
@@ -476,8 +490,10 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
                 service=dict(latchRevision=state['latchRevision'],hardLatched=pair_key(span) in state['hardLatches'],
                     runDeferralEnabled=minimum_run_pruning and not program.get('priorityTurnaround',False) and group_latched(f),
                     tickDeferralEnabled=minimum_run_pruning and group_latched(f),comparisonPolicy=COMPARISON_POLICY_VERSION))
-        alternatives=[]
+        alternatives,side=[],{}
         if status=='feasible':
+            if forward:
+                side=dict(sideOutcome=side_outcome(program,result['best']))
             from parkour_solver.scene.route import row_tick
             from parkour_solver.constraints.encounters import settled_through
             from parkour_solver.search.repair import node_alternatives
@@ -533,12 +549,12 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
             depth=depth,lastSolvedDepth=program.get('lastSolvedDepth',0),program=copy.deepcopy(program),
             **(dict(alternatives=copy.deepcopy(alternatives)) if alternatives else {}),
             # The committed program drops its repair; the solve report reads the node's alternatives from it.
-            **(dict(repairState=repair) if status=='feasible' else {}))
+            **(dict(repairState=repair) if status=='feasible' else {}),**side)
         state['nodeResults'][identity]=dict(query,parent=program.get('decisionParent'),depth=depth)
         publish()
         from parkour_solver.search.feasibility import unresolved_only
         return dict(status=status,program=program,alternatives=alternatives,
-                    deferUnknown=status=='suspended' and unresolved_only(program.get('repairState',{})))
+                    deferUnknown=status=='suspended' and unresolved_only(program.get('repairState',{})),**side)
 
     def generate(f):
         target_scene = dict(scene,goalBlock=f['goal']['block'])

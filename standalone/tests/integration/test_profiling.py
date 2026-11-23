@@ -339,7 +339,14 @@ class BookkeepingProfileTests(unittest.TestCase):
                             pending=[dict(needsNodeSolve=True, decisionParent='reserve')], exclusions=[
             dict(node='a', proof=dict(reason='search_policy')), dict(node='root', proof=dict(reason='disk_control_relaxation_infeasible'))],
             minimumRunCandidates=[dict(node='root', key='["ceiling", "b3"]', k=1, total=9, N=12, outcome='kept', nodes=['a']),
-                                  dict(node='a', key='["step", "b2"]', k=None, total=None, N=None, outcome='unreached', nodes=[])])
+                                  dict(node='a', key='["step", "b2"]', k=None, total=None, N=None, outcome='unreached', nodes=[])],
+            # Node a's held side variants: one restored behind its slack forward b, one promoted, one still waiting.
+            sideVariants=[dict(node='a', child='s1', case='slab_boost', face='b2', side='X-', forwards=[['b', 'Z-']],
+                               outcomes=dict(b='slack'), alternative='held'),
+                          dict(node='a', child='s2', case='normal_step', face='b2', side='X+', forwards=[['b', 'Z-'], ['x', 'X-']],
+                               outcomes=dict(b='tight', x='failed')),
+                          dict(node='a', child='s3', case='slab_boost', face='b2', side='X+', forwards=[['b', 'Z-']])],
+            alternatives=dict(held=dict(programs=[dict(decisionNode='s1')], restored=['s1'], next=1, watch=['b'], side=['b'])))
         frame = dict(id=3, goal=dict(block='b2'), parents=[dict(decisionNode='root')], goalRequest=dict(afterTick=0), records=[],
                      generation=dict(generated=9, screenedPrefixes=1, policyRejections=2, totalExpandedPrefixes=2,
                                      continuation=continuation))
@@ -367,7 +374,9 @@ class BookkeepingProfileTests(unittest.TestCase):
         self.assertIn('Solved children: node 3.2.\nChildren queued but not yet solved: 0.\nChildren pruned when generated: 1 '
                       'search policy (time, hard-anchor latch '
                       'or minimum-run bound).\nMinimum run ticks: no run count below the bound passed the screens: step-up '
-                      'onto B2.', markdown)
+                      'onto B2.\n\nSide variants:\n\n- slab boost onto B2 from its X- side: reserved behind node 3.2 (its Z- '
+                      "side row was slack); restored: node 3.2's branch died.\n- normal step onto B2 from its X+ side: promoted: "
+                      "node 3.2's Z- side row was tight, an unsolved node failed.\n\n", markdown)
 
     def test_case_steps_name_their_faces_and_wall_hits_their_face(self):
         from tools.profiling.trace import steps

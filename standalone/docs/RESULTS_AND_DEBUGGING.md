@@ -140,7 +140,10 @@ disk-relaxation and bound proofs, and the search policy's rejections), and its
 minimum-run candidates (each kept one with its run ticks, built landing, bound and
 children; the others grouped as beaten by a kept candidate or not reached below the
 bound, and jumps back onto the launch face held because they do not fit it, with their
-room and natural jump). The frame start's own expansion comes first.
+room and natural jump), and its held side variants of steps and slab boosts (each reserved
+behind a forward node whose side row was slack, and restored once that node's branch died,
+or promoted because every forward was tight or failed; one whose forward is not solved yet
+is left out). The frame start's own expansion comes first.
 
 A request's `owners` are the routes whose repair log holds its problem hash; an
 empty list means no saved route kept that solve. The `stop` report lists suspended

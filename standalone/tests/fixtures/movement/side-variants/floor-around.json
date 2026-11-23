@@ -1,0 +1,93 @@
+{
+ "sideVariant": {
+  "leg": [
+   0,
+   1
+  ],
+  "forward": [
+   "Z-"
+  ],
+  "reserved": [
+   "X-",
+   "X+"
+  ],
+  "note": "target sits on an open floor: the X sides are real approaches, not edge jumps"
+ },
+ "request": {
+  "version": 1,
+  "sceneModel": "collision_boxes",
+  "geometryBounds": [
+   -10,
+   -5,
+   -10,
+   20,
+   12,
+   20
+  ],
+  "initial": {
+   "position": [
+    0.5,
+    1,
+    0.5
+   ],
+   "velocity": [
+    0,
+    -0.0784000015258789,
+    0
+   ],
+   "yaw": 0
+  },
+  "startBlock": "start",
+  "goalBlock": "goal",
+  "maxWallHits": 0,
+  "maxContactCombinations": 0,
+  "blocks": [
+   {
+    "id": "start",
+    "boxes": [
+     [
+      -3,
+      0,
+      -3,
+      4,
+      1,
+      9
+     ]
+    ]
+   },
+   {
+    "id": "target",
+    "boxes": [
+     [
+      0,
+      1,
+      4,
+      1,
+      1.5,
+      6
+     ]
+    ]
+   },
+   {
+    "id": "goal",
+    "boxes": [
+     [
+      0,
+      1,
+      12,
+      1,
+      2,
+      13
+     ]
+    ]
+   }
+  ],
+  "movementSearch": {
+   "types": [
+    "normal",
+    "stepping"
+   ],
+   "maxInputs": 40
+  }
+ }
+}
