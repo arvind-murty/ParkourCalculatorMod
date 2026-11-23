@@ -179,7 +179,8 @@ def instrument(profile):
     try:
         from parkour_solver.numerics.disk import RelaxedDispatch
         def recorded(original):
-            # The relaxed dispatch answers find_route's requests itself, so both entry points are recorded.
+            # The relaxed dispatch answers find_route's requests itself, so every entry point is recorded, its
+            # alarm confirmations included.
             def solve(*args, **kwargs):
                 problem = args[-1]
                 row = dict(index=len(profile.runtime.requests)+1,
@@ -194,6 +195,7 @@ def instrument(profile):
             return solve
         replace(ordered_route, 'solve', recorded(ordered_route.solve))
         replace(RelaxedDispatch, 'solve', recorded(RelaxedDispatch.solve))
+        replace(RelaxedDispatch, 'confirmed', recorded(RelaxedDispatch.confirmed))
         aliases(identity.digest, 'digest', profile.digest(identity.digest))
         for name in ('program_physics_key', 'program_search_key', 'compile_program'):
             original = getattr(program, name)
