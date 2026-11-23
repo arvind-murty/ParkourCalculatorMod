@@ -166,6 +166,16 @@ class ProgramModelTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, message):
                     self.native.round_trip_program(broken)
 
+    def test_published_dfs_states_round_trip(self):
+        from tests.unit.search import test_anchor_dfs
+        states = []
+        # The checkpoint's JSON form is the contract: Python-mode states hold tuples in opaque data.
+        test_anchor_dfs.AnchorDFSTests().run_tree(finishes=2, on_progress=lambda state: states.append(
+            json.loads(json.dumps(state['dfs']))))
+        self.assertTrue(any(s['windows'] for s in states) and any('finalization' in s for s in states))
+        for state in states:
+            self.assertEqual(canonical(self.native.round_trip_dfs_state(state)), canonical(state))
+
 
 class GatePreparationTests(unittest.TestCase):
     """Native InteractionGate.prepare must return exactly what the Python gate prepares."""

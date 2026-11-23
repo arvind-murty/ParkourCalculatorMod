@@ -16,49 +16,13 @@
 #include "pkc/movement/vertical_profiles.hpp"
 #include "pkc/scene/ladders.hpp"
 #include "pkc/vertical.hpp"
+#include "codec.hpp"
 #include "schema.hpp"
 #include "value_ops.hpp"
 
 namespace pkc {
-namespace {
+namespace codec {
 
-// Largest magnitude where a double holds every integer exactly.
-constexpr std::int64_t kExactInteger = std::int64_t{1} << 53;
-
-// Where a decode is in the input, rendered only when it fails: building the
-// string for every field cost more than the decode itself.
-struct Path {
-    const Path* parent = nullptr;
-    std::string_view key;
-    std::size_t index = 0;
-    bool is_index = false;
-
-    std::string str() const {
-        if (!parent) return std::string(key);
-        return parent->str() + (is_index ? "[" + std::to_string(index) + "]" : "." + std::string(key));
-    }
-};
-
-Path child(const Path& parent, std::string_view key) { return {&parent, key}; }
-Path element(const Path& parent, std::size_t index) { return {&parent, {}, index, true}; }
-
-[[noreturn]] void fail(const Path& path, const std::string& problem) {
-    throw std::invalid_argument(path.str() + ": " + problem);
-}
-
-template <class T>
-const T& as(const Value& value, const Path& path, const char* expected) {
-    if (auto* held = std::get_if<T>(&value.data)) return *held;
-    fail(path, std::string("expected ") + expected);
-}
-
-// Each record lists its fields once in describe(); Reader and Writer walk that
-// list to decode and encode, so the two directions cannot disagree.
-template <class T>
-struct IsRecord : std::false_type {};
-#define PKC_RECORD(T) \
-    template <>       \
-    struct IsRecord<T> : std::true_type {}
 PKC_RECORD(ScalarState);
 PKC_RECORD(PositionConstraint);
 PKC_RECORD(LegConstraint);
@@ -74,210 +38,6 @@ PKC_RECORD(VerticalTrace);
 PKC_RECORD(Trace);
 PKC_RECORD(Program);
 PKC_RECORD(MovementChoice);
-#undef PKC_RECORD
-
-// Declared up front because records and containers nest in each other.
-template <class T>
-std::enable_if_t<IsRecord<T>::value> decode(const Value& value, T& out, const Path& path);
-template <class T>
-void decode(const Value& value, Nullable<T>& out, const Path& path);
-template <class T>
-void decode(const Value& value, std::vector<T>& out, const Path& path);
-template <class T, std::size_t N>
-void decode(const Value& value, std::array<T, N>& out, const Path& path);
-template <class T>
-std::enable_if_t<IsRecord<T>::value, Value> encode(const T& record);
-template <class T>
-Value encode(const Nullable<T>& value);
-template <class T>
-Value encode(const std::vector<T>& values);
-template <class T, std::size_t N>
-Value encode(const std::array<T, N>& values);
-
-void decode(const Value& value, bool& out, const Path& path) { out = as<bool>(value, path, "bool"); }
-
-void decode(const Value& value, std::int64_t& out, const Path& path) {
-    out = as<std::int64_t>(value, path, "int");
-}
-
-void decode(const Value& value, Num& out, const Path& path) {
-    if (auto* integer = std::get_if<std::int64_t>(&value.data)) {
-        if (*integer > kExactInteger || *integer < -kExactInteger) fail(path, "int outside the exact double range");
-        out = {static_cast<double>(*integer), true};
-    } else {
-        out = {as<double>(value, path, "number"), false};
-    }
-}
-
-void decode(const Value& value, std::string& out, const Path& path) {
-    out = as<std::string>(value, path, "str");
-}
-
-void decode(const Value& value, Value& out, const Path&) { out = value; }
-
-void decode(const Value& value, Anchors& out, const Path& path) {
-    for (const auto& [key, item] : *as<std::shared_ptr<const Object>>(value, path, "object"))
-        out[key] = as<std::int64_t>(item, child(path, key), "int");
-}
-
-template <class T>
-void decode(const Value& value, Nullable<T>& out, const Path& path) {
-    if (std::holds_alternative<std::nullptr_t>(value.data)) {
-        out.value.reset();
-    } else {
-        decode(value, out.value.emplace(), path);
-    }
-}
-
-template <class T>
-void decode(const Value& value, std::vector<T>& out, const Path& path) {
-    const auto& items = *as<std::shared_ptr<const Array>>(value, path, "list");
-    out.clear();
-    out.reserve(items.size());
-    for (std::size_t i = 0; i < items.size(); ++i) {
-        T item{};
-        decode(items[i], item, element(path, i));
-        out.push_back(std::move(item));
-    }
-}
-
-template <class T, std::size_t N>
-void decode(const Value& value, std::array<T, N>& out, const Path& path) {
-    const auto& items = *as<std::shared_ptr<const Array>>(value, path, "list");
-    if (items.size() != N) fail(path, "expected " + std::to_string(N) + " items");
-    for (std::size_t i = 0; i < N; ++i) decode(items[i], out[i], element(path, i));
-}
-
-class Reader {
-public:
-    Reader(const Value& value, const Path& path)
-        : fields_(*as<std::shared_ptr<const Object>>(value, path, "object")),
-          path_(path),
-          used_(fields_.size()) {}
-
-    template <class T>
-    void req(const char* key, T& out) {
-        const Value* value = find(key);
-        if (!value) fail(path_, std::string("missing key ") + key);
-        decode(*value, out, child(path_, key));
-    }
-
-    template <class T>
-    void opt(const char* key, std::optional<T>& out) {
-        out.reset();
-        if (const Value* value = find(key)) decode(*value, out.emplace(), child(path_, key));
-    }
-
-    // Keys no field claimed: an error for typed records, annotations for Program.
-    Object rest() const {
-        Object rest;
-        for (std::size_t i = 0; i < fields_.size(); ++i)
-            if (!used_[i]) rest.push_back(fields_[i]);
-        return rest;
-    }
-
-    void finish() const {
-        for (std::size_t i = 0; i < fields_.size(); ++i)
-            if (!used_[i]) fail(path_, "unknown key " + fields_[i].first);
-    }
-
-private:
-    const Value* find(const char* key) {
-        for (std::size_t i = 0; i < fields_.size(); ++i) {
-            if (fields_[i].first == key) {
-                used_[i] = true;
-                return &fields_[i].second;
-            }
-        }
-        return nullptr;
-    }
-
-    const Object& fields_;
-    const Path& path_;
-    std::vector<bool> used_;
-};
-
-Value encode(bool value) { return {value}; }
-Value encode(std::int64_t value) { return {value}; }
-Value encode(const Num& value) {
-    if (value.integral) return {static_cast<std::int64_t>(value.value)};
-    return {value.value};
-}
-Value encode(const std::string& value) { return {value}; }
-Value encode(const Value& value) { return value; }
-
-Value encode(const Anchors& anchors) {
-    auto object = std::make_shared<Object>();
-    for (const auto& [key, value] : anchors) object->emplace_back(key, Value{value});
-    return {std::shared_ptr<const Object>(std::move(object))};
-}
-
-template <class T>
-Value encode(const Nullable<T>& value) {
-    if (!value.value) return {nullptr};
-    return encode(*value.value);
-}
-
-template <class T>
-Value encode(const std::vector<T>& values) {
-    auto array = std::make_shared<Array>();
-    array->reserve(values.size());
-    for (std::size_t i = 0; i < values.size(); ++i) array->push_back(encode(static_cast<const T&>(values[i])));
-    return {std::shared_ptr<const Array>(std::move(array))};
-}
-
-Value encode(const std::vector<bool>& values) {
-    auto array = std::make_shared<Array>();
-    array->reserve(values.size());
-    for (bool value : values) array->push_back({value});
-    return {std::shared_ptr<const Array>(std::move(array))};
-}
-
-template <class T, std::size_t N>
-Value encode(const std::array<T, N>& values) {
-    auto array = std::make_shared<Array>();
-    array->reserve(N);
-    for (const auto& value : values) array->push_back(encode(value));
-    return {std::shared_ptr<const Array>(std::move(array))};
-}
-
-// Counts the fields a record writes so Writer allocates its object once.
-class FieldCount {
-public:
-    template <class T>
-    void req(const char*, const T&) {
-        ++count;
-    }
-
-    template <class T>
-    void opt(const char*, const std::optional<T>& value) {
-        count += value.has_value();
-    }
-
-    std::size_t count = 0;
-};
-
-class Writer {
-public:
-    explicit Writer(std::size_t capacity) { fields_->reserve(capacity); }
-
-    template <class T>
-    void req(const char* key, const T& value) {
-        fields_->emplace_back(key, encode(value));
-    }
-
-    template <class T>
-    void opt(const char* key, const std::optional<T>& value) {
-        if (value) fields_->emplace_back(key, encode(*value));
-    }
-
-    void extend(const Object& rest) { fields_->insert(fields_->end(), rest.begin(), rest.end()); }
-
-    Value done() { return {std::shared_ptr<const Object>(std::move(fields_))}; }
-
-private:
-    std::shared_ptr<Object> fields_ = std::make_shared<Object>();
-};
 
 template <class R, class V>
 void describe(R& s, V& v, ScalarState*) {
@@ -484,29 +244,11 @@ void describe(R& c, V& v, MovementChoice*) {
     v.req("interaction", c.interaction);
 }
 
-template <class T>
-std::enable_if_t<IsRecord<T>::value> decode(const Value& value, T& out, const Path& path) {
-    Reader reader(value, path);
-    describe(out, reader, static_cast<T*>(nullptr));
-    if constexpr (std::is_same_v<T, Program>) {
-        out.annotations = reader.rest();
-    } else {
-        reader.finish();
-    }
-}
+}  // namespace codec
 
-template <class T>
-std::enable_if_t<IsRecord<T>::value, Value> encode(const T& record) {
-    FieldCount fields;
-    describe(record, fields, static_cast<T*>(nullptr));
-    if constexpr (std::is_same_v<T, Program>) fields.count += record.annotations.size();
-    Writer writer(fields.count);
-    describe(record, writer, static_cast<T*>(nullptr));
-    if constexpr (std::is_same_v<T, Program>) writer.extend(record.annotations);
-    return writer.done();
-}
-
-}  // namespace
+using codec::decode;
+using codec::encode;
+using codec::Path;
 
 Program program_from_value(const Value& value) {
     Program program;

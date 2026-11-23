@@ -59,17 +59,17 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/ANCHOR_SEARCH_EXECUTION_REFERENCE.md](ANCHOR_SEARCH_EXECUTION_REFERENCE.md) | 37603 |
 | [docs/ARCHITECTURE.md](ARCHITECTURE.md) | 16418 |
 | [docs/CHECKPOINT_STORAGE.md](CHECKPOINT_STORAGE.md) | 7541 |
-| [docs/CODE_MAP.md](CODE_MAP.md) | 38326 |
+| [docs/CODE_MAP.md](CODE_MAP.md) | 38870 |
 | [docs/CURRENT_STATE.md](CURRENT_STATE.md) | 12858 |
 | [docs/DECISIONS_AND_PLANS.md](DECISIONS_AND_PLANS.md) | 20981 |
 | [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 36593 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11512 |
 | [docs/DOC_INDEX.md](DOC_INDEX.md) | 28873 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 269991 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 272219 |
 | [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 66117 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
-| [docs/LAYOUT.md](LAYOUT.md) | 11382 |
+| [docs/LAYOUT.md](LAYOUT.md) | 11535 |
 | [docs/MOD_REFERENCES.md](MOD_REFERENCES.md) | 5299 |
 | [docs/PERFORMANCE.md](PERFORMANCE.md) | 20029 |
 | [docs/REAL11_EXTENDED_GEOMETRY.md](REAL11_EXTENDED_GEOMETRY.md) | 12104 |
@@ -138,7 +138,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 
 | File | Bytes |
 | --- | ---: |
-| [native/cpp/CMakeLists.txt](../native/cpp/CMakeLists.txt) | 5107 |
+| [native/cpp/CMakeLists.txt](../native/cpp/CMakeLists.txt) | 5132 |
 | [native/cpp/LICENSE.cpython](../native/cpp/LICENSE.cpython) | 13936 |
 | [native/cpp/include/pkc/canonical.hpp](../native/cpp/include/pkc/canonical.hpp) | 977 |
 | [native/cpp/include/pkc/coefficients.hpp](../native/cpp/include/pkc/coefficients.hpp) | 355 |
@@ -162,6 +162,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/include/pkc/numerics/continuation.hpp](../native/cpp/include/pkc/numerics/continuation.hpp) | 1132 |
 | [native/cpp/include/pkc/numerics/disk.hpp](../native/cpp/include/pkc/numerics/disk.hpp) | 1795 |
 | [native/cpp/include/pkc/numerics/model.hpp](../native/cpp/include/pkc/numerics/model.hpp) | 475 |
+| [native/cpp/include/pkc/ordered_map.hpp](../native/cpp/include/pkc/ordered_map.hpp) | 917 |
 | [native/cpp/include/pkc/program.hpp](../native/cpp/include/pkc/program.hpp) | 9168 |
 | [native/cpp/include/pkc/reachability/screen.hpp](../native/cpp/include/pkc/reachability/screen.hpp) | 495 |
 | [native/cpp/include/pkc/reachability/service.hpp](../native/cpp/include/pkc/reachability/service.hpp) | 6387 |
@@ -177,6 +178,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/include/pkc/search/bounds/remaining.hpp](../native/cpp/include/pkc/search/bounds/remaining.hpp) | 595 |
 | [native/cpp/include/pkc/search/comparison.hpp](../native/cpp/include/pkc/search/comparison.hpp) | 1138 |
 | [native/cpp/include/pkc/search/dfs.hpp](../native/cpp/include/pkc/search/dfs.hpp) | 3302 |
+| [native/cpp/include/pkc/search/dfs_state.hpp](../native/cpp/include/pkc/search/dfs_state.hpp) | 8341 |
 | [native/cpp/include/pkc/search/engine.hpp](../native/cpp/include/pkc/search/engine.hpp) | 2683 |
 | [native/cpp/include/pkc/search/feasibility.hpp](../native/cpp/include/pkc/search/feasibility.hpp) | 769 |
 | [native/cpp/include/pkc/search/goals.hpp](../native/cpp/include/pkc/search/goals.hpp) | 790 |
@@ -191,8 +193,9 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/include/pkc/validation/vertical.hpp](../native/cpp/include/pkc/validation/vertical.hpp) | 353 |
 | [native/cpp/include/pkc/value.hpp](../native/cpp/include/pkc/value.hpp) | 698 |
 | [native/cpp/include/pkc/vertical.hpp](../native/cpp/include/pkc/vertical.hpp) | 2554 |
-| [native/cpp/python/module.cpp](../native/cpp/python/module.cpp) | 74395 |
+| [native/cpp/python/module.cpp](../native/cpp/python/module.cpp) | 74649 |
 | [native/cpp/src/canonical.cpp](../native/cpp/src/canonical.cpp) | 13203 |
+| [native/cpp/src/codec.hpp](../native/cpp/src/codec.hpp) | 11503 |
 | [native/cpp/src/coefficient_tables.inc](../native/cpp/src/coefficient_tables.inc) | 23532 |
 | [native/cpp/src/coefficients.cpp](../native/cpp/src/coefficients.cpp) | 9450 |
 | [native/cpp/src/constraints/avoidance.cpp](../native/cpp/src/constraints/avoidance.cpp) | 8443 |
@@ -218,7 +221,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/src/numerics/disk.cpp](../native/cpp/src/numerics/disk.cpp) | 23410 |
 | [native/cpp/src/numerics/model.cpp](../native/cpp/src/numerics/model.cpp) | 15824 |
 | [native/cpp/src/numerics/worker.cpp](../native/cpp/src/numerics/worker.cpp) | 22202 |
-| [native/cpp/src/program.cpp](../native/cpp/src/program.cpp) | 62537 |
+| [native/cpp/src/program.cpp](../native/cpp/src/program.cpp) | 53649 |
 | [native/cpp/src/py_math.hpp](../native/cpp/src/py_math.hpp) | 2748 |
 | [native/cpp/src/reachability/screen.cpp](../native/cpp/src/reachability/screen.cpp) | 3501 |
 | [native/cpp/src/reachability/service.cpp](../native/cpp/src/reachability/service.cpp) | 30331 |
@@ -235,6 +238,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/src/search/bounds/remaining.cpp](../native/cpp/src/search/bounds/remaining.cpp) | 8052 |
 | [native/cpp/src/search/comparison.cpp](../native/cpp/src/search/comparison.cpp) | 7941 |
 | [native/cpp/src/search/dfs.cpp](../native/cpp/src/search/dfs.cpp) | 18606 |
+| [native/cpp/src/search/dfs_state.cpp](../native/cpp/src/search/dfs_state.cpp) | 10552 |
 | [native/cpp/src/search/engine.cpp](../native/cpp/src/search/engine.cpp) | 13637 |
 | [native/cpp/src/search/feasibility.cpp](../native/cpp/src/search/feasibility.cpp) | 5672 |
 | [native/cpp/src/search/goals.cpp](../native/cpp/src/search/goals.cpp) | 3418 |
@@ -1970,7 +1974,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/integration/test_geometry_bounds.py](../tests/integration/test_geometry_bounds.py) | 4077 |
 | [tests/integration/test_integration.py](../tests/integration/test_integration.py) | 10053 |
 | [tests/integration/test_movement_contacts.py](../tests/integration/test_movement_contacts.py) | 11263 |
-| [tests/integration/test_native_core.py](../tests/integration/test_native_core.py) | 19886 |
+| [tests/integration/test_native_core.py](../tests/integration/test_native_core.py) | 20500 |
 | [tests/integration/test_orchestrator_continuation.py](../tests/integration/test_orchestrator_continuation.py) | 11449 |
 | [tests/integration/test_package_layout.py](../tests/integration/test_package_layout.py) | 5628 |
 | [tests/integration/test_profiling.py](../tests/integration/test_profiling.py) | 36615 |

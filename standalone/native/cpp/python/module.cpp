@@ -29,6 +29,7 @@
 #include "pkc/search/bounds/remaining.hpp"
 #include "pkc/search/comparison.hpp"
 #include "pkc/search/dfs.hpp"
+#include "pkc/search/dfs_state.hpp"
 #include "pkc/search/engine.hpp"
 #include "pkc/search/feasibility.hpp"
 #include "pkc/search/goals.hpp"
@@ -815,6 +816,9 @@ PYBIND11_MODULE(_pkc_native, m) {
        py::arg("keep_region_choices") = false, "search/dfs.commit_arrival");
     m.def("candidate_key", [](py::handle program) { return pkc::candidate_key(convert(program)); },
           "search/dfs.candidate_key");
+    m.def("round_trip_dfs_state", [](py::handle state) {
+        return to_python(pkc::to_value(pkc::dfs_state_from_value(convert(state))));
+    }, "search_goals' state through its typed form (search/dfs_state.hpp)");
     py::class_<pkc::InteractionGate, std::shared_ptr<pkc::InteractionGate>>(m, "InteractionGate")
         .def(py::init([](py::handle scene) { return std::make_shared<pkc::InteractionGate>(convert(scene)); }))
         .def("reachable_faces", [](pkc::InteractionGate& gate, std::optional<std::string> name) {
