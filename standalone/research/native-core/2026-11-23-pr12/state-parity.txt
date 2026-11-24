@@ -1,0 +1,7 @@
+Published and result states, Python mode (oracle) vs native mode, in call order (pm.sh), final build:
+== short states: {"a": 186, "b": 186, "compared": 186, "equal": 186, "differing": 0}
+== fixed states: {"a": 468, "b": 468, "compared": 468, "equal": 468, "differing": 0}
+Reports differ in compiler and gate cache counters and in the order of the gate's exclusion log, as before the port.
+Per test (milestone list, build before the request observer): {"tests": 54, "equal": 53, "differing": 1}
+differs tests.unit.search.test_anchor_search.RelaxedAutomaticSearchTests.test_search_runs_on_the_relaxation_and_publishes_frame_end_answers 1 1
+The one differing test runs in Python mode under both (it records engine.solve_contact_branches); only diagnostics' disk.cached differs: in the native-mode process the earlier tests filled the native decided-result cache, not Python's.

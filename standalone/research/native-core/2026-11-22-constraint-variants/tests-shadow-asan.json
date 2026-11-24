@@ -1,0 +1,21 @@
+{
+ "stats": {
+  "constructed": 376,
+  "constructed with state": 73,
+  "next variant": 2175,
+  "obstacle_key": 22,
+  "with_obstacles": 18,
+  "next stop": 156,
+  "skipped (route guards or signature)": 1,
+  "resynced (edited outside next)": 6,
+  "python timeouts (resynced)": 70,
+  "skipped (patched option)": 2,
+  "twin construction errors": 1
+ },
+ "mismatches": [
+  {
+   "name": "construction",
+   "error": "NativeValueError(\"KeyError: 'choices'\")"
+  }
+ ]
+}

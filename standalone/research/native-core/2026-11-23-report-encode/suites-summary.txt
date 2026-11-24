@@ -1,0 +1,7 @@
+Milestone suite (tools/native-suite.json modules plus the evaluate extras)
+Python mode:
+Ran 862 tests in 99.781s
+OK (skipped=10)
+Native mode:
+Ran 862 tests in 84.739s
+OK (skipped=10)

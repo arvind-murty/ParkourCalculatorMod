@@ -1,0 +1,22 @@
+[
+ [
+  ".provenance.command[4]",
+  "/private/var/tmp/standalone-cpp-node-20261122/batch2/base != /private/var/tmp/standalone-cpp-node-20261122/batch3/new"
+ ],
+ [
+  ".provenance.sourceHashes.parkour_solver/search/dfs.py",
+  "9629f7ccf5d38ad79a89e5d8034f9e7b6bbe0dae6b0832ac2a83166f2c958d39 != 78e5c57d888c4782328cb336104017c14588fa79c4a187a4292a98c355d49bc1"
+ ],
+ [
+  ".provenance.sourceHashes.parkour_solver/search/events/engine.py",
+  "deea5cfc58550cfa82e11297528641e98bf53b7fceca5dd4c13fe5646e010716 != 04094aa8f4e201765256b0f1d3180a1cc4dc53c5b6ae5bb48d98474854e320ba"
+ ],
+ [
+  ".provenance.sourceHashes.parkour_solver/search/frontier.py",
+  "639568c47532d4ed9ded65e63185c851fede71303389f9b76c50f9fc4d695b36 != a663c22a90a37b6fb692d6f20f169401c651c7bd4df7603cd7ec05ba00111949"
+ ],
+ [
+  ".provenance.sourceHashes.parkour_solver/search/movement.py",
+  "891901719bd293f78647b135e367b390bda51053e978ecc6d71ef8e7a92aa417 != d991bf47f0724a0ec04abf49b1d0cfab49106aedf74bcc7032cf272708a08a2c"
+ ]
+]

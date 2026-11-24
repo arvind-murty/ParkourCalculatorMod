@@ -1,0 +1,18 @@
+{
+  "sourceRevision": "3c31cb5104bc9ff6623120c323cdce0dc9a351d0",
+  "sourceUnchanged": true,
+  "input": "/private/var/tmp/standalone-cpp-baseline-20261120T001815/runs/extended-300s-r01/input.json",
+  "seconds": 90.0,
+  "variant": "release",
+  "status": "unknown",
+  "termination": "deadline",
+  "ticks": null,
+  "objective": null,
+  "validationPassed": [],
+  "calls": {
+    "check_scene": 135,
+    "route_footprints": 1122,
+    "normalize_geometry": 3
+  },
+  "mismatches": 0
+}

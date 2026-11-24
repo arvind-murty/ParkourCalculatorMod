@@ -6510,7 +6510,7 @@
     },
     {
       "old": "autonomy/terminal_goals.py",
-      "new": "src/parkour_solver/search/virtual_goals.py",
+      "new": "src/parkour_solver/movement/virtual_goals.py",
       "originalSha256": "afadafef3a464a22aa150826c2bb77828dd0417e4bdac330d5438d55537c5264",
       "immutable": false,
       "retired": "2026-11-21"
@@ -6977,7 +6977,7 @@
     },
     {
       "old": "autonomy/work.py",
-      "new": "src/parkour_solver/search/work.py",
+      "new": "src/parkour_solver/work.py",
       "originalSha256": "62f45230d351f043054e2b0bfdfe2832493b7d65b62141aa95b4ad55d5cec9ec",
       "immutable": false
     },
@@ -7390,7 +7390,7 @@
     "standalone.autonomy.solve_blocks": "parkour_solver.cli.blocks",
     "standalone.autonomy.solve_spec": "parkour_solver.search.identity",
     "standalone.autonomy.stepping_generation": "parkour_solver.movement.stepping",
-    "standalone.autonomy.terminal_goals": "parkour_solver.search.virtual_goals",
+    "standalone.autonomy.terminal_goals": "parkour_solver.movement.virtual_goals",
     "standalone.autonomy.tests.test_acceptance": "tests.integration.test_acceptance",
     "standalone.autonomy.tests.test_anchor_dfs": "tests.unit.search.test_anchor_dfs",
     "standalone.autonomy.tests.test_anchor_policy": "tests.unit.search.test_anchor_policy",
@@ -7463,7 +7463,7 @@
     "standalone.autonomy.tests.test_transfer_time_bounds": "tests.unit.search.test_transfer_time_bounds",
     "standalone.autonomy.vertical_profiles": "parkour_solver.movement.vertical_profiles",
     "standalone.autonomy.witness": "parkour_solver.validation.witness",
-    "standalone.autonomy.work": "parkour_solver.search.work",
+    "standalone.autonomy.work": "parkour_solver.work",
     "standalone.ipopt.capture": "parkour_solver.io.capture",
     "standalone.ipopt.constraints": "parkour_solver.numerics.constraints",
     "standalone.ipopt.continuation": "parkour_solver.numerics.continuation",

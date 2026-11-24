@@ -5,7 +5,6 @@ evidence, queues and recovery. Terminal objective ranking is separate.
 """
 
 POLICY_VERSION = 1
-TOLERANCE = 1e-7
 
 
 def comparison_label(program, *, start=0, through=None, identity='', mode='ordinary',
@@ -50,72 +49,16 @@ def _count_protections(candidate, peer):
     return reasons
 
 
-def measurements(record):
-    times = {k:v['ticks'] for k,v in record.get('spatial_results', {}).items()
-             if v.get('status') == 'feasible' and v.get('ticks') is not None}
-    progress = {k:v['objective'] for k,v in record.get('clock_results', {}).items()
-                if v.get('status') == 'feasible' and v.get('objective') is not None}
-    return times, progress
-
-
-def _clock_protections(candidate, peer, margin):
-    reasons = []
-    for key in candidate.get('required_clocks', candidate.get('clock_results', {})):
-        c, b = candidate.get('clock_results', {}).get(key, {}), peer.get('clock_results', {}).get(key, {})
-        cs, bs = c.get('state'), b.get('state')
-        if (not cs or not bs or not cs.get('motion') or not bs.get('motion') or
-                any(s.get(k) is None for s in (cs,bs) for k in ('forwardVelocity','speed')) or
-                c.get('objective') is None or b.get('objective') is None):
-            reasons.append('missing_state_metadata')
-            continue
-        cm, bm = cs['motion'], bs['motion']
-        if cm['schedule'] != bm['schedule']:
-            reasons.append('incomparable_schedules')
-            labels = [dict(J=m['jumps'], tickCost=m['runs'], mode='ordinary') for m in (cm, bm)]
-            reasons += ['more_effective_jumps' if r == 'more_jump_inputs' else r
-                        for r in _count_protections(*labels)]
-            continue
-        if cm['phase'] != bm['phase'] or cs.get('scope') != bs.get('scope'):
-            reasons.append('incompatible_phase_or_scope')
-            continue
-        if c['objective'] >= b['objective']-margin-TOLERANCE:
-            reasons.append('position_close_or_ahead')
-        if cs['forwardVelocity'] > bs['forwardVelocity']+TOLERANCE:
-            reasons.append('higher_forward_velocity')
-        if cs['speed'] > bs['speed']+TOLERANCE:
-            reasons.append('higher_horizontal_speed')
-    return sorted(set(reasons))
-
-
-def _clock_decision(candidate, peer, context):
-    reasons = _clock_protections(candidate, peer, context.get('progressMargin', .25))
-    ct, cp = measurements(candidate)
-    pt, pp = measurements(peer)
-    complete = (bool(ct and cp) and ct.keys() <= pt.keys() and cp.keys() <= pp.keys() and
-                set(candidate.get('required_spatial', ct)) <= ct.keys() and
-                set(candidate.get('required_clocks', cp)) <= cp.keys())
-    worse = (complete and not reasons and
-             all(pt[k] <= v for k,v in ct.items()) and
-             all(pp[k] >= v-TOLERANCE for k,v in cp.items()) and
-             (any(v-pt[k] > context.get('timeMargin', 1) for k,v in ct.items()) or
-              any(pp[k]-v > context.get('progressMargin', .25)+TOLERANCE for k,v in cp.items())))
-    return dict(version=POLICY_VERSION, action='defer_preparation' if worse else 'keep',
-                candidateId=candidate.get('id'), peerId=peer.get('id'),
-                protectionReasons=reasons, peerLookupAllowed=True)
-
-
 def compare_candidates(candidate, peer=None, *, context=None, incumbent=None):
     """Return a pure decision; every peer-based heuristic uses this entry point."""
     context = context or {}
-    if context.get('purpose') == 'common_clock' and peer is not None:
-        return _clock_decision(candidate, peer, context)
     result = dict(version=POLICY_VERSION, action='keep', candidateId=candidate.get('id'),
                   peerId=peer.get('id') if peer else None, contextId=context.get('comparisonContextId'),
                   priorityKey=list(priority_key(candidate)), protectionReasons=[],
                   peerLookupAllowed=False, elapsedT=candidate['T'])
     remaining = candidate.get('remainingFinishBound') or {}
     optimistic = candidate['T']+remaining.get('ticks', remaining.get('remainingTicks', 0))
-    if incumbent is not None and not context.get('fixedTerminal'):
+    if incumbent is not None:
         tick = incumbent.get('T', incumbent.get('plan', {}).get('ticks'))
         if tick is not None:
             result.update(optimisticFinish=optimistic, incumbentT=tick,

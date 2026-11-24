@@ -5,6 +5,7 @@ reachability and its individual air-cell walks are never route identities.
 """
 
 import json
+import time
 from dataclasses import asdict, dataclass
 
 from parkour_solver.movement.settings import movement_settings
@@ -105,6 +106,13 @@ def build_route_domain(scene, task, *, deadline=None, max_cells=20000, decomposi
     Query-boundary enclosure is deliberately unknown. Horizon XY query bounds
     alone cannot certify Y/probe enclosure. Outside attachments remain latent.
     """
+    if decomposition is None:
+        from parkour_solver import native_core
+        native = native_core.from_environment()
+        if native is not None:  # the whole build, returning the canonical payload
+            from parkour_solver.movement.settings import GENERATORS
+            return RouteDomain(native.build_route_domain(scene, task, None if deadline is None else deadline-time.monotonic(),
+                                                         max_cells, list(GENERATORS)))
     d = decomposition if decomposition is not None else decompose(scene, deadline=deadline, max_cells=max_cells)
     supports = support_components(d)
     graph = build_geometry_graph(scene, d, supports, task, deadline=deadline)

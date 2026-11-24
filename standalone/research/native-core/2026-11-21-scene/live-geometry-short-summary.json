@@ -1,0 +1,20 @@
+{
+  "sourceRevision": "3c31cb5104bc9ff6623120c323cdce0dc9a351d0",
+  "sourceUnchanged": true,
+  "input": "cases/real11/physical-anchors.json",
+  "seconds": 120.0,
+  "variant": "release",
+  "status": "feasible",
+  "termination": "exhausted",
+  "ticks": 64,
+  "objective": -1093.2381026602418,
+  "validationPassed": [
+    true
+  ],
+  "calls": {
+    "check_scene": 21,
+    "route_footprints": 89,
+    "normalize_geometry": 4
+  },
+  "mismatches": 0
+}

@@ -35,6 +35,15 @@ STATS = dict(screen=collections.Counter(), candidate=collections.Counter())
 _DECIDED = {}
 
 
+def _native():
+    """The native core under PKC_NATIVE_CORE, which solves the relaxation, keeps the decided-result cache and its
+    counters (shared with the native gate's screens) and seeds IPOPT; None otherwise.
+
+    The spec and the other small helpers stay here: converting a problem costs more than they do."""
+    from parkour_solver import native_core
+    return native_core.from_environment()
+
+
 def spec(problem, extra_rows=(), objective=None, *, strict):
     """Canonical numerical content, or None outside the supported class.
 
@@ -64,8 +73,19 @@ def spec(problem, extra_rows=(), objective=None, *, strict):
     return result
 
 
+def stats():
+    """STATS, or under PKC_NATIVE_CORE the native decided cache's counters, which every solve then counts."""
+    native = _native()
+    if native is None:
+        return STATS
+    return {kind: collections.Counter(counts) for kind, counts in native.disk_stats().items()}
+
+
 def solve(content, *, seconds, kind='candidate'):
     """Solve a spec to a feasible or infeasible verdict, cached process-wide by content."""
+    native = _native()
+    if native is not None:  # the native gate's screens share this cache; the module's limits are read here
+        return native.disk_cached_solve(content, seconds, kind, CAP, MAX_ITER, RETRY_CAP, RETRY_MAX_ITER)
     encoded = json.dumps(content, sort_keys=True)
     stats = STATS[kind]
     if encoded in _DECIDED:
@@ -125,6 +145,9 @@ def ipopt_seed(yaw):
     infeasibility; a uniform turn breaks every mirror symmetry while staying in
     the same basin (research/disk-relaxation/README.md#confirmation-seed).
     """
+    native = _native()
+    if native is not None:
+        return native.ipopt_seed(yaw)
     return [y+math.degrees(SEED_TILT) for y in yaw]
 
 
@@ -152,6 +175,8 @@ class RelaxedDispatch:
     loop solves with `solve` and confirms its kept candidates once, at its end
     (search/repair.py). `full_strength` answers every request at full strength,
     for the search's frame-end re-solve of a chosen witness (search/dfs.py).
+    A gate with a native core (PKC_NATIVE_CORE) dispatches natively
+    (numerics/disk.hpp) and keeps the confirmations in the core's cache.
     """
     def __init__(self, *, gate, post_alarm='pipeline'):
         if post_alarm not in ('ipopt', 'pipeline'):
@@ -172,6 +197,10 @@ class RelaxedDispatch:
                   on_incumbent=None, mode):
         from parkour_solver.numerics.solver import solve as full_solve
         from parkour_solver.validation.numerical import validate_controls
+        core = getattr(self.gate, 'core', None)
+        if core is not None:  # native node solves dispatch there too, so both share the core's confirmations
+            return _native().relaxed_dispatch(core, problem, seconds=seconds, stop_on_feasible=stop_on_feasible,
+                mode=mode, post_alarm=self.post_alarm, cancel_event=cancel_event, on_incumbent=on_incumbent)
 
         def full(reason, request=problem):
             result = full_solve(request, seconds=seconds, stop_on_feasible=stop_on_feasible,

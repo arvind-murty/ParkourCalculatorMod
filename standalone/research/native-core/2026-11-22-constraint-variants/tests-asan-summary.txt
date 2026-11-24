@@ -1,0 +1,4 @@
+0
+2:FAIL: test_repeated_ladder_ceiling_events_regenerate_the_complete_schedule (tests.unit.movement.test_ladder_composition.LadderRegionTests.test_repeated_ladder_ceiling_events_regenerate_the_complete_schedule)
+10:Ran 276 tests in 151.483s
+12:FAILED (failures=1, skipped=10)

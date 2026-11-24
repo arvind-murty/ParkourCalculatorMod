@@ -2,7 +2,7 @@ import collections
 import copy
 
 from parkour_solver.scene.geometry import expanded_box
-from parkour_solver.reachability.intervals import interaction_reachability, reachable_envelopes
+from parkour_solver.reachability.intervals import interaction_reachability, interaction_reachability_many, reachable_envelopes
 
 
 PROOF_POLICY = 5
@@ -11,7 +11,7 @@ PROOF_POLICY = 5
 def interaction_context_key(context):
     """Fingerprint all bounds/rows/probe uncertainty, including unknown Y."""
     import math
-    from parkour_solver.search.identity import digest
+    from parkour_solver.canonical import digest
     def finite(value):
         if isinstance(value, float) and not math.isfinite(value):
             return {'nonfiniteBound': str(value)}
@@ -23,6 +23,12 @@ def interaction_context_key(context):
     return digest(dict(policy=PROOF_POLICY, context=finite(context)))
 
 
+def analysis_key(prepared_key, open_terminal, scope, initial_intervals, parent_ticks):
+    """An analysis named by the preparation it models (InteractionGate.analyze_model)."""
+    return interaction_context_key(dict(prepared=prepared_key, openTerminal=open_terminal, scope=scope,
+                                        initialIntervals=initial_intervals, parentTicks=parent_ticks))
+
+
 def query_interaction(request, context, *, session=None, budget=None, context_key=None):
     """Conservative role/window query shared by routing and fixed generation.
 
@@ -30,7 +36,7 @@ def query_interaction(request, context, *, session=None, budget=None, context_ke
     may supply a precomputed key only for this exact immutable context.
     """
     import copy
-    from parkour_solver.search.identity import digest
+    from parkour_solver.canonical import digest
     role = request['role']
     if role not in ('required_contact', 'unwanted_contact', 'approach_prerequisite'):
         raise ValueError('Unknown interaction role')
@@ -239,20 +245,40 @@ def landing_boxes(program, cut):
 
 
 class InteractionGate:
-    """Session-shared preparation, coefficient and exact-model proof cache."""
-    def __init__(self, scene, compiler, *, seconds=1):
+    """Session-shared preparation, coefficient and exact-model proof cache.
+
+    Under PKC_NATIVE_CORE, for a collision-box scene and a compiler whose replies equal the native tables, a native
+    gate (`core`) keeps the scene's preparations, analyses and program screens in its own cache and metrics; `cores`
+    ({scene digest: core}) shares one across the gates of a search, as `cache` and `metrics` are shared."""
+    def __init__(self, scene, compiler, *, seconds=1, cores=None):
+        from parkour_solver import native_core
+        from parkour_solver.canonical import digest
         self.scene, self.compiler, self.seconds = scene, compiler, seconds
+        self.native = native_core.from_environment()
         self.cache = {}
         self.metrics = {}
         self.checked = 0
         self.exclusions = []
-        from parkour_solver.numerics.disk import STATS
-        self.relaxation_start = {kind: collections.Counter(counts) for kind, counts in STATS.items()}
+        self.core = None
+        if (self.native is not None and scene.get('sceneModel')=='collision_boxes'
+                and getattr(compiler,'table_coefficients',False)):
+            cores = {} if cores is None else cores
+            key = digest({k: v for k, v in scene.items() if k != 'movementSearch'})
+            self.core = cores.get(key) or cores.setdefault(key, self.native.InteractionGate(scene))
+        # This gate's share of the core's query log: the core is shared across a search's gates.
+        self.core_start = (self.core.checked, self.core.excluded) if self.core is not None else (0, 0)
+        from parkour_solver.numerics.disk import stats
+        self.relaxation_start = {kind: collections.Counter(counts) for kind, counts in stats().items()}
         self.face_tables, self.jump_traces = {}, {}
         self.approaches = {}
+        self.native_parents = {}  # id(program) -> (program, its native program); see _sequenced
 
     def reachable_faces(self, name):
         if name in self.face_tables:
+            return self.face_tables[name]
+        if self.core is not None:
+            table = self.core.reachable_faces(name)
+            self.face_tables[name] = {k: frozenset(v) if isinstance(v, set) else v for k, v in table.items()}
             return self.face_tables[name]
         import time
         started = time.process_time()
@@ -276,14 +302,35 @@ class InteractionGate:
         return value
 
     def prepare(self, program, *, scene=None, require_complete=False):
+        """The preparation with this program's own warm yaw: the cache key is physical, so a cached route carries
+        the guideSeedYaw of the program that built it."""
+        prepared=self._prepared(program,scene=scene,require_complete=require_complete)
+        if prepared is None:
+            return None
+        prepared=prepared if isinstance(prepared,dict) else prepared.to_python()
+        route={k:v for k,v in prepared['route'].items() if k!='warmYaw'}
+        if 'guideSeedYaw' in program:
+            route['warmYaw']=program['guideSeedYaw'][:]
+        return dict(prepared,route=route)
+
+    def _prepared(self, program, *, scene=None, require_complete=False):
+        """The cached preparation: a dict, or under PKC_NATIVE_CORE a native one for the routes it covers
+        (collision-box scenes without ladder events), whose dict is built only when Python reads it. `program` may
+        be a native program from `_sequenced`."""
         from parkour_solver.movement.program import compile_program, program_physics_key
         from parkour_solver.scene.route import prepare_route, schedule
         from parkour_solver.validation.vertical import validate_vertical_schedule
-        from parkour_solver.search.identity import digest
+        from parkour_solver.canonical import digest
+        if self.core is not None and scene is None:
+            return self.core.prepare(program,require_complete)
         scene=self.scene if scene is None else scene
+        typed=not isinstance(program,dict)
         key=('prepared',digest(dict(scene={k:v for k,v in scene.items() if k!='movementSearch'},
-            program=program_physics_key(program),complete=require_complete)))
+            program=program.physics_key() if typed else program_physics_key(program),complete=require_complete)))
         def build():
+            if typed or (self.native is not None and scene['sceneModel']=='collision_boxes'
+                         and not program.get('ladderEvents')):
+                return self.native.prepare(scene,program,require_complete,key[1])
             compiled=compile_program(scene,program,require_complete=require_complete)
             route=prepare_route(compiled['route']);plan=schedule(route,[0])
             vertical=validate_vertical_schedule(route,compiled['profiles'],plan)
@@ -297,11 +344,12 @@ class InteractionGate:
         """`prepared_key`: the `prepare` key that produced route, plan and vertical. The model is a function of it,
         so it names the analysis instead of the model's own content. `parent_ticks`: see `reachable_envelopes`."""
         from parkour_solver.bridge.compiler import coefficient_request
-        from parkour_solver.search.identity import digest
+        from parkour_solver.canonical import digest
         def build_model():
             request=coefficient_request(route,plan)
             coefficient=self._cached(('coefficients',digest(request)),
                 lambda:self.compiler.compile(route,plan,self.seconds),'coefficient')
+            if not isinstance(coefficient,dict):coefficient=coefficient.to_python()  # cached by a native analysis
             rows=[r for r in plan['walls'] if not open_terminal or not r.get('name','').startswith('landing:1:')]
             result=dict(coefficient,ticks=plan['ticks'],walls=rows,contacts=plan['contacts'],
                 position=route['initial']['position'][::2],velocity=route['initial']['velocity'][::2],
@@ -311,8 +359,7 @@ class InteractionGate:
             return result,coefficient
         built=None
         if prepared_key is not None:
-            key=interaction_context_key(dict(prepared=prepared_key,openTerminal=open_terminal,scope=scope,
-                                             initialIntervals=initial_intervals,parentTicks=parent_ticks))
+            key=analysis_key(prepared_key,open_terminal,scope,initial_intervals,parent_ticks)
         else:
             built=build_model()
             key=interaction_context_key(dict(model=built[0],y=vertical['y'],scope=scope,parentTicks=parent_ticks))
@@ -324,11 +371,31 @@ class InteractionGate:
         return self._cached(('analysis',key),build,'analysis')
 
     def analyze(self, program, *, scene=None, require_complete=False, open_terminal=True, scope=None):
-        prepared=self.prepare(program,scene=scene,require_complete=require_complete)
+        analysis=self._analysis(program,scene=scene,require_complete=require_complete,open_terminal=open_terminal,
+                                scope=scope)
+        return analysis if analysis is None or isinstance(analysis,dict) else analysis.to_python()
+
+    def _analysis(self, program, *, scene=None, require_complete=False, open_terminal=True, scope=None):
+        """analyze's cached result: a dict, or a native analysis when the preparation is native."""
+        if self.core is not None and scene is None and not require_complete and open_terminal and scope is None:
+            return self.core.analysis(program)
+        prepared=self._prepared(program,scene=scene,require_complete=require_complete)
         if prepared is None:return None
-        return self.analyze_model(prepared['route'],prepared['plan'],prepared['vertical'],
-                                  open_terminal=open_terminal,scope=scope,prepared_key=prepared['key'],
-                                  parent_ticks=program.get('parentTicks'))
+        parent_ticks=program.get('parentTicks') if isinstance(program,dict) else program.parent_ticks
+        # A native analysis compiles coefficients from the native tables, so only for a compiler whose replies
+        # equal them; any other compiler (test doubles) gets the Python model of the same preparation.
+        if isinstance(prepared,dict) or not getattr(self.compiler,'table_coefficients',False):
+            if not isinstance(prepared,dict):prepared=prepared.to_python()
+            return self.analyze_model(prepared['route'],prepared['plan'],prepared['vertical'],
+                                      open_terminal=open_terminal,scope=scope,prepared_key=prepared['key'],
+                                      parent_ticks=parent_ticks)
+        key=analysis_key(prepared.key,open_terminal,scope,None,parent_ticks)
+        def build():
+            coefficient=self._cached(('coefficients',prepared.coefficient_digest()),prepared.compile_coefficients,
+                                     'coefficient')
+            if isinstance(coefficient,dict):coefficient=self.native.coefficients(coefficient)  # cached by Python
+            return prepared.analyze(coefficient,open_terminal,parent_ticks,key)
+        return self._cached(('analysis',key),build,'analysis')
 
     def condition(self, analysis, rows):
         """Add X/Z prerequisites and repropagate, retaining the compiled physics."""
@@ -344,9 +411,8 @@ class InteractionGate:
 
     def sequence(self, context, choice):
         """Screen a shared named outcome before multiplying its side variants."""
-        from parkour_solver.movement.program import append_choice
         if context.get('checkBudget'):context['checkBudget']()
-        program=append_choice(context['program'],choice)
+        program=self._sequenced(context['program'],choice)
         self.metrics['sequenceChecks']=self.metrics.get('sequenceChecks',0)+1
         proof=dict(reason='composition_rejected') if program is None else self.required(program)
         if proof:
@@ -355,24 +421,50 @@ class InteractionGate:
                 input=context['program']['profile']['duration'],cases=choice['profile'].get('caseEvents',[])))
         return proof
 
+    def _sequenced(self, parent, choice):
+        """append_choice(parent, choice), built only for this screen. Under PKC_NATIVE_CORE, when the gate screens
+        natively, it is a native program. The parent's native program is kept by identity: what a screen reads of a
+        program (its states, trace, threshold and seed yaw) never changes once it is built."""
+        from parkour_solver.movement.program import append_choice
+        if (self.native is not None and self.scene['sceneModel']=='collision_boxes'
+                and getattr(self.compiler,'table_coefficients',False)):
+            entry=self.native_parents.pop(id(parent),None)
+            if entry is None or entry[0] is not parent:
+                entry=parent,self.native.program(parent)
+            self.native_parents[id(parent)]=entry
+            while len(self.native_parents)>64:
+                self.native_parents.pop(next(iter(self.native_parents)))
+            try:
+                return entry[1].append_choice(choice)
+            except self.native.NativeUnsupported:  # a ceiling a ladder climb owns outside a ladder append
+                pass
+        return append_choice(parent,choice)
+
     def check_program(self, program, objective=None):
         """None or a rejection proof. A run-off's launch-support face selection is appended to program['walkOffs']."""
-        analysis=self.analyze(program)
+        if self.core is not None:
+            proof,selection=self.core.check_program(program,objective)
+            if selection is not None:
+                program['walkOffs']=program.get('walkOffs',[])+[selection]
+            return proof
+        analysis=self._analysis(program)
         if analysis is None:return dict(reason='vertical_schedule')
-        from parkour_solver.search.identity import digest
+        def materialized():  # Python readers need the analysis dict, built once for a native analysis
+            return analysis if isinstance(analysis,dict) else analysis.to_python()
+        from parkour_solver.canonical import digest
         objective=self.scene['objective'] if objective is None else objective
         cut=walk_off_tick(program)
-        key=('screen',analysis['key'],digest(objective),cut)
+        key=('screen',analysis['key'] if isinstance(analysis,dict) else analysis.key,digest(objective),cut)
         def relax(rows):
             self.metrics['relaxationChecks']=self.metrics.get('relaxationChecks',0)+1
-            return self.relaxation(program,analysis,objective,rows)
+            return self.relaxation(program,materialized(),objective,rows)
         def build():
             proof=self.required(program)
             if proof:return proof,None
             faces=None
             if cut is not None:
                 from parkour_solver.constraints.contacts import walk_off_faces
-                faces=walk_off_faces(self.scene,program,cut,analysis['envelopes'],landing_boxes(program,cut))
+                faces=walk_off_faces(self.scene,program,cut,materialized()['envelopes'],landing_boxes(program,cut))
             if faces is None:
                 if self.scene.get('maxWallHits',0):return None,None
                 checked=relax([])
@@ -399,12 +491,13 @@ class InteractionGate:
 
     def relaxation(self, program, analysis, objective, rows=()):
         """The disk relaxation of the request a decision check's repair loop sends for this program with
-        avoidance `rows` (search.ordered_route.numerical_problem), optimizing `objective`: one Clarabel solve
+        avoidance `rows` (numerics.builders.numerical_problem), optimizing `objective`: one Clarabel solve
         that the repair loop's identical request finds in the content cache. None outside the supported class."""
         import copy
         from parkour_solver.numerics.disk import screen
         from parkour_solver.scene.route import schedule
-        from parkour_solver.search.ordered_route import derive_footprints, numerical_problem
+        from parkour_solver.scene.route import derive_footprints
+        from parkour_solver.numerics.builders import numerical_problem
         prepared=self.prepare(program)
         route=dict(copy.deepcopy(prepared['route']),objective=dict(axis='X',sense='MAX'),guideObjective=objective)
         route['constraints'].extend(copy.deepcopy(list(rows)))
@@ -419,7 +512,7 @@ class InteractionGate:
         inputs are known, the proposed interaction has not changed the height/ground state yet. None if unknown."""
         from parkour_solver.movement.program import append_choice, program_physics_key
         from parkour_solver.movement.normal import approaches, event_choice, first_descent
-        from parkour_solver.search.identity import digest
+        from parkour_solver.canonical import digest
         prefix = context['program']
         if '_prefixKey' not in context:
             context['_prefixKey'] = (digest(program_physics_key(prefix)), context.get('threshold', .005))
@@ -450,20 +543,38 @@ class InteractionGate:
         return envelope
 
     def query(self, context, bounds, tick, *, label, jumping=False, phases=('Y', 'X', 'Z')):
+        return self.query_many(context, [bounds], tick, label=label, jumping=jumping, phases=phases)[0]
+
+    def query_many(self, context, bounds, tick, *, label, jumping=False, phases=('Y', 'X', 'Z')):
+        requests, prepared = [], []
+        # Retain per-query cache/fallback accounting while sharing the native check.
         # Use the approach's horizontal envelope, keeping Y unconstrained for stepping and ceiling outcomes.
-        envelope = self.approach(context, tick, jumping=jumping)
-        if envelope is None:
-            return dict(ruledOut=False, reason='unknown_approach')
-        at = context['program']['profile']['duration']+tick
-        bounds = list(bounds)
-        bounds[1], bounds[4] = -float('inf'), float('inf')
-        proof = interaction_reachability(envelope, dict(alternatives=[dict(regions=[
-            dict(tick=at, phase=phase, bounds=bounds)]) for phase in phases]))
-        self.checked += 1
-        if proof['ruledOut']:
-            self.exclusions.append(dict(label, frame=context.get('frameId'), horizontal=[bounds[0], bounds[2], bounds[3], bounds[5]],
-                                        input=at, proof=proof))
-        return proof
+        for box in bounds:
+            envelope = self.approach(context, tick, jumping=jumping)
+            box = list(box)
+            box[1], box[4] = -float('inf'), float('inf')
+            at = context['program']['profile']['duration']+tick
+            prepared.append((envelope, box, at))
+            requests.append(dict(alternatives=[dict(regions=[dict(tick=at, phase=phase, bounds=box)])
+                                                for phase in phases]))
+        proofs = []
+        index = 0
+        while index < len(prepared):
+            envelope = prepared[index][0]
+            end = index+1
+            while end < len(prepared) and prepared[end][0] is envelope:
+                end += 1
+            checked = ([dict(ruledOut=False, reason='unknown_approach') for _ in range(index, end)]
+                       if envelope is None else interaction_reachability_many(envelope, requests[index:end]))
+            for (current, box, at), proof in zip(prepared[index:end], checked):
+                if current is not None:
+                    self.checked += 1
+                    if proof['ruledOut']:
+                        self.exclusions.append(dict(label, frame=context.get('frameId'),
+                            horizontal=[box[0], box[2], box[3], box[5]], input=at, proof=proof))
+                proofs.append(proof)
+            index = end
+        return proofs
 
     def walk_off(self, context, landing_boxes, *, label):
         """Whether a run-off from the context's ground state onto `landing_boxes` can leave its launch support
@@ -482,9 +593,13 @@ class InteractionGate:
         return False
 
     def required(self, program):
-        analysis = self.analyze(program)
+        if self.core is not None:
+            return self.core.required(program)
+        analysis = self._analysis(program)
         if analysis is None:
             return dict(reason='vertical_schedule')
+        if not isinstance(analysis, dict):
+            return analysis.required()
         envelope = analysis['envelopes']
         profile = program['profile']
         if envelope.get('contradiction'):
@@ -508,6 +623,11 @@ class InteractionGate:
         context['interactionGate'] = self
 
     def summary(self):
-        from parkour_solver.numerics.disk import STATS
-        return dict(checked=self.checked,excluded=len(self.exclusions),exclusions=self.exclusions,metrics=dict(self.metrics),
-                    relaxation={kind: dict(counts-self.relaxation_start[kind]) for kind, counts in STATS.items()})
+        from parkour_solver.numerics.disk import stats
+        metrics,checked,exclusions=collections.Counter(self.metrics),self.checked,self.exclusions
+        if self.core is not None:
+            metrics.update(self.core.metrics)
+            checked+=self.core.checked-self.core_start[0]
+            exclusions=exclusions+self.core.exclusions_since(self.core_start[1])
+        return dict(checked=checked,excluded=len(exclusions),exclusions=exclusions,metrics=dict(metrics),
+                    relaxation={kind: dict(counts-self.relaxation_start[kind]) for kind, counts in stats().items()})

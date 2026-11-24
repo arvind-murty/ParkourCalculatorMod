@@ -1,0 +1,6 @@
+fixed-base   "searchSeconds": 23.31258074566722,
+fixed-native   "searchSeconds": 19.504143830388784,
+fixed-python   "searchSeconds": 46.14097937569022,
+short-base   "searchSeconds": 2.8615635447204113,
+short-native   "searchSeconds": 1.6195067502558231,
+short-python   "searchSeconds": 3.87273633480072,

@@ -1,0 +1,2 @@
+Ran 844 tests in 107.903s
+OK (skipped=10)

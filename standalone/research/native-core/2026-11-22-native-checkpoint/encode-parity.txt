@@ -1,0 +1,6 @@
+Native checkpoint encoding vs io/checkpoint_store's archive on every recorded published state (JSON form, timing
+keys dropped): the root object's key, a hash over every chunk below it, must match. Recordings: the native-frontier trial
+(fs1). Seconds include converting each recorded dict to a native value, not a publish's cost.
+short: {"states": 191, "equal": 191, "differing": 0, "objects": 1663, "missing": 0, "pythonSeconds": 68.45, "nativeSeconds": 28.259}
+fixed: {"states": 438, "equal": 438, "differing": 0, "objects": 5452, "missing": 0, "pythonSeconds": 360.568, "nativeSeconds": 149.402}
+tests: {"states": 325, "equal": 325, "differing": 0, "objects": 2184, "missing": 0, "pythonSeconds": 5.515, "nativeSeconds": 1.78}

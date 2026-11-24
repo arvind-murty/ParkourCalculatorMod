@@ -761,6 +761,7 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.search(post_alarm='race')
 
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # records engine.solve_contact_branches, which a native leg solve never calls
     def test_search_runs_on_the_relaxation_and_publishes_frame_end_answers(self):
         from parkour_solver.bridge.python_compiler import PythonCompiler
         from parkour_solver.numerics import disk
@@ -858,6 +859,7 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
         self.assertGreater(max(best['candidate']['yaw'])-min(best['candidate']['yaw']), 30)
         self.assertGreater(best['candidate']['positions'][-1][1], 4.2)
 
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # records the Python generator's items; a native solve builds its own
     def test_relaxed_route_runs_off_the_start_and_jumps_from_the_lower_block(self):
         from parkour_solver.constraints.variants import ConstraintVariants
         built, original = [], ConstraintVariants.__init__
@@ -877,6 +879,7 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
         self.assertTrue(solves)
         self.assertFalse([c for checks in solves for c in checks if c['offset'] == walk and c['block']['id'] == 'start'])
 
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # cancels through RelaxedDispatch's Python seams, which a native leg solve never calls
     def test_a_cancelled_frame_end_solve_is_repeated_on_resume_and_nothing_else_is(self):
         import threading
         from parkour_solver.bridge.python_compiler import PythonCompiler

@@ -186,6 +186,16 @@ def refine_support_cells(cells, contacts, *, max_cells, deadline=None):
 
 def decompose(scene, *, max_cells=20000, deadline=None, refine_support=True):
     started = time.monotonic()
+    from parkour_solver import native_core
+    native = native_core.from_environment()
+    if native is not None:
+        rows = native.decompose(scene, max_cells, None if deadline is None else deadline - started, refine_support)
+        return Decomposition(tuple(rows['bounds']), [Cell(i, tuple(b), d) for i, (b, d) in enumerate(rows['cells'])],
+            [Portal(i, tuple(c), tuple(b), d) for i, (c, b, d) in enumerate(rows['portals'])],
+            [ContactPatch(cell, solid, owner, axis, side, kind, tuple(b)) for cell, solid, owner, axis, side, kind, b in rows['contacts']],
+            {cell: ladders for cell, ladders in rows['climbable']},
+            dict(rows['statistics'], elapsedSeconds=time.monotonic() - started),
+            {cell: tuple(ids) for cell, ids in rows['parents']})
     geometry = scene['collisionScene']
     source_bounds = box_bounds(list(geometry['bounds']), 'decomposition bounds')
     bounds = (source_bounds[0] + HALF_WIDTH, source_bounds[1], source_bounds[2] + HALF_WIDTH,

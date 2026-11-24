@@ -2,7 +2,7 @@
 
 import copy
 
-from parkour_solver.search.identity import digest
+from parkour_solver.canonical import digest
 from parkour_solver.movement.program import program_search_key
 from parkour_solver.search.repair_state import branch_key
 

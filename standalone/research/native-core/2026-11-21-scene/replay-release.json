@@ -1,0 +1,49 @@
+{
+ "cases": {
+  "original": 21,
+  "shifted": 21,
+  "scaled": 21,
+  "scaled3": 21,
+  "nocontacts": 21,
+  "ground": 21,
+  "sneak": 21,
+  "nostep": 21,
+  "ladders": 21,
+  "ladderticks": 21,
+  "startinside": 21,
+  "bounds": 21,
+  "badfield": 21,
+  "friction": 21
+ },
+ "outcomes": {
+  "ok:feasible": 57,
+  "ok:scene_collision": 132,
+  "ok:ladder_cap_contract": 21,
+  "ok:initial_ladder_membership": 21,
+  "ValueError": 63
+ }
+}
+{
+ "synthetic": {
+  "ok:unplanned_step": 66,
+  "ok:scene_collision": 31,
+  "ok:scene_query": 3,
+  "ValueError": 2
+ },
+ "timeout": [
+  [
+   "TimeoutError",
+   "Scene check exceeded the budget"
+  ],
+  [
+   "TimeoutError",
+   "Scene check exceeded the budget"
+  ]
+ ]
+}
+{
+ "consistent": {
+  "ok:feasible": 40,
+  "ok:ladder_cap_contract": 8
+ }
+}

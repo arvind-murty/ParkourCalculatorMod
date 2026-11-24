@@ -1,0 +1,9 @@
+Every DFS state search_goals publishes (on_progress, begin_repair, repair_progress) and each call's result state,
+JSON form, timing keys dropped, compared in call order by value. Base: d60bb7f3's Python with the same native module.
+native loop (trial dispatch) vs previous native code:
+short:   {"a": 191, "b": 191, "compared": 191, "equal": 191, "differing": 0}
+fixed:   {"a": 438, "b": 438, "compared": 438, "equal": 438, "differing": 0}
+tests:   {"a": 328, "b": 328, "compared": 328, "equal": 328, "differing": 0}
+Python mode with the trial dispatch's refactors vs d60bb7f3:
+fixed:   {"a": 438, "b": 438, "compared": 438, "equal": 438, "differing": 0}
+tests:   {"a": 328, "b": 328, "compared": 328, "equal": 328, "differing": 0}

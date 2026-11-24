@@ -2,8 +2,7 @@
 
 Design record for common-clock time and progress labels, from user rulings on
 2026-11-01 and 2026-11-02. The labels and protection guards served the legacy
-common-clock search, removed on 2026-11-21; `search.comparison.compare_candidates` keeps
-the predicates. The active anchor DFS orders by
+common-clock search, removed on 2026-11-21 along with their predicates. The active anchor DFS orders by
 `(T,-J,tickCost,id)` (`search/comparison.py`) and does not run a global
 position/velocity exclusion pass ([decisions](../DECISIONS_AND_PLANS.md)).
 [Measurements](../../research/two-goal-comparisons/README.md).

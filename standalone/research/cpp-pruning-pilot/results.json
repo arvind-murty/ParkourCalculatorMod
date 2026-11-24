@@ -1,0 +1,141 @@
+{
+  "scope": "C++17 reachable_envelopes and interaction_reachability inside the existing Python search; not a full C++ solver",
+  "sourceRevision": "e9ca522c063b79d5300d31b7a51e50f00d49de62",
+  "sourceSnapshotNote": "Frozen local encounter-groups source plus its captured one-line DFS test assertion edit; production source unchanged",
+  "evidenceDirectory": "/private/var/tmp/standalone-cpp-pilot-20261120T130422",
+  "kernel": {
+    "reachable_envelopes": {
+      "processes": 3,
+      "cases": 177,
+      "pythonMedianSecondsPerCorpus": 0.16928908228874207,
+      "nativeMedianSecondsPerCorpus": 0.02380041591823101,
+      "medianProcessSpeedup": 7.141981598251635,
+      "processSpeedupRange": [
+        7.09823365580608,
+        7.164750083504466
+      ]
+    },
+    "interaction_reachability": {
+      "processes": 3,
+      "cases": 1021,
+      "pythonMedianSecondsPerCorpus": 0.0026886071122827985,
+      "nativeMedianSecondsPerCorpus": 0.00293309036642313,
+      "medianProcessSpeedup": 0.9242646445000489,
+      "processSpeedupRange": [
+        0.9086161595180942,
+        0.9298486155270538
+      ]
+    }
+  },
+  "live": {
+    "short": {
+      "pairs": 5,
+      "pythonMedianSeconds": 4.699046794325113,
+      "nativeMedianSeconds": 4.413745958358049,
+      "medianPairedSpeedup": 1.0660646775225355,
+      "approximate95PercentInterval": [
+        1.0408109286440852,
+        1.1042781242641577
+      ],
+      "pythonExpanded": [
+        11,
+        11,
+        11,
+        11,
+        11
+      ],
+      "nativeExpanded": [
+        11,
+        11,
+        11,
+        11,
+        11
+      ]
+    },
+    "short-durable": {
+      "pairs": 3,
+      "pythonMedianSeconds": 16.667959667742252,
+      "nativeMedianSeconds": 16.190563544631004,
+      "medianPairedSpeedup": 1.0304895702768513,
+      "approximate95PercentInterval": [
+        1.0294860720440802,
+        1.0470407168953826
+      ],
+      "pythonExpanded": [
+        11,
+        11,
+        11
+      ],
+      "nativeExpanded": [
+        11,
+        11,
+        11
+      ]
+    },
+    "extended": {
+      "pairs": 2,
+      "pythonMedianSeconds": 55.07357779331505,
+      "nativeMedianSeconds": 55.12587368674576,
+      "medianPairedSpeedup": 0.9990521132128629,
+      "approximate95PercentInterval": [
+        0.9978744617386476,
+        1.0002297646870784
+      ],
+      "pythonExpanded": [
+        21,
+        21
+      ],
+      "nativeExpanded": [
+        22,
+        21
+      ]
+    }
+  },
+  "correctness": {
+    "tests": {
+      "tests": 82,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "comparisons": {
+        "reachable_envelopes": 4909,
+        "interaction_reachability": 79785
+      },
+      "sourceUnchanged": true
+    },
+    "corpusComparisons": {
+      "reachable_envelopes": 177,
+      "interaction_reachability": 1024
+    },
+    "liveComparisons": {
+      "reachable_envelopes": 440,
+      "interaction_reachability": 28148
+    },
+    "matchingShortPairs": 8,
+    "sanitizer": {
+      "tests": 82,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "comparisons": {
+        "reachable_envelopes": 4909,
+        "interaction_reachability": 79785
+      },
+      "sourceUnchanged": true
+    }
+  },
+  "build": {
+    "compiler": "Apple clang version 15.0.0 (clang-1500.1.0.2.5)\nTarget: arm64-apple-darwin24.6.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin\n",
+    "python": "3.12.2 (v3.12.2:6abddd9f6a, Feb  6 2024, 17:02:06) [Clang 13.0.0 (clang-1300.0.29.30)]",
+    "pybind11": "3.0.1",
+    "sourceSHA256": "c3b22b6c033fb82d09ce5aff58e20f42ba86ef86fb249d6f3d0a1b15c75af622",
+    "binarySHA256": "6bc88d03904bb5a76f3ae4c0c79177e1de03947c61de4066e954b8ffa6673564"
+  },
+  "limits": [
+    "Only two pruning functions are native; generators and traversal remain Python.",
+    "Component corpus sampling is bounded; three refinement cases are excluded only from kernel timing.",
+    "Extended wall-time ratios measure a deadline, not solution latency; two pairs are exploratory.",
+    "Earlier baseline has a separate reproducible backend-selection assertion failure; no full Java differential gate claim."
+  ],
+  "recommendation": "Measure approach-envelope construction and a complete ordered batch of candidate interaction checks behind one native boundary before expanding the migration."
+}

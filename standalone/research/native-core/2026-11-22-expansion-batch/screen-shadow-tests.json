@@ -1,0 +1,13 @@
+{
+ "stats": {
+  "eligible": 246,
+  "screen": 307,
+  "screen passes": 186,
+  "screen proofs": 121,
+  "screen proof optimistic_remaining_time_exceeds_incumbent": 3,
+  "screen proof elapsed_inputs_exceed_incumbent_finish": 79,
+  "screen proof required_interaction_unreachable": 36,
+  "screen proof disk_control_relaxation_infeasible": 3
+ },
+ "mismatches": []
+}

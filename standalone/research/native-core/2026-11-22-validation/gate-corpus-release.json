@@ -1,0 +1,49 @@
+{
+ "prepare": {
+  "cases": 1216,
+  "mismatches": 0,
+  "errors": {},
+  "seconds": 0.0002998262643814087,
+  "msPerCall": 0.0002
+ },
+ "coefficients": {
+  "cases": 3199,
+  "mismatches": 0,
+  "errors": {},
+  "seconds": 0.1836722530424595,
+  "msPerCall": 0.0574
+ },
+ "programs": {
+  "cases": 6206,
+  "mismatches": 0,
+  "errors": {},
+  "seconds": 2.5395310632884502,
+  "msPerCall": 0.4092
+ },
+ "choices": {
+  "cases": 658,
+  "mismatches": 0,
+  "errors": {},
+  "seconds": 0.01889776438474655,
+  "msPerCall": 0.0287
+ },
+ "appends-rebuilt": {
+  "cases": 8,
+  "notRebuilds": 0
+ },
+ "appends": {
+  "cases": 6197,
+  "mismatches": 0,
+  "errors": {},
+  "seconds": 0.0007994286715984344,
+  "msPerCall": 0.0001
+ },
+ "envelopes": {
+  "cases": 5731,
+  "mismatches": 0,
+  "errors": {},
+  "seconds": 7.572054497897625,
+  "msPerCall": 1.3212
+ },
+ "prepare-cache-hits-rebuilt": 1
+}

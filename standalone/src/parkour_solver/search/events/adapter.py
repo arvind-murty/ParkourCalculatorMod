@@ -31,12 +31,12 @@ class EventGuideAdapter:
         self.scene = data['scene']
         self.motion = motion or {}
         self.corridor = EventReference(data['domainId'])
-        self.gates = []
         self.request = None
         self.program = None
         self.counts = dict(eventAudits=0, requiredEventRejections=0)
         self.interaction_cache = {}
         self.interaction_metrics = {}
+        self.interaction_cores = {}
         self.compiler, self.candidate_seconds = compiler, candidate_seconds
         self.flight_cache = {}
 
@@ -133,9 +133,6 @@ class EventGuideAdapter:
     def bind_program(self, program):
         result=copy.copy(self);result.program=program
         return result
-
-    def eligible(self, envelopes, through):
-        return self
 
     def candidate(self, plan, candidate, vertical, *, partial=False):
         if self.program is None or self.request is None:

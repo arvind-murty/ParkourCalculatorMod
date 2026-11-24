@@ -7,6 +7,10 @@ from parkour_solver.scene.objectives import objective_spec
 
 
 def prepare_scene(request):
+    from parkour_solver import native_core
+    native = native_core.from_environment()
+    if native is not None:
+        return native.prepare_scene(request)
     scene = copy.deepcopy(request)
     if not isinstance(scene, dict):
         raise ValueError('Expected a block scene')

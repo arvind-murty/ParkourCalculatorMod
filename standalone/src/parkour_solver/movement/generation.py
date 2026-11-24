@@ -14,11 +14,26 @@ def register_movement_type(name, generator, *, ladder=False):
     GENERATORS[name] = generator
 
 
+# Open generators the interaction gate's native core runs (reachability/service.InteractionGate).
+NATIVE_TYPES = ('normal', 'stepping', 'ceiling')
+
+
+def _shares_geometry(scene, gate_scene):
+    """Whether a context scene is the gate's up to fields the generators do not read (the DFS sets goalBlock)."""
+    return all(scene.get(k) is gate_scene.get(k) or scene.get(k) == gate_scene.get(k)
+               for k in ('blocks', 'collisionScene', 'ceilingHits', 'initial'))
+
+
 def generate_choices(kind, context, **options):
     if context.get('mode') == 'open' and (options.get('start', 0) not in (0, None) or options.get('ends') is not None):
         raise ValueError('Open choices use relative inputs; the composer owns retiming')
     if kind not in GENERATORS:
         raise ValueError('Unsupported movement generator: ' + str(kind))
+    core = getattr(context.get('interactionGate'), 'core', None)
+    if (core is not None and context.get('mode') == 'open' and kind in NATIVE_TYPES
+            and _shares_geometry(context['scene'], context['interactionGate'].scene)):
+        yield from core.generate_choices(kind, {k: v for k, v in context.items() if k not in ('scene', 'interactionGate')})
+        return
     for choice in GENERATORS[kind].generate(context, **options):
         if choice['unit']['type'] != kind:
             raise ValueError('Movement generator returned a different type')

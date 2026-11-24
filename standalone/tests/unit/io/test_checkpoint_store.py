@@ -224,10 +224,13 @@ class NativeCheckpointTests(StoreCase):
         class CheckedWriter(SearchCheckpoint):
             def begin_repair(self,state,program,extra_targets=()):
                 super().begin_repair(state,program,extra_targets)
-                owners.append(bool(extra_targets))
+                dfs=state['dfs']  # a native snapshot names its repair targets itself
+                owners.append(bool(dfs.repair['targets'] if hasattr(dfs,'repair') else extra_targets))
             def repair_progress(self,state):
                 super().repair_progress(state)
-                testcase.assertEqual(read_report(testcase.path)['searchState'],json.loads(json.dumps(state)))
+                dfs=state['dfs']  # a native search publishes snapshots, converted on request
+                live=dict(state,dfs=dfs.to_python()) if hasattr(dfs,'to_python') else state
+                testcase.assertEqual(read_report(testcase.path)['searchState'],json.loads(json.dumps(live)))
                 checked.append(True)
         with PythonCompiler() as compiler, CheckpointStore(self.path) as store:
             writer=CheckedWriter(store,{})

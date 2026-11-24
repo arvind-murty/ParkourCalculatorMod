@@ -1,0 +1,25 @@
+{
+ "parkour_solver.scene.route:prepare_route": {
+  "cases": 2183,
+  "ok": 2165,
+  "ValueError": 18
+ },
+ "parkour_solver.scene.route:schedule": {
+  "cases": 1676,
+  "ok": 1676
+ },
+ "parkour_solver.movement.units:ladder_units": {
+  "cases": 4000,
+  "ok": 3999,
+  "ValueError": 1
+ },
+ "parkour_solver.movement.units:movement_program": {
+  "cases": 772,
+  "ok": 632,
+  "ValueError": 140
+ },
+ "parkour_solver.movement.units:exit_matches": {
+  "cases": 4000,
+  "ok": 4000
+ }
+}

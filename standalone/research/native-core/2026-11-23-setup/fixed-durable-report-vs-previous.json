@@ -1,0 +1,14 @@
+[
+ [
+  ".provenance.command[4]",
+  "/private/var/tmp/standalone-cpp-next-20261122/ab4d/fixed-base-1 != /private/var/tmp/standalone-cpp-next-20261122/ab4d/fixed-new-1"
+ ],
+ [
+  ".provenance.sourceHashes.parkour_solver/search/anchors/policy.py",
+  "30c78ad967083a24c0ea2f72f09de3892e30d4f66fc6c5c539eb7a9186a17482 != 7e27abc9ce0be0c2800e7b9be5326e3b0601b27c68bbd8dda4cd9be995f592a7"
+ ],
+ [
+  ".provenance.sourceHashes.parkour_solver/spatial/event_routes.py",
+  "29451fcf4891eb0c23f33af3372e11015d85f608969c66415e98ddc4633f4e90 != c6cae76a0afcc83207b9ab8057e3e7b7f5ce384438530cafbe735f4edb205c38"
+ ]
+]

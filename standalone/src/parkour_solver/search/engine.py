@@ -7,11 +7,11 @@ from parkour_solver.constraints.contacts import floor_checks
 from parkour_solver.search.repair import solve_contact_branches
 from parkour_solver.scene.normalize import prepare_scene
 from parkour_solver.schema import integer, number
-from parkour_solver.bridge.counting import CountingCompiler; from parkour_solver.search.work import SearchWork
+from parkour_solver.bridge.counting import CountingCompiler; from parkour_solver.work import SearchWork
 from parkour_solver.search.goals import landing_satisfied
 from parkour_solver.search.identity import solve_scope, solve_identity, validation_prefix
 from parkour_solver.reachability.intervals import motion_bound
-from parkour_solver.constraints.variants import ConstraintVariants
+from parkour_solver.constraints.variants import ConstraintVariants, check_generation
 
 
 class ScopedWork:
@@ -111,8 +111,6 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, s
         threshold=route.get('physicsThreshold', .005), vertical=vertical['vertical'], objective=dict(route.get('guideObjective', route['objective']), tick=plan['ticks']))
     envelopes=analysis['envelopes']
     mark('reachability')
-    if hasattr(scoped_adapter, 'eligible'):
-        scoped_adapter = scoped_adapter.eligible(envelopes, scope['through'])
     from parkour_solver.search.ordered_route import initial_guess
     from parkour_solver.numerics import prepare, validate
     reference_yaw = initial_guess(route, plan, None)
@@ -128,17 +126,30 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, s
         dict(adapter=adapter_identity,policy=policy,nodeQuery=getattr(scoped_adapter,'node_query',False)), coefficients)
     saved_repair=program.get('repairState',{})
     saved_policy=(saved_repair.get('context',{}).get('scope') or {}).get('scope',{}).get('solvePolicy')
-    variants = ConstraintVariants(route, profiles[0], plan, scene['collisionScene'], envelopes, scope,
-        segment_solids=segment_solids(scene, program, profiles[0], scope['through'], service), checks=checks, walk_offs=walk_offs,
-        gates=scoped_adapter.gates, signature=(),
-        state=saved_repair.get('constraintGeneration') if saved_policy==policy else None, deadline=scoped.deadline, reference=reference,
-        settled=program.get('settledThrough', 0),
-        # Conflict-driven: obstacles join the generator only once a solve hits them.
-        obstacles=[],
-        owners=owners, budget=scoped.check, cancel_event=cancel_event,
-        objective=route.get('guideObjective', route['objective']),
-        route_guards=scoped_adapter.constraint_guards(program['profile'],envelopes,scope,scoped.deadline)
-        if hasattr(scoped_adapter,'constraint_guards') else None)
+    repair_route = route if final_route is None else final_route
+    # Under PKC_NATIVE_CORE the generator and the repair loop run natively for the routes they cover: no passages,
+    # wall hits or ladder events.
+    native = getattr(service, 'native', None)
+    deadline = scoped.deadline
+    if (native is not None and
+            not any(r.get(k) for r in (route, repair_route) for k in ('passages', 'hitEvents', 'ladderEvents'))):
+        variants = native.ConstraintVariants(route=route, profile=profiles[0], geometry=scene['collisionScene'],
+            envelopes=envelopes, scope=scope, checks=list(checks),
+            state=saved_repair.get('constraintGeneration') if saved_policy==policy else None, reference=reference,
+            owners=owners, check=lambda: check_generation(cancel_event, scoped.check, deadline),
+            segment_solids=segment_solids(scene, program, profiles[0], scope['through'], service),
+            objective=route.get('guideObjective', route['objective']), settled=program.get('settledThrough', 0),
+            obstacles=[], walk_offs=list(walk_offs))
+    else:
+        variants = ConstraintVariants(route, profiles[0], plan, scene['collisionScene'], envelopes, scope,
+            segment_solids=segment_solids(scene, program, profiles[0], scope['through'], service), checks=checks, walk_offs=walk_offs,
+            state=saved_repair.get('constraintGeneration') if saved_policy==policy else None, deadline=deadline, reference=reference,
+            settled=program.get('settledThrough', 0),
+            # Conflict-driven: obstacles join the generator only once a solve hits them.
+            obstacles=[],
+            owners=owners, budget=scoped.check, cancel_event=cancel_event,
+            objective=route.get('guideObjective', route['objective']))
+        native = None
     mark('eligibilityAndVariantConstruction')
     numerical, confirm = None, None
     if policy['numerical'] in ('relaxed', 'relaxed_pipeline', 'full_strength'):
@@ -148,7 +159,7 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, s
         numerical, confirm = ((dispatch.full_strength, None) if policy['numerical'] == 'full_strength' else
                               (dispatch.solve, dispatch.confirmed))
     # A frame-end re-solve repairs a relaxed witness's own branch route (search/dfs.py).
-    result = solve_contact_branches(route if final_route is None else final_route, profiles, checks,
+    result = solve_contact_branches(repair_route, profiles, checks,
         compiler, seconds=seconds, candidate_seconds=candidate_seconds, retries=0,
         improve=True, rank_equal_cost=policy['rankEqualCost'], optimize_goal=True,
         stop_on_feasible=policy['stopOnFeasible'], oracle_rejection=policy['oracleRejection'], climb_families=climb_families,
@@ -157,8 +168,9 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, s
         candidate_filter=candidate_filter, work=scoped, resume_state=program.get('repairState'),
         repair_scope=dict(solveIdentity=identity, scope=scope, solvePolicy=policy, assemblyVersion=14),
         validation_scope=scope, initial_variants=variants if final_route is None else None, on_progress=on_progress,
-        numerical=numerical, confirm=confirm)
+        numerical=numerical, confirm=confirm, native=native)
     mark('physicalSearchAndValidation')
+    generation = variants.state
     diagnostics=[d for a in result.get('attempts',[]) for d in a.get('diagnostics',[])]
     parent_work=work
     while not hasattr(parent_work,'counts'):
@@ -166,17 +178,54 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, s
     counts=numerical_counts(diagnostics)
     for counter in (parent_work.counts,scoped.local.counts):
         counter.update(counts)
-    result['timings']=dict(timings,**variants.state['timings'])
+    result['timings']=dict(timings,**generation['timings'])
     if result['best'] is not None and scope['purpose'] == 'complete':
         work.accepted(result['best'])
     result['work'] = scoped.local.summary()
     result.update(solveScope=scope, solveIdentity=identity,
                   solvePolicy=policy,objectiveMode='configured', nodeFeasibility=outcome(result, identity, policy),
                   fullSceneValidated=result['best'] is not None and scope['purpose'] == 'complete',
-                  reachability=dict(excludedSolids=variants.exclusions, interactionGroups=len(variants.items)))
+                  reachability=dict(excludedSolids=generation['exclusions'], interactionGroups=len(generation['items'])))
     if result['best'] is not None:
         result['best']['validationScope'] = scope
     return result
+
+
+def solve_services(adapter, program, work, service, numerical, *, seconds, cancel_event):
+    """A native node solve's Python services (search/engine.hpp's hooks): the scoped work, the relaxed dispatch and its
+    setting (`relaxed`, for a gate's native core), the gate's analysis and face tables (served by its native core when
+    it has one) and the adapter's candidate check (None without an adapter: the native search's own adapter checks
+    candidates). `numerical` is the solve policy's, as in evaluate_program."""
+    scoped = ScopedWork(work, None, min(work.deadline or math.inf, time.monotonic()+seconds))
+    deadline = scoped.deadline
+    solve, confirm, relaxed = None, None, None
+    if numerical in ('relaxed', 'relaxed_pipeline', 'full_strength'):
+        from parkour_solver.numerics.disk import RelaxedDispatch
+        dispatch = RelaxedDispatch(gate=service, post_alarm='pipeline' if numerical == 'relaxed_pipeline' else 'ipopt')
+        solve, confirm = ((dispatch.full_strength, None) if numerical == 'full_strength' else
+                          (dispatch.solve, dispatch.confirmed))
+        relaxed = dict(mode='full_strength' if numerical == 'full_strength' else 'solve', postAlarm=dispatch.post_alarm)
+    views = {}
+    def candidate(plan, value, vertical, solve_scope):
+        if 'view' not in views:  # the adapter scoped to the native solve's scope and bound to the program
+            view = adapter.scoped(solve_scope) if hasattr(adapter, 'scoped') else adapter
+            views['view'] = view.bind_program(program) if hasattr(view, 'bind_program') else view
+        return views['view'].candidate(plan, value, vertical, partial=True)
+    def reachable_faces(name):
+        table = service.reachable_faces(name)
+        return dict(ticks=table['ticks'], solids=sorted(table['solids']))
+    def record_counts(counts):
+        parent_work = work
+        while not hasattr(parent_work, 'counts'):
+            parent_work = parent_work.parent
+        for counter in (parent_work.counts, scoped.local.counts):
+            counter.update(counts)
+    return dict(work=scoped, numerical=solve, confirm=confirm, relaxed=relaxed,
+        analyze_model=lambda route, plan, vertical, scope: service.analyze_model(route, plan, vertical, scope=scope),
+        reachable_faces=reachable_faces, candidate=candidate if adapter is not None else None,
+        check_generation=lambda: check_generation(cancel_event, scoped.check, deadline), record_counts=record_counts,
+        accepted=work.accepted, work_summary=scoped.local.summary, seconds=seconds, gate=service.core,
+        adapter_identity=adapter.corridor.to_dict() if hasattr(adapter, 'corridor') else None)
 
 
 def numerical_counts(diagnostics):

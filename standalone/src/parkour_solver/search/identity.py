@@ -1,13 +1,8 @@
 import copy
-import hashlib
-import json
 
+from parkour_solver.canonical import digest
 from parkour_solver.movement.program import program_physics_key
 from parkour_solver.search.comparison import comparison_label, priority_key
-
-
-def digest(value):
-    return hashlib.sha256(json.dumps(value, sort_keys=True, allow_nan=False).encode()).hexdigest()
 
 
 def motion_record(program):
@@ -60,11 +55,6 @@ def solve_identity(scene, program, objective, scope, route=None, coefficients=No
 def scoped_geometry(geometry, scope):
     indices = scope['solidIndices']
     return dict(geometry, solids=[geometry['solids'][i] for i in indices]), indices
-
-
-def full_witness(best):
-    scope = best.get('validationScope', {})
-    return scope.get('purpose', 'complete') == 'complete' and scope.get('through', best['plan']['ticks']) == best['plan']['ticks']
 
 
 def validation_prefix(plan, candidate, vertical, through):

@@ -1,0 +1,20 @@
+{
+ "calls": {
+  "normal": 181,
+  "exclusion:all_interaction_alternatives_excluded": 2016,
+  "ceiling": 181,
+  "stepping": 181,
+  "exclusion:required_interaction_unreachable": 738,
+  "case:blip": 1400,
+  "case:corner_blip": 638,
+  "exclusion:behind_decision_point": 209,
+  "exclusion:entry_against_guide": 462,
+  "case:grind": 26,
+  "case:slab_boost": 157,
+  "sideVariant:held": 68,
+  "sideVariant:forward": 100,
+  "case:corner_jump_cancel": 68,
+  "case:normal_step": 18
+ },
+ "mismatches": []
+}

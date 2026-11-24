@@ -1,0 +1,48 @@
+{
+ "parkour_solver.scene.ladders:ladder_columns": {
+  "cases": 376,
+  "ok": 371,
+  "ValueError": 5
+ },
+ "parkour_solver.scene.ladders:ladder_regions": {
+  "cases": 204,
+  "ok": 204
+ },
+ "parkour_solver.scene.ladders:region_rectangles": {
+  "cases": 182,
+  "ok": 182
+ },
+ "parkour_solver.scene.ladders:region_contains": {
+  "cases": 60,
+  "ok": 60
+ },
+ "parkour_solver.scene.ladders:region_axis": {
+  "cases": 22,
+  "ok": 22
+ },
+ "parkour_solver.scene.ladders:climb_walls": {
+  "cases": 11,
+  "ok": 11
+ },
+ "parkour_solver.scene.ladders:movement_contexts": {
+  "cases": 4,
+  "ok": 4
+ },
+ "parkour_solver.scene.ladders:entry_channels": {
+  "cases": 13,
+  "ok": 13
+ },
+ "parkour_solver.scene.ladders:outside_row": {
+  "cases": 428,
+  "ok": 428
+ },
+ "parkour_solver.scene.ladders:schedule_constraints": {
+  "cases": 41,
+  "ok": 39,
+  "ValueError": 2
+ },
+ "parkour_solver.scene.ladders:exit_faces": {
+  "cases": 13,
+  "ok": 13
+ }
+}

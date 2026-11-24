@@ -1,0 +1,29 @@
+{
+ "stats": {
+  "as_recorded": {
+   "cases": 21,
+   "phases": 42,
+   "candidates": 36
+  },
+  "zero_yaw": {
+   "cases": 21,
+   "phases": 42,
+   "candidates": 38
+  },
+  "random_yaw": {
+   "cases": 21,
+   "phases": 42,
+   "candidates": 38
+  },
+  "threshold": {
+   "cases": 21,
+   "phases": 149,
+   "candidates": 52
+  }
+ },
+ "seconds": {
+  "python": 35.93346096202731,
+  "native": 19.628857221454382
+ },
+ "mismatches": 0
+}

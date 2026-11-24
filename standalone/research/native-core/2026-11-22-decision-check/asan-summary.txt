@@ -1,0 +1,5 @@
+Ran 141 tests in 27.848s
+OK
+modules: tests.unit.search.test_anchor_search tests.unit.search.test_anchor_dfs tests.unit.search.test_event_search tests.integration.test_repair_resume tests.integration.test_orchestrator_continuation tests.integration.test_integration tests.integration.test_generic_composition
+native decision checks: {'native': 30}
+fixed work under ASan: exit 0, 0 AddressSanitizer reports

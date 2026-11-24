@@ -1,0 +1,23 @@
+{
+  "sourceRevision": "0b1c644256c5171d5817e6dac6076360a2016d13",
+  "sourceUnchanged": true,
+  "input": "/private/var/tmp/standalone-cpp-baseline-20261120T001815/runs/extended-300s-r01/input.json",
+  "seconds": 90.0,
+  "variant": "sanitize",
+  "status": "unknown",
+  "termination": "deadline",
+  "ticks": null,
+  "objective": null,
+  "validationPassed": [],
+  "calls": {
+    "check_scene": 102,
+    "route_footprints": 795,
+    "normalize_geometry": 3,
+    "prepare_scene": 3,
+    "prepare_route": 7689,
+    "schedule": 4572,
+    "initial_guess": 847,
+    "unsupported": 0
+  },
+  "mismatches": 0
+}

@@ -1,0 +1,4 @@
+Published states vs 41163279's production path (ns.sh n2, 2026-11-22)
+== short states: {"a": 191, "b": 191, "compared": 191, "equal": 191, "differing": 0}
+== fixed states: {"a": 438, "b": 438, "compared": 438, "equal": 438, "differing": 0}
+== tests per test: {"tests": 46, "equal": 46, "differing": 0}

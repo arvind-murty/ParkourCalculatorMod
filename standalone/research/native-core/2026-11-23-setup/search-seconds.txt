@@ -1,0 +1,6 @@
+searchSeconds, alternating sequential runs: base = 2060b2ee with its own native build, new = the working tree (native mode)
+ab4 fixed base 15.047267336398363 14.466025456786156 new 14.37677862495184 14.044749207794666
+ab4 short base 1.2890999168157578 1.3058797903358936 new 1.3559522926807404 1.3162344172596931
+ab4d fixed base 54.591211546212435 53.79890149831772 new 54.14498458430171 54.05018304288387
+ab4d short base 8.655868876725435 8.31482508406043 new 8.434525292366743 8.347427792847157
+(ab4d = --durable). Reports of the first round equal the base reports except provenance, plain and durable.

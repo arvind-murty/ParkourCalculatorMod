@@ -2,7 +2,7 @@
 
 import copy
 
-from parkour_solver.search.identity import digest
+from parkour_solver.canonical import digest
 from parkour_solver.spatial.anchor_guides import classify
 from parkour_solver.search.comparison import comparison_label, priority_key
 

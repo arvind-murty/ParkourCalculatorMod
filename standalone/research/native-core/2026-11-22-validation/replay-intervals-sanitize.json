@@ -1,0 +1,11 @@
+{
+ "parkour_solver.reachability.intervals:interaction_reachability": {
+  "cases": 3000,
+  "ok": 3000,
+  "fellBack": 2
+ },
+ "parkour_solver.reachability.intervals:interaction_reachability_many": {
+  "cases": 884,
+  "ok": 884
+ }
+}

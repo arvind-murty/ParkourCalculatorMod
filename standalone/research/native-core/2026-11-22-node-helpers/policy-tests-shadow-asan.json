@@ -1,0 +1,19 @@
+{
+ "stats": {
+  "feet_touches": 2649,
+  "visits": 6232,
+  "visit_state": 2649,
+  "audit": 2428,
+  "transfer_structure": 430,
+  "launch": 441,
+  "next_anchor": 735,
+  "advantageous_targets": 677,
+  "visits skipped partial input": 15,
+  "feet_touches skipped partial input": 6,
+  "visit_state skipped partial input": 6,
+  "audit skipped partial input": 4,
+  "advantageous_targets skipped partial input": 8,
+  "transfer_structure skipped partial input": 4
+ },
+ "mismatches": []
+}

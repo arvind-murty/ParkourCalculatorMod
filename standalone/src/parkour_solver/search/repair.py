@@ -70,9 +70,22 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                            max_wall_candidates=24, candidate_filter=None, work=None, resume_state=None, repair_scope=None,
                            on_progress=None, validation_scope=None, initial_variants=None,
                            stop_on_feasible=None, oracle_rejection=False, climb_families=False, numerical=None,
-                           confirm=None):
+                           confirm=None, native=None):
     """`confirm`: with `rank_equal_cost`, the numerical callable that confirms an alarmed relaxed point
-    (RelaxedDispatch.confirmed); `numerical` solves relaxed only and the walk at the end confirms."""
+    (RelaxedDispatch.confirmed); `numerical` solves relaxed only and the walk at the end confirms.
+
+    `native`: the native core, to run the loop natively (search/repair.hpp); `initial_variants` is then a native
+    generator, and the route has no passages, wall hits or ladder events."""
+    if native is not None:
+        from parkour_solver.search import ordered_route
+        return native.solve_contact_branches(
+            route, profiles, checks, compiler, ordered_route.solve, seconds=seconds, candidate_seconds=candidate_seconds,
+            retries=retries, improve=improve, rank_equal_cost=rank_equal_cost, optimize_goal=optimize_goal,
+            stop_on_feasible=stop_on_feasible, python_executable=python_executable, cancel_event=cancel_event,
+            geometry=geometry, solid_blocks=solid_blocks, max_wall_hits=max_wall_hits, candidate_filter=candidate_filter,
+            work=work, resume_state=resume_state, repair_scope=repair_scope, on_progress=on_progress,
+            validation_scope=validation_scope, initial_variants=initial_variants,
+            oracle_rejection=oracle_rejection, climb_families=climb_families, numerical=numerical, confirm=confirm)
     route = copy.deepcopy(route)
     if solid_blocks is not None:
         for passage in route.get('passages', []):
@@ -555,7 +568,7 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                         leg = max(i for i, e in enumerate(record['plan']['events']) if e['landed'] <= at//3)
                         passage['phaseReferences'].append(dict(leg=leg, offset=at//3-record['plan']['events'][leg]['jump'], phase=at%3))
                 source = branch_key(record['rows'], record['passages'], record['hits'])
-                from parkour_solver.search.identity import digest
+                from parkour_solver.canonical import digest
                 arrive(record['score']+variant['score']*1e-9, record['rows']+converted, record['passages'],
                        record['hits'], record['candidate']['yaw'], selected,
                        dict(family=digest([source, variant['family']]), switches=variant['switches'],
@@ -609,7 +622,7 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
         audit_cache, audit_errors = {}, []
 
         def audit(best):
-            from parkour_solver.search.identity import digest
+            from parkour_solver.canonical import digest
             # Equal facings with different relaxed accelerations are different trajectories.
             key = (tuple(best['allocation']), best['plan']['ticks'], tuple(best['candidate']['yaw']),
                    digest(best['candidate']['controls']) if 'controls' in best['candidate'] else None)

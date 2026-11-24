@@ -1,0 +1,22 @@
+{
+ "calls": {
+  "initial_cursor": 1,
+  "next_goals": 7,
+  "for_goal": 8,
+  "candidate": 19,
+  "advance": 6
+ },
+ "mismatches": [],
+ "counts": [
+  {
+   "python": {
+    "eventAudits": 15,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 15,
+    "requiredEventRejections": 0
+   }
+  }
+ ]
+}

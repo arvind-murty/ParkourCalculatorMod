@@ -25,6 +25,25 @@ Scene checks differ only in tolerance: the legacy Java bridge compares at 1e-7, 
 Python port at `REPLAY_TOLERANCE` (1e-4), so production runs use the Python bridge.
 Executable Minecraft replay and export remain Java tools.
 
+`PKC_NATIVE_CORE` opts a solve into the C++ core: set it to a built module
+directory (`build/native/cpp`, built as in
+[run a solve and report it](#run-a-solve-and-report-it)). The interaction gate then
+keeps a native gate per search and scene (with the table compiler on a collision-box
+scene) that prepares and analyzes its programs, answers their required-contact screens
+and screens whole programs (`check_program`, walk-off faces and the disk relaxation
+included) in its own cache, building Python dicts only for readers that ask; the open
+normal, stepping and ceiling generators run on that gate, with its face tables and query log. The anchor DFS
+loop runs natively with its frontier (each decision expanded a movement type at a time, with its minimum-run
+searches) and decision checks, publishing snapshots the checkpoint store encodes natively; decision checks of other
+searches run natively after their gate preparation, and anchor-leg and finish solves run their constraint generator
+and repair loop natively (see the
+[execution reference](ANCHOR_SEARCH_EXECUTION_REFERENCE.md#implementation-ownership-and-persistence)).
+Its sequence screens append the choice to a native copy of the context's program and
+screen that child without building it in Python, ladder appends included. The Python bridge replays scene checks and derives footprints natively, and `scene/` normalizes scenes and builds routes and schedules natively for every caller, including scenes with climbable cells and routes with ladder events. The numerical request checks, `validation/numerical` replays and `validation/vertical` schedule checks, `numerical_problem` and the disk relaxation's Clarabel solve with its decided-result cache and counters (`numerics/disk.py`; its spec and small helpers stay in Python) run natively for every caller, `spatial/surfaces.py`'s scene geometry (contact options, clusters, sides, free rectangles) computes natively behind its Python caches, `movement/vertical_profiles.trace_ladder_schedule` traces natively, `spatial/cells.decompose`, `spatial/regions.support_components` and `build_geometry_graph` build the cell decomposition and its geometry graph natively, `spatial/event_routes.build_route_domain` builds the whole event domain natively, `search/anchors/policy.encounter_groups` groups anchors on a native gate's face tables, `io/checkpoint_store` encodes plain JSON containers natively (saves with targets excepted), and `numerics/solver.py` launches the native IPOPT worker (`pkc_numerics_worker`, built beside the module against the casadi of the build's Python) instead of `python -m parkour_solver.numerics.worker`. It compiles their coefficients from the native tables, so the compiler's call counts
+omit them; only bridges whose replies equal those tables allow that
+(`table_coefficients`), and any other compiler gets the Python analysis. Everything else, and every run without the
+variable, uses the Python implementation, which stays the parity oracle.
+
 For a fresh environment, use Python3.12+ and the pinned extras:
 
 ```sh
@@ -63,7 +82,9 @@ while another numerical job uses that classpath. Four bridge sources live under
 
 After changing a Java source listed in `SOURCES` of
 [the generated coefficient tables](../src/parkour_solver/physics/_coefficient_tables.py),
-regenerate them from `standalone/`; `--check` fails when the checked-in module differs:
+regenerate them from `standalone/`. The generator writes the Python module and its C++ twin
+`native/cpp/src/coefficient_tables.inc` from the same rows (rebuild the native core
+afterwards); `--check` fails when either checked-in file differs:
 
 ```sh
 "$PKC_IPOPT_PYTHON" -B -m tools.generate_coefficient_tables --compiler build/native/compiler.json
@@ -130,6 +151,52 @@ them for a saved report from `python -m parkour_solver`:
 "$PKC_IPOPT_PYTHON" -B -m tools.profiling.trace runs/<run-name>
 "$PKC_IPOPT_PYTHON" -B -m tools.profiling.trace /path/to/report.json.gz --output /path/to/dir
 ```
+
+Compare two saved solves for C++ migration parity: outcome, ticks, objective and
+the transition sequence without timestamps. Exact by default. `--tolerant` accepts
+objective differences within the search's own objective tolerance (`parity.SOLVE`)
+and drops digest strings from transitions; both routes must still have passed their
+own validation. Exit status 1 means a difference:
+
+```sh
+"$PKC_IPOPT_PYTHON" -B -m tools.profiling.parity /path/to/python.json.gz /path/to/native.json.gz [--tolerant]
+```
+
+Build the native C++ core (`native/cpp/`, needs CMake, the pinned pybind11 from
+`research/cpp-pruning-pilot/requirements.txt`, the `numerics` extra's casadi and cargo; the first configure
+fetches Clarabel.cpp v0.11.1 and the crates pinned by `native/cpp/third_party/clarabel/Cargo.lock`) into `build/native/cpp/`, or the
+undefined-behavior-sanitizer variant into `build/native/cpp-sanitize/`. Then check
+every `canonical.digest` call of a real solve against the native encoder, round-trip
+every program and movement choice that `movement/program.py` builds through the typed
+native model, or repeat every `InteractionGate.prepare` call, `PythonCompiler.compile`
+coefficient request or `reachable_envelopes` build natively. Each stops at the first
+difference and saves it as `mismatch.json`:
+
+```sh
+"$PKC_IPOPT_PYTHON" -B -m tools.native_cpp build [--variant sanitize] [--output /path/to/provenance-dir]
+"$PKC_IPOPT_PYTHON" -B -m tools.native_cpp verify-digest --input cases/real11/physical-anchors.json \
+  --seconds 60 --output /path/to/new-dir [--variant sanitize]
+"$PKC_IPOPT_PYTHON" -B -m tools.native_cpp verify-programs --input cases/real11/physical-anchors.json \
+  --seconds 60 --output /path/to/new-dir [--variant sanitize]
+"$PKC_IPOPT_PYTHON" -B -m tools.native_cpp verify-gate --input cases/real11/physical-anchors.json \
+  --seconds 60 --output /path/to/new-dir [--variant sanitize]
+"$PKC_IPOPT_PYTHON" -B -m tools.native_cpp verify-coefficients --input cases/real11/physical-anchors.json \
+  --seconds 60 --output /path/to/new-dir [--variant sanitize]
+"$PKC_IPOPT_PYTHON" -B -m tools.native_cpp verify-envelopes --input cases/real11/physical-anchors.json \
+  --seconds 60 --output /path/to/new-dir [--variant sanitize]
+"$PKC_IPOPT_PYTHON" -B -m tools.native_cpp verify-screen --input cases/real11/physical-anchors.json \
+  --seconds 60 --output /path/to/new-dir [--variant sanitize]
+"$PKC_IPOPT_PYTHON" -B -m tools.native_cpp verify-scene --input cases/real11/physical-anchors.json \
+  --seconds 120 --output /path/to/new-dir [--variant sanitize]
+```
+
+`verify-screen` solves on the native gate and repeats every `sequence`, `required` and
+`check_program` call on a shadow Python gate. `verify-scene` repeats every `scene/` call
+natively: scene checks, footprints, geometry and scene normalization, routes, schedules
+and initial yaw guesses.
+
+A new program field fails the typed conversion by name, so add it to
+`native/cpp/include/pkc/program.hpp` in the same change.
 
 A report written from a bare solve report has no request numbers or IPOPT
 statuses, which only the profiler records. [Results and debugging](RESULTS_AND_DEBUGGING.md#solve-reports)

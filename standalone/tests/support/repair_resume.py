@@ -18,7 +18,7 @@ from parkour_solver.search.repair import solve_contact_branches
 
 class RepairHarness:
     def invoke(self, request, find, filter_candidate, **kwargs):
-        from parkour_solver.search.work import SearchWork
+        from parkour_solver.work import SearchWork
         budget = kwargs.setdefault('work', SearchWork(1))
         def dispatch(*args, **options):
             budget.before_solve({})

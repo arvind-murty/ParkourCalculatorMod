@@ -1,0 +1,9 @@
+searchSeconds, alternating base and native-frontier runs one at a time (fixed work, then the short control, two rounds).
+fixed-base-1: 24.26199595630169,
+fixed-base-2: 18.535942751914263,
+fixed-frontier-1: 63.59323554113507,
+fixed-frontier-2: 67.36212562397122,
+short-base-1: 1.6877398751676083,
+short-base-2: 1.6875637471675873,
+short-frontier-1: 5.290053207427263,
+short-frontier-2: 5.418654378503561,

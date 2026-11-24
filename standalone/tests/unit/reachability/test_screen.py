@@ -176,6 +176,7 @@ class DiskScreenTests(unittest.TestCase):
         self.assertIn(proof['status'],('PrimalInfeasible','AlmostPrimalInfeasible'))
         self.assertFalse(interaction_reachability(reachable_envelopes(self.model(1.85)),{},refine=True)['ruledOut'])
 
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # stubs the Python solve; the native cache has no such seam
     def test_a_limit_hit_twice_rules_out_and_verdicts_are_cached(self):
         limit = dict(status='MaxIterations',outcome='limit',controls=None,objective=None,iterations=200)
         with patch.object(disk,'_attempt',side_effect=lambda *a:(dict(limit),None)) as solved:

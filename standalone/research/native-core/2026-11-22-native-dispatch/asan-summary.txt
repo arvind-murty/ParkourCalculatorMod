@@ -1,0 +1,4 @@
+AddressSanitizer build (ad-hoc signed Python, detect_leaks=0), dispatch applied.
+modules: tests.unit.search.test_anchor_dfs tests.unit.io.test_checkpoint_store tests.unit.search.test_event_search tests.integration.test_repair_resume tests.integration.test_orchestrator_continuation tests.integration.test_native_core
+Ran 107 tests in 10.497s OK 
+AddressSanitizer reports: tests 0, durable fixed work 0

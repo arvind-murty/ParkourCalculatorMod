@@ -130,6 +130,12 @@ Each rectangle is its own family, so the switch climb never mixes them, and a
 rectangle is screened jointly with every later item. A repair source refines one
 solved branch and adds no region items.
 
+Independent rectangles are screened as an ordered batch against one approach.
+Encounter preparation likewise batches active-member checks and then candidate
+face-row checks within each phase. Full proofs, exclusion order and the existing
+phase-level budget checks are preserved; conditioning between decisions still
+rebuilds the bounds before downstream batches.
+
 ## Run-off walk-off items
 
 A run-off's creation screen chooses which face of its launch block it leaves by and
@@ -144,7 +150,7 @@ the switch climb, and choose their exact rows (`kind='walk_off'`).
 ## Conflict-driven obstacles in anchor search
 
 Anchor search (`search/engine.py`) gives `ConstraintVariants` an obstacle set,
-initially empty, so contact checks, contact regions and route guards are
+initially empty, so contact checks, contact regions and walk-off choices are
 enumerated up front but obstacle clusters are not. A decision check or anchor leg
 first solves its program without avoidance rows. When an accepted point's scene
 replay hits a solid, the repair loop (`search/repair.py` `grow`) adds it to the set

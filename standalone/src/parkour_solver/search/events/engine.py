@@ -8,11 +8,11 @@ from parkour_solver.search.comparison import POLICY_VERSION as COMPARISON_POLICY
 
 from parkour_solver.scene.normalize import prepare_scene
 from parkour_solver.movement.settings import movement_settings
-from parkour_solver.search.identity import digest
+from parkour_solver.canonical import digest
 from parkour_solver.search.goals import goal_spec
 from parkour_solver.spatial.event_routes import RouteDomain, build_route_domain, build_event_graph
 from parkour_solver.bridge.counting import CountingCompiler
-from parkour_solver.search.work import SearchWork
+from parkour_solver.work import SearchWork
 
 
 # Per-session work counters the event report sums across allocation sessions.
@@ -103,6 +103,12 @@ def search_event_routes(request, compiler, *, task_goal=None, discovery=None, an
                 for name,field in (('maxTotalRunTicks','runs'),('maxJumps','jumps'))):
             return False
         return policy is None or policy(program)
+    # The native expansion batch (search/node.hpp) applies the declared caps and an initial jump domain itself; any
+    # other policy keeps the Python loop.
+    from parkour_solver.search.domain import InitialJumpDomain
+    accepted_program.caps = {k: request[k] for k in ('maxJumps', 'maxTotalRunTicks', 'maxRunTicksPerJump') if k in request}
+    accepted_program.caps['initialJumpInputs'] = getattr(policy, 'initial_jump_inputs', None)
+    accepted_program.native = policy is None or type(policy) is InitialJumpDomain
     def search(work, deadline, on_progress):
         return search_goals(scene,counted,adapter,work,motion,
             cfg=dict(cfg,maxPrefixes=cfg['maxPrefixes']-expanded),

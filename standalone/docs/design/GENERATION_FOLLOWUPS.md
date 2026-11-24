@@ -443,7 +443,7 @@ before the last; the last leg's best competes directly for the final route.
   `dict(item=node['chosenItem'], sides=[side['key'] for side in passage['faces']],
   switches=[at//3 for at in passage['switchPhases']])` when the option has a
   `passage`, else `dict(item=node['chosenItem'], key=self.effective_key(option['rows']))`
-  (landing rectangle, route guard, contact check, or an encounter needing no rows).
+  (landing rectangle, contact check, or an encounter needing no rows).
   The pending root node starts with `choices=[]`. Items skipped as entailed
   (`variants.py:265`) record no choice.
 - Emission (`variants.py:260`): with `ordered = sorted(node['choices'], key=lambda c:

@@ -1,0 +1,25 @@
+{
+ "prepare": {
+  "cases": 32000,
+  "ok": 6460,
+  "ValueError": 25540
+ },
+ "fingerprint": {
+  "cases": 6460,
+  "ok": 6460
+ },
+ "reduce_walls": {
+  "cases": 6460,
+  "ok": 6460
+ },
+ "validate": {
+  "cases": 32300,
+  "ok": 19380,
+  "ValueError": 12920
+ },
+ "validate_controls": {
+  "cases": 38760,
+  "ok": 32300,
+  "ValueError": 6460
+ }
+}

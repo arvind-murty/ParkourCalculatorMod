@@ -26,6 +26,7 @@ Read those files with the old key, or with the frozen bundle's own scripts.
 | --- | --- |
 | `python -m tools.geometry_bounds` | Static player collision/landing-cover report. |
 | `python -m tools.profiling.run` | Cold current task run, scoped bookkeeping timings, source/config hashes and retained-witness replays. |
+| [C++ pruning pilot](cpp-pruning-pilot/README.md) | Exact Python/C++ envelope and interaction comparisons, paired live searches and a reproducible experimental native build. |
 | [Bookkeeping setup and measurements](bookkeeping-measurement/README.md) | Isolated baseline, sampled digest/preparation/copy measurements, hook calibration and durable resume; no production optimization. |
 | [Enumeration attribution](enumeration-attribution/README.md) | Exact block/side-chain/exit counters and fixed-work option replay identify duplicate internal states around B7; production search unchanged. |
 | [Enumeration reduction](enumeration-reduction/README.md) | Implemented early suppression of already-visited children, canonical key memoization, ordered-catalogue equivalence, timing and legacy-resume evidence. |

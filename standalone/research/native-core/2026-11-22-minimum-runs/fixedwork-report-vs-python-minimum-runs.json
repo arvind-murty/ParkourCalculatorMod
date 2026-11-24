@@ -1,0 +1,18 @@
+[
+ [
+  ".provenance.command[4]",
+  "/private/var/tmp/standalone-cpp-node-20261122/batch4/fixed/run != /private/var/tmp/standalone-cpp-node-20261122/mruns1/fixed/run"
+ ],
+ [
+  ".provenance.sourceHashes.parkour_solver/search/dfs.py",
+  "ac4af32163a4b613bc19fb0978b3e06a7a4a22ff104198ba80f05f6d45a058c0 != d38643b38dc40b0fbfff316ee0954a5772cc1fa652c14946243de42f87ecd878"
+ ],
+ [
+  ".provenance.sourceHashes.parkour_solver/search/frontier.py",
+  "2b27d4df37dbc10fe0ecc08714ae526ab5ef725c48d973f7a054142df1948ead != 7979d8844d8a4bcb6e4669e32b01fff778f4032ce32ff4d72a900003cde6f76d"
+ ],
+ [
+  ".provenance.sourceRevision",
+  "91e6d9394f24dda5c39dc0528ea12df92c1524a5 != b2160611c6a104897451e19f15e570962f3811fa"
+ ]
+]

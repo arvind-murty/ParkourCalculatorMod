@@ -2,12 +2,11 @@
 
 ## Current gate
 
-`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on the held side variants of steps and slab boosts
-(O12, `eb58ad02`): **607 tests, no failures, errors or skips**, source unchanged during the run
-([report](../research/encounter-groups/native-gate-side-variants/report.json)). Full discovery on the same source,
-with `PKC_RUN_TICKS_COMPILER` set: 693 tests, one failure, the ladder test
-`test_repeated_ladder_ceiling_events_regenerate_the_complete_schedule`, which fails on main `a7ddc3be` too, and no
-skips.
+`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on main's PR #12 and its native port (post-alarm
+pipeline, frame-end re-solves, full-queue frames): **621 tests, no failures, errors or skips** in Python mode, and the
+same with `PKC_NATIVE_CORE` set, source unchanged during both runs
+([Python mode](../research/native-core/2026-11-23-pr12/gate-python-mode-report.json),
+[native mode](../research/native-core/2026-11-23-pr12/gate-native-mode-report.json)).
 Wall-time-bound tests can still fail under heavier load ([deferred P17](DEFERRED_WORK.md)).
 The gate fails on any skip, so it needs `PKC_IPOPT_PYTHON` for the IPOPT tests,
 `PKC_RUN_TICKS_COMPILER` for the Java differential tests and the `numerics` and `reachability` extras
@@ -25,6 +24,8 @@ persistence without the removed 32/128 limits.
 
 | Source | Tests | Evidence |
 | --- | ---: | --- |
+| Native port of PR #12 on the native branch, both modes | 621 | [Python mode](../research/native-core/2026-11-23-pr12/gate-python-mode-report.json), [native mode](../research/native-core/2026-11-23-pr12/gate-native-mode-report.json) |
+| `b502cf66` native anchor adapter, setup builders and report encoding, both modes | 610 | [Python mode](../research/native-core/2026-11-23-gate/python-mode-report.json), [native mode](../research/native-core/2026-11-23-gate/native-mode-report.json) |
 | `c8a9f22c` + frames finish their queue before choosing, unknown outcomes infeasible | 618 | [report](../research/post-alarm/native-gate-c8a9f22c/report.json) |
 | `d56467cd` + refinement off, `disk_rejected`, Clarabel-only post-alarm pipeline (default) with full-strength acceptance, frame-end re-solves in place of the finalization | 616 | [report](../research/post-alarm/native-gate/report.json) |
 | `89e8dba0` + settled-stretch repair, solver margin and replay tolerance 1e-4, Clarabel verdicts, no pre-solve screen | 593 | [report](../research/encounter-groups/native-gate-settled-repair/report.json) |
@@ -104,6 +105,19 @@ Run the [new native driver and matched finite-task measurement](../research/anch
 
 [Runbook](RUNBOOK.md) supplies commands/environment. [File index](FILE_INDEX.md) lists every tracked test and fixture; [function index](FUNCTION_INDEX.md) indexes production definitions. Tests use `unittest`; many require explicit compiler/worker environment variables. Always report skips. No new test runner or formatting tool is required.
 
+## When to run what
+
+Every standalone workstream verifies in two tiers:
+
+- **Each change:** only what the change can affect: the focused modules for the touched
+  area (table below) and the test modules that import the touched files. Native core
+  changes add the release build, that unit's corpus replay, `test_native_core` and the
+  unit's live `tools.native_cpp verify-*` check on the release build; C++ changes add
+  the UBSan build.
+- **Milestones:** the full gate (rerun with `PKC_NATIVE_CORE` when native units are
+  involved), live checks on both builds and any equal-work timing, once when a feature
+  or migration step is complete (before its commit) and before every push.
+
 ## Choose tests by contract
 
 | Area changed | Focused modules under `tests/` |
@@ -118,6 +132,7 @@ Run the [new native driver and matched finite-task measurement](../research/anch
 | Full acceptance | `test_acceptance`, `test_full_route_witness`, `test_integration` |
 | Movement bridge: coefficients, scene checks, footprints, selection, cross-bridge resume | `test_python_compiler` (Java differential tests need `PKC_RUN_TICKS_COMPILER`), `test_package_layout` |
 | Existing ladders (movement level; the search-level tests wait for M6) | `test_ladder_*`, `test_climbable_search`, `test_hanging_vines`, `test_long_ladder_chains` |
+| C++ migration: native core, parity harness, pruning pilot | `test_native_core` (skips until `tools.native_cpp build`; outside the gate), `test_profiling`; rerun the gate modules with `PKC_NATIVE_CORE=build/native/cpp` to exercise the switched units; pilot: `tools.profiling.cpp_pruning tests` |
 
 `tests/unit/numerics/` separates `test_model` (scalar equations/constraints), `test_solver` (worker lifecycle, independent validation and failure handling), `test_continuation` (incumbents/inertia phases), `test_capture`, `test_ladder_model`, `test_movement` and real-worker `test_integration`. Reuse these instead of creating a second acceptance oracle.
 

@@ -1,0 +1,7 @@
+Milestone list (tools/native-suite.json modules + the extra list), Python mode and native mode:
+python: Ran 873 tests in 109.675s
+python: OK (skipped=10)
+native: Ran 873 tests in 85.645s
+native: OK (skipped=10)
+tools/native_gate.py: Python mode and native mode each 621 tests, 0 failures, errors or skips (gate-*-report.json).
+The milestone run leaves PKC_RUN_TICKS_COMPILER unset (pm.sh), with the same 10 skips as the runs before this change; the gate sets it and skips nothing.

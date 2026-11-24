@@ -118,6 +118,7 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertNotIn(15,[t for _,t,_ in purposes])
         self.assertEqual(result['best']['movementProgram']['profile']['duration'],20)
 
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # reads the Python frontier's arguments; the native loop runs its own
     def test_anchor_frontier_gets_the_minimum_run_policy_for_ordinary_decisions(self):
         from parkour_solver.bridge.python_compiler import PythonCompiler
         generated=[]
@@ -148,6 +149,7 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertEqual((fit['room'],fit['face']),(max(r[2] for r in top.regions)-root['decisionPoint'][0],'start'))
         self.assertFalse(fit['fits'])
 
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # reads the Python frontier's arguments; the native loop runs its own
     def test_a_jump_onto_a_block_merged_into_the_launch_face_lands_back_on_that_face(self):
         from parkour_solver.bridge.python_compiler import PythonCompiler
         from parkour_solver.movement.contact_combinations import face_name, top_faces
@@ -311,6 +313,7 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertTrue(solve_due(dict(decisionDepth=1,lastSolvedDepth=0),4,forced=True))
         self.assertFalse(solve_due(dict(decisionDepth=1,lastSolvedDepth=1),1))
 
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # stubs evaluate_program, which a native decision check never calls
     def test_decision_check_keeps_settled_rows_and_queues_sibling_choice(self):
         settled=dict(leg=0,offset=3,mode='X',cmp='GE',rhs=.25,name='avoidance')
         unsettled=dict(leg=0,offset=6,mode='Z',cmp='GE',rhs=.1,name='avoidance')
@@ -338,6 +341,7 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertEqual([c['offset'] for c in result['program']['profile']['regionChoices']],[7])
         self.assertEqual(result['alternatives'],[])
 
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # stubs evaluate_program, which a native decision check never calls
     def test_decision_check_holds_other_branch_choices_as_alternatives(self):
         from parkour_solver.search.repair_state import branch_key
         checked=[]
@@ -366,6 +370,7 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertEqual(held.get('decisionParent'),result['program'].get('decisionParent'))
         self.assertNotIn('needsNodeSolve',held)
 
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # stubs evaluate_program, which a native decision check never calls
     def test_interrupted_node_climb_is_suspended_not_decided(self):
         checked=[]
         def probe(node_evaluator,p):
@@ -382,6 +387,7 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertNotIn('settledThrough',result['program'])
         self.assertEqual(result['program']['repairState']['pending'],[dict(rows=[],passages=[],hits=[],score=0.)])
 
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # stubs evaluate_program, which a native decision check never calls
     def test_a_forward_side_variant_reads_its_keep_outside_row_at_its_tick(self):
         checked,nodes={},{}
         def probe(node_evaluator,p):
@@ -658,6 +664,7 @@ class AnchorDFSTests(unittest.TestCase):
 
 @unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'),'Set PKC_IPOPT_PYTHON')
 class SideOutcomeNodeSolveTests(unittest.TestCase):
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # patches the Python frontier; the native loop runs its own
     def test_the_forward_slab_boost_row_is_slack_after_three_run_ticks_and_tight_after_five(self):
         # corridor-diagonal's measured state: on the start block's X- edge, moving -X+Z, before the target's Z- side.
         from parkour_solver.bridge.python_compiler import PythonCompiler

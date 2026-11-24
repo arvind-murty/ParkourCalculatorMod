@@ -1,0 +1,12 @@
+{
+  "mode": "exact",
+  "rel_tol": null,
+  "abs_tol": null,
+  "differences": [],
+  "transitions": [
+    19,
+    19
+  ],
+  "firstTransitionDifference": null,
+  "matches": true
+}

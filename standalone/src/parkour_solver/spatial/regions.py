@@ -66,7 +66,26 @@ class SupportComponent:
     patches: tuple
 
 
+def _native():
+    """The native core under PKC_NATIVE_CORE, which builds the geometry graph for every caller; None otherwise."""
+    from parkour_solver import native_core
+    return native_core.from_environment()
+
+
+def _rows(decomposition):
+    """A Decomposition in the native core's row shape."""
+    d = decomposition
+    return dict(bounds=list(d.bounds), cells=[[list(c.bounds), c.dimension] for c in d.cells],
+                portals=[[list(p.cells), list(p.bounds), p.dimension] for p in d.portals],
+                contacts=[[p.cell, p.solid, p.owner, p.axis, p.side, p.kind, list(p.bounds)] for p in d.contacts])
+
+
 def support_components(decomposition):
+    native = _native()
+    if native is not None:
+        return [SupportComponent(key, owner, height, tuple(tuple(b) for b in cover), tuple(cells), tuple(solids),
+                                 tuple(patches))
+                for key, owner, height, cover, cells, solids, patches in native.support_components(_rows(decomposition))]
     grouped = {}
     for index, patch in enumerate(decomposition.contacts):
         if patch.kind == 'support':
@@ -142,6 +161,19 @@ def build_geometry_graph(scene, decomposition, supports=None, task_goal=None, *,
     survives, including boundary strata. Contact attachments use the same
     positive-overlap convention as the legacy graph.
     """
+    native = _native()
+    if native is not None:
+        supports = support_components(decomposition) if supports is None else supports
+        built = native.build_geometry_graph(scene, _rows(decomposition), [
+            [s.key, s.owner, s.height, [list(b) for b in s.cover], list(s.cells), list(s.solids), list(s.patches)]
+            for s in supports], task_goal)
+        return RouteGraph(SCHEMA, built['context'],
+            [RouteRegion(key, kind, tuple(tuple(b) for b in cover), tuple(cells), tuple(owners), tuple(solids),
+                         transit_key=transit) for key, kind, cover, cells, owners, solids, transit in built['regions']],
+            [RouteTransition(key, source, target, kind, tuple(tuple(b) for b in cover), tuple(portals), tuple(patches),
+                             tuple(families))
+             for key, source, target, kind, cover, portals, patches, families in built['transitions']],
+            supports, tuple(built['starts']), tuple(built['goals']))
     return _incidence_graph(scene, decomposition,
         support_components(decomposition) if supports is None else supports,
         task_goal, [c.bounds for c in decomposition.cells], deadline=deadline, raw=True)

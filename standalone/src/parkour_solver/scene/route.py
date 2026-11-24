@@ -9,7 +9,16 @@ from parkour_solver.scene.objectives import objective_spec
 HALF_WIDTH = f32(0.6) / 2
 
 
+def _native():
+    """The native core under PKC_NATIVE_CORE, which builds routes and schedules for every caller; None otherwise."""
+    from parkour_solver import native_core
+    return native_core.from_environment()
+
+
 def prepare_route(request):
+    native = _native()
+    if native is not None:
+        return native.prepare_route(request)
     route = copy.deepcopy(request)
     if not isinstance(route, dict) or type(route.get('version')) is not int or route['version'] != 1:
         raise ValueError('Expected a version 1 block route')
@@ -173,6 +182,13 @@ def row_tick(event, row):
 
 
 def schedule(route, allocation, stage='jump'):
+    native = _native()
+    if native is not None:
+        plan = native.schedule(route, list(allocation), stage)
+        # The native core has no tuples; the checks below are tuples here.
+        plan['supportChecks'] = [tuple(check) for check in plan['supportChecks']]
+        plan['exitChecks'] = [tuple(check) for check in plan['exitChecks']]
+        return plan
     if stage not in ('jump', 'run') or not allocation or len(allocation) > len(route['airtimes']):
         raise ValueError('Invalid allocation or stage')
     grounded, jump, events, supports_at, exit_checks = [], [], [], [], []
@@ -334,6 +350,7 @@ def schedule(route, allocation, stage='jump'):
 
 
 def initial_guess(route, plan, parent=None):
+    # Python callers keep this even under PKC_NATIVE_CORE: converting the route costs more than the guess.
     yaw = route['initial']['yaw']
     result = [yaw] * plan['ticks']
     if parent:
@@ -359,3 +376,20 @@ def initial_guess(route, plan, parent=None):
         prior = route['warmYaw']
         result[:min(len(prior), len(result))] = prior[:len(result)]
     return result
+
+
+def derive_footprints(route, compiler, seconds):
+    """Set every block's compiler-derived support footprints, which a numerical request's support rows use."""
+    footprints = compiler.derive_footprints(route, seconds)
+    if len(footprints) != len(route['blocks']):
+        raise ValueError('The footprint compiler returned the wrong number of supports')
+    for block, footprint in zip(route['blocks'], footprints):
+        if not isinstance(footprint, list) or len(footprint) != 4:
+            raise ValueError('Invalid derived footprint')
+        for value in footprint:
+            number(value, 'derived footprint')
+        block['_derivedFootprint'] = footprint[:]
+    if any('standingBounds' in block for block in route['blocks']):
+        standing = compiler.derive_standing_footprints(route, seconds)
+        for block, footprint in zip(route['blocks'], standing):
+            block['_derivedStandingFootprint'] = footprint[:]

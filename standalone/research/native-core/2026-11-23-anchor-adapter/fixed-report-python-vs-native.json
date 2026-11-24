@@ -1,0 +1,102 @@
+[
+ [
+  ".provenance.command[4]",
+  "/private/var/tmp/standalone-cpp-next-20261122/s3-fixed-python/run != /private/var/tmp/standalone-cpp-next-20261122/s3-fixed-native/run"
+ ],
+ [
+  ".result.compiler.calls.compile",
+  "1442 != 101"
+ ],
+ [
+  ".result.compiler.calls.derive_footprints",
+  "678 != 100"
+ ],
+ [
+  ".result.interactionGate.exclusions[1579].horizontal[0]",
+  "729.700099988079 != 731.3000000119209"
+ ],
+ [
+  ".result.interactionGate.exclusions[1579].horizontal[1]",
+  "-1091.299900011921 != -1095.299900011921"
+ ],
+ [
+  ".result.interactionGate.exclusions[1579].horizontal[2]",
+  "731.299900011921 != 734.299900011921"
+ ],
+ [
+  ".result.interactionGate.exclusions[1579].horizontal[3]",
+  "-1090.800000011921 != -1093.700099988079"
+ ],
+ [
+  ".result.interactionGate.exclusions[1579].input",
+  "75 != 73"
+ ],
+ [
+  ".result.interactionGate.exclusions[1579].owner",
+  "b13 != b22"
+ ],
+ [
+  ".result.interactionGate.exclusions[1579].role",
+  "landing != ceiling"
+ ],
+ [
+  ".result.interactionGate.exclusions[1580].horizontal[3]",
+  "-1091.700099988079 != -1092.700099988079"
+ ],
+ [
+  ".result.interactionGate.exclusions[1580].input",
+  "74 != 73"
+ ],
+ [
+  ".result.interactionGate.exclusions[1580].owner",
+  "b11 != b8"
+ ],
+ [
+  ".result.interactionGate.exclusions[1580].role",
+  "corner_blip != grind"
+ ],
+ [
+  ".result.interactionGate.exclusions[1581].horizontal[1]",
+  "-1091.299900011921 != -1093.699999988079"
+ ],
+ [
+  ".result.interactionGate.exclusions[1581].horizontal[3]",
+  "-1090.800000011921 != -1092.700099988079"
+ ],
+ [
+  ".result.interactionGate.exclusions[1581].input",
+  "74 != 73"
+ ],
+ [
+  ".result.interactionGate.exclusions[1581].owner",
+  "b13#0 != b8"
+ ],
+ [
+  ".result.interactionGate.exclusions[1581].proof.side",
+  "X+ != Z+"
+ ],
+ [
+  ".result.interactionGate.exclusions[1581].role",
+  "corner_blip != grind"
+ ],
+ [
+  ".result.interactionGate.exclusions[1582].horizontal[0]",
+  "729.6999999880791 != 731.3000000119209"
+ ],
+ [
+  ".result.interactionGate.exclusions[1582].horizontal[1]",
+  "-1090.800000011921 != -1095.299900011921"
+ ],
+ [
+  ".result.interactionGate.exclusions[1582].horizontal[2]",
+  "731.3000000119209 != 734.299900011921"
+ ],
+ [
+  ".result.interactionGate.exclusions[1582].horizontal[3]",
+  "-1089.699999988079 != -1093.700099988079"
+ ],
+ [
+  ".result.interactionGate.exclusions[1582].input",
+  "77 != 74"
+ ]
+]

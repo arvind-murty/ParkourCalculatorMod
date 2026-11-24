@@ -1,0 +1,6 @@
+ERROR: test_far_block_is_excluded_and_an_adjacent_one_kept (tests.unit.movement.test_block_contacts.BlockTableTests.test_far_block_is_excluded_and_an_adjacent_one_kept)
+ERROR: test_cache_measurement_preserves_invalidation_and_failed_build (tests.integration.test_profiling.BookkeepingProfileTests.test_cache_measurement_preserves_invalidation_and_failed_build)
+ERROR: test_cache_measurement_preserves_invalidation_and_failed_build (tests.integration.test_profiling.BookkeepingProfileTests.test_cache_measurement_preserves_invalidation_and_failed_build)
+Ran 844 tests in 89.897s
+FAILED (errors=3, skipped=10)
+Fixed after this run (scene.get('sceneModel')); tests.integration.test_profiling and tests.unit.movement.test_block_contacts then pass natively (51 tests).

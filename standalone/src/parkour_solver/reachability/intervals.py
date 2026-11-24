@@ -140,6 +140,8 @@ def reachable_envelopes(problem, y=None, *, parent_ticks=None):
 
 
 def interaction_reachability(envelopes, interaction, *, refine=False, objective=None):
+    # Python callers keep this screen even under PKC_NATIVE_CORE: converting the envelopes for the native one costs
+    # about twenty times the check. The native screen serves native callers (the gate's required-contact screen).
     if isinstance(interaction, list):
         interaction = dict(rows=interaction)
     if envelopes.get('contradiction'):
@@ -195,3 +197,8 @@ def interaction_reachability(envelopes, interaction, *, refine=False, objective=
         if checked is not None and checked['outcome']=='infeasible':
             return dict(ruledOut=True,**checked['proof'])
     return dict(ruledOut=False, reason='not_ruled_out')
+
+
+def interaction_reachability_many(envelopes, interactions):
+    """Screen independent queries against one unchanged envelope, preserving order."""
+    return [interaction_reachability(envelopes, query) for query in interactions]

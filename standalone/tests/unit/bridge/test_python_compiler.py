@@ -16,6 +16,7 @@ from parkour_solver.bridge.python_compiler import PythonCompiler
 from parkour_solver.physics.vertical import f32
 from parkour_solver.scene.geometry import BODY_HEIGHT, support_center_interval
 from parkour_solver.scene.route import HALF_WIDTH
+from tests.support.coefficient_requests import shared_request
 
 CONFIG = os.environ.get('PKC_RUN_TICKS_COMPILER')
 RUNTIME = os.environ.get('PKC_IPOPT_PYTHON')
@@ -170,21 +171,6 @@ def realized(message, compiler):
     return dict(message, positions=positions, expectedGround=ground, contacts=contacts)
 
 
-def shared_request(rng, n):
-    grounded = [rng.random() < .5 for _ in range(n)]
-    plan = dict(grounded=grounded, jump=[rng.random() < .4 for _ in range(n)],
-                sceneContacts=[dict(axis=rng.choice([0, 1, 2]), state=rng.randint(1, n)) for _ in range(rng.randint(0, 4))])
-    if rng.random() < .8:
-        plan['sneak'] = [rng.random() < .15 for _ in range(n)]
-    if rng.random() < .3:
-        plan['ladderTicks'] = [rng.random() < .3 for _ in range(n + 1)]
-    if rng.random() < .7:
-        plan['vertical'] = dict(profile='minecraft-1.8.9', onGround=grounded[0],
-                                previousHorizontalCollision=rng.random() < .3, threshold=0.,
-                                contacts=[dict(state=1, plane=1, direction=-1)], sneak=None)
-    return plan
-
-
 @unittest.skipUnless(CONFIG, 'Set PKC_RUN_TICKS_COMPILER for the Java oracle')
 class JavaOracleTests(unittest.TestCase):
     @classmethod
@@ -201,8 +187,10 @@ class JavaOracleTests(unittest.TestCase):
         self.assertEqual(canonical(actual), canonical(expected), name or message)
 
     def test_generated_tables_match_a_fresh_generation(self):
-        from tools.generate_coefficient_tables import OUTPUT, render
-        self.assertEqual(OUTPUT.read_text(), render(self.java))
+        from tools.generate_coefficient_tables import render
+        for path, text in render(self.java).items():
+            with self.subTest(path=path.name):
+                self.assertEqual(path.read_text(), text)
 
     def test_shared_coefficients_match_whole_payloads(self):
         rng = random.Random(7)
@@ -331,6 +319,7 @@ class JavaOracleTests(unittest.TestCase):
                 self.assertEqual(canonical(self.python._exchange(message, 30)), canonical(expected))
 
     @unittest.skipUnless(RUNTIME, 'Set PKC_IPOPT_PYTHON for checkpoint continuation')
+    @mock.patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # counts requests at RelaxedDispatch.solve, which native node solves bypass
     def test_saved_searches_resume_exactly_on_the_other_bridge(self):
         import threading
         from parkour_solver.io.checkpoint_store import CheckpointStore, read_report

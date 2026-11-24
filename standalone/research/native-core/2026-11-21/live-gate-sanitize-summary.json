@@ -1,0 +1,14 @@
+{
+  "sourceRevision": "5a8f43f7d0dba4f479d3495c4f42bd37688fe841",
+  "sourceUnchanged": true,
+  "input": "/private/var/tmp/standalone-cpp-baseline-20261120T001815/runs/extended-300s-r01/input.json",
+  "seconds": 90.0,
+  "variant": "sanitize",
+  "status": "unknown",
+  "termination": "deadline",
+  "ticks": null,
+  "objective": null,
+  "validationPassed": [],
+  "prepareCalls": 5722,
+  "mismatches": 0
+}

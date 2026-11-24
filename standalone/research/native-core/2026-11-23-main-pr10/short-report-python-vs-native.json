@@ -1,0 +1,22 @@
+[
+ [
+  ".provenance.command[4]",
+  "/private/var/tmp/standalone-cpp-next-20261122/m1-short-python/run != /private/var/tmp/standalone-cpp-next-20261122/m1-short-native/run"
+ ],
+ [
+  ".result.compiler.calls.compile",
+  "189 != 41"
+ ],
+ [
+  ".result.compiler.calls.derive_footprints",
+  "89 != 40"
+ ],
+ [
+  ".result.interactionGate.metrics.preparationHits",
+  "110 != 107"
+ ],
+ [
+  ".result.interactionGate.metrics.preparationMisses",
+  "156 != 159"
+ ]
+]

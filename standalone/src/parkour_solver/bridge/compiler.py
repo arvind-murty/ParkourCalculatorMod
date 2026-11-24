@@ -27,6 +27,9 @@ def coefficient_request(route, plan):
 
 
 class JavaCompiler:
+    # The coefficient tables are generated from these replies (tools/generate_coefficient_tables.py --check).
+    table_coefficients = True
+
     def __init__(self, config):
         command = config.get('command') if isinstance(config, dict) else None
         if not isinstance(command, list) or not command or any(not isinstance(part, str) for part in command):

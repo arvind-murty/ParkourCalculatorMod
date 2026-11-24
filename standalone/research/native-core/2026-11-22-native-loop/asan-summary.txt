@@ -1,0 +1,4 @@
+Ran 107 tests in 10.012s
+OK
+modules: tests.unit.search.test_anchor_dfs tests.unit.io.test_checkpoint_store tests.unit.search.test_event_search tests.integration.test_repair_resume tests.integration.test_orchestrator_continuation tests.integration.test_native_core
+fixed work under ASan: 0 AddressSanitizer reports

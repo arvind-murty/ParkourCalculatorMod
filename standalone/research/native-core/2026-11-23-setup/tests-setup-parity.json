@@ -1,0 +1,54 @@
+{
+ "calls": {
+  "goal_spec": 66,
+  "settings": 94,
+  "movement_settings": 322,
+  "semantic_settings": 605,
+  "build_route_domain": 84,
+  "build_event_graph": 76,
+  "build_guides": 79,
+  "encounter_groups": 80,
+  "semantic_settingsDiffers": 1
+ },
+ "mismatches": [
+  {
+   "kind": "semantic_settings",
+   "python": [
+    "ok",
+    {
+     "version": 1,
+     "anchors": [
+      "mid"
+     ],
+     "turnaround": {
+      "degrees": 110.0,
+      "spatialMargin": 0.3
+     },
+     "solveEveryDecisionLevels": 1,
+     "feasibilityPolicy": "numerical_oracle",
+     "hardJumpPolicyVersion": 1,
+     "searchPolicyVersion": 22,
+     "comparisonPolicyVersion": 1
+    }
+   ],
+   "native": [
+    "ok",
+    {
+     "version": 1,
+     "anchors": [
+      "mid"
+     ],
+     "turnaround": {
+      "degrees": 110.0,
+      "spatialMargin": 0.3
+     },
+     "solveEveryDecisionLevels": 1,
+     "feasibilityPolicy": "numerical_oracle",
+     "hardJumpPolicyVersion": 5,
+     "searchPolicyVersion": 22,
+     "comparisonPolicyVersion": 1
+    }
+   ]
+  }
+ ]
+}

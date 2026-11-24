@@ -1,0 +1,14 @@
+Every DFS state search_goals publishes (on_progress, begin_repair, repair_progress) and each call's result state,
+JSON form, timing keys dropped, compared by value in call order. Base: d60bb7f3's Python with the same native module
+(production at 94f29ba1 is the same path). Trial: the native loop running each frame's frontier natively.
+native frontier (trial dispatch) vs previous native code:
+short:   {"a": 191, "b": 191, "compared": 191, "equal": 191, "differing": 0}
+fixed:   {"a": 438, "b": 438, "compared": 438, "equal": 438, "differing": 0}
+tests, per test: {"tests": 46, "equal": 44, "differing": 2}
+differs tests.unit.search.test_anchor_dfs.AnchorDFSTests.test_a_jump_onto_a_block_merged_into_the_launch_face_lands_back_on_that_face 4 4
+differs tests.unit.search.test_anchor_dfs.AnchorDFSTests.test_anchor_frontier_gets_the_minimum_run_policy_for_ordinary_decisions 4 1
+  (both stub dfs.iter_movement_programs, which the native frontier does not call)
+Every decision check's prepared route marked as having a passage (the native node solve leaves it to Python: the
+base's Python fallback after evaluate_node returns None, the trial's solve_route hook):
+short:   191 states each, all equal; 3 checks diverted on each side
+tests, per test: {"tests": 46, "equal": 44, "differing": 2} (the same two stubbing tests)

@@ -1,0 +1,686 @@
+{
+ "calls": {
+  "initial_cursor": 57,
+  "next_goals": 118,
+  "for_goal": 148,
+  "candidate": 127,
+  "perturbed:accepted": 1346,
+  "candidatePerturbed": 2292,
+  "perturbed:missing_prior_anchor": 454,
+  "perturbed:required_event_not_observed": 492,
+  "advance": 62
+ },
+ "mismatches": [],
+ "counts": [
+  {
+   "python": {
+    "eventAudits": 150,
+    "requiredEventRejections": 81
+   },
+   "native": {
+    "eventAudits": 150,
+    "requiredEventRejections": 81
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 60,
+    "requiredEventRejections": 36
+   },
+   "native": {
+    "eventAudits": 60,
+    "requiredEventRejections": 36
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 37,
+    "requiredEventRejections": 24
+   },
+   "native": {
+    "eventAudits": 37,
+    "requiredEventRejections": 24
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 100,
+    "requiredEventRejections": 60
+   },
+   "native": {
+    "eventAudits": 100,
+    "requiredEventRejections": 60
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 60,
+    "requiredEventRejections": 36
+   },
+   "native": {
+    "eventAudits": 60,
+    "requiredEventRejections": 36
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 78,
+    "requiredEventRejections": 54
+   },
+   "native": {
+    "eventAudits": 78,
+    "requiredEventRejections": 54
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 21,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 21,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 20,
+    "requiredEventRejections": 3
+   },
+   "native": {
+    "eventAudits": 20,
+    "requiredEventRejections": 3
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 19,
+    "requiredEventRejections": 3
+   },
+   "native": {
+    "eventAudits": 19,
+    "requiredEventRejections": 3
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 27,
+    "requiredEventRejections": 18
+   },
+   "native": {
+    "eventAudits": 27,
+    "requiredEventRejections": 18
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 30,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 30,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 76,
+    "requiredEventRejections": 21
+   },
+   "native": {
+    "eventAudits": 76,
+    "requiredEventRejections": 21
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 130,
+    "requiredEventRejections": 75
+   },
+   "native": {
+    "eventAudits": 130,
+    "requiredEventRejections": 75
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 35,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 35,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 117,
+    "requiredEventRejections": 48
+   },
+   "native": {
+    "eventAudits": 117,
+    "requiredEventRejections": 48
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 97,
+    "requiredEventRejections": 18
+   },
+   "native": {
+    "eventAudits": 97,
+    "requiredEventRejections": 18
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 41,
+    "requiredEventRejections": 3
+   },
+   "native": {
+    "eventAudits": 41,
+    "requiredEventRejections": 3
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 18,
+    "requiredEventRejections": 6
+   },
+   "native": {
+    "eventAudits": 18,
+    "requiredEventRejections": 6
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 20,
+    "requiredEventRejections": 3
+   },
+   "native": {
+    "eventAudits": 20,
+    "requiredEventRejections": 3
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 20,
+    "requiredEventRejections": 3
+   },
+   "native": {
+    "eventAudits": 20,
+    "requiredEventRejections": 3
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  },
+  {
+   "python": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   },
+   "native": {
+    "eventAudits": 0,
+    "requiredEventRejections": 0
+   }
+  }
+ ]
+}

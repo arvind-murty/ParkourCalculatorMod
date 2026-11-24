@@ -1,0 +1,304 @@
+{
+  "scope": "Native envelope construction and compiled query batches, plus a public mutable-snapshot integration bridge",
+  "sourceRevision": "09d416fd1af6a917b15b36869111e250ac815f13",
+  "sourceDelta": "Recorded ordered-query batch APIs; search and numerical policies unchanged",
+  "evidenceDirectory": "/private/var/tmp/standalone-cpp-batch-20261120T134000",
+  "kernel": {
+    "build_and_batch": {
+      "processes": 3,
+      "cases": 128,
+      "pythonMedianSecondsPerCorpus": 0.16150843352079391,
+      "nativeMedianSecondsPerCorpus": 0.008937956765294075,
+      "medianProcessSpeedup": 17.999196964907906,
+      "processSpeedupRange": [
+        17.90514993451007,
+        18.014735819212845
+      ]
+    },
+    "retained_batch": {
+      "processes": 3,
+      "cases": 128,
+      "pythonMedianSecondsPerCorpus": 0.0005178245902061463,
+      "nativeMedianSecondsPerCorpus": 0.00049546979367733,
+      "medianProcessSpeedup": 1.0452120665173472,
+      "processSpeedupRange": [
+        1.042762241737131,
+        1.05228512164866
+      ]
+    },
+    "public_batch": {
+      "processes": 3,
+      "cases": 128,
+      "pythonMedianSecondsPerCorpus": 0.0005262322910130024,
+      "nativeMedianSecondsPerCorpus": 0.0006708212569355964,
+      "medianProcessSpeedup": 0.7804643786026845,
+      "processSpeedupRange": [
+        0.7781966567494073,
+        0.7898194663596816
+      ]
+    }
+  },
+  "live": {
+    "short": {
+      "pairs": 5,
+      "pythonMedianSeconds": 4.585980542004108,
+      "nativeMedianSeconds": 4.186721123754978,
+      "medianPairedSpeedup": 1.0964480595512132,
+      "approximate95PercentInterval": [
+        1.0741969006473255,
+        1.113622467189322
+      ],
+      "pythonExpanded": [
+        11,
+        11,
+        11,
+        11,
+        11
+      ],
+      "nativeExpanded": [
+        11,
+        11,
+        11,
+        11,
+        11
+      ]
+    },
+    "short-durable": {
+      "pairs": 3,
+      "pythonMedianSeconds": 16.234456837177277,
+      "nativeMedianSeconds": 15.790927708148956,
+      "medianPairedSpeedup": 1.0290872705806657,
+      "approximate95PercentInterval": [
+        1.023903340362406,
+        1.0333834195414104
+      ],
+      "pythonExpanded": [
+        11,
+        11,
+        11
+      ],
+      "nativeExpanded": [
+        11,
+        11,
+        11
+      ]
+    },
+    "extended": {
+      "pairs": 2,
+      "pythonMedianSeconds": 55.08990170806646,
+      "nativeMedianSeconds": 55.09216425195336,
+      "medianPairedSpeedup": 0.9999590543132663,
+      "approximate95PercentInterval": [
+        0.9993274047710718,
+        1.0005907038554607
+      ],
+      "pythonExpanded": [
+        21,
+        21
+      ],
+      "nativeExpanded": [
+        24,
+        24
+      ]
+    }
+  },
+  "batches": {
+    "count": 128,
+    "queries": 181,
+    "sizes": [
+      2,
+      1,
+      1,
+      2,
+      1,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      1,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      1,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      5,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      4,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      9,
+      5,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      4,
+      1,
+      5,
+      5,
+      5,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      6,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ]
+  },
+  "tests": {
+    "tests": 83,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "comparisons": {
+      "reachable_envelopes": 4910,
+      "interaction_reachability": 49298,
+      "interaction_reachability_many": 21415
+    },
+    "sourceUnchanged": true
+  },
+  "movementTests": {
+    "tests": 53,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "comparisons": {
+      "reachable_envelopes": 49,
+      "interaction_reachability": 153,
+      "interaction_reachability_many": 48
+    },
+    "sourceUnchanged": true
+  },
+  "corpusParity": {
+    "reachable_envelopes": 178,
+    "interaction_reachability": 1024,
+    "interaction_reachability_many": 128
+  },
+  "liveParity": {
+    "reachable_envelopes": 440,
+    "interaction_reachability": 25714,
+    "interaction_reachability_many": 1869
+  },
+  "matchesPrebatchSearchTransitions": true,
+  "originalGateQueries": 24,
+  "sanitizer": {
+    "tests": {
+      "tests": 83,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "comparisons": {
+        "reachable_envelopes": 4910,
+        "interaction_reachability": 49298,
+        "interaction_reachability_many": 21415
+      },
+      "sourceUnchanged": true
+    },
+    "ownedBatchParity": true
+  },
+  "build": {
+    "compiler": "Apple clang version 15.0.0 (clang-1500.1.0.2.5)\nTarget: arm64-apple-darwin24.6.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin\n",
+    "python": "3.12.2 (v3.12.2:6abddd9f6a, Feb  6 2024, 17:02:06) [Clang 13.0.0 (clang-1300.0.29.30)]",
+    "pybind11": "3.0.1",
+    "sourceSHA256": "4e6e37b2f79f9ed3d421f4bb5204807bfa36aab52f84b6619a4bf7f27ac535bd",
+    "binarySHA256": "ad587bf63a19e85075ad9e6ecfba43c5fd00fa9f06ab291e8200c14bdaf78703"
+  },
+  "limitations": [
+    "The opaque build-and-batch multiplier is not a whole-search speedup.",
+    "Live integration still exposes Python snapshots; the public batch bridge is slower on this query corpus.",
+    "Two extended pairs are exploratory; neither arm found a finished route.",
+    "The initial retained-dictionary adapter failed an existing mutation test and was removed.",
+    "The baseline backend-selection assertion failure remains recorded; no full Java differential gate claim."
+  ]
+}

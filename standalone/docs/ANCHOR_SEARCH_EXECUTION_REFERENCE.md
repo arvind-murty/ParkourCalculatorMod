@@ -150,7 +150,8 @@ is never solved again. Incumbents are only frame-end answers, so the run
 publishes its incumbent as is, also when cancelled; with none, it publishes no
 route. `work` counts `frameEnds`, `frameEndRejections` and `frameEndIpoptCalls`
 apart from the traversal's counters. IPOPT-backend searches keep their
-witnesses.
+witnesses. The native loop (`search/dfs_search.hpp`) re-solves at the same
+points through `DfsSearch::frame_end`, its leg solve on a fresh work budget.
 
 ## Tick policy, protections and examples
 
@@ -268,6 +269,37 @@ policy14 participate in the relevant context fingerprints. Matching schema numbe
 an older checkpoint compatible. Old wrong-policy exact continuations reject;
 checkpoint storage format stays version1. Never redirect work to an old checkout
 because a source-era handoff contains its absolute path.
+
+Under `PKC_NATIVE_CORE`, an anchor search whose gate has a native core and whose program filter is at most an initial
+jump domain runs `search_goals` natively (`search/dfs_search.hpp`) over the typed state of `search/dfs_state.hpp`: frames,
+scoring, selection, refinement, recovery, windows, latches and finalization, each frame's movement frontier
+(`search/frontier.hpp`) and its decision checks, and the anchor adapter's stage views, discovery, advance and candidate
+checks (`search/anchors/adapter.hpp`, on `spatial/event_routes.hpp`; its counts join the Python adapter's summary).
+Python keeps the preamble (roots, context, resume checks, the gate) and the result, and serves gate preparations, the
+Python parts of the solve services and the work budget through hooks. Each publish hands `on_progress` a frozen snapshot, read field by field (`to_python()` builds the
+whole dict); the checkpoint store encodes it natively and it names the paths of the repair the saver patches
+([checkpoint storage](CHECKPOINT_STORAGE.md)). The frontier expands each decision one movement type at a time
+natively (`search/node.hpp`): generation,
+composition, owned-endpoint projection, the frame's screen and eligibility (incumbent, hard-latch and run bounds,
+viability, program screen, caps, anchor audit), acceptance and linking run in one call, with an ordinary decision's
+landings, same-face fit and advantageous targets, and the frontier applies its queued and held children, exclusions,
+minimum-run records and DFS state changes in proposal order. The minimum-run search after the types (and each held
+minimum-run search) also runs natively; the frontier commits its exclusions, queues its children and holds its
+reserved run counts as alternatives in the same order as the Python search. A batch stops where the Python loop would emit a ready program and commits nothing when the budget stops it,
+so a resumed expansion redoes it from the saved cursor. Each decision check (`dfs.evaluate_node`) runs natively
+(`search/dfs.hpp`) once the gate has prepared a route without passages, wall hits or ladder events: its node solve
+(`search/engine.hpp`: scope, floor checks, identity, constraint generator, repair loop, outcome), the branch program it
+commits and the alternatives it holds. The gate's analysis and face tables and the relaxed dispatch (its post-alarm
+pipeline, frame-end answers and IPOPT solves) run on the gate's native core (`reachability/service.hpp`,
+`numerics/disk.hpp`, `numerics/post_alarm.hpp`, `numerics/solver.hpp`); the
+compiler and the work budget stay Python callbacks (and, in the Python loop, the adapter's candidate check), and the
+check records into
+the search's node table, checkpoint progress and observations through callbacks. The native search's anchor-leg and
+finish solves run the same way after the gate's preparation of the leg's scene (`DfsSearch::evaluate_leg`);
+`search/engine.evaluate_program` solves the routes they leave to Python, on the frame's Python stage view. There, and in the
+Python loop, it runs its constraint generator and repair loop natively (`constraints/variants.hpp`,
+`search/repair.hpp`) for the same routes; the loop calls the compiler, the numerical solve, the candidate filter, the
+work budget and the progress callback in Python and returns the Python result and repair state.
 
 The movement continuation also keeps what the [solve report](RESULTS_AND_DEBUGGING.md#solve-reports)
 needs for its search tree; no search decision reads it. Each exclusion (a screen's proof or a

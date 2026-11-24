@@ -1,7 +1,7 @@
 # Performance: measurements, hotspots and invariants
 
 Where solver time goes, what has already been optimized, and the contracts any
-speedup must preserve. Measurements are timed observations of one cold control,
+speedup must preserve. Measurements are timed observations of recorded controls,
 not optimality certificates or guaranteed recoverable speedups.
 
 ## Measuring
@@ -25,6 +25,33 @@ overhead is included. Without `--durable` the profiler still passes a progress c
 repair progress snapshots run there but not in the solve CLI without `--save-progress`; time
 production behavior through the CLI. Keep profiler hooks in `tools/profiling/`, never in
 production code.
+
+## Python/C++ pruning pilot
+
+On the frozen encounter-groups baseline `e9ca522c`, a C++17 port of interval
+envelopes measured 7.141982x faster across three fresh-process corpus runs; the
+individual interaction checks measured 0.924265x. Replacing both inside the real
+Python search measured 1.066065x on five completed short pairs without durable
+checkpoints and 1.030490x on three pairs with them. Every short pair matched
+ticks, objective, work, replay validation and ordered search transitions.
+Two extended deadline pairs expanded Python `[21, 21]` versus native `[22, 21]`;
+this is exploratory progress evidence, not a time-to-solution speedup.
+The [pilot and portable results](../research/cpp-pruning-pilot/README.md) record
+the exact corpus, build, timing boundary, validation scope and raw evidence paths.
+This measures two pruning functions, not a full C++ migration; the tiny-query
+regression motivated the shared native batch experiment below.
+
+The [batched experiment](../research/cpp-pruning-pilot/README.md#batched-experiment)
+measured 17.999197x for native envelope construction plus an ordered query batch,
+returning only decisions. Checks against retained native bounds measured
+1.045212x; checks against mutable Python snapshots measured 0.780464x. These
+boundaries use the same sampled batches within this experiment; they differ from
+the first experiment's corpus and full-envelope return contract.
+The integrated public bridge measured 1.096448x on five completed short pairs
+and 1.029087x on three durable pairs, with identical search-transition hashes
+also matching the scalar baseline. Extended pairs expanded native `[24, 24]`
+versus Python `[21, 21]`, without a finish. This remains a small mixed backend;
+the direct component multiplier does not estimate a complete migration's speed.
 
 ## Real11 cold 300 s controls
 
@@ -158,6 +185,40 @@ ordered options. That is targeted enumeration work, not a whole-solver speedup.
 - In-process movement bridge: on the extended B22 task at an equal 300 s budget,
   coefficient, scene and footprint calls took 0.72 s against 6.84 s through the Java
   process, with identical requests ([evidence](../research/jvm-free-bridge/README.md)).
+- Native gate screen (opt-in, `PKC_NATIVE_CORE`): preparation, analysis, the
+  required-contact screen and the child programs of sequence screens stay in C++. At
+  equal work on the extended case capped at 100 solver calls, search time is 33.7% lower
+  than Python's with identical transitions; building sequence children natively added
+  1.7% of that ([evidence](../research/native-core/README.md)).
+- Native anchor DFS loop (`PKC_NATIVE_CORE`): the loop, its frontier and decision checks run in C++ and publish
+  frozen snapshots the checkpoint store encodes natively. Fixed work takes 17.45 s against 17.89 s for the Python loop
+  over the same native expansion, and 58.3 s against 123.8 s with durable checkpoints
+  ([evidence](../research/native-core/README.md)).
+- Native node-solve services (`PKC_NATIVE_CORE`): the gate's analysis and face tables, the relaxed dispatch and its
+  IPOPT driver run on the gate's native core. Fixed work takes 17.03 s and 16.52 s against 18.33 s and 18.09 s with
+  them as Python callbacks; the short control and durable runs are unchanged. Running the anchor-leg and finish solves
+  the same way then takes the short control to 1.258 s and 1.312 s against 1.643 s and 1.613 s, and durable fixed work
+  to 54.98 s and 55.03 s against 56.10 s and 55.99 s, with fixed work unchanged
+  ([evidence](../research/native-core/README.md)).
+- Native mode after main's PR #10 (merged search, native port): fixed work 14.17 s and 13.83 s against Python mode's
+  40.28 s and 39.46 s, and 55.97 s and 55.31 s against 125.6 s and 129.9 s with durable checkpoints
+  ([evidence](../research/native-core/README.md)). With the anchor adapter native too, search time is unchanged:
+  fixed work 14.18 s and 14.38 s against 14.80 s and 14.31 s, the short control 1.297 s against 1.365 s (means of five)
+  ([evidence](../research/native-core/README.md)). Of the setup builders only the event domain (84.1 ms against
+  91.9 ms on fixed work) and the encounter groups (2.3 ms against 6.7 ms) run faster natively, so only they dispatch
+  ([evidence](../research/native-core/README.md)).
+- Native report encoding (`PKC_NATIVE_CORE`): checkpoint saves hand plain JSON containers to the native encoder.
+  Durable fixed work searches in 42.56 s and 42.50 s against 53.40 s and 53.03 s, the durable short control in 5.68 s
+  and 5.93 s against 8.12 s and 8.14 s, and fixed work's final report save falls from 2.48 s to 1.36 s
+  ([evidence](../research/native-core/README.md)). With the store's encode cache an unchanged part costs a lookup
+  in the next save: durable fixed work searches in 16.93 s and 17.88 s against 43.81 s and 44.95 s (plain 13.76 s and
+  13.79 s), the durable short control in 2.46 s and 2.48 s against 5.83 s and 6.73 s, at about 100 MiB more peak
+  memory ([evidence](../research/native-core/README.md)).
+- Native port of main's PR #12 (post-alarm pipeline, frame-end re-solves, full-queue frames): on Real11 extended at
+  300 s native mode makes 1,844 solver calls and expands 554 prefixes against Python mode's 776 and 243, and
+  `cases/real11/physical-anchors.json` searches in 1.48 s against 5.11 s. Fixed work searches in 12.23 s and 12.42 s
+  against 37.32 s and 38.99 s, and 16.55 s and 16.15 s against 132.69 s and 125.38 s with durable checkpoints
+  ([evidence](../research/native-core/README.md)).
 - Clarabel iterative refinement off in every disk solve: on the extended fixed-work control
   (100 solver calls) search time fell from 39.36 s to 37.50 s with identical transitions and
   verdicts, and a 300 s extended run spent 7.92 s instead of 11.43 s in Clarabel requests
@@ -185,7 +246,7 @@ Open measurement: solve cadence 1 versus 2 or 4 decision levels
 
 | File | What to look at without changing behavior |
 | --- | --- |
-| `search/identity.py` | `digest`, `motion_record`, `solve_scope`, `solve_identity`: repeated canonical serialization. |
+| `canonical.py`, `search/identity.py` | `digest` (owned by `canonical.py`; a replacement must keep its exact bytes, since search order breaks ties on it), `motion_record`, `solve_scope`, `solve_identity`: repeated canonical serialization. |
 | `movement/program.py` | `program_search_key` (owners and repair hash), `compile_program`: repeated serialization of immutable content. `program_physics_key` resumes the parent's per-state chain. |
 | `reachability/service.py` | `InteractionGate.prepare` key construction (scene and program physics key), which costs even on a cache hit. |
 | `search/engine.py` | `evaluate_program`: scope, coefficients, replay, solve identity, variants, validation. |

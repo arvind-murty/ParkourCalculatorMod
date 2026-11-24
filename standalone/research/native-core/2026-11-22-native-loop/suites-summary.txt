@@ -1,0 +1,3 @@
+Milestone test list (tools/native-suite.json modules plus the extra list), with the trial dispatch:
+native mode: Ran 843 tests in 89.780s OK (skipped=10)
+Python mode: Ran 843 tests in 110.106s OK (skipped=10)

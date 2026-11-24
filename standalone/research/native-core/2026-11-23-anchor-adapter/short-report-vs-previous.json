@@ -1,0 +1,14 @@
+[
+ [
+  ".provenance.command[4]",
+  "/private/var/tmp/standalone-cpp-next-20261122/ab3/short-base-1 != /private/var/tmp/standalone-cpp-next-20261122/ab3/short-new-1"
+ ],
+ [
+  ".provenance.sourceHashes.parkour_solver/search/dfs.py",
+  "53755c3169e2c0814c335d7524d7c619502b70e4d9f9008a08ca3d5ca5675757 != e386983a20499cae0aa1900f6d93627009420e961a54c827814d687e24e3bac2"
+ ],
+ [
+  ".provenance.sourceHashes.parkour_solver/search/engine.py",
+  "27169a6b8c4c729f48c7d7135a3a015ec4b959530fecbc67dbcc6f1c35f0e28e != c2767815646c1ec6db70801bc7ada95f3245274398366bfd83b300bd98ab894f"
+ ]
+]

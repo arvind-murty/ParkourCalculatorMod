@@ -20,7 +20,7 @@ python3.12 -m venv ../.venv-guidance
 
 The copied real11 fixtures contain 200 and 400 ticks, every facing row in their selected spans, prescribed wall contacts, and per-axis inertia. Their acceleration coefficients use the captured Force 45 / Derive policies. The fixture source and SHA-256 are recorded inside each request.
 
-The parent process uses only the Python standard library. To run it from a different interpreter, supply `--python /absolute/path/to/the/worker/python` or set `PKC_IPOPT_PYTHON`. The worker needs CasADi and NumPy. Nothing installs or downloads automatically.
+The parent process uses only the Python standard library. To run it from a different interpreter, supply `--python /absolute/path/to/the/worker/python` or set `PKC_IPOPT_PYTHON`. The worker needs CasADi and NumPy. Nothing installs or downloads automatically. Under `PKC_NATIVE_CORE` the parent launches the native worker `pkc_numerics_worker` from that build instead; it speaks the same protocol, links the CasADi and IPOPT libraries of the Python environment it was built with, and needs no worker interpreter. The disk relaxation below then builds and solves natively too, through Clarabel.cpp at the Python package's Clarabel version.
 
 ## Export a new captured TAS
 
@@ -187,7 +187,8 @@ threshold, ladder ticks, an inertia pattern or non-X/Z rows have no spec.
 contains the circle). Every other status (a non-finite point, `NumericalError`,
 `InsufficientProgress`, an exception, a limit hit on the retry too) is also
 infeasible, so Clarabel never leaves a request undecided (user, 2026-11-22).
-Results are cached process-wide by the canonical spec (1024 entries). `validation.numerical.validate_controls`
+Results are cached process-wide by the canonical spec (1024 entries); under `PKC_NATIVE_CORE` the cache and its
+counters are native, shared with the native gate's program screens. `validation.numerical.validate_controls`
 replays the returned acceleration vectors through the same scalar checks as
 `validate` (which converts facings to full-strength vectors first) and also
 rejects a vector outside its disk by more than `REPLAY_TOLERANCE`. `deficits` reports each
@@ -224,7 +225,13 @@ feasible requests. The result carries `confirmation`: the shortfall peak and
 tick, both objectives, `gap = sense*(disk - ipopt)` and `material` (`gap > 1e-4`).
 A gap describes only its own request. Decided
 confirmations are cached per run in the interaction gate's cache by problem
-fingerprint. Search's use of it is in the
+fingerprint. Under `PKC_NATIVE_CORE`, a gate with a native core dispatches every
+entry point natively (`numerics/disk.hpp`, the pipeline in `numerics/post_alarm.hpp`)
+for Python and native callers alike, keeping its confirmations and frame-end answers
+in the core's cache, and its IPOPT solves run through the native driver
+(`numerics/solver.hpp`: the same worker protocol, deadline, cancellation and
+validation as `solve`). The profiler records a native leg solve's requests through
+the module's request observer (`tools/profiling/bookkeeping.py`). Search's use of it is in the
 [execution reference](../ANCHOR_SEARCH_EXECUTION_REFERENCE.md#numerical-backend-and-frame-end-re-solves).
 `RelaxedDispatch(gate=...)` answers the alarm with the post-alarm pipeline below;
 `post_alarm='ipopt'` makes that IPOPT call instead.

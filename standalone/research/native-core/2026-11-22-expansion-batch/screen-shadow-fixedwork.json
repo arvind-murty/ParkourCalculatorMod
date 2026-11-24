@@ -1,0 +1,11 @@
+{
+ "stats": {
+  "eligible": 364,
+  "screen": 906,
+  "screen passes": 307,
+  "screen proofs": 599,
+  "screen proof disk_control_relaxation_infeasible": 105,
+  "screen proof required_interaction_unreachable": 494
+ },
+ "mismatches": []
+}

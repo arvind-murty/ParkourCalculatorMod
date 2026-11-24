@@ -61,8 +61,9 @@ class ProcessTests(unittest.TestCase):
         result = self.run_worker('print("broken")', request)
         self.assertEqual(result['status'], 'error')
         self.assertEqual(result['termination'], 'protocol_error')
-        with tempfile.TemporaryDirectory() as directory:
-            result = solver.solve(request, python_executable=str(pathlib.Path(directory) / 'missing'))
+        with tempfile.TemporaryDirectory() as directory, \
+                mock.patch.object(solver, '_command', return_value=[str(pathlib.Path(directory) / 'missing')]):
+            result = solver.solve(request)
         self.assertEqual(result['status'], 'error')
         self.assertEqual(result['termination'], 'runtime_error')
 
@@ -98,8 +99,9 @@ class ProcessTests(unittest.TestCase):
         request.update(velocity=[0, 0], magnitude=[0.1, 0.1], base=[0, 0])
         result = self.run_worker('print(\'{"type":"candidate","yaw":[180,180]}\')', request)
         self.assertAlmostEqual(result['candidate']['objective'], 0.25)
-        with tempfile.TemporaryDirectory() as directory:
-            result = solver.solve(request, python_executable=str(pathlib.Path(directory) / 'missing'))
+        with tempfile.TemporaryDirectory() as directory, \
+                mock.patch.object(solver, '_command', return_value=[str(pathlib.Path(directory) / 'missing')]):
+            result = solver.solve(request)
         self.assertTrue(result['feasible'])
         self.assertEqual(result['termination'], 'runtime_error')
         self.assertIsNotNone(result['error'])

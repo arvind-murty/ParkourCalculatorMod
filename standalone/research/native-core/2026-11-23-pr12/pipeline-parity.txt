@@ -1,0 +1,8 @@
+Pipeline parity: RelaxedDispatch.confirmed(post_alarm='pipeline') in Python mode (gate without a core) vs the native core's relaxed_dispatch(mode='confirmed'), each side in its own process, IPOPT forbidden; decisions (status, termination, method, steps, probes, raced, quadrant, reversal tick, solves) compared exactly, objectives by absolute difference.
+== tests/fixtures/post_alarm (7 requests)
+requests 7  decision mismatches 0  worst objective diff 0.000e+00
+python seconds 0.68 native seconds 0.43
+== Real11 alarmed requests (482, research/post-alarm capture_alarmed.py)
+requests 482  decision mismatches 0  worst objective diff 0.000e+00
+python seconds 23.17 native seconds 19.24
+native outcomes: {('feasible', 'decay'): 41, ('feasible', 'race'): 55, ('feasible', 'push'): 333, ('unknown', 'none'): 27, ('feasible', 'probe'): 11, ('unknown', 'quadrant'): 15}

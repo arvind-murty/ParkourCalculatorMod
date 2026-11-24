@@ -361,6 +361,9 @@ class ExposureTests(unittest.TestCase):
                 self.owners.append(label['owner'])
                 return dict(ruledOut=False)
 
+            def query_many(self, context, bounds, tick, **kwargs):
+                return [self.query(context, box, tick, **kwargs) for box in bounds]
+
             def walk_off(self, context, landing_boxes, *, label):
                 self.owners.append(label['owner'])
                 return True

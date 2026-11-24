@@ -14,6 +14,13 @@ def _flags(values, name, length=None):
 
 def trace_ladder_schedule(initial, ladder, sneak, hit, *, jump=None, target_top=None, min_landing_state=0, contacts=None,
                           occupied_y_bounds=None, stop_on_landing=True, threshold=.005):
+    from parkour_solver import native_core
+    native = native_core.from_environment()
+    if native is not None:
+        return native.trace_ladder_schedule(initial, ladder, sneak, hit, jump=jump, target_top=target_top,
+                                            min_landing_state=min_landing_state, contacts=contacts,
+                                            occupied_y_bounds=occupied_y_bounds, stop_on_landing=stop_on_landing,
+                                            threshold=threshold)
     hit = _flags(hit, 'hit')
     n = integer(len(hit), 'ticks', 1, 200)
     ladder = _flags(ladder, 'ladder', n + 1)

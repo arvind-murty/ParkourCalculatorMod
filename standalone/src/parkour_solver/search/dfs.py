@@ -1,11 +1,12 @@
 import copy
 import time
+from types import SimpleNamespace
 
 from parkour_solver.reachability.service import InteractionGate
 from parkour_solver.movement.program import boundary_state, empty_program, program_search_key
 from parkour_solver.search.movement import iter_movement_programs, screen_program
 from parkour_solver.reachability.viability import prefix_viability
-from parkour_solver.search.identity import digest
+from parkour_solver.canonical import digest
 from parkour_solver.spatial.checkpoints import retain_prefix
 from parkour_solver.search.goals import goal_key, _landing_prefixes
 from parkour_solver.search.deferrals import POLICY_VERSION
@@ -13,7 +14,7 @@ from parkour_solver.search.anchors.policy import (advantageous_candidates, advan
                                                   semantic_settings, terminal_face)
 from parkour_solver.constraints.variants import GENERATION_POLICY
 from parkour_solver.search.comparison import comparison_label, compare_candidates, POLICY_VERSION as COMPARISON_POLICY_VERSION
-from parkour_solver.search.work import SearchWork
+from parkour_solver.work import SearchWork
 
 
 # A forward side's keep-outside row within this of binding is tight: its held sides may then reach further.
@@ -103,7 +104,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
     prior_calls, initial_expanded = state['cumulativeCalls'], state['expanded']
     if resume_state and not _owned_state and state['best'] is not None and not replay_witness(scene,state['best'],compiler)['passed']:
         raise ValueError('Saved DFS incumbent no longer passes independent replay')
-    gate = InteractionGate(scene, compiler, seconds=candidate_seconds)
+    gate = InteractionGate(scene, compiler, seconds=candidate_seconds, cores=adapter.interaction_cores)
     adapter.interaction_service=gate
     gate.cache = adapter.interaction_cache
     gate.metrics = adapter.interaction_metrics
@@ -111,6 +112,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
     state.setdefault('minimumRunExclusions',[])
     excluded_runs={(r['frame'],r['candidate']) for r in state['minimumRunExclusions']}
     viability_counts = dict(checked=0, excluded=0)
+    native_scenes = {}
     termination = 'exhausted'
 
     def publish():
@@ -323,8 +325,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
     def time_bound(program,f=None):
         if state['best'] is None:return None
         label=dict(T=program['profile']['duration'])
-        ctx=dict(fixedTerminal=False)
-        decision=compare_candidates(label,context=ctx,incumbent=state['best'])
+        decision=compare_candidates(label,incumbent=state['best'])
         if decision['action']=='exclude_bound':
             return dict(reason=decision['reason'],elapsedInputs=label['T'],incumbentTick=decision['incumbentT'])
         if f is not None:
@@ -336,7 +337,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
             proof=remaining_bound(adapter.guide_plan,span,program,motion,
                                   transfers=records,hard_latches=state['hardLatches'])
             label['remainingFinishBound']=dict(ticks=proof['remainingTicks'],proofIds=proof.get('proofIds',[]))
-            decision=compare_candidates(label,context=ctx,incumbent=state['best'])
+            decision=compare_candidates(label,incumbent=state['best'])
             if decision['action']=='exclude_bound':
                 return dict(proof,reason=decision['reason'],elapsedInputs=label['T'],incumbentTick=decision['incumbentT'])
         return None
@@ -427,6 +428,62 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
     def final_frame(f):
         return f['goalRequest']['terminal']
 
+    def native_node(program, nodes, f, active, span, start, identity):
+        """evaluate_node natively (search/dfs.hpp), recording into this search's state; None for a route the native
+        node solve leaves to Python."""
+        from parkour_solver.observability.turns import record as observe, replay
+        from parkour_solver.search import ordered_route
+        from parkour_solver.search.engine import solve_services
+        entry={}
+        def begin():
+            entry.update(status='suspended',parent=program.get('decisionParent'),repairState=program.get('repairState'))
+            nodes[identity]=entry
+            begin_repair(program,(entry,))
+        def begin_solve():
+            node_view=active.for_node(program)
+            services=solve_services(node_view,program,work,gate,numerical_backend,
+                seconds=max(.001,min(score_seconds,deadline-time.monotonic())),cancel_event=cancel_event)
+            return dict(services,objective=node_view.objective)
+        def assign(repair):
+            program['repairState']=repair
+        def progress(repair):
+            program['repairState']=repair
+            entry['repairState']=repair
+            repair_progress()
+        def settle(repair):
+            program['repairState']=entry['repairState']=repair
+        def observed(model, status, elapsed, metrics):
+            observe(state['observations'],adapter.guide_plan,program,span=span,start=start,
+                    model=model,status=status,elapsed=elapsed,metrics=metrics,
+                    service=dict(latchRevision=state['latchRevision'],hardLatched=pair_key(span) in state['hardLatches'],
+                        runDeferralEnabled=minimum_run_pruning and not program.get('priorityTurnaround',False) and group_latched(f),
+                        tickDeferralEnabled=minimum_run_pruning and group_latched(f),comparisonPolicy=COMPARISON_POLICY_VERSION))
+        def replayed(positions, model):
+            ancestor=program.get('decisionParent')
+            while ancestor:
+                event=state['observations']['decisions'].get(ancestor)
+                if event is None:break
+                replay(state['observations'],adapter.guide_plan,ancestor,event['span'],positions[event['pointTick']],model)
+                ancestor=event['parent']
+        def store(key, record, node_result, recovery):
+            if recovery is not None:
+                f['recoveryFailure']=recovery
+            nodes[key]=record
+            state['nodeResults'][key]=node_result
+            publish()
+        evaluated=gate.native.evaluate_node(scene,program,compiler,ordered_route.solve,cancel_event=cancel_event,
+            python_executable=python_executable,prepare=lambda _: gate.prepare(program,scene=scene),begin=begin,
+            begin_solve=begin_solve,assign=assign,progress=progress if on_progress else None,settle=settle,
+            observe=observed,replay=replayed,store=store,saved=nodes.get(identity),guide_plan=adapter.guide_plan,
+            span=span,solve_interval=adapter.anchor_policy['solveEveryDecisionLevels'],numerical=numerical_backend,
+            frame=f['id'],candidate_seconds=candidate_seconds)
+        if evaluated is None:
+            return None
+        result,same=evaluated
+        if same:
+            result['program']=program
+        return result
+
     def evaluate_node(program, nodes, unused, f):
         from parkour_solver.search.feasibility import solve_due
         from parkour_solver.spatial.anchor_guides import classify
@@ -437,6 +494,10 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
         depth=program['decisionDepth']
         # A forward side variant reports whether its keep-outside row is tight (sideOutcome); an unsolved one is.
         forward=(program.get('sideVariant') or {}).get('forward',False)
+        if gate.native is not None:
+            evaluated=native_node(program,nodes,f,active,span,start,identity)
+            if evaluated is not None:
+                return evaluated
         if not solve_due(program,adapter.anchor_policy['solveEveryDecisionLevels']):
             return dict(status='untested',program=program,**(dict(sideOutcome='tight') if forward else {}))
         saved=nodes.get(identity)
@@ -570,10 +631,11 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
             targets=lambda base,child:advantageous_targets(scene,base,child,next_anchor(scene,base,anchors,task)),
             candidates=candidates,next=lambda p:next_anchor(scene,p,anchors,task),face=lambda p:terminal_face(scene,p),
             back=lands_on_launch_face,fits=lambda decision,landing:same_face_fit(decision,landing,f))
+        policy_context=dict(anchor=semantic_settings(adapter.anchor_policy),span=span,guide=adapter.guide_plan['id'],score=stage_adapter(f).score_context)
         node_options=dict(node_evaluator=lambda p,n,x:evaluate_node(p,n,x,f),
             priority_key=lambda p,identity:priority(p,f,identity),
             live_programs=lambda:live_programs(f),run_policy=run_policy,
-            policy_context=dict(anchor=semantic_settings(adapter.anchor_policy),span=span,guide=adapter.guide_plan['id'],score=stage_adapter(f).score_context))
+            policy_context=policy_context)
         source = iter_movement_programs(target_scene,settings=settings,report=report,initial_programs=f['parents'],
             **node_options,
             continuation=report.get('continuation'),
@@ -904,6 +966,105 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
                 commit_finish(f,chosen)
                 return
 
+    def result(termination):
+        generations = [f['generation'] for f in state['frames']+state['stack']+state.get('goalQueue',[])]
+        return dict(status='feasible' if state['best'] else 'cancelled' if termination=='cancelled' else
+            'error' if termination=='error' else 'unknown',termination=termination,best=state['best'],
+            windows=state['windows'],finalAttempts=state['finalAttempts'],corridor=adapter.corridor.to_dict(),
+            routeGeneration=None,adapter=adapter.summary(),movementGeneration=generations,
+            expandedPrefixes=state['expanded']-initial_expanded,totalExpandedPrefixes=state['expanded'],
+            work=work.summary(),compiler=compiler.summary(),elapsedSeconds=time.monotonic()-started,threshold=0.,
+            order='goal_arrival_depth_first',comparisonPolicy='goal_arrival_dfs',objectiveOptimalityProven=False,minimumTicksProven=False,searchState=state,
+            resume=dict(exact=state['session']>1,session=state['session']),interactionGate=gate.summary(),viability=viability_counts,
+            minimumRunPruning=dict(enabled=minimum_run_pruning,version=POLICY_VERSION,excluded=len(state['minimumRunExclusions']),
+                scope='protected_hard_anchor_ticks',
+                comparisonPolicy=COMPARISON_POLICY_VERSION,certifiedDominance=False))
+
+    from parkour_solver.search.anchors.adapter import AnchorAdapter
+    if gate.core is not None and isinstance(adapter, AnchorAdapter) and getattr(accepted_program, 'native', False):
+        # The loop runs natively (search/dfs_search.hpp) and owns the state, with each frame's movement frontier, its
+        # decision checks and its leg solves, and the anchor adapter's stage views, discovery, advance and candidate
+        # checks (search/anchors/adapter.hpp). Python serves it gate preparations and the solve services; `evaluate`
+        # and `solve_route` solve, on the frame's Python stage view, the routes the native generator leaves to Python.
+        from parkour_solver.search import ordered_route
+        from parkour_solver.search.engine import solve_services
+        if 'anchorScene' not in native_scenes:
+            native_scenes['anchorScene'] = gate.native.AnchorScene(scene)
+        native_adapter = gate.native.AnchorAdapter(adapter.data, adapter.graph, adapter.anchor_policy, adapter.guide_plan,
+                                                   semantic_settings(adapter.anchor_policy), native_scenes['anchorScene'])
+        frames = {}
+        def view(frame_id, request, cursor):
+            return stage_adapter(frames.setdefault(frame_id, dict(id=frame_id, goalRequest=request, semanticCursor=cursor,
+                                                                  goal=request['goal'])))
+        def evaluate(frame_id, request, cursor, program, options):
+            landing = options['landing']
+            final = dict(final_route=options['finalRoute']) if 'finalRoute' in options else {}
+            # A frame-end re-solve runs on its own work, outside the run's deadline and call budget.
+            return evaluate_program(dict(scene,goalBlock=landing),program,compiler,view(frame_id,request,cursor),
+                SearchWork() if options.get('ownWork') else work,motion,seconds=options['seconds'],
+                candidate_seconds=options.get('candidateSeconds',candidate_seconds),python_executable=python_executable,
+                cancel_event=cancel_event,on_progress=native.score_progress if options['progress'] else None,
+                required_landing=landing,first_witness=options['firstWitness'],
+                guide_objective=options['guideObjective'],solve_policy=options['policy'],climb_families=True,**final)
+        def bounds(saved):
+            from parkour_solver.search.bounds.flight import transfer_bounds
+            transfer_bounds(scene, adapter.guide_plan, motion, gate, saved=saved, threshold=0., check=work.check)
+            return saved
+        def begin_leg(program, numerical, seconds, own_work):
+            return solve_services(None, program, SearchWork() if own_work else work, gate, numerical, seconds=seconds,
+                                  cancel_event=cancel_event)
+        def begin_solve(program):
+            return solve_services(None,program,work,gate,numerical_backend,
+                seconds=max(.001,min(score_seconds,deadline-time.monotonic())),cancel_event=cancel_event)
+        def solve_route(frame_id, request, cursor, program, progress):
+            node_view=view(frame_id,request,cursor).for_node(program)
+            policy=dict(purpose='node',stopOnFeasible=False,rankEqualCost=True,oracleRejection=True,numerical=numerical_backend)
+            return evaluate_program(scene,program,compiler,node_view,work,motion,
+                seconds=max(.001,min(score_seconds,deadline-time.monotonic())),candidate_seconds=candidate_seconds,
+                python_executable=python_executable,cancel_event=cancel_event,
+                guide_objective=node_view.objective,first_witness=True,
+                solve_policy=policy,climb_families=True,on_progress=progress)
+        def count(name, by):
+            work.counts[name] += by
+        # Each publish is a native snapshot; a checkpoint saver reads its repair targets' paths from it.
+        def begun(snapshot):
+            begin = getattr(on_progress, 'begin_repair', None)
+            if begin is not None:
+                begin(snapshot, None)
+            else:
+                on_progress(snapshot)
+        def repaired(snapshot):
+            callback = getattr(on_progress, 'repair_progress', None)
+            if callback is not None:
+                callback(snapshot)
+            else:
+                on_progress(snapshot)
+        hooks = SimpleNamespace(monotonic=time.monotonic, progress=bool(on_progress),
+            cancelled=lambda: cancel_event is not None and cancel_event.is_set(),
+            publish=on_progress, begin_repair=begun, repair_progress=repaired, check=work.check,
+            solver_calls=lambda: work.counts['solverCalls'], count=count, accepted=work.accepted,
+            termination=lambda: work.termination, evaluate=evaluate, transfer_bounds=bounds, begin_leg=begin_leg,
+            prepare_leg=lambda program, landing: gate.prepare(program, scene=dict(scene, goalBlock=landing),
+                                                              require_complete=True),
+            prepare=lambda program: gate.prepare(program, scene=scene), begin_solve=begin_solve, solve_route=solve_route,
+            compiler=compiler, solve=ordered_route.solve, cancel_event=cancel_event, python_executable=python_executable)
+        native = gate.native.DfsSearch(state, dict(scene=scene, cfg=cfg, motion=motion, guidePlan=adapter.guide_plan,
+            anchorPolicy=adapter.anchor_policy, policySettings=semantic_settings(adapter.anchor_policy),
+            domainId=adapter.data['domainId'], roots=roots,
+            taskBlock=adapter.data['task']['block'],
+            initialJumpInputs=getattr(program_filter,'initial_jump_inputs',None), caps=accepted_program.caps,
+            minimumRunPruning=bool(minimum_run_pruning), deadline=deadline,
+            started=started, candidateSeconds=candidate_seconds, scoreSeconds=score_seconds, batchSize=batch_size,
+            numericalBackend=numerical_backend, priorCalls=prior_calls, initialExpanded=initial_expanded,
+            comparisonPolicy=COMPARISON_POLICY_VERSION), hooks, gate.core, native_scenes['anchorScene'], native_adapter)
+        try:
+            termination = native.run()
+        finally:
+            for name, count in native_adapter.counts.items():  # the adapter summary's counts
+                adapter.counts[name] += count
+        state = native.state()
+        viability_counts.update(native.viability())
+        return result(termination)
     state['discoveryWork'] = dict(expansions=0,materializations=0)
     if not state['stack'] and state['nextFrame']==0 and not state.get('goalOwners'):
         frame(0,roots)
@@ -1067,15 +1228,4 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
     publish()
     if any(not d['exhausted'] for d in state['discovery'].values()) and termination=='exhausted':
         termination='discovery_work_limit'
-    generations = [f['generation'] for f in state['frames']+state['stack']+state.get('goalQueue',[])]
-    return dict(status='feasible' if state['best'] else 'cancelled' if termination=='cancelled' else
-        'error' if termination=='error' else 'unknown',termination=termination,best=state['best'],
-        windows=state['windows'],finalAttempts=state['finalAttempts'],corridor=adapter.corridor.to_dict(),
-        routeGeneration=None,adapter=adapter.summary(),movementGeneration=generations,
-        expandedPrefixes=state['expanded']-initial_expanded,totalExpandedPrefixes=state['expanded'],
-        work=work.summary(),compiler=compiler.summary(),elapsedSeconds=time.monotonic()-started,threshold=0.,
-        order='goal_arrival_depth_first',comparisonPolicy='goal_arrival_dfs',objectiveOptimalityProven=False,minimumTicksProven=False,searchState=state,
-        resume=dict(exact=state['session']>1,session=state['session']),interactionGate=gate.summary(),viability=viability_counts,
-        minimumRunPruning=dict(enabled=minimum_run_pruning,version=POLICY_VERSION,excluded=len(state['minimumRunExclusions']),
-            scope='protected_hard_anchor_ticks',
-            comparisonPolicy=COMPARISON_POLICY_VERSION,certifiedDominance=False))
+    return result(termination)

@@ -8,6 +8,12 @@ import subprocess
 from tools.paths import STANDALONE_ROOT
 
 
+def native_role(path):
+    if path.parts[:2] == ('native', 'cpp'):
+        return 'C++ migration core (pybind11 module `_pkc_native`).'
+    return 'Standalone Java bridge / Gradle adapter.'
+
+
 def files():
     # Include deliberately new files, excluding ignored local runs/build/cache.
     result = subprocess.check_output(['git', 'ls-files', '-z', '--cached', '--others', '--exclude-standard', '--', '.'],
@@ -52,7 +58,7 @@ def main():
         lines += ['## ' + label, '', '| File | Role |', '| --- | --- |']
         for p in paths:
             if select(p):
-                lines.append(f'| [{p}]({link(p)}) | {purpose(p) if p.suffix == ".py" else "Standalone Java bridge / Gradle adapter."} |')
+                lines.append(f'| [{p}]({link(p)}) | {purpose(p) if p.suffix == ".py" else native_role(p)} |')
         lines += ['']
     lines += ['## Research and data', '',
               '[Research guide](../research/README.md) separates maintained prototypes/drivers from frozen bundles.',

@@ -1,0 +1,7 @@
+Milestone test list (tools/native-suite.json modules + extras) on the merged tree with the native port
+native:
+Ran 862 tests in 83.564s
+OK (skipped=10)
+python:
+Ran 862 tests in 104.321s
+OK (skipped=10)

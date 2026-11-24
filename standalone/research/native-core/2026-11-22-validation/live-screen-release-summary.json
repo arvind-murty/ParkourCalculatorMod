@@ -1,0 +1,18 @@
+{
+ "sourceRevision": "ea92580cad37be1e78267df63306e6226c58ca25",
+ "sourceUnchanged": true,
+ "input": "/private/var/tmp/standalone-cpp-baseline-20261120T001815/runs/extended-300s-r01/input.json",
+ "seconds": 90.0,
+ "variant": "release",
+ "status": "unknown",
+ "termination": "deadline",
+ "ticks": null,
+ "objective": null,
+ "validationPassed": [],
+ "screenCalls": {
+  "sequence": 2292,
+  "required": 1680,
+  "check_program": 1691
+ },
+ "mismatches": 0
+}

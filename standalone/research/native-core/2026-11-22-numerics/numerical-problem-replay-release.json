@@ -1,0 +1,6 @@
+{
+ "parkour_solver.numerics.builders:numerical_problem": {
+  "cases": 1152,
+  "ok": 1152
+ }
+}
