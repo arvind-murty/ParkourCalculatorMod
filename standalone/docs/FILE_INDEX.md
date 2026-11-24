@@ -76,7 +76,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/REAL11_GUIDE.md](REAL11_GUIDE.md) | 20426 |
 | [docs/RESULTS_AND_DEBUGGING.md](RESULTS_AND_DEBUGGING.md) | 19339 |
 | [docs/RUNBOOK.md](RUNBOOK.md) | 13337 |
-| [docs/TESTING.md](TESTING.md) | 20825 |
+| [docs/TESTING.md](TESTING.md) | 20987 |
 | [docs/design/ANCHOR_POLICY_DECISIONS.md](design/ANCHOR_POLICY_DECISIONS.md) | 47419 |
 | [docs/design/AVOIDANCE_PASSAGES.md](design/AVOIDANCE_PASSAGES.md) | 21311 |
 | [docs/design/BRANCH_SCHEDULING_INVESTIGATION.md](design/BRANCH_SCHEDULING_INVESTIGATION.md) | 34070 |
@@ -1330,6 +1330,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/post-alarm/lean-variants-score.log](../research/post-alarm/lean-variants-score.log) | 1546 |
 | [research/post-alarm/lean_variants.py](../research/post-alarm/lean_variants.py) | 11688 |
 | [research/post-alarm/native-gate/report.json](../research/post-alarm/native-gate/report.json) | 15719 |
+| [research/post-alarm/native-gate-c8a9f22c/report.json](../research/post-alarm/native-gate-c8a9f22c/report.json) | 15719 |
 | [research/post-alarm/pipeline-variants-bound-gap.log](../research/post-alarm/pipeline-variants-bound-gap.log) | 244 |
 | [research/post-alarm/pipeline-variants-decay-losses.log](../research/post-alarm/pipeline-variants-decay-losses.log) | 1276 |
 | [research/post-alarm/pipeline-variants-gains-nodecay.log](../research/post-alarm/pipeline-variants-gains-nodecay.log) | 299 |
@@ -1716,7 +1717,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/integration/test_acceptance.py](../tests/integration/test_acceptance.py) | 1849 |
 | [tests/integration/test_block_route_witnesses.py](../tests/integration/test_block_route_witnesses.py) | 10461 |
 | [tests/integration/test_full_route_witness.py](../tests/integration/test_full_route_witness.py) | 1854 |
-| [tests/integration/test_generic_composition.py](../tests/integration/test_generic_composition.py) | 18392 |
+| [tests/integration/test_generic_composition.py](../tests/integration/test_generic_composition.py) | 18888 |
 | [tests/integration/test_geometry_bounds.py](../tests/integration/test_geometry_bounds.py) | 4077 |
 | [tests/integration/test_integration.py](../tests/integration/test_integration.py) | 10053 |
 | [tests/integration/test_movement_contacts.py](../tests/integration/test_movement_contacts.py) | 11263 |
@@ -1794,7 +1795,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/unit/reachability/test_screen.py](../tests/unit/reachability/test_screen.py) | 12498 |
 | [tests/unit/search/__init__.py](../tests/unit/search/__init__.py) | 0 |
 | [tests/unit/search/test_anchor_dfs.py](../tests/unit/search/test_anchor_dfs.py) | 46368 |
-| [tests/unit/search/test_anchor_policy.py](../tests/unit/search/test_anchor_policy.py) | 38401 |
+| [tests/unit/search/test_anchor_policy.py](../tests/unit/search/test_anchor_policy.py) | 38878 |
 | [tests/unit/search/test_anchor_search.py](../tests/unit/search/test_anchor_search.py) | 73318 |
 | [tests/unit/search/test_anchor_time_bound.py](../tests/unit/search/test_anchor_time_bound.py) | 1920 |
 | [tests/unit/search/test_candidate_comparison.py](../tests/unit/search/test_candidate_comparison.py) | 6044 |
