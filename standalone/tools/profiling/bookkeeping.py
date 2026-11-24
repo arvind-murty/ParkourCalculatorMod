@@ -177,23 +177,33 @@ def instrument(profile):
             if module_name.startswith('parkour_solver.') and getattr(module, name, None) is original:
                 replace(module, name, wrapped)
 
+    from parkour_solver import native_core
+    native = native_core.from_environment()
     try:
         from parkour_solver.numerics.disk import RelaxedDispatch
+        def request_row(problem, stop_on_feasible):
+            row = dict(index=len(profile.runtime.requests)+1,
+                fingerprint=ordered_route.fingerprint(problem), ticks=len(problem['magnitude']),
+                stopOnFeasible=stop_on_feasible)
+            profile.runtime.requests.append(row)
+            return row
+        def answered(row, result):
+            row.update(status=result['status'],workerLaunched=result.get('workerLaunched'),
+                workerStatus=result.get('workerStatus'),seconds=result.get('elapsedSeconds'),
+                **{k: result[k] for k in ('backend', 'fallback', 'confirmation', 'frameEnd') if k in result})
         def recorded(original):
             # The relaxed dispatch answers find_route's requests itself, so every entry point is recorded, its
             # alarm confirmations and frame-end re-solves included.
             def solve(*args, **kwargs):
-                problem = args[-1]
-                row = dict(index=len(profile.runtime.requests)+1,
-                    fingerprint=ordered_route.fingerprint(problem), ticks=len(problem['magnitude']),
-                    stopOnFeasible=kwargs.get('stop_on_feasible',False))
-                profile.runtime.requests.append(row)
+                row = request_row(args[-1], kwargs.get('stop_on_feasible',False))
                 result = profile.runtime.call('solver.invoke',original,*args,**kwargs)
-                row.update(status=result['status'],workerLaunched=result.get('workerLaunched'),
-                    workerStatus=result.get('workerStatus'),seconds=result.get('elapsedSeconds'),
-                    **{k: result[k] for k in ('backend', 'fallback', 'confirmation', 'frameEnd') if k in result})
+                answered(row, result)
                 return result
             return solve
+        if native is not None:
+            # Native leg solves dispatch natively and report each request once it is answered.
+            native.set_request_observer(lambda problem, stop_on_feasible, result:
+                                        answered(request_row(problem, stop_on_feasible), result))
         replace(ordered_route, 'solve', recorded(ordered_route.solve))
         replace(RelaxedDispatch, 'solve', recorded(RelaxedDispatch.solve))
         replace(RelaxedDispatch, 'confirmed', recorded(RelaxedDispatch.confirmed))
@@ -221,6 +231,8 @@ def instrument(profile):
                 replace(module, 'copy', CopyProxy(profile, copy))
         yield
     finally:
+        if native is not None:
+            native.set_request_observer(None)
         # Modules imported during the context can acquire wrapped from-imports.
         for name, original, wrapped in reversed(alias_replacements):
             for module_name, module in list(sys.modules.items()):

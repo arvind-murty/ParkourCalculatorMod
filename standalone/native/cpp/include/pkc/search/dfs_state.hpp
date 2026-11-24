@@ -44,7 +44,6 @@ struct Record {  // a frame's scored candidate (score, variant_record)
     std::string objective_mode;
     Nullable<std::int64_t> arrival;
     Nullable<Num> value;
-    std::string family;
     Value work, goal, goal_key;
     std::vector<Evaluation> evaluations;
     bool tried = false;
@@ -60,6 +59,7 @@ struct Record {  // a frame's scored candidate (score, variant_record)
     std::optional<Value> preparation_deferral, time_bound_exclusion, refinement_time_exclusion;
     std::optional<std::string> variant_of;
     std::optional<std::int64_t> restored_fallbacks;
+    std::optional<Value> frame_end;  // the frame-end re-solve's record once it ran
 };
 
 struct Frame {  // make_frame
@@ -82,7 +82,6 @@ struct Frame {  // make_frame
     std::optional<std::int64_t> tick_peer_revision;
     std::optional<Value> recovery_failure;
     std::optional<bool> validated_finish;
-    std::optional<std::int64_t> retry_session;
     std::optional<std::vector<std::string>> failed_candidates;
 };
 
@@ -213,21 +212,6 @@ struct LocalSetupAlias {
     Value request;
 };
 
-struct FinalAttempt {
-    std::string status;
-    Value termination;
-    std::int64_t ipopt_calls = 0, frame = 0;
-    std::string record;
-    Num seconds;
-};
-
-struct Finalization {
-    std::int64_t version = 0;
-    std::string source, stage;
-    std::vector<FinalAttempt> attempts;
-    Value best;  // a copy, with its own movement program
-};
-
 struct Incumbent {  // a final record's witness copy holding the record's child as its movement program
     SharedValue movement_program;
     Value block_ids;
@@ -238,7 +222,7 @@ struct DfsState {
     std::int64_t version = 0;
     std::string kind, context;
     std::vector<Value> initial_roots;
-    std::vector<std::shared_ptr<Frame>> stack, suspended, refinements, frames;
+    std::vector<std::shared_ptr<Frame>> stack, suspended, frames;
     std::vector<Transition> transitions;
     std::vector<Window> windows;
     std::vector<std::shared_ptr<Record>> final_attempts;
@@ -260,7 +244,6 @@ struct DfsState {
     std::optional<std::string> pending_goal_owner;
     std::optional<Value> transfer_time_bounds;
     std::optional<Num> first_full_solution_seconds;
-    std::optional<Finalization> finalization;
 };
 
 DfsState dfs_state_from_value(const Value& value);

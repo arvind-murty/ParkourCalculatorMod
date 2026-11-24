@@ -200,7 +200,7 @@ class RelaxedDispatch:
         core = getattr(self.gate, 'core', None)
         if core is not None:  # native node solves dispatch there too, so both share the core's confirmations
             return _native().relaxed_dispatch(core, problem, seconds=seconds, stop_on_feasible=stop_on_feasible,
-                confirming=confirming, cancel_event=cancel_event, on_incumbent=on_incumbent)
+                mode=mode, post_alarm=self.post_alarm, cancel_event=cancel_event, on_incumbent=on_incumbent)
 
         def full(reason, request=problem):
             result = full_solve(request, seconds=seconds, stop_on_feasible=stop_on_feasible,

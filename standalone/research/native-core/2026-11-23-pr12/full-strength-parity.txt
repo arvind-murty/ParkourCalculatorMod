@@ -1,0 +1,13 @@
+Frame-end parity: RelaxedDispatch.full_strength in Python mode vs relaxed_dispatch(mode='full_strength') natively, real IPOPT polish on both sides (Python worker vs native worker), each side in its own process.
+== fixture
+requests 7  decision mismatches 0  worst objective diff 0.000e+00
+python seconds 1.66 native seconds 0.88
+== unalarmed
+requests 401  decision mismatches 0  worst objective diff 0.000e+00
+python seconds 75.55 native seconds 33.64
+== alarmed
+requests 482  decision mismatches 0  worst objective diff 0.000e+00
+python seconds 122.6 native seconds 66.44
+fixture frameEnd records differing 0 yaws differing 0 disk records differing 0
+unalarmed frameEnd records differing 0 yaws differing 0 disk records differing 0
+alarmed frameEnd records differing 0 yaws differing 0 disk records differing 0

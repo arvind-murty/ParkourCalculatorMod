@@ -33,7 +33,7 @@ struct EvaluateOptions {
     Value supplied_scope, required_landing, final_route;  // each may be null
     Value policy;            // feasibility.policy_spec's validated policy
     Value adapter_identity;  // the adapter's corridor.to_dict(), or null
-    bool node_query = false, retry_unresolved = true, climb_families = false;
+    bool node_query = false, climb_families = false;
     Object timings;  // the marks taken before the call; this call adds its own
 };
 

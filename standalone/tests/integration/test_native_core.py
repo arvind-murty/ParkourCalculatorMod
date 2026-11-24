@@ -187,7 +187,7 @@ class ProgramModelTests(unittest.TestCase):
             find_checkpoint_route(scene, compiler, anchor_search={}, seconds=8, max_solver_calls=20,
                                   program_filter=InitialJumpDomain([0], max_inputs=28),
                                   python_executable=os.environ['PKC_IPOPT_PYTHON'], on_progress=progress)
-        self.assertTrue(any('finalization' in s for s in states) and
+        self.assertTrue(any(r.get('frameEnd') for s in states for f in s['frames']+s['stack'] for r in f['records']) and
                         any(f['generation'] for s in states for f in s['frames']))
         for state in states:
             self.assertEqual(canonical(self.native.round_trip_dfs_state(state)), canonical(state))

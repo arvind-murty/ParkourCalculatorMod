@@ -15,7 +15,7 @@ everything not being worked on is in the [deferred-work register](DEFERRED_WORK.
   published the physical route ([execution](ANCHOR_SEARCH_EXECUTION_REFERENCE.md#numerical-backend-and-frame-end-re-solves)).
   Real11 keeps the replayed T64 with 0 interim IPOPT workers and 1 finalization call,
   median search 3.6 s against 7.5 s on `c9deef42` ([evidence](../research/disk-relaxation/README.md)).
-- Local, `feat/post-alarm-pipeline`: Clarabel iterative refinement off, validator-rejected relaxed
+- Merged as PR #12 (`feat/post-alarm-pipeline`), with its native port: Clarabel iterative refinement off, validator-rejected relaxed
   points infeasible, the Clarabel-only
   [post-alarm pipeline](reference/NUMERICAL_SOLVER.md#post-alarm-pipeline) behind the case setting
   `post_alarm` (default `pipeline`; `ipopt` keeps the IPOPT confirmation), accepting only full-strength

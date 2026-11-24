@@ -78,10 +78,11 @@ public:
     // walk_off(context, landing_boxes, label=label): whether a no-jump run-off can leave its launch support.
     bool walk_off(const GenerationContext& context, const Value& landing_boxes, const Object& label);
 
-    // RelaxedDispatch's IPOPT confirmations, kept in this cache as Python keeps them in gate.cache: a read neither
-    // counts nor refreshes, and an insert is trimmed by the next cached lookup.
-    const Value* confirmation(const std::string& fingerprint) const;
-    void remember_confirmation(const std::string& fingerprint, const Value& result);
+    // RelaxedDispatch's decided answers of a kind ('confirmation', 'frameEnd'), kept in this cache as Python keeps them
+    // in gate.cache under (kind, fingerprint): a read neither counts nor refreshes, and an insert is trimmed by the
+    // next cached lookup.
+    const Value* answer(const std::string& kind, const std::string& fingerprint) const;
+    void remember_answer(const std::string& kind, const std::string& fingerprint, const Value& result);
     void count(const std::string& metric, std::int64_t by = 1);
     const Object& metrics() const { return metrics_; }
     std::int64_t checked = 0;

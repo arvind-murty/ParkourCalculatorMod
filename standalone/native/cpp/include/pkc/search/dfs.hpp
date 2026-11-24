@@ -58,14 +58,13 @@ struct NodeOptions {
     std::string numerical = "ipopt";
     Value frame;  // f['id']
     double candidate_seconds = 1;
-    bool retry_unresolved = false;
 };
 
 // dfs.SIDE_SLACK: a forward side's keep-outside row within this of binding is tight.
 inline constexpr double kSideSlack = 1e-3;
 
 struct NodeEvaluation {
-    Value result;        // {status, program, alternatives?, deferUnknown?, sideOutcome? (a forward side variant)}
+    Value result;        // {status, program, alternatives, sideOutcome? (a forward side variant)}
     bool input_program;  // `program` is the caller's program, with every assign applied
 };
 

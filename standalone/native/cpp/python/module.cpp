@@ -396,17 +396,29 @@ pkc::SolveHooks solve_hooks(py::object compiler, py::object solve, py::object wo
     return hooks;
 }
 
-// RelaxedDispatch's services for a gate's native core: the native IPOPT solve, the core's confirmations and
-// numerics/disk's settings in force.
-pkc::RelaxedServices relaxed_services(std::shared_ptr<pkc::InteractionGate> core, py::object cancel_event) {
+// The profiler's observer of the requests native leg solves dispatch natively (set_request_observer), or None. Never
+// freed: it may outlive the interpreter's teardown of module globals.
+py::object& request_observer() {
+    static py::object* observer = new py::object(py::none());
+    return *observer;
+}
+
+// RelaxedDispatch's services for a gate's native core: the native IPOPT solve, the core's decided answers and
+// numerics/disk's settings in force; `post_alarm` is RelaxedDispatch's.
+pkc::RelaxedServices relaxed_services(std::shared_ptr<pkc::InteractionGate> core, py::object cancel_event,
+                                      const std::string& post_alarm) {
+    if (post_alarm != "ipopt" && post_alarm != "pipeline") throw py::value_error("post_alarm must be ipopt or pipeline");
     py::module_ disk = py::module_::import("parkour_solver.numerics.disk");
     pkc::RelaxedServices services;
     services.full = native_solve(cancel_event);
     services.cancelled = cancelled_hook(cancel_event);
-    services.confirmation = [core](const std::string& fingerprint) { return core->confirmation(fingerprint); };
-    services.remember_confirmation = [core](const std::string& fingerprint, const pkc::Value& result) {
-        core->remember_confirmation(fingerprint, result);
+    services.answer = [core](const std::string& kind, const std::string& fingerprint) {
+        return core->answer(kind, fingerprint);
     };
+    services.remember = [core](const std::string& kind, const std::string& fingerprint, const pkc::Value& result) {
+        core->remember_answer(kind, fingerprint, result);
+    };
+    services.pipeline = post_alarm == "pipeline";
     services.limits = pkc::DiskLimits{disk.attr("CAP").cast<double>(), disk.attr("MAX_ITER").cast<unsigned>(),
                                       disk.attr("RETRY_CAP").cast<double>(), disk.attr("RETRY_MAX_ITER").cast<unsigned>()};
     services.alarm_fraction = disk.attr("ALARM_FRACTION").cast<double>();
@@ -414,10 +426,11 @@ pkc::RelaxedServices relaxed_services(std::shared_ptr<pkc::InteractionGate> core
     return services;
 }
 
-// The node solve's Python services (engine.evaluate_program's): `services` maps work, numerical, confirm,
+// The node solve's Python services (engine.solve_services'): `services` maps work, numerical, confirm,
 // analyze_model, reachable_faces, candidate, check_generation, record_counts, accepted and work_summary to callables
-// (numerical and confirm may be None), and gate to the gate's native core or None; a core replaces analyze_model,
-// reachable_faces and the relaxed dispatch. on_progress is left to the caller.
+// (numerical and confirm may be None), gate to the gate's native core or None, and relaxed to the relaxed dispatch's
+// entry point and post_alarm setting ({'mode': 'solve' or 'full_strength', 'postAlarm': ...}) or None; a core
+// replaces analyze_model, reachable_faces and the relaxed dispatch. on_progress is left to the caller.
 pkc::EvaluateHooks evaluate_hooks(py::object compiler, py::object solve, py::object cancel_event,
                                   py::object python_executable, const py::object& services) {
     auto service = [&](const char* name) { return py::object(services[py::str(name)]); };
@@ -431,16 +444,25 @@ pkc::EvaluateHooks evaluate_hooks(py::object compiler, py::object solve, py::obj
     hooks.confirm = numerical_hook(service("confirm"), python_executable, cancel_event);
     if (py::object gate = service("gate"); !gate.is_none()) {  // the gate's native core serves its own caches
         auto core = gate.cast<std::shared_ptr<pkc::InteractionGate>>();
-        if (hooks.numerical) {  // the relaxed dispatch, with its confirmations in the core
-            const pkc::RelaxedServices relaxed = relaxed_services(core, cancel_event);
-            hooks.numerical = [relaxed](const pkc::Value& problem, double seconds, bool stop_on_feasible,
-                                        const std::function<void(const pkc::Value&)>& on_incumbent) {
-                return pkc::relaxed_dispatch(problem, seconds, stop_on_feasible, false, on_incumbent, relaxed);
+        if (py::object setting = service("relaxed"); !setting.is_none()) {  // the relaxed dispatch, answers in the core
+            const pkc::RelaxedServices relaxed =
+                relaxed_services(core, cancel_event, setting["postAlarm"].cast<std::string>());
+            auto entry = [relaxed](pkc::DispatchMode mode) -> pkc::NumericalSolve {
+                return [relaxed, mode](const pkc::Value& problem, double seconds, bool stop_on_feasible,
+                                       const std::function<void(const pkc::Value&)>& on_incumbent) {
+                    pkc::Value result = pkc::relaxed_dispatch(problem, seconds, stop_on_feasible, mode, on_incumbent, relaxed);
+                    if (!request_observer().is_none())
+                        python_hook([&] { request_observer()(to_python(problem), stop_on_feasible, to_python(result)); });
+                    return result;
+                };
             };
-            hooks.confirm = [relaxed](const pkc::Value& problem, double seconds, bool stop_on_feasible,
-                                      const std::function<void(const pkc::Value&)>& on_incumbent) {
-                return pkc::relaxed_dispatch(problem, seconds, stop_on_feasible, true, on_incumbent, relaxed);
-            };
+            if (setting["mode"].cast<std::string>() == "full_strength") {
+                hooks.numerical = entry(pkc::DispatchMode::full_strength);
+                hooks.confirm = nullptr;
+            } else {
+                hooks.numerical = entry(pkc::DispatchMode::solve);
+                hooks.confirm = entry(pkc::DispatchMode::confirmed);
+            }
         }
         hooks.analyze_model = [core](const pkc::Value& route, const pkc::Value& plan, const pkc::Value& vertical,
                                      const pkc::Value& scope) { return core->analyze_model(route, plan, vertical, scope); };
@@ -708,9 +730,6 @@ PYBIND11_MODULE(_pkc_native, m) {
         return to_python(pkc::disk_spec(convert(problem), convert(extra_rows),
                                         objective.is_none() ? nullptr : &objective_value, strict));
     }, py::arg("problem"), py::arg("extra_rows"), py::arg("objective"), py::arg("strict"), "numerics/disk.spec");
-    m.def("disk_solve", [](py::handle content, double time_limit, unsigned max_iter) {
-        return to_python(pkc::disk_solve(convert(content), time_limit, max_iter));
-    }, "numerics/disk._solve with disk.MAX_ITER");
     m.def("disk_deficits", [](py::handle problem, py::handle controls) {
         return to_python(pkc::disk_deficits(convert(problem), convert(controls)));
     }, "numerics/disk.deficits as a list");
@@ -905,8 +924,8 @@ PYBIND11_MODULE(_pkc_native, m) {
              bool optimize_goal, py::object stop_on_feasible, py::object python_executable, py::object cancel_event,
              py::handle geometry, py::handle solid_blocks, std::int64_t max_wall_hits, py::object candidate_filter,
              py::object work, py::handle resume_state, py::handle repair_scope, py::object on_progress,
-             py::handle validation_scope, pkc::ConstraintVariants* initial_variants, bool retry_unresolved,
-             bool oracle_rejection, bool climb_families, py::object numerical, py::object confirm) {
+             py::handle validation_scope, pkc::ConstraintVariants* initial_variants, bool oracle_rejection,
+             bool climb_families, py::object numerical, py::object confirm) {
               if (max_wall_hits) throw pkc::Unsupported("wall-hit repairs run in Python");
               const pkc::SolveHooks hooks = solve_hooks(compiler, solve, work, cancel_event, python_executable);
               pkc::RepairOptions options;
@@ -919,7 +938,6 @@ PYBIND11_MODULE(_pkc_native, m) {
               if (!stop_on_feasible.is_none()) options.stop_on_feasible = stop_on_feasible.cast<bool>();
               options.oracle_rejection = oracle_rejection;
               options.climb_families = climb_families;
-              options.retry_unresolved = retry_unresolved;
               options.geometry = convert(geometry);
               options.solid_blocks = convert(solid_blocks);
               options.resume_state = convert(resume_state);
@@ -948,7 +966,7 @@ PYBIND11_MODULE(_pkc_native, m) {
           py::arg("solid_blocks") = py::none(), py::arg("max_wall_hits") = 0, py::arg("candidate_filter") = py::none(),
           py::arg("work") = py::none(), py::arg("resume_state") = py::none(), py::arg("repair_scope") = py::none(),
           py::arg("on_progress") = py::none(), py::arg("validation_scope") = py::none(),
-          py::arg("initial_variants") = nullptr, py::arg("retry_unresolved") = true, py::arg("oracle_rejection") = false,
+          py::arg("initial_variants") = nullptr, py::arg("oracle_rejection") = false,
           py::arg("climb_families") = false, py::arg("numerical") = py::none(), py::arg("confirm") = py::none(),
           "search/repair.solve_contact_branches; `solve` is numerics.solver.solve, called when `numerical` is None");
     m.def("evaluate_node",
@@ -956,7 +974,7 @@ PYBIND11_MODULE(_pkc_native, m) {
              py::object python_executable, py::object prepare, py::object begin, py::object begin_solve,
              py::object assign, py::object progress, py::object settle, py::object observe, py::object replay,
              py::object store, py::handle saved, py::handle guide_plan, std::int64_t span, std::int64_t solve_interval,
-             std::string numerical, py::handle frame, double candidate_seconds, bool retry_unresolved) -> py::object {
+             std::string numerical, py::handle frame, double candidate_seconds) -> py::object {
               pkc::NodeHooks hooks;
               hooks.prepare = [prepare](const pkc::Value& value) {
                   return python_hook([&] { return convert(prepare(to_python(value))); });
@@ -998,7 +1016,6 @@ PYBIND11_MODULE(_pkc_native, m) {
               options.numerical = numerical;
               options.frame = convert(frame);
               options.candidate_seconds = candidate_seconds;
-              options.retry_unresolved = retry_unresolved;
               const auto evaluated = pkc::evaluate_node(convert(scene), convert(program), hooks, options);
               if (!evaluated) return py::none();
               return py::make_tuple(to_python(evaluated->result), evaluated->input_program);
@@ -1008,7 +1025,6 @@ PYBIND11_MODULE(_pkc_native, m) {
           py::arg("begin_solve"), py::arg("assign"), py::arg("progress"), py::arg("settle"), py::arg("observe"),
           py::arg("replay"), py::arg("store"), py::arg("saved"), py::arg("guide_plan"), py::arg("span"),
           py::arg("solve_interval"), py::arg("numerical"), py::arg("frame"), py::arg("candidate_seconds"),
-          py::arg("retry_unresolved"),
           "search/dfs.evaluate_node with the search state it records into as Python callables: (result, whether the "
           "result's program is the caller's), or None for a route the native node solve leaves to Python");
     m.def("commit_arrival", [](py::handle program, py::handle best, py::handle source_program, bool keep_region_choices) {
@@ -1105,7 +1121,6 @@ PYBIND11_MODULE(_pkc_native, m) {
             o.initial_jump_inputs = value("initialJumpInputs");
             o.caps = *std::get<std::shared_ptr<const pkc::Object>>(value("caps").data);
             o.minimum_run_pruning = options["minimumRunPruning"].cast<bool>();
-            o.retry_unknown = options["retryUnknown"].cast<bool>();
             o.deadline = options["deadline"].cast<double>();
             o.started = options["started"].cast<double>();
             o.candidate_seconds = options["candidateSeconds"].cast<double>();
@@ -1130,7 +1145,7 @@ PYBIND11_MODULE(_pkc_native, m) {
             h.repair_progress = snapshot_hook(hook("repair_progress"));
             h.check = [f = hook("check")] { python_hook([&] { f(); }); };
             h.solver_calls = [f = hook("solver_calls")] { return python_hook([&] { return f().cast<std::int64_t>(); }); };
-            h.count = [f = hook("count")](const std::string& name) { python_hook([&] { f(name); }); };
+            h.count = [f = hook("count")](const std::string& name, std::int64_t by) { python_hook([&] { f(name, by); }); };
             h.accepted = [f = hook("accepted")](const pkc::Value& candidate) { python_hook([&] { f(to_python(candidate)); }); };
             h.termination = [f = hook("termination")] { return python_hook([&] { return convert(f()); }); };
             h.evaluate = [f = hook("evaluate")](std::int64_t frame, const pkc::Value& request, const pkc::Value& cursor,
@@ -1159,8 +1174,8 @@ PYBIND11_MODULE(_pkc_native, m) {
                 return python_hook([&] { return convert(f(to_python(program), to_python(landing))); });
             };
             h.begin_leg = [f = hook("begin_leg"), node_solve](const pkc::Value& program, const std::string& numerical,
-                                                              double seconds) {
-                return python_hook([&] { return node_solve(f(to_python(program), numerical, seconds)); });
+                                                              double seconds, bool own_work) {
+                return python_hook([&] { return node_solve(f(to_python(program), numerical, seconds, own_work)); });
             };
             h.solve_route = [f = hook("solve_route")](std::int64_t frame, const pkc::Value& request,
                                                       const pkc::Value& cursor, const pkc::Value& program,
@@ -1176,7 +1191,6 @@ PYBIND11_MODULE(_pkc_native, m) {
                                                     std::move(gate), std::move(anchors), std::move(adapter));
         }))
         .def("run", &pkc::DfsSearch::run, "the main loop; its termination")
-        .def("finalize_best", &pkc::DfsSearch::finalize_best)
         .def("state", [](const pkc::DfsSearch& search) {
             // One Python object per shared container, as the Python search's state shares its dicts.
             SharedObjects shared;
@@ -1423,18 +1437,27 @@ PYBIND11_MODULE(_pkc_native, m) {
           "numerics.solver.solve with the native worker (or `worker`)");
     m.def("relaxed_dispatch",
           [](std::shared_ptr<pkc::InteractionGate> core, py::handle problem, double seconds, bool stop_on_feasible,
-             bool confirming, py::object cancel_event, py::object on_incumbent) {
+             const std::string& mode, const std::string& post_alarm, py::object cancel_event, py::object on_incumbent) {
               std::function<void(const pkc::Value&)> incumbent;
               if (!on_incumbent.is_none())
                   incumbent = [on_incumbent](const pkc::Value& candidate) {
                       python_hook([&] { on_incumbent(to_python(candidate)); });
                   };
-              return to_python(pkc::relaxed_dispatch(convert(problem), seconds, stop_on_feasible, confirming, incumbent,
-                                                     relaxed_services(core, cancel_event)));
+              const pkc::DispatchMode dispatch_mode = mode == "solve"       ? pkc::DispatchMode::solve
+                                                      : mode == "confirmed" ? pkc::DispatchMode::confirmed
+                                                      : mode == "full_strength"
+                                                          ? pkc::DispatchMode::full_strength
+                                                          : throw py::value_error("unknown dispatch mode " + mode);
+              return to_python(pkc::relaxed_dispatch(convert(problem), seconds, stop_on_feasible, dispatch_mode,
+                                                     incumbent, relaxed_services(core, cancel_event, post_alarm)));
           },
           py::arg("core"), py::arg("problem"), py::kw_only(), py::arg("seconds"), py::arg("stop_on_feasible"),
-          py::arg("confirming"), py::arg("cancel_event"), py::arg("on_incumbent"),
-          "numerics/disk.RelaxedDispatch's dispatch with its confirmations in the gate's native core");
+          py::arg("mode"), py::arg("post_alarm"), py::arg("cancel_event"), py::arg("on_incumbent"),
+          "numerics/disk.RelaxedDispatch's entry point `mode` with its decided answers in the gate's native core");
+    m.def("set_request_observer", [](py::object observer) { request_observer() = std::move(observer); },
+          py::arg("observer"),
+          "observer(problem, stop_on_feasible, result) after each request a native leg solve dispatches natively, or "
+          "None (tools/profiling/bookkeeping.py)");
     m.def("disk_stats", [] { return to_python(pkc::disk_stats()); }, "numerics/disk.STATS of the native decided cache");
     m.def("float_repr", &pkc::float_repr, "repr(float) for a finite float");
     m.def("sha256_hex", [](py::bytes data) { return pkc::sha256_hex(std::string(data)); });

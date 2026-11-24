@@ -879,6 +879,7 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
         self.assertTrue(solves)
         self.assertFalse([c for checks in solves for c in checks if c['offset'] == walk and c['block']['id'] == 'start'])
 
+    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # cancels through RelaxedDispatch's Python seams, which a native leg solve never calls
     def test_a_cancelled_frame_end_solve_is_repeated_on_resume_and_nothing_else_is(self):
         import threading
         from parkour_solver.bridge.python_compiler import PythonCompiler

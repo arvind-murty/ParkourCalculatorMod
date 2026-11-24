@@ -192,15 +192,19 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, s
 
 
 def solve_services(adapter, program, work, service, numerical, *, seconds, cancel_event):
-    """A native node solve's Python services (search/engine.hpp's hooks): the scoped work, the relaxed dispatch, the
-    gate's analysis and face tables (served by its native core when it has one) and the adapter's candidate check
-    (None without an adapter: the native search's own adapter checks candidates)."""
+    """A native node solve's Python services (search/engine.hpp's hooks): the scoped work, the relaxed dispatch and its
+    setting (`relaxed`, for a gate's native core), the gate's analysis and face tables (served by its native core when
+    it has one) and the adapter's candidate check (None without an adapter: the native search's own adapter checks
+    candidates). `numerical` is the solve policy's, as in evaluate_program."""
     scoped = ScopedWork(work, None, min(work.deadline or math.inf, time.monotonic()+seconds))
     deadline = scoped.deadline
-    dispatch = None
-    if numerical == 'relaxed':
+    solve, confirm, relaxed = None, None, None
+    if numerical in ('relaxed', 'relaxed_pipeline', 'full_strength'):
         from parkour_solver.numerics.disk import RelaxedDispatch
-        dispatch = RelaxedDispatch(gate=service)
+        dispatch = RelaxedDispatch(gate=service, post_alarm='pipeline' if numerical == 'relaxed_pipeline' else 'ipopt')
+        solve, confirm = ((dispatch.full_strength, None) if numerical == 'full_strength' else
+                          (dispatch.solve, dispatch.confirmed))
+        relaxed = dict(mode='full_strength' if numerical == 'full_strength' else 'solve', postAlarm=dispatch.post_alarm)
     views = {}
     def candidate(plan, value, vertical, solve_scope):
         if 'view' not in views:  # the adapter scoped to the native solve's scope and bound to the program
@@ -216,8 +220,7 @@ def solve_services(adapter, program, work, service, numerical, *, seconds, cance
             parent_work = parent_work.parent
         for counter in (parent_work.counts, scoped.local.counts):
             counter.update(counts)
-    return dict(work=scoped, numerical=dispatch.solve if dispatch is not None else None,
-        confirm=dispatch.confirmed if dispatch is not None else None,
+    return dict(work=scoped, numerical=solve, confirm=confirm, relaxed=relaxed,
         analyze_model=lambda route, plan, vertical, scope: service.analyze_model(route, plan, vertical, scope=scope),
         reachable_faces=reachable_faces, candidate=candidate if adapter is not None else None,
         check_generation=lambda: check_generation(cancel_event, scoped.check, deadline), record_counts=record_counts,

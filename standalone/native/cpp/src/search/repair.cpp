@@ -353,11 +353,13 @@ Value check_geometry(const Value& geometry_value, const Object& plan, const Obje
     return object(std::move(checked));
 }
 
+// `cause` logs why an unresolved branch ended without a verdict.
 Value save_branch(const Value& score, const Array& rows, const Array& passages, const Array& hits, const Value& warm_yaw,
-                  const Value& meta) {
+                  const Value& meta, const Value& cause = Value{nullptr}) {
     Object out{{"score", score}, {"rows", array(rows)}, {"passages", array(passages)}, {"hits", array(hits)},
                {"warmYaw", warm_yaw}};
     if (!is_null(meta)) out.emplace_back("meta", meta);
+    if (!is_null(cause)) out.emplace_back("cause", cause);
     return object(std::move(out));
 }
 
@@ -586,7 +588,7 @@ private:
     Value best_branch_{nullptr};
     Array completed_;
     std::vector<Object> accepted_variants_;
-    Value in_flight_{nullptr}, walking_{nullptr};
+    Value in_flight_{nullptr}, walking_{nullptr}, interrupted_{nullptr};
     Array resume_attempt_log_, resume_contact_log_;
 
     Family* family(const std::string& name) {
@@ -857,8 +859,9 @@ void RepairLoop::publish(const Value* state) {
 }
 
 Value RepairLoop::finish(Object result) {
-    // An unfinished walk's next candidate stays in flight: the check is unfinished and a resume re-walks.
-    in_flight_ = walking_;
+    // An unfinished walk's next candidate stays in flight: the check is unfinished and a resume re-walks. A branch a
+    // cancellation or geometry deadline cut stays in flight too, so a resume repeats it.
+    in_flight_ = py_truthy(walking_) ? walking_ : interrupted_;
     const Value state = snapshot();
     put(result, "repairState", state);
     std::vector<std::pair<std::string, std::int64_t>> metrics = completed_source_metrics_;
@@ -1257,10 +1260,9 @@ Value RepairLoop::run() {
         }
         const Array pending = listed(r, "pending");
         Array deferred;
-        if (o_.retry_unresolved) deferred = listed(r, "unresolved");
         if (py_truthy(get_or_null(r, "inFlight"))) deferred.push_back(at(r, "inFlight"));
-        if (!o_.retry_unresolved)
-            for (const auto& u : listed(r, "unresolved")) unresolved_.push_back(u);
+        // Unresolved branches are infeasible: a log, never retried (user, 2026-11-23).
+        for (const auto& u : listed(r, "unresolved")) unresolved_.push_back(u);
         // max([scores] + [0.]) + 1: Python's max keeps the first maximal value.
         Num floor = pending.empty() ? flt(0.) : any_num(at(fields(pending[0]), "score"));
         for (const auto& b : pending) floor = py_max(floor, any_num(at(fields(b), "score")));
@@ -1380,7 +1382,8 @@ Value RepairLoop::run() {
                 if (is_object(state) && py_truthy(get_or_null(fields(state), "uncertainInteractions"))) {
                     const Value unknown = save_branch(at(record.record, "score"), items(at(record.record, "rows")),
                                                       items(at(record.record, "passages")), items(at(record.record, "hits")),
-                                                      at(fields(at(record.record, "candidate")), "yaw"), get_or_null(record.record, "meta"));
+                                                      at(fields(at(record.record, "candidate")), "yaw"), get_or_null(record.record, "meta"),
+                                                      text("uncertain_interactions"));
                     const Object& u = fields(unknown);
                     const std::string key = branch_key(items(at(u, "rows")), items(at(u, "passages")), items(at(u, "hits")));
                     if (std::none_of(unresolved_.begin(), unresolved_.end(), [&](const Value& b) {
@@ -1569,14 +1572,15 @@ Value RepairLoop::run() {
                 update_completion(completion);
             }
         } catch (const Timeout&) {
-            unresolved_.push_back(save_branch(score, rows, passages, hits, proposal_yaw, meta));
+            interrupted_ = in_flight_;
+            completed_.pop_back();
             termination = "geometry_deadline";
             break;
         } catch (const Unsupported&) {
             throw;
         } catch (const std::exception& error) {
             if (!dynamic_cast<const std::invalid_argument*>(&error) && !dynamic_cast<const std::runtime_error*>(&error)) throw;
-            unresolved_.push_back(save_branch(score, rows, passages, hits, proposal_yaw, meta));
+            unresolved_.push_back(save_branch(score, rows, passages, hits, proposal_yaw, meta, text("geometry_error")));
             if (best_result_) return finish_best({{"termination", text("geometry_error")}, {"error", text(error.what())}});
             return finish({{"status", text("error")}, {"termination", text("geometry_check")}, {"error", text(error.what())},
                            {"best", Value{nullptr}}, {"attempts", array(inner_attempts_)}, {"contactAttempts", array(attempts_)}});
@@ -1604,7 +1608,12 @@ Value RepairLoop::run() {
         auto set_last = [&](Object a) { attempts_.back() = object(std::move(a)); };
         const std::string& status = as_text(at(result, "status"));
         if (status == "error" || status == "cancelled") {
-            unresolved_.push_back(save_branch(score, rows, passages, hits, proposal_yaw, meta));
+            if (status == "cancelled") {
+                interrupted_ = in_flight_;
+                completed_.pop_back();
+            } else {
+                unresolved_.push_back(save_branch(score, rows, passages, hits, proposal_yaw, meta, text("solver_error")));
+            }
             if (best_result_) return finish_best({{"termination", text(status)}});
             put(result, "attempts", array(inner_attempts_));
             put(result, "contactAttempts", array(attempts_));
@@ -1633,15 +1642,24 @@ Value RepairLoop::run() {
                     ((py_equal(t, text("worker_finished")) &&
                       in({"Infeasible_Problem_Detected", "Search_Direction_Becomes_Too_Small", "Restoration_Failed",
                           "Solve_Succeeded", "Solved_To_Acceptable_Level"})) ||
-                     // Every unsolved disk result is an infeasible verdict (numerics/disk).
-                     py_equal(t, text("disk_finished")));
+                     // Every unsolved or validator-rejected disk result is an infeasible verdict (numerics/disk).
+                     py_equal(t, text("disk_finished")) || py_equal(t, text("disk_rejected")));
             }
             put(completion, "oracleRejected", boolean(oracle_completed));
             put(completion, "proven", boolean(proven));
             put(completion, "certificates", array(certificates));
             update_completion(completion);
-            if (status == "unknown" && !oracle_completed && !proven)
-                unresolved_.push_back(save_branch(score, rows, passages, hits, proposal_yaw, meta));
+            if (status == "unknown" && !oracle_completed && !proven) {
+                if (monotonic() >= deadline_) {
+                    // The deadline cut this solve: the branch stays in flight and a resume repeats it.
+                    interrupted_ = in_flight_;
+                    completed_.pop_back();
+                    termination = "deadline";
+                    break;
+                }
+                unresolved_.push_back(
+                    save_branch(score, rows, passages, hits, proposal_yaw, meta, at(result, "termination")));
+            }
             continue;
         }
         if (conflicts.empty()) {

@@ -24,20 +24,16 @@ extern "C" {
 #include "../schema.hpp"
 #include "pkc/canonical.hpp"
 #include "pkc/numerics/model.hpp"
+#include "pkc/numerics/post_alarm.hpp"
 #include "pkc/validation/numerical.hpp"
 
 namespace pkc {
 namespace {
 
 const int kModelVersion = 1;
-const double kAllowance = 1e-9;
 const double kTol = 1e-9;
 const double kInfeasibilityTol = 1e-8;
 const double kSeedTilt = 1e-4;
-
-double seconds_now() {
-    return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
-}
 
 bool is_int(const Value& value) { return std::holds_alternative<std::int64_t>(value.data); }
 bool is_one(const Value& value, std::string_view expected) {
@@ -89,12 +85,61 @@ std::string status_name(ClarabelSolverStatus status) {
 
 }  // namespace
 
-Value disk_solve(const Value& content_value, double time_limit, unsigned max_iter) {
+double seconds_now() {
+    return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+
+struct DiskProblem::Solver {
+    ClarabelDefaultSolver_f64* solver = nullptr;
+    ~Solver() {
+        if (solver) clarabel_DefaultSolver_f64_free(solver);
+    }
+};
+
+namespace {
+
+// _cost: the minimized cost vector, the world offset and the sign recovering the score (cost@x is sign*(score-offset)).
+struct Cost {
+    std::vector<double> cost;
+    double offset = 0., sign = 0.;
+};
+
+Cost cost_of(const Value* objective_value, std::int64_t n, std::size_t columns,
+             const std::function<std::size_t(int, std::int64_t)>& pos, const std::vector<Num>& position) {
+    Cost out{std::vector<double>(columns, 0.)};
+    if (!objective_value || is_null(*objective_value)) return out;
+    const Object& objective = fields(*objective_value);
+    const std::int64_t tick = as_int(at(objective, "tick"));
+    if (tick < 0 || tick > n) return out;
+    out.sign = as_text(at(objective, "sense")) == "MAX" ? -1. : 1.;
+    const Value& custom = get_or_null(objective, "customYaw");
+    if (!is_null(custom)) {
+        const double angle = radians(num(custom).value);
+        const double weights[2] = {-std::sin(angle), std::cos(angle)};
+        const bool motion = is_one(get_or_null(objective, "type"), "MOTION") && tick > 0;
+        out.offset = motion ? 0. : weights[0] * position[0].value + weights[1] * position[1].value;
+        for (int axis = 0; axis < 2; ++axis) {
+            out.cost[pos(axis, tick)] += out.sign * weights[axis];
+            if (motion) out.cost[pos(axis, tick - 1)] -= out.sign * weights[axis];
+        }
+    } else {
+        const int axis = as_text(at(objective, "axis")) == "X" ? 0 : 1;
+        out.cost[pos(axis, tick)] = out.sign;
+        out.offset = position[axis].value;
+    }
+    return out;
+}
+
+}  // namespace
+
+DiskProblem::DiskProblem(const Value& content_value, double time_limit, unsigned max_iter,
+                         const std::vector<DiskCut>& cuts, const std::optional<DiskLevel>& level)
+    : solver_(std::make_unique<Solver>()) {
     const double started = seconds_now();
     const Object& content = fields(content_value);
     const std::int64_t n = as_int(at(content, "ticks"));
     const std::size_t width = 3 * n + 2;
-    auto pos = [&](int axis, std::int64_t t) { return axis * width + t; };
+    std::function<std::size_t(int, std::int64_t)> pos = [&](int axis, std::int64_t t) { return axis * width + t; };
     auto vel = [&](int axis, std::int64_t t) { return axis * width + n + 1 + t; };
     auto control = [&](int axis, std::int64_t t) { return axis * width + 2 * (n + 1) + t; };
     Block equalities, inequalities;
@@ -169,10 +214,22 @@ Value disk_solve(const Value& content_value, double time_limit, unsigned max_ite
             inequalities.row(entries, sub(offset, rhs).value);
         }
     }
+    for (const DiskCut& cut : cuts)
+        inequalities.row({{control(0, cut.tick), -cut.nx}, {control(1, cut.tick), -cut.nz}}, -cut.rhs);
+    const std::size_t columns = 2 * width;
+    if (level) {
+        const Cost weights = cost_of(&level->objective, n, columns, pos, position);
+        const bool maximized = as_text(at(fields(level->objective), "sense")) == "MAX";
+        std::vector<std::pair<std::size_t, double>> entries;
+        for (std::size_t i = 0; i < columns; ++i)
+            if (weights.cost[i] != 0.) entries.emplace_back(i, maximized ? -weights.sign * weights.cost[i]
+                                                                          : weights.sign * weights.cost[i]);
+        inequalities.row(entries, maximized ? weights.offset - level->value : level->value - weights.offset);
+    }
     Block disks;
     const Array& magnitudes = items(at(content, "magnitude"));
     for (std::int64_t t = 0; t < n; ++t) {
-        disks.rhs.insert(disks.rhs.end(), {num(magnitudes[t]).value + kAllowance, 0., 0.});
+        disks.rhs.insert(disks.rhs.end(), {num(magnitudes[t]).value + kDiskAllowance, 0., 0.});
         for (int axis = 0; axis < 2; ++axis) {
             disks.rows.push_back(3 * t + 1 + axis);
             disks.columns.push_back(control(axis, t));
@@ -181,7 +238,6 @@ Value disk_solve(const Value& content_value, double time_limit, unsigned max_ite
     }
 
     // coo -> csc: column-major, rows ascending within a column (the blocks stack in row order).
-    const std::size_t columns = 2 * width;
     std::vector<std::size_t> colptr(columns + 1, 0), rowval;
     std::vector<double> nzval, rhs;
     std::vector<std::vector<std::pair<std::size_t, double>>> by_column(columns);
@@ -201,33 +257,11 @@ Value disk_solve(const Value& content_value, double time_limit, unsigned max_ite
         }
         colptr[c + 1] = rowval.size();
     }
-
-    // _cost: the minimized cost vector, the world offset and the sign recovering the score.
-    std::vector<double> cost(columns, 0.);
-    double score_offset = 0., sign = 0.;
-    const Value* objective_value = get(content, "objective");
-    if (objective_value && !is_null(*objective_value)) {
-        const Object& objective = fields(*objective_value);
-        const std::int64_t tick = as_int(at(objective, "tick"));
-        if (0 <= tick && tick <= n) {
-            sign = as_text(at(objective, "sense")) == "MAX" ? -1. : 1.;
-            const Value& custom = get_or_null(objective, "customYaw");
-            if (!is_null(custom)) {
-                const double angle = radians(num(custom).value);
-                const double weights[2] = {-std::sin(angle), std::cos(angle)};
-                const bool motion = is_one(get_or_null(objective, "type"), "MOTION") && tick > 0;
-                score_offset = motion ? 0. : weights[0] * position[0].value + weights[1] * position[1].value;
-                for (int axis = 0; axis < 2; ++axis) {
-                    cost[pos(axis, tick)] += sign * weights[axis];
-                    if (motion) cost[pos(axis, tick - 1)] -= sign * weights[axis];
-                }
-            } else {
-                const int axis = as_text(at(objective, "axis")) == "X" ? 0 : 1;
-                cost[pos(axis, tick)] = sign;
-                score_offset = position[axis].value;
-            }
-        }
-    }
+    Cost objective = cost_of(get(content, "objective"), n, columns, pos, position);
+    cost_ = std::move(objective.cost);
+    offset_ = objective.offset;
+    sense_ = objective.sign;
+    for (std::int64_t t = 0; t < n; ++t) columns_.push_back({control(0, t), control(1, t)});
 
     std::vector<ClarabelSupportedConeT_f64> cones;
     auto cone = [&](ClarabelSupportedConeT_Tag tag, std::size_t dimension) {
@@ -247,34 +281,56 @@ Value disk_solve(const Value& content_value, double time_limit, unsigned max_ite
     settings.max_iter = max_iter;
     settings.tol_feas = settings.tol_gap_abs = settings.tol_gap_rel = kTol;
     settings.tol_infeas_abs = settings.tol_infeas_rel = kInfeasibilityTol;
+    // Same verdicts and search decisions, faster solves (research/clarabel-refinement/README.md).
+    settings.iterative_refinement_enable = false;
     const double assembled = seconds_now();
     std::vector<std::uintptr_t> p_colptr(columns + 1, 0);
     ClarabelCscMatrix_f64 P, A;
     clarabel_CscMatrix_f64_init(&P, columns, columns, p_colptr.data(), nullptr, nullptr);
     std::vector<std::uintptr_t> a_colptr(colptr.begin(), colptr.end()), a_rowval(rowval.begin(), rowval.end());
     clarabel_CscMatrix_f64_init(&A, rhs.size(), columns, a_colptr.data(), a_rowval.data(), nzval.data());
-    ClarabelDefaultSolver_f64* solver = clarabel_DefaultSolver_f64_new(&P, cost.data(), &A, rhs.data(), cones.size(),
-                                                                       cones.data(), &settings);
-    const double ready = seconds_now();
-    clarabel_DefaultSolver_f64_solve(solver);
+    solver_->solver = clarabel_DefaultSolver_f64_new(&P, cost_.data(), &A, rhs.data(), cones.size(), cones.data(),
+                                                     &settings);
+    assembly_seconds = assembled - started;
+    setup_seconds = seconds_now() - assembled;
+}
+
+DiskProblem::~DiskProblem() = default;
+
+void DiskProblem::update_q(const std::vector<double>& q) {
+    clarabel_DefaultSolver_f64_update_q(solver_->solver, q.data(), q.size());
+}
+
+std::optional<Controls> DiskProblem::solve_controls() {
+    clarabel_DefaultSolver_f64_solve(solver_->solver);
+    const ClarabelDefaultSolution_f64 solution = clarabel_DefaultSolver_f64_solution(solver_->solver);
+    Controls controls;
+    for (const auto& tick : columns_) {
+        const double a[2] = {solution.x[tick[0]], solution.x[tick[1]]};
+        if (!std::isfinite(a[0]) || !std::isfinite(a[1])) return std::nullopt;
+        controls.push_back({a[0], a[1]});
+    }
+    return controls;
+}
+
+Value DiskProblem::run() {
+    const double started = seconds_now();
+    clarabel_DefaultSolver_f64_solve(solver_->solver);
     const double finished = seconds_now();
-    ClarabelDefaultSolution_f64 solution = clarabel_DefaultSolver_f64_solution(solver);
+    const ClarabelDefaultSolution_f64 solution = clarabel_DefaultSolver_f64_solution(solver_->solver);
     const std::string status = status_name(solution.status);
-    std::vector<double> x(solution.x, solution.x + solution.x_length);
-    const auto iterations = static_cast<std::int64_t>(solution.iterations);
-    clarabel_DefaultSolver_f64_free(solver);
+    const bool finite = std::all_of(solution.x, solution.x + solution.x_length, [](double v) { return std::isfinite(v); });
     Value controls{nullptr}, score{nullptr};
     std::string outcome;
-    const bool finite = std::all_of(x.begin(), x.end(), [](double v) { return std::isfinite(v); });
     if ((status == "Solved" || status == "AlmostSolved") && finite) {
         outcome = "feasible";
         Array rows;
-        for (std::int64_t t = 0; t < n; ++t) rows.push_back(array({real(x[control(0, t)]), real(x[control(1, t)])}));
+        for (const auto& tick : columns_) rows.push_back(array({real(solution.x[tick[0]]), real(solution.x[tick[1]])}));
         controls = array(std::move(rows));
-        if (sign != 0) {
+        if (sense_ != 0) {
             double dot = 0.;
-            for (std::size_t i = 0; i < columns; ++i) dot += cost[i] * x[i];
-            score = real(score_offset + sign * dot);
+            for (std::size_t i = 0; i < cost_.size(); ++i) dot += cost_[i] * solution.x[i];
+            score = real(offset_ + sense_ * dot);
         }
     } else {
         // Every status but a limit is a verdict: no undecided result reaches IPOPT.
@@ -284,12 +340,9 @@ Value disk_solve(const Value& content_value, double time_limit, unsigned max_ite
                    {"outcome", text(outcome)},
                    {"controls", controls},
                    {"objective", score},
-                   {"iterations", integer_value(iterations)},
-                   {"assemblySeconds", real(assembled - started)},
-                   {"setupSeconds", real(ready - assembled)},
-                   {"solveSeconds", real(finished - ready)}});
+                   {"iterations", integer_value(static_cast<std::int64_t>(solution.iterations))},
+                   {"solveSeconds", real(finished - started)}});
 }
-
 
 Value disk_spec(const Value& problem_value, const Value& extra_rows, const Value* objective_value, bool strict) {
     const Object& problem = fields(problem_value);
@@ -430,17 +483,38 @@ void bump(Object& counter, const std::string& name) {  // collections.Counter()[
     counter.emplace_back(name, integer_value(1));
 }
 
-Value attempt(const Value& content, double time_limit, unsigned max_iter) {  // _attempt
+// _attempt: one run, its verdict and its built problem (null after an exception).
+std::pair<Value, std::shared_ptr<DiskProblem>> attempt(const Value& content, double time_limit, unsigned max_iter,
+                                                       const std::vector<DiskCut>& cuts,
+                                                       const std::optional<DiskLevel>& level) {
     try {
-        return disk_solve(content, time_limit, max_iter);
+        auto built = std::make_shared<DiskProblem>(content, time_limit, max_iter, cuts, level);
+        Object result = fields(built->run());
+        result.emplace_back("assemblySeconds", real(built->assembly_seconds));
+        result.emplace_back("setupSeconds", real(built->setup_seconds));
+        return {object(std::move(result)), built};
     } catch (const std::exception& error) {
-        return object({{"status", text("exception")}, {"outcome", text("infeasible")}, {"controls", Value{nullptr}},
-                       {"objective", Value{nullptr}}, {"iterations", integer_value(0)},
-                       {"message", text(std::string("ValueError('") + error.what() + "')")}});
+        return {object({{"status", text("exception")}, {"outcome", text("infeasible")}, {"controls", Value{nullptr}},
+                        {"objective", Value{nullptr}}, {"iterations", integer_value(0)},
+                        {"message", text(std::string("ValueError('") + error.what() + "')")}}),
+                nullptr};
     }
 }
 
 }  // namespace
+
+std::pair<Value, std::shared_ptr<DiskProblem>> disk_decide(const Value& content, double seconds,
+                                                           const DiskLimits& limits, const std::vector<DiskCut>& cuts,
+                                                           const std::optional<DiskLevel>& level) {
+    auto result = attempt(content, std::min(limits.cap, seconds), limits.max_iter, cuts, level);
+    if (as_text(at(fields(result.first), "outcome")) == "limit") {
+        result = attempt(content, std::min(limits.retry_cap, seconds), limits.retry_max_iter, cuts, level);
+        Object retry = with(fields(result.first), "retried", boolean(true));
+        if (as_text(at(retry, "outcome")) == "limit") put(retry, "outcome", text("infeasible"));
+        result.first = object(std::move(retry));
+    }
+    return result;
+}
 
 Value disk_cached_solve(const Value& content, double seconds, const std::string& kind, const DiskLimits& limits) {
     DecidedCache& cache = decided();
@@ -451,14 +525,8 @@ Value disk_cached_solve(const Value& content, double seconds, const std::string&
         return object(with(fields(hit->second->second), "cached", boolean(true)));
     }
     bump(stats, "solved");
-    Value result = attempt(content, std::min(limits.cap, seconds), limits.max_iter);
-    if (as_text(at(fields(result), "outcome")) == "limit") {
-        bump(stats, "retried");
-        Object retry = with(fields(attempt(content, std::min(limits.retry_cap, seconds), limits.retry_max_iter)),
-                            "retried", boolean(true));
-        if (as_text(at(retry, "outcome")) == "limit") put(retry, "outcome", text("infeasible"));
-        result = object(std::move(retry));
-    }
+    const Value result = disk_decide(content, seconds, limits).first;
+    if (get(fields(result), "retried")) bump(stats, "retried");
     bump(stats, as_text(at(fields(result), "outcome")));
     cache.order.emplace_back(encoded, result);
     cache.index[encoded] = std::prev(cache.order.end());
@@ -490,11 +558,8 @@ Value disk_screen(const Value& model, const Value& extra_rows, const Value* obje
     return object(std::move(checked));
 }
 
-namespace {
-
-// _result: a numerics.solver.solve-shaped result for an answer Clarabel decided.
 Value decided_result(const Value& problem, double started, const char* status, const Value& candidate,
-                     const char* termination, const Value& solver_status, const Value& relaxed) {
+                     const std::string& termination, const Value& solver_status, const Value& relaxed) {
     const Object& p = fields(problem);
     const double elapsed = seconds_now() - started;
     return object({{"version", integer_value(1)}, {"status", text(status)}, {"feasible", boolean(!is_null(candidate))},
@@ -513,12 +578,35 @@ Value decided_result(const Value& problem, double started, const char* status, c
                                            {"stderr", array({})}})}});
 }
 
-// RelaxedDispatch.confirm: re-solve an alarmed request with IPOPT, whose outcome then governs it.
+namespace {
+
+const std::string& termination_of(const Value& result) { return as_text(at(fields(result), "termination")); }
+bool feasible(const Value& result) { return as_text(at(fields(result), "status")) == "feasible"; }
+
+// RelaxedDispatch.confirm: answer an alarmed request with the post-alarm pipeline (no IPOPT), or re-solve it with
+// IPOPT; the outcome governs it.
 Value confirm(const Value& problem, const Value& relaxed_candidate, const Object& relaxed, double seconds,
               const std::function<void(const Value&)>& on_incumbent, const RelaxedServices& services) {
     const std::string key = fingerprint(problem);
-    const Value* stored = services.confirmation(key);
+    const Value* stored = services.answer("confirmation", key);
     const bool cached = stored != nullptr;
+    if (services.pipeline) {
+        Value result;
+        if (cached) {
+            Object hit = fields(*stored);
+            put(hit, "confirmation", object(with(with(fields(at(hit, "confirmation")), "cached", boolean(true)),
+                                                 "clarabelSolves", integer_value(0))));
+            result = object(std::move(hit));
+        } else {
+            result = post_alarm_run(problem, relaxed_candidate, object(relaxed), seconds, services);
+            // Decided: an answer, a sector certificate, or no answer after every step; a deadline is not.
+            if (feasible(result) || termination_of(result) == "quadrant_infeasible" ||
+                termination_of(result) == "post_alarm_none")
+                services.remember("confirmation", key, result);
+        }
+        if (feasible(result) && on_incumbent) on_incumbent(at(fields(result), "candidate"));
+        return result;
+    }
     Value result;
     if (cached) {
         result = object(with(fields(*stored), "workerLaunched", boolean(false)));
@@ -530,7 +618,7 @@ Value confirm(const Value& problem, const Value& relaxed_candidate, const Object
         const Object& r = fields(result);
         const std::string& status = as_text(at(r, "status"));
         if (status == "feasible" || (status == "unknown" && as_text(at(r, "termination")) == "worker_finished"))
-            services.remember_confirmation(key, result);
+            services.remember("confirmation", key, result);
     }
     const Value& disk_objective = at(fields(relaxed_candidate), "objective");
     Object confirmation = {{"peak", at(relaxed, "peakRelativeDeficit")}, {"tick", at(relaxed, "peakTick")},
@@ -550,9 +638,85 @@ Value confirm(const Value& problem, const Value& relaxed_candidate, const Object
                        object(std::move(confirmation))));
 }
 
+// _full_strength: the relaxed point itself when it is full strength, else the post-alarm pipeline's answer, then one
+// IPOPT polish from the answer's exact facings (the SEED_TILT turn moves validated points out of IPOPT's tolerance),
+// keeping the better; without an answer or a sector certificate, IPOPT from the turned disk facings
+// (research/post-alarm/README.md#full-strength-acceptance-and-frame-end-re-solves).
+Value full_strength(const Value& problem, const Value& relaxed_candidate, const Object& relaxed, double started,
+                    double seconds, const RelaxedServices& services) {
+    const Object& relaxed_point = fields(relaxed_candidate);
+    Object record{{"method", text("direct")}, {"pushObjective", kNull}, {"ipoptObjective", kNull},
+                  {"ipoptCalls", integer_value(0)}, {"clarabelSolves", integer_value(0)}, {"cached", boolean(false)}};
+    Value answer{nullptr};
+    std::string termination = "disk_finished";
+    if (num(items(disk_deficits(problem, at(relaxed_point, "controls")))[0]).value < kPostAlarmFull) {
+        Value checked = validate(problem, post_alarm_facings(problem, at(relaxed_point, "controls")));
+        if (py_truthy(at(fields(checked), "feasible"))) answer = checked;
+    }
+    if (is_null(answer)) {
+        const Value pushed = post_alarm_run(problem, relaxed_candidate, object(relaxed),
+                                            std::max(.001, started + seconds - seconds_now()), services);
+        const Object& p = fields(pushed);
+        const Object& confirmation = fields(at(p, "confirmation"));
+        put(record, "method", at(confirmation, "method"));
+        put(record, "clarabelSolves", at(confirmation, "clarabelSolves"));
+        if (as_text(at(p, "status")) == "cancelled" || termination_of(pushed) == "quadrant_infeasible")
+            return object(with(p, "frameEnd", object(std::move(record))));
+        answer = at(p, "candidate");
+        termination = termination_of(pushed);
+    }
+    Object request;
+    if (!is_null(answer)) {
+        put(record, "pushObjective", at(fields(answer), "objective"));
+        for (const auto& [k, v] : with(fields(problem), "yaw", at(fields(answer), "yaw")))
+            if (k != "fallbackYaw") request.emplace_back(k, v);
+    } else {
+        request = with(fields(problem), "yaw", ipopt_seed(at(relaxed_point, "yaw")));
+    }
+    const Value ipopt_value =
+        services.full(object(std::move(request)), std::max(.001, started + seconds - seconds_now()), false, {});
+    const Object& ipopt = fields(ipopt_value);
+    const Value& launched = get_or_null(ipopt, "workerLaunched");
+    put(record, "ipoptCalls", integer_value(std::holds_alternative<bool>(launched.data) && std::get<bool>(launched.data)));
+    const std::string& status = as_text(at(ipopt, "status"));
+    if (status == "feasible") put(record, "ipoptObjective", at(fields(at(ipopt, "candidate")), "objective"));
+    const double sense = as_text(at(fields(at(fields(problem), "objective")), "sense")) == "MAX" ? 1 : -1;
+    if (is_null(answer) || status == "cancelled" ||
+        (status == "feasible" && sense * num(at(fields(at(ipopt, "candidate")), "objective")).value >
+                                     sense * num(at(fields(answer), "objective")).value))
+        return object(with(with(with(ipopt, "backend", text("ipopt")), "disk", object(relaxed)), "frameEnd",
+                           object(std::move(record))));
+    const Value result = decided_result(problem, started, "feasible", answer, termination, at(relaxed, "status"),
+                                        object(relaxed));
+    return object(with(with(fields(result), "workerLaunched", launched), "frameEnd", object(std::move(record))));
+}
+
+// RelaxedDispatch._frame_end: full_strength's answer for a validated relaxed point, cached when decided like a
+// confirmation.
+Value frame_end(const Value& problem, const Value& relaxed_candidate, const Object& relaxed, double started,
+                double seconds, const std::function<void(const Value&)>& on_incumbent,
+                const RelaxedServices& services) {
+    const std::string key = fingerprint(problem);
+    Value result;
+    if (const Value* stored = services.answer("frameEnd", key)) {
+        Object hit = with(fields(*stored), "workerLaunched", boolean(false));
+        put(hit, "frameEnd", object(with(with(with(fields(at(hit, "frameEnd")), "cached", boolean(true)), "ipoptCalls",
+                                              integer_value(0)),
+                                         "clarabelSolves", integer_value(0))));
+        result = object(std::move(hit));
+    } else {
+        result = full_strength(problem, relaxed_candidate, relaxed, started, seconds, services);
+        if (feasible(result) || termination_of(result) == "quadrant_infeasible" ||
+            termination_of(result) == "worker_finished")
+            services.remember("frameEnd", key, result);
+    }
+    if (feasible(result) && on_incumbent) on_incumbent(at(fields(result), "candidate"));
+    return result;
+}
+
 }  // namespace
 
-Value relaxed_dispatch(const Value& problem, double seconds, bool stop_on_feasible, bool confirming,
+Value relaxed_dispatch(const Value& problem, double seconds, bool stop_on_feasible, DispatchMode mode,
                        const std::function<void(const Value& candidate)>& on_incumbent,
                        const RelaxedServices& services) {
     auto full = [&](const char* reason) {
@@ -574,16 +738,22 @@ Value relaxed_dispatch(const Value& problem, double seconds, bool stop_on_feasib
         return decided_result(problem, started, "unknown", kNull, "disk_finished", at(solved, "status"),
                               object(std::move(relaxed)));
     Object candidate = fields(validate_controls(problem, at(solved, "controls")));
-    if (!py_truthy(at(candidate, "feasible"))) return full("rejected_relaxed_point");
+    // The replay only fails a solved point by numerical error; it is not worth an IPOPT call (user, 2026-11-23).
+    if (!py_truthy(at(candidate, "feasible")))
+        return decided_result(problem, started, "unknown", kNull, "disk_rejected", at(solved, "status"),
+                              object(std::move(relaxed)));
     const Value deficit_value = disk_deficits(problem, at(solved, "controls"));
     const Array& deficit = items(deficit_value);
     const Value alarmed = alarm_ticks(problem, deficit.at(1), services.alarm_fraction);
     put(relaxed, "peakRelativeDeficit", deficit.at(0));
     put(relaxed, "peakTick", deficit.at(2));
     put(relaxed, "alarmTicks", alarmed);
+    put(relaxed, "objective", at(solved, "objective"));
     put(candidate, "model", text("relaxed_disk"));
     const Value candidate_value = object(std::move(candidate));
-    if (confirming && !items(alarmed).empty() && !stop_on_feasible)
+    if (mode == DispatchMode::full_strength)
+        return frame_end(problem, candidate_value, relaxed, started, seconds, on_incumbent, services);
+    if (mode == DispatchMode::confirmed && !items(alarmed).empty() && !stop_on_feasible)
         return confirm(problem, candidate_value, relaxed, seconds, on_incumbent, services);
     if (on_incumbent) on_incumbent(candidate_value);
     return decided_result(problem, started, "feasible", candidate_value, "disk_finished", at(solved, "status"),

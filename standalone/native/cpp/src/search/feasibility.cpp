@@ -1,10 +1,11 @@
-// Port of search/feasibility.policy_spec, node_identity, meaningful_choice, outcome, solve_due and unresolved_only.
+// Port of search/feasibility.policy_spec, node_identity, meaningful_choice, outcome and solve_due.
 #include "pkc/search/feasibility.hpp"
 
 #include <algorithm>
+#include <set>
 
 #include "pkc/canonical.hpp"
-#include "pkc/search/frontier.hpp"
+#include "pkc/search/repair.hpp"
 #include "../schema.hpp"
 #include "../value_ops.hpp"
 
@@ -37,7 +38,7 @@ Value policy_spec(const Value& value, bool first_witness) {
         return std::any_of(names.begin(), names.end(), [&](const char* n) { return py_equal(at(defaults, key), text(n)); });
     };
     if (!py_equal(at(defaults, "version"), integer_value(1)) || !one_of("purpose", {"node", "anchor", "terminal"}) ||
-        !one_of("numerical", {"ipopt", "relaxed"}))
+        !one_of("numerical", {"ipopt", "relaxed", "relaxed_pipeline", "full_strength"}))
         fail("Unsupported solve policy");
     for (const char* key : {"stopOnFeasible", "rankEqualCost", "oracleRejection"})
         if (!std::holds_alternative<bool>(at(defaults, key).data)) fail("Solve policy flags must be boolean");
@@ -53,15 +54,6 @@ bool solve_due(const Value& program_value, std::int64_t interval) {
     return (depth ? as_int(*depth) : 0) - (solved ? as_int(*solved) : 0) >= interval;
 }
 
-bool unresolved_only(const Value& repair_value) {
-    // No runnable repair remains unless the caller explicitly retries unknowns.
-    const Object& repair = fields(repair_value);
-    const Value& generation = get_or_null(repair, "constraintGeneration");
-    return py_truthy(get_or_null(repair, "unresolved")) && !py_truthy(get_or_null(repair, "pending")) &&
-           !py_truthy(get_or_null(repair, "repairSources")) && !py_truthy(get_or_null(repair, "inFlight")) &&
-           (is_null(generation) || py_truthy(get_or_null(fields(generation), "exhausted")));
-}
-
 Value outcome(const Value& result_value, const std::string& model, const Value& policy) {
     const Object& result = fields(result_value);
     const Value* repair_value = get(result, "repairState");
@@ -69,8 +61,15 @@ Value outcome(const Value& result_value, const std::string& model, const Value& 
     const Value* completed = get(repair, "completed");
     const Array complete = completed ? items(*completed) : Array{};
     const Value& generation = get_or_null(repair, "constraintGeneration");
+    // An unresolved branch is infeasible: logged in repairState, never retried (user, 2026-11-23).
+    std::set<std::string> unresolved;
+    if (const Value* listed = get(repair, "unresolved"))
+        for (const Value& b : items(*listed)) {
+            const Object& branch = fields(b);
+            unresolved.insert(branch_key(items(at(branch, "rows")), items(at(branch, "passages")), items(at(branch, "hits"))));
+        }
     const bool settled = !py_truthy(get_or_null(repair, "pending")) && !py_truthy(get_or_null(repair, "repairSources")) &&
-                         !py_truthy(get_or_null(repair, "inFlight")) && !py_truthy(get_or_null(repair, "unresolved"));
+                         !py_truthy(get_or_null(repair, "inFlight"));
     const bool generated = is_null(generation) || py_truthy(get_or_null(fields(generation), "exhausted"));
     auto rejected = [](const Value& c) {
         return py_truthy(get_or_null(fields(c), "oracleRejected")) || py_truthy(get_or_null(fields(c), "proven"));
@@ -80,10 +79,13 @@ Value outcome(const Value& result_value, const std::string& model, const Value& 
         status = "feasible";
     } else if (py_equal(get_or_null(result, "status"), text("error"))) {
         status = "error";
-    } else if (py_truthy(at(fields(policy), "oracleRejection")) && !complete.empty() && settled && generated &&
-               std::all_of(complete.begin(), complete.end(), rejected)) {
+    } else if (py_truthy(at(fields(policy), "oracleRejection")) && (!complete.empty() || !unresolved.empty()) && settled &&
+               generated && std::all_of(complete.begin(), complete.end(), [&](const Value& c) {
+                   return rejected(c) || unresolved.count(as_text(at(fields(c), "branch")));
+               })) {
         status = "oracle_rejected";
-    } else if ((!complete.empty() || (!is_null(generation) && py_truthy(get_or_null(fields(generation), "exhausted")))) &&
+    } else if ((!complete.empty() || !unresolved.empty() ||
+                (!is_null(generation) && py_truthy(get_or_null(fields(generation), "exhausted")))) &&
                settled && generated) {
         // Exhausting repair/physical alternatives is a backtrack, not a numerical infeasibility label for this node or
         // its ancestors. A fully screened-out generator can exhaust before emitting any solve.
@@ -96,14 +98,6 @@ Value outcome(const Value& result_value, const std::string& model, const Value& 
         if (rejected(c)) alternatives.push_back(at(fields(c), "branch"));
     return object({{"version", integer_value(1)}, {"status", text(status)}, {"model", text(model)}, {"policy", policy},
                    {"termination", get_or_null(result, "termination")}, {"rejectedAlternatives", array(std::move(alternatives))}});
-}
-
-bool restore_unknown_nodes(Continuation* source, bool retry_unknown) {
-    if (!retry_unknown || !source || !source->deferred_nodes || source->deferred_nodes->empty()) return false;
-    source->pending.insert(source->pending.end(), source->deferred_nodes->begin(), source->deferred_nodes->end());
-    source->deferred_nodes->clear();
-    source->exhausted = false;
-    return true;
 }
 
 }  // namespace pkc

@@ -114,6 +114,11 @@ Value prepare_problem(const Value& request) {
         numbers(get(problem, key), key, length, std::string(key) + " has the wrong length");
     if (const Value* fallback = get(problem, "fallbackYaw"))
         numbers(fallback, "fallbackYaw", ticks, "fallbackYaw has the wrong length");
+    // Post-alarm hint (numerics/post_alarm.hpp), not physical: the parent answer's facings on the shared prefix.
+    if (const Value* warm = get(problem, "warmYaw")) {
+        if (!is_list(*warm) || items(*warm).empty() || items(*warm).size() > ticks) fail("warmYaw has the wrong length");
+        for (const auto& value : items(*warm)) number(value, "warmYaw");
+    }
     for (const auto& m : items(at(problem, "magnitude")))
         if (num(m).value < 0) fail("Acceleration magnitudes must be nonnegative");
     for (const auto& f : items(at(problem, "friction")))
@@ -256,7 +261,7 @@ std::string fingerprint(const Value& problem) {
     Object physical;
     for (const auto& [key, value] : fields(problem))
         if (key != "seconds" && key != "yaw" && key != "fallbackYaw" && key != "stopOnFeasible" &&
-            key != "objectiveMode" && key != "source" && key != "maxIterations")
+            key != "objectiveMode" && key != "source" && key != "maxIterations" && key != "warmYaw")
             physical.emplace_back(key, value);
     return sha256_hex(dumps(object(std::move(physical)), true, true));
 }

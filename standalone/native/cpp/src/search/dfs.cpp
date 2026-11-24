@@ -250,7 +250,6 @@ std::optional<NodeEvaluation> evaluate_node(const Value& scene, const Value& pro
         eo.policy = policy;
         eo.adapter_identity = solve.adapter_identity;
         eo.node_query = true;
-        eo.retry_unresolved = options.retry_unresolved;
         eo.climb_families = true;
         eo.timings = {{"programCompilation", real(prepared_at - t)}};
         result_value = evaluate_prepared(scene, object(program), object(std::move(route)),
@@ -384,9 +383,7 @@ std::optional<NodeEvaluation> evaluate_node(const Value& scene, const Value& pro
     if (status == "feasible") record.emplace_back("repairState", record_repair);
     if (!is_null(side_outcome)) record.emplace_back("sideOutcome", side_outcome);
     hooks.store(identity, object(std::move(record)), object(with(with(query, "parent", parent), "depth", depth)), recovery);
-    const bool defer = status == "suspended" && unresolved_only(get_or(program, "repairState", object({})));
-    Object out{{"status", text(status)}, {"program", object(program)},
-               {"alternatives", array(std::move(alternatives))}, {"deferUnknown", boolean(defer)}};
+    Object out{{"status", text(status)}, {"program", object(program)}, {"alternatives", array(std::move(alternatives))}};
     if (!is_null(side_outcome)) out.emplace_back("sideOutcome", side_outcome);
     return NodeEvaluation{object(std::move(out)), input_program};
 }

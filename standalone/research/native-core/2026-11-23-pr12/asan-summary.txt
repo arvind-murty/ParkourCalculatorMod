@@ -1,0 +1,12 @@
+AddressSanitizer build (checks2.sh): test_anchor_dfs, test_checkpoint_store, test_event_search, test_repair_resume, test_orchestrator_continuation, test_native_core, test_disk, test_solver, test_proposal_analysis, test_anchor_search, test_post_alarm; durable fixed work; IPOPT driver parity.
+asan build EXIT 0
+asan tests EXIT 1
+asan fixed EXIT 0
+asan solver parity EXIT 0 {"cases": 38, "equal": 38}
+Ran 226 tests in 34.997s
+FAILED (failures=1)
+asan reports: tests 0 fixed 0 solver 0
+asan fixed vs release (non-provenance diffs): 1
+20:35:50 done
+The one failure is the known harness failure test_cli_writes_structured_error_atomically (the sanitized interpreter aborts the CLI subprocess). The report diff is .windows, which the durable run adds and the non-durable release run lacks.
+Before the node.cpp fix in this change, test_relaxed_routes_hit_a_ceiling_and_grind_under_one hit heap-use-after-free at NodeSearch::run_bound (node.cpp:179): a pointer to the program's priorityTurnaround annotation read after annotate() moved the annotation storage.

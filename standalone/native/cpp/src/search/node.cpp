@@ -142,9 +142,11 @@ Value NodeSearch::run_bound(Program& program, NodeEffects& effects) const {
     f.comparison_context_set = true;
     const bool complete = supported_by(program, f.goal_blocks) && program.profile.grounded.back();
     const std::string identity = candidate_key(program);
-    const Value* turnaround = note(program, "priorityTurnaround");
+    // A copy: the annotations below can move the program's annotation storage.
+    const Value* noted = note(program, "priorityTurnaround");
+    const Value turnaround = noted ? *noted : boolean(false);
     const Value label = comparison_label(
-        program, f.span_start, std::nullopt, identity, turnaround && py_truthy(*turnaround) ? "turnaround" : "ordinary",
+        program, f.span_start, std::nullopt, identity, py_truthy(turnaround) ? "turnaround" : "ordinary",
         {{"comparisonContext", f.comparison_context_id},
          {"basis", text(complete ? "anchor_arrival" : "open_prefix")},
          {"scope", program.solve_scope.value_or(Value{nullptr})},
@@ -176,7 +178,7 @@ Value NodeSearch::run_bound(Program& program, NodeEffects& effects) const {
         effects.minimum_run_exclusions.push_back(object(
             {{"frame", f.frame_id}, {"candidate", text(identity)}, {"proof", proof}, {"program", to_value(program)},
              {"span", integer_value(f.anchor_index)}, {"decision", node ? *node : Value{nullptr}},
-             {"isTurnaround", turnaround ? *turnaround : boolean(false)}, {"latchRevision", integer_value(f.latch_revision)}}));
+             {"isTurnaround", turnaround}, {"latchRevision", integer_value(f.latch_revision)}}));
     }
     return proof;
 }

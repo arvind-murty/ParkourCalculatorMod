@@ -214,6 +214,10 @@ ordered options. That is targeted enumeration work, not a whole-solver speedup.
   in the next save: durable fixed work searches in 16.93 s and 17.88 s against 43.81 s and 44.95 s (plain 13.76 s and
   13.79 s), the durable short control in 2.46 s and 2.48 s against 5.83 s and 6.73 s, at about 100 MiB more peak
   memory ([evidence](../research/native-core/README.md)).
+- Native port of main's PR #12 (post-alarm pipeline, frame-end re-solves, full-queue frames): on Real11 extended at
+  300 s native mode makes 1,844 solver calls and expands 554 prefixes against Python mode's 776 and 243, and
+  `cases/real11/physical-anchors.json` searches in 1.48 s against 5.11 s
+  ([evidence](../research/native-core/README.md)).
 - Clarabel iterative refinement off in every disk solve: on the extended fixed-work control
   (100 solver calls) search time fell from 39.36 s to 37.50 s with identical transitions and
   verdicts, and a 300 s extended run spent 7.92 s instead of 11.43 s in Clarabel requests

@@ -65,7 +65,6 @@ struct Continuation {  // persistent_programs' state
     // Decision checks (a node evaluator): node solve records by decision node, deferred unknown checks, the decision
     // tree, held alternatives, nodes below a validated group-end arrival.
     std::optional<OrderedMap<Value>> nodes;
-    std::optional<std::vector<Value>> deferred_nodes;
     std::optional<OrderedMap<Nullable<std::string>>> decision_parents;
     std::optional<OrderedMap<HeldAlternative>> alternatives;
     std::optional<std::vector<std::string>> succeeded_nodes;
@@ -78,7 +77,7 @@ struct Continuation {  // persistent_programs' state
 struct GenerationReport {  // persistent_programs' update()
     std::string termination;
     std::int64_t expanded_prefixes = 0, total_expanded_prefixes = 0, generated = 0, emitted_programs = 0,
-                 screened_prefixes = 0, remaining_prefixes = 0, deferred_nodes = 0, queued_complete_programs = 0,
+                 screened_prefixes = 0, remaining_prefixes = 0, queued_complete_programs = 0,
                  queue_drops = 0, partial_queue_drops = 0, complete_queue_drops = 0, policy_rejections = 0;
     std::string queue_policy;
     Value types;

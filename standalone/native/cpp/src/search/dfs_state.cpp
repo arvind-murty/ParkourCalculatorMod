@@ -39,8 +39,6 @@ PKC_RECORD(Discovery);
 PKC_RECORD(DiscoveryWork);
 PKC_RECORD(ComparisonWork);
 PKC_RECORD(LocalSetupAlias);
-PKC_RECORD(FinalAttempt);
-PKC_RECORD(Finalization);
 PKC_RECORD(Incumbent);
 PKC_RECORD(DfsState);
 
@@ -102,7 +100,6 @@ void describe(R& c, V& v, Continuation*) {
     v.req("exhausted", c.exhausted);
     v.req("exclusions", c.exclusions);
     v.opt("nodes", c.nodes);
-    v.opt("deferredNodes", c.deferred_nodes);
     v.opt("decisionParents", c.decision_parents);
     v.opt("alternatives", c.alternatives);
     v.opt("succeededNodes", c.succeeded_nodes);
@@ -121,7 +118,6 @@ void describe(R& r, V& v, GenerationReport*) {
     v.req("emittedPrograms", r.emitted_programs);
     v.req("screenedPrefixes", r.screened_prefixes);
     v.req("remainingPrefixes", r.remaining_prefixes);
-    v.req("deferredNodes", r.deferred_nodes);
     v.req("queuedCompletePrograms", r.queued_complete_programs);
     v.req("queueDrops", r.queue_drops);
     v.req("partialQueueDrops", r.partial_queue_drops);
@@ -164,7 +160,6 @@ void describe(R& r, V& v, Record*) {
     v.req("objectiveMode", r.objective_mode);
     v.req("arrival", r.arrival);
     v.req("value", r.value);
-    v.req("family", r.family);
     v.req("work", r.work);
     v.req("goal", r.goal);
     v.req("goalKey", r.goal_key);
@@ -190,6 +185,7 @@ void describe(R& r, V& v, Record*) {
     v.opt("refinementTimeExclusion", r.refinement_time_exclusion);
     v.opt("variantOf", r.variant_of);
     v.opt("restoredFallbacks", r.restored_fallbacks);
+    v.opt("frameEnd", r.frame_end);
 }
 
 template <class R, class V>
@@ -216,7 +212,6 @@ void describe(R& f, V& v, Frame*) {
     v.opt("tickPeerRevision", f.tick_peer_revision);
     v.opt("recoveryFailure", f.recovery_failure);
     v.opt("validatedFinish", f.validated_finish);
-    v.opt("retrySession", f.retry_session);
     v.opt("failedCandidates", f.failed_candidates);
 }
 
@@ -380,25 +375,6 @@ void describe(R& a, V& v, LocalSetupAlias*) {
 }
 
 template <class R, class V>
-void describe(R& a, V& v, FinalAttempt*) {
-    v.req("status", a.status);
-    v.req("termination", a.termination);
-    v.req("ipoptCalls", a.ipopt_calls);
-    v.req("frame", a.frame);
-    v.req("record", a.record);
-    v.req("seconds", a.seconds);
-}
-
-template <class R, class V>
-void describe(R& f, V& v, Finalization*) {
-    v.req("version", f.version);
-    v.req("source", f.source);
-    v.req("stage", f.stage);
-    v.req("attempts", f.attempts);
-    v.req("best", f.best);
-}
-
-template <class R, class V>
 void describe(R& i, V& v, Incumbent*) {
     v.req("movementProgram", i.movement_program);
     v.req("blockIds", i.block_ids);
@@ -412,7 +388,6 @@ void describe(R& s, V& v, DfsState*) {
     v.req("initialRoots", s.initial_roots);
     v.req("stack", s.stack);
     v.req("suspended", s.suspended);
-    v.req("refinements", s.refinements);
     v.req("frames", s.frames);
     v.req("transitions", s.transitions);
     v.req("windows", s.windows);
@@ -438,7 +413,6 @@ void describe(R& s, V& v, DfsState*) {
     v.opt("pendingGoalOwner", s.pending_goal_owner);
     v.opt("transferTimeBounds", s.transfer_time_bounds);
     v.opt("firstFullSolutionSeconds", s.first_full_solution_seconds);
-    v.opt("finalization", s.finalization);
 }
 
 }  // namespace codec

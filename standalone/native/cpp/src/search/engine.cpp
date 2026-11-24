@@ -75,7 +75,11 @@ Value numerical_counts(const Array& diagnostics) {
         if (!is_null(confirmation)) {
             const Object& c = fields(confirmation);
             bump("confirmations", 1);
-            bump("confirmationIpoptCalls", !py_truthy(at(c, "cached")));
+            // A pipeline confirmation counts its own IPOPT calls (none when cached); an IPOPT one is one call.
+            const Value* calls = get(c, "ipoptCalls");
+            bump("confirmationIpoptCalls", calls ? as_int(*calls) : !py_truthy(at(c, "cached")));
+            const Value* solves = get(c, "clarabelSolves");
+            bump("confirmationClarabelSolves", solves ? as_int(*solves) : 0);
             double material = 0;
             if (!numeric(at(c, "material"), material)) fail("material must be a number");
             bump("materialGaps", static_cast<std::int64_t>(material));
@@ -196,7 +200,6 @@ Value evaluate_prepared(const Value& scene_value, const Value& program_value, co
     repair.stop_on_feasible = py_truthy(at(fields(policy), "stopOnFeasible"));
     repair.oracle_rejection = py_truthy(at(fields(policy), "oracleRejection"));
     repair.climb_families = options.climb_families;
-    repair.retry_unresolved = options.retry_unresolved;
     repair.geometry = at(scene, "collisionScene");
     repair.solid_blocks = array(owners);
     repair.resume_state = get_or_null(program, "repairState");

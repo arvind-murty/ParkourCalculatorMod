@@ -970,3 +970,31 @@ save converted and encoded each copy.
 - Fixed work, alternating against `2b2ba7d6`: whole run 14.92 and 14.95 s against 15.62 and 15.41 s, peak memory 750
   and 756 MiB against 895 and 877 MiB. Real11 extended at 300 s (one native run each): final report save 18.44 s
   against 29.61 s, peak memory 2,842 MiB against 3,639 MiB ([times](2026-11-23-shared-state/times.txt)).
+
+## Main's PR #12 in the native core, 2026-11-23
+Source: the merge of main at PR #12 (`5cb0d44f`) plus the native port of its behaviour: Clarabel refinement off,
+validator-rejected relaxed points infeasible (`disk_rejected`), the disk problem built once and re-solved with cut and
+level rows and new linear costs (`DiskProblem`), the Clarabel-only post-alarm pipeline (`numerics/post_alarm.hpp`),
+`RelaxedDispatch.full_strength` with its frame-end cache, `warmYaw`, the search's frame-end re-solves in place of the
+finalization, frames finishing their queue before choosing, unresolved branches infeasible and the confirmation
+counters. Native leg solves report their requests to the profiler, and a use-after-free in the decision check's
+minimum-run deferral (a pointer to an annotation read after the annotations moved) is fixed; the full queue made it
+reachable.
+
+- The pipeline in each mode, each side in its own process: the 7 fixture requests and the 482 alarmed Real11 requests
+  give the same method, steps, solves, reversal tick and objective, to the bit
+  ([pipeline](2026-11-23-pr12/pipeline-parity.txt)). Frame-end answers with real IPOPT polishes on the fixtures and
+  the 401 unalarmed and 482 alarmed Real11 requests: same records, facings and objectives
+  ([frame ends](2026-11-23-pr12/full-strength-parity.txt)).
+- Every published and result state equals Python mode in call order (short control 186, fixed work 468), transitions
+  match ([states](2026-11-23-pr12/state-parity.txt), [fixed](2026-11-23-pr12/fixed-parity-python-native.json),
+  [short](2026-11-23-pr12/short-parity-python-native.json)). `requests.json` rows are equal in both modes on the short
+  control and on `cases/real11/physical-anchors.json`, which finds the same T64 route (objective
+  -1093.2383028783543, 47 requests, 8 frame-end solves, 8/8 replays) in 1.48 s against 5.11 s
+  ([requests and physical anchors](2026-11-23-pr12/requests-and-physical-anchors.txt)).
+- The gate and the milestone list pass in both modes; the cancelled frame-end test, which cancels through
+  `RelaxedDispatch`'s Python seams, runs in Python mode ([suites](2026-11-23-pr12/suites-summary.txt)).
+  AddressSanitizer runs clean ([summary](2026-11-23-pr12/asan-summary.txt),
+  [report](2026-11-23-pr12/fixed-asan-report-vs-release.json)).
+- Real11 extended at 300 s, one run each: native mode makes 1,844 solver calls and expands 554 prefixes against 776 and
+  243; neither finds a finish ([run](2026-11-23-pr12/real11-extended-300s.txt)).

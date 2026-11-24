@@ -19,7 +19,7 @@ struct RepairOptions {
     std::int64_t retries = 0;
     bool improve = false, rank_equal_cost = false, optimize_goal = false;
     std::optional<bool> stop_on_feasible;
-    bool oracle_rejection = false, climb_families = false, retry_unresolved = true;
+    bool oracle_rejection = false, climb_families = false;
     Value geometry, solid_blocks, resume_state, repair_scope, validation_scope;  // each may be null
     NumericalSolve numerical, confirm;  // may be empty: numerics.solver.solve, no confirmation walk
     std::function<Value(const Value& plan, const Value& candidate, const Value& vertical)> candidate_filter;  // may be empty

@@ -1,4 +1,5 @@
-// The anchor DFS loop: search/dfs.py search_goals from its first publish through the main loop and finalization,
+// The anchor DFS loop: search/dfs.py search_goals from its first publish through the main loop and its frame-end
+// re-solves,
 // owning the typed search state (search/dfs_state.hpp) and running each frame's movement frontier
 // (search/frontier.hpp) with its decision checks. Python keeps the preamble (roots, context digest, resume checks, the
 // gate) and the result dict, and serves what is not ported yet through DfsHooks: gate preparations, the Python parts
@@ -53,22 +54,24 @@ struct DfsHooks {
     std::function<void(const Snapshot& state)> publish;
     std::function<void(const Snapshot& state)> begin_repair;
     std::function<void(const Snapshot& state)> repair_progress;
-    // The work budget: check() (raises TimeoutError), counts['solverCalls'], counts[name] += 1, accepted(candidate),
+    // The work budget: check() (raises TimeoutError), counts['solverCalls'], counts[name] += by, accepted(candidate),
     // termination (null for None).
     std::function<void()> check;
     std::function<std::int64_t()> solver_calls;
-    std::function<void(const std::string& name)> count;
+    std::function<void(const std::string& name, std::int64_t by)> count;
     std::function<void(const Value& candidate)> accepted;
     std::function<Value()> termination;
     // An anchor-leg or finish solve, evaluate_program(dict(scene, goalBlock=landing), program, ..., the frame's stage
     // view, ...) with `options` {landing, policy, firstWitness, guideObjective, seconds, finalRoute (or absent),
-    // progress}, runs natively after the gate's preparation: gate.prepare(program, scene=dict(scene,
-    // goalBlock=landing), require_complete=True) as prepare_leg, then solve_services without an adapter (its
-    // numerical backend and seconds) as begin_leg; the native adapter serves the candidate check. `evaluate` is the
+    // progress, ownWork, candidateSeconds}, runs natively after the gate's preparation: gate.prepare(program,
+    // scene=dict(scene, goalBlock=landing), require_complete=True) as prepare_leg, then solve_services without an
+    // adapter (its numerical backend and seconds, on a fresh SearchWork outside the run's budget when `own_work`, as a
+    // frame-end re-solve runs) as begin_leg; the native adapter serves the candidate check. `evaluate` is the
     // Python solve, on the stage view of the frame's goal request and cursor, for a route the native one leaves there
     // (passages, wall hits, ladder events). With progress, the solve reports through DfsSearch::score_progress.
     std::function<Value(const Value& program, const Value& landing)> prepare_leg;
-    std::function<NodeSolve(const Value& program, const std::string& numerical, double seconds)> begin_leg;
+    std::function<NodeSolve(const Value& program, const std::string& numerical, double seconds, bool own_work)>
+        begin_leg;
     std::function<Value(std::int64_t frame, const Value& request, const Value& cursor, const Value& program,
                         const Value& options)>
         evaluate;
@@ -92,7 +95,7 @@ struct DfsOptions {
     std::string task_block;
     Value initial_jump_inputs;  // program_filter.initial_jump_inputs, or null
     Object caps;                // accepted_program.caps
-    bool minimum_run_pruning = false, retry_unknown = false;
+    bool minimum_run_pruning = false;
     double deadline = 0, started = 0, candidate_seconds = 0, score_seconds = 0;
     std::int64_t batch_size = 1;
     std::string numerical_backend = "ipopt";
@@ -106,7 +109,6 @@ public:
               std::shared_ptr<AnchorScene> anchors, std::shared_ptr<AnchorAdapter> adapter);
 
     std::string run();      // the main loop; the termination
-    void finalize_best();   // finalize=True
     Value state() const;    // the state as published
     std::int64_t viability_checked() const { return viability_checked_; }
     std::int64_t viability_excluded() const { return viability_excluded_; }
@@ -155,10 +157,14 @@ private:
     void refine(Frame& f, const RecordPtr& pending);
     RecordPtr variant_record(Frame& f, const Record& record, const Value& variant);
     bool restore_fallback(Frame& f, const Value& recovery);
-    void close_frame(const FramePtr& f, bool deferred);
+    void close_frame(const FramePtr& f);
+    bool frame_end(Frame& f, Record& chosen);
+    Value witness_rank(const Record& record) const;
+    bool improves(const Record& record) const;
+    void commit_finish(Frame& f, Record& chosen);
+    void confirm_at_budget_end();
     void succeed(Frame& f, const Value& program);
     bool restore_alternatives(Frame& f);
-    void retry_deferred_nodes(Frame& f);
     NodeSearch node_search(Frame& f, Value* context_id, const Value& policy_context = Value{nullptr});
     Value evaluate_node(Value& program, OrderedMap<Value>& nodes, Frame& f);
     Object node_service(const Value& program, std::int64_t span, Frame& f);

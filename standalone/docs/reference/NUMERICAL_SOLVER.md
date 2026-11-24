@@ -225,11 +225,13 @@ feasible requests. The result carries `confirmation`: the shortfall peak and
 tick, both objectives, `gap = sense*(disk - ipopt)` and `material` (`gap > 1e-4`).
 A gap describes only its own request. Decided
 confirmations are cached per run in the interaction gate's cache by problem
-fingerprint. Under `PKC_NATIVE_CORE`, a gate with a native core dispatches natively
-(`numerics/disk.hpp`) for Python and native callers alike, keeping its confirmations
+fingerprint. Under `PKC_NATIVE_CORE`, a gate with a native core dispatches every
+entry point natively (`numerics/disk.hpp`, the pipeline in `numerics/post_alarm.hpp`)
+for Python and native callers alike, keeping its confirmations and frame-end answers
 in the core's cache, and its IPOPT solves run through the native driver
 (`numerics/solver.hpp`: the same worker protocol, deadline, cancellation and
-validation as `solve`). Search's use of it is in the
+validation as `solve`). The profiler records a native leg solve's requests through
+the module's request observer (`tools/profiling/bookkeeping.py`). Search's use of it is in the
 [execution reference](../ANCHOR_SEARCH_EXECUTION_REFERENCE.md#numerical-backend-and-frame-end-re-solves).
 `RelaxedDispatch(gate=...)` answers the alarm with the post-alarm pipeline below;
 `post_alarm='ipopt'` makes that IPOPT call instead.

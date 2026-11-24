@@ -22,6 +22,9 @@
 namespace pkc {
 namespace {
 
+// FRAME_END_SECONDS: frame-end re-solves have no deadline (user, 2026-11-23); this only bounds a hung solve.
+const double kFrameEndSeconds = 600.;
+
 Value set_key(const Value& base, std::string_view key, Value value) {
     Object out = fields(base);
     put(out, key, std::move(value));
@@ -131,8 +134,8 @@ Snapshot DfsSearch::snapshot(RepairTargets repair) const {
 std::vector<Array> DfsSearch::frame_paths(const Frame& f) const {
     std::vector<Array> out;
     const std::pair<const char*, const std::vector<FramePtr>*> groups[] = {
-        {"stack", &state_.stack}, {"suspended", &state_.suspended}, {"refinements", &state_.refinements},
-        {"frames", &state_.frames}, {"goalQueue", &state_.goal_queue}};
+        {"stack", &state_.stack}, {"suspended", &state_.suspended}, {"frames", &state_.frames},
+        {"goalQueue", &state_.goal_queue}};
     for (const auto& [group, frames] : groups)
         for (std::size_t i = 0; i < frames->size(); ++i)
             if ((*frames)[i].get() == &f) out.push_back({text(group), integer_value(static_cast<std::int64_t>(i))});
@@ -162,8 +165,8 @@ std::vector<Array> DfsSearch::program_paths(const SharedValue& program) const {
         }
     };
     const std::pair<const char*, const std::vector<FramePtr>*> groups[] = {
-        {"stack", &state_.stack}, {"suspended", &state_.suspended}, {"refinements", &state_.refinements},
-        {"frames", &state_.frames}, {"goalQueue", &state_.goal_queue}};
+        {"stack", &state_.stack}, {"suspended", &state_.suspended}, {"frames", &state_.frames},
+        {"goalQueue", &state_.goal_queue}};
     for (const auto& [group, frames] : groups)
         for (std::size_t i = 0; i < frames->size(); ++i)
             frame({text(group), integer_value(static_cast<std::int64_t>(i))}, *(*frames)[i]);
@@ -227,7 +230,7 @@ void DfsSearch::transition(const std::string& kind, const Frame& f, Object field
         Transition{kind, f.id, f.index, state_.session, flt(hooks_.monotonic() - options_.started), std::move(fields_)});
     // A typed arrival's tried flag and child execution owner are one checkpoint transaction. The child's
     // open/backtrack publishes both.
-    if (kind != "choose") publish();
+    if (kind != "choose" && kind != "frame_end_confirmed") publish();
 }
 
 // ---- frames and discovery
@@ -715,19 +718,20 @@ Value DfsSearch::evaluate_leg(Frame& f, const Value& program, const Value& args)
         put(route, "guideObjective", guide);
     }
     const double seconds = num(at(a, "seconds")).value;
-    NodeSolve solve = hooks_.begin_leg(program, as_text(at(fields(policy), "numerical")), seconds);
+    const bool own_work = py_truthy(get_or_null(a, "ownWork"));
+    NodeSolve solve = hooks_.begin_leg(program, as_text(at(fields(policy), "numerical")), seconds, own_work);
     solve.adapter_identity = stage(f).corridor;
     EvaluateHooks evaluate = solve.hooks;
     evaluate.candidate = adapter_->candidate(program, f.goal_request, f.semantic_cursor, false);
     if (py_truthy(at(a, "progress"))) evaluate.on_progress = [this](const Value& repair) { score_progress(repair); };
     EvaluateOptions eo;
     eo.seconds = seconds;
-    eo.candidate_seconds = options_.candidate_seconds;
+    const Value* candidate_seconds = get(a, "candidateSeconds");
+    eo.candidate_seconds = candidate_seconds ? num(*candidate_seconds).value : options_.candidate_seconds;
     eo.required_landing = landing;
     eo.final_route = final_route;
     eo.policy = policy;
     eo.adapter_identity = solve.adapter_identity;
-    eo.retry_unresolved = options_.retry_unknown;
     eo.climb_families = true;
     eo.timings = {{"programCompilation", real(prepared_at - started)}};
     return evaluate_prepared(object(with(fields(options_.scene), "goalBlock", landing)), program, object(std::move(route)),
@@ -744,7 +748,7 @@ DfsSearch::RecordPtr DfsSearch::score(Frame& f, const SharedValue& program, cons
     const Value source_program = *program;
     const std::string identity =
         old ? old->id : f.in_flight.value ? f.in_flight.value->id : score_key(*program, f);
-    hooks_.count(final_frame(f) ? "terminalEvaluations" : "spatialGoalEvaluations");
+    hooks_.count(final_frame(f) ? "terminalEvaluations" : "spatialGoalEvaluations", 1);
     f.in_flight.value = InFlight{identity, program};
     transition("dispatch", f, {{"candidate", text(identity)}, {"goal", f.goal},
                                {"inputs", integer_value(duration_of(*program))}});
@@ -805,7 +809,6 @@ DfsSearch::RecordPtr DfsSearch::score(Frame& f, const SharedValue& program, cons
     record->objective_mode = "configured";
     if (!is_null(best)) record->arrival.value = duration_of(*program);
     if (!is_null(best)) record->value.value = num(at(fields(at(fields(best), "candidate")), "objective"));
-    record->family = decision_family(*program, f.parents);
     record->work = at(result, "work");
     record->goal = f.goal;
     record->goal_key = py_truthy(f.goal) ? text(goal_key(options_.scene, f.goal, active.corridor)) : Value{nullptr};
@@ -910,22 +913,6 @@ DfsSearch::RecordPtr DfsSearch::score(Frame& f, const SharedValue& program, cons
         }
     }
     if (record->witness && final_validated && final_frame(f)) {
-        Incumbent candidate{*record->child, Value{}, fields(*record->witness)};
-        erase(candidate.annotations, "movementProgram");
-        erase(candidate.annotations, "blockIds");
-        const Object& scene = fields(options_.scene);
-        candidate.block_ids = array({at(scene, "startBlock"), at(scene, "goalBlock")});
-        const Value objective = at(scene, "objective");
-        const Value candidate_value = to_value(candidate);
-        if (!state_.best.value || py_compare(candidate_rank(candidate_value, objective),
-                                             candidate_rank(to_value(*state_.best.value), objective)) < 0) {
-            state_.best.value = candidate;
-            if (!state_.first_full_solution_seconds)
-                state_.first_full_solution_seconds = flt(hooks_.monotonic() - options_.started);
-            hooks_.accepted(candidate_value);
-            transition("incumbent", f, {{"candidate", text(identity)},
-                                        {"objective", at(fields(at(fields(*record->witness), "candidate")), "objective")}});
-        }
         const auto existing = std::find_if(state_.final_attempts.begin(), state_.final_attempts.end(),
                                            [&](const RecordPtr& r) { return r->id == identity; });
         if (existing != state_.final_attempts.end()) {
@@ -986,6 +973,7 @@ DfsSearch::RecordPtr DfsSearch::variant_record(Frame& f, const Record& record, c
     alternate->arrival.value = at_tick;
     alternate->value.value = num(at(candidate, "objective"));
     alternate->restored_fallbacks.reset();
+    alternate->frame_end.reset();
     return alternate;
 }
 
@@ -1018,13 +1006,13 @@ bool DfsSearch::restore_fallback(Frame& f, const Value& recovery) {
     return false;
 }
 
-void DfsSearch::close_frame(const FramePtr& f, bool deferred) {
+void DfsSearch::close_frame(const FramePtr& f) {
     state_.stack.pop_back();
     const auto old = std::find_if(state_.frames.begin(), state_.frames.end(),
                                   [&](const FramePtr& v) { return v->id == f->id; });
     if (old != state_.frames.end()) state_.frames.erase(old);
     state_.frames.push_back(f);
-    if (!f->validated_finish.value_or(false) && !deferred) {
+    if (!f->validated_finish.value_or(false)) {
         bool rejected = false;
         for (const RecordPtr& r : f->records)
             rejected = rejected || (is_object(r->node_feasibility) &&
@@ -1047,17 +1035,8 @@ void DfsSearch::close_frame(const FramePtr& f, bool deferred) {
             }
         }
     }
-    if (!deferred) {
-        bool pending = false;
-        for (const RecordPtr& r : f->records) {
-            if (pending) break;
-            const Value& repair = get_or_null(fields(*r->program), "repairState");
-            pending = numerical_pending(*r) || (is_object(repair) && py_truthy(get_or_null(fields(repair), "unresolved")));
-        }
-        const Continuation* continuation = f->generation.continuation();
-        if (pending || (continuation && continuation->deferred_nodes && !continuation->deferred_nodes->empty()))
-            state_.suspended.push_back(f);
-    }
+    if (std::any_of(f->records.begin(), f->records.end(), [&](const RecordPtr& r) { return numerical_pending(*r); }))
+        state_.suspended.push_back(f);
     transition("backtrack", *f, {{"parent", frame_parent(f->parent)}});
 }
 
@@ -1095,10 +1074,6 @@ bool DfsSearch::restore_alternatives(Frame& f) {
     continuation->exhausted = false;
     f.source_exhausted = false;
     return true;
-}
-
-void DfsSearch::retry_deferred_nodes(Frame& f) {
-    if (restore_unknown_nodes(f.generation.continuation(), options_.retry_unknown)) f.source_exhausted = false;
 }
 
 // ---- decision checks
@@ -1187,7 +1162,6 @@ Value DfsSearch::evaluate_node(Value& program, OrderedMap<Value>& nodes, Frame& 
     o.numerical = options_.numerical_backend;
     o.frame = integer_value(f.id);
     o.candidate_seconds = options_.candidate_seconds;
-    o.retry_unresolved = options_.retry_unknown;
     // solve_route covers the routes the native node solve leaves to Python.
     const NodeEvaluation evaluated = *pkc::evaluate_node(options_.scene, program, h, o);
     return evaluated.input_program ? set_key(evaluated.result, "program", program) : evaluated.result;
@@ -1206,98 +1180,128 @@ void DfsSearch::replay_ancestors(const Value& program, const Value& positions, c
     }
 }
 
-// ---- finalization and the main loop
+// ---- frame ends and the main loop
 
-void DfsSearch::finalize_best() {
-    // One IPOPT re-solve of the best relaxed finish through the repair loop.
-    const std::string source = digest(to_value(*state_.best.value));
-    if (state_.finalization && state_.finalization->source == source && state_.finalization->stage == "complete") return;
-    state_.finalization = Finalization{1, source, "running", {}, Value{nullptr}};
-    publish();
-    // {f['id']: f for group in ('frames', 'suspended', 'refinements', 'stack') for f in state[group]}: a later group's
-    // frame replaces an earlier one with its id in the first one's place.
-    std::vector<std::pair<std::int64_t, FramePtr>> frames;
-    for (const auto* group : {&state_.frames, &state_.suspended, &state_.refinements, &state_.stack}) {
-        for (const FramePtr& f : *group) {
-            auto found = std::find_if(frames.begin(), frames.end(), [&](const auto& e) { return e.first == f->id; });
-            if (found != frames.end()) {
-                found->second = f;
-            } else {
-                frames.emplace_back(f->id, f);
-            }
-        }
+bool DfsSearch::frame_end(Frame& f, Record& chosen) {
+    // Re-solve a chosen relaxed witness at full strength before the search commits to it (user, 2026-11-23): true with
+    // the record holding the answer, false on failure, when the frame takes its next option. Outside the run's deadline
+    // and call budget: the solve runs on its own work, bounded only against a hung solve.
+    const Value program = without(*chosen.program, "repairState");
+    Object args = evaluation_args(f, program);
+    put(args, "policy", object(with(with(fields(at(args, "policy")), "rankEqualCost", boolean(false)), "numerical",
+                                    text("full_strength"))));
+    put(args, "seconds", real(kFrameEndSeconds));
+    put(args, "candidateSeconds", real(kFrameEndSeconds));
+    put(args, "progress", boolean(false));
+    put(args, "ownWork", boolean(true));
+    put(args, "finalRoute", at(fields(*chosen.witness), "route"));
+    const double began = hooks_.monotonic();
+    const Value result_value = evaluate_leg(f, program, object(std::move(args)));
+    const Object& result = fields(result_value);
+    if (as_text(at(result, "status")) == "cancelled" || hooks_.cancelled()) {
+        chosen.tried = false;  // untried again, so a resume repeats this solve
+        throw Timeout("cancelled");
     }
-    // Every final-frame witness is a complete relaxed finish; a chosen variant can be the incumbent without a
-    // finalAttempts record.
+    Array attempts;
+    if (const Value* listed = get(result, "attempts"))
+        for (const Value& a : items(*listed))
+            if (const Value* diagnostics = get(fields(a), "diagnostics"))
+                for (const Value& d : items(*diagnostics))
+                    if (const Value* record = get(fields(d), "frameEnd")) attempts.push_back(*record);
+    const Value* launches = get(fields(at(result, "work")), "workerLaunches");
+    const std::int64_t ipopt_calls = launches ? as_int(*launches) : 0;
+    hooks_.count("frameEnds", 1);
+    hooks_.count("frameEndIpoptCalls", ipopt_calls);
+    Object record{{"termination", at(result, "termination")}, {"attempts", array(std::move(attempts))},
+                  {"ipoptCalls", integer_value(ipopt_calls)}, {"seconds", real(hooks_.monotonic() - began)}};
+    const Value& best = at(result, "best");
+    if (is_null(best) || (final_frame(f) && !py_truthy(get_or_null(result, "fullSceneValidated")))) {
+        chosen.frame_end = object(with(record, "status", text("failed")));
+        hooks_.count("frameEndRejections", 1);
+        transition("frame_end_rejected", f, {{"candidate", text(chosen.id)}, {"termination", at(result, "termination")}});
+        return false;
+    }
+    Object child = fields(commit_arrival(program, best, program, false));
+    // The search fields score and variant_record set on the relaxed witness's child.
+    const Object& relaxed_child = fields(**chosen.child);
+    for (const char* k : {"settledThrough", "searchParent", "decisionNode", "decisionParent", "decisionDepth",
+                          "restoredRun", "decisionPointTick", "decisionPointSource", "lastSolvedDepth"})
+        if (const Value* v = get(relaxed_child, k)) put(child, k, *v);
+    erase(child, "solveScope");
+    const std::int64_t tick = as_int(at(child, "decisionPointTick"));
+    const Object& candidate = fields(at(fields(best), "candidate"));
+    put(child, "decisionPoint", items(at(candidate, "positions")).at(tick));
+    put(child, "decisionVelocity", items(at(candidate, "velocity")).at(tick));
+    chosen.witness = best;
+    chosen.child = std::make_shared<Value>(object(std::move(child)));
+    chosen.value.value = num(at(candidate, "objective"));
+    chosen.frame_end = object(with(record, "status", text("confirmed")));
+    transition("frame_end_confirmed", f, {{"candidate", text(chosen.id)}, {"objective", at(candidate, "objective")}});
+    return true;
+}
+
+Value DfsSearch::witness_rank(const Record& record) const {
+    // Ticks, then the objective the frame's witnesses optimize: a guide objective at an anchor.
+    const Object& route = fields(at(fields(*record.witness), "route"));
+    const Value* guide = get(route, "guideObjective");
+    return candidate_rank(*record.witness, guide ? *guide : at(route, "objective"));
+}
+
+bool DfsSearch::improves(const Record& record) const {
+    // A finish ranked no better than the incumbent cannot become it: its relaxed value bounds its answer.
     const Value objective = at(fields(options_.scene), "objective");
-    std::vector<std::tuple<Value, FramePtr, RecordPtr>> candidates;
-    for (const auto& [_, f] : frames)
-        if (final_frame(*f))
-            for (const RecordPtr& r : f->records)
-                if (r->witness) candidates.emplace_back(candidate_rank(*r->witness, objective), f, r);
-    std::stable_sort(candidates.begin(), candidates.end(),
-                     [](const auto& a, const auto& b) { return py_compare(std::get<0>(a), std::get<0>(b)) < 0; });
-    Finalization& record = *state_.finalization;
-    for (const auto& [rank, f, r] : candidates) {
-        if (hooks_.monotonic() >= options_.deadline || hooks_.cancelled()) break;
-        const Value& witness = *r->witness;
-        const Value program = without(*r->program, "repairState");
-        const double began = hooks_.monotonic();
-        Value best, child;
-        FinalAttempt attempt;
-        if (!get(fields(at(fields(witness), "candidate")), "model")) {
-            best = witness;
-            child = **r->child;
-            attempt.status = "physical";
-            attempt.termination = Value{nullptr};
-            attempt.ipopt_calls = 0;
-        } else {
-            Object args = evaluation_args(*f, program);
-            put(args, "policy", object({{"purpose", text("terminal")}, {"stopOnFeasible", boolean(false)},
-                                        {"rankEqualCost", boolean(false)}, {"oracleRejection", boolean(true)},
-                                        {"numerical", text("ipopt")}}));
-            put(args, "seconds", real(std::max(.001, options_.deadline - hooks_.monotonic())));
-            put(args, "progress", boolean(false));
-            const Object& w = fields(witness);
-            put(args, "finalRoute", set_key(at(w, "route"), "warmYaw", ipopt_seed(at(fields(at(w, "candidate")), "yaw"))));
-            scoring_ = f.get();
-            Value result_value;
-            try {
-                result_value = evaluate_leg(*f, program, object(std::move(args)));
-            } catch (...) {
-                scoring_ = nullptr;
-                throw;
-            }
-            scoring_ = nullptr;
-            const Object& result = fields(result_value);
-            best = at(result, "best");
-            if (!is_null(best) && !py_truthy(get_or_null(result, "fullSceneValidated"))) best = Value{nullptr};
-            child = is_null(best) ? Value{nullptr} : commit_arrival(program, best, program, false);
-            attempt.status = is_null(best) ? as_text(at(result, "status")) : "feasible";
-            attempt.termination = at(result, "termination");
-            const Value* launches = get(fields(at(result, "work")), "workerLaunches");
-            attempt.ipopt_calls = launches ? as_int(*launches) : 0;
-        }
-        attempt.frame = f->id;
-        attempt.record = r->id;
-        attempt.seconds = flt(hooks_.monotonic() - began);
-        record.attempts.push_back(std::move(attempt));
-        if (!is_null(best)) {
-            const Object& scene = fields(options_.scene);
-            Object published = fields(best);
-            put(published, "movementProgram", child);
-            put(published, "blockIds", array({at(scene, "startBlock"), at(scene, "goalBlock")}));
-            record.best = object(std::move(published));
-            break;
-        }
-        publish();
+    return !state_.best.value || py_compare(candidate_rank(*record.witness, objective),
+                                            candidate_rank(to_value(*state_.best.value), objective)) < 0;
+}
+
+void DfsSearch::commit_finish(Frame& f, Record& chosen) {
+    const Value& node = get_or_null(fields(*chosen.program), "decisionNode");
+    if (std::holds_alternative<std::string>(node.data))
+        if (ObservationDecision* event = state_.observations.decisions.find(as_text(node)))
+            event->selected = event->selected.value_or(0) + 1;
+    transition("choose", f, {{"candidate", text(chosen.id)},
+                             {"arrival", chosen.arrival.value ? integer_value(*chosen.arrival.value) : Value{nullptr}},
+                             {"key", record_priority(chosen, f)}});
+    for (const FramePtr& ancestor : state_.stack) ancestor->validated_finish = true;
+    Incumbent candidate{*chosen.child, Value{}, fields(*chosen.witness)};
+    erase(candidate.annotations, "movementProgram");
+    erase(candidate.annotations, "blockIds");
+    const Object& scene = fields(options_.scene);
+    candidate.block_ids = array({at(scene, "startBlock"), at(scene, "goalBlock")});
+    const Value objective = at(scene, "objective");
+    const Value candidate_value = to_value(candidate);
+    if (!state_.best.value || py_compare(candidate_rank(candidate_value, objective),
+                                         candidate_rank(to_value(*state_.best.value), objective)) < 0) {
+        state_.best.value = candidate;
+        if (!state_.first_full_solution_seconds)
+            state_.first_full_solution_seconds = flt(hooks_.monotonic() - options_.started);
+        hooks_.accepted(candidate_value);
+        transition("incumbent", f, {{"candidate", text(chosen.id)},
+                                    {"objective", at(fields(at(fields(*chosen.witness), "candidate")), "objective")}});
     }
-    if (!is_null(record.best)) {
-        record.stage = "complete";
-    } else if (!hooks_.cancelled()) {
-        record.stage = "failed";
+}
+
+void DfsSearch::confirm_at_budget_end() {
+    // The run budget ended inside a final frame: confirm its best scored finish that can beat the incumbent, falling
+    // back to the next (user, 2026-11-23). The rest of its queue waits for a resume.
+    if (state_.stack.empty() || options_.numerical_backend == "ipopt") return;
+    const FramePtr f = state_.stack.back();
+    if (!final_frame(*f)) return;
+    std::vector<std::pair<Value, RecordPtr>> options;
+    for (const RecordPtr& r : f->records)
+        if (r->witness && !r->tried && !(r->preparation_deferral && py_truthy(*r->preparation_deferral)) && improves(*r))
+            options.emplace_back(array({witness_rank(*r), record_priority(*r, *f)}), r);
+    std::stable_sort(options.begin(), options.end(),
+                     [](const auto& a, const auto& b) { return py_compare(a.first, b.first) < 0; });
+    for (const auto& [_, chosen] : options) {
+        chosen->tried = true;
+        const bool confirmed = chosen->frame_end && py_equal(get_or_null(fields(*chosen->frame_end), "status"),
+                                                              text("confirmed"));
+        if (confirmed || frame_end(*f, *chosen)) {
+            commit_finish(*f, *chosen);
+            return;
+        }
     }
-    publish();
 }
 
 std::string DfsSearch::run() {
@@ -1317,7 +1321,6 @@ std::string DfsSearch::run() {
         }
     }
     const auto resumable_frame = [&](const Frame& f) {
-        if (options_.retry_unknown) return true;
         return std::any_of(f.records.begin(), f.records.end(), [&](const RecordPtr& r) { return numerical_pending(*r); });
     };
     FramePtr resumable;
@@ -1329,10 +1332,6 @@ std::string DfsSearch::run() {
     if (state_.stack.empty() && resumable) {
         FramePtr f = resumable;
         state_.suspended.erase(std::find(state_.suspended.begin(), state_.suspended.end(), f));
-        retry_deferred_nodes(*f);
-        f->retry_session = state_.session;
-        for (const RecordPtr& r : f->records)
-            if (options_.retry_unknown && !r->witness) f->ready.push_back(r->program);
         f->phase = "score";
         state_.stack.push_back(f);
     }
@@ -1349,8 +1348,7 @@ std::string DfsSearch::run() {
                *r.refinement_session->value != state_.session;
     };
     try {
-        while (!state_.stack.empty() || !state_.refinements.empty() || !resumable_ids.empty() ||
-               !state_.goal_queue.empty()) {
+        while (!state_.stack.empty() || !resumable_ids.empty() || !state_.goal_queue.empty()) {
             hooks_.check();
             if (state_.stack.empty()) {
                 if (!state_.goal_queue.empty()) {
@@ -1358,23 +1356,10 @@ std::string DfsSearch::run() {
                     state_.goal_queue.erase(state_.goal_queue.begin());
                     continue;
                 }
-                FramePtr f;
-                if (!state_.refinements.empty()) {
-                    f = state_.refinements.front();
-                    state_.refinements.erase(state_.refinements.begin());
-                } else {
-                    f = *std::find_if(state_.suspended.begin(), state_.suspended.end(),
-                                      [&](const FramePtr& v) { return resumable_ids.count(v->id); });
-                    resumable_ids.erase(f->id);
-                    state_.suspended.erase(std::find(state_.suspended.begin(), state_.suspended.end(), f));
-                    if (options_.retry_unknown) {
-                        std::set<std::string> known;
-                        for (const SharedValue& p : f->ready) known.insert(candidate_key(*p));
-                        for (const RecordPtr& r : f->records)
-                            if (!r->witness && !known.count(r->id)) f->ready.push_back(r->program);
-                    }
-                }
-                retry_deferred_nodes(*f);
+                FramePtr f = *std::find_if(state_.suspended.begin(), state_.suspended.end(),
+                                           [&](const FramePtr& v) { return resumable_ids.count(v->id); });
+                resumable_ids.erase(f->id);
+                state_.suspended.erase(std::find(state_.suspended.begin(), state_.suspended.end(), f));
                 f->phase = !f->ready.empty() ? "score" : !f->source_exhausted ? "generate" : "select";
                 state_.stack.push_back(f);
             }
@@ -1400,50 +1385,8 @@ std::string DfsSearch::run() {
                         program = item.program;
                         previous = first_record(*f, [&](const Record& r) { return r.id == item.id; });
                     } else {
-                        std::set<std::string> covered;
-                        std::vector<RecordPtr> measured;
-                        for (const RecordPtr& r : f->records)
-                            if (r->witness && !r->tried) {
-                                covered.insert(r->family);
-                                measured.push_back(r);
-                            }
-                        for (const SharedValue& p : f->ready)
-                            if (!covered.count(decision_family(*p, f->parents))) {
-                                program = p;
-                                break;
-                            }
-                        if (!program) break;
-                        const Value initial_domain = f->index == 0 ? options_.initial_jump_inputs : Value{nullptr};
-                        std::set<std::optional<std::int64_t>> observed;
-                        for (const RecordPtr& r : measured) {
-                            const Object& prof = profile_of(*r->program);
-                            const Array &jump = items(at(prof, "jump")), &grounded = items(at(prof, "grounded"));
-                            std::optional<std::int64_t> first;
-                            for (std::size_t t = 0; t < jump.size(); ++t)
-                                if (py_truthy(jump[t]) && py_truthy(grounded.at(t))) {
-                                    first = static_cast<std::int64_t>(t);
-                                    break;
-                                }
-                            observed.insert(first);
-                        }
-                        bool compared_roots = is_null(initial_domain);
-                        if (!compared_roots) {
-                            compared_roots = true;
-                            for (const Value& t : items(initial_domain))
-                                compared_roots = compared_roots && observed.count(as_int(t));
-                        }
-                        if (!measured.empty() && compared_roots) {
-                            RecordPtr best = measured.front();
-                            Value best_key = record_priority(*best, *f);
-                            for (std::size_t i = 1; i < measured.size(); ++i) {
-                                Value key = record_priority(*measured[i], *f);
-                                if (py_compare(key, best_key) < 0) {
-                                    best = measured[i];
-                                    best_key = std::move(key);
-                                }
-                            }
-                            if (compare_prefix(priority(*program, *f), record_priority(*best, *f), 3) > 0) break;
-                        }
+                        // Every queued arrival is scored, in priority order.
+                        program = f->ready.front();
                         hooks_.check();
                         f->ready.erase(std::find(f->ready.begin(), f->ready.end(), program));
                         const std::string key = candidate_key(*program);
@@ -1460,15 +1403,35 @@ std::string DfsSearch::run() {
                 }
                 f->phase = "select";
             }
+            // A frame chooses only once its whole queue is examined: every arrival scored, every interrupted solve
+            // refined and its generator exhausted. Reserved work (deferred slower runs, held alternatives) waits for a
+            // failure below (user, 2026-11-23).
+            if (!f->ready.empty()) {
+                f->phase = "score";
+                continue;
+            }
+            if (RecordPtr pending = first_record(*f, [&](const Record& r) {
+                    return !(r.refinement_time_exclusion && py_truthy(*r.refinement_time_exclusion)) &&
+                           !(r.preparation_deferral && py_truthy(*r.preparation_deferral)) && numerical_pending(r) &&
+                           refinement_session_differs(r);
+                })) {
+                refine(*f, pending);
+                continue;
+            }
+            if (!f->source_exhausted) {
+                f->phase = "generate";
+                continue;
+            }
             std::vector<RecordPtr> options;
             for (const RecordPtr& r : f->records)
                 if (r->witness && !r->tried && !(r->preparation_deferral && py_truthy(*r->preparation_deferral)))
                     options.push_back(r);
             if (!options.empty()) {
+                // Fewest ticks, then objective, at every frame (user, 2026-11-23).
                 RecordPtr chosen = options.front();
-                Value chosen_key = record_priority(*chosen, *f);
+                Value chosen_key = array({witness_rank(*chosen), record_priority(*chosen, *f)});
                 for (std::size_t i = 1; i < options.size(); ++i) {
-                    Value key = record_priority(*options[i], *f);
+                    Value key = array({witness_rank(*options[i]), record_priority(*options[i], *f)});
                     if (py_compare(key, chosen_key) < 0) {
                         chosen = options[i];
                         chosen_key = std::move(key);
@@ -1489,6 +1452,17 @@ std::string DfsSearch::run() {
                     transition("candidate_exclusion", *f, {{"candidate", text(chosen->id)}, {"proof", proof}});
                     continue;
                 }
+                // A finish that cannot beat the incumbent needs no answer.
+                if (options_.numerical_backend != "ipopt" && (!final_frame(*f) || improves(*chosen)) &&
+                    !(chosen->frame_end &&
+                      py_equal(get_or_null(fields(*chosen->frame_end), "status"), text("confirmed"))) &&
+                    !frame_end(*f, *chosen))
+                    continue;
+                if (final_frame(*f)) {
+                    // The frame stays open: its next finish may still beat this one's answer.
+                    commit_finish(*f, *chosen);
+                    continue;
+                }
                 const Value& node = get_or_null(fields(*chosen->program), "decisionNode");
                 if (std::holds_alternative<std::string>(node.data))
                     if (ObservationDecision* event = state_.observations.decisions.find(as_text(node)))
@@ -1496,31 +1470,6 @@ std::string DfsSearch::run() {
                 transition("choose", *f, {{"candidate", text(chosen->id)},
                                           {"arrival", chosen->arrival.value ? integer_value(*chosen->arrival.value) : Value{nullptr}},
                                           {"key", record_priority(*chosen, *f)}});
-                if (final_frame(*f)) {
-                    for (const FramePtr& ancestor : state_.stack) ancestor->validated_finish = true;
-                    Incumbent candidate{*chosen->child, Value{}, fields(*chosen->witness)};
-                    erase(candidate.annotations, "movementProgram");
-                    erase(candidate.annotations, "blockIds");
-                    const Object& scene = fields(options_.scene);
-                    candidate.block_ids = array({at(scene, "startBlock"), at(scene, "goalBlock")});
-                    const Value objective = at(scene, "objective");
-                    const Value candidate_value = to_value(candidate);
-                    if (!state_.best.value || py_compare(candidate_rank(candidate_value, objective),
-                                                         candidate_rank(to_value(*state_.best.value), objective)) < 0) {
-                        state_.best.value = candidate;
-                        hooks_.accepted(candidate_value);
-                        transition("incumbent", *f,
-                                   {{"candidate", text(chosen->id)},
-                                    {"objective", at(fields(at(fields(*chosen->witness), "candidate")), "objective")}});
-                    }
-                    // Save local refinements, but return to actual siblings first.
-                    const bool deferred = !f->ready.empty() || !f->source_exhausted ||
-                                          std::any_of(f->records.begin(), f->records.end(),
-                                                      [&](const RecordPtr& r) { return numerical_pending(*r); });
-                    if (deferred) state_.refinements.push_back(f);
-                    close_frame(f, deferred);
-                    continue;
-                }
                 Window window;
                 window.checkpoint.tick = *chosen->arrival.value;
                 window.goal = f->goal;
@@ -1542,22 +1491,6 @@ std::string DfsSearch::run() {
                 const Value cursor =
                     adapter_->advance(f->semantic_cursor, **chosen->child, *chosen->witness, f->goal_request);
                 frame(f->index + 1, {**chosen->child}, Nullable<FrameParent>{FrameParent{f->id, chosen->id}}, cursor);
-                continue;
-            }
-            if (!f->ready.empty()) {
-                f->phase = "score";
-                continue;
-            }
-            if (RecordPtr pending = first_record(*f, [&](const Record& r) {
-                    return !(r.refinement_time_exclusion && py_truthy(*r.refinement_time_exclusion)) &&
-                           !(r.preparation_deferral && py_truthy(*r.preparation_deferral)) && numerical_pending(r) &&
-                           refinement_session_differs(r);
-                })) {
-                refine(*f, pending);
-                continue;
-            }
-            if (!f->source_exhausted) {
-                f->phase = "generate";
                 continue;
             }
             if (restore_alternatives(*f)) {
@@ -1622,12 +1555,19 @@ std::string DfsSearch::run() {
                     continue;
                 }
             }
-            close_frame(f, false);
+            close_frame(f);
         }
         if (state_.stack.empty() && !state_.suspended.empty()) termination = "numerical_unknown";
     } catch (const Timeout& error) {
         const Value work_termination = hooks_.termination();
         termination = py_truthy(work_termination) ? as_text(work_termination) : error.what();
+        if (termination != "cancelled" && termination != "error") {
+            try {
+                confirm_at_budget_end();
+            } catch (const Timeout&) {
+                termination = "cancelled";
+            }
+        }
     }
     publish();
     if (termination == "exhausted")

@@ -56,8 +56,6 @@ bool restore_alternatives(Continuation& state, const std::vector<Value>& extra_l
     };
     for (const Value& program : state.pending) live(program);
     for (const Value& program : state.ready) live(program);
-    if (state.deferred_nodes)
-        for (const Value& program : *state.deferred_nodes) live(program);
     if (state.node_in_flight) live(*state.node_in_flight);
     if (state.expansion.value) live(state.expansion.value->program);
     for (const Value& program : extra_live) live(program);
@@ -131,7 +129,6 @@ Frontier::Frontier(Generation& generation, FrontierOptions options, FrontierHook
     state_ = &report_->continuation;
     // The DFS always evaluates decision nodes.
     if (!state_->nodes) state_->nodes.emplace();
-    if (!state_->deferred_nodes) state_->deferred_nodes.emplace();
     if (!state_->decision_parents) state_->decision_parents.emplace();
     if (!state_->alternatives) state_->alternatives.emplace();
     if (!state_->succeeded_nodes) state_->succeeded_nodes.emplace();
@@ -443,16 +440,14 @@ void Frontier::expand(ExpansionState& e) {
 void Frontier::update(const std::string& reason) {
     GenerationReport& r = *report_;
     const Continuation& s = *state_;
-    const std::int64_t deferred = s.deferred_nodes ? static_cast<std::int64_t>(s.deferred_nodes->size()) : 0;
     r.termination = reason;
     r.expanded_prefixes = expanded_;
     r.total_expanded_prefixes = s.expanded;
     r.generated = s.generated;
     r.emitted_programs = s.emitted;
     r.screened_prefixes = s.screened;
-    r.remaining_prefixes = static_cast<std::int64_t>(s.pending.size() + s.ready.size()) + deferred +
+    r.remaining_prefixes = static_cast<std::int64_t>(s.pending.size() + s.ready.size()) +
                            s.expansion.value.has_value() + s.node_in_flight.has_value();
-    r.deferred_nodes = deferred;
     r.queued_complete_programs = static_cast<std::int64_t>(s.ready.size());
     r.queue_drops = r.partial_queue_drops = r.complete_queue_drops = 0;
     r.policy_rejections = s.policy_rejections;
@@ -536,13 +531,6 @@ std::optional<Value> Frontier::run() {
                     const Object& r = fields(result);
                     program = at(r, "program");
                     s.node_in_flight = program;
-                    if (py_truthy(get_or_null(r, "deferUnknown"))) {
-                        s.deferred_nodes->push_back(program);
-                        s.node_in_flight.reset();
-                        settle_sides(node_of(program));
-                        update();
-                        continue;
-                    }
                     const std::string status = as_text(at(r, "status"));
                     if (status == "suspended" || status == "error") {
                         update(status);
@@ -595,7 +583,7 @@ std::optional<Value> Frontier::run() {
             update();
         }
         s.exhausted = true;
-        update(s.deferred_nodes && !s.deferred_nodes->empty() ? "numerical_unknown" : "exhausted");
+        update("exhausted");
     } catch (const Timeout& error) {
         const Value termination = hooks_.termination();
         update(py_truthy(termination) ? as_text(termination) : std::string(error.what()));

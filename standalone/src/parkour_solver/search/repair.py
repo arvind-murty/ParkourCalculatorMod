@@ -84,7 +84,7 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
             stop_on_feasible=stop_on_feasible, python_executable=python_executable, cancel_event=cancel_event,
             geometry=geometry, solid_blocks=solid_blocks, max_wall_hits=max_wall_hits, candidate_filter=candidate_filter,
             work=work, resume_state=resume_state, repair_scope=repair_scope, on_progress=on_progress,
-            validation_scope=validation_scope, initial_variants=initial_variants, retry_unresolved=False,
+            validation_scope=validation_scope, initial_variants=initial_variants,
             oracle_rejection=oracle_rejection, climb_families=climb_families, numerical=numerical, confirm=confirm)
     route = copy.deepcopy(route)
     if solid_blocks is not None:

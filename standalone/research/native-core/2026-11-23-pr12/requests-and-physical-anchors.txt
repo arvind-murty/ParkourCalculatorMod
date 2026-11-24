@@ -1,0 +1,8 @@
+requests.json, short control (/private/var/tmp/standalone-cpp-node-20261122/short/input.json), --profile-mode bookkeeping, Python mode vs native mode:
+rows 47 47 ; equal apart from seconds 47
+Before the request observer, native mode recorded 1 row on this input (Python mode 40, before PR #12's frame-end rows).
+
+cases/real11/physical-anchors.json, 300 s, --profile-mode bookkeeping:
+python {'ticks': 64, 'objective': -1093.2383028783543, 'searchSeconds': 5.108796875923872, 'firstFullSolutionSeconds': 2.821789000183344, 'expandedPrefixes': 10, 'termination': 'exhausted', 'unresolvedBranches': 0, 'wrappers': 47, 'workers': 8, 'validatedWitnesses': 8, 'allReplaysPassed': True}
+native {'ticks': 64, 'objective': -1093.2383028783543, 'searchSeconds': 1.4781849570572376, 'firstFullSolutionSeconds': 0.7825383730232716, 'expandedPrefixes': 10, 'termination': 'exhausted', 'unresolvedBranches': 0, 'wrappers': 47, 'workers': 8, 'validatedWitnesses': 8, 'allReplaysPassed': True}
+request rows equal apart from seconds: 47 of 47

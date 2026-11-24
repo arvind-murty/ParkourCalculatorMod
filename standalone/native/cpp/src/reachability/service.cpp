@@ -117,14 +117,14 @@ std::shared_ptr<const T> InteractionGate::cached(const std::string& key, const s
     return value;
 }
 
-const Value* InteractionGate::confirmation(const std::string& fingerprint) const {
-    auto found = index_.find("confirmation:" + fingerprint);
+const Value* InteractionGate::answer(const std::string& kind, const std::string& fingerprint) const {
+    auto found = index_.find(kind + ":" + fingerprint);
     if (found == index_.end()) return nullptr;
     return std::any_cast<const std::shared_ptr<const Value>&>(found->second->second).get();
 }
 
-void InteractionGate::remember_confirmation(const std::string& fingerprint, const Value& result) {
-    const std::string key = "confirmation:" + fingerprint;
+void InteractionGate::remember_answer(const std::string& kind, const std::string& fingerprint, const Value& result) {
+    const std::string key = kind + ":" + fingerprint;
     cache_.emplace_back(key, std::make_shared<const Value>(result));
     index_[key] = std::prev(cache_.end());
 }

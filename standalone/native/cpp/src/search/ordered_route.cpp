@@ -406,7 +406,7 @@ Value find_route(const Value& request, const SolveHooks& hooks, const RouteSearc
                                   {"objectiveMode", text("configured")},
                                   {"workerLaunched", get_or_null(result, "workerLaunched")},
                                   {"workerStatus", get_or_null(result, "workerStatus")}};
-                for (const char* key : {"backend", "disk", "confirmation", "fallback"})
+                for (const char* key : {"backend", "disk", "confirmation", "fallback", "frameEnd"})
                     if (const Value* v = get(result, key)) diagnostic.emplace_back(key, *v);
                 diagnostics.push_back(object(std::move(diagnostic)));
                 if (as_text(at(result, "status")) == "cancelled")

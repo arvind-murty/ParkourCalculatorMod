@@ -476,7 +476,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
             begin_solve=begin_solve,assign=assign,progress=progress if on_progress else None,settle=settle,
             observe=observed,replay=replayed,store=store,saved=nodes.get(identity),guide_plan=adapter.guide_plan,
             span=span,solve_interval=adapter.anchor_policy['solveEveryDecisionLevels'],numerical=numerical_backend,
-            frame=f['id'],candidate_seconds=candidate_seconds,retry_unresolved=False)
+            frame=f['id'],candidate_seconds=candidate_seconds)
         if evaluated is None:
             return None
         result,same=evaluated
@@ -999,8 +999,10 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
         def evaluate(frame_id, request, cursor, program, options):
             landing = options['landing']
             final = dict(final_route=options['finalRoute']) if 'finalRoute' in options else {}
-            return evaluate_program(dict(scene,goalBlock=landing),program,compiler,view(frame_id,request,cursor),work,
-                motion,seconds=options['seconds'],candidate_seconds=candidate_seconds,python_executable=python_executable,
+            # A frame-end re-solve runs on its own work, outside the run's deadline and call budget.
+            return evaluate_program(dict(scene,goalBlock=landing),program,compiler,view(frame_id,request,cursor),
+                SearchWork() if options.get('ownWork') else work,motion,seconds=options['seconds'],
+                candidate_seconds=options.get('candidateSeconds',candidate_seconds),python_executable=python_executable,
                 cancel_event=cancel_event,on_progress=native.score_progress if options['progress'] else None,
                 required_landing=landing,first_witness=options['firstWitness'],
                 guide_objective=options['guideObjective'],solve_policy=options['policy'],climb_families=True,**final)
@@ -1008,8 +1010,9 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
             from parkour_solver.search.bounds.flight import transfer_bounds
             transfer_bounds(scene, adapter.guide_plan, motion, gate, saved=saved, threshold=0., check=work.check)
             return saved
-        def begin_leg(program, numerical, seconds):
-            return solve_services(None, program, work, gate, numerical, seconds=seconds, cancel_event=cancel_event)
+        def begin_leg(program, numerical, seconds, own_work):
+            return solve_services(None, program, SearchWork() if own_work else work, gate, numerical, seconds=seconds,
+                                  cancel_event=cancel_event)
         def begin_solve(program):
             return solve_services(None,program,work,gate,numerical_backend,
                 seconds=max(.001,min(score_seconds,deadline-time.monotonic())),cancel_event=cancel_event)
@@ -1021,8 +1024,8 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
                 python_executable=python_executable,cancel_event=cancel_event,
                 guide_objective=node_view.objective,first_witness=True,
                 solve_policy=policy,climb_families=True,on_progress=progress)
-        def count(name):
-            work.counts[name] += 1
+        def count(name, by):
+            work.counts[name] += by
         # Each publish is a native snapshot; a checkpoint saver reads its repair targets' paths from it.
         def begun(snapshot):
             begin = getattr(on_progress, 'begin_repair', None)
@@ -1050,7 +1053,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
             domainId=adapter.data['domainId'], roots=roots,
             taskBlock=adapter.data['task']['block'],
             initialJumpInputs=getattr(program_filter,'initial_jump_inputs',None), caps=accepted_program.caps,
-            minimumRunPruning=bool(minimum_run_pruning), retryUnknown=False, deadline=deadline,
+            minimumRunPruning=bool(minimum_run_pruning), deadline=deadline,
             started=started, candidateSeconds=candidate_seconds, scoreSeconds=score_seconds, batchSize=batch_size,
             numericalBackend=numerical_backend, priorCalls=prior_calls, initialExpanded=initial_expanded,
             comparisonPolicy=COMPARISON_POLICY_VERSION), hooks, gate.core, native_scenes['anchorScene'], native_adapter)

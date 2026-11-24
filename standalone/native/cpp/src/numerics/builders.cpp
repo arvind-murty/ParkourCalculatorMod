@@ -2,6 +2,8 @@
 // ladder_waypoints seed ladder events and stay in Python with the ladder code.
 #include "pkc/numerics/builders.hpp"
 
+#include <algorithm>
+
 #include "../schema.hpp"
 #include "pkc/numerics/model.hpp"
 #include "pkc/scene/route.hpp"
@@ -29,6 +31,13 @@ Value numerical_problem(const Value& route_value, const Value& plan_value, const
     put(problem, "contacts", contacts ? *contacts : array({}));
     put(problem, "objective", object(with(fields(guide ? *guide : at(route, "objective")), "tick", at(plan, "ticks"))));
     if (const Value* ladder = get(plan, "ladderTicks")) put(problem, "ladderTicks", *ladder);
+    const Value* warm = get(route, "warmYaw");
+    if ((!parent || is_null(*parent)) && warm && py_truthy(*warm)) {
+        // The parent answer's facings, kept apart from `yaw`, which passage_seed may replace.
+        const Array& yaw = items(*warm);
+        const auto ticks = static_cast<std::size_t>(std::min<std::int64_t>(as_int(at(plan, "ticks")), yaw.size()));
+        put(problem, "warmYaw", array(Array(yaw.begin(), yaw.begin() + ticks)));
+    }
     return prepare_problem(object(std::move(problem)));
 }
 

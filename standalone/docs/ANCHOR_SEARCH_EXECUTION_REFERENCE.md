@@ -150,7 +150,8 @@ is never solved again. Incumbents are only frame-end answers, so the run
 publishes its incumbent as is, also when cancelled; with none, it publishes no
 route. `work` counts `frameEnds`, `frameEndRejections` and `frameEndIpoptCalls`
 apart from the traversal's counters. IPOPT-backend searches keep their
-witnesses.
+witnesses. The native loop (`search/dfs_search.hpp`) re-solves at the same
+points through `DfsSearch::frame_end`, its leg solve on a fresh work budget.
 
 ## Tick policy, protections and examples
 
@@ -288,8 +289,9 @@ reserved run counts as alternatives in the same order as the Python search. A ba
 so a resumed expansion redoes it from the saved cursor. Each decision check (`dfs.evaluate_node`) runs natively
 (`search/dfs.hpp`) once the gate has prepared a route without passages, wall hits or ladder events: its node solve
 (`search/engine.hpp`: scope, floor checks, identity, constraint generator, repair loop, outcome), the branch program it
-commits and the alternatives it holds. The gate's analysis and face tables and the relaxed dispatch with its IPOPT
-solves run on the gate's native core (`reachability/service.hpp`, `numerics/disk.hpp`, `numerics/solver.hpp`); the
+commits and the alternatives it holds. The gate's analysis and face tables and the relaxed dispatch (its post-alarm
+pipeline, frame-end answers and IPOPT solves) run on the gate's native core (`reachability/service.hpp`,
+`numerics/disk.hpp`, `numerics/post_alarm.hpp`, `numerics/solver.hpp`); the
 compiler and the work budget stay Python callbacks (and, in the Python loop, the adapter's candidate check), and the
 check records into
 the search's node table, checkpoint progress and observations through callbacks. The native search's anchor-leg and

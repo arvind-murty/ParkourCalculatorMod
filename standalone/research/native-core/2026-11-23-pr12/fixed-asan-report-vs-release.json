@@ -1,0 +1,38 @@
+[
+ [
+  ".provenance.command",
+  "length 9 != 10"
+ ],
+ [
+  ".provenance.command[0]",
+  "tools.profiling.run != /Users/arvindmurty/CS/pkc-wt/standalone-cpp-benchmark/standalone/tools/profiling/run.py"
+ ],
+ [
+  ".provenance.command[4]",
+  "/private/var/tmp/standalone-cpp-next-20261122/pr12a-fixed-native/run != /private/var/tmp/standalone-cpp-next-20261122/pr12-asan-fixed"
+ ],
+ [
+  ".provenance.command[6]",
+  "900 != 3600"
+ ],
+ [
+  ".provenance.dependencies.numpy",
+  "2.5.4 != 2.0.1"
+ ],
+ [
+  ".provenance.dependencies.scipy",
+  "1.18.1 != 1.16.2"
+ ],
+ [
+  ".provenance.instrumentationHashes.bookkeeping.py",
+  "579dac50ccdc79cba6d98fc824730bd2f21c8ef98f1e5e0901da57c7dbd7c235 != b1fba23863f2e43e6325625af825b7222abc54e8450e531c34a0c78029c1e6e7"
+ ],
+ [
+  ".provenance.pythonExecutable",
+  "/Users/arvindmurty/CS/pkc-wt/standalone-cpp-benchmark/.venv-guidance/bin/python != /private/tmp/claude-501/-Users-arvindmurty-CS-ParkourCalculatorMod-standalone/f72b07cb-fc7a-4ce8-b89d-345ede25af02/scratchpad/Python-adhoc"
+ ],
+ [
+  ".windows",
+  "missing on left"
+ ]
+]
