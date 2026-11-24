@@ -82,6 +82,7 @@ std::pair<Value, std::shared_ptr<DiskProblem>> disk_decide(const Value& content,
 // process-wide by json.dumps(content, sort_keys=True), with STATS counted per kind ('screen', 'candidate').
 Value disk_cached_solve(const Value& content, double seconds, const std::string& kind, const DiskLimits& limits);
 Value disk_stats();  // STATS: {kind: {counter: count}}
+void disk_clear_decided();  // clear_decided(): empties the decided cache (a change of work-only mode)
 
 // screen(model, extra_rows, objective): null when not applicable, else {outcome, status[, proof]}.
 Value disk_screen(const Value& model, const Value& extra_rows, const Value* objective, const DiskLimits& limits);

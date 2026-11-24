@@ -1,3 +1,4 @@
+import math
 import unittest
 
 from parkour_solver.numerics.continuation import Incumbent, run
@@ -81,6 +82,20 @@ class ContinuationTests(unittest.TestCase):
         self.assertAlmostEqual(sum(c[1] for c in calls), 1.)
         self.assertTrue(all(c[2] == [[2, 2], [2, 2]] for c in calls))
         self.assertEqual(events[-1]['yaw'], [0, 0])
+
+    def test_a_request_without_a_wall_limit_gives_every_phase_an_unlimited_budget(self):
+        request = self.request()
+        request.update(threshold=0, fallbackYaw=[90, 90], seconds=None, stopOnFeasible=False)
+        calls, now = [], [0.]
+
+        def phase(problem, yaw, pattern, seconds, stop, consider, kind, seed):
+            calls.append((seed, seconds))
+            now[0] += 1e6  # however long a phase takes, the next one still runs
+            return yaw, 'Solve_Succeeded'
+
+        run(request, phase, lambda yaw: self.fail('Threshold inference in carry-only mode'), lambda event: None,
+            clock=lambda: now[0])
+        self.assertEqual(calls, [('initial', math.inf), ('fallback', math.inf)])
 
     def test_zero_threshold_failed_fallback_preserves_valid_incumbent(self):
         request = self.request()

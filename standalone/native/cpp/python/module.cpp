@@ -58,6 +58,7 @@
 #include "pkc/spatial/surfaces.hpp"
 #include "pkc/validation/numerical.hpp"
 #include "pkc/validation/vertical.hpp"
+#include "pkc/work.hpp"
 
 namespace py = pybind11;
 
@@ -1545,6 +1546,8 @@ PYBIND11_MODULE(_pkc_native, m) {
           "native leg solve dispatches natively through RelaxedDispatch's entry point `mode`, or None "
           "(tools/profiling/bookkeeping.py)");
     m.def("disk_stats", [] { return to_python(pkc::disk_stats()); }, "numerics/disk.STATS of the native decided cache");
+    m.def("set_work_only", &pkc::set_work_only, py::arg("enabled"),
+          "work.WORK_ONLY for the native core (work.work_only sets both); a change empties the decided cache");
     m.def("float_repr", &pkc::float_repr, "repr(float) for a finite float");
     m.def("sha256_hex", [](py::bytes data) { return pkc::sha256_hex(std::string(data)); });
 }

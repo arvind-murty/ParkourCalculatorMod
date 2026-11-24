@@ -1,4 +1,5 @@
 import copy
+import itertools
 import json
 import os
 import time
@@ -760,6 +761,19 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
             self.search(resume_state=result['searchState'], post_alarm='ipopt')
         with self.assertRaises(ValueError):
             self.search(post_alarm='race')
+
+    def test_a_work_only_run_does_not_read_the_clock_into_its_outcome(self):
+        from tests.support.checkpoint_guidance import timeless
+        _, reference, _ = self.search(work_only=True)
+        clock = itertools.count(0., 1000.)  # every read is 1000 s later: any time limit would end the run
+        with patch('time.monotonic', lambda: next(clock)):
+            _, raced, _ = self.search(work_only=True)
+            _, timed, _ = self.search()
+        self.assertIn('deadline', timed['termination'])  # the clock binds a timed run at its first deadline
+        self.assertIsNotNone(reference['best'])
+        self.assertEqual(timeless(raced), timeless(reference))
+        with self.assertRaises(ValueError):
+            self.search(work_only=1)
 
     @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # records engine.solve_contact_branches, which a native leg solve never calls
     def test_search_runs_on_the_relaxation_and_publishes_frame_end_answers(self):

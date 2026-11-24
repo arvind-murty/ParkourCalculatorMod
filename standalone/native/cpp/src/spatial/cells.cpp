@@ -41,6 +41,7 @@ std::vector<NumBox> subtract_open(const NumBox& box, const NumBox& obstacle, boo
 // ---- decompose and the cell helpers it uses (spatial/cells.py)
 
 #include <chrono>
+#include <cmath>
 #include <map>
 
 #include "../value_ops.hpp"
@@ -67,7 +68,8 @@ Num number_of(const Value& v) {
 class Deadline {
 public:
     explicit Deadline(std::optional<double> seconds) {
-        if (seconds) end_ = std::chrono::steady_clock::now() + std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+        // An infinite budget (a work-only run) has no end; converting it to a clock duration would overflow.
+        if (seconds && std::isfinite(*seconds)) end_ = std::chrono::steady_clock::now() + std::chrono::duration_cast<std::chrono::steady_clock::duration>(
                                                                 std::chrono::duration<double>(*seconds));
     }
     void check(const char* message) const {

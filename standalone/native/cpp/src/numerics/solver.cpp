@@ -145,14 +145,15 @@ Value solve_numerical(const Value& request, std::optional<double> seconds, std::
                       const std::string& worker_path, const std::function<bool()>& cancelled_hook,
                       const std::function<void(const Value& candidate)>& on_incumbent) {
     Object overrides = fields(request);
-    if (seconds) put(overrides, "seconds", real(*seconds));
+    // An unlimited budget is null on the wire (JSON carries no infinity): the worker has no wall limit.
+    if (seconds) put(overrides, "seconds", std::isfinite(*seconds) ? real(*seconds) : Value{nullptr});
     if (stop_on_feasible) put(overrides, "stopOnFeasible", boolean(*stop_on_feasible));
     const Value problem = prepare_problem(object(std::move(overrides)));
     const Object& p = fields(problem);
     const bool stop = py_truthy(at(p, "stopOnFeasible"));
     const bool maximize = as_text(at(fields(at(p, "objective")), "sense")) == "MAX";
     const double started = seconds_now();
-    const double deadline = started + num(at(p, "seconds")).value;
+    const double deadline = started + (is_null(at(p, "seconds")) ? INFINITY : num(at(p, "seconds")).value);
     auto is_cancelled = [&] { return cancelled_hook && cancelled_hook(); };
     Messages messages;
     std::mutex stderr_mutex;

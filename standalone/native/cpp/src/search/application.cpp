@@ -1098,6 +1098,7 @@ struct Settings {
     std::int64_t max_solver_calls = 128, max_candidates = 24;
     bool minimum_run_pruning = true;
     std::string post_alarm = "pipeline";
+    bool work_only = false;  // seconds and candidate_seconds are checked, then unlimited (pkc/work.hpp)
 };
 
 std::int64_t max_index(const Array& frames) {
@@ -1375,12 +1376,17 @@ Settings task_settings(const Value& fixture, const SolveCaseOptions& options) {
             out.post_alarm = as_text(value);
             if (out.post_alarm != "ipopt" && out.post_alarm != "pipeline")
                 throw std::invalid_argument("post_alarm must be ipopt or pipeline");
+        } else if (key == "work_only") {
+            const auto* flag = std::get_if<bool>(&value.data);
+            if (!flag) throw std::invalid_argument("work_only must be boolean");
+            out.work_only = *flag;
         } else {
             throw std::invalid_argument("Unsupported setting for the native solve entry: " + key);
         }
     }
     if (out.seconds <= 0) throw std::invalid_argument("seconds must be positive");
     if (out.candidate_seconds <= 0) throw std::invalid_argument("candidate_seconds must be positive");
+    if (out.work_only) out.seconds = out.candidate_seconds = INFINITY;
     return out;
 }
 
@@ -1420,6 +1426,12 @@ Value find_checkpoint_route(Run& run, const Value& request_value, const Value& f
     };
     if (run.cancelled()) return unfinished("cancelled");
     const Object& f = fields(fixture);
+    // work.work_only(settings.work_only) for the search: set, then restored however the search ends.
+    struct WorkOnlyMode {
+        bool previous = work_only();
+        explicit WorkOnlyMode(bool enabled) { set_work_only(enabled); }
+        ~WorkOnlyMode() { set_work_only(previous); }
+    } mode(settings.work_only);
     try {
         return search_event_routes(run, request_value, get_or_null(f, "terminalGoal"), get_or_null(f, "discoverySettings"),
                                    get_or_null(f, "anchorSearch"), settings, initial_jump_inputs, checkpoint_identity);

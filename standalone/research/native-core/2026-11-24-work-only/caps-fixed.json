@@ -1,0 +1,28 @@
+{
+ "clarabel": {
+  "Solved": 442,
+  "PrimalInfeasible": 197,
+  "AlmostSolved": 1
+ },
+ "clarabelHeadroom": {
+  "maxRatio": 0.05681376904249191,
+  "maxSolveSeconds": 0.005681376904249191,
+  "maxSeconds": 0.12036441639065742,
+  "maxIterRatio": 0.21
+ },
+ "ipoptTermination": {
+  "worker_finished": 3
+ },
+ "ipoptMaxRatio": {
+  "all": 0.00023131296642775042,
+  "maxSeconds": 0.13878720998764038
+ },
+ "ipoptPhase": {
+  "Solve_Succeeded": 3
+ },
+ "postAlarm": {
+  "post_alarm_decay": 1,
+  "post_alarm_race": 2,
+  "post_alarm_push": 2
+ }
+}

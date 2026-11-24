@@ -1,6 +1,15 @@
-"""Shared test builders extracted from tests.unit.spatial.test_checkpoint_guidance and
-tests.unit.search.test_transfer_time_bounds."""
+"""Shared test builders extracted from tests.unit.spatial.test_checkpoint_guidance,
+tests.unit.search.test_transfer_time_bounds and tests.integration.test_native_core."""
 from parkour_solver.scene.normalize import prepare_scene
+
+
+def timeless(value):
+    """A result without its wall-clock fields."""
+    if isinstance(value, dict):
+        return {k: timeless(v) for k, v in value.items() if 'econds' not in k and k != 'timings'}
+    if isinstance(value, list):
+        return [timeless(v) for v in value]
+    return value
 
 def flat_scene():
     return prepare_scene(dict(version=1, sceneModel='collision_boxes', geometryBounds=[-10,-5,-10,20,12,10],

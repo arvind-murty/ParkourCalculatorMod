@@ -10,6 +10,18 @@
 
 namespace pkc {
 
+namespace {
+bool work_only_mode = false;
+}  // namespace
+
+bool work_only() { return work_only_mode; }
+
+void set_work_only(bool enabled) {
+    if (enabled == work_only_mode) return;
+    work_only_mode = enabled;
+    disk_clear_decided();
+}
+
 SearchWork::SearchWork(std::optional<std::int64_t> max_solver_calls, std::optional<double> deadline)
     : deadline(deadline), max_solver_calls_(max_solver_calls), started_(seconds_now()) {
     if (max_solver_calls && *max_solver_calls < 1) throw std::invalid_argument("max_solver_calls must be a positive integer");

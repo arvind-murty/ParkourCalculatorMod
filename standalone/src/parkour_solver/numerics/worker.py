@@ -220,13 +220,16 @@ def fixed_phase(problem, yaw, pattern, seconds, stop, on_candidate, kind, seed_n
     decode = ca.Function('decode', [x], [ca.vertcat(*facings)])
     constraints = ca.Function('original_constraints', [x], [g])
     monitor = Monitor(x.numel(), g.numel(), decode, constraints, lower, upper, stop, on_candidate)
-    solver = ca.nlpsol('local_ipopt', 'ipopt', {'x': x, 'g': g, 'f': cost}, {
+    options = {
         'print_time': False, 'error_on_fail': False, 'iteration_callback': monitor,
         'detect_simple_bounds': True,
-        'ipopt.print_level': 0, 'ipopt.sb': 'yes', 'ipopt.max_wall_time': max(0.01, seconds),
+        'ipopt.print_level': 0, 'ipopt.sb': 'yes',
         'ipopt.max_iter': problem.get('maxIterations', 10000), 'ipopt.tol': 1e-9, 'ipopt.constr_viol_tol': 1e-9,
         'ipopt.acceptable_tol': 1e-8, 'ipopt.acceptable_constr_viol_tol': 1e-9,
-        'ipopt.bound_relax_factor': 0.0})
+        'ipopt.bound_relax_factor': 0.0}
+    if math.isfinite(seconds):  # a request without a wall limit stops on max_iter only
+        options['ipopt.max_wall_time'] = max(0.01, seconds)
+    solver = ca.nlpsol('local_ipopt', 'ipopt', {'x': x, 'g': g, 'f': cost}, options)
     solution = solver(x0=initial, lbg=lower, ubg=upper)
     monitor.record(solution['x'], solution['g'], float(solution['f']))
     stats = solver.stats()

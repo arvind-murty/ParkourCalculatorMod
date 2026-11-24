@@ -402,7 +402,9 @@ Value find_route(const Value& request, const SolveHooks& hooks, const RouteSearc
                                   {"error", get_or_null(result, "error")},
                                   {"problemHash", text(fingerprint(object(problem)))},
                                   {"request", object(problem)},
-                                  {"callOptions", object({{"seconds", real(budget)}, {"stopOnFeasible", boolean(early_stop)}})},
+                                  // A work-only run's unlimited budget is null, as on the wire.
+                                  {"callOptions", object({{"seconds", std::isfinite(budget) ? real(budget) : Value{nullptr}},
+                                                          {"stopOnFeasible", boolean(early_stop)}})},
                                   {"objectiveMode", text("configured")},
                                   {"workerLaunched", get_or_null(result, "workerLaunched")},
                                   {"workerStatus", get_or_null(result, "workerStatus")}};

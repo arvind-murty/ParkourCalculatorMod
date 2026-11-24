@@ -42,6 +42,10 @@ class IntegrationTests(unittest.TestCase):
         result = solve(request, seconds=5, python_executable=RUNTIME)
         self.assertTrue(result['feasible'], result)
         self.assertAlmostEqual(result['candidate']['objective'], 0.6125, places=6)
+        # A work-only run's request has no wall limit (`seconds` null on the wire): IPOPT stops on its iterations.
+        unlimited = solve(request, seconds=math.inf, python_executable=RUNTIME)
+        self.assertEqual((unlimited['termination'], unlimited['candidate']),
+                         ('worker_finished', result['candidate']))
 
     def test_real11_200_and_400_with_all_rows_and_contacts(self):
         for ticks, rows, contacts in [(200, 197, 21), (400, 341, 34)]:

@@ -391,15 +391,6 @@ class EnvelopeTests(unittest.TestCase):
         self.assertIn('interval_reach_contradiction', reasons)
 
 
-def timeless(value):
-    """A result without its wall-clock fields."""
-    if isinstance(value, dict):
-        return {k: timeless(v) for k, v in value.items() if 'econds' not in k and k != 'timings'}
-    if isinstance(value, list):
-        return [timeless(v) for v in value]
-    return value
-
-
 class SolveEntryTests(unittest.TestCase):
     """The native solve entry (search/application.hpp, pkc_solve) against the Python it ports."""
 
@@ -433,19 +424,23 @@ class SolveEntryTests(unittest.TestCase):
         import sys
         import tempfile
         from parkour_solver.io.checkpoint_store import read_report
+        from tests.support.checkpoint_guidance import timeless
         module = native()
         build = Path(module.__file__).parent
-        case = ROOT/'cases/real11/physical-anchors.json'
-        with tempfile.TemporaryDirectory() as directory:
-            native_report, python_report = Path(directory)/'native.json.gz', Path(directory)/'python.json.gz'
-            # No Python and no PKC_* variables reach the executable.
-            subprocess.run([str(build/'pkc_solve'), '--input', str(case), '--output', str(native_report)],
-                           env=dict(PATH='/usr/bin:/bin'), check=True, capture_output=True)
-            subprocess.run([sys.executable, '-B', '-m', 'parkour_solver.cli.solve', '--input', str(case),
-                            '--output', str(python_report)],
-                           env=dict(os.environ, PKC_NATIVE_CORE=str(build), PYTHONPATH=f'{ROOT/"src"}:{ROOT}'),
-                           check=True, capture_output=True)
-            solved, expected = read_report(native_report), read_report(python_report)
-        self.assertIsNotNone(solved['result']['best'])
-        self.assertEqual(timeless(solved['result']), timeless(expected['result']))
-        self.assertEqual(timeless(solved['validation']), timeless(expected['validation']))
+        fixture = json.loads((ROOT/'cases/real11/physical-anchors.json').read_text())
+        for work_only in (False, True):
+            with self.subTest(work_only=work_only), tempfile.TemporaryDirectory() as directory:
+                case = Path(directory)/'case.json'
+                case.write_text(json.dumps(dict(fixture, settings=dict(fixture['settings'], work_only=work_only))))
+                native_report, python_report = Path(directory)/'native.json.gz', Path(directory)/'python.json.gz'
+                # No Python and no PKC_* variables reach the executable.
+                subprocess.run([str(build/'pkc_solve'), '--input', str(case), '--output', str(native_report)],
+                               env=dict(PATH='/usr/bin:/bin'), check=True, capture_output=True)
+                subprocess.run([sys.executable, '-B', '-m', 'parkour_solver.cli.solve', '--input', str(case),
+                                '--output', str(python_report)],
+                               env=dict(os.environ, PKC_NATIVE_CORE=str(build), PYTHONPATH=f'{ROOT/"src"}:{ROOT}'),
+                               check=True, capture_output=True)
+                solved, expected = read_report(native_report), read_report(python_report)
+                self.assertIsNotNone(solved['result']['best'])
+                self.assertEqual(timeless(solved['result']), timeless(expected['result']))
+                self.assertEqual(timeless(solved['validation']), timeless(expected['validation']))

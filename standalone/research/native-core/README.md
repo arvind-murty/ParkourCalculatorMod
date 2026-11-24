@@ -1055,3 +1055,30 @@ worker with no Python at configure time.
   and fixed work) and on the native-core and checkpoint-store tests. The suite passes in both modes (875 tests, 10
   skipped as before) and the gate in both modes (621, no failures, errors or skips; [Python mode](2026-11-23-entry/gate-python-mode-report.json),
   [native mode](2026-11-23-entry/gate-native-mode-report.json)).
+
+## Work-only mode, 2026-11-24
+Source: `4df8943c` plus the case setting `work_only` ([runbook](../../docs/RUNBOOK.md#current-physical-anchor-solve-profile-and-resume)):
+the run sets no deadline and lifts every time limit under it (per-request budgets, the disk relaxation's Clarabel
+caps, the IPOPT wall limit, sent as `"seconds": null`, the post-alarm deadline, the frame-end re-solve's 600 s), and
+keeps every work limit, so the same case gives the same outcome on any machine load. Python and native
+(`work.work_only`, `pkc/work.hpp`) set it process-wide for a run, since the disk screens and their decided cache are
+process-wide.
+
+- On an idle machine at `4df8943c`, no time limit decided anything on the two controls (Python mode, counting
+  wrappers around the disk attempts, IPOPT requests and the post-alarm pipeline): short control 89 Clarabel solves
+  and fixed work 640, none `MaxTime` or `MaxIterations`, the slowest at 2.9 % and 5.7 % of the 0.1 s cap and at most
+  21 % of `MAX_ITER`; 8 and 3 IPOPT requests, all `worker_finished` within 0.03 % of their budgets
+  ([short](2026-11-24-work-only/caps-short.json), [fixed](2026-11-24-work-only/caps-fixed.json)). Lifting the time
+  limits therefore keeps what a timed run finds there, rather than simulating a work clock.
+- Short control and fixed work under `work_only`, each run in its own process without wall-clock fields
+  ([log](2026-11-24-work-only/evidence.txt)): Python mode, Python-hosted native and the native entry each give the
+  same result idle and under eight busy loops (load average 28.8), Python mode under a second `PYTHONHASHSEED` too;
+  the native entry equals the hosted run; and every work-only result equals the timed run's in its mode. Python
+  against native mode differs only as the timed runs already do (compiler and gate counters on the short control,
+  gate exclusion records on fixed work: 4538 differing values in timed and work-only runs alike).
+- `pkc_solve` reports what the Python CLI reports under `work_only` too (`SolveEntryTests`). The suite passes in both
+  modes (880 tests, 11 skipped: the new Java-bridge test, like the others, needs the bridge) and the gate in both
+  modes (626, no failures, errors or skips; [Python mode](2026-11-24-work-only/gate-python-mode-report.json),
+  [native mode](2026-11-24-work-only/gate-native-mode-report.json)). AddressSanitizer runs clean on the durable fixed
+  work run and the native-core, checkpoint-store, search and numerics tests; under it the Java bridge's infinite
+  `queue.get` timeout was found and fixed (it now waits without one).

@@ -19,7 +19,7 @@ from parkour_solver.work import SearchWork
 
 # A forward side's keep-outside row within this of binding is tight: its held sides may then reach further.
 SIDE_SLACK = 1e-3
-# Frame-end re-solves have no deadline (user, 2026-11-23); this only bounds a hung solve.
+# Frame-end re-solves have no deadline (user, 2026-11-23); this only bounds a hung solve, and a work-only run lifts it.
 FRAME_END_SECONDS = 600.
 
 
@@ -683,9 +683,11 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
         args = evaluation_args(f,program)
         args['solve_policy'] = dict(args['solve_policy'],rankEqualCost=False,numerical='full_strength')
         own = SearchWork()
+        from parkour_solver.work import WORK_ONLY
+        seconds = float('inf') if WORK_ONLY else FRAME_END_SECONDS
         began = time.monotonic()
         result = evaluate_program(args.pop('scene'),program,compiler,args.pop('adapter'),own,motion,
-            seconds=FRAME_END_SECONDS,candidate_seconds=FRAME_END_SECONDS,python_executable=python_executable,
+            seconds=seconds,candidate_seconds=seconds,python_executable=python_executable,
             cancel_event=cancel_event,final_route=chosen['witness']['route'],**args)
         if result['status']=='cancelled' or cancel_event is not None and cancel_event.is_set():
             # Untried again, so a resume repeats this solve.

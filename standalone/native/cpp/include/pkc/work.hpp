@@ -13,6 +13,12 @@
 
 namespace pkc {
 
+// work.py's WORK_ONLY (case setting `work_only`): no time limit decides an outcome, only work counts do. Process-wide
+// because the disk screens and their decided cache are; a run sets it for its duration (work.work_only in Python,
+// solve_case natively). A change empties the disk's decided cache, which holds verdicts under the limits in force.
+bool work_only();
+void set_work_only(bool enabled);
+
 class SearchWork {
 public:
     explicit SearchWork(std::optional<std::int64_t> max_solver_calls = std::nullopt,

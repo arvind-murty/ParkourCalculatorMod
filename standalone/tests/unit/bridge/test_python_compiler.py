@@ -205,6 +205,13 @@ class JavaOracleTests(unittest.TestCase):
                 from parkour_solver.bridge.compiler import coefficient_request
                 self.assertSameReply(coefficient_request(route, plan))
 
+    def test_a_work_only_budget_waits_for_the_reply(self):
+        from parkour_solver.bridge.compiler import coefficient_request
+        message = coefficient_request(dict(sharedMovement=True, inputs=dict(sprint=True, force45=False)),
+                                      shared_request(random.Random(11), 12))
+        self.assertEqual(canonical(self.java._exchange(copy.deepcopy(message), math.inf)),
+                         canonical(reply(self.java, message)))
+
     def test_held_jumps_cross_the_cooldown_and_walls_end_sprint(self):
         from parkour_solver.bridge.compiler import coefficient_request
         for sprint, incoming, force45 in itertools.product((False, True), repeat=3):

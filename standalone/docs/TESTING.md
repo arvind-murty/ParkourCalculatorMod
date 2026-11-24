@@ -2,11 +2,10 @@
 
 ## Current gate
 
-`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on the native checkpoint saver and the native solve
-entry: **621 tests, no failures, errors or skips** in Python mode, and the same with `PKC_NATIVE_CORE` set, source
-unchanged during both runs
-([Python mode](../research/native-core/2026-11-23-entry/gate-python-mode-report.json),
-[native mode](../research/native-core/2026-11-23-entry/gate-native-mode-report.json)).
+`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on the work-only mode: **626 tests, no failures,
+errors or skips** in Python mode, and the same with `PKC_NATIVE_CORE` set, source unchanged during both runs
+([Python mode](../research/native-core/2026-11-24-work-only/gate-python-mode-report.json),
+[native mode](../research/native-core/2026-11-24-work-only/gate-native-mode-report.json)).
 Wall-time-bound tests can still fail under heavier load ([deferred P17](DEFERRED_WORK.md)).
 The gate fails on any skip, so it needs `PKC_IPOPT_PYTHON` for the IPOPT tests,
 `PKC_RUN_TICKS_COMPILER` for the Java differential tests and the `numerics` and `reachability` extras
@@ -24,6 +23,7 @@ persistence without the removed 32/128 limits.
 
 | Source | Tests | Evidence |
 | --- | ---: | --- |
+| Work-only mode (case setting `work_only`), both modes | 626 | [Python mode](../research/native-core/2026-11-24-work-only/gate-python-mode-report.json), [native mode](../research/native-core/2026-11-24-work-only/gate-native-mode-report.json) |
 | Native checkpoint saver and native solve entry, both modes | 621 | [Python mode](../research/native-core/2026-11-23-entry/gate-python-mode-report.json), [native mode](../research/native-core/2026-11-23-entry/gate-native-mode-report.json) |
 | Native port of PR #12 on the native branch, both modes | 621 | [Python mode](../research/native-core/2026-11-23-pr12/gate-python-mode-report.json), [native mode](../research/native-core/2026-11-23-pr12/gate-native-mode-report.json) |
 | `b502cf66` native anchor adapter, setup builders and report encoding, both modes | 610 | [Python mode](../research/native-core/2026-11-23-gate/python-mode-report.json), [native mode](../research/native-core/2026-11-23-gate/native-mode-report.json) |

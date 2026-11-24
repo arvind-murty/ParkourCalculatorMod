@@ -144,7 +144,8 @@ from the answer's end state. On failure the record keeps `frameEnd` with
 `status='failed'`, the transition `frame_end_rejected` is logged, and the frame
 takes its next option; a frame out of options backtracks as usual. Each solve
 has no deadline: it runs past the run's deadline and outside its call budget, up
-to `FRAME_END_SECONDS` (600 s), which only bounds a hung solve. A cancellation
+to `FRAME_END_SECONDS` (600 s), which only bounds a hung solve and which a
+[work-only run](RUNBOOK.md#current-physical-anchor-solve-profile-and-resume) lifts. A cancellation
 during it leaves the record untried, so a resume repeats it; a confirmed record
 is never solved again. Incumbents are only frame-end answers, so the run
 publishes its incumbent as is, also when cancelled; with none, it publishes no
