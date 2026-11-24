@@ -216,7 +216,8 @@ ordered options. That is targeted enumeration work, not a whole-solver speedup.
   memory ([evidence](../research/native-core/README.md)).
 - Native port of main's PR #12 (post-alarm pipeline, frame-end re-solves, full-queue frames): on Real11 extended at
   300 s native mode makes 1,844 solver calls and expands 554 prefixes against Python mode's 776 and 243, and
-  `cases/real11/physical-anchors.json` searches in 1.48 s against 5.11 s
+  `cases/real11/physical-anchors.json` searches in 1.48 s against 5.11 s. Fixed work searches in 12.23 s and 12.42 s
+  against 37.32 s and 38.99 s, and 16.55 s and 16.15 s against 132.69 s and 125.38 s with durable checkpoints
   ([evidence](../research/native-core/README.md)).
 - Clarabel iterative refinement off in every disk solve: on the extended fixed-work control
   (100 solver calls) search time fell from 39.36 s to 37.50 s with identical transitions and

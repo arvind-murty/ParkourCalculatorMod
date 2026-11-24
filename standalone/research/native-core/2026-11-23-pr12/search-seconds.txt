@@ -1,0 +1,11 @@
+Search seconds, alternating Python mode and native mode on 1c06a30b's build, two rounds (abm3.sh):
+== plain
+fixed-native [12.23, 12.42]
+fixed-python [37.32, 38.99]
+short-native [1.55, 1.53]
+short-python [4.88, 5.46]
+== durable checkpoints
+fixed-native [16.55, 16.15]
+fixed-python [132.69, 125.38]
+short-native [2.48, 2.54]
+short-python [15.65, 15.97]

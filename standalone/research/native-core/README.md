@@ -998,3 +998,6 @@ reachable.
   [report](2026-11-23-pr12/fixed-asan-report-vs-release.json)).
 - Real11 extended at 300 s, one run each: native mode makes 1,844 solver calls and expands 554 prefixes against 776 and
   243; neither finds a finish ([run](2026-11-23-pr12/real11-extended-300s.txt)).
+- Search seconds, alternating Python mode and native mode: fixed work 37.32 and 38.99 against 12.23 and 12.42, the
+  short control 4.88 and 5.46 against 1.55 and 1.53; with durable checkpoints fixed work 132.69 and 125.38 against
+  16.55 and 16.15, the short control 15.65 and 15.97 against 2.48 and 2.54 ([times](2026-11-23-pr12/search-seconds.txt)).

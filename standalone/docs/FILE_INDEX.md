@@ -71,7 +71,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
 | [docs/LAYOUT.md](LAYOUT.md) | 13115 |
 | [docs/MOD_REFERENCES.md](MOD_REFERENCES.md) | 5299 |
-| [docs/PERFORMANCE.md](PERFORMANCE.md) | 23415 |
+| [docs/PERFORMANCE.md](PERFORMANCE.md) | 23569 |
 | [docs/REAL11_EXTENDED_GEOMETRY.md](REAL11_EXTENDED_GEOMETRY.md) | 12104 |
 | [docs/REAL11_GUIDE.md](REAL11_GUIDE.md) | 20426 |
 | [docs/RESULTS_AND_DEBUGGING.md](RESULTS_AND_DEBUGGING.md) | 19274 |
@@ -1665,6 +1665,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/native-core/2026-11-23-pr12/pipeline-parity.txt](../research/native-core/2026-11-23-pr12/pipeline-parity.txt) | 865 |
 | [research/native-core/2026-11-23-pr12/real11-extended-300s.txt](../research/native-core/2026-11-23-pr12/real11-extended-300s.txt) | 921 |
 | [research/native-core/2026-11-23-pr12/requests-and-physical-anchors.txt](../research/native-core/2026-11-23-pr12/requests-and-physical-anchors.txt) | 1026 |
+| [research/native-core/2026-11-23-pr12/search-seconds.txt](../research/native-core/2026-11-23-pr12/search-seconds.txt) | 351 |
 | [research/native-core/2026-11-23-pr12/short-parity-python-native.json](../research/native-core/2026-11-23-pr12/short-parity-python-native.json) | 176 |
 | [research/native-core/2026-11-23-pr12/state-parity.txt](../research/native-core/2026-11-23-pr12/state-parity.txt) | 874 |
 | [research/native-core/2026-11-23-pr12/suites-summary.txt](../research/native-core/2026-11-23-pr12/suites-summary.txt) | 481 |
@@ -1703,7 +1704,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/native-core/2026-11-23-shared-state/short-parity-python-native.json](../research/native-core/2026-11-23-shared-state/short-parity-python-native.json) | 176 |
 | [research/native-core/2026-11-23-shared-state/short-report-vs-previous.json](../research/native-core/2026-11-23-shared-state/short-report-vs-previous.json) | 170 |
 | [research/native-core/2026-11-23-shared-state/times.txt](../research/native-core/2026-11-23-shared-state/times.txt) | 1467 |
-| [research/native-core/README.md](../research/native-core/README.md) | 83945 |
+| [research/native-core/README.md](../research/native-core/README.md) | 84297 |
 | [research/obstacle-avoidance/README.md](../research/obstacle-avoidance/README.md) | 3166 |
 | [research/obstacle-avoidance/blocked-result.json](../research/obstacle-avoidance/blocked-result.json) | 52110 |
 | [research/obstacle-avoidance/cross-neo-request.json](../research/obstacle-avoidance/cross-neo-request.json) | 5584 |
