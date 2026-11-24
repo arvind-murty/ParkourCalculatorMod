@@ -144,7 +144,8 @@ from the answer's end state. On failure the record keeps `frameEnd` with
 `status='failed'`, the transition `frame_end_rejected` is logged, and the frame
 takes its next option; a frame out of options backtracks as usual. Each solve
 has no deadline: it runs past the run's deadline and outside its call budget, up
-to `FRAME_END_SECONDS` (600 s), which only bounds a hung solve. A cancellation
+to `FRAME_END_SECONDS` (600 s), which only bounds a hung solve and which a
+[work-only run](RUNBOOK.md#current-physical-anchor-solve-profile-and-resume) lifts. A cancellation
 during it leaves the record untried, so a resume repeats it; a confirmed record
 is never solved again. Incumbents are only frame-end answers, so the run
 publishes its incumbent as is, also when cancelled; with none, it publishes no
@@ -287,7 +288,7 @@ minimum-run records and DFS state changes in proposal order. The minimum-run sea
 minimum-run search) also runs natively; the frontier commits its exclusions, queues its children and holds its
 reserved run counts as alternatives in the same order as the Python search. A batch stops where the Python loop would emit a ready program and commits nothing when the budget stops it,
 so a resumed expansion redoes it from the saved cursor. Each decision check (`dfs.evaluate_node`) runs natively
-(`search/dfs.hpp`) once the gate has prepared a route without passages, wall hits or ladder events: its node solve
+(`search/dfs.hpp`) once the gate has prepared a route without wall hits or ladder events: its node solve
 (`search/engine.hpp`: scope, floor checks, identity, constraint generator, repair loop, outcome), the branch program it
 commits and the alternatives it holds. The gate's analysis and face tables and the relaxed dispatch (its post-alarm
 pipeline, frame-end answers and IPOPT solves) run on the gate's native core (`reachability/service.hpp`,

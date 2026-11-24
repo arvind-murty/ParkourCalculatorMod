@@ -1,5 +1,15 @@
-"""Shared test builders extracted from tests.unit.spatial.test_checkpoint_guidance."""
+"""Shared test builders extracted from tests.unit.spatial.test_checkpoint_guidance,
+tests.unit.search.test_transfer_time_bounds and tests.integration.test_native_core."""
 from parkour_solver.scene.normalize import prepare_scene
+
+
+def timeless(value):
+    """A result without its wall-clock fields."""
+    if isinstance(value, dict):
+        return {k: timeless(v) for k, v in value.items() if 'econds' not in k and k != 'timings'}
+    if isinstance(value, list):
+        return [timeless(v) for v in value]
+    return value
 
 def flat_scene():
     return prepare_scene(dict(version=1, sceneModel='collision_boxes', geometryBounds=[-10,-5,-10,20,12,10],
@@ -7,6 +17,18 @@ def flat_scene():
         startBlock='start', goalBlock='goal', maxWallHits=0, maxContactCombinations=0,
         blocks=[dict(id='start', boxes=[[-2,0,-2,3,1,2]]), dict(id='goal', boxes=[[5,0,-1,6,1,1]])],
         movementSearch=dict(types=['normal'], maxInputs=30, maxPrefixes=96, maxQueuedPrefixes=128, maxChoicesPerType=16)))
+
+
+def transfer_ceiling_scene(x):
+    """The flat scene with a ceiling block at `x` over the start-to-goal jump, and guides for that transfer."""
+    s=flat_scene();s['movementSearch']['types']=['normal','ceiling']
+    box=[x,2.9,-2,x+1,3.9,2];index=len(s['collisionScene']['solids'])
+    s['collisionScene']['solids'].append(box)
+    s['blocks'].append(dict(id='ceiling',sourceBlock='ceiling',solidIndex=index,
+                            bounds=[x,x+1,-2,2],top=3.9))
+    g=dict(anchors=['start','goal'],coverPhase='pre_or_post',covers={
+        'start':[[-2.3,1,-2.3,3.3,1,2.3]],'goal':[[4.7,1,-1.3,6.3,1,1.3]]})
+    return s,g
 
 def programs(scene, tick, limit=64):
     """Up to `limit` distinct ungated programs of the scene's movement types that end exactly at `tick`: generated

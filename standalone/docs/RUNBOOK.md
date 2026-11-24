@@ -198,6 +198,22 @@ and initial yaw guesses.
 A new program field fails the typed conversion by name, so add it to
 `native/cpp/include/pkc/program.hpp` in the same change.
 
+The build also makes `pkc_solve` beside the module: the solve CLI (`cli/solve.py`) with no Python
+(`native/cpp/include/pkc/search/application.hpp`), for collision-box cases without ladders or wall hits. It reads
+the same case file and writes the same checkpoint report, which `read_report` reads; `--resume` continues a report
+either CLI wrote, as the Python CLI's `--resume` does, and the Python CLI resumes its reports. `--seconds` and
+`--max-solver-calls` override the case's settings (a `work_only` case ignores `--seconds` as it ignores its own
+`seconds`); it has no `--compiler`. It runs
+`pkc_numerics_worker` from its own directory. With `-DPKC_PYTHON_MODULE=OFF -DPKC_CASADI_ROOT=<casadi package
+directory>` CMake builds the core, the worker and `pkc_solve` without Python at configure time.
+
+```sh
+build/native/cpp/pkc_solve --input cases/real11/physical-anchors.json --output /path/to/report.json.gz \
+  [--resume /path/to/earlier.json.gz] [--save-progress] [--seconds S] [--max-solver-calls N]
+cmake -S native/cpp -B /path/to/build -DPKC_PYTHON_MODULE=OFF -DPKC_CASADI_ROOT=/path/to/site-packages/casadi
+cmake --build /path/to/build --target pkc_solve pkc_numerics_worker
+```
+
 A report written from a bare solve report has no request numbers or IPOPT
 statuses, which only the profiler records. [Results and debugging](RESULTS_AND_DEBUGGING.md#solve-reports)
 explains every output. `runs/` is ignored by git; copy evidence worth keeping
@@ -238,7 +254,18 @@ Physical anchor mode uses `seconds` and `max_solver_calls` for the whole session
 and `candidate_seconds` for each numerical request. The case setting `post_alarm`
 (`pipeline`, the default, or `ipopt`) chooses how alarmed relaxed optima are
 answered ([post-alarm pipeline](reference/NUMERICAL_SOLVER.md#post-alarm-pipeline));
-it is part of the run identity. Legacy `score_seconds`,
+it is part of the run identity.
+
+The case setting `work_only` (default `false`) makes a run's outcome independent of machine load: with
+`true`, `seconds` and `candidate_seconds` are still checked but set no deadline, and every time limit under them
+is lifted: the disk relaxation's 0.1 s and 0.5 s Clarabel caps, the IPOPT wall limit (the request then carries
+`"seconds": null`), the post-alarm pipeline's deadline, the frame-end re-solve's 600 s and the witness replay's 5 s
+compile and scene-check budgets. The work limits stay:
+`max_solver_calls`, `maxPrefixes`, `max_candidates`, the disk's 200 and 500 iterations and IPOPT's
+`maxIterations`, so a run takes as long as they allow; cancel it to stop it sooner. Timing fields still report
+wall time, so compare outcomes without them. The mode is process-wide while a run executes, because the disk
+screens and their decided cache are (a change of mode empties that cache); it is not part of the run identity, so
+a checkpoint resumes in either mode. Legacy `score_seconds`,
 `score_call_limit` and `final_call_limit` settings remain accepted for older input
 files but do not limit anchor search. Non-anchor modes retain their existing
 service budgets. Changing these budgets does not change physical model identities

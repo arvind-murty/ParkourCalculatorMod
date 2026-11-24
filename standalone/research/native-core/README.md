@@ -1001,3 +1001,116 @@ reachable.
 - Search seconds, alternating Python mode and native mode: fixed work 37.32 and 38.99 against 12.23 and 12.42, the
   short control 4.88 and 5.46 against 1.55 and 1.53; with durable checkpoints fixed work 132.69 and 125.38 against
   16.55 and 16.15, the short control 15.65 and 15.97 against 2.48 and 2.54 ([times](2026-11-23-pr12/search-seconds.txt)).
+
+## Native coverage of the resume tests, 2026-11-23
+The request observer now hears each natively dispatched request before and after it is answered, with its entry point
+and seconds, so the two resume tests that record or cancel at `RelaxedDispatch`'s Python seams run in both modes: the
+cancelled frame-end test and the bridge's saved-search test. In native mode they record the same requests and
+frame-end requests as Python mode, fingerprint for fingerprint, and the profiler's `requests.json` rows are unchanged
+([evidence](2026-11-23-observer/resume-tests.txt)).
+
+## The native checkpoint saver, 2026-11-23
+Source: `ef1f5919` plus a native checkpoint store (`io/store.hpp`: SQLite, zlib, the manifest, patches and compaction
+on the Python store's files and objects) and a native search saver (`io/search_checkpoint.hpp`): under the native
+core `CheckpointStore` writes through the native store, and a `SearchCheckpoint` on it hands the native anchor search
+a saver, so the search's full saves and repair patches are written with no Python call. The search's final snapshot
+goes to the checkpoint too, so the final save encodes the result's state from it. The native encoder's per-archive
+memo now holds each container it names (it keyed raw addresses, so an encoded temporary's address could return a
+later temporary's stale encoding), and a failed native file write raises the `OSError` Python raises.
+
+- Same objects: in one run, every snapshot saved by the Python saver is also saved by a native saver on a second
+  store, and after every save and patch both manifests name the same root: 185 of 185 on the short control and 467 of
+  467 on fixed work ([short](2026-11-23-saver/store-parity-short.json), [fixed](2026-11-23-saver/store-parity-fixed.json));
+  `tests/unit/io/test_checkpoint_store.py` checks the same in the suite. Two runs cannot be compared store to store:
+  their timing fields differ.
+- The suite passes in both modes (873 tests, 10 skipped as before), the gate in both modes (621, no failures, errors
+  or skips), AddressSanitizer runs clean on the search, checkpoint and numerics tests (the known
+  `test_cli_writes_structured_error_atomically` harness failure aside) and on durable fixed work, whose report equals
+  the release build's.
+- Durable, alternating with `ef1f5919`: reports equal; fixed work 15.00 s and 14.97 s against 15.79 s and 15.84 s,
+  the short control 2.21 s and 2.16 s against 2.47 s and 2.43 s; on fixed work the 469 Python save callbacks (3.71 s)
+  become 467 native saves and patches (2.08 s) and the final save takes 1.05 s instead of 1.84 s
+  ([runs](2026-11-23-saver/durable-ab.txt)). Real11 was not rerun.
+
+## The native solve entry, 2026-11-23
+Source: `69dee392` plus `search/application.hpp` (`solve_case`: `search/application.run` through
+`find_checkpoint_route`, the event search's sessions and the native anchor search, with no Python) and `work.hpp`
+(the work budget), behind the `pkc_solve` executable and a `native.solve_case` binding. The services a Python-hosted
+native search gets from Python run natively: the compiler (coefficient tables, scene checks and footprints, counted
+as `CountingCompiler` counts), the interaction gate's preparation cache and its interval analysis, the node solves'
+services, the transfer-time bounds (with their ceiling proofs), `motion_bound` and the final witness replay. Routes
+with wall hits or ladder events, which the native solves leave to Python, are rejected; the search forces
+`maxWallHits=0` and runs without ladders. `pkc_solve` mirrors `cli/solve.py` (checkpoint report, `--save-progress`,
+SIGINT/SIGTERM cancel with exit 130) without `--resume`; CMake's `PKC_PYTHON_MODULE=OFF` builds it, the core and the
+worker with no Python at configure time.
+
+- Results equal the Python-hosted native run's, each side in its own process and without wall-clock fields, on the
+  eight straight calibration courses, physical-anchors with and without anchors, fixed work and the short control:
+  no differing path in any of the 12 ([parity](2026-11-23-entry/parity.txt)). The native transfer-time bounds equal
+  Python's on the ceiling scenes of `test_transfer_time_bounds` and the Real11 anchor contexts.
+- `pkc_solve` links no Python and runs with an empty environment; its report equals the Python CLI's, a cancelled
+  durable run resumes in the Python CLI to the uninterrupted route, and a Python-free CMake build solves
+  ([executable](2026-11-23-entry/executable.txt)). `tests/integration/test_native_core.py` `SolveEntryTests` checks
+  the report and the transfer bounds in the suite. AddressSanitizer runs clean on `pkc_solve` (durable physical-anchors
+  and fixed work) and on the native-core and checkpoint-store tests. The suite passes in both modes (875 tests, 10
+  skipped as before) and the gate in both modes (621, no failures, errors or skips; [Python mode](2026-11-23-entry/gate-python-mode-report.json),
+  [native mode](2026-11-23-entry/gate-native-mode-report.json)).
+
+## Work-only mode, 2026-11-24
+Source: `4df8943c` plus the case setting `work_only` ([runbook](../../docs/RUNBOOK.md#current-physical-anchor-solve-profile-and-resume)):
+the run sets no deadline and lifts every time limit under it (per-request budgets, the disk relaxation's Clarabel
+caps, the IPOPT wall limit, sent as `"seconds": null`, the post-alarm deadline, the frame-end re-solve's 600 s), and
+keeps every work limit, so the same case gives the same outcome on any machine load. Python and native
+(`work.work_only`, `pkc/work.hpp`) set it process-wide for a run, since the disk screens and their decided cache are
+process-wide.
+
+- On an idle machine at `4df8943c`, no time limit decided anything on the two controls (Python mode, counting
+  wrappers around the disk attempts, IPOPT requests and the post-alarm pipeline): short control 89 Clarabel solves
+  and fixed work 640, none `MaxTime` or `MaxIterations`, the slowest at 2.9 % and 5.7 % of the 0.1 s cap and at most
+  21 % of `MAX_ITER`; 8 and 3 IPOPT requests, all `worker_finished` within 0.03 % of their budgets
+  ([short](2026-11-24-work-only/caps-short.json), [fixed](2026-11-24-work-only/caps-fixed.json)). Lifting the time
+  limits therefore keeps what a timed run finds there, rather than simulating a work clock.
+- Short control and fixed work under `work_only`, each run in its own process without wall-clock fields
+  ([log](2026-11-24-work-only/evidence.txt)): Python mode, Python-hosted native and the native entry each give the
+  same result idle and under eight busy loops (load average 28.8), Python mode under a second `PYTHONHASHSEED` too;
+  the native entry equals the hosted run; and every work-only result equals the timed run's in its mode. Python
+  against native mode differs only as the timed runs already do (compiler and gate counters on the short control,
+  gate exclusion records on fixed work: 4538 differing values in timed and work-only runs alike).
+- `pkc_solve` reports what the Python CLI reports under `work_only` too (`SolveEntryTests`). The suite passes in both
+  modes (880 tests, 11 skipped: the new Java-bridge test, like the others, needs the bridge) and the gate in both
+  modes (626, no failures, errors or skips; [Python mode](2026-11-24-work-only/gate-python-mode-report.json),
+  [native mode](2026-11-24-work-only/gate-native-mode-report.json)). AddressSanitizer runs clean on the durable fixed
+  work run and the native-core, checkpoint-store, search and numerics tests; under it the Java bridge's infinite
+  `queue.get` timeout was found and fixed (it now waits without one).
+- Follow-up (2026-11-24): the witness replay (`validation/witness.replay_witness` and its native port) compiled and
+  checked the scene with fixed 5 s budgets, which the clock-site audit missed (they are constants, not clock reads);
+  a work-only run lifts them too, the final replay running in the run's mode.
+  `test_a_work_only_replay_does_not_read_the_clock` replays under the racing clock. Suite 882 tests in both modes
+  (11 skipped), gate 627 in both modes ([Python mode](2026-11-24-work-only/gate-python-mode-replay-report.json),
+  [native mode](2026-11-24-work-only/gate-native-mode-replay-report.json)).
+
+## `pkc_solve --resume`, 2026-11-24
+Source: `81e14099` plus a native report reader (`io/store.hpp` `read_report`: legacy plain or gzipped JSON as is, the
+manifest and companion database checks, hash-checked objects, patch roots; Python's checks and messages), which
+`checkpoint_store.read_report` uses under `PKC_NATIVE_CORE` as the store's writes already go native, and the saved
+branch of the native `search_event_routes` (`search/events/engine.py`'s: the continuation's schema, kind and context,
+the saved domain's id, the effective request, the session count, the saved incumbent's replay, the saved motion
+bound and `resume.exact`). `pkc_solve --resume` takes either CLI's report.
+
+- The native reader decodes the A/B harness's durable reports to the same value as the Python reader, 3.6 times
+  faster on fixed work (0.695 s against 2.516 s) and 4.1 times on the short control (0.128 s against 0.526 s)
+  ([readers](2026-11-24-resume/readers.txt)); the checkpoint-store tests pass through it in native mode.
+- Short control and fixed work run by `pkc_solve --save-progress` and stopped by SIGINT (a cancelled final report)
+  and by SIGKILL (a progress manifest whose root is a patch or a reference): each resumed by `pkc_solve` and by the
+  Python CLI gives the same result without wall-clock fields ([log](2026-11-24-resume/evidence.txt)).
+  `SolveEntryTests.test_pkc_solve_resumes_what_the_python_cli_resumes` checks the four writer and reader pairs on
+  physical-anchors cut at 10 solver calls, and the error for a report from another case.
+- The suite passes in both modes (881 tests, 11 skipped) and the gate in both modes (626, no failures, errors or
+  skips; [Python mode](2026-11-24-resume/gate-python-mode-report.json),
+  [native mode](2026-11-24-resume/gate-native-mode-report.json)). AddressSanitizer runs clean on the durable fixed
+  work run, the native-core, checkpoint-store, search and numerics tests, and `pkc_solve --resume` of the killed
+  fixed-work report. Tests that start a Python CLI child run under it apart, with `ASAN_OPTIONS=strip_env=0` (ASan
+  otherwise drops itself from the children's `DYLD_INSERT_LIBRARIES`, and a child that loads the instrumented module
+  aborts) and the Python bridge (the JVM does not start with ASan inserted): `SolveEntryTests` and
+  `test_cli_writes_structured_error_atomically`, which failed under the shared run for that reason since the first
+  ASan checks, pass there.

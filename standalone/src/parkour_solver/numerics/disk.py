@@ -13,6 +13,7 @@ import json
 import math
 import time
 
+from parkour_solver import work
 from parkour_solver.schema import SOLVER_MARGIN
 
 MODEL_VERSION = 1
@@ -22,6 +23,7 @@ MAX_ITER = 200
 # A run that hits a limit is solved once more with these; a second limit is infeasible.
 RETRY_CAP = 0.5
 RETRY_MAX_ITER = 500
+# A work-only run (parkour_solver.work) keeps MAX_ITER and RETRY_MAX_ITER and lifts CAP and RETRY_CAP.
 TOL = 1e-9
 INFEASIBILITY_TOL = 1e-8
 ALARM_FRACTION = 0.1
@@ -71,6 +73,11 @@ def spec(problem, extra_rows=(), objective=None, *, strict):
     if objective is not None:
         result['objective'] = {k: objective.get(k) for k in ('tick', 'axis', 'sense', 'customYaw', 'type')}
     return result
+
+
+def clear_decided():
+    """Empty the decided cache (a change of work-only mode; the native core empties its own)."""
+    _DECIDED.clear()
 
 
 def stats():
@@ -451,7 +458,7 @@ def _build(content, time_limit, max_iter, cuts=(), level=None):
     settings.verbose = False
     settings.max_threads = 1
     settings.direct_solve_method = 'qdldl'
-    settings.time_limit = time_limit
+    settings.time_limit = math.inf if work.WORK_ONLY else time_limit
     settings.max_iter = max_iter
     settings.tol_feas = settings.tol_gap_abs = settings.tol_gap_rel = TOL
     settings.tol_infeas_abs = settings.tol_infeas_rel = INFEASIBILITY_TOL

@@ -127,12 +127,12 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, s
     saved_repair=program.get('repairState',{})
     saved_policy=(saved_repair.get('context',{}).get('scope') or {}).get('scope',{}).get('solvePolicy')
     repair_route = route if final_route is None else final_route
-    # Under PKC_NATIVE_CORE the generator and the repair loop run natively for the routes they cover: no passages,
-    # wall hits or ladder events.
+    # Under PKC_NATIVE_CORE the generator and the repair loop run natively for the routes they cover: no wall hits or
+    # ladder events.
     native = getattr(service, 'native', None)
     deadline = scoped.deadline
     if (native is not None and
-            not any(r.get(k) for r in (route, repair_route) for k in ('passages', 'hitEvents', 'ladderEvents'))):
+            not any(r.get(k) for r in (route, repair_route) for k in ('hitEvents', 'ladderEvents'))):
         variants = native.ConstraintVariants(route=route, profile=profiles[0], geometry=scene['collisionScene'],
             envelopes=envelopes, scope=scope, checks=list(checks),
             state=saved_repair.get('constraintGeneration') if saved_policy==policy else None, reference=reference,
@@ -254,17 +254,22 @@ def find_checkpoint_route(request, compiler, *, seconds=30, candidate_seconds=1,
                           max_candidates=24, python_executable=None, cancel_event=None, initial_programs=None,
                           program_filter=None, resume_state=None, on_progress=None,
                           minimum_run_pruning=True, task_goal=None, discovery_settings=None, anchor_search=None,
-                          post_alarm='pipeline'):
+                          post_alarm='pipeline', work_only=False):
     """Anchor search for a physical landing task over the scene's automatically discovered contact events.
 
     `post_alarm` answers alarmed relaxed optima with the post-alarm pipeline ('pipeline', numerics/post_alarm.py, the
-    default since 2026-11-23) or an IPOPT confirmation ('ipopt')."""
+    default since 2026-11-23) or an IPOPT confirmation ('ipopt'). `work_only` bounds the run by work counts alone
+    (parkour_solver.work): `seconds` and `candidate_seconds` are checked and then unlimited, so the outcome does not
+    depend on machine load."""
     if type(minimum_run_pruning) is not bool:raise ValueError('minimum_run_pruning must be boolean')
     if post_alarm not in ('ipopt', 'pipeline'):raise ValueError('post_alarm must be ipopt or pipeline')
+    if type(work_only) is not bool:raise ValueError('work_only must be boolean')
     started = time.monotonic()
     for name, value in [('seconds', seconds), ('candidate_seconds', candidate_seconds)]:
         if number(value, name) <= 0:
             raise ValueError(name+' must be positive')
+    if work_only:
+        seconds = candidate_seconds = math.inf
     for name, value in [('max_candidates', max_candidates), ('max_solver_calls', max_solver_calls)]:
         integer(value, name, 1, 100000)
     if request.get('maxWallHits', 0):
@@ -283,12 +288,14 @@ def find_checkpoint_route(request, compiler, *, seconds=30, candidate_seconds=1,
     if cancel_event is not None and cancel_event.is_set():
         return unfinished('cancelled')
     from parkour_solver.search.events.engine import search_event_routes
+    from parkour_solver.work import work_only as work_only_mode
     try:
-        return search_event_routes(request, compiler, task_goal=task_goal, discovery=discovery_settings,
-            anchor_search=anchor_search, seconds=seconds, candidate_seconds=candidate_seconds,
-            max_solver_calls=max_solver_calls, max_candidates=max_candidates, python_executable=python_executable,
-            cancel_event=cancel_event, initial_programs=initial_programs, program_filter=program_filter,
-            resume_state=resume_state, on_progress=on_progress,
-            minimum_run_pruning=minimum_run_pruning, post_alarm=post_alarm)
+        with work_only_mode(work_only):
+            return search_event_routes(request, compiler, task_goal=task_goal, discovery=discovery_settings,
+                anchor_search=anchor_search, seconds=seconds, candidate_seconds=candidate_seconds,
+                max_solver_calls=max_solver_calls, max_candidates=max_candidates, python_executable=python_executable,
+                cancel_event=cancel_event, initial_programs=initial_programs, program_filter=program_filter,
+                resume_state=resume_state, on_progress=on_progress,
+                minimum_run_pruning=minimum_run_pruning, post_alarm=post_alarm)
     except TimeoutError as error:
         return unfinished(str(error))

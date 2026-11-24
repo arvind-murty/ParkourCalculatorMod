@@ -1,0 +1,9 @@
+test_a_cancelled_frame_end_solve_is_repeated_on_resume_and_nothing_else_is, its recorded lists in each mode:
+  requests: python 5, native 5, fingerprints equal True
+  frame_ends: python 2, native 2, fingerprints equal True
+  frameEnds (interrupted, rerun): python [0, 1], native [0, 1]; rerun best equal True
+test_saved_searches_resume_exactly_on_the_other_bridge: passes in both modes (its control asserts 20 recorded requests).
+tests.unit.search.test_anchor_search + tests.unit.bridge.test_python_compiler: 63 tests OK in Python mode and in native mode.
+tests.unit.search.test_anchor_search plus the bridge resume test under AddressSanitizer: 50 tests OK, 0 reports.
+requests.json, short control (/private/var/tmp/standalone-cpp-node-20261122/short/input.json), --profile-mode bookkeeping:
+  rows 47 47 equal apart from seconds 47

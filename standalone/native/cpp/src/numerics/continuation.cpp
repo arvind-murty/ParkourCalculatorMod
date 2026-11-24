@@ -71,7 +71,7 @@ bool succeeded(const std::string& status) {
 std::string run(const Value& problem_value, const Phase& phase, const std::function<Value(const Value&)>& infer,
                 const std::function<void(const Value&)>& emit, const std::function<double()>& clock) {
     const Object& problem = fields(problem_value);
-    const double end = clock() + num(at(problem, "seconds")).value;
+    const double end = clock() + (is_null(at(problem, "seconds")) ? INFINITY : num(at(problem, "seconds")).value);
     const bool stop = std::get<bool>(at(problem, "stopOnFeasible").data);
     Incumbent incumbent(problem_value, emit);
     incumbent.consider(at(problem, "yaw"));

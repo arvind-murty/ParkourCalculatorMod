@@ -148,6 +148,11 @@ def search_event_routes(request, compiler, *, task_goal=None, discovery=None, an
             else:publish(value)
         publish.begin_repair=begin_repair
         publish.repair_progress=repair_progress
+        checkpoint=options.get('on_progress')
+        if hasattr(checkpoint,'native_saver'):
+            # A native search saves its transitions through the checkpoint's native store, with no Python call.
+            publish.native_saver=lambda: checkpoint.native_saver(dict(state,dfs=None))
+            publish.native_final=checkpoint.native_final
         # Without a saver the search skips progress snapshots entirely.
         last=search(work,deadline,on_progress=publish if options.get('on_progress') else None)
         state['dfs']=last['searchState']; state['best']=last['best']

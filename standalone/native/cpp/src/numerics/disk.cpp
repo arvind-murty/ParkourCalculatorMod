@@ -26,6 +26,7 @@ extern "C" {
 #include "pkc/numerics/model.hpp"
 #include "pkc/numerics/post_alarm.hpp"
 #include "pkc/validation/numerical.hpp"
+#include "pkc/work.hpp"
 
 namespace pkc {
 namespace {
@@ -277,7 +278,7 @@ DiskProblem::DiskProblem(const Value& content_value, double time_limit, unsigned
     settings.verbose = false;
     settings.max_threads = 1;
     settings.direct_solve_method = QDLDL;
-    settings.time_limit = time_limit;
+    settings.time_limit = work_only() ? INFINITY : time_limit;  // a work-only run stops on max_iter only
     settings.max_iter = max_iter;
     settings.tol_feas = settings.tol_gap_abs = settings.tol_gap_rel = kTol;
     settings.tol_infeas_abs = settings.tol_infeas_rel = kInfeasibilityTol;
@@ -535,6 +536,12 @@ Value disk_cached_solve(const Value& content, double seconds, const std::string&
         cache.order.pop_front();
     }
     return object(with(fields(result), "cached", boolean(false)));
+}
+
+void disk_clear_decided() {
+    DecidedCache& cache = decided();
+    cache.order.clear();
+    cache.index.clear();
 }
 
 Value disk_stats() {

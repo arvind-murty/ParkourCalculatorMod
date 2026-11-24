@@ -7,21 +7,21 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `open_compiler` | [9](../src/parkour_solver/bridge/compiler.py#L9) | function |
-| `coefficient_request` | [18](../src/parkour_solver/bridge/compiler.py#L18) | function |
-| `JavaCompiler` | [29](../src/parkour_solver/bridge/compiler.py#L29) | class |
-| `JavaCompiler.__init__` | [33](../src/parkour_solver/bridge/compiler.py#L33) | function |
-| `JavaCompiler._start` | [41](../src/parkour_solver/bridge/compiler.py#L41) | function |
-| `JavaCompiler._errors` | [48](../src/parkour_solver/bridge/compiler.py#L48) | function |
-| `JavaCompiler.compile` | [56](../src/parkour_solver/bridge/compiler.py#L56) | function |
-| `JavaCompiler.provenance` | [59](../src/parkour_solver/bridge/compiler.py#L59) | function |
-| `JavaCompiler.derive_footprints` | [62](../src/parkour_solver/bridge/compiler.py#L62) | function |
-| `JavaCompiler.derive_standing_footprints` | [65](../src/parkour_solver/bridge/compiler.py#L65) | function |
-| `JavaCompiler.check_scene` | [68](../src/parkour_solver/bridge/compiler.py#L68) | function |
-| `JavaCompiler._exchange` | [74](../src/parkour_solver/bridge/compiler.py#L74) | function |
-| `JavaCompiler.close` | [103](../src/parkour_solver/bridge/compiler.py#L103) | function |
-| `JavaCompiler.__enter__` | [115](../src/parkour_solver/bridge/compiler.py#L115) | function |
-| `JavaCompiler.__exit__` | [118](../src/parkour_solver/bridge/compiler.py#L118) | function |
+| `open_compiler` | [10](../src/parkour_solver/bridge/compiler.py#L10) | function |
+| `coefficient_request` | [19](../src/parkour_solver/bridge/compiler.py#L19) | function |
+| `JavaCompiler` | [30](../src/parkour_solver/bridge/compiler.py#L30) | class |
+| `JavaCompiler.__init__` | [34](../src/parkour_solver/bridge/compiler.py#L34) | function |
+| `JavaCompiler._start` | [42](../src/parkour_solver/bridge/compiler.py#L42) | function |
+| `JavaCompiler._errors` | [49](../src/parkour_solver/bridge/compiler.py#L49) | function |
+| `JavaCompiler.compile` | [57](../src/parkour_solver/bridge/compiler.py#L57) | function |
+| `JavaCompiler.provenance` | [60](../src/parkour_solver/bridge/compiler.py#L60) | function |
+| `JavaCompiler.derive_footprints` | [63](../src/parkour_solver/bridge/compiler.py#L63) | function |
+| `JavaCompiler.derive_standing_footprints` | [66](../src/parkour_solver/bridge/compiler.py#L66) | function |
+| `JavaCompiler.check_scene` | [69](../src/parkour_solver/bridge/compiler.py#L69) | function |
+| `JavaCompiler._exchange` | [75](../src/parkour_solver/bridge/compiler.py#L75) | function |
+| `JavaCompiler.close` | [105](../src/parkour_solver/bridge/compiler.py#L105) | function |
+| `JavaCompiler.__enter__` | [117](../src/parkour_solver/bridge/compiler.py#L117) | function |
+| `JavaCompiler.__exit__` | [120](../src/parkour_solver/bridge/compiler.py#L120) | function |
 
 ## bridge/counting.py
 
@@ -170,16 +170,16 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `_atomic_json` | [30](../src/parkour_solver/io/checkpoint_store.py#L30) | function |
 | `CheckpointStore` | [37](../src/parkour_solver/io/checkpoint_store.py#L37) | class |
 | `CheckpointStore.__init__` | [45](../src/parkour_solver/io/checkpoint_store.py#L45) | function |
-| `CheckpointStore.__enter__` | [64](../src/parkour_solver/io/checkpoint_store.py#L64) | function |
-| `CheckpointStore.__exit__` | [67](../src/parkour_solver/io/checkpoint_store.py#L67) | function |
-| `CheckpointStore.close` | [70](../src/parkour_solver/io/checkpoint_store.py#L70) | function |
-| `CheckpointStore.save` | [73](../src/parkour_solver/io/checkpoint_store.py#L73) | function |
-| `CheckpointStore.archive` | [78](../src/parkour_solver/io/checkpoint_store.py#L78) | function |
-| `CheckpointStore.publish` | [184](../src/parkour_solver/io/checkpoint_store.py#L184) | function |
-| `CheckpointStore.patch` | [191](../src/parkour_solver/io/checkpoint_store.py#L191) | function |
-| `CheckpointStore.compact` | [205](../src/parkour_solver/io/checkpoint_store.py#L205) | function |
-| `read_report` | [242](../src/parkour_solver/io/checkpoint_store.py#L242) | function |
-| `main` | [298](../src/parkour_solver/io/checkpoint_store.py#L298) | function |
+| `CheckpointStore.__enter__` | [72](../src/parkour_solver/io/checkpoint_store.py#L72) | function |
+| `CheckpointStore.__exit__` | [75](../src/parkour_solver/io/checkpoint_store.py#L75) | function |
+| `CheckpointStore.close` | [78](../src/parkour_solver/io/checkpoint_store.py#L78) | function |
+| `CheckpointStore.save` | [84](../src/parkour_solver/io/checkpoint_store.py#L84) | function |
+| `CheckpointStore.archive` | [89](../src/parkour_solver/io/checkpoint_store.py#L89) | function |
+| `CheckpointStore.publish` | [195](../src/parkour_solver/io/checkpoint_store.py#L195) | function |
+| `CheckpointStore.patch` | [205](../src/parkour_solver/io/checkpoint_store.py#L205) | function |
+| `CheckpointStore.compact` | [222](../src/parkour_solver/io/checkpoint_store.py#L222) | function |
+| `read_report` | [260](../src/parkour_solver/io/checkpoint_store.py#L260) | function |
+| `main` | [320](../src/parkour_solver/io/checkpoint_store.py#L320) | function |
 
 ## io/provenance.py
 
@@ -198,17 +198,20 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `_NativeState` | [15](../src/parkour_solver/io/search_checkpoint.py#L15) | class |
-| `_NativeState.__init__` | [17](../src/parkour_solver/io/search_checkpoint.py#L17) | function |
-| `_NativeState.checkpoint_encode` | [20](../src/parkour_solver/io/search_checkpoint.py#L20) | function |
-| `SearchCheckpoint` | [24](../src/parkour_solver/io/search_checkpoint.py#L24) | class |
-| `SearchCheckpoint.__init__` | [25](../src/parkour_solver/io/search_checkpoint.py#L25) | function |
-| `SearchCheckpoint.state` | [33](../src/parkour_solver/io/search_checkpoint.py#L33) | function |
-| `SearchCheckpoint.freeze` | [54](../src/parkour_solver/io/search_checkpoint.py#L54) | function |
-| `SearchCheckpoint.__call__` | [60](../src/parkour_solver/io/search_checkpoint.py#L60) | function |
-| `SearchCheckpoint.begin_repair` | [85](../src/parkour_solver/io/search_checkpoint.py#L85) | function |
-| `SearchCheckpoint.repair_progress` | [88](../src/parkour_solver/io/search_checkpoint.py#L88) | function |
-| `SearchCheckpoint.finish` | [111](../src/parkour_solver/io/search_checkpoint.py#L111) | function |
+| `_NativeState` | [16](../src/parkour_solver/io/search_checkpoint.py#L16) | class |
+| `_NativeState.__init__` | [18](../src/parkour_solver/io/search_checkpoint.py#L18) | function |
+| `_NativeState.checkpoint_encode` | [21](../src/parkour_solver/io/search_checkpoint.py#L21) | function |
+| `SearchCheckpoint` | [25](../src/parkour_solver/io/search_checkpoint.py#L25) | class |
+| `SearchCheckpoint.__init__` | [26](../src/parkour_solver/io/search_checkpoint.py#L26) | function |
+| `SearchCheckpoint.native_saver` | [36](../src/parkour_solver/io/search_checkpoint.py#L36) | function |
+| `SearchCheckpoint.native_final` | [47](../src/parkour_solver/io/search_checkpoint.py#L47) | function |
+| `SearchCheckpoint.sync` | [51](../src/parkour_solver/io/search_checkpoint.py#L51) | function |
+| `SearchCheckpoint.state` | [56](../src/parkour_solver/io/search_checkpoint.py#L56) | function |
+| `SearchCheckpoint.freeze` | [80](../src/parkour_solver/io/search_checkpoint.py#L80) | function |
+| `SearchCheckpoint.__call__` | [86](../src/parkour_solver/io/search_checkpoint.py#L86) | function |
+| `SearchCheckpoint.begin_repair` | [111](../src/parkour_solver/io/search_checkpoint.py#L111) | function |
+| `SearchCheckpoint.repair_progress` | [114](../src/parkour_solver/io/search_checkpoint.py#L114) | function |
+| `SearchCheckpoint.finish` | [137](../src/parkour_solver/io/search_checkpoint.py#L137) | function |
 
 ## movement/cases.py
 
@@ -488,39 +491,40 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `Incumbent` | [9](../src/parkour_solver/numerics/continuation.py#L9) | class |
-| `Incumbent.__init__` | [10](../src/parkour_solver/numerics/continuation.py#L10) | function |
-| `Incumbent.consider` | [15](../src/parkour_solver/numerics/continuation.py#L15) | function |
-| `Incumbent.pattern` | [28](../src/parkour_solver/numerics/continuation.py#L28) | function |
-| `run` | [34](../src/parkour_solver/numerics/continuation.py#L34) | function |
+| `Incumbent` | [10](../src/parkour_solver/numerics/continuation.py#L10) | class |
+| `Incumbent.__init__` | [11](../src/parkour_solver/numerics/continuation.py#L11) | function |
+| `Incumbent.consider` | [16](../src/parkour_solver/numerics/continuation.py#L16) | function |
+| `Incumbent.pattern` | [29](../src/parkour_solver/numerics/continuation.py#L29) | function |
+| `run` | [35](../src/parkour_solver/numerics/continuation.py#L35) | function |
 
 ## numerics/disk.py
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `_native` | [38](../src/parkour_solver/numerics/disk.py#L38) | function |
-| `spec` | [47](../src/parkour_solver/numerics/disk.py#L47) | function |
-| `stats` | [76](../src/parkour_solver/numerics/disk.py#L76) | function |
-| `solve` | [84](../src/parkour_solver/numerics/disk.py#L84) | function |
-| `decide` | [105](../src/parkour_solver/numerics/disk.py#L105) | function |
-| `screen` | [119](../src/parkour_solver/numerics/disk.py#L119) | function |
-| `deficits` | [132](../src/parkour_solver/numerics/disk.py#L132) | function |
-| `ipopt_seed` | [139](../src/parkour_solver/numerics/disk.py#L139) | function |
-| `alarm_ticks` | [154](../src/parkour_solver/numerics/disk.py#L154) | function |
-| `RelaxedDispatch` | [165](../src/parkour_solver/numerics/disk.py#L165) | class |
-| `RelaxedDispatch.__init__` | [181](../src/parkour_solver/numerics/disk.py#L181) | function |
-| `RelaxedDispatch.solve` | [187](../src/parkour_solver/numerics/disk.py#L187) | function |
-| `RelaxedDispatch.confirmed` | [190](../src/parkour_solver/numerics/disk.py#L190) | function |
-| `RelaxedDispatch.full_strength` | [193](../src/parkour_solver/numerics/disk.py#L193) | function |
-| `RelaxedDispatch._dispatch` | [196](../src/parkour_solver/numerics/disk.py#L196) | function |
-| `RelaxedDispatch.confirm` | [240](../src/parkour_solver/numerics/disk.py#L240) | function |
-| `RelaxedDispatch._frame_end` | [280](../src/parkour_solver/numerics/disk.py#L280) | function |
-| `_full_strength` | [298](../src/parkour_solver/numerics/disk.py#L298) | function |
-| `_result` | [337](../src/parkour_solver/numerics/disk.py#L337) | function |
-| `_attempt` | [353](../src/parkour_solver/numerics/disk.py#L353) | function |
-| `_build` | [362](../src/parkour_solver/numerics/disk.py#L362) | function |
-| `_run` | [468](../src/parkour_solver/numerics/disk.py#L468) | function |
-| `_cost` | [488](../src/parkour_solver/numerics/disk.py#L488) | function |
+| `_native` | [40](../src/parkour_solver/numerics/disk.py#L40) | function |
+| `spec` | [49](../src/parkour_solver/numerics/disk.py#L49) | function |
+| `clear_decided` | [78](../src/parkour_solver/numerics/disk.py#L78) | function |
+| `stats` | [83](../src/parkour_solver/numerics/disk.py#L83) | function |
+| `solve` | [91](../src/parkour_solver/numerics/disk.py#L91) | function |
+| `decide` | [112](../src/parkour_solver/numerics/disk.py#L112) | function |
+| `screen` | [126](../src/parkour_solver/numerics/disk.py#L126) | function |
+| `deficits` | [139](../src/parkour_solver/numerics/disk.py#L139) | function |
+| `ipopt_seed` | [146](../src/parkour_solver/numerics/disk.py#L146) | function |
+| `alarm_ticks` | [161](../src/parkour_solver/numerics/disk.py#L161) | function |
+| `RelaxedDispatch` | [172](../src/parkour_solver/numerics/disk.py#L172) | class |
+| `RelaxedDispatch.__init__` | [188](../src/parkour_solver/numerics/disk.py#L188) | function |
+| `RelaxedDispatch.solve` | [194](../src/parkour_solver/numerics/disk.py#L194) | function |
+| `RelaxedDispatch.confirmed` | [197](../src/parkour_solver/numerics/disk.py#L197) | function |
+| `RelaxedDispatch.full_strength` | [200](../src/parkour_solver/numerics/disk.py#L200) | function |
+| `RelaxedDispatch._dispatch` | [203](../src/parkour_solver/numerics/disk.py#L203) | function |
+| `RelaxedDispatch.confirm` | [247](../src/parkour_solver/numerics/disk.py#L247) | function |
+| `RelaxedDispatch._frame_end` | [287](../src/parkour_solver/numerics/disk.py#L287) | function |
+| `_full_strength` | [305](../src/parkour_solver/numerics/disk.py#L305) | function |
+| `_result` | [344](../src/parkour_solver/numerics/disk.py#L344) | function |
+| `_attempt` | [360](../src/parkour_solver/numerics/disk.py#L360) | function |
+| `_build` | [369](../src/parkour_solver/numerics/disk.py#L369) | function |
+| `_run` | [475](../src/parkour_solver/numerics/disk.py#L475) | function |
+| `_cost` | [495](../src/parkour_solver/numerics/disk.py#L495) | function |
 
 ## numerics/model.py
 
@@ -528,7 +532,7 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | --- | ---: | --- |
 | `_native` | [7](../src/parkour_solver/numerics/model.py#L7) | function |
 | `prepare` | [13](../src/parkour_solver/numerics/model.py#L13) | function |
-| `fingerprint` | [203](../src/parkour_solver/numerics/model.py#L203) | function |
+| `fingerprint` | [204](../src/parkour_solver/numerics/model.py#L204) | function |
 
 ## numerics/post_alarm.py
 
@@ -558,8 +562,8 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `_command` | [18](../src/parkour_solver/numerics/solver.py#L18) | function |
-| `solve` | [26](../src/parkour_solver/numerics/solver.py#L26) | function |
+| `_command` | [19](../src/parkour_solver/numerics/solver.py#L19) | function |
+| `solve` | [27](../src/parkour_solver/numerics/solver.py#L27) | function |
 
 ## numerics/worker.py
 
@@ -577,8 +581,8 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `Monitor.record` | [90](../src/parkour_solver/numerics/worker.py#L90) | function |
 | `Monitor.eval` | [107](../src/parkour_solver/numerics/worker.py#L107) | function |
 | `fixed_phase` | [114](../src/parkour_solver/numerics/worker.py#L114) | function |
-| `phase` | [243](../src/parkour_solver/numerics/worker.py#L243) | function |
-| `main` | [294](../src/parkour_solver/numerics/worker.py#L294) | function |
+| `phase` | [246](../src/parkour_solver/numerics/worker.py#L246) | function |
+| `main` | [297](../src/parkour_solver/numerics/worker.py#L297) | function |
 
 ## observability/turns.py
 
@@ -965,7 +969,7 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | Symbol | Line | Kind |
 | --- | ---: | --- |
 | `search_allocations` | [15](../src/parkour_solver/search/ordered_route.py#L15) | function |
-| `find_route` | [129](../src/parkour_solver/search/ordered_route.py#L129) | function |
+| `find_route` | [130](../src/parkour_solver/search/ordered_route.py#L130) | function |
 
 ## search/ranking.py
 
@@ -1145,18 +1149,19 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | Symbol | Line | Kind |
 | --- | ---: | --- |
 | `replay_witness` | [10](../src/parkour_solver/validation/witness.py#L10) | function |
-| `witnesses` | [49](../src/parkour_solver/validation/witness.py#L49) | function |
-| `full_witness` | [59](../src/parkour_solver/validation/witness.py#L59) | function |
+| `witnesses` | [52](../src/parkour_solver/validation/witness.py#L52) | function |
+| `full_witness` | [62](../src/parkour_solver/validation/witness.py#L62) | function |
 
 ## work.py
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `SearchWork` | [9](../src/parkour_solver/work.py#L9) | class |
-| `SearchWork.__init__` | [10](../src/parkour_solver/work.py#L10) | function |
-| `SearchWork.check` | [23](../src/parkour_solver/work.py#L23) | function |
-| `SearchWork.program` | [31](../src/parkour_solver/work.py#L31) | function |
-| `SearchWork.proposal` | [42](../src/parkour_solver/work.py#L42) | function |
-| `SearchWork.before_solve` | [47](../src/parkour_solver/work.py#L47) | function |
-| `SearchWork.accepted` | [51](../src/parkour_solver/work.py#L51) | function |
-| `SearchWork.summary` | [56](../src/parkour_solver/work.py#L56) | function |
+| `work_only` | [15](../src/parkour_solver/work.py#L15) | function |
+| `SearchWork` | [39](../src/parkour_solver/work.py#L39) | class |
+| `SearchWork.__init__` | [40](../src/parkour_solver/work.py#L40) | function |
+| `SearchWork.check` | [53](../src/parkour_solver/work.py#L53) | function |
+| `SearchWork.program` | [61](../src/parkour_solver/work.py#L61) | function |
+| `SearchWork.proposal` | [72](../src/parkour_solver/work.py#L72) | function |
+| `SearchWork.before_solve` | [77](../src/parkour_solver/work.py#L77) | function |
+| `SearchWork.accepted` | [81](../src/parkour_solver/work.py#L81) | function |
+| `SearchWork.summary` | [86](../src/parkour_solver/work.py#L86) | function |

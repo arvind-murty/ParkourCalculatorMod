@@ -46,6 +46,15 @@ class CheckpointStore:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.database = self.path.with_name(self.path.name+'.store.sqlite3')
+        from parkour_solver import native_core
+        self.core = native_core.from_environment()
+        # Under the native core one native store (io/store.hpp) owns the database and every write goes through it; its
+        # key set and encode cache serve the walk below.
+        self.native = self.core.CheckpointStore(str(self.path)) if self.core is not None else None
+        if self.native is not None:
+            self.identity, self.known, self.encode_cache = self.native.identity, self.native, self.native.cache
+            return
+        self.encode_cache = None
         self.connection = sqlite3.connect(self.database)
         with self.connection:
             self.connection.execute('CREATE TABLE IF NOT EXISTS metadata (version INTEGER, identity TEXT)')
@@ -59,7 +68,6 @@ class CheckpointStore:
             raise ValueError('Unsupported checkpoint store version')
         self.identity = row[1]
         self.known = {r[0] for r in self.connection.execute('SELECT key FROM objects')}
-        self.encode_cache = None  # the native encode cache, made on the first archive under the native core
 
     def __enter__(self):
         return self
@@ -68,7 +76,10 @@ class CheckpointStore:
         self.close()
 
     def close(self):
-        self.connection.close()
+        if self.native is not None:
+            self.native.close()
+        else:
+            self.connection.close()
 
     def save(self, report):
         reference, statistics, _ = self.archive(report)
@@ -84,11 +95,7 @@ class CheckpointStore:
             target_ids.setdefault(id(target), []).append(i)
         # The native core encodes plain JSON containers the same way (io/checkpoint_store.hpp); paths to targets are
         # found by identity here, so an archive with targets walks in Python.
-        from parkour_solver import native_core
-        core = native_core.from_environment()
-        native = core if not target_ids else None
-        if core is not None and self.encode_cache is None:  # native values in any archive encode through it
-            self.encode_cache = core.EncodeCache()
+        native = self.core if not target_ids else None
 
         def remember(data):
             key = hashlib.sha256(data).hexdigest()
@@ -167,14 +174,18 @@ class CheckpointStore:
             root = remember(encode(report))
             # A failed transaction or manifest replacement leaves the previous root
             # readable. Extra committed objects from a failed publication are safe.
-            with self.connection:
-                self.connection.executemany('INSERT INTO objects VALUES (?, ?)',
-                    ((k, zlib.compress(v, level=1)) for k,v in pending.items()))
+            if self.native is not None:
+                self.native.insert(list(pending.items()))
+            else:
+                with self.connection:
+                    self.connection.executemany('INSERT INTO objects VALUES (?, ?)',
+                        ((k, zlib.compress(v, level=1)) for k,v in pending.items()))
         except BaseException:
             if self.encode_cache is not None:  # its new encodings may name objects that were never stored
                 self.encode_cache.clear()
             raise
-        self.known.update(pending)
+        if self.native is None:
+            self.known.update(pending)
         paths = [[] for _ in targets]
         for i, path in found.get(id(report), ()):
             paths[i].append(path)
@@ -184,6 +195,9 @@ class CheckpointStore:
     def publish(self, reference):
         if reference.identity != self.identity:
             raise ValueError('Reference belongs to another checkpoint store')
+        if self.native is not None:
+            self.native.publish(reference.key)
+            return
         manifest = dict(format=FORMAT, version=VERSION, store=self.database.name,
                         storeId=self.identity, root=reference.key)
         _atomic_json(self.path, manifest)
@@ -193,6 +207,9 @@ class CheckpointStore:
         if base.identity != self.identity:
             raise ValueError('Reference belongs to another checkpoint store')
         changes, statistics, _ = self.archive(changes)
+        if self.native is not None:
+            self.native.publish_patch(base.key, changes.key)
+            return statistics
         data = _json(['p', [base.key, changes.key]])
         key = hashlib.sha256(data).hexdigest()
         if key not in self.known:
@@ -204,8 +221,9 @@ class CheckpointStore:
 
     def compact(self):
         """Drop superseded roots after the final report has been published."""
-        if self.encode_cache is not None:  # its encodings may name dropped objects
-            self.encode_cache.clear()
+        if self.native is not None:
+            self.native.compact()  # empties its encode cache too
+            return
         manifest = json.loads(gzip.decompress(self.path.read_bytes()) if self.path.suffix == '.gz' else self.path.read_bytes())
         reachable = set()
 
@@ -241,6 +259,10 @@ class CheckpointStore:
 
 def read_report(path):
     """Read a new manifest/store pair or a legacy plain/gzipped JSON report."""
+    from parkour_solver import native_core
+    native = native_core.from_environment()
+    if native is not None:  # under PKC_NATIVE_CORE the native reader (io/store.hpp), as the store writes natively
+        return native.read_report(str(path))
     path = Path(path)
     raw = path.read_bytes()
     value = json.loads(gzip.decompress(raw) if path.suffix == '.gz' else raw)

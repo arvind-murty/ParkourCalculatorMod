@@ -79,6 +79,11 @@ class ProcessTests(unittest.TestCase):
         seen[0]['yaw'][0] = 90
         self.assertEqual(result['candidate']['yaw'][0], 0)
 
+    def test_an_unlimited_budget_is_a_null_wall_limit_on_the_wire(self):
+        echo = 'import json, sys; r = json.loads(sys.stdin.readline()); print(json.dumps({"type": "done", "status": repr(r["seconds"])}))'
+        result = self.run_worker(echo, seconds=float('inf'))
+        self.assertEqual((result['termination'], result['workerStatus']), ('worker_finished', 'None'))
+
     def test_valid_seed_survives_timeout_without_worker_candidates(self):
         seen = []
         result = self.run_worker('import time; time.sleep(30)', seconds=0.2, on_incumbent=seen.append)

@@ -11,6 +11,7 @@
 #include "pkc/scene/static_collision.hpp"
 #include "pkc/observability/turns.hpp"
 #include "pkc/search/bounds/remaining.hpp"
+#include "pkc/work.hpp"
 #include "pkc/search/comparison.hpp"
 #include "pkc/search/dfs.hpp"
 #include "pkc/search/engine.hpp"
@@ -22,8 +23,15 @@
 namespace pkc {
 namespace {
 
-// FRAME_END_SECONDS: frame-end re-solves have no deadline (user, 2026-11-23); this only bounds a hung solve.
+// FRAME_END_SECONDS: frame-end re-solves have no deadline (user, 2026-11-23); this only bounds a hung solve, and a
+// work-only run lifts it.
 const double kFrameEndSeconds = 600.;
+
+// num(value) for a budget in the evaluate args, which is infinite in a work-only run (num rejects infinity).
+double budget(const Value& value) {
+    if (const auto* seconds = std::get_if<double>(&value.data); seconds && *seconds == INFINITY) return INFINITY;
+    return num(value).value;
+}
 
 Value set_key(const Value& base, std::string_view key, Value value) {
     Object out = fields(base);
@@ -193,7 +201,12 @@ RepairTargets DfsSearch::active_targets() {
 
 void DfsSearch::publish() {
     state_.cumulative_calls = options_.prior_calls + hooks_.solver_calls();
-    if (hooks_.progress) hooks_.publish(snapshot(active_targets()));
+    if (!hooks_.progress) return;
+    const Snapshot state = snapshot(active_targets());
+    if (hooks_.saver)
+        hooks_.saver->save(state->state, state->repair);
+    else
+        hooks_.publish(state);
 }
 
 // `program` is the anchor-leg program the targets follow, or null for a decision check's node program.
@@ -204,7 +217,18 @@ void DfsSearch::begin_repair(RepairTargets targets, const SharedValue& program) 
     repair_ = targets;
     repair_program_ = program;
     repair_node_ = !program;
-    hooks_.begin_repair(snapshot(std::move(targets)));
+    const Snapshot state = snapshot(std::move(targets));
+    if (hooks_.saver)
+        hooks_.saver->save(state->state, state->repair);
+    else
+        hooks_.begin_repair(state);
+}
+
+void DfsSearch::report_repair(const Snapshot& state) {
+    if (hooks_.saver)
+        hooks_.saver->progress(state->state, state->repair);
+    else
+        hooks_.repair_progress(state);
 }
 
 void DfsSearch::repair_progress() {
@@ -219,9 +243,9 @@ void DfsSearch::repair_progress() {
     if (following && !(active && (repair_node_ || active->program != repair_program_))) {
         RepairTargets targets = repair_;
         targets.patch = true;
-        hooks_.repair_progress(snapshot(std::move(targets)));
+        report_repair(snapshot(std::move(targets)));
     } else {
-        hooks_.repair_progress(snapshot(active_targets()));
+        report_repair(snapshot(active_targets()));
     }
 }
 
@@ -707,7 +731,7 @@ Value DfsSearch::evaluate_leg(Frame& f, const Value& program, const Value& args)
     bool uncovered = false;
     for (const Value* r : {&at(fields(prepared), "route"), &final_route})
         if (!is_null(*r))
-            for (const char* key : {"passages", "hitEvents", "ladderEvents"})
+            for (const char* key : {"hitEvents", "ladderEvents"})
                 uncovered = uncovered || py_truthy(get_or_null(fields(*r), key));
     if (uncovered) return hooks_.evaluate(f.id, f.goal_request, f.semantic_cursor, program, args);
     if (!get(route, "constraints")) put(route, "constraints", array({}));
@@ -717,7 +741,7 @@ Value DfsSearch::evaluate_leg(Frame& f, const Value& program, const Value& args)
         put(route, "objective", object({{"axis", text("X")}, {"sense", text("MAX")}}));
         put(route, "guideObjective", guide);
     }
-    const double seconds = num(at(a, "seconds")).value;
+    const double seconds = budget(at(a, "seconds"));
     const bool own_work = py_truthy(get_or_null(a, "ownWork"));
     NodeSolve solve = hooks_.begin_leg(program, as_text(at(fields(policy), "numerical")), seconds, own_work);
     solve.adapter_identity = stage(f).corridor;
@@ -727,7 +751,7 @@ Value DfsSearch::evaluate_leg(Frame& f, const Value& program, const Value& args)
     EvaluateOptions eo;
     eo.seconds = seconds;
     const Value* candidate_seconds = get(a, "candidateSeconds");
-    eo.candidate_seconds = candidate_seconds ? num(*candidate_seconds).value : options_.candidate_seconds;
+    eo.candidate_seconds = candidate_seconds ? budget(*candidate_seconds) : options_.candidate_seconds;
     eo.required_landing = landing;
     eo.final_route = final_route;
     eo.policy = policy;
@@ -1190,8 +1214,9 @@ bool DfsSearch::frame_end(Frame& f, Record& chosen) {
     Object args = evaluation_args(f, program);
     put(args, "policy", object(with(with(fields(at(args, "policy")), "rankEqualCost", boolean(false)), "numerical",
                                     text("full_strength"))));
-    put(args, "seconds", real(kFrameEndSeconds));
-    put(args, "candidateSeconds", real(kFrameEndSeconds));
+    const double seconds = work_only() ? INFINITY : kFrameEndSeconds;
+    put(args, "seconds", real(seconds));
+    put(args, "candidateSeconds", real(seconds));
     put(args, "progress", boolean(false));
     put(args, "ownWork", boolean(true));
     put(args, "finalRoute", at(fields(*chosen.witness), "route"));

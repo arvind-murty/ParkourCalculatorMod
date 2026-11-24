@@ -94,9 +94,10 @@ std::string CheckpointEncoder::encode(const Value& value) {
     if (is_object(value)) identity = std::get<std::shared_ptr<const Object>>(value.data).get();
     if (is_list(value)) identity = std::get<std::shared_ptr<const Array>>(value.data).get();
     if (identity) {
-        if (const auto found = memo_.find(identity); found != memo_.end()) return found->second;
+        if (const auto found = memo_.find(identity); found != memo_.end()) return found->second.second;
         if (cache_)
-            if (const std::string* cached = cache_->find(identity)) return memo_.emplace(identity, *cached).first->second;
+            if (const std::string* cached = cache_->find(identity))
+                return memo_.emplace(identity, std::make_pair(value, *cached)).first->second.second;
     }
     std::string data;
     bool all_flat = container;
@@ -136,12 +137,27 @@ std::string CheckpointEncoder::encode(const Value& value) {
     const bool stored = data.size() >= kChunkBytes;
     data = chunk(std::move(data));
     if (identity) {
-        memo_.emplace(identity, data);
+        memo_.emplace(identity, std::make_pair(value, data));
         // Only a stored object's reference: a smaller encoding sits inside its parent's, so keeping it too would hold
         // the same text twice, and it costs little to redo.
         if (cache_ && stored) cache_->store(identity, value, data);
     }
     return data;
+}
+
+std::string CheckpointEncoder::references(const std::vector<std::string>& stored) {
+    // A list of references is never flat; an empty one is.
+    if (stored.empty()) return "[\"j\",[]]";
+    std::string out = "[\"l\",[";
+    for (std::size_t i = 0; i < stored.size(); ++i) out += (i ? "," : "") + reference(stored[i]);
+    return chunk(out + "]]");
+}
+
+std::string CheckpointEncoder::entries(const std::vector<std::pair<std::string, std::string>>& encoded) {
+    std::string data = "[\"d\",[";
+    for (std::size_t i = 0; i < encoded.size(); ++i)
+        data += std::string(i ? "," : "") + '[' + json(Value{encoded[i].first}) + ',' + encoded[i].second + ']';
+    return chunk(data + "]]");
 }
 
 std::string CheckpointEncoder::chunk(std::string data) {
@@ -150,16 +166,7 @@ std::string CheckpointEncoder::chunk(std::string data) {
 
 std::string CheckpointEncoder::encode_replacing(const Value& object, const std::string& key,
                                                 const std::vector<std::string>& stored) {
-    // A list of references is never flat; an empty one is.
-    std::string replaced;
-    if (stored.empty()) {
-        replaced = "[\"j\",[]]";
-    } else {
-        replaced = "[\"l\",[";
-        for (std::size_t i = 0; i < stored.size(); ++i) replaced += (i ? "," : "") + reference(stored[i]);
-        replaced += "]]";
-        replaced = chunk(std::move(replaced));
-    }
+    const std::string replaced = references(stored);
     bool all_flat = true;
     for (const auto& [k, child] : fields(object)) all_flat = all_flat && (k == key ? stored.empty() : flat(child));
     if (all_flat) {

@@ -362,13 +362,15 @@ PhaseOutcome fixed_phase(const Problem& problem, const Value& yaw_value, const R
     casadi::Function decode("decode", {x}, {SX::vertcat(facings)});
     casadi::Function constraints("original_constraints", {x}, {g});
     Monitor monitor(x.numel(), g.numel(), decode, constraints, lower, upper, stop, on_candidate);
-    casadi::Function solver = casadi::nlpsol(
-        "local_ipopt", "ipopt", casadi::SXDict{{"x", x}, {"g", g}, {"f", cost}},
-        casadi::Dict{{"print_time", false}, {"error_on_fail", false}, {"iteration_callback", monitor},
-                     {"detect_simple_bounds", true}, {"ipopt.print_level", 0}, {"ipopt.sb", "yes"},
-                     {"ipopt.max_wall_time", std::fmax(0.01, seconds)}, {"ipopt.max_iter", problem.max_iterations},
-                     {"ipopt.tol", 1e-9}, {"ipopt.constr_viol_tol", 1e-9}, {"ipopt.acceptable_tol", 1e-8},
-                     {"ipopt.acceptable_constr_viol_tol", 1e-9}, {"ipopt.bound_relax_factor", 0.0}});
+    casadi::Dict options{{"print_time", false}, {"error_on_fail", false}, {"iteration_callback", monitor},
+                         {"detect_simple_bounds", true}, {"ipopt.print_level", 0}, {"ipopt.sb", "yes"},
+                         {"ipopt.max_iter", problem.max_iterations},
+                         {"ipopt.tol", 1e-9}, {"ipopt.constr_viol_tol", 1e-9}, {"ipopt.acceptable_tol", 1e-8},
+                         {"ipopt.acceptable_constr_viol_tol", 1e-9}, {"ipopt.bound_relax_factor", 0.0}};
+    // A request without a wall limit stops on max_iter only.
+    if (std::isfinite(seconds)) options["ipopt.max_wall_time"] = std::fmax(0.01, seconds);
+    casadi::Function solver =
+        casadi::nlpsol("local_ipopt", "ipopt", casadi::SXDict{{"x", x}, {"g", g}, {"f", cost}}, options);
     casadi::DMDict solution = solver(casadi::DMDict{{"x0", DM(initial)}, {"lbg", DM(lower)}, {"ubg", DM(upper)}});
     monitor.record(solution.at("x"), static_cast<double>(solution.at("f")));
     const casadi::Dict stats = solver.stats();

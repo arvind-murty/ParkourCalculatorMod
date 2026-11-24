@@ -219,6 +219,11 @@ ordered options. That is targeted enumeration work, not a whole-solver speedup.
   `cases/real11/physical-anchors.json` searches in 1.48 s against 5.11 s. Fixed work searches in 12.23 s and 12.42 s
   against 37.32 s and 38.99 s, and 16.55 s and 16.15 s against 132.69 s and 125.38 s with durable checkpoints
   ([evidence](../research/native-core/README.md)).
+- Native checkpoint saver (`PKC_NATIVE_CORE`): a durable native search writes its saves and repair patches natively,
+  with no Python call. Durable fixed work searches in 15.00 s and 14.97 s against 15.79 s and 15.84 s, the durable
+  short control in 2.21 s and 2.16 s against 2.47 s and 2.43 s; on fixed work the 469 Python save callbacks
+  (3.71 s) become 467 native saves and patches (2.08 s), and the final save takes 1.05 s instead of 1.84 s
+  ([evidence](../research/native-core/README.md)).
 - Clarabel iterative refinement off in every disk solve: on the extended fixed-work control
   (100 solver calls) search time fell from 39.36 s to 37.50 s with identical transitions and
   verdicts, and a 300 s extended run spent 7.92 s instead of 11.43 s in Clarabel requests

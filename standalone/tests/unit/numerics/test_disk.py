@@ -8,6 +8,7 @@ import unittest
 from types import SimpleNamespace
 from unittest import mock
 
+from parkour_solver import work
 from parkour_solver.numerics import disk, prepare, solve, validate
 from parkour_solver.numerics.model import fingerprint
 from parkour_solver.physics.angles import wrap
@@ -191,6 +192,22 @@ class StartAndStatusTests(unittest.TestCase):
             limited = disk.solve(other, seconds=disk.CAP)
         self.assertEqual((limited['outcome'], limited['status'], limited['retried']), ('infeasible', 'MaxIterations', True))
         self.assertTrue(disk.solve(copy.deepcopy(other), seconds=disk.CAP)['cached'])
+
+    def test_a_work_only_run_lifts_the_time_caps_and_keeps_the_iteration_caps(self):
+        content = disk.spec(request(4, .13, walls=[dict(mode='Z', t1=3, cmp='LE', rhs=.31)]), strict=True)
+        with mock.patch.object(disk, 'CAP', 1e-12), mock.patch.object(disk, 'RETRY_CAP', 1e-12):
+            limited = disk.solve(content, seconds=disk.CAP)
+            with work.work_only(True):
+                lifted = disk.solve(copy.deepcopy(content), seconds=disk.CAP)
+                with mock.patch.object(disk, 'MAX_ITER', 1), mock.patch.object(disk, 'RETRY_MAX_ITER', 1):
+                    other = disk.spec(request(4, .13, walls=[dict(mode='Z', t1=3, cmp='LE', rhs=.32)]), strict=True)
+                    counted = disk.solve(other, seconds=disk.CAP)
+            # Leaving the mode empties the decided cache, which held the work-only verdict.
+            again = disk.solve(copy.deepcopy(content), seconds=disk.CAP)
+        self.assertEqual((limited['outcome'], limited['status']), ('infeasible', 'MaxTime'))
+        self.assertEqual((lifted['outcome'], lifted['cached']), ('feasible', False))
+        self.assertEqual((counted['outcome'], counted['status']), ('infeasible', 'MaxIterations'))
+        self.assertEqual((again['status'], again['cached']), ('MaxTime', False))
 
     def test_cut_and_level_rows(self):
         content = disk.spec(request(1, .1), strict=True)

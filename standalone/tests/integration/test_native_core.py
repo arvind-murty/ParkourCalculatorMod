@@ -389,3 +389,102 @@ class EnvelopeTests(unittest.TestCase):
                         reasons.add(self.assert_same(blocked, y)['contradiction']['reason'])
         self.assertIn(None, reasons)
         self.assertIn('interval_reach_contradiction', reasons)
+
+
+class SolveEntryTests(unittest.TestCase):
+    """The native solve entry (search/application.hpp, pkc_solve) against the Python it ports."""
+
+    def test_transfer_bounds_match_python_on_ceiling_scenes_and_real11(self):
+        import gzip
+        from parkour_solver.bridge.python_compiler import PythonCompiler
+        from parkour_solver.reachability.service import InteractionGate
+        from parkour_solver.scene.normalize import prepare_scene
+        from parkour_solver.search.bounds.flight import transfer_bounds
+        from parkour_solver.spatial.anchor_guides import build_guides
+        from tests.support.archived_events import current_events
+        from tests.support.paths import REGRESSION_FIXTURES
+        from tests.support.checkpoint_guidance import transfer_ceiling_scene
+        module = native()
+        cases = []
+        for x in (0., 15.):  # a ceiling the launch can reach, and one it cannot
+            scene, guides = transfer_ceiling_scene(x)
+            cases.append((scene, guides, dict(storedSpeedNorm=.4, movementAfterSupportCheck=.8)))
+        data = current_events(json.loads(gzip.decompress((REGRESSION_FIXTURES/'anchor-contexts.json.gz').read_bytes())))
+        scene = prepare_scene(data['request'])
+        scene['movementSearch']['types'] = ['normal', 'ceiling', 'stepping']
+        cases.append((scene, build_guides(data['domain'], data['policy']), data['motion']))
+        for scene, guides, motion in cases:
+            with self.subTest(anchors=guides['anchors']), PythonCompiler() as compiler:
+                expected = transfer_bounds(scene, guides, motion, InteractionGate(scene, compiler))
+                self.assertEqual(module.transfer_bounds(scene, guides, motion), json.loads(json.dumps(expected)))
+
+    @unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'), 'Set PKC_IPOPT_PYTHON for the solve')
+    def test_pkc_solve_reports_what_the_python_cli_reports(self):
+        import subprocess
+        import sys
+        import tempfile
+        from parkour_solver.io.checkpoint_store import read_report
+        from tests.support.checkpoint_guidance import timeless
+        module = native()
+        build = Path(module.__file__).parent
+        fixture = json.loads((ROOT/'cases/real11/physical-anchors.json').read_text())
+        for work_only in (False, True):
+            with self.subTest(work_only=work_only), tempfile.TemporaryDirectory() as directory:
+                case = Path(directory)/'case.json'
+                case.write_text(json.dumps(dict(fixture, settings=dict(fixture['settings'], work_only=work_only))))
+                native_report, python_report = Path(directory)/'native.json.gz', Path(directory)/'python.json.gz'
+                # No Python and no PKC_* variables reach the executable.
+                subprocess.run([str(build/'pkc_solve'), '--input', str(case), '--output', str(native_report)],
+                               env=dict(PATH='/usr/bin:/bin'), check=True, capture_output=True)
+                subprocess.run([sys.executable, '-B', '-m', 'parkour_solver.cli.solve', '--input', str(case),
+                                '--output', str(python_report)],
+                               env=dict(os.environ, PKC_NATIVE_CORE=str(build), PYTHONPATH=f'{ROOT/"src"}:{ROOT}'),
+                               check=True, capture_output=True)
+                solved, expected = read_report(native_report), read_report(python_report)
+                self.assertIsNotNone(solved['result']['best'])
+                self.assertEqual(timeless(solved['result']), timeless(expected['result']))
+                self.assertEqual(timeless(solved['validation']), timeless(expected['validation']))
+
+    @unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'), 'Set PKC_IPOPT_PYTHON for the solve')
+    def test_pkc_solve_resumes_what_the_python_cli_resumes(self):
+        import subprocess
+        import sys
+        import tempfile
+        from parkour_solver.io.checkpoint_store import read_report
+        from tests.support.checkpoint_guidance import timeless
+        build = Path(native().__file__).parent
+        case = ROOT/'cases/real11/physical-anchors.json'
+        fixture = json.loads(case.read_text())
+
+        def solve(cli, *arguments):
+            if cli == 'native':  # no Python and no PKC_* variables reach the executable
+                return subprocess.run([str(build/'pkc_solve'), *map(str, arguments)], env=dict(PATH='/usr/bin:/bin'),
+                                      capture_output=True, text=True)
+            return subprocess.run([sys.executable, '-B', '-m', 'parkour_solver.cli.solve', *map(str, arguments)],
+                                  env=dict(os.environ, PKC_NATIVE_CORE=str(build), PYTHONPATH=f'{ROOT/"src"}:{ROOT}'),
+                                  capture_output=True, text=True)
+
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            # Cut short after it has an incumbent, so the resume also replays the saved best.
+            cut = directory/'cut.json'
+            cut.write_text(json.dumps(dict(fixture, settings=dict(fixture['settings'], max_solver_calls=10))))
+            resumed = {}
+            for writer in ('native', 'python'):
+                saved = directory/f'{writer}.json.gz'
+                self.assertEqual(solve(writer, '--input', cut, '--output', saved, '--save-progress').returncode, 0)
+                for reader in ('native', 'python'):
+                    output = directory/f'{writer}-{reader}.json.gz'
+                    self.assertEqual(solve(reader, '--input', case, '--output', output, '--resume', saved).returncode, 0)
+                    resumed[writer, reader] = read_report(output)
+            other = solve('native', '--input', ROOT/'cases/real11/extended-anchors.json', '--output',
+                          directory/'other.json.gz', '--resume', directory/'native.json.gz')
+        expected = resumed['python', 'python']
+        self.assertEqual(expected['result']['resume'], dict(exact=True, session=2))
+        self.assertIsNotNone(expected['result']['best'])
+        for key, report in resumed.items():
+            with self.subTest(writer=key[0], reader=key[1]):
+                self.assertEqual(timeless(report['result']), timeless(expected['result']))
+                self.assertEqual(timeless(report['validation']), timeless(expected['validation']))
+        self.assertEqual(other.returncode, 1)
+        self.assertIn('Incompatible automatic event continuation', other.stderr)

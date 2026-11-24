@@ -127,7 +127,10 @@ Value prepare_problem(const Value& request) {
     if (threshold < 0 || (0 < threshold && threshold <= 1e-8))
         fail("Threshold must be zero or greater than the 1e-8 branch guard");
     number(setdefault(problem, "startYaw", real(0.0)), "startYaw");
-    if (number(setdefault(problem, "seconds", real(10.0)), "seconds").value <= 0) fail("seconds must be positive");
+    // null: no wall limit (a work-only run, pkc/work.hpp); JSON carries no infinity.
+    if (const Value& seconds = setdefault(problem, "seconds", real(10.0));
+        !is_null(seconds) && number(seconds, "seconds").value <= 0)
+        fail("seconds must be positive");
     if (!is_bool(setdefault(problem, "stopOnFeasible", boolean(false)))) fail("stopOnFeasible must be a boolean");
     const Value mode = setdefault(problem, "objectiveMode", text("configured"));
     if (!is_one_of(mode, {"configured", "constant_zero"})) fail("Unsupported numerical objective mode");

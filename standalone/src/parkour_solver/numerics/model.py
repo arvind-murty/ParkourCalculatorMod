@@ -49,7 +49,8 @@ def prepare(request):
     problem.setdefault('startYaw', 0.0)
     number(problem['startYaw'], 'startYaw')
     problem.setdefault('seconds', 10.0)
-    if number(problem['seconds'], 'seconds') <= 0:
+    # null: no wall limit (a work-only run, parkour_solver.work); JSON carries no infinity.
+    if problem['seconds'] is not None and number(problem['seconds'], 'seconds') <= 0:
         raise ValueError('seconds must be positive')
     problem.setdefault('stopOnFeasible', False)
     if not isinstance(problem['stopOnFeasible'], bool):

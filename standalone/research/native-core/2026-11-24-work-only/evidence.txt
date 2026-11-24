@@ -1,0 +1,39 @@
+00:15:19 prod-short-python EXIT 0
+00:15:22 prod-short-hosted EXIT 0
+00:15:28 idle-short-python EXIT 0
+00:15:31 idle-short-hosted EXIT 0
+00:15:34 idle-short-entry EXIT 0
+00:15:39 seed-short-python EXIT 0
+00:16:23 prod-fixed-python EXIT 0
+00:16:43 prod-fixed-hosted EXIT 0
+00:17:26 idle-fixed-python EXIT 0
+00:17:47 idle-fixed-hosted EXIT 0
+00:18:06 idle-fixed-entry EXIT 0
+00:18:58 seed-fixed-python EXIT 0
+00:18:58 load on: 54687 54688 54689 54690 54691 54692 54693 54694
+ 0:18  up 419 days,  4:14, 1 user, load averages: 9.21 4.52 3.33
+00:19:08 load-short-python EXIT 0
+00:19:13 load-short-hosted EXIT 0
+00:19:18 load-short-entry EXIT 0
+00:20:31 load-fixed-python EXIT 0
+00:21:01 load-fixed-hosted EXIT 0
+00:21:30 load-fixed-entry EXIT 0
+ 0:21  up 419 days,  4:17, 1 user, load averages: 28.80 16.14 8.35
+00:21:30 load off
+idle-short-python vs load-short-python:  "differences": 0,
+idle-short-python vs seed-short-python:  "differences": 0,
+idle-short-hosted vs load-short-hosted:  "differences": 0,
+idle-short-hosted vs idle-short-entry:  "differences": 0,
+idle-short-entry vs load-short-entry:  "differences": 0,
+prod-short-python vs idle-short-python:  "differences": 0,
+prod-short-hosted vs idle-short-hosted:  "differences": 0,
+idle-short-python vs idle-short-hosted kinds: "kinds":[[".result.compiler.calls.compilevalue",1],[".result.compiler.calls.derive_footprintsvalue",1],[".result.interactionGate.metrics.preparationMissesvalue",1],[".result.interactionGate.metrics.preparationHitsvalue",1]],"examples":[[".result.compiler.calls.compile","value","212","48"],[".result.compiler.calls.derive_footprints","value","100","47"],[".result.interactionGate.metrics.preparationM
+idle-fixed-python vs load-fixed-python:  "differences": 0,
+idle-fixed-python vs seed-fixed-python:  "differences": 0,
+idle-fixed-hosted vs load-fixed-hosted:  "differences": 0,
+idle-fixed-hosted vs idle-fixed-entry:  "differences": 0,
+idle-fixed-entry vs load-fixed-entry:  "differences": 0,
+prod-fixed-python vs idle-fixed-python:  "differences": 0,
+prod-fixed-hosted vs idle-fixed-hosted:  "differences": 0,
+idle-fixed-python vs idle-fixed-hosted kinds: "kinds":[[".result.interactionGate.exclusions[].horizontal[]value",668],[".result.interactionGate.exclusions[].inputvalue",266],[".result.interactionGate.exclusions[].proof.alternatives[].reachable[]value",259],[".result.interactionGate.exclusions[].proof.reasonvalue",237],[".result.interactionGate.exclusions[].proof.alternatives[].required[]value",203],[".result.interactionGate.exclusions[].owner
+00:22:10 done

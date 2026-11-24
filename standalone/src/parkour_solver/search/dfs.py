@@ -19,7 +19,7 @@ from parkour_solver.work import SearchWork
 
 # A forward side's keep-outside row within this of binding is tight: its held sides may then reach further.
 SIDE_SLACK = 1e-3
-# Frame-end re-solves have no deadline (user, 2026-11-23); this only bounds a hung solve.
+# Frame-end re-solves have no deadline (user, 2026-11-23); this only bounds a hung solve, and a work-only run lifts it.
 FRAME_END_SECONDS = 600.
 
 
@@ -683,9 +683,11 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
         args = evaluation_args(f,program)
         args['solve_policy'] = dict(args['solve_policy'],rankEqualCost=False,numerical='full_strength')
         own = SearchWork()
+        from parkour_solver.work import WORK_ONLY
+        seconds = float('inf') if WORK_ONLY else FRAME_END_SECONDS
         began = time.monotonic()
         result = evaluate_program(args.pop('scene'),program,compiler,args.pop('adapter'),own,motion,
-            seconds=FRAME_END_SECONDS,candidate_seconds=FRAME_END_SECONDS,python_executable=python_executable,
+            seconds=seconds,candidate_seconds=seconds,python_executable=python_executable,
             cancel_event=cancel_event,final_route=chosen['witness']['route'],**args)
         if result['status']=='cancelled' or cancel_event is not None and cancel_event.is_set():
             # Untried again, so a resume repeats this solve.
@@ -1039,7 +1041,10 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
                 callback(snapshot)
             else:
                 on_progress(snapshot)
-        hooks = SimpleNamespace(monotonic=time.monotonic, progress=bool(on_progress),
+        # A checkpoint with a native store saves the run's transitions natively (io/search_checkpoint.hpp).
+        factory = getattr(on_progress, 'native_saver', None)
+        hooks = SimpleNamespace(saver=factory() if factory is not None else None,
+            monotonic=time.monotonic, progress=bool(on_progress),
             cancelled=lambda: cancel_event is not None and cancel_event.is_set(),
             publish=on_progress, begin_repair=begun, repair_progress=repaired, check=work.check,
             solver_calls=lambda: work.counts['solverCalls'], count=count, accepted=work.accepted,
@@ -1048,6 +1053,10 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
                                                               require_complete=True),
             prepare=lambda program: gate.prepare(program, scene=scene), begin_solve=begin_solve, solve_route=solve_route,
             compiler=compiler, solve=ordered_route.solve, cancel_event=cancel_event, python_executable=python_executable)
+        def handed(result_state):  # the checkpoint encodes this result state from the native snapshot
+            final = getattr(on_progress, 'native_final', None)
+            if final is not None:
+                final(result_state, native.snapshot())
         native = gate.native.DfsSearch(state, dict(scene=scene, cfg=cfg, motion=motion, guidePlan=adapter.guide_plan,
             anchorPolicy=adapter.anchor_policy, policySettings=semantic_settings(adapter.anchor_policy),
             domainId=adapter.data['domainId'], roots=roots,
@@ -1063,6 +1072,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
             for name, count in native_adapter.counts.items():  # the adapter summary's counts
                 adapter.counts[name] += count
         state = native.state()
+        handed(state)
         viability_counts.update(native.viability())
         return result(termination)
     state['discoveryWork'] = dict(expansions=0,materializations=0)

@@ -49,16 +49,21 @@ public:
     // encode(dict(object, **{key: [StoredValue(k) for k in stored]})): the object with one entry replaced by
     // references to objects already in the store.
     std::string encode_replacing(const Value& object, const std::string& key, const std::vector<std::string>& stored);
+    // A list of stored references, as the Python walk encodes [StoredValue, ...].
+    std::string references(const std::vector<std::string>& stored);
+    // A dict whose values are already encoded and are not all flat (a saved document's levels).
+    std::string entries(const std::vector<std::pair<std::string, std::string>>& encoded);
+    std::string chunk(std::string data);  // a reference once `data` reaches CHUNK_BYTES
 
     // New objects for the store, in first-seen order.
     std::vector<std::pair<std::string, std::string>> pending;
 
 private:
-    std::string chunk(std::string data);  // a reference once `data` reaches CHUNK_BYTES
 
     std::function<bool(const std::string&)> known_;
     EncodeCache* cache_ = nullptr;
-    std::unordered_map<const void*, std::string> memo_;  // containers already encoded in this archive
+    // Containers already encoded in this archive, each held so a temporary's address is never reused while it is named.
+    std::unordered_map<const void*, std::pair<Value, std::string>> memo_;
     std::unordered_map<std::string, std::size_t> pending_index_;
 };
 

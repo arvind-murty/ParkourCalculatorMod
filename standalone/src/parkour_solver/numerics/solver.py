@@ -1,5 +1,6 @@
 import collections
 import json
+import math
 import pathlib
 import queue
 import subprocess
@@ -27,12 +28,12 @@ def solve(request, *, seconds=None, stop_on_feasible=None, python_executable=Non
           cancel_event=None, on_incumbent=None):
     overrides = dict(request)
     if seconds is not None:
-        overrides['seconds'] = seconds
+        overrides['seconds'] = seconds if math.isfinite(seconds) else None
     if stop_on_feasible is not None:
         overrides['stopOnFeasible'] = stop_on_feasible
     problem = prepare(overrides)
     started = time.monotonic()
-    deadline = started + problem['seconds']
+    deadline = started + (math.inf if problem['seconds'] is None else problem['seconds'])
     messages = queue.Queue(maxsize=64)
     stderr = collections.deque(maxlen=20)
     phases = []

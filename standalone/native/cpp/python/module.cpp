@@ -3,6 +3,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -28,7 +29,10 @@
 #include "pkc/reachability/service.hpp"
 #include "pkc/spatial/event_routes.hpp"
 #include "pkc/movement/settings.hpp"
+#include "pkc/io/search_checkpoint.hpp"
+#include "pkc/io/store.hpp"
 #include "pkc/search/anchors/adapter.hpp"
+#include "pkc/search/application.hpp"
 #include "pkc/search/anchors/policy.hpp"
 #include "pkc/search/bounds/remaining.hpp"
 #include "pkc/search/comparison.hpp"
@@ -54,6 +58,7 @@
 #include "pkc/spatial/surfaces.hpp"
 #include "pkc/validation/numerical.hpp"
 #include "pkc/validation/vertical.hpp"
+#include "pkc/work.hpp"
 
 namespace py = pybind11;
 
@@ -396,8 +401,8 @@ pkc::SolveHooks solve_hooks(py::object compiler, py::object solve, py::object wo
     return hooks;
 }
 
-// The profiler's observer of the requests native leg solves dispatch natively (set_request_observer), or None. Never
-// freed: it may outlive the interpreter's teardown of module globals.
+// The observer of the requests native leg solves dispatch natively (set_request_observer), or None. Never freed: it
+// may outlive the interpreter's teardown of module globals.
 py::object& request_observer() {
     static py::object* observer = new py::object(py::none());
     return *observer;
@@ -447,21 +452,28 @@ pkc::EvaluateHooks evaluate_hooks(py::object compiler, py::object solve, py::obj
         if (py::object setting = service("relaxed"); !setting.is_none()) {  // the relaxed dispatch, answers in the core
             const pkc::RelaxedServices relaxed =
                 relaxed_services(core, cancel_event, setting["postAlarm"].cast<std::string>());
-            auto entry = [relaxed](pkc::DispatchMode mode) -> pkc::NumericalSolve {
-                return [relaxed, mode](const pkc::Value& problem, double seconds, bool stop_on_feasible,
-                                       const std::function<void(const pkc::Value&)>& on_incumbent) {
+            auto entry = [relaxed](pkc::DispatchMode mode, const char* name) -> pkc::NumericalSolve {
+                return [relaxed, mode, name](const pkc::Value& problem, double seconds, bool stop_on_feasible,
+                                             const std::function<void(const pkc::Value&)>& on_incumbent) {
+                    auto observe = [&](const pkc::Value* result) {
+                        if (!request_observer().is_none())
+                            python_hook([&] {
+                                request_observer()(name, to_python(problem), seconds, stop_on_feasible,
+                                                   result ? to_python(*result) : py::none());
+                            });
+                    };
+                    observe(nullptr);
                     pkc::Value result = pkc::relaxed_dispatch(problem, seconds, stop_on_feasible, mode, on_incumbent, relaxed);
-                    if (!request_observer().is_none())
-                        python_hook([&] { request_observer()(to_python(problem), stop_on_feasible, to_python(result)); });
+                    observe(&result);
                     return result;
                 };
             };
             if (setting["mode"].cast<std::string>() == "full_strength") {
-                hooks.numerical = entry(pkc::DispatchMode::full_strength);
+                hooks.numerical = entry(pkc::DispatchMode::full_strength, "full_strength");
                 hooks.confirm = nullptr;
             } else {
-                hooks.numerical = entry(pkc::DispatchMode::solve);
-                hooks.confirm = entry(pkc::DispatchMode::confirmed);
+                hooks.numerical = entry(pkc::DispatchMode::solve, "solve");
+                hooks.confirm = entry(pkc::DispatchMode::confirmed, "confirmed");
             }
         }
         hooks.analyze_model = [core](const pkc::Value& route, const pkc::Value& plan, const pkc::Value& vertical,
@@ -553,7 +565,11 @@ py::list paths_to_python(const std::vector<pkc::Array>& paths) {
 // the store's `known` set and reusing the store's encode cache when given.
 py::tuple checkpoint_encode(const std::function<std::string(pkc::CheckpointEncoder&)>& encode, py::handle known,
                             pkc::EncodeCache* cache = nullptr) {
+    // `known` is the store's key set, or a native store itself.
+    const pkc::CheckpointStore* store =
+        py::isinstance<pkc::CheckpointStore>(known) ? known.cast<const pkc::CheckpointStore*>() : nullptr;
     pkc::CheckpointEncoder encoder([&](const std::string& key) {
+        if (store) return store->known(key);
         const int found = PySet_Contains(known.ptr(), py::str(key).ptr());
         if (found < 0) throw py::error_already_set();
         return found == 1;
@@ -571,6 +587,15 @@ PYBIND11_MODULE(_pkc_native, m) {
     py::register_exception<std::invalid_argument>(m, "NativeValueError", PyExc_ValueError);
     py::register_exception<pkc::Unsupported>(m, "NativeUnsupported", PyExc_NotImplementedError);
     py::register_exception<pkc::Timeout>(m, "NativeTimeout", PyExc_TimeoutError);
+    py::register_exception_translator([](std::exception_ptr failure) {
+        try {
+            if (failure) std::rethrow_exception(failure);
+        } catch (const std::filesystem::filesystem_error& e) {  // OSError(errno, strerror, filename), as Python raises
+            py::object error = py::module_::import("builtins").attr("OSError")(e.code().value(), e.code().message(),
+                                                                                e.path1().string());
+            PyErr_SetObject(error.get_type().ptr(), error.ptr());
+        }
+    });
     m.def("canonical_json", [](py::handle value) { return py::bytes(pkc::canonical_json(convert(value))); },
           "json.dumps(value, sort_keys=True, allow_nan=False).encode()");
     m.def("digest", [](py::handle value) { return pkc::digest(convert(value)); },
@@ -1046,6 +1071,55 @@ PYBIND11_MODULE(_pkc_native, m) {
         return checkpoint_encode([&](pkc::CheckpointEncoder& e) { return e.encode(v); }, known, cache);
     }, py::arg("value"), py::arg("known"), py::arg("cache") = nullptr,
        "io/checkpoint_store's encode of a JSON value: (its encoding, new objects [(key, data)] not in `known`)");
+    m.def(
+        "read_report",
+        [](const std::string& path) {
+            pkc::Value report;
+            {
+                py::gil_scoped_release release;
+                report = pkc::read_report(path);
+            }
+            return to_python(report);
+        },
+        py::arg("path"), "io/checkpoint_store.read_report(path), natively (io/store.hpp)");
+    py::class_<pkc::CheckpointStore, std::shared_ptr<pkc::CheckpointStore>>(m, "CheckpointStore")
+        .def(py::init<std::string>(), "io/store.hpp: opens or creates the store whose manifest is `path`")
+        .def_property_readonly("identity", &pkc::CheckpointStore::identity)
+        .def_property_readonly("cache", &pkc::CheckpointStore::cache)
+        .def("__contains__", &pkc::CheckpointStore::known)
+        .def("__len__", &pkc::CheckpointStore::size)
+        .def("insert", [](pkc::CheckpointStore& store, py::handle objects) {
+            std::vector<std::pair<std::string, std::string>> rows;
+            for (py::handle row : objects) {
+                auto pair = row.cast<py::tuple>();
+                rows.emplace_back(pair[0].cast<std::string>(), pair[1].cast<std::string>());
+            }
+            store.insert(rows);
+        }, "commits (key, uncompressed bytes) objects the store does not hold, in one transaction")
+        .def("publish", &pkc::CheckpointStore::publish)
+        .def("publish_patch", &pkc::CheckpointStore::publish_patch)
+        .def("compact", &pkc::CheckpointStore::compact)
+        .def("close", &pkc::CheckpointStore::close);
+    py::class_<pkc::SearchSaver, std::shared_ptr<pkc::SearchSaver>>(m, "SearchSaver")
+        .def(py::init([](std::shared_ptr<pkc::CheckpointStore> store, py::handle metadata, py::handle outer,
+                         std::vector<std::string> windows) {
+            return std::make_shared<pkc::SearchSaver>(std::move(store), convert(metadata), convert(outer), std::move(windows));
+        }), "io/search_checkpoint.hpp: a native search's saver; `outer` is the event state, whose dfs it fills, or None")
+        .def("save", [](pkc::SearchSaver& saver, const NativeSnapshot& state) {
+            saver.save(state.snapshot->state, state.snapshot->repair);
+        }, "a native search's full save of this snapshot")
+        .def("progress", [](pkc::SearchSaver& saver, const NativeSnapshot& state) {
+            saver.progress(state.snapshot->state, state.snapshot->repair);
+        }, "a native search's repair progress: a patch of the last save when the snapshot's repair follows it")
+        .def_property_readonly("windows", &pkc::SearchSaver::windows)
+        .def_property_readonly("counts", [](const pkc::SearchSaver& s) {
+            py::dict out;
+            out["seconds"] = s.seconds;
+            out["maxSeconds"] = s.max_seconds;
+            out["saves"] = s.saves;
+            out["patches"] = s.patches;
+            return out;
+        });
     py::class_<FrozenValue, std::shared_ptr<FrozenValue>>(m, "FrozenValue")
         .def(py::init([](py::handle value) { return std::make_shared<FrozenValue>(FrozenValue{convert(value)}); }))
         .def("checkpoint_encode", [](const FrozenValue& f, py::handle known,
@@ -1141,6 +1215,8 @@ PYBIND11_MODULE(_pkc_native, m) {
                 };
             };
             h.publish = snapshot_hook(hook("publish"));
+            if (py::object saver = py::getattr(hooks, "saver", py::none()); !saver.is_none())
+                h.saver = saver.cast<std::shared_ptr<pkc::SearchSaver>>();
             h.begin_repair = snapshot_hook(hook("begin_repair"));
             h.repair_progress = snapshot_hook(hook("repair_progress"));
             h.check = [f = hook("check")] { python_hook([&] { f(); }); };
@@ -1191,6 +1267,9 @@ PYBIND11_MODULE(_pkc_native, m) {
                                                     std::move(gate), std::move(anchors), std::move(adapter));
         }))
         .def("run", &pkc::DfsSearch::run, "the main loop; its termination")
+        .def("snapshot", [](const pkc::DfsSearch& search) {
+            return std::make_shared<NativeSnapshot>(NativeSnapshot{search.snapshot(), {}});
+        }, "the state as a frozen snapshot: the checkpoint saver encodes the result's state from it natively")
         .def("state", [](const pkc::DfsSearch& search) {
             // One Python object per shared container, as the Python search's state shares its dicts.
             SharedObjects shared;
@@ -1454,11 +1533,32 @@ PYBIND11_MODULE(_pkc_native, m) {
           py::arg("core"), py::arg("problem"), py::kw_only(), py::arg("seconds"), py::arg("stop_on_feasible"),
           py::arg("mode"), py::arg("post_alarm"), py::arg("cancel_event"), py::arg("on_incumbent"),
           "numerics/disk.RelaxedDispatch's entry point `mode` with its decided answers in the gate's native core");
+    m.def("solve_case", [](py::handle fixture, py::object seconds, py::object max_solver_calls) {
+        pkc::SolveCaseOptions options;
+        if (!seconds.is_none()) options.seconds = seconds.cast<double>();
+        if (!max_solver_calls.is_none()) options.max_solver_calls = max_solver_calls.cast<std::int64_t>();
+        options.worker = worker_path();
+        const pkc::Value value = convert(fixture);
+        pkc::Value solved;
+        {
+            py::gil_scoped_release release;  // the entry calls no Python
+            solved = pkc::solve_case(value, options);
+        }
+        return to_python(solved);
+    }, py::arg("fixture"), py::kw_only(), py::arg("seconds") = py::none(), py::arg("max_solver_calls") = py::none(),
+       "search/application.hpp's solve_case: application.run(fixture)'s {result, validation} with no Python");
+    m.def("transfer_bounds", [](py::handle scene, py::handle guides, py::handle motion, py::handle saved) {
+        return to_python(pkc::transfer_bounds(convert(scene), convert(guides), convert(motion), convert(saved)));
+    }, py::arg("scene"), py::arg("guides"), py::arg("motion"), py::arg("saved") = py::none(),
+       "search/bounds/flight.transfer_bounds on a fresh gate over the native compiler (search/application.hpp)");
     m.def("set_request_observer", [](py::object observer) { request_observer() = std::move(observer); },
           py::arg("observer"),
-          "observer(problem, stop_on_feasible, result) after each request a native leg solve dispatches natively, or "
-          "None (tools/profiling/bookkeeping.py)");
+          "observer(mode, problem, seconds, stop_on_feasible, result) before (result None) and after each request a "
+          "native leg solve dispatches natively through RelaxedDispatch's entry point `mode`, or None "
+          "(tools/profiling/bookkeeping.py)");
     m.def("disk_stats", [] { return to_python(pkc::disk_stats()); }, "numerics/disk.STATS of the native decided cache");
+    m.def("set_work_only", &pkc::set_work_only, py::arg("enabled"),
+          "work.WORK_ONLY for the native core (work.work_only sets both); a change empties the decided cache");
     m.def("float_repr", &pkc::float_repr, "repr(float) for a finite float");
     m.def("sha256_hex", [](py::bytes data) { return pkc::sha256_hex(std::string(data)); });
 }

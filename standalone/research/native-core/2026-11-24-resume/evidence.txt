@@ -1,0 +1,25 @@
+00:58:09 short-INT interrupted EXIT 0
+  root tag d final sessions 1 frames 4
+00:58:10 short-INT native resume EXIT 0
+00:58:11 short-INT python resume EXIT 0
+  short-INT-native.json.gz equal {'exact': True, 'session': 2} exhausted
+  short-INT-python.json.gz {'exact': True, 'session': 2} exhausted
+00:58:13 short-KILL interrupted EXIT 0
+  root tag p progress sessions 1 frames 5
+00:58:14 short-KILL native resume EXIT 0
+00:58:16 short-KILL python resume EXIT 0
+  short-KILL-native.json.gz equal {'exact': True, 'session': 2} exhausted
+  short-KILL-python.json.gz {'exact': True, 'session': 2} exhausted
+00:58:23 fixed-INT interrupted EXIT 0
+  root tag d final sessions 1 frames 4
+00:58:32 fixed-INT native resume EXIT 0
+00:58:45 fixed-INT python resume EXIT 0
+  fixed-INT-native.json.gz equal {'exact': True, 'session': 2} numerical_call_limit
+  fixed-INT-python.json.gz {'exact': True, 'session': 2} numerical_call_limit
+00:58:57 fixed-KILL interrupted EXIT 0
+  root tag r progress sessions 1 frames 4
+00:59:06 fixed-KILL native resume EXIT 0
+00:59:19 fixed-KILL python resume EXIT 0
+  fixed-KILL-native.json.gz equal {'exact': True, 'session': 2} numerical_call_limit
+  fixed-KILL-python.json.gz {'exact': True, 'session': 2} numerical_call_limit
+00:59:25 done

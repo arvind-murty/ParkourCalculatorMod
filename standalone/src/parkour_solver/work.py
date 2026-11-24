@@ -1,9 +1,39 @@
 """Search budgets and compiler accounting, independent of route adapters."""
 
 import collections
+import contextlib
 import hashlib
 import json
 import time
+
+# Work-only mode (case setting `work_only`): no time limit decides an outcome, only work counts do. Process-wide
+# because the disk screens and their decided cache are; find_checkpoint_route sets it for the duration of a run.
+WORK_ONLY = False
+
+
+@contextlib.contextmanager
+def work_only(enabled):
+    """WORK_ONLY = enabled for the block. The disk's decided cache holds verdicts under the time limits in force, so a
+    change of mode empties it (and the native core's)."""
+    previous = WORK_ONLY
+
+    def switch(value):
+        global WORK_ONLY
+        if value == WORK_ONLY:
+            return
+        WORK_ONLY = value
+        from parkour_solver import native_core
+        from parkour_solver.numerics import disk
+        disk.clear_decided()
+        native = native_core.from_environment()
+        if native is not None:
+            native.set_work_only(value)
+
+    switch(enabled)
+    try:
+        yield
+    finally:
+        switch(previous)
 
 
 class SearchWork:

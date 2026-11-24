@@ -15,7 +15,8 @@ from parkour_solver.search.ranking import objective_seed, passage_seed
 def search_allocations(route, evaluate, *, seconds=60, improve=False, rank_equal_cost=False,
                        cancel_event=None, on_attempt=None):
     route = prepare_route(route)
-    if number(seconds, 'search seconds') <= 0:
+    # A work-only run's budgets are infinite (parkour_solver.work).
+    if seconds != math.inf and number(seconds, 'search seconds') <= 0:
         raise ValueError('Search seconds must be positive')
     started = time.monotonic()
     deadline = started + seconds
@@ -131,9 +132,10 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                numerical=None):
     started = time.monotonic()
     route = prepare_route(request)
-    if number(seconds, 'search seconds') <= 0:
+    # A work-only run's budgets are infinite (parkour_solver.work).
+    if seconds != math.inf and number(seconds, 'search seconds') <= 0:
         raise ValueError('Search seconds must be positive')
-    if number(candidate_seconds, 'candidate seconds') <= 0:
+    if candidate_seconds != math.inf and number(candidate_seconds, 'candidate seconds') <= 0:
         raise ValueError('Candidate seconds must be positive')
     if type(retries) is not int or not 0 <= retries <= 10:
         raise ValueError('Retry count must be between zero and ten')
@@ -258,7 +260,9 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                 diagnostics.append({'status': result['status'], 'termination': result.get('termination'),
                                     'elapsedSeconds': result.get('elapsedSeconds'), 'error': result.get('error'),
                                     'problemHash': fingerprint(problem), 'request': copy.deepcopy(problem),
-                                    'callOptions': dict(seconds=budget,stopOnFeasible=early_stop),
+                                    # A work-only run's unlimited budget is null, as on the wire.
+                                    'callOptions': dict(seconds=budget if math.isfinite(budget) else None,
+                                                        stopOnFeasible=early_stop),
                                     'objectiveMode': 'configured',
                                     'workerLaunched': result.get('workerLaunched'),
                                     'workerStatus': result.get('workerStatus'),

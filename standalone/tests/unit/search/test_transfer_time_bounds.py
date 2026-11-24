@@ -13,7 +13,7 @@ from parkour_solver.search.bounds.remaining import remaining_bound
 from parkour_solver.search.bounds.flight import transfer_bounds, transfer_bound, state_covers
 from parkour_solver.movement.program import append_choice, boundary_state
 from parkour_solver.movement.normal import event_choice
-from tests.support.checkpoint_guidance import flat_scene
+from tests.support.checkpoint_guidance import transfer_ceiling_scene
 from tests.support.proposal_analysis import Coefficients
 from tests.support.archived_events import current_events
 
@@ -68,27 +68,17 @@ class TransferTimeBoundTests(unittest.TestCase):
         self.assertTrue(cover[0]<=1.5<=cover[3])
         self.assertEqual(state_covers(g,'s',{}),[])
 
-    def ceiling_scene(self, x):
-        s=flat_scene();s['movementSearch']['types']=['normal','ceiling']
-        box=[x,2.9,-2,x+1,3.9,2];index=len(s['collisionScene']['solids'])
-        s['collisionScene']['solids'].append(box)
-        s['blocks'].append(dict(id='ceiling',sourceBlock='ceiling',solidIndex=index,
-                                bounds=[x,x+1,-2,2],top=3.9))
-        g=dict(anchors=['start','goal'],coverPhase='pre_or_post',covers={
-            'start':[[-2.3,1,-2.3,3.3,1,2.3]],'goal':[[4.7,1,-1.3,6.3,1,1.3]]})
-        return s,g
-
     def test_reachable_ceiling_disables_clock_far_ceiling_reuses_shared_reachability(self):
         for x,expected in [(0.,0),(15.,12)]:
             with self.subTest(x=x):
-                s,g=self.ceiling_scene(x);c=Coefficients()
+                s,g=transfer_ceiling_scene(x);c=Coefficients()
                 result=transfer_bound(s,g,'start','goal',dict(storedSpeedNorm=.4,movementAfterSupportCheck=.8),InteractionGate(s,c))
                 self.assertEqual(result['ticks'],expected)
                 self.assertTrue(result['ceilings'])
                 self.assertEqual(c.calls,1)
 
     def test_no_ordinary_profile_and_unknown_ceiling_launch_bounds_are_not_infeasibility(self):
-        s,g=self.ceiling_scene(0.);service=InteractionGate(s,Coefficients())
+        s,g=transfer_ceiling_scene(0.);service=InteractionGate(s,Coefficients())
         self.assertEqual(transfer_bound(s,g,'start','goal',{},service)['ticks'],0)
         next(b for b in s['blocks'] if b['id']=='goal')['top']=4.
         r=transfer_bound(s,g,'start','goal',{},service)

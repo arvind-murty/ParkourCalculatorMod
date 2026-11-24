@@ -1,3 +1,4 @@
+import math
 import time
 
 try:
@@ -32,7 +33,7 @@ class Incumbent:
 
 
 def run(problem, phase, infer, emit, clock=time.monotonic):
-    end = clock() + problem['seconds']
+    end = clock() + (math.inf if problem['seconds'] is None else problem['seconds'])
     incumbent = Incumbent(problem, emit)
     incumbent.consider(problem['yaw'])
     if incumbent.best is not None and problem['stopOnFeasible']:

@@ -1,7 +1,7 @@
 // The contact-branch repair loop of one node solve: search/repair.py, with
 // repair_state's resume context and branch keys, validation/scene.check_geometry
 // and constraints/contacts.contact_conflicts. Wall-hit options (max_wall_hits > 0)
-// and routes with passages are left to Python.
+// are left to Python.
 #pragma once
 
 #include <cstdint>
@@ -13,6 +13,11 @@
 #include "pkc/value.hpp"
 
 namespace pkc {
+
+// validation/scene.check_geometry(geometry, plan, candidate, vertical, compiler, seconds), with the compiler's
+// check_scene from `hooks`.
+Value check_geometry(const Value& geometry, const Object& plan, const Object& candidate, const Object& vertical,
+                     const SolveHooks& hooks, double seconds);
 
 struct RepairOptions {
     double seconds = 0, candidate_seconds = 0;

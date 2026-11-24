@@ -119,6 +119,11 @@ Ticks are zero-based. Positions and stored velocities have `n+1` states, and yaw
 }
 ```
 
+`seconds` is the request's wall limit (default 10). `null` is none: a
+[work-only run](../RUNBOOK.md#current-physical-anchor-solve-profile-and-resume) sends it, since JSON has no
+infinity. IPOPT then gets no `max_wall_time` and stops on `maxIterations`, and every continuation phase runs with
+an unlimited budget. The worker diagnostics' `callOptions.seconds` is null for such a request too.
+
 For each axis, the model zeroes an incoming component only if its absolute value is below `threshold`. It adds the fixed-magnitude control vector `magnitude[t] * (cos(base[t] + radians(yaw[t])), sin(base[t] + radians(yaw[t])))`, applies an optional ladder component cap, clips prescribed wall contacts and advances position. Normal collision velocity is reset; surviving components are multiplied by `friction[t]` to store the next velocity. IPOPT optimizes X/Z states and facings. Optional scalar Y replay validates the prescribed vertical schedule.
 
 The historical `walls` field contains all scalar constraints. Modes `X`, `Z` and `F` evaluate a single state/input or combine `t1` and optional `t2` with `op: PLUS` or `MINUS`. Comparisons are `GE`, `LE` or `EQ`. Facing residuals wrap to (-180,180]. `DXZ` evaluates `abs(dx) - abs(dz)` and `DZX` reverses the axes, using the two referenced position states. Bounds/equality corridors from a TAS are compiled before export; a direct `EQ` row is checked as an equality at the solver tolerance.
@@ -179,7 +184,8 @@ Settings are QDLDL, one thread, 200 iterations, a 0.1 s cap, `1e-9`
 feasibility/gap tolerances (`1e-8` infeasibility) and iterative refinement off
 (same verdicts, faster solves: [evidence](../../research/clarabel-refinement/README.md)); a run that ends `MaxIterations`
 or `MaxTime` is solved once more with 500 iterations and a 0.5 s cap
-(`retried: true`). Requests with an inertia
+(`retried: true`). A [work-only run](../RUNBOOK.md#current-physical-anchor-solve-profile-and-resume) lifts both
+time caps and keeps both iteration limits. Requests with an inertia
 threshold, ladder ticks, an inertia pattern or non-X/Z rows have no spec.
 
 `Solved`/`AlmostSolved` with a finite point give a relaxed point;
@@ -230,8 +236,10 @@ entry point natively (`numerics/disk.hpp`, the pipeline in `numerics/post_alarm.
 for Python and native callers alike, keeping its confirmations and frame-end answers
 in the core's cache, and its IPOPT solves run through the native driver
 (`numerics/solver.hpp`: the same worker protocol, deadline, cancellation and
-validation as `solve`). The profiler records a native leg solve's requests through
-the module's request observer (`tools/profiling/bookkeeping.py`). Search's use of it is in the
+validation as `solve`). A native leg solve reports each request, before and after
+it is answered, to the module's request observer (`set_request_observer`), through
+which the profiler (`tools/profiling/bookkeeping.py`) and the resume tests record
+them. Search's use of it is in the
 [execution reference](../ANCHOR_SEARCH_EXECUTION_REFERENCE.md#numerical-backend-and-frame-end-re-solves).
 `RelaxedDispatch(gate=...)` answers the alarm with the post-alarm pipeline below;
 `post_alarm='ipopt'` makes that IPOPT call instead.

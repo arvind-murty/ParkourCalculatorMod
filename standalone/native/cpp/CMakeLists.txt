@@ -23,7 +23,7 @@ endif()
 
 add_library(pkc_core STATIC src/canonical.cpp src/coefficients.cpp src/envelopes.cpp src/gate.cpp src/program.cpp src/screen.cpp src/sha256.cpp src/vertical.cpp
             src/constraints/avoidance.cpp src/constraints/contacts.cpp src/constraints/encounters.cpp src/constraints/hit_events.cpp src/constraints/variants.cpp src/reachability/screen.cpp
-            src/movement/contact_combinations.cpp src/movement/cases.cpp src/movement/generation.cpp src/movement/normal.cpp src/reachability/service.cpp src/search/anchors/adapter.cpp src/search/anchors/policy.cpp src/search/bounds/remaining.cpp src/search/comparison.cpp src/search/dfs.cpp src/search/dfs_search.cpp src/search/dfs_state.cpp src/search/engine.cpp src/search/feasibility.cpp src/search/frontier.cpp src/search/goals.cpp src/search/identity.cpp src/search/node.cpp src/search/ordered_route.cpp src/search/repair.cpp src/reachability/viability.cpp src/movement/ladder/ceiling.cpp src/movement/ladder/events.cpp src/movement/ladder/settings.cpp src/movement/settings.cpp src/movement/units.cpp src/movement/vertical_profiles.cpp src/observability/turns.cpp src/io/checkpoint_store.cpp
+            src/movement/contact_combinations.cpp src/movement/cases.cpp src/movement/generation.cpp src/movement/normal.cpp src/reachability/service.cpp src/search/anchors/adapter.cpp src/search/anchors/policy.cpp src/search/bounds/remaining.cpp src/search/comparison.cpp src/search/dfs.cpp src/search/dfs_search.cpp src/search/dfs_state.cpp src/search/engine.cpp src/search/feasibility.cpp src/search/frontier.cpp src/search/goals.cpp src/search/identity.cpp src/search/node.cpp src/search/ordered_route.cpp src/search/repair.cpp src/reachability/viability.cpp src/movement/ladder/ceiling.cpp src/movement/ladder/events.cpp src/movement/ladder/settings.cpp src/movement/settings.cpp src/movement/units.cpp src/movement/vertical_profiles.cpp src/observability/turns.cpp src/io/checkpoint_store.cpp src/io/search_checkpoint.cpp src/io/store.cpp src/search/application.cpp src/work.cpp
             src/numerics/builders.cpp src/numerics/constraints.cpp src/numerics/disk.cpp src/numerics/post_alarm.cpp src/numerics/continuation.cpp src/numerics/model.cpp src/numerics/solver.cpp
             src/scene/geometry.cpp src/scene/ladders.cpp src/scene/normalize.cpp src/scene/objectives.cpp src/scene/route.cpp src/scene/static_collision.cpp
             src/spatial/cells.cpp src/spatial/event_routes.cpp src/spatial/regions.cpp src/spatial/surfaces.cpp
@@ -53,19 +53,39 @@ set_target_properties(clarabel_c PROPERTIES IMPORTED_LOCATION "${CLARABEL_LIBRAR
                       INTERFACE_INCLUDE_DIRECTORIES "${clarabel_cpp_SOURCE_DIR}/include")
 add_dependencies(clarabel_c clarabel_build)
 target_link_libraries(pkc_core PUBLIC clarabel_c)
+# The checkpoint store (io/store.hpp) writes the same SQLite database and zlib objects as io/checkpoint_store.py.
+find_package(SQLite3 REQUIRED)
+find_package(ZLIB REQUIRED)
+target_link_libraries(pkc_core PUBLIC SQLite::SQLite3 ZLIB::ZLIB)
 
-find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
-execute_process(COMMAND "${Python_EXECUTABLE}" -m pybind11 --cmakedir
-                OUTPUT_VARIABLE pybind11_DIR OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
-find_package(pybind11 CONFIG REQUIRED)
-pybind11_add_module(_pkc_native python/module.cpp)
-target_link_libraries(_pkc_native PRIVATE pkc_core)
+# The native solve entry: search/application.hpp's solve_case as an executable, with no Python.
+add_executable(pkc_solve src/tools/solve.cpp)
+target_link_libraries(pkc_solve PRIVATE pkc_core)
+
+# Off: no Python at configure time; the IPOPT worker then needs PKC_CASADI_ROOT.
+option(PKC_PYTHON_MODULE "Build the _pkc_native Python module" ON)
+set(PKC_CASADI_ROOT "" CACHE PATH "The casadi package directory the IPOPT worker links (default: the Python's)")
+if(PKC_PYTHON_MODULE)
+  find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
+  execute_process(COMMAND "${Python_EXECUTABLE}" -m pybind11 --cmakedir
+                  OUTPUT_VARIABLE pybind11_DIR OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
+  find_package(pybind11 CONFIG REQUIRED)
+  pybind11_add_module(_pkc_native python/module.cpp)
+  target_link_libraries(_pkc_native PRIVATE pkc_core)
+endif()
 
 # The IPOPT worker links the casadi the solver's Python environment ships, so
 # both workers run the same casadi and IPOPT builds.
-execute_process(COMMAND "${Python_EXECUTABLE}" -c "import casadi, os; print(os.path.dirname(casadi.__file__))"
-                OUTPUT_VARIABLE CASADI_ROOT OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
-find_package(casadi CONFIG REQUIRED PATHS "${CASADI_ROOT}/cmake" NO_DEFAULT_PATH)
-add_executable(pkc_numerics_worker src/numerics/worker.cpp)
-target_link_libraries(pkc_numerics_worker PRIVATE pkc_core casadi::casadi)
-set_target_properties(pkc_numerics_worker PROPERTIES BUILD_RPATH "${CASADI_ROOT}")
+set(CASADI_ROOT "${PKC_CASADI_ROOT}")
+if(NOT CASADI_ROOT AND PKC_PYTHON_MODULE)
+  execute_process(COMMAND "${Python_EXECUTABLE}" -c "import casadi, os; print(os.path.dirname(casadi.__file__))"
+                  OUTPUT_VARIABLE CASADI_ROOT OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
+endif()
+if(CASADI_ROOT)
+  find_package(casadi CONFIG REQUIRED PATHS "${CASADI_ROOT}/cmake" NO_DEFAULT_PATH)
+  add_executable(pkc_numerics_worker src/numerics/worker.cpp)
+  target_link_libraries(pkc_numerics_worker PRIVATE pkc_core casadi::casadi)
+  set_target_properties(pkc_numerics_worker PROPERTIES BUILD_RPATH "${CASADI_ROOT}")
+else()
+  message(WARNING "No PKC_CASADI_ROOT: pkc_numerics_worker is not built, so IPOPT solves cannot run")
+endif()

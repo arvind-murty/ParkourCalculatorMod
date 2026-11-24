@@ -1,0 +1,22 @@
+{
+ "clarabel": {
+  "Solved": 63,
+  "PrimalInfeasible": 26
+ },
+ "clarabelHeadroom": {
+  "maxRatio": 0.028598755598068237,
+  "maxSolveSeconds": 0.0028598755598068237,
+  "maxSeconds": 0.25710124894976616,
+  "maxIterRatio": 0.15
+ },
+ "ipoptTermination": {
+  "worker_finished": 8
+ },
+ "ipoptMaxRatio": {
+  "all": 0.00041196536440899655,
+  "maxSeconds": 0.24717800319194794
+ },
+ "ipoptPhase": {
+  "Solve_Succeeded": 8
+ }
+}

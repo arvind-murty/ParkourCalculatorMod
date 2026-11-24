@@ -1,5 +1,6 @@
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import subprocess
@@ -88,7 +89,8 @@ class JavaCompiler:
 
         threading.Thread(target=exchange, daemon=True).start()
         try:
-            line = received.get(timeout=seconds)
+            # A work-only run's budget is infinite: wait without a timeout (queue.get rejects an infinite one).
+            line = received.get(timeout=seconds if math.isfinite(seconds) else None)
         except queue.Empty:
             self.close()
             self.timed_out = True
