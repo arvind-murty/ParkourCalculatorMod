@@ -723,7 +723,7 @@ Value DfsSearch::evaluate_leg(Frame& f, const Value& program, const Value& args)
     bool uncovered = false;
     for (const Value* r : {&at(fields(prepared), "route"), &final_route})
         if (!is_null(*r))
-            for (const char* key : {"passages", "hitEvents", "ladderEvents"})
+            for (const char* key : {"hitEvents", "ladderEvents"})
                 uncovered = uncovered || py_truthy(get_or_null(fields(*r), key));
     if (uncovered) return hooks_.evaluate(f.id, f.goal_request, f.semantic_cursor, program, args);
     if (!get(route, "constraints")) put(route, "constraints", array({}));

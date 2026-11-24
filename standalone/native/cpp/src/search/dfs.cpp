@@ -179,7 +179,7 @@ std::optional<NodeEvaluation> evaluate_node(const Value& scene, const Value& pro
     bool uncovered = false;
     if (!is_null(prepared)) {
         const Object& route = fields(at(fields(prepared), "route"));
-        for (const char* key : {"passages", "hitEvents", "ladderEvents"})
+        for (const char* key : {"hitEvents", "ladderEvents"})
             uncovered = uncovered || py_truthy(get_or_null(route, key));
     }
     if (uncovered && !hooks.solve_route) return std::nullopt;

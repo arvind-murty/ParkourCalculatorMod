@@ -87,9 +87,6 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
             validation_scope=validation_scope, initial_variants=initial_variants,
             oracle_rejection=oracle_rejection, climb_families=climb_families, numerical=numerical, confirm=confirm)
     route = copy.deepcopy(route)
-    if solid_blocks is not None:
-        for passage in route.get('passages', []):
-            passage['blockId'] = solid_blocks[passage['solidIndex']]
     deadline = time.monotonic() + seconds
     queue, seen, serial, unresolved = [], set(), 0, []
     variant_source = iter(initial_variants) if initial_variants is not None else None

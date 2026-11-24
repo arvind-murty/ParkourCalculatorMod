@@ -287,7 +287,7 @@ minimum-run records and DFS state changes in proposal order. The minimum-run sea
 minimum-run search) also runs natively; the frontier commits its exclusions, queues its children and holds its
 reserved run counts as alternatives in the same order as the Python search. A batch stops where the Python loop would emit a ready program and commits nothing when the budget stops it,
 so a resumed expansion redoes it from the saved cursor. Each decision check (`dfs.evaluate_node`) runs natively
-(`search/dfs.hpp`) once the gate has prepared a route without passages, wall hits or ladder events: its node solve
+(`search/dfs.hpp`) once the gate has prepared a route without wall hits or ladder events: its node solve
 (`search/engine.hpp`: scope, floor checks, identity, constraint generator, repair loop, outcome), the branch program it
 commits and the alternatives it holds. The gate's analysis and face tables and the relaxed dispatch (its post-alarm
 pipeline, frame-end answers and IPOPT solves) run on the gate's native core (`reachability/service.hpp`,

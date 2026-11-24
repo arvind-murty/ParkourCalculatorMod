@@ -56,16 +56,16 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | File | Bytes |
 | --- | ---: |
 | [docs/AGENT_SETUP.md](AGENT_SETUP.md) | 3797 |
-| [docs/ANCHOR_SEARCH_EXECUTION_REFERENCE.md](ANCHOR_SEARCH_EXECUTION_REFERENCE.md) | 42052 |
+| [docs/ANCHOR_SEARCH_EXECUTION_REFERENCE.md](ANCHOR_SEARCH_EXECUTION_REFERENCE.md) | 42042 |
 | [docs/ARCHITECTURE.md](ARCHITECTURE.md) | 16507 |
 | [docs/CHECKPOINT_STORAGE.md](CHECKPOINT_STORAGE.md) | 9565 |
 | [docs/CODE_MAP.md](CODE_MAP.md) | 42248 |
 | [docs/CURRENT_STATE.md](CURRENT_STATE.md) | 13681 |
 | [docs/DECISIONS_AND_PLANS.md](DECISIONS_AND_PLANS.md) | 25918 |
-| [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 35770 |
+| [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 36552 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11512 |
 | [docs/DOC_INDEX.md](DOC_INDEX.md) | 29236 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 308174 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 308574 |
 | [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 68883 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
@@ -256,8 +256,8 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/src/search/anchors/policy.cpp](../native/cpp/src/search/anchors/policy.cpp) | 37738 |
 | [native/cpp/src/search/bounds/remaining.cpp](../native/cpp/src/search/bounds/remaining.cpp) | 8052 |
 | [native/cpp/src/search/comparison.cpp](../native/cpp/src/search/comparison.cpp) | 8960 |
-| [native/cpp/src/search/dfs.cpp](../native/cpp/src/search/dfs.cpp) | 20114 |
-| [native/cpp/src/search/dfs_search.cpp](../native/cpp/src/search/dfs_search.cpp) | 82347 |
+| [native/cpp/src/search/dfs.cpp](../native/cpp/src/search/dfs.cpp) | 20102 |
+| [native/cpp/src/search/dfs_search.cpp](../native/cpp/src/search/dfs_search.cpp) | 82335 |
 | [native/cpp/src/search/dfs_state.cpp](../native/cpp/src/search/dfs_state.cpp) | 14157 |
 | [native/cpp/src/search/engine.cpp](../native/cpp/src/search/engine.cpp) | 13911 |
 | [native/cpp/src/search/feasibility.cpp](../native/cpp/src/search/feasibility.cpp) | 5739 |
@@ -266,7 +266,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/src/search/identity.cpp](../native/cpp/src/search/identity.cpp) | 7125 |
 | [native/cpp/src/search/node.cpp](../native/cpp/src/search/node.cpp) | 72707 |
 | [native/cpp/src/search/ordered_route.cpp](../native/cpp/src/search/ordered_route.cpp) | 25604 |
-| [native/cpp/src/search/repair.cpp](../native/cpp/src/search/repair.cpp) | 97356 |
+| [native/cpp/src/search/repair.cpp](../native/cpp/src/search/repair.cpp) | 97197 |
 | [native/cpp/src/sha256.cpp](../native/cpp/src/sha256.cpp) | 3234 |
 | [native/cpp/src/spatial/cells.cpp](../native/cpp/src/spatial/cells.cpp) | 18689 |
 | [native/cpp/src/spatial/event_routes.cpp](../native/cpp/src/spatial/event_routes.cpp) | 25879 |
@@ -2117,7 +2117,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [src/parkour_solver/search/deferrals.py](../src/parkour_solver/search/deferrals.py) | 1228 |
 | [src/parkour_solver/search/dfs.py](../src/parkour_solver/search/dfs.py) | 77790 |
 | [src/parkour_solver/search/domain.py](../src/parkour_solver/search/domain.py) | 960 |
-| [src/parkour_solver/search/engine.py](../src/parkour_solver/search/engine.py) | 18448 |
+| [src/parkour_solver/search/engine.py](../src/parkour_solver/search/engine.py) | 18426 |
 | [src/parkour_solver/search/events/__init__.py](../src/parkour_solver/search/events/__init__.py) | 0 |
 | [src/parkour_solver/search/events/adapter.py](../src/parkour_solver/search/events/adapter.py) | 9469 |
 | [src/parkour_solver/search/events/engine.py](../src/parkour_solver/search/events/engine.py) | 13273 |
@@ -2128,7 +2128,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [src/parkour_solver/search/movement.py](../src/parkour_solver/search/movement.py) | 1292 |
 | [src/parkour_solver/search/ordered_route.py](../src/parkour_solver/search/ordered_route.py) | 16913 |
 | [src/parkour_solver/search/ranking.py](../src/parkour_solver/search/ranking.py) | 3304 |
-| [src/parkour_solver/search/repair.py](../src/parkour_solver/search/repair.py) | 47675 |
+| [src/parkour_solver/search/repair.py](../src/parkour_solver/search/repair.py) | 47523 |
 | [src/parkour_solver/search/repair_state.py](../src/parkour_solver/search/repair_state.py) | 3038 |
 | [src/parkour_solver/spatial/__init__.py](../src/parkour_solver/spatial/__init__.py) | 0 |
 | [src/parkour_solver/spatial/anchor_guides.py](../src/parkour_solver/spatial/anchor_guides.py) | 6039 |

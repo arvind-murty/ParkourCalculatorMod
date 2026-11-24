@@ -1217,8 +1217,6 @@ std::unique_ptr<ConstraintVariants> RepairLoop::for_plan(const Object& record, d
 }
 
 Value RepairLoop::run() {
-    if (const Value* passages = get(route_, "passages"); passages && py_truthy(*passages))
-        throw Unsupported("routes with passages repair in Python");
     deadline_ = monotonic() + o_.seconds;
     source_exhausted_ = !source_ || source_->exhausted();
     climbing_ = o_.climb_families && o_.rank_equal_cost;

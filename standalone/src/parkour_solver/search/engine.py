@@ -127,12 +127,12 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, s
     saved_repair=program.get('repairState',{})
     saved_policy=(saved_repair.get('context',{}).get('scope') or {}).get('scope',{}).get('solvePolicy')
     repair_route = route if final_route is None else final_route
-    # Under PKC_NATIVE_CORE the generator and the repair loop run natively for the routes they cover: no passages,
-    # wall hits or ladder events.
+    # Under PKC_NATIVE_CORE the generator and the repair loop run natively for the routes they cover: no wall hits or
+    # ladder events.
     native = getattr(service, 'native', None)
     deadline = scoped.deadline
     if (native is not None and
-            not any(r.get(k) for r in (route, repair_route) for k in ('passages', 'hitEvents', 'ladderEvents'))):
+            not any(r.get(k) for r in (route, repair_route) for k in ('hitEvents', 'ladderEvents'))):
         variants = native.ConstraintVariants(route=route, profile=profiles[0], geometry=scene['collisionScene'],
             envelopes=envelopes, scope=scope, checks=list(checks),
             state=saved_repair.get('constraintGeneration') if saved_policy==policy else None, reference=reference,
