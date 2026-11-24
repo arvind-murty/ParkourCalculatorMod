@@ -1,7 +1,7 @@
 // The contact-branch repair loop of one node solve: search/repair.py, with
 // repair_state's resume context and branch keys, validation/scene.check_geometry
 // and constraints/contacts.contact_conflicts. Wall-hit options (max_wall_hits > 0)
-// and routes with passages are left to Python.
+// are left to Python.
 #pragma once
 
 #include <cstdint>
