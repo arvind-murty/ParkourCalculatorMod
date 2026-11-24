@@ -464,13 +464,15 @@ Minimum-run candidates (O9) keep their own reserves and are not tested. The test
   the landing's movement magnitudes and frictions (`travel_radii`).
 - **Fits** when R > 0.7·D (`SAME_FACE_FIT_FACTOR`; the factor may change).
 
-A held jump is not queued, sets no N and beats no run-tick candidate. When P queued
-or reserved nothing else it is queued at once; otherwise it is reserved
-(`state['alternatives']`) and restored once nothing below P lives and every node P
-queued or reserved has died, never after a validated group-end arrival below them.
-A run-tick reserve restored in the same pass counts as alive, so it goes first.
-Each held jump is logged in `minimumRunCandidates` (key `["same_face", <face
-name>]`) with outcome `held` (or `queued`), its room and its jump. Restoring it
+A held jump is not queued, sets no N and beats no run-tick candidate. It is reserved
+(`state['alternatives']`, watching P's node, or `frameStart` at the frame's initial
+program) and restored once P is exhausted: nothing below P pending, the search's
+unreleased reserves and fallbacks included (user, 2026-11-24), never after a validated
+group-end arrival below P. Entries waiting on one node come back one at a time in the
+queue's priority order, so a run-tick reserve (a copy of P) goes before a hop, and a
+two-tick grind back onto the face before a full hop. Each held jump is logged in
+`minimumRunCandidates` (key `["same_face", <face name>]`) with outcome `held`, its room
+and its jump. Restoring it
 earlier, once the run ticks spent below P reach its airtime, is deferred
 ([S9](../DEFERRED_WORK.md)).
 

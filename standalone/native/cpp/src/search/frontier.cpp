@@ -31,7 +31,8 @@ Nullable<std::string> nullable_text(const Value& value) {
 
 }  // namespace
 
-bool restore_alternatives(Continuation& state, const std::vector<Value>& extra_live) {
+bool restore_alternatives(Continuation& state, const std::vector<Value>& extra_live,
+                          const std::function<Value(const Value& program, const std::string& identity)>& priority) {
     if (!state.alternatives) return false;
     std::set<std::string> succeeded;
     if (state.succeeded_nodes) succeeded.insert(state.succeeded_nodes->begin(), state.succeeded_nodes->end());
@@ -41,6 +42,20 @@ bool restore_alternatives(Continuation& state, const std::vector<Value>& extra_l
         if (held.next < static_cast<std::int64_t>(held.programs.size()) && !succeeded.count(node)) waiting.push_back(i);
     }
     if (waiting.empty()) return false;
+    if (priority) {
+        std::vector<Value> keys;
+        for (std::size_t i : waiting) {
+            const HeldAlternative& held = state.alternatives->items[i].second;
+            keys.push_back(priority(held.programs.at(static_cast<std::size_t>(held.next)), ""));
+        }
+        std::vector<std::size_t> order(waiting.size());
+        for (std::size_t i = 0; i < order.size(); ++i) order[i] = i;
+        std::stable_sort(order.begin(), order.end(),
+                         [&](std::size_t a, std::size_t b) { return py_compare(keys[a], keys[b]) < 0; });
+        std::vector<std::size_t> sorted;
+        for (std::size_t i : order) sorted.push_back(waiting[i]);
+        waiting = std::move(sorted);
+    }
     const OrderedMap<Nullable<std::string>>& parents = *state.decision_parents;
     std::set<std::string> alive;
     const auto live = [&](const Value& program) {
@@ -53,6 +68,7 @@ bool restore_alternatives(Continuation& state, const std::vector<Value>& extra_l
             const Nullable<std::string>* parent = parents.find(*node);
             node = parent ? parent->value : std::nullopt;
         }
+        alive.insert(kFrameStart);
     };
     for (const Value& program : state.pending) live(program);
     for (const Value& program : state.ready) live(program);
@@ -176,7 +192,7 @@ Value Frontier::take(std::vector<Value>& programs) const {
     return out;
 }
 
-bool Frontier::restore() { return restore_alternatives(*state_, hooks_.live_programs()); }
+bool Frontier::restore() { return restore_alternatives(*state_, hooks_.live_programs(), hooks_.priority); }
 
 // Each exclusion names the decision node whose expansion generated it, for the solve report.
 void Frontier::commit(const Value& exclusions, std::int64_t screened, std::int64_t policy_rejections,
@@ -193,8 +209,6 @@ void Frontier::hold_minimum_runs(ExpansionState& e, const Value& node, const Arr
     for (const Value& reserve : reserves) {
         const Value& reserve_fields = items(reserve).at(0);
         const std::string key = digest(array({node, text("minimumRunTicks"), reserve_fields}));
-        if (!e.queued_nodes) e.queued_nodes.emplace();
-        e.queued_nodes->push_back(Nullable<std::string>{key});
         if (state_->alternatives->contains(key)) continue;
         Object held = fields(e.program);
         erase(held, "needsNodeSolve");
@@ -246,28 +260,20 @@ void Frontier::minimum_runs(ExpansionState& e) {
 }
 
 void Frontier::hold_same_face(ExpansionState& e) {
-    // Queue each held jump back onto the launch face of an ordinary decision P (O11) at once when P queued or
-    // reserved nothing else; otherwise reserve it until every other branch of P died: everything below P's node, and
-    // the nodes P queued and reserved (P's node is None at frame 0's initial program).
+    // Hold each jump back onto the launch face of an ordinary decision P that does not fit it (O11) until P is
+    // exhausted: nothing below P's node pending, the search's reserves included (restore_alternatives).
     const Value node = node_of(e.program);
-    const std::vector<Nullable<std::string>> others = e.queued_nodes.value_or(std::vector<Nullable<std::string>>{});
     const std::vector<Value> held = e.held.value_or(std::vector<Value>{});
     e.held.reset();
     for (const Value& h : held) {
         const Object& fit = fields(h);
         const Value& child = at(fit, "program");
-        if (!others.empty()) {
-            HeldAlternative alternative;
-            alternative.programs.push_back(child);
-            std::vector<Nullable<std::string>> watch;
-            if (py_truthy(node)) watch.push_back(nullable_text(node));
-            watch.insert(watch.end(), others.begin(), others.end());
-            alternative.watch = std::move(watch);
-            (*state_->alternatives)[digest(array({node, text("sameFace"), at(fields(child), "decisionNode")}))] =
-                std::move(alternative);
-        } else {
-            (complete(child) ? state_->ready : state_->pending).push_back(child);
-        }
+        HeldAlternative alternative;
+        alternative.programs.push_back(child);
+        alternative.watch = std::vector<Nullable<std::string>>{
+            Nullable<std::string>{py_truthy(node) ? as_text(node) : std::string(kFrameStart)}};
+        (*state_->alternatives)[digest(array({node, text("sameFace"), at(fields(child), "decisionNode")}))] =
+            std::move(alternative);
         if (!state_->minimum_run_candidates) state_->minimum_run_candidates.emplace();
         state_->minimum_run_candidates->push_back(
             object({{"node", node},
@@ -278,7 +284,7 @@ void Frontier::hold_same_face(ExpansionState& e) {
                     {"N", Value{nullptr}},
                     {"lower", integer_value(0)},
                     {"round", integer_value(0)},
-                    {"outcome", text(others.empty() ? "queued" : "held")},
+                    {"outcome", text("held")},
                     {"nodes", array({at(fields(child), "decisionNode")})},
                     {"room", at(fit, "room")},
                     {"jump", at(fit, "jump")}}));
@@ -306,9 +312,6 @@ void Frontier::queue_child(ExpansionState& e, const Program& parent, const std::
         }
     }
     if (forward) (complete(child) ? state_->ready : state_->pending).push_back(child);
-    // What a held jump back onto the launch face of this expansion waits for (hold_same_face).
-    if (!e.queued_nodes) e.queued_nodes.emplace();
-    e.queued_nodes->push_back(nullable_text(node_of(child)));
 }
 
 void Frontier::hold_sides(ExpansionState& e) {

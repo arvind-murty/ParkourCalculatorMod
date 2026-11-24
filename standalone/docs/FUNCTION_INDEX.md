@@ -929,9 +929,9 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `take_first` | [14](../src/parkour_solver/search/frontier.py#L14) | function |
-| `restore_alternatives` | [20](../src/parkour_solver/search/frontier.py#L20) | function |
-| `persistent_programs` | [59](../src/parkour_solver/search/frontier.py#L59) | function |
+| `take_first` | [17](../src/parkour_solver/search/frontier.py#L17) | function |
+| `restore_alternatives` | [23](../src/parkour_solver/search/frontier.py#L23) | function |
+| `persistent_programs` | [70](../src/parkour_solver/search/frontier.py#L70) | function |
 
 ## search/goals.py
 

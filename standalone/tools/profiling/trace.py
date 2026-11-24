@@ -673,7 +673,7 @@ RUN_CANDIDATES = dict(anchor='jump onto anchor', ceiling='ceiling jump under', g
                       slab_boost='slab boost onto', corner_jump_cancel='corner jump cancel past', landing='run-off onto',
                       step='step-up onto', scan='run-tick scan', same_face='jump back onto')
 RUN_OUTCOMES = dict(dominated='beaten by a kept candidate', unreached='no run count below the bound passed the screens',
-                    held='held (does not fit its face)', queued='queued at once (does not fit its face; nothing else to wait for)')
+                    held='held (does not fit its face)')
 
 
 def minimum_run_text(candidates, numbers):

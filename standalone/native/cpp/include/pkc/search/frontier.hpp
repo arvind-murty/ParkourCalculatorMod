@@ -32,7 +32,6 @@ struct ExpansionState {  // continuation['expansion']: one decision's expansion,
     // landings on other faces.
     std::optional<OrderedMap<std::vector<Value>>> reached;
     std::optional<std::vector<Value>> landings;
-    std::optional<std::vector<Nullable<std::string>>> queued_nodes;  // what a held same-face jump waits for
     std::optional<std::vector<Value>> held;                          // same-face fits with their program
     std::optional<Value> choice, child, full_program, projected;     // the Python proposal path's proposal
     std::optional<bool> proposal_checked;
@@ -94,9 +93,14 @@ struct Generation {  // a frame's generation: {} until its frontier first report
     const Continuation* continuation() const { return report ? &report->continuation : nullptr; }
 };
 
-// restore_alternatives(state, extra_live): queues each held decision-node alternative whose branch died; whether
-// anything was queued.
-bool restore_alternatives(Continuation& state, const std::vector<Value>& extra_live);
+// The node a frame's initial program decides at: every node of the frame descends from it.
+inline constexpr const char* kFrameStart = "frameStart";
+
+// restore_alternatives(state, extra_live, priority): queues each held decision-node alternative whose branch died;
+// whether anything was queued. `extra_live` adds the search's own pending work, its unreleased reserves and fallbacks
+// included; every live program also keeps kFrameStart alive. Entries are released in the queue's priority order.
+bool restore_alternatives(Continuation& state, const std::vector<Value>& extra_live,
+                          const std::function<Value(const Value& program, const std::string& identity)>& priority);
 
 struct FrontierHooks {
     std::function<void()> budget;  // throws Timeout when cancelled, out of work or past the deadline

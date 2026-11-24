@@ -81,6 +81,48 @@ class AnchorSearchTests(unittest.TestCase):
         self.assertTrue(restore_alternatives(state))
         self.assertEqual(state['pending'],[node('P'),node('R')])
 
+    def test_an_unreleased_reserve_keeps_its_node_from_being_exhausted(self):
+        # The search passes its reserves as markers at the node that reserved them (user, 2026-11-24).
+        from parkour_solver.search.frontier import restore_alternatives
+        def node(name):return dict(decisionNode=name)
+        def fresh(**fields):
+            state=dict(pending=[],ready=[],expansion=None,nodeInFlight=None,succeededNodes=[],
+                decisionParents={'N':'P','c':'N'},
+                alternatives={'hop':dict(programs=[node('hop')],restored=[],next=0,watch=['N'])})
+            state.update(fields)
+            return state
+        self.assertFalse(restore_alternatives(fresh(),extra_live=[node('N')]))
+        self.assertFalse(restore_alternatives(fresh(),extra_live=[node('c')]))
+        state=fresh()
+        self.assertTrue(restore_alternatives(state,extra_live=[node('P')]))
+        self.assertEqual(state['pending'],[node('hop')])
+
+    def test_alternatives_held_on_one_node_come_back_in_queue_priority_order(self):
+        from parkour_solver.search.frontier import restore_alternatives
+        def node(name, T):return dict(decisionNode=name,T=T)
+        state=dict(pending=[],ready=[],expansion=None,nodeInFlight=None,succeededNodes=[],
+            decisionParents={'long':'P','short':'P'},
+            alternatives={'long':dict(programs=[node('long',12)],restored=[],next=0,watch=['P']),
+                          'short':dict(programs=[node('short',2)],restored=[],next=0,watch=['P'])})
+        self.assertTrue(restore_alternatives(state,key=lambda p,identity:(p['T'],identity)))
+        self.assertEqual(state['pending'],[node('short',2)])
+
+    def test_an_alternative_held_at_the_frame_start_waits_for_the_whole_frame(self):
+        from parkour_solver.search.frontier import FRAME_START, restore_alternatives
+        def node(name):return dict(decisionNode=name)
+        def fresh(**fields):
+            state=dict(pending=[],ready=[],expansion=None,nodeInFlight=None,succeededNodes=[],decisionParents={'c':None},
+                alternatives={'hop':dict(programs=[node('hop')],restored=[],next=0,watch=[FRAME_START])})
+            state.update(fields)
+            return state
+        self.assertFalse(restore_alternatives(fresh(pending=[node('c')])))
+        self.assertFalse(restore_alternatives(fresh(pending=[node(None)])))
+        self.assertFalse(restore_alternatives(fresh(),extra_live=[node(FRAME_START)]))
+        self.assertFalse(restore_alternatives(fresh(succeededNodes=[FRAME_START])))
+        state=fresh()
+        self.assertTrue(restore_alternatives(state))
+        self.assertEqual(state['pending'],[node('hop')])
+
     def test_frontier_restores_a_held_alternative_after_the_winner_subtree_is_rejected(self):
         calls=[]
         def evaluate(p,nodes,forced):
@@ -457,10 +499,10 @@ class MinimumRunTickTests(unittest.TestCase):
         emitted,state=self.frontier(fits=held,screen=self.late(3))
         self.assertEqual(self.runs(emitted),[3])
         self.assertEqual([(p['minimumRunSearch']['kind'],p['minimumRunSearch']['start']) for p in state['pending']],[('scan',4)])
-        # With nothing else to wait for it is queued at once.
+        # With nothing else below its decision it is held all the same and comes back at the next restore.
         emitted,state=self.frontier(fits=held,screen=lambda p:None if p.get('terminalSupport')=='start' else dict(reason='elsewhere'))
         self.assertEqual((emitted,hops(state['pending'])),([],entry['nodes']))
-        self.assertEqual([r['outcome'] for r in state['minimumRunCandidates'] if r['key']==key],['queued'])
+        self.assertEqual([r['outcome'] for r in state['minimumRunCandidates'] if r['key']==key],['held'])
 
     def test_without_n_the_first_screened_run_count_is_queued_and_the_next_restored_when_it_dies(self):
         emitted,state=self.frontier(screen=self.late(3))

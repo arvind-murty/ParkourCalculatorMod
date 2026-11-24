@@ -58,7 +58,6 @@ void describe(R& e, V& v, ExpansionState*) {
     v.req("cursor", e.cursor);
     v.opt("reached", e.reached);
     v.opt("landings", e.landings);
-    v.opt("queuedNodes", e.queued_nodes);
     v.opt("held", e.held);
     v.opt("choice", e.choice);
     v.opt("child", e.child);
