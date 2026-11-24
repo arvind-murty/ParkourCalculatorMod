@@ -58,7 +58,8 @@ private:
 
     std::function<bool(const std::string&)> known_;
     EncodeCache* cache_ = nullptr;
-    std::unordered_map<const void*, std::string> memo_;  // containers already encoded in this archive
+    // Containers already encoded in this archive, each held so a temporary's address is never reused while it is named.
+    std::unordered_map<const void*, std::pair<Value, std::string>> memo_;
     std::unordered_map<std::string, std::size_t> pending_index_;
 };
 

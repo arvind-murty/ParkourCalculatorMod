@@ -94,9 +94,10 @@ std::string CheckpointEncoder::encode(const Value& value) {
     if (is_object(value)) identity = std::get<std::shared_ptr<const Object>>(value.data).get();
     if (is_list(value)) identity = std::get<std::shared_ptr<const Array>>(value.data).get();
     if (identity) {
-        if (const auto found = memo_.find(identity); found != memo_.end()) return found->second;
+        if (const auto found = memo_.find(identity); found != memo_.end()) return found->second.second;
         if (cache_)
-            if (const std::string* cached = cache_->find(identity)) return memo_.emplace(identity, *cached).first->second;
+            if (const std::string* cached = cache_->find(identity))
+                return memo_.emplace(identity, std::make_pair(value, *cached)).first->second.second;
     }
     std::string data;
     bool all_flat = container;
@@ -136,7 +137,7 @@ std::string CheckpointEncoder::encode(const Value& value) {
     const bool stored = data.size() >= kChunkBytes;
     data = chunk(std::move(data));
     if (identity) {
-        memo_.emplace(identity, data);
+        memo_.emplace(identity, std::make_pair(value, data));
         // Only a stored object's reference: a smaller encoding sits inside its parent's, so keeping it too would hold
         // the same text twice, and it costs little to redo.
         if (cache_ && stored) cache_->store(identity, value, data);
