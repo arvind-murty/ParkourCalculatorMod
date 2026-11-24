@@ -34,17 +34,6 @@ def candidate_key(program):
     return digest(program_search_key(physical))
 
 
-def decision_family(program, parents):
-    start = min(p['profile']['duration'] for p in parents)
-    p = program['profile']
-    jump = next((t for t in range(start,p['duration']) if p['jump'][t] and p['grounded'][t]),None)
-    events = [(e['offset'],e['axis'],e.get('role'),e['boxes']) for e in p.get('contactEvents',[])
-        if e['offset']>=start and not (e['axis']=='Y' and p['grounded'][e['offset']] and not p['jump'][e['offset']])]
-    events += [(e['input'],e['case'],e.get('boxes')) for e in p.get('caseEvents',[]) if e['input']>=start]
-    first = min(events,key=lambda e:e[0]) if events else None
-    return digest([jump,first])
-
-
 def commit_arrival(program, best, *, source_program=None, keep_region_choices=False):
     best = copy.deepcopy(best)
     n = program['profile']['duration']
@@ -71,7 +60,7 @@ def commit_arrival(program, best, *, source_program=None, keep_region_choices=Fa
 
 
 def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_program, program_filter, roots,
-                 resume_state, retry_unknown, deadline, started, candidate_seconds, score_seconds, batch_size,
+                 resume_state, deadline, started, candidate_seconds, score_seconds, batch_size,
                  python_executable, cancel_event, on_progress, minimum_run_pruning, numerical_backend='ipopt',
                  _owned_state=False):
     """Depth-first anchor search: one frame per encounter group, over the adapter's lazy contact-event goals."""
@@ -95,12 +84,12 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
         physics=motion,
         eventStagePolicy=4,anchorPolicy=semantic_settings(adapter.anchor_policy),guidePlan=adapter.guide_plan['id'],
         minimumRunPolicy=POLICY_VERSION if minimum_run_pruning else None,comparisonPolicy=COMPARISON_POLICY_VERSION,
-        numericalBackend=numerical_backend,routeStagePolicy=2,routeCommitPolicy=1,routeProposalPolicy=1,frameEndPolicy=1))
+        numericalBackend=numerical_backend,routeStagePolicy=2,routeCommitPolicy=1,routeProposalPolicy=1,frameEndPolicy=1,queuePolicy=1))
     if resume_state is not None and (resume_state.get('version') != schema or
             resume_state.get('kind') != 'ordered_goal_dfs' or resume_state.get('context') != context):
         raise ValueError('Incompatible DFS continuation; old checkpoint queues require explicit reconstruction')
     state = (resume_state if _owned_state else copy.deepcopy(resume_state)) if resume_state is not None else dict(version=schema, kind='ordered_goal_dfs',
-        context=context, initialRoots=roots, stack=[], suspended=[], refinements=[], frames=[], transitions=[],
+        context=context, initialRoots=roots, stack=[], suspended=[], frames=[], transitions=[],
         windows=[], finalAttempts=[], best=None, cumulativeCalls=0, session=0, expanded=0, nextFrame=0)
     state.setdefault('goalQueue', [])
     state.setdefault('goalOwners', {})
@@ -475,7 +464,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
             seconds=max(.001,min(score_seconds,deadline-time.monotonic())),candidate_seconds=candidate_seconds,
             python_executable=python_executable,cancel_event=cancel_event,
             guide_objective=node_view.objective,first_witness=True,
-            solve_policy=policy,climb_families=True,on_progress=progress if on_progress else None,retry_unresolved=retry_unknown)
+            solve_policy=policy,climb_families=True,on_progress=progress if on_progress else None)
         if not on_progress and result.get('repairState') is not None:
             # Nothing saves progress, so the repair published nothing: leave its final state where progress would.
             program['repairState']=entry['repairState']=result['repairState']
@@ -553,9 +542,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
             **(dict(repairState=repair) if status=='feasible' else {}),**side)
         state['nodeResults'][identity]=dict(query,parent=program.get('decisionParent'),depth=depth)
         publish()
-        from parkour_solver.search.feasibility import unresolved_only
-        return dict(status=status,program=program,alternatives=alternatives,
-                    deferUnknown=status=='suspended' and unresolved_only(program.get('repairState',{})),**side)
+        return dict(status=status,program=program,alternatives=alternatives,**side)
 
     def generate(f):
         target_scene = dict(scene,goalBlock=f['goal']['block'])
@@ -637,7 +624,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
         began = time.monotonic()
         result = evaluate_program(args.pop('scene'),program,compiler,args.pop('adapter'),own,motion,
             seconds=FRAME_END_SECONDS,candidate_seconds=FRAME_END_SECONDS,python_executable=python_executable,
-            cancel_event=cancel_event,retry_unresolved=retry_unknown,final_route=chosen['witness']['route'],**args)
+            cancel_event=cancel_event,final_route=chosen['witness']['route'],**args)
         if result['status']=='cancelled' or cancel_event is not None and cancel_event.is_set():
             # Untried again, so a resume repeats this solve.
             chosen['tried'] = False
@@ -681,7 +668,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
         result = evaluate_program(args.pop('scene'),program,compiler,args.pop('adapter'),work,motion,
             seconds=max(.001,min(score_seconds,deadline-time.monotonic())),candidate_seconds=candidate_seconds,
             python_executable=python_executable,cancel_event=cancel_event,
-            on_progress=progress if on_progress else None,retry_unresolved=retry_unknown,**args)
+            on_progress=progress if on_progress else None,**args)
         if not on_progress and result.get('repairState') is not None:
             f['inFlight']['program']['repairState'] = result['repairState']
         from parkour_solver.observability.turns import record as observe, replay
@@ -710,7 +697,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
             nodeFeasibility=result.get('nodeFeasibility'),objectiveMode='configured',
             arrival=program['profile']['duration'] if result['best'] is not None else None,
             value=result['best']['candidate']['objective'] if result['best'] else None,
-            family=decision_family(program,f['parents']),work=result['work'],goal=f['goal'],goalKey=goal_key(scene,f['goal'],active_adapter.corridor) if f['goal'] else None,
+            work=result['work'],goal=f['goal'],goalKey=goal_key(scene,f['goal'],active_adapter.corridor) if f['goal'] else None,
             evaluations=(old.get('evaluations',[]) if old else [])+[dict(session=state['session'],work=result['work'])],
             tried=old.get('tried',False) if old else False,solveScope=result.get('solveScope'),solveIdentity=result.get('solveIdentity'),
             numericalAttempts=result.get('repairState',{}).get('attemptLog',result.get('attempts',[])),
@@ -834,13 +821,13 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
                     return True
         return False
 
-    def close_frame(f, *, deferred=False):
+    def close_frame(f):
         state['stack'].pop()
         old = next((v for v in state['frames'] if v['id']==f['id']),None)
         if old is not None:
             state['frames'].remove(old)
         state['frames'].append(f)
-        if not f.get('validatedFinish') and not deferred:
+        if not f.get('validatedFinish'):
             rejected=any((r.get('nodeFeasibility') or {}).get('status')=='oracle_rejected' for r in f['records'])
             if rejected or f.get('recoveryFailure'):
                 parent=next((v for v in state['stack'] if f['parent'] and v['id']==f['parent']['frame']),None)
@@ -849,8 +836,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
                     failed=parent.setdefault('failedCandidates',[])
                     if f['parent']['candidate'] not in failed:
                         failed.append(f['parent']['candidate'])
-        if not deferred and (any(numerical_pending(r) or r.get('program',{}).get('repairState',{}).get('unresolved') for r in f['records']) or
-                             f['generation'].get('continuation',{}).get('deferredNodes')):
+        if any(numerical_pending(r) for r in f['records']):
             state['suspended'].append(f)
         transition('backtrack',f,parent=f['parent'])
 
@@ -882,11 +868,41 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
         f['sourceExhausted']=False
         return True
 
-    def retry_deferred_nodes(f):
-        from parkour_solver.search.feasibility import restore_unknown_nodes
-        source=f['generation'].get('continuation',{})
-        if restore_unknown_nodes(source,retry_unknown):
-            f['sourceExhausted']=False
+    def witness_rank(record):
+        # Ticks, then the objective the frame's witnesses optimize: a guide objective at an anchor.
+        route=record['witness']['route']
+        return candidate_rank(record['witness'],route.get('guideObjective',route['objective']))
+
+    def improves(record):
+        # A finish ranked no better than the incumbent cannot become it: its relaxed value bounds its answer.
+        return state['best'] is None or candidate_rank(record['witness'],scene['objective']) < candidate_rank(state['best'],scene['objective'])
+
+    def commit_finish(f, chosen):
+        event=state['observations']['decisions'].get(chosen['program'].get('decisionNode'))
+        if event is not None:event['selected']=event.get('selected',0)+1
+        transition('choose',f,candidate=chosen['id'],arrival=chosen['arrival'],key=list(record_priority(chosen,f)))
+        for ancestor in state['stack']:
+            ancestor['validatedFinish']=True
+        candidate = copy.deepcopy(chosen['witness'])
+        candidate.update(movementProgram=chosen['child'],blockIds=[scene['startBlock'],scene['goalBlock']])
+        if state['best'] is None or candidate_rank(candidate,scene['objective']) < candidate_rank(state['best'],scene['objective']):
+            state['best'] = candidate
+            state.setdefault('firstFullSolutionSeconds',time.monotonic()-started)
+            work.accepted(candidate)
+            transition('incumbent',f,candidate=chosen['id'],objective=candidate['candidate']['objective'])
+
+    def confirm_at_budget_end():
+        """The run budget ended inside a final frame: confirm its best scored finish that can beat the incumbent, falling
+        back to the next (user, 2026-11-23). The rest of its queue waits for a resume."""
+        f = state['stack'][-1] if state['stack'] else None
+        if f is None or not final_frame(f) or numerical_backend=='ipopt':
+            return
+        options = [r for r in f['records'] if r.get('witness') and not r['tried'] and not r.get('preparationDeferral') and improves(r)]
+        for chosen in sorted(options,key=lambda r:(witness_rank(r),record_priority(r,f))):
+            chosen['tried'] = True
+            if (chosen.get('frameEnd') or {}).get('status')=='confirmed' or frame_end(f,chosen):
+                commit_finish(f,chosen)
+                return
 
     state['discoveryWork'] = dict(expansions=0,materializations=0)
     if not state['stack'] and state['nextFrame']==0 and not state.get('goalOwners'):
@@ -899,37 +915,24 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
         state['goalQueue'].remove(ready)
         state['stack'].append(ready)
         state.pop('pendingGoalOwner')
-    resumable = next((f for f in reversed(state['suspended']) if retry_unknown or any(numerical_pending(r) for r in f['records'])),None)
+    from parkour_solver.search.ranking import candidate_rank
+    resumable = next((f for f in reversed(state['suspended']) if any(numerical_pending(r) for r in f['records'])),None)
     if not state['stack'] and resumable is not None:
         f = resumable
         state['suspended'].remove(f)
-        retry_deferred_nodes(f)
-        f['retrySession'] = state['session']
-        for r in f['records']:
-            if retry_unknown and not r.get('witness'):
-                f['ready'].append(r['program'])
         f['phase'] = 'score'
         state['stack'].append(f)
-    resumable_ids = {f['id'] for f in state['suspended'] if retry_unknown or any(numerical_pending(r) for r in f['records'])}
+    resumable_ids = {f['id'] for f in state['suspended'] if any(numerical_pending(r) for r in f['records'])}
     try:
-        while state['stack'] or state['refinements'] or resumable_ids or state['goalQueue']:
+        while state['stack'] or resumable_ids or state['goalQueue']:
             work.check()
             if not state['stack']:
                 if state['goalQueue']:
                     state['stack'].append(state['goalQueue'].pop(0))
                     continue
-                if state['refinements']:
-                    f = state['refinements'].pop(0)
-                else:
-                    f = next(f for f in state['suspended'] if f['id'] in resumable_ids)
-                    resumable_ids.remove(f['id'])
-                    state['suspended'].remove(f)
-                    if retry_unknown:
-                        known = {candidate_key(p) for p in f['ready']}
-                        for r in f['records']:
-                            if not r.get('witness') and r['id'] not in known:
-                                f['ready'].append(r['program'])
-                retry_deferred_nodes(f)
+                f = next(f for f in state['suspended'] if f['id'] in resumable_ids)
+                resumable_ids.remove(f['id'])
+                state['suspended'].remove(f)
                 f['phase'] = 'score' if f['ready'] else 'generate' if not f['sourceExhausted'] else 'select'
                 state['stack'].append(f)
             if cancel_event is not None and cancel_event.is_set():
@@ -952,17 +955,8 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
                         program = item['program']
                         previous = next((r for r in f['records'] if r['id']==item['id']),None)
                     else:
-                        covered = {r['family'] for r in f['records'] if r.get('witness') and not r['tried']}
-                        program = next((p for p in f['ready'] if decision_family(p,f['parents']) not in covered),None)
-                        if program is None:
-                            break
-                        measured = [r for r in f['records'] if r.get('witness') and not r['tried']]
-                        initial_domain = getattr(program_filter,'initial_jump_inputs',None) if f['index']==0 else None
-                        observed = {next((t for t,j in enumerate(r['program']['profile']['jump'])
-                            if j and r['program']['profile']['grounded'][t]),None) for r in measured}
-                        compared_roots = initial_domain is None or set(initial_domain)<=observed
-                        if measured and compared_roots and priority(program,f)[:3] > record_priority(min(measured,key=lambda r:record_priority(r,f)),f)[:3]:
-                            break
+                        # Every queued arrival is scored, in priority order.
+                        program = f['ready'][0]
                         work.check()
                         f['ready'].remove(program)
                         previous = next((r for r in f['records'] if r.get('candidateKey',r['id'])==candidate_key(program)),None)
@@ -972,12 +966,24 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
                         continue
                     score(f,program,previous)
                 f['phase'] = 'select'
+            # A frame chooses only once its whole queue is examined: every arrival scored, every interrupted solve
+            # refined and its generator exhausted. Reserved work (deferred slower runs, held alternatives) waits for a
+            # failure below (user, 2026-11-23).
+            if f['ready']:
+                f['phase'] = 'score'
+                continue
+            pending = next((r for r in f['records'] if not r.get('refinementTimeExclusion') and not r.get('preparationDeferral') and numerical_pending(r) and
+                r.get('refinementSession')!=state['session']),None)
+            if pending is not None:
+                refine(f,pending)
+                continue
+            if not f['sourceExhausted']:
+                f['phase'] = 'generate'
+                continue
             options = [r for r in f['records'] if r.get('witness') and not r['tried'] and not r.get('preparationDeferral')]
             if options:
-                from parkour_solver.search.ranking import candidate_rank
-                # A final frame takes its best finish first: fewest ticks, then objective.
-                chosen = min(options,key=lambda r:(candidate_rank(r['witness'],scene['objective']),record_priority(r,f))
-                             if final_frame(f) else record_priority(r,f))
+                # Fewest ticks, then objective, at every frame (user, 2026-11-23).
+                chosen = min(options,key=lambda r:(witness_rank(r),record_priority(r,f)))
                 chosen['tried'] = True
                 preparation=run_bound(chosen['child'],f)
                 structural=hard_bound(chosen['child'],f)
@@ -990,32 +996,17 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
                     chosen['timeBoundExclusion']=proof
                     transition('candidate_exclusion',f,candidate=chosen['id'],proof=proof)
                     continue
-                # A final finish that cannot beat the incumbent needs no answer: its relaxed value bounds it.
-                improves = not final_frame(f) or state['best'] is None or candidate_rank(
-                    chosen['witness'],scene['objective']) < candidate_rank(state['best'],scene['objective'])
-                if (numerical_backend!='ipopt' and improves and (chosen.get('frameEnd') or {}).get('status')!='confirmed'
-                        and not frame_end(f,chosen)):
+                # A finish that cannot beat the incumbent needs no answer.
+                if (numerical_backend!='ipopt' and (not final_frame(f) or improves(chosen))
+                        and (chosen.get('frameEnd') or {}).get('status')!='confirmed' and not frame_end(f,chosen)):
+                    continue
+                if final_frame(f):
+                    # The frame stays open: its next finish may still beat this one's answer.
+                    commit_finish(f,chosen)
                     continue
                 event=state['observations']['decisions'].get(chosen['program'].get('decisionNode'))
                 if event is not None:event['selected']=event.get('selected',0)+1
                 transition('choose',f,candidate=chosen['id'],arrival=chosen['arrival'],key=list(record_priority(chosen,f)))
-                if final_frame(f):
-                    for ancestor in state['stack']:
-                        ancestor['validatedFinish']=True
-                    candidate = copy.deepcopy(chosen['witness'])
-                    candidate.update(movementProgram=chosen['child'],blockIds=[scene['startBlock'],scene['goalBlock']])
-                    if state['best'] is None or candidate_rank(candidate,scene['objective']) < candidate_rank(state['best'],scene['objective']):
-                        state['best'] = candidate
-                        state.setdefault('firstFullSolutionSeconds',time.monotonic()-started)
-                        work.accepted(candidate)
-                        transition('incumbent',f,candidate=chosen['id'],objective=candidate['candidate']['objective'])
-                    # Save local refinements, but return to actual siblings first.
-                    if final_frame(f):
-                        deferred = bool(f['ready'] or not f['sourceExhausted'] or any(numerical_pending(r) for r in f['records']))
-                        if deferred:
-                            state['refinements'].append(f)
-                        close_frame(f,deferred=deferred)
-                    continue
                 window = dict(checkpoint=dict(tick=chosen['arrival']),goal=f['goal'],frame=f['id'],
                     candidates=copy.deepcopy(f['records']),retained=[r['id'] for r in options],
                     deferred=[candidate_key(p) for p in f['ready']],
@@ -1025,17 +1016,6 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
                 observed=support_episodes_for_child(chosen,f)
                 cursor=adapter.advance(f['semanticCursor'],chosen['child'],observed,f['goalRequest'])
                 frame(f['index']+1,[chosen['child']],parent=dict(frame=f['id'],candidate=chosen['id']),cursor=cursor)
-                continue
-            if f['ready']:
-                f['phase'] = 'score'
-                continue
-            pending = next((r for r in f['records'] if not r.get('refinementTimeExclusion') and not r.get('preparationDeferral') and numerical_pending(r) and
-                r.get('refinementSession')!=state['session']),None)
-            if pending is not None:
-                refine(f,pending)
-                continue
-            if not f['sourceExhausted']:
-                f['phase'] = 'generate'
                 continue
             if restore_alternatives(f):
                 transition('restore_node_alternative',f)
@@ -1079,6 +1059,11 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
             termination = 'numerical_unknown'
     except TimeoutError as error:
         termination = work.termination or str(error)
+        if termination not in ('cancelled','error'):
+            try:
+                confirm_at_budget_end()
+            except TimeoutError:
+                termination = 'cancelled'
     publish()
     if any(not d['exhausted'] for d in state['discovery'].values()) and termination=='exhausted':
         termination='discovery_work_limit'

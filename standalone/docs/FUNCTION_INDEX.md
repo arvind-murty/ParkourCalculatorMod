@@ -832,9 +832,8 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | --- | ---: | --- |
 | `side_outcome` | [25](../src/parkour_solver/search/dfs.py#L25) | function |
 | `candidate_key` | [32](../src/parkour_solver/search/dfs.py#L32) | function |
-| `decision_family` | [37](../src/parkour_solver/search/dfs.py#L37) | function |
-| `commit_arrival` | [48](../src/parkour_solver/search/dfs.py#L48) | function |
-| `search_goals` | [73](../src/parkour_solver/search/dfs.py#L73) | function |
+| `commit_arrival` | [37](../src/parkour_solver/search/dfs.py#L37) | function |
+| `search_goals` | [62](../src/parkour_solver/search/dfs.py#L62) | function |
 
 ## search/domain.py
 
@@ -891,13 +890,11 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `policy_spec` | [9](../src/parkour_solver/search/feasibility.py#L9) | function |
-| `node_identity` | [27](../src/parkour_solver/search/feasibility.py#L27) | function |
-| `outcome` | [34](../src/parkour_solver/search/feasibility.py#L34) | function |
-| `meaningful_choice` | [61](../src/parkour_solver/search/feasibility.py#L61) | function |
-| `solve_due` | [68](../src/parkour_solver/search/feasibility.py#L68) | function |
-| `unresolved_only` | [72](../src/parkour_solver/search/feasibility.py#L72) | function |
-| `restore_unknown_nodes` | [78](../src/parkour_solver/search/feasibility.py#L78) | function |
+| `policy_spec` | [10](../src/parkour_solver/search/feasibility.py#L10) | function |
+| `node_identity` | [28](../src/parkour_solver/search/feasibility.py#L28) | function |
+| `outcome` | [35](../src/parkour_solver/search/feasibility.py#L35) | function |
+| `meaningful_choice` | [64](../src/parkour_solver/search/feasibility.py#L64) | function |
+| `solve_due` | [71](../src/parkour_solver/search/feasibility.py#L71) | function |
 
 ## search/frontier.py
 

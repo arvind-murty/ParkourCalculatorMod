@@ -88,9 +88,8 @@ This replaces the earlier conversational categories3/4/5:
   become runnable again merely because we would like a better objective.
 
 Feasible witnesses, completed-query records and incumbents are stored results.
-They can coexist with ordinary pending work. Remove the conceptual special
-eligibility for `refinements`; migrate its remaining work into the ordinary
-scheduler while retaining all saved variants and its ownership. Physical repair
+They can coexist with ordinary pending work. A frame now finishes its queue before
+choosing, so the special `refinements` eligibility is gone. Physical repair
 queues can remain nested within an owning job; this is not a request to flatten
 all raw combinations into one giant queue or duplicate their prefixes.
 
@@ -143,7 +142,8 @@ Current implementation facts to fix deliberately:
 - `numerics/solver.solve` exposes `unknown` for several distinct cases, including
   a parent time limit and normal worker completion without a validated candidate.
 - `search/repair.solve_contact_branches` interprets a whitelist of worker statuses
-  as `oracleRejected`; other no-best results enter `unresolved`. The whitelist
+  as `oracleRejected`; other no-best results enter `unresolved`, which counts as
+  infeasible and is never retried (user, 2026-11-23). The whitelist
   currently includes `Solve_Succeeded` / `Solved_To_Acceptable_Level` even when no
   accepted candidate remains. Inspect rejected-candidate diagnostics before
   treating those as normal infeasibility; the fake-success regression already

@@ -21,7 +21,9 @@ everything not being worked on is in the [deferred-work register](DEFERRED_WORK.
   `post_alarm` (default `pipeline`; `ipopt` keeps the IPOPT confirmation), accepting only full-strength
   answers, and [frame-end re-solves](ANCHOR_SEARCH_EXECUTION_REFERENCE.md#numerical-backend-and-frame-end-re-solves)
   in place of the run-end finalization: every chosen witness is re-solved at full strength before the search
-  commits to it.
+  commits to it. Every frame examines its whole queue before it chooses, then chooses by ticks and objective, and
+  unknown outcomes are infeasible and logged, never retried
+  ([decision](DECISIONS_AND_PLANS.md)).
 - Merged as PR #4 (`feat/jvm-free-orchestrator`): search is JVM-free. The
   in-process Python movement bridge is the default and the Java bridge an explicit
   oracle ([evidence](../research/jvm-free-bridge/README.md)).

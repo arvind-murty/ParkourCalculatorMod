@@ -107,7 +107,7 @@ def search_event_routes(request, compiler, *, task_goal=None, discovery=None, an
         return search_goals(scene,counted,adapter,work,motion,
             cfg=dict(cfg,maxPrefixes=cfg['maxPrefixes']-expanded),
             accepted_program=accepted_program,program_filter=policy,roots=roots,
-            resume_state=state['dfs'],retry_unknown=options['retry_unknown'],deadline=deadline,started=started,
+            resume_state=state['dfs'],deadline=deadline,started=started,
             candidate_seconds=options['candidate_seconds'],
             score_seconds=options['seconds'],batch_size=options['max_candidates'],
             python_executable=options.get('python_executable'),cancel_event=options.get('cancel_event'),
@@ -158,7 +158,7 @@ def search_event_routes(request, compiler, *, task_goal=None, discovery=None, an
         termination=last['termination']
         if termination in ('error','cancelled'):
             break
-        active=bool(dfs['stack'] or dfs['goalQueue'] or dfs['refinements'])
+        active=bool(dfs['stack'] or dfs['goalQueue'])
         discoverable=any(not d['exhausted'] for d in dfs['discovery'].values()) and (
             used['expansions']<limits['maxGraphExpansions'] and used['materializations']<limits['maxGuideMaterializations'])
         if not active and not discoverable:
@@ -190,10 +190,12 @@ def search_event_routes(request, compiler, *, task_goal=None, discovery=None, an
             nodes=state['dfs']['nodeResults'],observations=summary(state['dfs']['observations']),
             runDeferrals=len(state['dfs']['minimumRunExclusions']),
             runRestorations=sum(r.get('restored',False) for r in state['dfs']['minimumRunExclusions']))
-        owners={f['id']:f for group in ('frames','stack','suspended','refinements','goalQueue')
+        owners={f['id']:f for group in ('frames','stack','suspended','goalQueue')
                 for f in state['dfs'].get(group,[])}
-        report['anchorSearch']['deferredNodes']=sum(len(f['generation'].get('continuation',{}).get('deferredNodes',[]))
-                                                   for f in owners.values())
+        # Unresolved branches are infeasible and never retried; each keeps its cause in its repairState.
+        report['anchorSearch']['unresolvedBranches']=sum(
+            len((p.get('repairState') or {}).get('unresolved',[])) for f in owners.values()
+            for p in [r['program'] for r in f['records']]+[n['program'] for n in f['generation'].get('continuation',{}).get('nodes',{}).values()])
         report['backend']='anchor_goals_v1'
         report['routeGeneration']['backend']='anchor_goals_v1'
     if options.get('on_progress'):options['on_progress'](state)

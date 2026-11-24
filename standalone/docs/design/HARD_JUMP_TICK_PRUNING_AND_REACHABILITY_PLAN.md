@@ -387,7 +387,7 @@ Save an explicit required-continuation failure as a pending recovery cause.
 Serve runnable first-class siblings before restoring deferred work. Once there
 is no runnable ordinary continuation in that owning context, restore one eligible
 deferred alternative in the common priority order; attach the exact failed
-candidate/frame/model. Parked unknown alternatives stay preserved.
+candidate/frame/model. Unresolved alternatives are infeasible and stay logged.
 Exhaustion of physically checked alternatives can request a preparation change
 without labelling the feasible ancestor numerically infeasible. Unknown-only,
 budget interruption and heuristic deferral alone do not trigger recovery.

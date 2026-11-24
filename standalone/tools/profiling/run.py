@@ -32,7 +32,7 @@ from parkour_solver.io.reports import save
 
 def witnesses(state):
     seen = set()
-    for group in ('frames','stack','suspended','refinements','goalQueue'):
+    for group in ('frames','stack','suspended','goalQueue'):
         for frame in state['dfs'].get(group,[]):
             for record in frame['records']:
                 best = record.get('witness')
@@ -173,7 +173,7 @@ def main():
             termination=result['termination'],stop=stop,
             runDeferrals=len(deferrals),
             runRestorations=sum(bool(v.get('restored')) for v in deferrals),
-            deferredNodes=result.get('anchorSearch',{}).get('deferredNodes',0),
+            unresolvedBranches=result.get('anchorSearch',{}).get('unresolvedBranches',0),
             comparisonWork=dfs.get('comparisonWork',{}),interactionMetrics=result.get('interactionGate',{}).get('metrics',{}),
             relaxationChecks=result.get('interactionGate',{}).get('relaxation',{}),
             transferTimeBounds=dfs.get('transferTimeBounds',{}),

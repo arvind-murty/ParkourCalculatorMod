@@ -176,7 +176,7 @@ Preserve plain/gzip JSON, exact constraints, source hashes, command/settings, wa
 
 ## DFS reports
 
-`result.searchState` contains `stack`, archived `frames`, `suspended`, deferred `refinements`, ordered `transitions`, `initialRoots`, cumulative calls and the incumbent. Frames name their shared spatial goal and retain parents, a symbolic generator/cursor, unscored `ready` programs, scored `records` and `inFlight`. A frame may be archived as history, but has only one execution owner among active/suspended/refinement queues. Reports' old `windows` fields are selected-goal diagnostics, not breadth barriers.
+`result.searchState` contains `stack`, archived `frames`, `suspended`, ordered `transitions`, `initialRoots`, cumulative calls and the incumbent. Frames name their shared spatial goal and retain parents, a symbolic generator/cursor, unscored `ready` programs, scored `records` and `inFlight`. A frame may be archived as history, but has only one execution owner among active/suspended/refinement queues. Reports' old `windows` fields are selected-goal diagnostics, not breadth barriers.
 
 Record `arrival` is a validated goal time. `value` is that program's local objective, not an arrival lower bound. `child` is the actual committed discrete program. A parent's current best child can improve during refinement; the descended frame's saved `parents` is the authoritative program used for that descent. `variantOf` records inherit numerical provenance but do not own additional worker calls; don't sum their copied logs again.
 

@@ -41,7 +41,7 @@ class AnchorSearchTests(unittest.TestCase):
         from parkour_solver.search.frontier import restore_alternatives
         def node(name):return dict(decisionNode=name)
         def fresh(**fields):
-            state=dict(pending=[],ready=[],expansion=None,deferredNodes=[],nodeInFlight=None,succeededNodes=[],
+            state=dict(pending=[],ready=[],expansion=None,nodeInFlight=None,succeededNodes=[],
                 decisionParents={'N':'P','c':'N','g':'c','a0':'P','a1':'P','x':'a0'},
                 alternatives={'N':dict(programs=[node('a0'),node('a1')],restored=[],next=0)})
             state.update(fields)
@@ -68,7 +68,7 @@ class AnchorSearchTests(unittest.TestCase):
         from parkour_solver.search.frontier import restore_alternatives
         def node(name):return dict(decisionNode=name)
         def fresh(**fields):
-            state=dict(pending=[],ready=[],expansion=None,deferredNodes=[],nodeInFlight=None,succeededNodes=[],
+            state=dict(pending=[],ready=[],expansion=None,nodeInFlight=None,succeededNodes=[],
                 decisionParents={'R':'P','o1':'P','o2':'P','c':'o2'},
                 alternatives={'R':dict(programs=[node('R')],restored=[],next=0,watch=['o1','o2'])})
             state.update(fields)
@@ -144,39 +144,18 @@ class AnchorSearchTests(unittest.TestCase):
         self.assertTrue(programs,'Rejected local-hop child swallowed the direct goal sibling')
         self.assertNotIn('status',report['continuation']['pending'][0] if report['continuation']['pending'] else {})
 
-    def test_unresolved_node_is_parked_without_blocking_or_retried_on_implicit_resume(self):
-        report={};queried=[]
-        def evaluate(p,nodes,forced):
-            queried.append(p['decisionNode'])
-            p['repairState']=dict(unresolved=[dict(branch='unknown')],pending=[],inFlight=None,
-                                  constraintGeneration=dict(exhausted=True))
-            return dict(status='suspended',program=p,deferUnknown=True)
-        source=self.frontier(evaluate,report=report,limit=4)
-        try:programs=list(source)
-        finally:source.close()
-        self.assertTrue(programs,'Unknown source hop blocked the direct goal sibling')
-        saved=json.loads(json.dumps(report['continuation']))
-        retained={p['decisionNode'] for p in saved['deferredNodes']}
-        self.assertTrue(retained)
-        self.assertIsNone(saved.get('nodeInFlight'))
-        before=len(queried)
-        resumed=self.frontier(evaluate,report={},continuation=saved,limit=4)
-        try:list(resumed)
-        finally:resumed.close()
-        self.assertFalse(retained.intersection(queried[before:]))
-
-    def test_unknown_retry_is_explicit_and_preserves_the_exact_node(self):
-        from parkour_solver.search.feasibility import restore_unknown_nodes, unresolved_only
-        node=dict(decisionNode='exact-child',decisionParent='actual-parent',repairState=dict(unresolved=[1]))
-        source=dict(pending=[],deferredNodes=[node],exhausted=True)
-        self.assertFalse(restore_unknown_nodes(source,False))
-        self.assertEqual(source['deferredNodes'],[node])
-        self.assertTrue(restore_unknown_nodes(source,True))
-        self.assertIs(source['pending'][0],node)
-        self.assertFalse(source['exhausted'])
-        self.assertTrue(unresolved_only(dict(unresolved=[1],pending=[],inFlight=None)))
-        self.assertFalse(unresolved_only(dict(unresolved=[1],pending=[dict(next='work')])))
-        self.assertFalse(unresolved_only(dict(unresolved=[1],constraintGeneration=dict(exhausted=False))))
+    def test_an_unresolved_branch_is_an_infeasible_completion(self):
+        from parkour_solver.search.feasibility import outcome, policy_spec
+        from parkour_solver.search.repair_state import branch_key
+        policy=policy_spec(dict(oracleRejection=True))
+        unknown=dict(rows=[],passages=[],hits=[],cause='uncertain_interactions')
+        rejected=dict(branch='another branch',oracleRejected=True)
+        repair=dict(unresolved=[unknown],completed=[dict(branch=branch_key([],[],[]),oracleRejected=False),rejected],pending=[],
+                    constraintGeneration=dict(exhausted=True))
+        self.assertEqual(outcome(dict(repairState=repair),'m',policy)['status'],'oracle_rejected')
+        self.assertEqual(outcome(dict(repairState=dict(repair,completed=[])),'m',policy)['status'],'oracle_rejected')
+        # A branch with other runnable work left is not decided yet.
+        self.assertEqual(outcome(dict(repairState=dict(repair,pending=[dict(next='work')])),'m',policy)['status'],'suspended')
 
     def test_learned_latch_and_resume_keep_source_setup_hops_in_the_actual_source(self):
         report={};latched=False;calls=[]
@@ -987,8 +966,6 @@ class SideVariantFrontierTests(unittest.TestCase):
                 # The tag carries the forward's own keep-outside row, shifted onto the child's take-off.
                 self.assertIn(tag['row'], [r for r in p['profile']['positionConstraints'] if r['t1'] == 1])
                 forwards.append(program)
-            if status == 'deferUnknown':
-                return dict(status='suspended', program=program, deferUnknown=True)
             if status not in ('slack', 'tight'):
                 return dict(status=status, program=program)
             held = [dict(program, decisionNode=digest([p['decisionNode'], 'alternative', 0]), alternativeOf=p['decisionNode'],
@@ -1037,7 +1014,7 @@ class SideVariantFrontierTests(unittest.TestCase):
         self.assertEqual(state['sideReserves'], [])
 
     def test_a_tight_failed_or_dropped_forward_promotes_its_sides(self):
-        for outcome in ('tight', 'oracle_rejected', 'exhausted', 'deferUnknown'):
+        for outcome in ('tight', 'oracle_rejected', 'exhausted'):
             log, state, _ = self.frontier('corridor-long', {'Z-': outcome}, live=True)
             self.assertEqual((log[0], sorted(log[1:]), self.held(state)), ('Z-', ['X+', 'X-'], []), outcome)
             outcomes = {o for r in state['sideVariants'] for o in r['outcomes'].values()}
@@ -1109,14 +1086,12 @@ class SideVariantFrontierTests(unittest.TestCase):
         def state(**fields):
             # Decision P kept a forward and its side after k run ticks and reserved run count k + 1 ('run'); the side
             # was then held behind the slack forward ('held').
-            return dict(dict(pending=[], ready=[], expansion=None, deferredNodes=[], succeededNodes=[], sideReserves=[],
+            return dict(dict(pending=[], ready=[], expansion=None, succeededNodes=[], sideReserves=[],
                              decisionParents=dict(forward='P', side='P', run='P', child='forward'),
                              alternatives=dict(run=dict(programs=[program('run', 'P')], restored=[], next=0, watch=['forward', 'side']),
                                                held=dict(programs=[program('side', 'P')], restored=[], next=0, watch=['forward'],
                                                          side=['forward']))), **fields)
         self.assertFalse(restore_alternatives(state(pending=[program('child', 'forward')])))
-        # A deferred node below the forward keeps its branch alive.
-        self.assertFalse(restore_alternatives(state(deferredNodes=[program('child', 'forward')])))
         # The forward's branch died: the side is restored and the reserve waits for it, then for its branch.
         s = state()
         self.assertTrue(restore_alternatives(s))

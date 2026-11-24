@@ -30,7 +30,7 @@ def extend(s,parent,target,n,extra=False):
 class AnchorDFSTests(unittest.TestCase):
     def run_tree(self, *, logging=True, resume=None, calls=20, interval=1, setup=False, seconds=3,
                  on_progress=None,cancel_event=None,requests_per_evaluation=1,advance=None,node_probe=None,node_best=None,
-                 finishes=1,relaxed=False,final=None,leg_best=None,goal=None,goal_choices=None,generated=None,compiler=None,
+                 finishes=1,relaxed=False,final=None,leg_best=None,goal=None,goal_choices=None,mid_choices=None,generated=None,compiler=None,
                  extra=(),**settings):
         s=scene(goal,extra) if goal else scene(extra=extra);s['maxTotalRunTicks']=60;s['maxRunTicksPerJump']=60;dispatched=[]
         def generate(target_scene,*,report,initial_programs,continuation=None,node_evaluator,**kwargs):
@@ -38,7 +38,9 @@ class AnchorDFSTests(unittest.TestCase):
             report['continuation']=saved
             if generated is not None:generated.append((initial_programs,kwargs))
             parent=initial_programs[0];target=target_scene['goalBlock']
-            if target=='mid':
+            if target=='mid' and mid_choices is not None:
+                choices=mid_choices(s,parent)
+            elif target=='mid':
                 choices=[extend(s,parent,'mid',10),extend(s,parent,'mid',11)]
                 if setup:
                     prepared=extend(s,parent,'mid',11)
@@ -172,11 +174,12 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertEqual((fit['face'],fit['room']),('pad+rest',max(r[2] for r in top.regions)-2.5))
 
     def test_anchor_search_uses_run_budget_across_routes_and_constraint_requests(self):
+        # A frame scores its whole queue (both mid arrivals) before it descends.
         clock=[100.]
         def advance():clock[0]+=.05
         with patch('time.monotonic',side_effect=lambda:clock[0]):
             result,calls=self.run_tree(calls=100,seconds=100,requests_per_evaluation=30,advance=advance)
-        self.assertEqual([(b,t) for b,t,_ in calls],[('mid',10),('goal',20),('mid',11)])
+        self.assertEqual([(b,t) for b,t,_ in calls],[('mid',10),('mid',11),('goal',20)])
         self.assertEqual(result['work']['solverCalls'],90)
         allocations=result['searchState']['allocations']
         self.assertEqual(len(allocations),1)
@@ -191,12 +194,12 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertEqual(first['termination'],'deadline')
         self.assertEqual([(b,t) for b,t,_ in calls1],[('mid',10)])
         second,calls2=self.run_tree(resume=json.loads(json.dumps(first['searchState'])))
-        self.assertEqual([(b,t) for b,t,_ in calls1+calls2],[('mid',10),('goal',20),('mid',11)])
+        self.assertEqual([(b,t) for b,t,_ in calls1+calls2],[('mid',10),('mid',11),('goal',20)])
         self.assertEqual(second['best']['plan']['ticks'],20)
 
     def test_global_latch_survives_abandoned_certifier_and_changed_incoming_prefix(self):
         result,calls=self.run_tree()
-        self.assertEqual([(b,t) for b,t,_ in calls],[('mid',10),('goal',20),('mid',11)])
+        self.assertEqual([(b,t) for b,t,_ in calls],[('mid',10),('mid',11),('goal',20)])
         dfs=result['searchState']['dfs']
         self.assertIn('mid→goal',dfs['hardLatches'])
         self.assertIn('start→mid',dfs['hardLatches'])
@@ -216,14 +219,14 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertTrue(all(p['purpose']=='terminal' and not p['stopOnFeasible'] for b,t,p in on_calls if b=='goal'))
 
     def test_latch_resume_keeps_exact_parent_and_does_not_repeat_scored_nodes(self):
-        first,calls1=self.run_tree(calls=2)
+        first,calls1=self.run_tree(calls=3)
         saved=json.loads(json.dumps(first['searchState']))
         second,calls2=self.run_tree(resume=saved)
-        self.assertEqual([(b,t) for b,t,_ in calls1+calls2],[('mid',10),('goal',20),('mid',11)])
+        self.assertEqual([(b,t) for b,t,_ in calls1+calls2],[('mid',10),('mid',11),('goal',20)])
         self.assertEqual(first['searchState']['dfs']['hardLatches'],second['searchState']['dfs']['hardLatches'])
 
     def test_resume_keeps_nested_incumbent_even_without_time_for_a_service_slice(self):
-        first,_=self.run_tree(calls=2)
+        first,_=self.run_tree(calls=3)
         saved=json.loads(json.dumps(first['searchState']))
         saved['best']=None  # A callback may publish DFS before the allocator catches up.
         result,calls=self.run_tree(resume=saved,seconds=1e-6)
@@ -232,7 +235,8 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertIsNone(saved['best'])
 
     def queued_tree(self, refinement=False):
-        first,_=self.run_tree(calls=2)
+        # Three calls score both mid arrivals and the 20-tick finish: an incumbent, then the budget ends.
+        first,_=self.run_tree(calls=3)
         saved=json.loads(json.dumps(first['searchState']))
         root=saved['dfs']['stack'][0]
         template=root['records'][0]
@@ -240,7 +244,7 @@ class AnchorDFSTests(unittest.TestCase):
             p=extend(scene(),history(scene(),[]),'mid',n)
             record=copy.deepcopy(template)
             record.update(id='queued-'+str(n),program=p,child=copy.deepcopy(p),arrival=n,ticks=n,tried=False,
-                witness=dict(plan=dict(ticks=n,walls=[]),allocation=[0],cost=0,
+                witness=dict(plan=dict(ticks=n,walls=[]),allocation=[0],cost=0,route=dict(source='relaxed',objective=dict(axis='X',sense='MAX')),
                     candidate=dict(yaw=[0.]*n,positions=[[.5,.5]]*(n+1),velocity=[[0.,0.]]*(n+1),objective=0.)))
             if refinement:
                 record.pop('witness')
@@ -461,7 +465,7 @@ class AnchorDFSTests(unittest.TestCase):
                       (reject_all or p['profile']['jump'][12]))
             best=None if rejected else dict(plan=dict(ticks=n,walls=p['profile']['positionConstraints']),
                 candidate=dict(yaw=[0.]*n,positions=[[.5,.5]]*(n+1),velocity=[[0.,0.]]*(n+1),objective=0.),
-                allocation=[0],cost=0,route=dict(source='stub'))
+                allocation=[0],cost=0,route=dict(source='stub',objective=dict(axis='X',sense='MAX')))
             repair=dict(pending=[],unresolved=[],constraintGeneration=dict(exhausted=True))
             if fallbacks and p['terminalSupport']=='goal':
                 alternatives=[dict(branch=f'{n}:{i}',best=dict(copy.deepcopy(best),plan=dict(ticks=n,walls=list(best['plan']['walls'])+
@@ -530,6 +534,38 @@ class AnchorDFSTests(unittest.TestCase):
         goal=next(programs[0] for programs,_ in generated if programs[0]['terminalSupport']=='mid')
         self.assertEqual(goal['decisionPoint'],[.5,.7])
         self.assertEqual(goal['guideSeedYaw'],[1.]*goal['profile']['duration'])
+
+    def sneaking(self, s, parent, block, ticks, sneaks):
+        # Equally timed arrivals; the stub's objective is -1 per sneak input.
+        p=extend(s,parent,block,ticks)
+        for t in sneaks:p['profile']['sneak'][t]=True
+        return p
+
+    def test_every_frame_scores_its_whole_queue_then_takes_fewest_ticks_then_best_objective(self):
+        generated=[]
+        result,calls=self.run_tree(generated=generated,
+            mid_choices=lambda s,parent:[self.sneaking(s,parent,'mid',10,[0]),self.sneaking(s,parent,'mid',10,[])])
+        self.assertEqual([(b,t) for b,t,_ in calls][:2],[('mid',10),('mid',10)])
+        first=next(programs[0] for programs,_ in generated if programs[0]['terminalSupport']=='mid')
+        self.assertFalse(any(first['profile']['sneak']))
+
+    def test_a_final_frame_tries_its_next_finish_while_it_can_beat_the_incumbent(self):
+        calls=[]
+        def final(p,kwargs,best):
+            calls.append((p['terminalSupport'],sum(p['profile']['sneak'])))
+            # The best relaxed finish confirms below the next one's relaxed value.
+            return self.physical(p,-2.) if p['terminalSupport']=='goal' and not any(p['profile']['sneak']) else best
+        result,_=self.run_tree(relaxed=True,final=final,
+            goal_choices=lambda s,parent:[self.sneaking(s,parent,'goal',20,[]),self.sneaking(s,parent,'goal',20,[0])])
+        self.assertEqual([c for c in calls if c[0]=='goal'][:2],[('goal',0),('goal',1)])
+        self.assertEqual(result['best']['candidate']['objective'],-1.)
+
+    def test_the_budget_end_confirms_the_best_scored_finish(self):
+        # Three calls score both mid arrivals and one of the two finishes; the other is never scored.
+        result,_=self.run_tree(relaxed=True,calls=3,final=lambda p,kwargs,best:self.physical(p,-2.) if p['terminalSupport']=='goal' else best,
+            goal_choices=lambda s,parent:[self.sneaking(s,parent,'goal',20,[]),self.sneaking(s,parent,'goal',20,[0])])
+        self.assertEqual((result['termination'],result['best']['candidate']['objective']),('numerical_call_limit',-2.))
+        self.assertEqual(self.frame_ends(result)[-1],('frame_end_confirmed',1))
 
     def test_a_rejected_finish_falls_back_to_the_frames_next_one(self):
         result,_=self.run_tree(relaxed=True,finishes=2,final=lambda p,kwargs,best:(

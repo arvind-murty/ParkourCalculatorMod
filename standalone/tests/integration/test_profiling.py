@@ -179,7 +179,7 @@ class BookkeepingProfileTests(unittest.TestCase):
                         program=dict(repairState=dict(attemptLog=[dict(problemHash=h) for h in attempts],
                                                       unresolved=list(unresolved), pending=[])))
         rejected = dict(id=1, goal=dict(block='b3'), generation={}, records=[record('a','unknown','oracle_rejected',['h1'])])
-        finish = dict(id=4, goal=dict(block='b7'), generation=dict(continuation=dict(deferredNodes=[])),
+        finish = dict(id=4, goal=dict(block='b7'), generation=dict(continuation=dict()),
                       records=[record('b','feasible','feasible',['h2','h3'],[dict(score=-1.)])])
         stale = dict(finish, records=[record('b','feasible','feasible',['h2'])])
         state = dict(dfs=dict(frames=[rejected, stale], stack=[], suspended=[finish]))
@@ -192,7 +192,7 @@ class BookkeepingProfileTests(unittest.TestCase):
             request['owners'] = owners.get(request['fingerprint'], [])
         report = stop_report(state, requests)
         self.assertEqual(report['suspendedFrames'], [dict(frame=4, goal='b7', records=1, unresolvedBranches=1,
-                                                          pendingBranches=0, deferredNodes=0)])
+                                                          pendingBranches=0)])
         self.assertEqual([r['record'] for r in report['oracleRejectedRoutes']], ['a'])
         self.assertEqual([(r['index'], [o['record'] for o in r['owners']]) for r in report['unknownRequests']],
                          [(1, ['a']), (2, ['b']), (4, [])])

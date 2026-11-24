@@ -60,7 +60,7 @@ def segment_solids(scene, program, profile, through, gate):
 
 def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, seconds=3, candidate_seconds=1,
                      python_executable=None, cancel_event=None, required_landing=None, scope=None, on_progress=None,
-                     retry_unresolved=True, first_witness=False, guide_objective=None, solve_policy=None,
+                     first_witness=False, guide_objective=None, solve_policy=None,
                      climb_families=False, final_route=None):
     timings={}
     marked=time.monotonic()
@@ -157,7 +157,7 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, s
         candidate_filter=candidate_filter, work=scoped, resume_state=program.get('repairState'),
         repair_scope=dict(solveIdentity=identity, scope=scope, solvePolicy=policy, assemblyVersion=14),
         validation_scope=scope, initial_variants=variants if final_route is None else None, on_progress=on_progress,
-        retry_unresolved=retry_unresolved, numerical=numerical, confirm=confirm)
+        numerical=numerical, confirm=confirm)
     mark('physicalSearchAndValidation')
     diagnostics=[d for a in result.get('attempts',[]) for d in a.get('diagnostics',[])]
     parent_work=work
@@ -203,7 +203,7 @@ def numerical_counts(diagnostics):
 
 def find_checkpoint_route(request, compiler, *, seconds=30, candidate_seconds=1, max_solver_calls=128,
                           max_candidates=24, python_executable=None, cancel_event=None, initial_programs=None,
-                          program_filter=None, resume_state=None, on_progress=None, retry_unknown=False,
+                          program_filter=None, resume_state=None, on_progress=None,
                           minimum_run_pruning=True, task_goal=None, discovery_settings=None, anchor_search=None,
                           post_alarm='pipeline'):
     """Anchor search for a physical landing task over the scene's automatically discovered contact events.
@@ -239,7 +239,7 @@ def find_checkpoint_route(request, compiler, *, seconds=30, candidate_seconds=1,
             anchor_search=anchor_search, seconds=seconds, candidate_seconds=candidate_seconds,
             max_solver_calls=max_solver_calls, max_candidates=max_candidates, python_executable=python_executable,
             cancel_event=cancel_event, initial_programs=initial_programs, program_filter=program_filter,
-            resume_state=resume_state, on_progress=on_progress, retry_unknown=retry_unknown,
+            resume_state=resume_state, on_progress=on_progress,
             minimum_run_pruning=minimum_run_pruning, post_alarm=post_alarm)
     except TimeoutError as error:
         return unfinished(str(error))

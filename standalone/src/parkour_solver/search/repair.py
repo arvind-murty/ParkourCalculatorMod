@@ -68,7 +68,7 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                            python_executable=None, cancel_event=None, geometry=None, motion_bound=None,
                            solid_blocks=None, max_wall_hits=0,
                            max_wall_candidates=24, candidate_filter=None, work=None, resume_state=None, repair_scope=None,
-                           on_progress=None, validation_scope=None, initial_variants=None, retry_unresolved=True,
+                           on_progress=None, validation_scope=None, initial_variants=None,
                            stop_on_feasible=None, oracle_rejection=False, climb_families=False, numerical=None,
                            confirm=None):
     """`confirm`: with `rank_equal_cost`, the numerical callable that confirms an alarmed relaxed point
@@ -212,9 +212,9 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                 for member in family['points'].values():
                     member['pending'] = 0
         pending = resume_state.get('pending', [])
-        deferred = (resume_state.get('unresolved', []) if retry_unresolved else [])+([resume_state['inFlight']] if resume_state.get('inFlight') else [])
-        if not retry_unresolved:
-            unresolved.extend(copy.deepcopy(resume_state.get('unresolved', [])))
+        deferred = [resume_state['inFlight']] if resume_state.get('inFlight') else []
+        # Unresolved branches are infeasible: a log, never retried (user, 2026-11-23).
+        unresolved.extend(copy.deepcopy(resume_state.get('unresolved', [])))
         floor = max([b['score'] for b in pending]+[0.])+1
         # An accepted branch left in flight is an unfinished walk's candidate: keep its result, re-walk.
         restored = {v['branch'] for v in resume_state.get('acceptedVariants', [])} if exact_resume else set()
@@ -232,9 +232,11 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
         if initial_variants is None:
             offer(min([b[0] for b in queue]+[0.])-1, [], route.get('passages', []), route.get('hitEvents', []), route.get('warmYaw'))
 
-    def save_branch(score, rows, passages, hits, warm_yaw, meta=None):
+    def save_branch(score, rows, passages, hits, warm_yaw, meta=None, cause=None):
+        # `cause` logs why an unresolved branch ended without a verdict.
         return copy.deepcopy(dict(score=score, rows=rows, passages=passages, hits=hits, warmYaw=warm_yaw,
-                                  **(dict(meta=meta) if meta is not None else {})))
+                                  **(dict(meta=meta) if meta is not None else {}),
+                                  **(dict(cause=cause) if cause is not None else {})))
 
     def fallbacks():
         if best_result is None or best_branch is None:
@@ -271,8 +273,9 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
 
     def finish(result):
         nonlocal in_flight
-        # An unfinished walk's next candidate stays in flight: the check is unfinished and a resume re-walks.
-        in_flight = walking
+        # An unfinished walk's next candidate stays in flight: the check is unfinished and a resume re-walks. A branch a
+        # cancellation or geometry deadline cut stays in flight too, so a resume repeats it.
+        in_flight = walking or interrupted
         result['repairState'] = state = snapshot()
         metrics = completed_source_metrics.copy()
         metrics.update(getattr(variant_source, 'state', {}).get('metrics', {}))
@@ -289,7 +292,7 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
     best_branch = copy.deepcopy(resume_state.get('incumbent')) if exact_resume else None
     completed = copy.deepcopy(resume_state.get('completed', [])) if exact_resume else []
     accepted_variants = copy.deepcopy(resume_state.get('acceptedVariants', [])) if exact_resume else []
-    in_flight = walking = None
+    in_flight = walking = interrupted = None
     if best_result is not None:
         saved = best_result['best']
         valid = validate_vertical_schedule(route, profiles, saved['plan'])
@@ -524,7 +527,8 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                 completed_source_metrics.update(record.get('state', {}).get('metrics', {}))
                 if record.get('state', {}).get('uncertainInteractions'):
                     unknown = save_branch(record['score'], record['rows'], record['passages'],
-                                          record['hits'], record['candidate']['yaw'], record.get('meta'))
+                                          record['hits'], record['candidate']['yaw'], record.get('meta'),
+                                          cause='uncertain_interactions')
                     key = branch_key(unknown['rows'], unknown['passages'], unknown['hits'])
                     if not any(branch_key(b['rows'], b['passages'], b['hits']) == key for b in unresolved):
                         unresolved.append(unknown)
@@ -653,11 +657,12 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
             if checked is not None:
                 completion['validationStatus'] = 'accepted' if checked.get('accepted') else checked.get('reason','rejected')
         except TimeoutError:
-            unresolved.append(save_branch(score, rows, passages, hits, proposal_yaw, meta))
+            interrupted = in_flight
+            completed.pop()
             termination = 'geometry_deadline'
             break
         except (ValueError, RuntimeError, OSError) as error:
-            unresolved.append(save_branch(score, rows, passages, hits, proposal_yaw, meta))
+            unresolved.append(save_branch(score, rows, passages, hits, proposal_yaw, meta, cause='geometry_error'))
             if best_result is not None:
                 best_result.update(termination='geometry_error', error=str(error),
                                    attempts=inner_attempts, contactAttempts=attempts)
@@ -673,7 +678,11 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                          'conflicts': [{'block': c['block']['id'], 'state': c['state'], 'reason': c['reason']}
                                        for c in conflicts], 'termination': result['termination']})
         if result['status'] in ('error', 'cancelled'):
-            unresolved.append(save_branch(score, rows, passages, hits, proposal_yaw, meta))
+            if result['status'] == 'cancelled':
+                interrupted = in_flight
+                completed.pop()
+            else:
+                unresolved.append(save_branch(score, rows, passages, hits, proposal_yaw, meta, cause='solver_error'))
             if best_result is not None:
                 best_result.update(termination=result['status'], attempts=inner_attempts, contactAttempts=attempts)
                 return finish(best_result)
@@ -694,7 +703,13 @@ def solve_contact_branches(route, profiles, checks, compiler, *, seconds, candid
                 for d in diagnostics)
             completion.update(oracleRejected=bool(oracle_completed), proven=proven, certificates=certificates)
             if result['status'] == 'unknown' and not oracle_completed and not proven:
-                unresolved.append(save_branch(score, rows, passages, hits, proposal_yaw, meta))
+                if time.monotonic() >= deadline:
+                    # The deadline cut this solve: the branch stays in flight and a resume repeats it.
+                    interrupted = in_flight
+                    completed.pop()
+                    termination = 'deadline'
+                    break
+                unresolved.append(save_branch(score, rows, passages, hits, proposal_yaw, meta, cause=result['termination']))
             continue
         if not conflicts:
             if 'verdict' in checked and candidate_filter is not None:

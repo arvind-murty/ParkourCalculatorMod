@@ -90,7 +90,7 @@ class GlobalBudgetTests(unittest.TestCase):
             with patch('parkour_solver.search.repair.find_route', side_effect=solve):
                 return solve_contact_branches(route(), [], [], object(), seconds=30, candidate_seconds=.1,
                     retries=0, initial_variants=variants, work=work, resume_state=state,
-                    oracle_rejection=True, retry_unresolved=False)
+                    oracle_rejection=True)
         first = invoke(generated, 140)
         self.assertEqual(len(requests), 140)
         self.assertEqual(first['termination'], 'numerical_call_limit')
