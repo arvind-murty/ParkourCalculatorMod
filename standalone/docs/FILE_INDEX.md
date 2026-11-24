@@ -2230,7 +2230,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/integration/test_acceptance.py](../tests/integration/test_acceptance.py) | 1849 |
 | [tests/integration/test_block_route_witnesses.py](../tests/integration/test_block_route_witnesses.py) | 10461 |
 | [tests/integration/test_full_route_witness.py](../tests/integration/test_full_route_witness.py) | 1854 |
-| [tests/integration/test_generic_composition.py](../tests/integration/test_generic_composition.py) | 18888 |
+| [tests/integration/test_generic_composition.py](../tests/integration/test_generic_composition.py) | 18852 |
 | [tests/integration/test_geometry_bounds.py](../tests/integration/test_geometry_bounds.py) | 4077 |
 | [tests/integration/test_integration.py](../tests/integration/test_integration.py) | 10053 |
 | [tests/integration/test_movement_contacts.py](../tests/integration/test_movement_contacts.py) | 11263 |
