@@ -1149,8 +1149,8 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | Symbol | Line | Kind |
 | --- | ---: | --- |
 | `replay_witness` | [10](../src/parkour_solver/validation/witness.py#L10) | function |
-| `witnesses` | [49](../src/parkour_solver/validation/witness.py#L49) | function |
-| `full_witness` | [59](../src/parkour_solver/validation/witness.py#L59) | function |
+| `witnesses` | [52](../src/parkour_solver/validation/witness.py#L52) | function |
+| `full_witness` | [62](../src/parkour_solver/validation/witness.py#L62) | function |
 
 ## work.py
 

@@ -775,6 +775,20 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.search(work_only=1)
 
+    def test_a_work_only_replay_does_not_read_the_clock(self):
+        from parkour_solver.bridge.python_compiler import PythonCompiler
+        from parkour_solver.scene.normalize import prepare_scene
+        from parkour_solver.validation.witness import replay_witness
+        from parkour_solver.work import work_only
+        _, result, _ = self.search(work_only=True)
+        scene = prepare_scene(result['effectiveRequest'])
+        clock = itertools.count(0., 1000.)
+        with PythonCompiler() as compiler, patch('time.monotonic', lambda: next(clock)):
+            with self.assertRaises(TimeoutError):  # the replay's own compile budget
+                replay_witness(scene, result['best'], compiler)
+            with work_only(True):
+                self.assertTrue(replay_witness(scene, result['best'], compiler)['passed'])
+
     @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # records engine.solve_contact_branches, which a native leg solve never calls
     def test_search_runs_on_the_relaxation_and_publishes_frame_end_answers(self):
         from parkour_solver.bridge.python_compiler import PythonCompiler

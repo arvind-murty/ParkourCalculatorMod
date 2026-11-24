@@ -61,11 +61,11 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/CHECKPOINT_STORAGE.md](CHECKPOINT_STORAGE.md) | 9808 |
 | [docs/CODE_MAP.md](CODE_MAP.md) | 42910 |
 | [docs/CURRENT_STATE.md](CURRENT_STATE.md) | 13681 |
-| [docs/DECISIONS_AND_PLANS.md](DECISIONS_AND_PLANS.md) | 26431 |
+| [docs/DECISIONS_AND_PLANS.md](DECISIONS_AND_PLANS.md) | 26489 |
 | [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 36552 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11512 |
 | [docs/DOC_INDEX.md](DOC_INDEX.md) | 29236 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 310256 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 310803 |
 | [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 69040 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
@@ -75,8 +75,8 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/REAL11_EXTENDED_GEOMETRY.md](REAL11_EXTENDED_GEOMETRY.md) | 12104 |
 | [docs/REAL11_GUIDE.md](REAL11_GUIDE.md) | 20426 |
 | [docs/RESULTS_AND_DEBUGGING.md](RESULTS_AND_DEBUGGING.md) | 19344 |
-| [docs/RUNBOOK.md](RUNBOOK.md) | 21563 |
-| [docs/TESTING.md](TESTING.md) | 23068 |
+| [docs/RUNBOOK.md](RUNBOOK.md) | 21621 |
+| [docs/TESTING.md](TESTING.md) | 23346 |
 | [docs/design/ANCHOR_POLICY_DECISIONS.md](design/ANCHOR_POLICY_DECISIONS.md) | 47419 |
 | [docs/design/AVOIDANCE_PASSAGES.md](design/AVOIDANCE_PASSAGES.md) | 21679 |
 | [docs/design/BRANCH_SCHEDULING_INVESTIGATION.md](design/BRANCH_SCHEDULING_INVESTIGATION.md) | 34070 |
@@ -256,7 +256,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/src/screen.cpp](../native/cpp/src/screen.cpp) | 8465 |
 | [native/cpp/src/search/anchors/adapter.cpp](../native/cpp/src/search/anchors/adapter.cpp) | 13616 |
 | [native/cpp/src/search/anchors/policy.cpp](../native/cpp/src/search/anchors/policy.cpp) | 37738 |
-| [native/cpp/src/search/application.cpp](../native/cpp/src/search/application.cpp) | 90062 |
+| [native/cpp/src/search/application.cpp](../native/cpp/src/search/application.cpp) | 90317 |
 | [native/cpp/src/search/bounds/remaining.cpp](../native/cpp/src/search/bounds/remaining.cpp) | 8052 |
 | [native/cpp/src/search/comparison.cpp](../native/cpp/src/search/comparison.cpp) | 8960 |
 | [native/cpp/src/search/dfs.cpp](../native/cpp/src/search/dfs.cpp) | 20102 |
@@ -1728,9 +1728,11 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/native-core/2026-11-24-work-only/caps-fixed.json](../research/native-core/2026-11-24-work-only/caps-fixed.json) | 529 |
 | [research/native-core/2026-11-24-work-only/caps-short.json](../research/native-core/2026-11-24-work-only/caps-short.json) | 416 |
 | [research/native-core/2026-11-24-work-only/evidence.txt](../research/native-core/2026-11-24-work-only/evidence.txt) | 2552 |
+| [research/native-core/2026-11-24-work-only/gate-native-mode-replay-report.json](../research/native-core/2026-11-24-work-only/gate-native-mode-replay-report.json) | 15919 |
 | [research/native-core/2026-11-24-work-only/gate-native-mode-report.json](../research/native-core/2026-11-24-work-only/gate-native-mode-report.json) | 15919 |
+| [research/native-core/2026-11-24-work-only/gate-python-mode-replay-report.json](../research/native-core/2026-11-24-work-only/gate-python-mode-replay-report.json) | 15920 |
 | [research/native-core/2026-11-24-work-only/gate-python-mode-report.json](../research/native-core/2026-11-24-work-only/gate-python-mode-report.json) | 15919 |
-| [research/native-core/README.md](../research/native-core/README.md) | 94301 |
+| [research/native-core/README.md](../research/native-core/README.md) | 94915 |
 | [research/obstacle-avoidance/README.md](../research/obstacle-avoidance/README.md) | 3166 |
 | [research/obstacle-avoidance/blocked-result.json](../research/obstacle-avoidance/blocked-result.json) | 52110 |
 | [research/obstacle-avoidance/cross-neo-request.json](../research/obstacle-avoidance/cross-neo-request.json) | 5584 |
@@ -2127,7 +2129,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [src/parkour_solver/search/anchors/__init__.py](../src/parkour_solver/search/anchors/__init__.py) | 0 |
 | [src/parkour_solver/search/anchors/adapter.py](../src/parkour_solver/search/anchors/adapter.py) | 7509 |
 | [src/parkour_solver/search/anchors/policy.py](../src/parkour_solver/search/anchors/policy.py) | 24606 |
-| [src/parkour_solver/search/application.py](../src/parkour_solver/search/application.py) | 2305 |
+| [src/parkour_solver/search/application.py](../src/parkour_solver/search/application.py) | 2475 |
 | [src/parkour_solver/search/bounds/__init__.py](../src/parkour_solver/search/bounds/__init__.py) | 0 |
 | [src/parkour_solver/search/bounds/flight.py](../src/parkour_solver/search/bounds/flight.py) | 5262 |
 | [src/parkour_solver/search/bounds/remaining.py](../src/parkour_solver/search/bounds/remaining.py) | 4009 |
@@ -2160,7 +2162,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [src/parkour_solver/validation/numerical.py](../src/parkour_solver/validation/numerical.py) | 9272 |
 | [src/parkour_solver/validation/scene.py](../src/parkour_solver/validation/scene.py) | 1952 |
 | [src/parkour_solver/validation/vertical.py](../src/parkour_solver/validation/vertical.py) | 3081 |
-| [src/parkour_solver/validation/witness.py](../src/parkour_solver/validation/witness.py) | 3726 |
+| [src/parkour_solver/validation/witness.py](../src/parkour_solver/validation/witness.py) | 3929 |
 | [src/parkour_solver/work.py](../src/parkour_solver/work.py) | 3487 |
 
 ## tests
@@ -2337,7 +2339,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/unit/search/__init__.py](../tests/unit/search/__init__.py) | 0 |
 | [tests/unit/search/test_anchor_dfs.py](../tests/unit/search/test_anchor_dfs.py) | 47232 |
 | [tests/unit/search/test_anchor_policy.py](../tests/unit/search/test_anchor_policy.py) | 38878 |
-| [tests/unit/search/test_anchor_search.py](../tests/unit/search/test_anchor_search.py) | 75059 |
+| [tests/unit/search/test_anchor_search.py](../tests/unit/search/test_anchor_search.py) | 75895 |
 | [tests/unit/search/test_anchor_time_bound.py](../tests/unit/search/test_anchor_time_bound.py) | 1920 |
 | [tests/unit/search/test_candidate_comparison.py](../tests/unit/search/test_candidate_comparison.py) | 5313 |
 | [tests/unit/search/test_event_search.py](../tests/unit/search/test_event_search.py) | 8566 |

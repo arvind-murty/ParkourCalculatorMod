@@ -37,7 +37,9 @@ def run(fixture,compiler=None,*,python_executable=None,resume_state=None,on_prog
         python_executable=python_executable,**task_settings(fixture))
     validation=[]
     if result['best'] is not None:
-        checked=replay_witness(prepare_scene(result['effectiveRequest']),result['best'],compiler)
+        from parkour_solver.work import work_only
+        with work_only(task_settings(fixture).get('work_only',False)):  # the run's mode, which its search restored
+            checked=replay_witness(prepare_scene(result['effectiveRequest']),result['best'],compiler)
         validation.append(checked)
         if not checked['passed']:
             raise RuntimeError('Automatic route incumbent failed independent physical replay')

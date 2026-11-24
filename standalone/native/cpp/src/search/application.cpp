@@ -719,6 +719,13 @@ Value turns_summary(const Value& observations) {
 
 // ---- the run
 
+// work.work_only(enabled) for a scope: set, then restored however the scope ends.
+struct WorkOnlyMode {
+    bool previous = work_only();
+    explicit WorkOnlyMode(bool enabled) { set_work_only(enabled); }
+    ~WorkOnlyMode() { set_work_only(previous); }
+};
+
 Value replay_witness(const Value& scene, const Value& best, Compiler& compiler);  // defined with the public one
 
 // RouteDomain.from_dict(value)'s checks on a saved domain.
@@ -1470,12 +1477,7 @@ Value find_checkpoint_route(Run& run, const Value& request_value, const Value& f
     };
     if (run.cancelled()) return unfinished("cancelled");
     const Object& f = fields(fixture);
-    // work.work_only(settings.work_only) for the search: set, then restored however the search ends.
-    struct WorkOnlyMode {
-        bool previous = work_only();
-        explicit WorkOnlyMode(bool enabled) { set_work_only(enabled); }
-        ~WorkOnlyMode() { set_work_only(previous); }
-    } mode(settings.work_only);
+    const WorkOnlyMode mode(settings.work_only);
     try {
         return search_event_routes(run, request_value, get_or_null(f, "terminalGoal"), get_or_null(f, "discoverySettings"),
                                    get_or_null(f, "anchorSearch"), settings, initial_jump_inputs, checkpoint_identity);
@@ -1510,7 +1512,9 @@ Value replay_witness(const Value& scene_value, const Value& best_value, Compiler
         return object({{"passed", boolean(false)}, {"reason", text("vertical_replay")}});
     put(plan, "vertical", at(vertical, "vertical"));
     const Value plan_value = object(plan);
-    Object request = fields(compiler.compile(route_value, plan_value, 5));
+    // A work-only run replays without the compile and scene-check budgets, as it solves without them.
+    const double seconds = work_only() ? INFINITY : 5;
+    Object request = fields(compiler.compile(route_value, plan_value, seconds));
     const Object& initial = fields(at(scene, "initial"));
     const Value* objective = get(route, "guideObjective");
     const Value* threshold = get(route, "physicsThreshold");
@@ -1570,7 +1574,7 @@ Value replay_witness(const Value& scene_value, const Value& best_value, Compiler
         if (!support) break;
     }
     put(candidate, "friction", at(problem, "friction"));
-    const Value checked = check_geometry(at(scene, "collisionScene"), plan, candidate, vertical, hooks, 5);
+    const Value checked = check_geometry(at(scene, "collisionScene"), plan, candidate, vertical, hooks, seconds);
     const bool same = py_equal(at(candidate, "positions"), at(candidate_in, "positions")) &&
                       py_equal(at(candidate, "velocity"), at(candidate_in, "velocity"));
     const bool feasible = py_truthy(at(candidate, "feasible"));
@@ -1622,6 +1626,7 @@ Value solve_case(const Value& fixture_value, const SolveCaseOptions& options) {
     Array validation;
     const Object& r = fields(result);
     if (!is_null(at(r, "best"))) {
+        const WorkOnlyMode mode(settings.work_only);  // the run's mode, which its search restored
         const Value checked = replay_witness(prepare_scene(at(r, "effectiveRequest")), at(r, "best"));
         validation.push_back(checked);
         if (!py_truthy(at(fields(checked), "passed")))

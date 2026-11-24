@@ -259,7 +259,8 @@ it is part of the run identity.
 The case setting `work_only` (default `false`) makes a run's outcome independent of machine load: with
 `true`, `seconds` and `candidate_seconds` are still checked but set no deadline, and every time limit under them
 is lifted: the disk relaxation's 0.1 s and 0.5 s Clarabel caps, the IPOPT wall limit (the request then carries
-`"seconds": null`), the post-alarm pipeline's deadline and the frame-end re-solve's 600 s. The work limits stay:
+`"seconds": null`), the post-alarm pipeline's deadline, the frame-end re-solve's 600 s and the witness replay's 5 s
+compile and scene-check budgets. The work limits stay:
 `max_solver_calls`, `maxPrefixes`, `max_candidates`, the disk's 200 and 500 iterations and IPOPT's
 `maxIterations`, so a run takes as long as they allow; cancel it to stop it sooner. Timing fields still report
 wall time, so compare outcomes without them. The mode is process-wide while a run executes, because the disk

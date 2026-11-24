@@ -17,7 +17,10 @@ def replay_witness(scene, best, compiler):
     if not vertical['feasible']:
         return dict(passed=False, reason='vertical_replay')
     plan['vertical'] = vertical['vertical']
-    coefficients = compiler.compile(route, plan, 5)
+    from parkour_solver.work import WORK_ONLY
+    # A work-only run replays without the compile and scene-check budgets, as it solves without them.
+    seconds = math.inf if WORK_ONLY else 5
+    coefficients = compiler.compile(route, plan, seconds)
     problem = prepare(dict(coefficients, version=1, ticks=plan['ticks'],
         position=scene['initial']['position'][::2], velocity=scene['initial']['velocity'][::2],
         yaw=best['candidate']['yaw'], threshold=route.get('physicsThreshold', .005),
@@ -38,7 +41,7 @@ def replay_witness(scene, best, compiler):
     support_ok = all(supports(route['blocks'][index], *candidate['positions'][tick], kind=kind)
                      for tick, index, kind in plan['supportChecks'])
     candidate['friction'] = problem['friction']
-    checked = check_geometry(scene['collisionScene'], plan, candidate, vertical, compiler, 5)
+    checked = check_geometry(scene['collisionScene'], plan, candidate, vertical, compiler, seconds)
     same = candidate['positions'] == best['candidate']['positions'] and candidate['velocity'] == best['candidate']['velocity']
     return dict(passed=candidate['feasible'] and support_ok and checked['feasible'] and same,
                 scalarFeasible=candidate['feasible'], supports=support_ok, geometry=checked,

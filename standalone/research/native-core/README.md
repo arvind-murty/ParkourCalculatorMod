@@ -1082,6 +1082,12 @@ process-wide.
   [native mode](2026-11-24-work-only/gate-native-mode-report.json)). AddressSanitizer runs clean on the durable fixed
   work run and the native-core, checkpoint-store, search and numerics tests; under it the Java bridge's infinite
   `queue.get` timeout was found and fixed (it now waits without one).
+- Follow-up (2026-11-24): the witness replay (`validation/witness.replay_witness` and its native port) compiled and
+  checked the scene with fixed 5 s budgets, which the clock-site audit missed (they are constants, not clock reads);
+  a work-only run lifts them too, the final replay running in the run's mode.
+  `test_a_work_only_replay_does_not_read_the_clock` replays under the racing clock. Suite 882 tests in both modes
+  (11 skipped), gate 627 in both modes ([Python mode](2026-11-24-work-only/gate-python-mode-replay-report.json),
+  [native mode](2026-11-24-work-only/gate-native-mode-replay-report.json)).
 
 ## `pkc_solve --resume`, 2026-11-24
 Source: `81e14099` plus a native report reader (`io/store.hpp` `read_report`: legacy plain or gzipped JSON as is, the

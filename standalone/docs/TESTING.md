@@ -2,10 +2,10 @@
 
 ## Current gate
 
-`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on `pkc_solve --resume`: **626 tests, no failures,
-errors or skips** in Python mode, and the same with `PKC_NATIVE_CORE` set, source unchanged during both runs
-([Python mode](../research/native-core/2026-11-24-resume/gate-python-mode-report.json),
-[native mode](../research/native-core/2026-11-24-resume/gate-native-mode-report.json)).
+`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on the work-only witness replay: **627 tests, no
+failures, errors or skips** in Python mode, and the same with `PKC_NATIVE_CORE` set, source unchanged during both runs
+([Python mode](../research/native-core/2026-11-24-work-only/gate-python-mode-replay-report.json),
+[native mode](../research/native-core/2026-11-24-work-only/gate-native-mode-replay-report.json)).
 Wall-time-bound tests can still fail under heavier load ([deferred P17](DEFERRED_WORK.md)).
 The gate fails on any skip, so it needs `PKC_IPOPT_PYTHON` for the IPOPT tests,
 `PKC_RUN_TICKS_COMPILER` for the Java differential tests and the `numerics` and `reachability` extras
@@ -23,6 +23,7 @@ persistence without the removed 32/128 limits.
 
 | Source | Tests | Evidence |
 | --- | ---: | --- |
+| Work-only witness replay budgets, both modes | 627 | [Python mode](../research/native-core/2026-11-24-work-only/gate-python-mode-replay-report.json), [native mode](../research/native-core/2026-11-24-work-only/gate-native-mode-replay-report.json) |
 | `pkc_solve --resume` and the native report reader, both modes | 626 | [Python mode](../research/native-core/2026-11-24-resume/gate-python-mode-report.json), [native mode](../research/native-core/2026-11-24-resume/gate-native-mode-report.json) |
 | Work-only mode (case setting `work_only`), both modes | 626 | [Python mode](../research/native-core/2026-11-24-work-only/gate-python-mode-report.json), [native mode](../research/native-core/2026-11-24-work-only/gate-native-mode-report.json) |
 | Native checkpoint saver and native solve entry, both modes | 621 | [Python mode](../research/native-core/2026-11-23-entry/gate-python-mode-report.json), [native mode](../research/native-core/2026-11-23-entry/gate-native-mode-report.json) |
