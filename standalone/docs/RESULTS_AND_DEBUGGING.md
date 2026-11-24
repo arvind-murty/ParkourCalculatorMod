@@ -81,7 +81,7 @@ writes these files to its output directory:
 | `routes.json` | The same per-route trace as data. |
 | `nodes.json` | Each frame's search tree as data. |
 | `summary.json` | Best route, timings, work counters, replay verdicts and the `stop` report. |
-| `requests.json` | Every solver request with its fingerprint, status, IPOPT status, wall seconds and `owners`. |
+| `requests.json` | Every solver request with its fingerprint, status, IPOPT status, wall seconds and `owners`; a relaxed request also has its `backend` and its alarm `confirmation` or `frameEnd` record. |
 | `report.json.gz` | The full saved search state; read it with `read_report` (paired `.store.sqlite3`). |
 | `provenance.json`, `profile.json`, `bookkeeping.json` | Source revision and hashes, fixture, interpreter; timing buckets. |
 
