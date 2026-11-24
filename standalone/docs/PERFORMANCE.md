@@ -209,7 +209,10 @@ ordered options. That is targeted enumeration work, not a whole-solver speedup.
 - Native report encoding (`PKC_NATIVE_CORE`): checkpoint saves hand plain JSON containers to the native encoder.
   Durable fixed work searches in 42.56 s and 42.50 s against 53.40 s and 53.03 s, the durable short control in 5.68 s
   and 5.93 s against 8.12 s and 8.14 s, and fixed work's final report save falls from 2.48 s to 1.36 s
-  ([evidence](../research/native-core/README.md)).
+  ([evidence](../research/native-core/README.md)). With the store's encode cache an unchanged part costs a lookup
+  in the next save: durable fixed work searches in 16.93 s and 17.88 s against 43.81 s and 44.95 s (plain 13.76 s and
+  13.79 s), the durable short control in 2.46 s and 2.48 s against 5.83 s and 6.73 s, at about 100 MiB more peak
+  memory ([evidence](../research/native-core/README.md)).
 - IPOPT row reduction: final rows fall from 278 to 91 on the benchmark
   ([constraint reduction](IPOPT_CONSTRAINT_REDUCTION.md)).
 - Content-addressed manifest plus SQLite checkpoints

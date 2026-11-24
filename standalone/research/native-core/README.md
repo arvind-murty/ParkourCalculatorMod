@@ -930,3 +930,30 @@ places as one value, so the encoder's identity memo reuses its encoding as the P
   whole run (its final save included) takes 15.00 and 15.13 s against 16.15 and 16.08 s on fixed work and 1.79 and
   1.81 s against 2.23 and 2.28 s on the short control. Fixed work's final save alone falls from 2.48 s to 1.36 s
   ([times](2026-11-23-report-encode/search-seconds.txt)).
+
+## The checkpoint encode cache, 2026-11-23
+Source: `b502cf66` plus a native encode cache per checkpoint store (`io/checkpoint_store.hpp` `EncodeCache`): the
+reference of every immutable native container the store stored as its own object, watched without keeping it alive,
+so an unchanged program, attempt log or frozen part costs a lookup in the next save. `SearchCheckpoint` hands the store
+native values: the snapshot (or a dict state converted once when no alias needs finding), one frozen copy of the event
+search's domain and graph, and a snapshot's repair parts unconverted. Before it, a durable save re-encoded the whole
+state: on fixed work the saver took 28.6 of the native loop's 42.4 s. The store's Python walk also no longer treats a
+native value inside a small dict as a JSON scalar.
+
+- Python mode is the oracle: every published and result state equals it in call order (short control 191, fixed work
+  454, the milestone list's searching tests except the two `disk.cached` flags) ([states](2026-11-23-encode-cache/state-parity.txt));
+  transitions match ([fixed](2026-11-23-encode-cache/fixed-parity-python-native.json),
+  [short](2026-11-23-encode-cache/short-parity-python-native.json)), and reports equal the previous code's except
+  provenance, plain and durable ([fixed](2026-11-23-encode-cache/fixed-report-vs-previous.json),
+  [short](2026-11-23-encode-cache/short-report-vs-previous.json),
+  [fixed durable](2026-11-23-encode-cache/fixed-durable-report-vs-previous.json),
+  [short durable](2026-11-23-encode-cache/short-durable-report-vs-previous.json)). The frozen domain and graph kept
+  their digests across every save.
+- The milestone list passes in both modes ([suites](2026-11-23-encode-cache/suites-summary.txt)). AddressSanitizer runs
+  clean ([summary](2026-11-23-encode-cache/asan-summary.txt),
+  [report](2026-11-23-encode-cache/fixed-asan-report-vs-release.json)).
+- Alternating against `b502cf66` with its own native build: durable fixed work searches in 16.93 and 17.88 s against
+  43.81 and 44.95 s (whole run 20.06 and 21.21 s against 48.99 and 50.46 s), the durable short control in 2.46 and
+  2.48 s against 5.83 and 6.73 s; peak memory 963 and 916 MiB against 865 and 804 MiB. Plain runs are unchanged
+  ([times](2026-11-23-encode-cache/search-seconds.txt)). A cache that held its containers ran as fast at 1346 and
+  1384 MiB; without reuse across saves a durable fixed run took 37.31 s.

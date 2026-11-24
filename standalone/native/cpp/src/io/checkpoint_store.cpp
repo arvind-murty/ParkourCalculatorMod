@@ -46,7 +46,32 @@ bool flat(const Value& item) {
 
 }  // namespace
 
-CheckpointEncoder::CheckpointEncoder(std::function<bool(const std::string& key)> known) : known_(std::move(known)) {}
+const std::string* EncodeCache::find(const void* identity) {
+    const auto found = entries_.find(identity);
+    if (found == entries_.end()) return nullptr;
+    if (found->second.container.expired()) {  // a new container at a dead one's address
+        entries_.erase(found);
+        return nullptr;
+    }
+    found->second.epoch = epoch_;
+    return &found->second.data;
+}
+
+void EncodeCache::store(const void* identity, const Value& container, const std::string& data) {
+    std::weak_ptr<const void> watched;
+    if (is_object(container)) watched = std::get<std::shared_ptr<const Object>>(container.data);
+    if (is_list(container)) watched = std::get<std::shared_ptr<const Array>>(container.data);
+    entries_.insert_or_assign(identity, Entry{std::move(watched), data, epoch_});
+}
+
+void EncodeCache::begin_snapshot() {
+    ++epoch_;
+    for (auto it = entries_.begin(); it != entries_.end();)
+        it = it->second.epoch + 1 < epoch_ || it->second.container.expired() ? entries_.erase(it) : std::next(it);
+}
+
+CheckpointEncoder::CheckpointEncoder(std::function<bool(const std::string& key)> known, EncodeCache* cache)
+    : known_(std::move(known)), cache_(cache) {}
 
 std::string CheckpointEncoder::reference(const std::string& key) const { return "[\"r\",\"" + key + "\"]"; }
 
@@ -70,6 +95,8 @@ std::string CheckpointEncoder::encode(const Value& value) {
     if (is_list(value)) identity = std::get<std::shared_ptr<const Array>>(value.data).get();
     if (identity) {
         if (const auto found = memo_.find(identity); found != memo_.end()) return found->second;
+        if (cache_)
+            if (const std::string* cached = cache_->find(identity)) return memo_.emplace(identity, *cached).first->second;
     }
     std::string data;
     bool all_flat = container;
@@ -106,8 +133,14 @@ std::string CheckpointEncoder::encode(const Value& value) {
     } else {
         data = json(value);
     }
+    const bool stored = data.size() >= kChunkBytes;
     data = chunk(std::move(data));
-    if (identity) memo_.emplace(identity, data);
+    if (identity) {
+        memo_.emplace(identity, data);
+        // Only a stored object's reference: a smaller encoding sits inside its parent's, so keeping it too would hold
+        // the same text twice, and it costs little to redo.
+        if (cache_ && stored) cache_->store(identity, value, data);
+    }
     return data;
 }
 

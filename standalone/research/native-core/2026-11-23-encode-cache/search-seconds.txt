@@ -1,0 +1,8 @@
+Alternating sequential runs: base = b502cf66 with its own native build, new = the working tree (native mode); searchSeconds (summary.json), wallSeconds and maxRssBytes in MiB (profile.json)
+ab7 fixed search base 13.623288042843342 13.96699345856905 new 13.763856329023838 13.792973790317774; wall base 15.448311794549227 15.700798250734806 new 15.526172831654549 15.475949749350548; rss base 885 884 new 880 872
+ab7 short search base 1.293318834155798 1.2736370787024498 new 1.268345206975937 1.2674191631376743; wall base 1.9063877873122692 1.8904973305761814 new 1.8783863335847855 1.8818825855851173; rss base 341 338 new 338 339
+ab7d fixed search base 43.80953845754266 44.95451141893864 new 16.9312929995358 17.880765918642282; wall base 48.98923558369279 50.45520745590329 new 20.056090250611305 21.21412979066372; rss base 865 804 new 963 916
+ab7d short search base 5.828266583383083 6.734348874539137 new 2.4556526243686676 2.478245746344328; wall base 6.717153463512659 7.64902900159359 new 3.0900721698999405 3.138171125203371; rss base 277 275 new 307 299
+(ab7d = --durable). Reports of the first round equal the base reports except provenance, plain and durable.
+Design runs (durable fixed work, single runs): a cache holding its containers took 16.63/17.32 s at 1346/1384 MiB; a fresh cache for every archive (no reuse across saves) 37.31 s at 980 MiB; the committed weak cache 16.88/16.36 s at 966/962 MiB.
+Frozen parts: the domain and graph digests stayed equal across every save (short 148 checks, fixed 230; frozen_check.py).

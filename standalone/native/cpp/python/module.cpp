@@ -472,6 +472,12 @@ const pkc::Value* field(const pkc::Object& object, const std::string& key) {
 }
 
 // A published DFS state for Python: fields convert on first read.
+// A JSON value converted once, which a checkpoint store encodes natively (search_checkpoint freezes the parts of a
+// search's state that never change after it builds them).
+struct FrozenValue {
+    pkc::Value value;
+};
+
 struct NativeSnapshot {
     pkc::Snapshot snapshot;
     std::map<std::string, py::object> converted;
@@ -505,13 +511,14 @@ py::list paths_to_python(const std::vector<pkc::Array>& paths) {
 }
 
 // checkpoint_store's encode for a native value: (its encoding, the new objects [(key, data)]), skipping objects in
-// the store's `known` set.
-py::tuple checkpoint_encode(const std::function<std::string(pkc::CheckpointEncoder&)>& encode, py::handle known) {
+// the store's `known` set and reusing the store's encode cache when given.
+py::tuple checkpoint_encode(const std::function<std::string(pkc::CheckpointEncoder&)>& encode, py::handle known,
+                            pkc::EncodeCache* cache = nullptr) {
     pkc::CheckpointEncoder encoder([&](const std::string& key) {
         const int found = PySet_Contains(known.ptr(), py::str(key).ptr());
         if (found < 0) throw py::error_already_set();
         return found == 1;
-    });
+    }, cache);
     const std::string data = encode(encoder);
     py::list objects;
     for (const auto& [key, object] : encoder.pending) objects.append(py::make_tuple(key, py::bytes(object)));
@@ -996,11 +1003,26 @@ PYBIND11_MODULE(_pkc_native, m) {
     m.def("round_trip_dfs_state", [](py::handle state) {
         return to_python(pkc::to_value(pkc::dfs_state_from_value(convert(state))));
     }, "search_goals' state through its typed form (search/dfs_state.hpp)");
-    m.def("checkpoint_encode", [](py::handle value, py::handle known) {
+    py::class_<pkc::EncodeCache, std::shared_ptr<pkc::EncodeCache>>(m, "EncodeCache")
+        .def(py::init<>())
+        .def("clear", &pkc::EncodeCache::clear)
+        .def("__len__", &pkc::EncodeCache::size);
+    m.def("checkpoint_encode", [](py::handle value, py::handle known, pkc::EncodeCache* cache) {
         Shared shared;  // the objects stay alive for the call, so their addresses stay unique
         const pkc::Value v = convert(value.ptr(), &shared);
-        return checkpoint_encode([&](pkc::CheckpointEncoder& e) { return e.encode(v); }, known);
-    }, "io/checkpoint_store's encode of a JSON value: (its encoding, new objects [(key, data)] not in `known`)");
+        return checkpoint_encode([&](pkc::CheckpointEncoder& e) { return e.encode(v); }, known, cache);
+    }, py::arg("value"), py::arg("known"), py::arg("cache") = nullptr,
+       "io/checkpoint_store's encode of a JSON value: (its encoding, new objects [(key, data)] not in `known`)");
+    py::class_<FrozenValue, std::shared_ptr<FrozenValue>>(m, "FrozenValue")
+        .def(py::init([](py::handle value) { return std::make_shared<FrozenValue>(FrozenValue{convert(value)}); }))
+        .def("checkpoint_encode", [](const FrozenValue& f, py::handle known,
+                                     std::optional<std::vector<std::string>> windows, pkc::EncodeCache* cache) {
+            return checkpoint_encode([&](pkc::CheckpointEncoder& e) {
+                return windows ? e.encode_replacing(f.value, "windows", *windows) : e.encode(f.value);
+            }, known, cache);
+        }, py::arg("known"), py::arg("windows") = py::none(), py::arg("cache") = nullptr,
+           "checkpoint_store's encode of the value, or of dict(value, windows=[stored windows by key]), as a "
+           "snapshot's; the store's encode cache makes a repeat encode a lookup");
     py::class_<NativeSnapshot, std::shared_ptr<NativeSnapshot>>(m, "DfsSnapshot")
         .def("__getitem__", &NativeSnapshot::item)
         .def("get", [](NativeSnapshot& s, const std::string& key, py::object fallback) {
@@ -1038,12 +1060,15 @@ PYBIND11_MODULE(_pkc_native, m) {
             out["targets"] = targets;
             return out;
         }, "where the saver's repair program and extra targets sit (see search/dfs_search.hpp RepairTargets)")
+        .def("part", [](const NativeSnapshot& s, py::handle path) { return std::make_shared<FrozenValue>(FrozenValue{s.at(path)}); },
+             "the value at a path, unconverted, for the checkpoint store to encode")
         .def("checkpoint_encode", [](const NativeSnapshot& s, py::handle known,
-                                     std::optional<std::vector<std::string>> windows) {
+                                     std::optional<std::vector<std::string>> windows, pkc::EncodeCache* cache) {
+            if (cache) cache->begin_snapshot();
             return checkpoint_encode([&](pkc::CheckpointEncoder& e) {
                 return windows ? e.encode_replacing(s.snapshot->state, "windows", *windows) : e.encode(s.snapshot->state);
-            }, known);
-        }, py::arg("known"), py::arg("windows") = py::none(),
+            }, known, cache);
+        }, py::arg("known"), py::arg("windows") = py::none(), py::arg("cache") = nullptr,
            "checkpoint_store's encode of the state, or of dict(state, windows=[stored windows by key]): (encoding, new "
            "objects)");
     py::class_<pkc::DfsSearch, std::shared_ptr<pkc::DfsSearch>>(m, "DfsSearch")

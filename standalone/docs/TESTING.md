@@ -2,12 +2,11 @@
 
 ## Current gate
 
-`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on the held side variants of steps and slab boosts
-(O12, `eb58ad02`): **607 tests, no failures, errors or skips**, source unchanged during the run
-([report](../research/encounter-groups/native-gate-side-variants/report.json)). Full discovery on the same source,
-with `PKC_RUN_TICKS_COMPILER` set: 693 tests, one failure, the ladder test
-`test_repeated_ladder_ceiling_events_regenerate_the_complete_schedule`, which fails on main `a7ddc3be` too, and no
-skips.
+`tools/native_gate.py` (commands in the [runbook](RUNBOOK.md)) on the native anchor adapter, setup builders and report
+encoding (`b502cf66`): **610 tests, no failures, errors or skips** in Python mode, and the same with
+`PKC_NATIVE_CORE` set, source unchanged during both runs
+([Python mode](../research/native-core/2026-11-23-gate/python-mode-report.json),
+[native mode](../research/native-core/2026-11-23-gate/native-mode-report.json)).
 Wall-time-bound tests can still fail under heavier load ([deferred P17](DEFERRED_WORK.md)).
 The gate fails on any skip, so it needs `PKC_IPOPT_PYTHON` for the IPOPT tests,
 `PKC_RUN_TICKS_COMPILER` for the Java differential tests and the `numerics` and `reachability` extras

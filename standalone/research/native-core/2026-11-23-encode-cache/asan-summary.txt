@@ -1,0 +1,6 @@
+AddressSanitizer build (ad-hoc signed Python, DYLD_INSERT_LIBRARIES):
+Ran 155 tests in 16.006s
+FAILED (failures=1)
+The one failure is test_cli_writes_structured_error_atomically: its CLI subprocess aborts under the preload, as in the previous ASan runs; it passes in both release modes.
+ASan reports: tests 0, durable fixed work 0, IPOPT driver parity 0 ({"cases": 38, "equal": 38})
+Its durable fixed-work report equals the release build durable report (ab7d fixed-new-1) except provenance (fixed-asan-report-vs-release.json).

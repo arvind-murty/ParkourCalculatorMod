@@ -39,7 +39,8 @@ class CheckpointStore:
 
     Containers are tagged so even user data resembling a reference round-trips.
     Every save visits current data; only unchanged *content* is reused. Mutable
-    object identities are never cached across saves.
+    object identities are never cached across saves; under the native core the
+    encodings of immutable native values are (the store's encode cache).
     """
     def __init__(self, path):
         self.path = Path(path)
@@ -58,6 +59,7 @@ class CheckpointStore:
             raise ValueError('Unsupported checkpoint store version')
         self.identity = row[1]
         self.known = {r[0] for r in self.connection.execute('SELECT key FROM objects')}
+        self.encode_cache = None  # the native encode cache, made on the first archive under the native core
 
     def __enter__(self):
         return self
@@ -83,7 +85,10 @@ class CheckpointStore:
         # The native core encodes plain JSON containers the same way (io/checkpoint_store.hpp); paths to targets are
         # found by identity here, so an archive with targets walks in Python.
         from parkour_solver import native_core
-        native = native_core.from_environment() if not target_ids else None
+        core = native_core.from_environment()
+        native = core if not target_ids else None
+        if core is not None and self.encode_cache is None:  # native values in any archive encode through it
+            self.encode_cache = core.EncodeCache()
 
         def remember(data):
             key = hashlib.sha256(data).hexdigest()
@@ -100,13 +105,13 @@ class CheckpointStore:
             if encode_self is not None:
                 # A native value (a published native search state) encodes itself the same way, skipping objects the
                 # store already holds.
-                data, objects = encode_self(self.known)
+                data, objects = encode_self(self.known, cache=self.encode_cache)
                 pending.update(objects)
                 return data
             container = isinstance(value, (dict, list, tuple))
             if native is not None and container:
                 try:
-                    data, objects = native.checkpoint_encode(value, self.known)
+                    data, objects = native.checkpoint_encode(value, self.known, self.encode_cache)
                 except (TypeError, ValueError):
                     pass  # holds a stored reference, a native value or a non-JSON value: walk this level here
                 else:
@@ -125,7 +130,8 @@ class CheckpointStore:
                     children = item
                 else:
                     return not isinstance(item, str) or len(item) < CHUNK_BYTES
-                return len(item) <= 16 and all(not isinstance(v, (dict, list, tuple, StoredValue)) and
+                # Only JSON scalars: a stored reference or a native value inside encodes on its own.
+                return len(item) <= 16 and all((isinstance(v, (int, float, str)) or v is None) and
                     (not isinstance(v, str) or len(v) < CHUNK_BYTES) for v in children)
 
             if container and all(flat(v) for v in (value.values() if isinstance(value, dict) else value)):
@@ -157,12 +163,17 @@ class CheckpointStore:
                 memo[identity] = value, data
             return data
 
-        root = remember(encode(report))
-        # A failed transaction or manifest replacement leaves the previous root
-        # readable. Extra committed objects from a failed publication are safe.
-        with self.connection:
-            self.connection.executemany('INSERT INTO objects VALUES (?, ?)',
-                ((k, zlib.compress(v, level=1)) for k,v in pending.items()))
+        try:
+            root = remember(encode(report))
+            # A failed transaction or manifest replacement leaves the previous root
+            # readable. Extra committed objects from a failed publication are safe.
+            with self.connection:
+                self.connection.executemany('INSERT INTO objects VALUES (?, ?)',
+                    ((k, zlib.compress(v, level=1)) for k,v in pending.items()))
+        except BaseException:
+            if self.encode_cache is not None:  # its new encodings may name objects that were never stored
+                self.encode_cache.clear()
+            raise
         self.known.update(pending)
         paths = [[] for _ in targets]
         for i, path in found.get(id(report), ()):
@@ -193,6 +204,8 @@ class CheckpointStore:
 
     def compact(self):
         """Drop superseded roots after the final report has been published."""
+        if self.encode_cache is not None:  # its encodings may name dropped objects
+            self.encode_cache.clear()
         manifest = json.loads(gzip.decompress(self.path.read_bytes()) if self.path.suffix == '.gz' else self.path.read_bytes())
         reachable = set()
 

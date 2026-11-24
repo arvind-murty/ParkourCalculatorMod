@@ -9,13 +9,16 @@ A native search publishes a snapshot (search/dfs_search.hpp) instead of a dict:
 the store encodes it natively, and it names the paths of its repair program and
 targets itself where a dict's are found by identity.
 """
+from parkour_solver import native_core
+
+
 class _NativeState:
     """A snapshot with its audit windows replaced by their stored references, for the store to encode."""
     def __init__(self, snapshot, windows):
         self.snapshot, self.windows = snapshot, windows
 
-    def checkpoint_encode(self, known):
-        return self.snapshot.checkpoint_encode(known, [w.key for w in self.windows])
+    def checkpoint_encode(self, known, cache=None):
+        return self.snapshot.checkpoint_encode(known, [w.key for w in self.windows], cache)
 
 
 class SearchCheckpoint:
@@ -25,8 +28,9 @@ class SearchCheckpoint:
         self.base, self.program = None, None
         self.paths = []
         self.token = None
+        self.frozen = {}  # id -> (part, its native copy)
 
-    def state(self, state):
+    def state(self, state, encode_natively=True):
         dfs=state.get('dfs') if state.get('kind')=='event_route_search' else state
         if dfs is None:return dict(state)
         native = hasattr(dfs, 'checkpoint_encode')
@@ -36,14 +40,34 @@ class SearchCheckpoint:
         for i in range(len(self.windows), count):
             reference, _, _ = self.store.archive(dfs.value(['windows', i]) if native else dfs['windows'][i])
             self.windows.append(reference)
-        stored = _NativeState(dfs, list(self.windows)) if native else dict(dfs, windows=self.windows)
-        return dict(state,dfs=stored) if dfs is not state else stored if native else dict(state,windows=self.windows)
+        core = native_core.from_environment() if native or encode_natively else None
+        if core is None:
+            return dict(state,dfs=dict(dfs, windows=self.windows)) if dfs is not state else dict(state,windows=self.windows)
+        # The native core encodes the state with its windows replaced, a snapshot or a dict alike. The event search
+        # never changes its domain or graph after building them: the store encodes one native copy of each, which its
+        # encode cache then answers.
+        stored = _NativeState(dfs if native else core.FrozenValue(dfs), list(self.windows))
+        if dfs is state:
+            return stored
+        return dict(state, dfs=stored, **{k: self.freeze(core, state[k]) for k in ('domain', 'graph') if k in state})
+
+    def freeze(self, core, part):
+        held = self.frozen.get(id(part))
+        if held is None or held[0] is not part:
+            held = self.frozen[id(part)] = part, core.FrozenValue(part)
+        return held[1]
 
     def __call__(self, state, program=None, extra_targets=()):
         dfs=state.get('dfs') if state.get('kind')=='event_route_search' else state
-        saved = dict(self.metadata, windows=self.windows, searchState=self.state(state))
+        native = dfs is not None and hasattr(dfs, 'checkpoint_encode')
+        if not native:
+            active = dfs['stack'][-1].get('inFlight') if dfs and dfs['stack'] else None
+            program = program if program is not None else active['program'] if active else None
+        # A dict state is found by identity in the save's walk only when it has a program or targets to locate.
+        saved = dict(self.metadata, windows=self.windows,
+                     searchState=self.state(state, encode_natively=native or (program is None and not extra_targets)))
         self.dfs_path=['searchState','dfs'] if dfs is not state else ['searchState']
-        if dfs is not None and hasattr(dfs, 'checkpoint_encode'):
+        if native:
             self.base, _, _ = self.store.archive(saved)
             self.store.publish(self.base)
             repair = dfs.repair
@@ -51,8 +75,6 @@ class SearchCheckpoint:
             self.paths = [self.dfs_path+path for path in repair['program']]
             self.extra_targets = [[self.dfs_path+path for path in paths] for paths in repair['targets']]
             return
-        active = dfs['stack'][-1].get('inFlight') if dfs and dfs['stack'] else None
-        program = program if program is not None else active['program'] if active else None
         self.base, _, paths = self.store.archive(saved, ([program] if program is not None else [])+list(extra_targets))
         self.store.publish(self.base)
         self.token = None
@@ -71,8 +93,8 @@ class SearchCheckpoint:
                 self(state)
                 return
             inner = len(self.dfs_path)
-            changes = [(path+['repairState'], dfs.value(path[inner:]+['repairState'])) for path in self.paths]
-            changes += [(path, dfs.value(path[inner:])) for paths in self.extra_targets for path in paths]
+            changes = [(path+['repairState'], dfs.part(path[inner:]+['repairState'])) for path in self.paths]
+            changes += [(path, dfs.part(path[inner:])) for paths in self.extra_targets for path in paths]
             changes.append((self.dfs_path+['cumulativeCalls'], dfs['cumulativeCalls']))
             self.store.patch(self.base, changes)
             return
