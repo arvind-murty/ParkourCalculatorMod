@@ -65,7 +65,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 35770 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11512 |
 | [docs/DOC_INDEX.md](DOC_INDEX.md) | 29236 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 307541 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 307669 |
 | [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 68572 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
@@ -102,7 +102,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/history/dependencies/autonomy-route_guidance-requirements.txt](history/dependencies/autonomy-route_guidance-requirements.txt) | 63 |
 | [docs/history/dependencies/ipopt-requirements.txt](history/dependencies/ipopt-requirements.txt) | 27 |
 | [docs/reference/MOVEMENT_PORT.md](reference/MOVEMENT_PORT.md) | 12360 |
-| [docs/reference/NUMERICAL_SOLVER.md](reference/NUMERICAL_SOLVER.md) | 30131 |
+| [docs/reference/NUMERICAL_SOLVER.md](reference/NUMERICAL_SOLVER.md) | 30235 |
 | [docs/reference/REPLAY.md](reference/REPLAY.md) | 8680 |
 | [docs/research/GENERIC_ROUTE_DISCOVERY_RESEARCH.md](research/GENERIC_ROUTE_DISCOVERY_RESEARCH.md) | 65980 |
 | [docs/research/HEURISTIC_SOURCE_REVIEW.md](research/HEURISTIC_SOURCE_REVIEW.md) | 17131 |
@@ -202,7 +202,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/include/pkc/validation/vertical.hpp](../native/cpp/include/pkc/validation/vertical.hpp) | 353 |
 | [native/cpp/include/pkc/value.hpp](../native/cpp/include/pkc/value.hpp) | 698 |
 | [native/cpp/include/pkc/vertical.hpp](../native/cpp/include/pkc/vertical.hpp) | 2554 |
-| [native/cpp/python/module.cpp](../native/cpp/python/module.cpp) | 95344 |
+| [native/cpp/python/module.cpp](../native/cpp/python/module.cpp) | 95823 |
 | [native/cpp/src/canonical.cpp](../native/cpp/src/canonical.cpp) | 13694 |
 | [native/cpp/src/codec.hpp](../native/cpp/src/codec.hpp) | 11503 |
 | [native/cpp/src/coefficient_tables.inc](../native/cpp/src/coefficient_tables.inc) | 23532 |
@@ -1656,6 +1656,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/native-core/2026-11-23-main-pr10/short-report-python-vs-native.json](../research/native-core/2026-11-23-main-pr10/short-report-python-vs-native.json) | 452 |
 | [research/native-core/2026-11-23-main-pr10/state-parity.txt](../research/native-core/2026-11-23-main-pr10/state-parity.txt) | 1428 |
 | [research/native-core/2026-11-23-main-pr10/suites-summary.txt](../research/native-core/2026-11-23-main-pr10/suites-summary.txt) | 202 |
+| [research/native-core/2026-11-23-observer/resume-tests.txt](../research/native-core/2026-11-23-observer/resume-tests.txt) | 833 |
 | [research/native-core/2026-11-23-pr12/asan-summary.txt](../research/native-core/2026-11-23-pr12/asan-summary.txt) | 1052 |
 | [research/native-core/2026-11-23-pr12/fixed-asan-report-vs-release.json](../research/native-core/2026-11-23-pr12/fixed-asan-report-vs-release.json) | 1060 |
 | [research/native-core/2026-11-23-pr12/fixed-parity-python-native.json](../research/native-core/2026-11-23-pr12/fixed-parity-python-native.json) | 176 |
@@ -1704,7 +1705,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/native-core/2026-11-23-shared-state/short-parity-python-native.json](../research/native-core/2026-11-23-shared-state/short-parity-python-native.json) | 176 |
 | [research/native-core/2026-11-23-shared-state/short-report-vs-previous.json](../research/native-core/2026-11-23-shared-state/short-report-vs-previous.json) | 170 |
 | [research/native-core/2026-11-23-shared-state/times.txt](../research/native-core/2026-11-23-shared-state/times.txt) | 1467 |
-| [research/native-core/README.md](../research/native-core/README.md) | 84297 |
+| [research/native-core/README.md](../research/native-core/README.md) | 84865 |
 | [research/obstacle-avoidance/README.md](../research/obstacle-avoidance/README.md) | 3166 |
 | [research/obstacle-avoidance/blocked-result.json](../research/obstacle-avoidance/blocked-result.json) | 52110 |
 | [research/obstacle-avoidance/cross-neo-request.json](../research/obstacle-avoidance/cross-neo-request.json) | 5584 |
@@ -2266,7 +2267,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/support/stepping_cases.py](../tests/support/stepping_cases.py) | 5338 |
 | [tests/unit/__init__.py](../tests/unit/__init__.py) | 0 |
 | [tests/unit/bridge/__init__.py](../tests/unit/bridge/__init__.py) | 0 |
-| [tests/unit/bridge/test_python_compiler.py](../tests/unit/bridge/test_python_compiler.py) | 24721 |
+| [tests/unit/bridge/test_python_compiler.py](../tests/unit/bridge/test_python_compiler.py) | 25227 |
 | [tests/unit/constraints/__init__.py](../tests/unit/constraints/__init__.py) | 51 |
 | [tests/unit/constraints/test_encounters.py](../tests/unit/constraints/test_encounters.py) | 25095 |
 | [tests/unit/constraints/test_option_keys.py](../tests/unit/constraints/test_option_keys.py) | 4738 |
@@ -2311,7 +2312,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/unit/search/__init__.py](../tests/unit/search/__init__.py) | 0 |
 | [tests/unit/search/test_anchor_dfs.py](../tests/unit/search/test_anchor_dfs.py) | 47232 |
 | [tests/unit/search/test_anchor_policy.py](../tests/unit/search/test_anchor_policy.py) | 38878 |
-| [tests/unit/search/test_anchor_search.py](../tests/unit/search/test_anchor_search.py) | 73721 |
+| [tests/unit/search/test_anchor_search.py](../tests/unit/search/test_anchor_search.py) | 74286 |
 | [tests/unit/search/test_anchor_time_bound.py](../tests/unit/search/test_anchor_time_bound.py) | 1920 |
 | [tests/unit/search/test_candidate_comparison.py](../tests/unit/search/test_candidate_comparison.py) | 5313 |
 | [tests/unit/search/test_event_search.py](../tests/unit/search/test_event_search.py) | 8566 |
@@ -2343,7 +2344,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tools/native_gate.py](../tools/native_gate.py) | 1679 |
 | [tools/paths.py](../tools/paths.py) | 567 |
 | [tools/profiling/__init__.py](../tools/profiling/__init__.py) | 66 |
-| [tools/profiling/bookkeeping.py](../tools/profiling/bookkeeping.py) | 12911 |
+| [tools/profiling/bookkeeping.py](../tools/profiling/bookkeeping.py) | 13069 |
 | [tools/profiling/calibrate.py](../tools/profiling/calibrate.py) | 3572 |
 | [tools/profiling/cpp_pruning.py](../tools/profiling/cpp_pruning.py) | 19377 |
 | [tools/profiling/enumeration.py](../tools/profiling/enumeration.py) | 5300 |

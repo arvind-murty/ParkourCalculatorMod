@@ -319,9 +319,9 @@ class JavaOracleTests(unittest.TestCase):
                 self.assertEqual(canonical(self.python._exchange(message, 30)), canonical(expected))
 
     @unittest.skipUnless(RUNTIME, 'Set PKC_IPOPT_PYTHON for checkpoint continuation')
-    @mock.patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # counts requests at RelaxedDispatch.solve, which native node solves bypass
     def test_saved_searches_resume_exactly_on_the_other_bridge(self):
         import threading
+        from parkour_solver import native_core
         from parkour_solver.io.checkpoint_store import CheckpointStore, read_report
         from parkour_solver.io.search_checkpoint import SearchCheckpoint
         from parkour_solver.numerics.disk import RelaxedDispatch
@@ -338,13 +338,27 @@ class JavaOracleTests(unittest.TestCase):
             scene['blocks'].append(dict(id='wall', sourceBlock='wall', solidIndex=2, top=3., bounds=[3.5, 4., -.2, .2]))
             cancel = threading.Event()
 
+            def answered():
+                if stop_after is not None and len(requests) >= stop_after:
+                    cancel.set()
+
             # Automatic search sends every numerical request through the relaxed dispatch.
             def record(dispatch, problem, **kwargs):
                 requests.append(canonical(problem))
                 outcome = solve(dispatch, problem, **kwargs)
-                if stop_after is not None and len(requests) >= stop_after:
-                    cancel.set()
+                answered()
                 return outcome
+
+            # Native node solves dispatch natively, past the Python seams.
+            def observed(mode, problem, seconds, stop_on_feasible, result):
+                if mode == 'solve' and result is None:
+                    requests.append(canonical(problem))
+                elif mode == 'solve':
+                    answered()
+            native = native_core.from_environment()
+            if native is not None:
+                native.set_request_observer(observed)
+                self.addCleanup(native.set_request_observer, None)
             with CheckpointStore(path) as store, mock.patch.object(RelaxedDispatch, 'solve', record):
                 writer = SearchCheckpoint(store, {})
                 # Generous budgets keep outcomes independent of host load across the compared runs.

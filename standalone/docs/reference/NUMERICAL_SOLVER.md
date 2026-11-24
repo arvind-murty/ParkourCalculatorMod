@@ -230,8 +230,10 @@ entry point natively (`numerics/disk.hpp`, the pipeline in `numerics/post_alarm.
 for Python and native callers alike, keeping its confirmations and frame-end answers
 in the core's cache, and its IPOPT solves run through the native driver
 (`numerics/solver.hpp`: the same worker protocol, deadline, cancellation and
-validation as `solve`). The profiler records a native leg solve's requests through
-the module's request observer (`tools/profiling/bookkeeping.py`). Search's use of it is in the
+validation as `solve`). A native leg solve reports each request, before and after
+it is answered, to the module's request observer (`set_request_observer`), through
+which the profiler (`tools/profiling/bookkeeping.py`) and the resume tests record
+them. Search's use of it is in the
 [execution reference](../ANCHOR_SEARCH_EXECUTION_REFERENCE.md#numerical-backend-and-frame-end-re-solves).
 `RelaxedDispatch(gate=...)` answers the alarm with the post-alarm pipeline below;
 `post_alarm='ipopt'` makes that IPOPT call instead.

@@ -1001,3 +1001,10 @@ reachable.
 - Search seconds, alternating Python mode and native mode: fixed work 37.32 and 38.99 against 12.23 and 12.42, the
   short control 4.88 and 5.46 against 1.55 and 1.53; with durable checkpoints fixed work 132.69 and 125.38 against
   16.55 and 16.15, the short control 15.65 and 15.97 against 2.48 and 2.54 ([times](2026-11-23-pr12/search-seconds.txt)).
+
+## Native coverage of the resume tests, 2026-11-23
+The request observer now hears each natively dispatched request before and after it is answered, with its entry point
+and seconds, so the two resume tests that record or cancel at `RelaxedDispatch`'s Python seams run in both modes: the
+cancelled frame-end test and the bridge's saved-search test. In native mode they record the same requests and
+frame-end requests as Python mode, fingerprint for fingerprint, and the profiler's `requests.json` rows are unchanged
+([evidence](2026-11-23-observer/resume-tests.txt)).

@@ -396,8 +396,8 @@ pkc::SolveHooks solve_hooks(py::object compiler, py::object solve, py::object wo
     return hooks;
 }
 
-// The profiler's observer of the requests native leg solves dispatch natively (set_request_observer), or None. Never
-// freed: it may outlive the interpreter's teardown of module globals.
+// The observer of the requests native leg solves dispatch natively (set_request_observer), or None. Never freed: it
+// may outlive the interpreter's teardown of module globals.
 py::object& request_observer() {
     static py::object* observer = new py::object(py::none());
     return *observer;
@@ -447,21 +447,28 @@ pkc::EvaluateHooks evaluate_hooks(py::object compiler, py::object solve, py::obj
         if (py::object setting = service("relaxed"); !setting.is_none()) {  // the relaxed dispatch, answers in the core
             const pkc::RelaxedServices relaxed =
                 relaxed_services(core, cancel_event, setting["postAlarm"].cast<std::string>());
-            auto entry = [relaxed](pkc::DispatchMode mode) -> pkc::NumericalSolve {
-                return [relaxed, mode](const pkc::Value& problem, double seconds, bool stop_on_feasible,
-                                       const std::function<void(const pkc::Value&)>& on_incumbent) {
+            auto entry = [relaxed](pkc::DispatchMode mode, const char* name) -> pkc::NumericalSolve {
+                return [relaxed, mode, name](const pkc::Value& problem, double seconds, bool stop_on_feasible,
+                                             const std::function<void(const pkc::Value&)>& on_incumbent) {
+                    auto observe = [&](const pkc::Value* result) {
+                        if (!request_observer().is_none())
+                            python_hook([&] {
+                                request_observer()(name, to_python(problem), seconds, stop_on_feasible,
+                                                   result ? to_python(*result) : py::none());
+                            });
+                    };
+                    observe(nullptr);
                     pkc::Value result = pkc::relaxed_dispatch(problem, seconds, stop_on_feasible, mode, on_incumbent, relaxed);
-                    if (!request_observer().is_none())
-                        python_hook([&] { request_observer()(to_python(problem), stop_on_feasible, to_python(result)); });
+                    observe(&result);
                     return result;
                 };
             };
             if (setting["mode"].cast<std::string>() == "full_strength") {
-                hooks.numerical = entry(pkc::DispatchMode::full_strength);
+                hooks.numerical = entry(pkc::DispatchMode::full_strength, "full_strength");
                 hooks.confirm = nullptr;
             } else {
-                hooks.numerical = entry(pkc::DispatchMode::solve);
-                hooks.confirm = entry(pkc::DispatchMode::confirmed);
+                hooks.numerical = entry(pkc::DispatchMode::solve, "solve");
+                hooks.confirm = entry(pkc::DispatchMode::confirmed, "confirmed");
             }
         }
         hooks.analyze_model = [core](const pkc::Value& route, const pkc::Value& plan, const pkc::Value& vertical,
@@ -1456,8 +1463,9 @@ PYBIND11_MODULE(_pkc_native, m) {
           "numerics/disk.RelaxedDispatch's entry point `mode` with its decided answers in the gate's native core");
     m.def("set_request_observer", [](py::object observer) { request_observer() = std::move(observer); },
           py::arg("observer"),
-          "observer(problem, stop_on_feasible, result) after each request a native leg solve dispatches natively, or "
-          "None (tools/profiling/bookkeeping.py)");
+          "observer(mode, problem, seconds, stop_on_feasible, result) before (result None) and after each request a "
+          "native leg solve dispatches natively through RelaxedDispatch's entry point `mode`, or None "
+          "(tools/profiling/bookkeeping.py)");
     m.def("disk_stats", [] { return to_python(pkc::disk_stats()); }, "numerics/disk.STATS of the native decided cache");
     m.def("float_repr", &pkc::float_repr, "repr(float) for a finite float");
     m.def("sha256_hex", [](py::bytes data) { return pkc::sha256_hex(std::string(data)); });

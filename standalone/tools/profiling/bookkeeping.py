@@ -201,9 +201,14 @@ def instrument(profile):
                 return result
             return solve
         if native is not None:
-            # Native leg solves dispatch natively and report each request once it is answered.
-            native.set_request_observer(lambda problem, stop_on_feasible, result:
-                                        answered(request_row(problem, stop_on_feasible), result))
+            # Native leg solves dispatch natively and report each request before and after it is answered.
+            rows = []
+            def observed(mode, problem, seconds, stop_on_feasible, result):
+                if result is None:
+                    rows.append(request_row(problem, stop_on_feasible))
+                else:
+                    answered(rows.pop(), result)
+            native.set_request_observer(observed)
         replace(ordered_route, 'solve', recorded(ordered_route.solve))
         replace(RelaxedDispatch, 'solve', recorded(RelaxedDispatch.solve))
         replace(RelaxedDispatch, 'confirmed', recorded(RelaxedDispatch.confirmed))

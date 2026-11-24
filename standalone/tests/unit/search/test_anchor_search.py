@@ -879,9 +879,9 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
         self.assertTrue(solves)
         self.assertFalse([c for checks in solves for c in checks if c['offset'] == walk and c['block']['id'] == 'start'])
 
-    @patch.dict('os.environ', {'PKC_NATIVE_CORE': ''})  # cancels through RelaxedDispatch's Python seams, which a native leg solve never calls
     def test_a_cancelled_frame_end_solve_is_repeated_on_resume_and_nothing_else_is(self):
         import threading
+        from parkour_solver import native_core
         from parkour_solver.bridge.python_compiler import PythonCompiler
         from parkour_solver.numerics import disk
         from parkour_solver.numerics.model import fingerprint, prepare
@@ -889,22 +889,34 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
                        anchorSearch=dict(anchors=[]), settings=dict(seconds=20, score_seconds=4, max_solver_calls=40))
         requests, frame_ends, cancel_next = [], [], []
         solve, full_strength = disk.RelaxedDispatch.solve, disk.RelaxedDispatch.full_strength
-        def key(problem, options):
-            return fingerprint(prepare(dict(problem, seconds=options['seconds'])))
-        def recorded(dispatch, problem, **options):
-            requests.append(key(problem, options))
-            return solve(dispatch, problem, **options)
-        def frame_end(dispatch, problem, **options):
-            frame_ends.append(key(problem, options))
+        def key(problem, seconds):
+            return fingerprint(prepare(dict(problem, seconds=seconds)))
+        def frame_end_started(problem, seconds):
+            frame_ends.append(key(problem, seconds))
             if cancel_next:
                 cancel_next.pop().set()
+        def recorded(dispatch, problem, **options):
+            requests.append(key(problem, options['seconds']))
+            return solve(dispatch, problem, **options)
+        def frame_end(dispatch, problem, **options):
+            frame_end_started(problem, options['seconds'])
             return full_strength(dispatch, problem, **options)
+        # Native leg solves dispatch natively, past the Python seams.
+        def observed(mode, problem, seconds, stop_on_feasible, result):
+            if result is None and mode == 'solve':
+                requests.append(key(problem, seconds))
+            elif result is None and mode == 'full_strength':
+                frame_end_started(problem, seconds)
         def session(compiler, saved, interrupt=False):
             cancel = threading.Event()
             if interrupt:
                 cancel_next.append(cancel)
             return run(fixture, compiler, python_executable=os.environ['PKC_IPOPT_PYTHON'],
                        resume_state=json.loads(json.dumps(saved)) if saved else None, cancel_event=cancel)
+        native = native_core.from_environment()
+        if native is not None:
+            native.set_request_observer(observed)
+            self.addCleanup(native.set_request_observer, None)
         with PythonCompiler() as compiler, patch.object(disk.RelaxedDispatch, 'solve', recorded), \
                 patch.object(disk.RelaxedDispatch, 'full_strength', frame_end):
             interrupted, _ = session(compiler, None, interrupt=True)
