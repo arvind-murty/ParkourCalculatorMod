@@ -71,7 +71,7 @@ a no-stepping/no-shortening-ceiling flight between fixed heights.
 | Queue selection | Shared ordinary/turn priority; inspect saved lifecycle flags; lazily recheck selected work against current peers/incumbent. | Descend via DFS; unselected alternatives remain queued/preserved. Priority alone is not a deferral proof. | No. |
 | Selected meaningful internal decision | Default cadence1 since last solved completed movement decision; retain prior contacts/anchors but omit the pending end-anchor predicate. | Evaluate exact node from original state. Reuse saved exact feasible/rejected node result where applicable; unknown work remains saved. | Possibly. Eligible solve preparation can still screen/block before a wrapper call. |
 | Required anchor arrival | Query the actual achieved anchor clock, regardless of cadence. | Optimize the onward guide objective over the alternatives the switch-tick climb visits, keep the best and up to two close fallbacks; physical validation; validated arrival can learn hard topology and become peer evidence. | Yes for every visited alternative; screens and caps can still prevent a call. |
-| Final physical landing | Optimize configured terminal objective at fixed candidate T; outer search compares actual T first, then terminal objective. | Update the single validated incumbent. There is no fixed64 target and no maximum-Z-at64 task. The incumbent is relaxed until the run's one IPOPT finalization (below) publishes a physical witness. | Normally for surviving terminal variants: `stopOnFeasible=False`, so a feasible seed does not replace optimization. Caps/screens may prevent a call. |
+| Final physical landing | Optimize configured terminal objective at fixed candidate T; outer search compares actual T first, then terminal objective. | Update the single validated incumbent with the finish's frame-end answer (below). There is no fixed64 target and no maximum-Z-at64 task. | Normally for surviving terminal variants: `stopOnFeasible=False`, so a feasible seed does not replace optimization. Caps/screens may prevent a call. |
 | Rejected / suspended result | Distinguish exact operational oracle rejection, exhausted repair catalogue, unresolved/budget/error and feasible evidence. A constraint generator exhausted before emitting any numerical branch is also exhausted when no pending/in-flight/unresolved repair remains. An alternative whose every attempt the pre-solve check on its compiled problem blocked keeps those certificates and is `proven`, never unresolved; with oracle rejection a node closes when each alternative is oracle-rejected or proven. | Only the exact solved model receives its rejection. Empty-domain exhaustion backtracks its node without inventing an IPOPT rejection. A failed child never invalidates an unqueried ancestor. | No additional ancestor-probing pass. |
 | Feasibility recovery | Definite required-continuation failure plus drained runnable first-class work in its owning context; successful finish alone does not reopen slower work. | First restore the next fallback of a failed record (`failedCandidates`, in failure order, transition `restore_alternative`); only when none remains restore one eligible saved slower run-tick alternative with frame-scoped bypass. Skip globally excluded alternatives; reuse matching saved witness when available. Keep all hard/cap/order limits. | Only if restored work needs a query; not automatically on every restoration. |
 
@@ -81,10 +81,10 @@ or reuse work. In early-stop mode a validated feasible yaw seed can return from
 the wrapper without IPOPT. Worker feasibility still needs the recorded vertical,
 scene and scope checks before anchor/terminal acceptance.
 
-### Numerical backend and finalization
+### Numerical backend and frame-end re-solves
 
 Automatic discovery (`search_event_routes`) runs with solve policy
-`numerical='relaxed'`; every other entrypoint keeps `'ipopt'`. The backend is in
+`numerical='relaxed_pipeline'` (`'relaxed'` with `post_alarm='ipopt'`); every other entrypoint keeps `'ipopt'`. The backend is in
 the solve policy, the repair context and the DFS context, so no state resumes
 across backends. A relaxed evaluation hands `find_route` a
 [`RelaxedDispatch`](../src/parkour_solver/numerics/disk.py), which answers each
@@ -121,18 +121,33 @@ a full-strength physical point. The anchor `feasibilityPolicy` has one value,
 `numerical_oracle`: the numerical backend's infeasibility verdict (IPOPT
 `Infeasible_Problem_Detected` or a Clarabel infeasible status) rejects the node.
 
-Traversal stops `min(5 s, a quarter of the run)` before the run deadline. The
-run then makes one IPOPT finalization: the best-ranked final-frame witness is
-re-solved through the repair loop from its own branch route, warm-started from its
-relaxed facings turned by `numerics.disk.ipopt_seed`, with `rankEqualCost=False` and oracle rejection; a geometry
-conflict on the exact trajectory is repaired by the usual avoidance sources. A
-witness that is already physical needs no call. On failure the next-ranked
-final-frame witness is tried; if none succeeds the run publishes no route
-(`termination='finalization_failed'`). A cancelled run publishes no relaxed
-incumbent either; a finalization the cancellation interrupts stays `running` and
-reruns on resume. The DFS keeps its relaxed incumbent for
-later sessions; the record is the DFS state's `finalization`
-([checkpoint storage](CHECKPOINT_STORAGE.md)).
+Before the search commits to a relaxed witness, it re-solves it at full strength
+(`frame_end` in `search/dfs.py`, user, 2026-11-23): at the choose of every frame,
+after the chosen record passes its bounds and before an anchor opens its child
+frame or a finish updates the incumbent. A final frame chooses its finishes by
+ticks, then objective (`candidate_rank`), and a finish whose relaxed rank cannot
+beat the incumbent is chosen without the solve, since its relaxed value bounds
+what the solve can reach. The re-solve repairs the witness's own branch route
+through the repair loop with solve policy `numerical='full_strength'`,
+`rankEqualCost=False` and oracle rejection, so a geometry conflict on the exact
+trajectory is repaired by the usual avoidance sources. Each request is answered
+by [`RelaxedDispatch.full_strength`](reference/NUMERICAL_SOLVER.md#frame-end-re-solves):
+the relaxed point itself when it is already full strength, else the post-alarm
+pipeline's full-strength answer, then one IPOPT polish from that answer's exact
+facings, keeping the better. Without an answer, IPOPT starts from the relaxed
+facings turned by `ipopt_seed`. On success the record's witness and child become
+the answer's (transition `frame_end_confirmed`), so an anchor's next frame starts
+from the answer's end state. On failure the record keeps `frameEnd` with
+`status='failed'`, the transition `frame_end_rejected` is logged, and the frame
+takes its next option; a frame out of options backtracks as usual. Each solve
+has no deadline: it runs past the run's deadline and outside its call budget, up
+to `FRAME_END_SECONDS` (600 s), which only bounds a hung solve. A cancellation
+during it leaves the record untried, so a resume repeats it; a confirmed record
+is never solved again. Incumbents are only frame-end answers, so the run
+publishes its incumbent as is, also when cancelled; with none, it publishes no
+route. `work` counts `frameEnds`, `frameEndRejections` and `frameEndIpoptCalls`
+apart from the traversal's counters. IPOPT-backend searches keep their
+witnesses.
 
 ## Tick policy, protections and examples
 
@@ -240,7 +255,7 @@ keys or adding a pose constraint. No mixed or uncertainty mode exists.
 | [`checkpoint_search`](../src/parkour_solver/search/engine.py), [`constraints.variants`](../src/parkour_solver/constraints/variants.py), [`search.repair`](../src/parkour_solver/search/repair.py) | Fixed scoped model preparation, discrete physical alternatives, resumable repair, numerical dispatch and scene acceptance. |
 | [`node_feasibility`](../src/parkour_solver/search/feasibility.py), [`checkpoint_persistence`](../src/parkour_solver/io/search_checkpoint.py), [`io.checkpoint_store`](../src/parkour_solver/io/checkpoint_store.py) | Exact-model outcome/cadence, all mutable aliases at dispatch, lossless manifest/SQLite persistence, isolated external decode. |
 | [`numerics.solver`](../src/parkour_solver/numerics/solver.py), [`search.ranking`](../src/parkour_solver/search/ranking.py) | Seed check/worker lifecycle/scalar validation; terminal actualT/objective ranking stays distinct from intermediate J/R/A policy. |
-| [`numerics.disk`](../src/parkour_solver/numerics/disk.py) `RelaxedDispatch` | Relaxed candidate requests and their IPOPT fallbacks; the finalization lives in `search_goals(finalize=True)`. |
+| [`numerics.disk`](../src/parkour_solver/numerics/disk.py) `RelaxedDispatch` | Relaxed candidate requests, their IPOPT fallbacks, and the frame-end `full_strength` answers `search_goals` asks for. |
 
 Physical automatic continuation is outer schema2 / DFS8 / movement context4 /
 repair assembly14. Hard3/search5/comparison1/guide2/proposal1 semantics, event

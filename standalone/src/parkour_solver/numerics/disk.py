@@ -150,7 +150,8 @@ class RelaxedDispatch:
     of a jump tick's acceleration unused (alarm_ticks): through numerics.post_alarm
     (Clarabel only), or with `post_alarm='ipopt'` with IPOPT. The repair
     loop solves with `solve` and confirms its kept candidates once, at its end
-    (search/repair.py).
+    (search/repair.py). `full_strength` answers every request at full strength,
+    for the search's frame-end re-solve of a chosen witness (search/dfs.py).
     """
     def __init__(self, *, gate, post_alarm='pipeline'):
         if post_alarm not in ('ipopt', 'pipeline'):
@@ -159,13 +160,16 @@ class RelaxedDispatch:
         self.post_alarm = post_alarm
 
     def solve(self, problem, **options):
-        return self._dispatch(problem, confirming=False, **options)
+        return self._dispatch(problem, mode='solve', **options)
 
     def confirmed(self, problem, **options):
-        return self._dispatch(problem, confirming=True, **options)
+        return self._dispatch(problem, mode='confirmed', **options)
+
+    def full_strength(self, problem, **options):
+        return self._dispatch(problem, mode='full_strength', **options)
 
     def _dispatch(self, problem, *, seconds, stop_on_feasible, python_executable=None, cancel_event=None,
-                  on_incumbent=None, confirming):
+                  on_incumbent=None, mode):
         from parkour_solver.numerics.solver import solve as full_solve
         from parkour_solver.validation.numerical import validate_controls
 
@@ -193,7 +197,11 @@ class RelaxedDispatch:
         alarmed = alarm_ticks(problem, shortfall)
         relaxed.update(peakRelativeDeficit=peak, peakTick=tick, alarmTicks=alarmed, objective=solved['objective'])
         candidate['model'] = 'relaxed_disk'
-        if confirming and alarmed and not stop_on_feasible:
+        if mode == 'full_strength':
+            return self._frame_end(problem, candidate, relaxed, started, seconds=seconds,
+                                   python_executable=python_executable, cancel_event=cancel_event,
+                                   on_incumbent=on_incumbent)
+        if mode == 'confirmed' and alarmed and not stop_on_feasible:
             return self.confirm(problem, candidate, relaxed, seconds=seconds, python_executable=python_executable,
                                 cancel_event=cancel_event, on_incumbent=on_incumbent)
         if on_incumbent is not None:
@@ -239,6 +247,62 @@ class RelaxedDispatch:
             if on_incumbent is not None:
                 on_incumbent(json.loads(json.dumps(result['candidate'])))
         return dict(result, backend='ipopt', disk=relaxed, confirmation=confirmation)
+
+    def _frame_end(self, problem, relaxed_candidate, relaxed, started, *, seconds, python_executable, cancel_event,
+                   on_incumbent):
+        """`full_strength`'s answer for a validated relaxed point, cached when decided like a confirmation."""
+        from parkour_solver.numerics.model import fingerprint
+        key = ('frameEnd', fingerprint(problem))
+        if key in self.gate.cache:
+            result = dict(self.gate.cache[key], workerLaunched=False)
+            result['frameEnd'] = dict(result['frameEnd'], cached=True, ipoptCalls=0, clarabelSolves=0)
+        else:
+            result = _full_strength(problem, relaxed_candidate, relaxed, started, seconds=seconds,
+                                    python_executable=python_executable, cancel_event=cancel_event)
+            if result['status'] == 'feasible' or result['termination'] in ('quadrant_infeasible', 'worker_finished'):
+                self.gate.cache[key] = result
+        if result['status'] == 'feasible' and on_incumbent is not None:
+            on_incumbent(json.loads(json.dumps(result['candidate'])))
+        return result
+
+
+def _full_strength(problem, relaxed_candidate, relaxed, started, *, seconds, python_executable, cancel_event):
+    """The relaxed point itself when it is full strength, else the post-alarm pipeline's answer, then one IPOPT polish
+    from the answer's exact facings (the SEED_TILT turn moves validated points out of IPOPT's tolerance), keeping the
+    better; without an answer or a sector certificate, IPOPT from the turned disk facings
+    (research/post-alarm/README.md#full-strength-acceptance-and-frame-end-re-solves)."""
+    from parkour_solver.numerics import post_alarm
+    from parkour_solver.numerics.solver import solve as full_solve
+    from parkour_solver.validation.numerical import validate
+    record = dict(method='direct', pushObjective=None, ipoptObjective=None, ipoptCalls=0, clarabelSolves=0,
+                  cached=False)
+    answer, termination = None, 'disk_finished'
+    if deficits(problem, relaxed_candidate['controls'])[0] < post_alarm.FULL:
+        checked = validate(problem, post_alarm.facings(problem, relaxed_candidate['controls']))
+        answer = checked if checked['feasible'] else None
+    if answer is None:
+        pushed = post_alarm.run(problem, relaxed_candidate, relaxed, seconds=max(.001, started+seconds-time.monotonic()),
+                                cancel_event=cancel_event)
+        record.update(method=pushed['confirmation']['method'], clarabelSolves=pushed['confirmation']['clarabelSolves'])
+        if pushed['status'] == 'cancelled' or pushed['termination'] == 'quadrant_infeasible':
+            return dict(pushed, frameEnd=record)
+        answer, termination = pushed['candidate'], pushed['termination']
+    if answer is not None:
+        record['pushObjective'] = answer['objective']
+        request = {k: v for k, v in dict(problem, yaw=answer['yaw']).items() if k != 'fallbackYaw'}
+    else:
+        request = dict(problem, yaw=ipopt_seed(relaxed_candidate['yaw']))
+    ipopt = full_solve(request, seconds=max(.001, started+seconds-time.monotonic()), stop_on_feasible=False,
+                       python_executable=python_executable, cancel_event=cancel_event)
+    record['ipoptCalls'] = int(ipopt.get('workerLaunched') is True)
+    if ipopt['status'] == 'feasible':
+        record['ipoptObjective'] = ipopt['candidate']['objective']
+    sense = 1 if problem['objective']['sense'] == 'MAX' else -1
+    if answer is None or ipopt['status'] == 'cancelled' or (
+            ipopt['status'] == 'feasible' and sense*ipopt['candidate']['objective'] > sense*answer['objective']):
+        return dict(ipopt, backend='ipopt', disk=relaxed, frameEnd=record)
+    result = _result(problem, started, 'feasible', answer, termination, relaxed['status'], relaxed)
+    return dict(result, workerLaunched=ipopt.get('workerLaunched'), frameEnd=record)
 
 
 def _result(problem, started, status, candidate, termination, solver_status, relaxed):

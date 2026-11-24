@@ -299,7 +299,7 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                                     'objectiveMode': 'configured',
                                     'workerLaunched': result.get('workerLaunched'),
                                     'workerStatus': result.get('workerStatus'),
-                                    **{k: result[k] for k in ('backend', 'disk', 'confirmation', 'fallback') if k in result}})
+                                    **{k: result[k] for k in ('backend', 'disk', 'confirmation', 'fallback', 'frameEnd') if k in result}})
                 if result['status'] == 'cancelled':
                     return {'status': 'cancelled', 'diagnostics': diagnostics}
                 if result['feasible']:

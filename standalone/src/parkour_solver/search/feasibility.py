@@ -15,7 +15,7 @@ def policy_spec(value=None, *, first_witness=False):
             raise ValueError('Unknown solve policy field')
         defaults.update(value)
     if (defaults['version'] != 1 or defaults['purpose'] not in ('node', 'anchor', 'terminal')
-            or defaults['numerical'] not in ('ipopt', 'relaxed', 'relaxed_pipeline')):
+            or defaults['numerical'] not in ('ipopt', 'relaxed', 'relaxed_pipeline', 'full_strength')):
         raise ValueError('Unsupported solve policy')
     if any(type(defaults[k]) is not bool for k in ('stopOnFeasible', 'rankEqualCost', 'oracleRejection')):
         raise ValueError('Solve policy flags must be boolean')

@@ -802,8 +802,8 @@ def render(report, requests, routes, stop, trees):
         ['First full solution',f'{dfs.get("firstFullSolutionSeconds"):.1f} s' if dfs.get('firstFullSolutionSeconds') is not None else 'none'],
         ['Search ended',f'{result["elapsedSeconds"]:.1f} s, `{termination}`'],
         ['Solver requests / worker launches',f'{result["work"].get("solverCalls")} / {result["work"].get("workerLaunches")}'],
-        *([['Finalization',f'{result["finalization"]["stage"]}, {len(result["finalization"]["attempts"])} attempts, '
-                           f'{result["work"].get("finalizationIpoptCalls", 0)} IPOPT calls']] if result.get('finalization') else []),
+        *([['Frame-end re-solves',f'{result["work"]["frameEnds"]}, {result["work"]["frameEndRejections"]} rejected, '
+                                  f'{result["work"]["frameEndIpoptCalls"]} IPOPT calls']] if 'frameEnds' in result['work'] else []),
         ['Expanded prefixes',result.get('expandedPrefixes')],
         ['Independent replays',f'{sum(v["passed"] for v in replays)}/{len(replays)} passed' if replays else 'not run']])
     lines += [f'The search {TERMINATIONS.get(termination,"ended with `"+termination+"`")}. '

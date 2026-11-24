@@ -726,7 +726,7 @@ class AnchorNativeTests(unittest.TestCase):
         self.assertTrue(result['best']['candidate']['onGround'][-1])
         self.assertEqual(result['searchState']['dfs']['version'],8)
         self.assertTrue(result['anchorSearch']['hardLatches'])
-        # Interim queries are relaxed; IPOPT runs only for alarm confirmations and the finalization.
+        # Interim queries are relaxed; IPOPT runs only for alarm confirmations and frame-end re-solves (counted apart).
         self.assertEqual(result['work']['workerLaunches'],result['work']['confirmationIpoptCalls'])
         self.assertGreater(result['work']['conicCandidates'],0)
         self.assertGreaterEqual(result['work']['solverCalls'],result['work']['conicCandidates'])
@@ -782,7 +782,7 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.search(post_alarm='race')
 
-    def test_search_runs_on_the_relaxation_and_publishes_one_physical_finalization(self):
+    def test_search_runs_on_the_relaxation_and_publishes_frame_end_answers(self):
         from parkour_solver.bridge.python_compiler import PythonCompiler
         from parkour_solver.numerics import disk
         from parkour_solver.scene.normalize import prepare_scene
@@ -790,25 +790,29 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
         from parkour_solver.search import engine
         repairs = []
         def recorded(route, *args, **kwargs):
-            repairs.append((route, kwargs['initial_variants'], kwargs['repair_scope']['solvePolicy']))
-            return original(route, *args, **kwargs)
+            solved = original(route, *args, **kwargs)
+            repairs.append((route, kwargs['initial_variants'], kwargs['repair_scope']['solvePolicy'], solved['best']))
+            return solved
         original = engine.solve_contact_branches
-        # Without the alarm the finish stays relaxed until the finalization.
+        # Without the alarm every witness stays relaxed until its frame-end re-solve.
         with patch.object(engine, 'solve_contact_branches', side_effect=recorded), \
              patch.object(disk, 'ALARM_FRACTION', 1.):
             _, result, _ = self.search()
-        relaxed = result['searchState']['dfs']['best']
-        # Finalization repairs the relaxed witness's own branch, warm-started from its turned facings.
-        (route, variants, policy), = [r for r in repairs if r[2]['numerical'] == 'ipopt']
-        self.assertIsNone(variants)
-        self.assertEqual(policy['rankEqualCost'], False)
-        self.assertEqual(route, dict(relaxed['route'], warmYaw=disk.ipopt_seed(relaxed['candidate']['yaw'])))
+        frame_ends = [(route, variants, policy) for route, variants, policy, _ in repairs if policy['numerical'] == 'full_strength']
+        finishes = [best for _, _, policy, best in repairs
+                    if policy['numerical'] != 'full_strength' and policy['purpose'] == 'terminal' and best is not None]
+        # A frame-end re-solve repairs its relaxed witness's own branch route.
+        self.assertEqual(len(frame_ends), result['work']['frameEnds'])
+        self.assertTrue(all(variants is None and not policy['rankEqualCost'] for _, variants, policy in frame_ends))
+        self.assertTrue(all(any(route == f['route'] for f in finishes) for route, _, policy in frame_ends
+                            if policy['purpose'] == 'terminal'))
+        relaxed = finishes[0]
         self.assertEqual(relaxed['candidate']['model'], 'relaxed_disk')
         self.assertNotIn('model', result['best']['candidate'])
+        self.assertEqual(result['searchState']['dfs']['best']['candidate'], result['best']['candidate'])
         self.assertEqual(result['work']['workerLaunches'], 0)
         self.assertGreater(result['work']['conicCandidates'], 0)
-        self.assertEqual(result['work']['finalizationIpoptCalls'], 1)
-        self.assertEqual(result['finalization']['stage'], 'complete')
+        self.assertGreater(result['work']['frameEndIpoptCalls'], 0)
         with PythonCompiler() as compiler:
             scene = prepare_scene(result['effectiveRequest'])
             physical = replay_witness(scene, result['best'], compiler)
@@ -835,7 +839,7 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
             work = result['work']
             self.assertGreater(work['conicCandidates'], 0)
             self.assertEqual(work['workerLaunches'], work['confirmationIpoptCalls'])
-            self.assertEqual(result['finalization']['stage'], 'complete')
+            self.assertGreater(work['frameEnds'], 0)
             self.assertNotIn('model', best['candidate'])
             self.assertTrue(replay_witness(prepare_scene(result['effectiveRequest']), best, compiler)['passed'])
             # The solve report reads a feasible node's alternatives from the repair it keeps beside its committed program.
@@ -894,42 +898,46 @@ class RelaxedAutomaticSearchTests(unittest.TestCase):
         self.assertTrue(solves)
         self.assertFalse([c for checks in solves for c in checks if c['offset'] == walk and c['block']['id'] == 'start'])
 
-    def test_cancelled_sessions_publish_no_relaxed_route_and_resume_without_repeating_requests(self):
+    def test_a_cancelled_frame_end_solve_is_repeated_on_resume_and_nothing_else_is(self):
         import threading
         from parkour_solver.bridge.python_compiler import PythonCompiler
         from parkour_solver.numerics import disk
         from parkour_solver.numerics.model import fingerprint, prepare
         fixture = dict(request=self.boxes(['normal'], start=[[-2,0,-2,1,1,2]], middle=[[1,-1,-2,4,0,2]], goal=[[6,-1,-1,7,0,1]]),
                        anchorSearch=dict(anchors=[]), settings=dict(seconds=20, score_seconds=4, max_solver_calls=40))
-        requests = []
-        original = disk.RelaxedDispatch.solve
+        requests, frame_ends, cancel_next = [], [], []
+        solve, full_strength = disk.RelaxedDispatch.solve, disk.RelaxedDispatch.full_strength
+        def key(problem, options):
+            return fingerprint(prepare(dict(problem, seconds=options['seconds'])))
         def recorded(dispatch, problem, **options):
-            requests.append(fingerprint(prepare(dict(problem, seconds=options['seconds']))))
-            return original(dispatch, problem, **options)
-        def session(compiler, saved, stop):
+            requests.append(key(problem, options))
+            return solve(dispatch, problem, **options)
+        def frame_end(dispatch, problem, **options):
+            frame_ends.append(key(problem, options))
+            if cancel_next:
+                cancel_next.pop().set()
+            return full_strength(dispatch, problem, **options)
+        def session(compiler, saved, interrupt=False):
             cancel = threading.Event()
-            result, validation = run(fixture, compiler, python_executable=os.environ['PKC_IPOPT_PYTHON'],
-                resume_state=json.loads(json.dumps(saved)) if saved else None, cancel_event=cancel,
-                on_progress=lambda state: stop(state['dfs'] or {}) and cancel.set())
-            return result, validation
-        relaxed = lambda dfs: (dfs.get('best') or {}).get('candidate', {}).get('model') == 'relaxed_disk'
-        finalizing = lambda dfs: (dfs.get('finalization') or {}).get('stage') == 'running'
-        with PythonCompiler() as compiler, patch.object(disk.RelaxedDispatch, 'solve', recorded):
-            traversal, _ = session(compiler, None, relaxed)
-            finalization, _ = session(compiler, traversal['searchState'], finalizing)
-            rerun, validation = session(compiler, finalization['searchState'], lambda dfs: False)
-            published = len(requests)
-            complete, _ = session(compiler, rerun['searchState'], lambda dfs: False)
-        for cancelled in (traversal, finalization):
-            self.assertEqual((cancelled['status'], cancelled['termination'], cancelled['best']), ('cancelled', 'cancelled', None))
-            self.assertEqual(cancelled['provisionalBest']['model'], 'relaxed_disk')
-        self.assertNotIn('finalization', traversal)
-        self.assertEqual((finalization['finalization']['stage'], finalization['work']['finalizationIpoptCalls']), ('running', 0))
-        self.assertEqual((rerun['finalization']['stage'], rerun['work']['finalizationIpoptCalls']), ('complete', 1))
+            if interrupt:
+                cancel_next.append(cancel)
+            return run(fixture, compiler, python_executable=os.environ['PKC_IPOPT_PYTHON'],
+                       resume_state=json.loads(json.dumps(saved)) if saved else None, cancel_event=cancel)
+        with PythonCompiler() as compiler, patch.object(disk.RelaxedDispatch, 'solve', recorded), \
+                patch.object(disk.RelaxedDispatch, 'full_strength', frame_end):
+            interrupted, _ = session(compiler, None, interrupt=True)
+            rerun, validation = session(compiler, interrupted['searchState'])
+            published = (len(requests), len(frame_ends))
+            complete, _ = session(compiler, rerun['searchState'])
+        self.assertEqual((interrupted['status'], interrupted['termination'], interrupted['best']), ('cancelled', 'cancelled', None))
+        self.assertEqual(interrupted['work']['frameEnds'], 0)
+        # The cancelled frame-end solve runs again exactly; no other request repeats.
+        self.assertEqual(frame_ends[0], frame_ends[1])
+        self.assertEqual(len(set(frame_ends)), len(frame_ends)-1)
+        self.assertEqual(len(set(requests)), len(requests))
         self.assertTrue(validation[0]['passed'])
         self.assertNotIn('model', rerun['best']['candidate'])
-        self.assertEqual(len(set(requests)), len(requests))
-        self.assertEqual((len(requests), complete['work']['finalizationIpoptCalls']), (published, 0))
+        self.assertEqual((len(requests), len(frame_ends)), published)
         self.assertEqual(complete['best']['candidate'], rerun['best']['candidate'])
 
 

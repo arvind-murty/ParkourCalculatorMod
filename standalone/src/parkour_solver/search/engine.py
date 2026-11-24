@@ -140,12 +140,14 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, s
         route_guards=scoped_adapter.constraint_guards(program['profile'],envelopes,scope,scoped.deadline)
         if hasattr(scoped_adapter,'constraint_guards') else None)
     mark('eligibilityAndVariantConstruction')
-    dispatch = None
-    if policy['numerical'] in ('relaxed', 'relaxed_pipeline'):
+    numerical, confirm = None, None
+    if policy['numerical'] in ('relaxed', 'relaxed_pipeline', 'full_strength'):
         from parkour_solver.numerics.disk import RelaxedDispatch
         dispatch = RelaxedDispatch(gate=service,
                                    post_alarm='pipeline' if policy['numerical'] == 'relaxed_pipeline' else 'ipopt')
-    # Finalization re-solves a relaxed witness's own branch route with IPOPT.
+        numerical, confirm = ((dispatch.full_strength, None) if policy['numerical'] == 'full_strength' else
+                              (dispatch.solve, dispatch.confirmed))
+    # A frame-end re-solve repairs a relaxed witness's own branch route (search/dfs.py).
     result = solve_contact_branches(route if final_route is None else final_route, profiles, checks,
         compiler, seconds=seconds, candidate_seconds=candidate_seconds, retries=0,
         improve=True, rank_equal_cost=policy['rankEqualCost'], optimize_goal=True,
@@ -155,8 +157,7 @@ def evaluate_program(scene, program, compiler, adapter, work, motion_bound, *, s
         candidate_filter=candidate_filter, work=scoped, resume_state=program.get('repairState'),
         repair_scope=dict(solveIdentity=identity, scope=scope, solvePolicy=policy, assemblyVersion=14),
         validation_scope=scope, initial_variants=variants if final_route is None else None, on_progress=on_progress,
-        retry_unresolved=retry_unresolved, numerical=dispatch.solve if dispatch is not None else None,
-        confirm=dispatch.confirmed if dispatch is not None else None)
+        retry_unresolved=retry_unresolved, numerical=numerical, confirm=confirm)
     mark('physicalSearchAndValidation')
     diagnostics=[d for a in result.get('attempts',[]) for d in a.get('diagnostics',[])]
     parent_work=work

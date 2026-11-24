@@ -212,7 +212,7 @@ applies its whole sprint-jump push, so a relaxed optimum that brakes it can be
 impossible at full strength.
 IPOPT re-solves the same request once and its result replaces the relaxed one.
 Every tick is seeded with its disk direction turned by `SEED_TILT` (`1e-4` rad,
-`ipopt_seed`), as the finalization is; the request's fallback facing stays. The
+`ipopt_seed`), as a frame-end re-solve without a full-strength answer is; the request's fallback facing stays. The
 turn breaks mirror symmetry: on a symmetric request Clarabel returns the
 symmetric optimum, whose short-tick direction lies exactly between the two
 full-strength completions, and IPOPT started on that line stops at a local
@@ -225,7 +225,7 @@ tick, both objectives, `gap = sense*(disk - ipopt)` and `material` (`gap > 1e-4`
 A gap describes only its own request. Decided
 confirmations are cached per run in the interaction gate's cache by problem
 fingerprint. Search's use of it is in the
-[execution reference](../ANCHOR_SEARCH_EXECUTION_REFERENCE.md#numerical-backend-and-finalization).
+[execution reference](../ANCHOR_SEARCH_EXECUTION_REFERENCE.md#numerical-backend-and-frame-end-re-solves).
 `RelaxedDispatch(gate=...)` answers the alarm with the post-alarm pipeline below;
 `post_alarm='ipopt'` makes that IPOPT call instead.
 
@@ -279,6 +279,32 @@ is 0) and adds `method`, `pushSteps`, `probes`,
 and `post_alarm_none` are cached like confirmations; a cache hit reports 0 solves.
 The problem field `warmYaw` is a hint: validated by `prepare`, left out of
 `fingerprint`, and read only by the pipeline.
+
+### Frame-end re-solves
+
+`RelaxedDispatch.full_strength` answers a request at full strength for the
+search's [frame-end re-solve](../ANCHOR_SEARCH_EXECUTION_REFERENCE.md#numerical-backend-and-frame-end-re-solves)
+of a chosen witness, alarmed or not (user, 2026-11-23,
+[evidence](../../research/post-alarm/README.md#full-strength-acceptance-and-frame-end-re-solves)).
+After the request's disk solve (an unsupported request goes to IPOPT, and an
+infeasible or validator-rejected point is `unknown` as in `solve`):
+
+1. The answer is the disk point itself when every tick is under 1e-6 short and
+   `validate` passes at its facings, else the post-alarm pipeline's answer on it.
+   A sector certificate (`quadrant_infeasible`) ends the request with no IPOPT call.
+2. With an answer, one IPOPT polish starts from the answer's exact facings with no
+   `fallbackYaw`, and the better of the two is kept. The `ipopt_seed` turn is left
+   out: it moves validated full-strength points out of IPOPT's tolerance, and
+   IPOPT then reports them infeasible.
+3. Without one, IPOPT starts from the disk facings turned by `ipopt_seed`, keeping
+   the request's `fallbackYaw`.
+
+The result has `solve`'s shape: `backend` is `ipopt` when IPOPT's point is kept,
+else `clarabel` (with `workerLaunched` when the polish ran). `frameEnd` records
+`method` (`direct`, the pipeline's method, or `none`), `pushObjective`,
+`ipoptObjective`, `ipoptCalls`, `clarabelSolves` and `cached`. Answers,
+certificates and IPOPT's `worker_finished` verdicts are cached per run under the
+problem fingerprint; a cache hit reports 0 calls and 0 solves.
 
 ## Tests
 
