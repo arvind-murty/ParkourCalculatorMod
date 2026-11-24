@@ -310,9 +310,11 @@ def node_trace(state, scene=None):
                 for i,name in zip(e['members'],e['names']):
                     # Members are in box order, so a block's repeated name is its next box.
                     solids.setdefault(i,name if e['names'].count(name) == 1 else f'{name}#{e["names"][:e["members"].index(i)].count(name)}')
-            def owners(bound):
-                return '+'.join(sorted({solids.get(o,'?').upper() for o in bound['owners']}))
-            sides = [dict(segment=p['segment'],faces=[[(owners(b),side(b)) for b in f.get('bounds') or [f]] for f in p['faces']])
+            def owners(bound, block):
+                # An over or under side (vertical_side) names no solids: it is the passage block's.
+                return '+'.join(sorted({solids.get(o,'?').upper() for o in bound['owners']})) or block.upper()
+            sides = [dict(segment=p['segment'],faces=[[(owners(b,p['blockId']),side(b)) for b in f.get('bounds') or [f]]
+                                                      for f in p['faces']])
                      for p in (repair.get('interactionChoices',{}).get(branch_key(kept['rows'],kept['passages'],kept['hits']),[])
                                if kept else [])]
             parent = solved(node['parent'])

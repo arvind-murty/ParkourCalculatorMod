@@ -378,6 +378,25 @@ class BookkeepingProfileTests(unittest.TestCase):
                       "side row was slack); restored: node 3.2's branch died.\n- normal step onto B2 from its X+ side: promoted: "
                       "node 3.2's Z- side row was tight, an unsolved node failed.\n\n", markdown)
 
+    def test_a_kept_over_or_under_side_is_named_by_its_passage_block(self):
+        # The under side of an obstacle (vertical_side) names no solids; its X side names the encountered one.
+        from parkour_solver.search.repair_state import branch_key
+        from tools.profiling.trace import node_trace
+        lid = [0, 3, 0, 1, 4, 1]
+        under = dict(axis='Y', direction=-1, plane=1.2, owners=[], bounds=[])
+        beside = dict(axis='X', direction=-1, plane=-.3, owners=[0], bounds=[])
+        repair = dict(incumbent=dict(rows=[], passages=[], hits=[]),
+                      interactionChoices={branch_key([], [], []): [dict(blockId='b3', segment=[0, 4], faces=[under, beside])]},
+                      constraintGeneration=dict(encounterLog=[dict(owner='b3', members=[0], names=['b3'], segment=[0, 4],
+                          possiblePhases=[], sides=[], coveredPhases=[], excludedFaces=[], verticalClear=[], uncertain=[])]))
+        node = dict(status='feasible', parent='root', depth=1, repairState=repair,
+                    program=dict(movementUnits=[dict(end=5)], profile=dict(jump=[True]+[False]*4, contactEvents=[],
+                                                                           caseEvents=[], positionConstraints=[])))
+        frame = dict(id=1, goal=dict(block='b2'), parents=[dict(decisionNode='root')], goalRequest=dict(afterTick=0), records=[],
+                     generation=dict(continuation=dict(nodes=dict(a=node), decisionParents={})))
+        trees = node_trace(dict(dfs=dict(stack=[frame])), dict(blocks=[dict(id='b3', boxes=[lid])]))
+        self.assertEqual(trees[1]['nodes'][0]['steps'], 'jumps t0, keeps to the under side of B3, then the X- side of B3 (t0-4)')
+
     def test_case_steps_name_their_faces_and_wall_hits_their_face(self):
         from tools.profiling.trace import steps
         lower, higher, low = [0, 6, 0, 1, 6.5, 1], [0, 6, 1, 1, 7, 2], [0, 0, 0, 1, 6, 1]
