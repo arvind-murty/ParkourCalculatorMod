@@ -25,6 +25,7 @@ persistence without the removed 32/128 limits.
 
 | Source | Tests | Evidence |
 | --- | ---: | --- |
+| `d56467cd` + refinement off, `disk_rejected`, Clarabel-only post-alarm pipeline (default) with full-strength acceptance, frame-end re-solves in place of the finalization | 616 | [report](../research/post-alarm/native-gate/report.json) |
 | `89e8dba0` + settled-stretch repair, solver margin and replay tolerance 1e-4, Clarabel verdicts, no pre-solve screen | 593 | [report](../research/encounter-groups/native-gate-settled-repair/report.json) |
 | `513f249f` + no backward moves at ordinary decisions (O10 for every generated move) | 594 | [report](../research/encounter-groups/native-gate-no-backward-moves/report.json) |
 | `73d4489a` + merged faces in visits, launch tables and generation | 590 | [report](../research/stale-code-removal/native-gate-merged-faces/report.json) |
