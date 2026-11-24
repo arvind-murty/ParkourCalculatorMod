@@ -377,20 +377,53 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
         if decision['action']=='defer_preparation':
             proof=dict(reason='higher_ticks_without_structural_advantage',heuristic=True,comparison=decision)
         if proof is not None:
-            identity=candidate_key(program);key=(f['id'],identity)
-            if key not in excluded_runs:
-                excluded_runs.add(key)
-                state['minimumRunExclusions'].append(dict(frame=f['id'],candidate=identity,proof=proof,
-                    program={k:copy.deepcopy(v) for k,v in program.items()},span=span_info(f)[0],
-                    decision=program.get('decisionNode'),isTurnaround=program.get('priorityTurnaround',False),
-                    latchRevision=state['latchRevision']))
+            reserve(program,f,proof)
+        return proof
+
+    def reserve(program, f, proof):
+        """Hold a program back as a restorable reserve of frame `f`, at the node that reserved it: a linked program's own
+        decision node, else (a proposal screened before it was linked) the node being expanded, else the frame start."""
+        from parkour_solver.search.frontier import FRAME_START
+        identity=candidate_key(program);key=(f['id'],identity)
+        if key not in excluded_runs:
+            excluded_runs.add(key)
+            if 'decisionNode' in program:
+                decision=program['decisionNode']
+            else:
+                expansion=(f['generation'].get('continuation') or {}).get('expansion') or {}
+                decision=(expansion.get('program') or {}).get('decisionNode')
+            state['minimumRunExclusions'].append(dict(frame=f['id'],candidate=identity,proof=proof,
+                program={k:copy.deepcopy(v) for k,v in program.items()},span=span_info(f)[0],
+                decision=decision or FRAME_START,isTurnaround=program.get('priorityTurnaround',False),
+                latchRevision=state['latchRevision']))
+
+    def best_arrival(f):
+        """The final frame's best finish: the earliest arrival among its scored finishes not excluded and not failed at
+        their frame-end re-solve. Anchor frames have none: there a slower arrival may carry more speed, which the
+        priority guard in run_bound judges."""
+        if not final_frame(f):
+            return None
+        return min((r['arrival'] for r in f['records'] if r.get('witness') and r.get('arrival') is not None and
+                    not r.get('preparationDeferral') and not r.get('timeBoundExclusion') and
+                    (r.get('frameEnd') or {}).get('status')!='failed'),default=None)
+
+    def reserve_slower(program, f):
+        # In the final frame a node already as slow as the best finish cannot beat it: it is a reserve until that finish
+        # fails its frame-end re-solve (user, 2026-11-24).
+        if f is None or (program.get('restoredRun') or {}).get('frame')==f['id']:
+            return None
+        tick=best_arrival(f)
+        if tick is None or program['profile']['duration']<tick:
+            return None
+        proof=dict(reason='frame_best_reached',elapsedInputs=program['profile']['duration'],frameBestTick=tick)
+        reserve(program,f,proof)
         return proof
 
     def eligible(program, f=None):
         if reject_time(program,f) is not None:
             return False
-        return (not hard_bound(program,f) and run_bound(program,f) is None and accepted_program(program) and
-                stage_adapter(f).program_allowed(program))
+        return (not hard_bound(program,f) and reserve_slower(program,f) is None and run_bound(program,f) is None and
+                accepted_program(program) and stage_adapter(f).program_allowed(program))
 
     def reject_time(program,f):
         proof=time_bound(program,f)
@@ -404,7 +437,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
             arrivals=[p for b in f['goal'].get('blocks',[f['goal']['block']])
                       for p in _landing_prefixes(scene,program,b)]
             if arrivals:bounded=min(arrivals,key=lambda p:p['profile']['duration'])
-        bound=time_bound(bounded,f) or hard_bound(bounded,f) or run_bound(bounded,f)
+        bound=time_bound(bounded,f) or hard_bound(bounded,f) or reserve_slower(bounded,f) or run_bound(bounded,f)
         if bound is not None:
             return bound
         g=f['goal']
@@ -865,14 +898,64 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
         alternate.pop('frameEnd',None)
         return alternate
 
-    def restore_fallback(f, recovery):
+    def restore_first(f, reserves, recovery):
+        """Restore the first of `reserves` in priority order that the incumbent and hard bounds still allow, retiring the
+        ones they exclude, and point the frame at the work it restored; False when none came back. `recovery` is the
+        failure that released them, None when the frame's own options ran out."""
+        cached=False
+        for saved in sorted(reserves,key=lambda r:priority(r['program'],f,r['candidate'])):
+            p=copy.deepcopy(saved['program']);p['restoredRun']=dict(frame=f['id'],candidate=saved['candidate'])
+            excluded=time_bound(p,f) or hard_bound(p,f)
+            if excluded is not None:
+                saved.update(retired=True,restorationExclusion=excluded)
+                continue
+            released=recovery or (dict(reason='frame_best_failed',frameBestTick=best_arrival(f))
+                if saved['proof'].get('reason')=='frame_best_reached' else dict(reason='frame_options_failed'))
+            saved.update(restored=True,recovery=released)
+            prior=next((r for r in f['records'] if r.get('witness') and
+                candidate_key(r.get('child',r['program']))==saved['candidate']),None)
+            if prior is not None:
+                prior['program']['restoredRun']=p['restoredRun']
+                prior['child']['restoredRun']=p['restoredRun']
+                prior.pop('preparationDeferral',None);prior['tried']=False;cached=True
+            elif p['terminalSupport'] in f['goal'].get('blocks',[f['goal']['block']]):
+                f['ready'].append(p)
+            else:
+                continuation=f['generation'].get('continuation')
+                if continuation is not None:
+                    if 'decisionNode' not in p:
+                        # Screened before it was linked: its subtree keeps the node that reserved it from being exhausted.
+                        p.update(decisionNode=digest(['restoredRun',f['id'],saved['candidate']]),decisionParent=saved['decision'])
+                        continuation['decisionParents'][p['decisionNode']]=saved['decision']
+                    continuation['pending'].append(p);continuation['exhausted']=False
+                    f['sourceExhausted']=False
+            transition('restore_run',f,candidate=saved['candidate'],recovery=released,cachedWitness=cached)
+            break
+        if cached or f['ready'] or not f['sourceExhausted']:
+            f['phase']='select' if cached else 'score' if f['ready'] else 'generate'
+            return True
+        return False
+
+    def fallback_sources(f):
+        """The original record of each failed candidate (in failure order) with fallback variants not yet restored."""
         for candidate in f.get('failedCandidates',[]):
             original = next((r for r in f['records'] if r['id']==candidate),None)
             while original is not None and original.get('variantOf'):
                 original = next((r for r in f['records'] if r['id']==original['variantOf']),None)
-            if original is None:
-                continue
-            fallbacks = original['program'].get('repairState',{}).get('fallbackVariants',[])
+            if original is not None and original.get('restoredFallbacks',0) < len(fallbacks_of(original)):
+                yield original
+
+    def fallbacks_of(record):
+        return record['program'].get('repairState',{}).get('fallbackVariants',[])
+
+    def mark_failed(f, candidate):
+        failed=f.setdefault('failedCandidates',[])
+        if candidate not in failed:
+            failed.append(candidate)
+
+    def restore_fallback(f, recovery):
+        for original in list(fallback_sources(f)):
+            fallbacks = fallbacks_of(original)
             while original.get('restoredFallbacks',0) < len(fallbacks):
                 variant = fallbacks[original.get('restoredFallbacks',0)]
                 original['restoredFallbacks'] = original.get('restoredFallbacks',0)+1
@@ -890,14 +973,11 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
             state['frames'].remove(old)
         state['frames'].append(f)
         if not f.get('validatedFinish'):
-            rejected=any((r.get('nodeFeasibility') or {}).get('status')=='oracle_rejected' for r in f['records'])
-            if rejected or f.get('recoveryFailure'):
-                parent=next((v for v in state['stack'] if f['parent'] and v['id']==f['parent']['frame']),None)
-                if parent is not None:
-                    parent['recoveryFailure']=dict(reason='required_descendant_oracle_rejected',frame=f['id'])
-                    failed=parent.setdefault('failedCandidates',[])
-                    if f['parent']['candidate'] not in failed:
-                        failed.append(f['parent']['candidate'])
+            # A frame that closes without a validated finish failed, whatever the reason (user, 2026-11-24).
+            parent=next((v for v in state['stack'] if f['parent'] and v['id']==f['parent']['frame']),None)
+            if parent is not None:
+                parent['recoveryFailure']=dict(reason='descendant_failed',frame=f['id'])
+                mark_failed(parent,f['parent']['candidate'])
         if any(numerical_pending(r) for r in f['records']):
             state['suspended'].append(f)
         transition('backtrack',f,parent=f['parent'])
@@ -908,23 +988,31 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
                               after=stage_adapter(frame).request['afterTick'])
 
     def live_programs(f):
-        # Frame programs outside the frontier that can still produce a group-end arrival.
+        # Frame programs outside the frontier that can still produce a group-end arrival, and the reserves and fallbacks
+        # not yet released, at their nodes: a node is exhausted only once nothing below it is pending (user, 2026-11-24).
+        reserves=[dict(decisionNode=r['decision']) for r in state['minimumRunExclusions']
+                  if r['frame']==f['id'] and not r.get('restored') and not r.get('retired')]
+        fallbacks=[dict(decisionNode=r.get('child',r['program']).get('decisionNode')) for r in fallback_sources(f)]
         return f['ready']+([f['inFlight']['program']] if f['inFlight'] is not None else [])+[
-            r['program'] for r in f['records'] if not r.get('witness') and numerical_pending(r)]
+            r['program'] for r in f['records'] if not r.get('witness') and numerical_pending(r)]+reserves+fallbacks
 
     def succeed(f, program):
         # A validated group-end arrival: its decision node and every ancestor keep their held alternatives.
         continuation=f['generation'].get('continuation')
         if continuation is None or 'succeededNodes' not in continuation:return
+        from parkour_solver.search.frontier import FRAME_START
         done=set(continuation['succeededNodes']);node=program.get('decisionNode')
         while node and node not in done:
             continuation['succeededNodes'].append(node);done.add(node)
             node=continuation['decisionParents'].get(node)
+        if FRAME_START not in done:
+            continuation['succeededNodes'].append(FRAME_START)
 
     def restore_alternatives(f):
         from parkour_solver.search.frontier import restore_alternatives as restore
         continuation=f['generation'].get('continuation')
-        if continuation is None or 'alternatives' not in continuation or not restore(continuation,live_programs(f)):
+        if continuation is None or 'alternatives' not in continuation or not restore(
+                continuation,live_programs(f),lambda p,identity:priority(p,f,identity)):
             return False
         continuation['exhausted']=False
         f['sourceExhausted']=False
@@ -1160,6 +1248,7 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
                 # A finish that cannot beat the incumbent needs no answer.
                 if (numerical_backend!='ipopt' and (not final_frame(f) or improves(chosen))
                         and (chosen.get('frameEnd') or {}).get('status')!='confirmed' and not frame_end(f,chosen)):
+                    mark_failed(f,chosen['id'])
                     continue
                 if final_frame(f):
                     # The frame stays open: its next finish may still beat this one's answer.
@@ -1182,38 +1271,19 @@ def search_goals(scene, compiler, adapter, work, motion, *, cfg, accepted_progra
                 transition('restore_node_alternative',f)
                 f['phase'] = 'generate'
                 continue
-            if f.get('recoveryFailure') and not f.get('validatedFinish'):
-                recovery=f.pop('recoveryFailure')
-                if restore_fallback(f,recovery):
+            if not f.get('validatedFinish'):
+                # Everything the frame chose failed, at its frame-end re-solve or below (user, 2026-11-24): fallbacks of
+                # the failed candidates first, then the reserves; final-frame reserves once they can beat the frame's
+                # best live finish.
+                recovery=f.pop('recoveryFailure',None)
+                if restore_fallback(f,recovery or dict(reason='frame_options_failed')):
                     f['phase']='select'
                     continue
+                tick=best_arrival(f)
                 deferred=[r for r in state['minimumRunExclusions'] if r['frame']==f['id'] and
-                          not r.get('restored') and not r.get('retired')]
-                cached=False
-                for saved in sorted(deferred,key=lambda r:priority(r['program'],f,r['candidate'])):
-                    p=copy.deepcopy(saved['program']);p['restoredRun']=dict(frame=f['id'],candidate=saved['candidate'])
-                    excluded=time_bound(p,f) or hard_bound(p,f)
-                    if excluded is not None:
-                        saved.update(retired=True,restorationExclusion=excluded)
-                        continue
-                    saved.update(restored=True,recovery=recovery)
-                    prior=next((r for r in f['records'] if r.get('witness') and
-                        candidate_key(r.get('child',r['program']))==saved['candidate']),None)
-                    if prior is not None:
-                        prior['program']['restoredRun']=p['restoredRun']
-                        prior['child']['restoredRun']=p['restoredRun']
-                        prior.pop('preparationDeferral',None);prior['tried']=False;cached=True
-                    elif p['terminalSupport'] in f['goal'].get('blocks',[f['goal']['block']]):
-                        f['ready'].append(p)
-                    else:
-                        continuation=f['generation'].get('continuation')
-                        if continuation is not None:
-                            continuation['pending'].append(p);continuation['exhausted']=False
-                            f['sourceExhausted']=False
-                    transition('restore_run',f,candidate=saved['candidate'],recovery=recovery,cachedWitness=cached)
-                    break
-                if cached or f['ready'] or not f['sourceExhausted']:
-                    f['phase']='select' if cached else 'score' if f['ready'] else 'generate'
+                          not r.get('restored') and not r.get('retired') and (
+                          r['proof'].get('reason')!='frame_best_reached' or tick is None or r['program']['profile']['duration']<tick)]
+                if deferred and restore_first(f,deferred,recovery):
                     continue
             close_frame(f)
         if not state['stack'] and state['suspended']:

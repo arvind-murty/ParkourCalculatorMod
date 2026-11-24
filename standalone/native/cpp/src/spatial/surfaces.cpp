@@ -55,9 +55,10 @@ std::optional<Rect> overlap(const Rect& a, const Rect& b, bool positive_area = t
     return std::nullopt;
 }
 
-bool adjacent(const Rect& a, const Rect& b) {
-    auto o = overlap(a, b, false);
-    return o && ((*o)[0].value < (*o)[2].value || (*o)[1].value < (*o)[3].value);
+bool adjacent(const Rect& a, const Rect& b) {  // _adjacent
+    double gap_u = std::max(a[0].value, b[0].value) - std::min(a[2].value, b[2].value);
+    double gap_v = std::max(a[1].value, b[1].value) - std::min(a[3].value, b[3].value);
+    return gap_u < kMinFreeWidth && gap_v < kMinFreeWidth && (gap_u < 0 || gap_v < 0);
 }
 
 using Fragment = std::pair<std::int64_t, Rect>;  // (owner solid, rect)

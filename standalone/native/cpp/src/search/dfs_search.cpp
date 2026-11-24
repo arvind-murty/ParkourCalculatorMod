@@ -421,6 +421,9 @@ NodeSearch DfsSearch::node_search(Frame& f, Value* context_id, const Value& poli
     n.transfers = state_.transfer_time_bounds ? *state_.transfer_time_bounds : object({});
     n.latch_revision = state_.latch_revision;
     n.minimum_run_pruning = options_.minimum_run_pruning;
+    n.frame_best = best_arrival(f);
+    if (const Continuation* continuation = f.generation.continuation(); continuation && continuation->expansion.value)
+        n.expanding_node = get_or_null(fields(continuation->expansion.value->program), "decisionNode");
     n.guide_plan = options_.guide_plan;
     n.motion = options_.motion;
     n.turnaround_margin = at(fields(at(fields(options_.anchor_policy), "turnaround")), "spatialMargin");
@@ -519,6 +522,29 @@ Value DfsSearch::run_bound(const SharedValue& program, Frame& f) {
     return proof;
 }
 
+// best_arrival: the final frame's earliest arrival among its scored finishes not excluded and not failed at their
+// frame-end re-solve; anchor frames have none.
+std::optional<std::int64_t> DfsSearch::best_arrival(const Frame& f) const {
+    std::optional<std::int64_t> best;
+    if (!final_frame(f)) return best;
+    for (const auto& r : f.records) {
+        if (!r->witness || !r->arrival.value || r->preparation_deferral || r->time_bound_exclusion) continue;
+        if (r->frame_end && py_equal(get_or_null(fields(*r->frame_end), "status"), text("failed"))) continue;
+        best = best ? std::min(*best, *r->arrival.value) : *r->arrival.value;
+    }
+    return best;
+}
+
+Value DfsSearch::reserve_slower(const SharedValue& program, Frame& f) {
+    Value context_id;
+    NodeSearch search = node_search(f, &context_id);
+    Program typed = program_from_value(*program);
+    NodeEffects effects;
+    const Value proof = search.reserve_slower(typed, effects);
+    apply(effects, f, context_id);
+    return proof;
+}
+
 Value DfsSearch::reject_time(const Value& program, Frame& f) {
     const Value proof = time_bound(program, f);
     if (!is_null(proof)) state_.time_bound_exclusions.push_back(TimeBoundExclusion{candidate_key(program), proof});
@@ -527,7 +553,8 @@ Value DfsSearch::reject_time(const Value& program, Frame& f) {
 
 bool DfsSearch::eligible(const SharedValue& program, Frame& f) {
     if (!is_null(reject_time(*program, f))) return false;
-    if (py_truthy(hard_bound(*program, f)) || !is_null(run_bound(program, f))) return false;
+    if (py_truthy(hard_bound(*program, f)) || !is_null(reserve_slower(program, f)) || !is_null(run_bound(program, f)))
+        return false;
     return node_search(f, nullptr).admitted(program_from_value(*program));
 }
 
@@ -977,21 +1004,115 @@ DfsSearch::RecordPtr DfsSearch::variant_record(Frame& f, const Record& record, c
     return alternate;
 }
 
-bool DfsSearch::restore_fallback(Frame& f, const Value& recovery) {
-    if (!f.failed_candidates) return false;
-    const std::vector<std::string> failed = *f.failed_candidates;
+// restore_first: restore the first of the reserves in priority order that the incumbent and hard bounds still allow,
+// retiring the ones they exclude, and point the frame at the work it restored; false when none came back.
+bool DfsSearch::restore_first(Frame& f, const std::vector<std::size_t>& reserves, const std::optional<Value>& recovery) {
+    // `recovery` is the failure that released the reserves, none when the frame's own options ran out.
+    std::vector<std::pair<Value, std::size_t>> ordered;
+    for (std::size_t i : reserves) {
+        const MinimumRunExclusion& r = state_.minimum_run_exclusions[i];
+        ordered.emplace_back(priority(r.program, f, r.candidate), i);
+    }
+    std::stable_sort(ordered.begin(), ordered.end(),
+                     [](const auto& a, const auto& b) { return py_compare(a.first, b.first) < 0; });
+    bool cached = false;
+    for (const auto& [_, i] : ordered) {
+        MinimumRunExclusion& saved = state_.minimum_run_exclusions[i];
+        const Value restored_run = object({{"frame", integer_value(f.id)}, {"candidate", text(saved.candidate)}});
+        const Value p = set_key(saved.program, "restoredRun", restored_run);
+        Value excluded = time_bound(p, f);
+        if (!py_truthy(excluded)) excluded = hard_bound(p, f);
+        if (py_truthy(excluded)) {
+            saved.retired = true;
+            saved.restoration_exclusion = excluded;
+            continue;
+        }
+        const Value released =
+            recovery ? *recovery
+            : py_equal(get_or_null(fields(saved.proof), "reason"), text("frame_best_reached"))
+                ? object({{"reason", text("frame_best_failed")},
+                          {"frameBestTick", best_arrival(f) ? integer_value(*best_arrival(f)) : Value{nullptr}}})
+                : object({{"reason", text("frame_options_failed")}});
+        saved.restored = true;
+        saved.recovery = released;
+        RecordPtr prior;
+        for (const RecordPtr& r : f.records)
+            if (r->witness && candidate_key(r->child ? **r->child : *r->program) == saved.candidate) {
+                prior = r;
+                break;
+            }
+        if (prior) {
+            annotate(prior->program, "restoredRun", restored_run);
+            annotate(*prior->child, "restoredRun", restored_run);
+            prior->preparation_deferral.reset();
+            prior->tried = false;
+            cached = true;
+        } else if (lands_in(p, goal_blocks(f.goal))) {
+            f.ready.push_back(std::make_shared<Value>(p));
+        } else {
+            if (Continuation* continuation = f.generation.continuation()) {
+                Value linked = p;
+                if (!get(fields(p), "decisionNode")) {
+                    // Screened before it was linked: its subtree keeps the node that reserved it from being exhausted.
+                    const std::string node =
+                        digest(array({text("restoredRun"), integer_value(f.id), text(saved.candidate)}));
+                    linked = set_key(set_key(p, "decisionNode", text(node)), "decisionParent", saved.decision);
+                    (*continuation->decision_parents)[node] = Nullable<std::string>{
+                        is_null(saved.decision) ? std::nullopt : std::optional<std::string>(as_text(saved.decision))};
+                }
+                continuation->pending.push_back(linked);
+                continuation->exhausted = false;
+                f.source_exhausted = false;
+            }
+        }
+        transition("restore_run", f, {{"candidate", text(saved.candidate)}, {"recovery", released},
+                                      {"cachedWitness", boolean(cached)}});
+        break;
+    }
+    if (cached || !f.ready.empty() || !f.source_exhausted) {
+        f.phase = cached ? "select" : !f.ready.empty() ? "score" : "generate";
+        return true;
+    }
+    return false;
+}
+
+namespace {
+
+Array fallbacks_of(const Record& record) {
+    if (const Value* repair = get(fields(*record.program), "repairState"))
+        if (const Value* held = get(fields(*repair), "fallbackVariants")) return items(*held);
+    return {};
+}
+
+}  // namespace
+
+std::vector<DfsSearch::RecordPtr> DfsSearch::fallback_sources(Frame& f) {
+    // The original record of each failed candidate (in failure order) with fallback variants not yet restored.
+    std::vector<RecordPtr> out;
+    if (!f.failed_candidates) return out;
     const auto by_id = [&](const std::string& id) -> RecordPtr {
         for (const RecordPtr& r : f.records)
             if (r->id == id) return r;
         return nullptr;
     };
-    for (const std::string& candidate : failed) {
+    for (const std::string& candidate : *f.failed_candidates) {
         RecordPtr original = by_id(candidate);
         while (original && original->variant_of && !original->variant_of->empty()) original = by_id(*original->variant_of);
-        if (!original) continue;
-        Array fallbacks;
-        if (const Value* repair = get(fields(*original->program), "repairState"))
-            if (const Value* held = get(fields(*repair), "fallbackVariants")) fallbacks = items(*held);
+        if (original && original->restored_fallbacks.value_or(0) < static_cast<std::int64_t>(fallbacks_of(*original).size()))
+            out.push_back(original);
+    }
+    return out;
+}
+
+void DfsSearch::mark_failed(Frame& f, const std::string& candidate) {
+    if (!f.failed_candidates) f.failed_candidates.emplace();
+    auto& failed = *f.failed_candidates;
+    if (std::find(failed.begin(), failed.end(), candidate) == failed.end()) failed.push_back(candidate);
+}
+
+bool DfsSearch::restore_fallback(Frame& f, const Value& recovery) {
+    for (const RecordPtr& original : fallback_sources(f)) {
+        const Array fallbacks = fallbacks_of(*original);
         while (original->restored_fallbacks.value_or(0) < static_cast<std::int64_t>(fallbacks.size())) {
             const Value variant = fallbacks.at(original->restored_fallbacks.value_or(0));
             original->restored_fallbacks = original->restored_fallbacks.value_or(0) + 1;
@@ -1013,26 +1134,17 @@ void DfsSearch::close_frame(const FramePtr& f) {
     if (old != state_.frames.end()) state_.frames.erase(old);
     state_.frames.push_back(f);
     if (!f->validated_finish.value_or(false)) {
-        bool rejected = false;
-        for (const RecordPtr& r : f->records)
-            rejected = rejected || (is_object(r->node_feasibility) &&
-                                    py_equal(get_or_null(fields(r->node_feasibility), "status"), text("oracle_rejected")));
-        if (rejected || (f->recovery_failure && py_truthy(*f->recovery_failure))) {
-            FramePtr parent;
-            if (f->parent.value)
-                for (const FramePtr& v : state_.stack)
-                    if (v->id == f->parent.value->frame) {
-                        parent = v;
-                        break;
-                    }
-            if (parent) {
-                parent->recovery_failure =
-                    object({{"reason", text("required_descendant_oracle_rejected")}, {"frame", integer_value(f->id)}});
-                if (!parent->failed_candidates) parent->failed_candidates.emplace();
-                auto& failed = *parent->failed_candidates;
-                if (std::find(failed.begin(), failed.end(), f->parent.value->candidate) == failed.end())
-                    failed.push_back(f->parent.value->candidate);
-            }
+        // A frame that closes without a validated finish failed, whatever the reason (user, 2026-11-24).
+        FramePtr parent;
+        if (f->parent.value)
+            for (const FramePtr& v : state_.stack)
+                if (v->id == f->parent.value->frame) {
+                    parent = v;
+                    break;
+                }
+        if (parent) {
+            parent->recovery_failure = object({{"reason", text("descendant_failed")}, {"frame", integer_value(f->id)}});
+            mark_failed(*parent, f->parent.value->candidate);
         }
     }
     if (std::any_of(f->records.begin(), f->records.end(), [&](const RecordPtr& r) { return numerical_pending(*r); }))
@@ -1041,12 +1153,18 @@ void DfsSearch::close_frame(const FramePtr& f) {
 }
 
 std::vector<Value> DfsSearch::live_programs(Frame& f) {
-    // Frame programs outside the frontier that can still produce a group-end arrival.
+    // Frame programs outside the frontier that can still produce a group-end arrival, and the reserves and fallbacks
+    // not yet released, at their nodes: a node is exhausted only once nothing below it is pending (user, 2026-11-24).
     std::vector<Value> out;
     for (const SharedValue& p : f.ready) out.push_back(*p);
     if (f.in_flight.value) out.push_back(*f.in_flight.value->program);
     for (const RecordPtr& r : f.records)
         if (!r->witness && numerical_pending(*r)) out.push_back(*r->program);
+    for (const MinimumRunExclusion& r : state_.minimum_run_exclusions)
+        if (r.frame == f.id && !r.restored.value_or(false) && !r.retired.value_or(false))
+            out.push_back(object({{"decisionNode", r.decision}}));
+    for (const RecordPtr& r : fallback_sources(f))
+        out.push_back(object({{"decisionNode", get_or_null(fields(r->child ? **r->child : *r->program), "decisionNode")}}));
     return out;
 }
 
@@ -1065,11 +1183,14 @@ void DfsSearch::succeed(Frame& f, const Value& program) {
         const Nullable<std::string>* parent = continuation->decision_parents->find(*node);
         node = parent ? parent->value : std::nullopt;
     }
+    if (!done.count(kFrameStart)) nodes.push_back(kFrameStart);
 }
 
 bool DfsSearch::restore_alternatives(Frame& f) {
     Continuation* continuation = f.generation.continuation();
-    if (!continuation || !continuation->alternatives || !pkc::restore_alternatives(*continuation, live_programs(f)))
+    const auto by_priority = [this, &f](const Value& p, const std::string& identity) { return priority(p, f, identity); };
+    if (!continuation || !continuation->alternatives ||
+        !pkc::restore_alternatives(*continuation, live_programs(f), by_priority))
         return false;
     continuation->exhausted = false;
     f.source_exhausted = false;
@@ -1456,8 +1577,10 @@ std::string DfsSearch::run() {
                 if (options_.numerical_backend != "ipopt" && (!final_frame(*f) || improves(*chosen)) &&
                     !(chosen->frame_end &&
                       py_equal(get_or_null(fields(*chosen->frame_end), "status"), text("confirmed"))) &&
-                    !frame_end(*f, *chosen))
+                    !frame_end(*f, *chosen)) {
+                    mark_failed(*f, chosen->id);
                     continue;
+                }
                 if (final_frame(*f)) {
                     // The frame stays open: its next finish may still beat this one's answer.
                     commit_finish(*f, *chosen);
@@ -1498,62 +1621,26 @@ std::string DfsSearch::run() {
                 f->phase = "generate";
                 continue;
             }
-            if (f->recovery_failure && py_truthy(*f->recovery_failure) && !f->validated_finish.value_or(false)) {
-                const Value recovery = *f->recovery_failure;
+            if (!f->validated_finish.value_or(false)) {
+                // Everything the frame chose failed, at its frame-end re-solve or below (user, 2026-11-24): fallbacks
+                // of the failed candidates first, then the reserves; final-frame reserves once they can beat the
+                // frame's best live finish.
+                std::optional<Value> recovery;
+                if (f->recovery_failure && py_truthy(*f->recovery_failure)) recovery = *f->recovery_failure;
                 f->recovery_failure.reset();
-                if (restore_fallback(*f, recovery)) {
+                if (restore_fallback(*f, recovery ? *recovery : object({{"reason", text("frame_options_failed")}}))) {
                     f->phase = "select";
                     continue;
                 }
-                std::vector<std::pair<Value, std::size_t>> deferred;
+                const std::optional<std::int64_t> tick = best_arrival(*f);
+                std::vector<std::size_t> deferred;
                 for (std::size_t i = 0; i < state_.minimum_run_exclusions.size(); ++i) {
                     const MinimumRunExclusion& r = state_.minimum_run_exclusions[i];
-                    if (r.frame == f->id && !r.restored.value_or(false) && !r.retired.value_or(false))
-                        deferred.emplace_back(priority(r.program, *f, r.candidate), i);
+                    if (r.frame != f->id || r.restored.value_or(false) || r.retired.value_or(false)) continue;
+                    const bool frame_best = py_equal(get_or_null(fields(r.proof), "reason"), text("frame_best_reached"));
+                    if (!frame_best || !tick || duration_of(r.program) < *tick) deferred.push_back(i);
                 }
-                std::stable_sort(deferred.begin(), deferred.end(),
-                                 [](const auto& a, const auto& b) { return py_compare(a.first, b.first) < 0; });
-                bool cached = false;
-                for (const auto& [_, i] : deferred) {
-                    MinimumRunExclusion& saved = state_.minimum_run_exclusions[i];
-                    const Value restored_run =
-                        object({{"frame", integer_value(f->id)}, {"candidate", text(saved.candidate)}});
-                    const Value p = set_key(saved.program, "restoredRun", restored_run);
-                    Value excluded = time_bound(p, *f);
-                    if (!py_truthy(excluded)) excluded = hard_bound(p, *f);
-                    if (py_truthy(excluded)) {
-                        saved.retired = true;
-                        saved.restoration_exclusion = excluded;
-                        continue;
-                    }
-                    saved.restored = true;
-                    saved.recovery = recovery;
-                    const RecordPtr prior = first_record(*f, [&](const Record& r) {
-                        return r.witness && candidate_key(r.child ? **r.child : *r.program) == saved.candidate;
-                    });
-                    if (prior) {
-                        annotate(prior->program, "restoredRun", restored_run);
-                        annotate(*prior->child, "restoredRun", restored_run);
-                        prior->preparation_deferral.reset();
-                        prior->tried = false;
-                        cached = true;
-                    } else if (lands_in(p, goal_blocks(f->goal))) {
-                        f->ready.push_back(std::make_shared<Value>(p));
-                    } else {
-                        if (Continuation* continuation = f->generation.continuation()) {
-                            continuation->pending.push_back(p);
-                            continuation->exhausted = false;
-                            f->source_exhausted = false;
-                        }
-                    }
-                    transition("restore_run", *f, {{"candidate", text(saved.candidate)}, {"recovery", recovery},
-                                                   {"cachedWitness", boolean(cached)}});
-                    break;
-                }
-                if (cached || !f->ready.empty() || !f->source_exhausted) {
-                    f->phase = cached ? "select" : !f->ready.empty() ? "score" : "generate";
-                    continue;
-                }
+                if (!deferred.empty() && restore_first(*f, deferred, recovery)) continue;
             }
             close_frame(f);
         }

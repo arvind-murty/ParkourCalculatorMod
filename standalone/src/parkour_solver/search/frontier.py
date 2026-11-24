@@ -10,6 +10,9 @@ from parkour_solver.canonical import digest
 from parkour_solver.search.identity import processing_key
 from parkour_solver.search.comparison import POLICY_VERSION as COMPARISON_POLICY_VERSION
 
+# The node a frame's initial program decides at: every node of the frame descends from it.
+FRAME_START = 'frameStart'
+
 
 def take_first(items, key):
     """Pop the item with the smallest key, list order breaking ties (user: every tied program is expanded
@@ -17,12 +20,15 @@ def take_first(items, key):
     return items.pop(min(range(len(items)), key=lambda i: key(items[i], '')))
 
 
-def restore_alternatives(state, extra_live=()):
+def restore_alternatives(state, extra_live=(), key=None):
     """Queue a decision node's next held alternative once its branch died: no live program descends
     from the node (or from every node the entry watches) or from an alternative already restored for
     it, this pass's restorations included. A branch with a validated group-end arrival below it never
     restores. A side variant still held (sideReserves, or a side entry not yet restored) is live, so what
-    watches it or its decision waits until the side variants are exhausted. Returns whether anything was queued."""
+    watches it or its decision waits until the side variants are exhausted; `extra_live` adds the search's own
+    pending work, its unreleased reserves and fallbacks included. Every live program also keeps FRAME_START
+    alive. Entries are released in the queue's priority order (`key`, as take_first calls it), so of two held on
+    one node the one the queue would take first comes back first. Returns whether anything was queued."""
     succeeded = set(state.get('succeededNodes', []))
     waiting = [(node, held) for node, held in state.get('alternatives', {}).items()
                if held['next'] < len(held['programs']) and node not in succeeded]
@@ -32,15 +38,20 @@ def restore_alternatives(state, extra_live=()):
     expansion = state['expansion'] or {}
     alive = set()
     def live(program):
-        node = program.get('decisionNode') if program else None
+        if not program:
+            return
+        node = program.get('decisionNode')
         while node and node not in alive:
             alive.add(node)
             node = parents.get(node)
+        alive.add(FRAME_START)
     held_sides = [p for reserve in state.get('sideReserves', []) for p in reserve['programs']] + [
         held['programs'][0] for held in state['alternatives'].values() if 'side' in held and not held['next']]
     for program in [*state['pending'], *state['ready'], state.get('nodeInFlight'),
                     expansion.get('program'), *extra_live, *held_sides]:
         live(program)
+    if key is not None:
+        waiting.sort(key=lambda item: key(item[1]['programs'][item[1]['next']], ''))
     restored = False
     for node, held in waiting:
         if (any(n in alive or n in succeeded for n in held.get('watch', [node])) or
@@ -110,7 +121,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
         return take_first(items, key)
 
     def restore():
-        return node_evaluator is not None and restore_alternatives(state, live_programs() if live_programs else ())
+        return node_evaluator is not None and restore_alternatives(state, live_programs() if live_programs else (), key)
 
     def project_owned(program):
         from parkour_solver.search.goals import _landing_prefixes
@@ -226,9 +237,6 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                 move['forwards'].append([child['decisionNode'], tag['side']])
         if tag is None or tag['forward']:
             (state['ready'] if complete(child) else state['pending']).append(child)
-        if state['expansion'] is not None:
-            # What a held jump back onto the launch face of this expansion waits for (hold_same_face).
-            state['expansion'].setdefault('queuedNodes',[]).append(child.get('decisionNode'))
 
     def target_keys(base, child):
         return {json.dumps(list(target)) for target in run_policy['targets'](base, child)}
@@ -555,7 +563,6 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
         state.setdefault('minimumRunCandidates',[]).extend(log)
         for fields,watch in reserves:
             key=digest([node,'minimumRunTicks',fields])
-            e.setdefault('queuedNodes',[]).append(key)
             if key in state['alternatives']:
                 continue
             held=copy.deepcopy(program)
@@ -566,21 +573,17 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             state['decisionParents'][key]=node
 
     def hold_same_face(e):
-        """Queue each held jump back onto the launch face of an ordinary decision P (O11) at once when P queued or reserved nothing
-        else; otherwise reserve it until every other branch of P died: everything below P's node, and the nodes P
-        queued and reserved (P's node is None at frame 0's initial program)."""
+        """Hold each jump back onto the launch face of an ordinary decision P that does not fit it (O11) until P is
+        exhausted: nothing below P's node pending, the search's reserves included (restore_alternatives)."""
         program=e['program']
-        node,others=program.get('decisionNode'),e.get('queuedNodes',[])
+        node=program.get('decisionNode')
         for held in e.pop('held',[]):
             child=held['program']
-            if others:
-                state['alternatives'][digest([node,'sameFace',child['decisionNode']])]=dict(
-                    programs=[child],restored=[],next=0,watch=([node] if node else [])+others)
-            else:
-                (state['ready'] if complete(child) else state['pending']).append(child)
+            state['alternatives'][digest([node,'sameFace',child['decisionNode']])]=dict(
+                programs=[child],restored=[],next=0,watch=[node or FRAME_START])
             state.setdefault('minimumRunCandidates',[]).append(dict(
                 node=node,key=json.dumps(['same_face',held['face']]),k=0,total=held['total'],A=None,N=None,lower=0,round=0,
-                outcome='held' if others else 'queued',nodes=[child['decisionNode']],room=held['room'],jump=held['jump']))
+                outcome='held',nodes=[child['decisionNode']],room=held['room'],jump=held['jump']))
 
     def hold_sides(e):
         """Reserve each move's held sides behind its forward nodes until those are solved (settle_sides). Without a

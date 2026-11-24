@@ -555,16 +555,20 @@ class AnchorDFSTests(unittest.TestCase):
         first=next(programs[0] for programs,_ in generated if programs[0]['terminalSupport']=='mid')
         self.assertFalse(any(first['profile']['sneak']))
 
-    def test_a_final_frame_tries_its_next_finish_while_it_can_beat_the_incumbent(self):
+    def test_a_confirmed_final_finish_never_restores_an_equally_timed_reserve(self):
         calls=[]
         def final(p,kwargs,best):
             calls.append((p['terminalSupport'],sum(p['profile']['sneak'])))
-            # The best relaxed finish confirms below the next one's relaxed value.
+            # The best relaxed finish confirms below the reserved one's relaxed value.
             return self.physical(p,-2.) if p['terminalSupport']=='goal' and not any(p['profile']['sneak']) else best
         result,_=self.run_tree(relaxed=True,final=final,
             goal_choices=lambda s,parent:[self.sneaking(s,parent,'goal',20,[]),self.sneaking(s,parent,'goal',20,[0])])
-        self.assertEqual([c for c in calls if c[0]=='goal'][:2],[('goal',0),('goal',1)])
-        self.assertEqual(result['best']['candidate']['objective'],-1.)
+        # Each goal frame (under both mid arrivals) confirms its unsneaking finish; the sneaking one stays a reserve.
+        self.assertNotIn(('goal',1),calls)
+        self.assertEqual(result['best']['candidate']['objective'],-2.)
+        reserves=[r for r in result['searchState']['dfs']['minimumRunExclusions'] if r['proof']['reason']=='frame_best_reached']
+        self.assertTrue(reserves)
+        self.assertTrue(all(r['proof']['frameBestTick']==20 and not r.get('restored') for r in reserves))
 
     def test_the_budget_end_confirms_the_best_scored_finish(self):
         # Three calls score both mid arrivals and one of the two finishes; the other is never scored.
@@ -580,6 +584,9 @@ class AnchorDFSTests(unittest.TestCase):
                                                   ('frame_end_confirmed',0)])
         self.assertEqual(result['best']['candidate']['objective'],-1.5)
         self.assertEqual(result['work']['frameEndRejections'],1)
+        # The equally timed finish was a reserve behind the rejected one and came back when it failed.
+        restored=[t['recovery'] for t in result['searchState']['dfs']['transitions'] if t['kind']=='restore_run']
+        self.assertEqual(restored,[dict(reason='frame_best_failed',frameBestTick=None)])
 
     def test_when_every_frame_end_solve_fails_no_route_is_published(self):
         result,_=self.run_tree(relaxed=True,finishes=2,
@@ -623,10 +630,11 @@ class AnchorDFSTests(unittest.TestCase):
         self.assertEqual(result['anchorSearch']['runRestorations'],0)
         self.assertEqual(result['anchorSearch']['runDeferrals'],2)
 
-    def test_unknown_descendant_does_not_trigger_infeasible_recovery(self):
+    def test_a_descendant_failing_without_an_oracle_rejection_restores_deferred_runs(self):
+        # A failure at any point releases the reserves, an unknown descendant included (user, 2026-11-24).
         result,calls=self.run_recovery_tree(oracle=False)
-        self.assertEqual(calls,[('goal',12),('finish',30)])
-        self.assertEqual(result['anchorSearch']['runRestorations'],0)
+        self.assertEqual(calls,[('goal',12),('finish',30),('goal',13),('finish',30)])
+        self.assertEqual(result['anchorSearch']['runRestorations'],1)
 
     def test_anchor_leg_keeps_fallbacks_without_sibling_records(self):
         result,calls=self.run_recovery_tree(reject_first=False,fallbacks=True)

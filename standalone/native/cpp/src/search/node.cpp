@@ -12,6 +12,7 @@
 #include "pkc/movement/generation.hpp"
 #include "pkc/reachability/viability.hpp"
 #include "pkc/search/bounds/remaining.hpp"
+#include "pkc/search/frontier.hpp"
 #include "pkc/search/comparison.hpp"
 #include "pkc/search/feasibility.hpp"
 #include "pkc/search/goals.hpp"
@@ -172,14 +173,37 @@ Value NodeSearch::run_bound(Program& program, NodeEffects& effects) const {
     if (!py_equal(at(fields(decision), "action"), text("defer_preparation"))) return Value{nullptr};
     const Value proof = object({{"reason", text("higher_ticks_without_structural_advantage")}, {"heuristic", boolean(true)},
                                 {"comparison", decision}});
-    if (!frame.excluded_runs.count(identity)) {
-        frame.excluded_runs.insert(identity);
-        const Value* node = note(program, "decisionNode");
-        effects.minimum_run_exclusions.push_back(object(
-            {{"frame", f.frame_id}, {"candidate", text(identity)}, {"proof", proof}, {"program", to_value(program)},
-             {"span", integer_value(f.anchor_index)}, {"decision", node ? *node : Value{nullptr}},
-             {"isTurnaround", turnaround}, {"latchRevision", integer_value(f.latch_revision)}}));
-    }
+    reserve(program, proof, effects);
+    return proof;
+}
+
+void NodeSearch::reserve(const Program& program, const Value& proof, NodeEffects& effects) const {
+    const NodeFrame& f = frame;
+    const std::string identity = candidate_key(program);
+    if (frame.excluded_runs.count(identity)) return;
+    frame.excluded_runs.insert(identity);
+    // At the node that reserved it: a linked program's own decision node, else (a proposal screened before it was
+    // linked) the node being expanded, else the frame start.
+    const Value* node = note(program, "decisionNode");
+    const Value decision = node ? *node : f.expanding_node;
+    const Value* turnaround = note(program, "priorityTurnaround");
+    effects.minimum_run_exclusions.push_back(object(
+        {{"frame", f.frame_id}, {"candidate", text(identity)}, {"proof", proof}, {"program", to_value(program)},
+         {"span", integer_value(f.anchor_index)}, {"decision", py_truthy(decision) ? decision : text(kFrameStart)},
+         {"isTurnaround", turnaround ? *turnaround : boolean(false)}, {"latchRevision", integer_value(f.latch_revision)}}));
+}
+
+Value NodeSearch::reserve_slower(Program& program, NodeEffects& effects) const {
+    // In the final frame a node already as slow as the best finish cannot beat it: it is a reserve until that finish
+    // fails its frame-end re-solve (user, 2026-11-24).
+    const NodeFrame& f = frame;
+    if (const Value* restored = note(program, "restoredRun"); restored && is_object(*restored) &&
+                                                              py_equal(get_or_null(fields(*restored), "frame"), f.frame_id))
+        return Value{nullptr};
+    if (!f.frame_best || program.profile.duration < *f.frame_best) return Value{nullptr};
+    const Value proof = object({{"reason", text("frame_best_reached")}, {"elapsedInputs", integer_value(program.profile.duration)},
+                                {"frameBestTick", integer_value(*f.frame_best)}});
+    reserve(program, proof, effects);
     return proof;
 }
 
@@ -189,7 +213,8 @@ bool NodeSearch::eligible(Program& program, NodeEffects& effects) const {
         effects.time_bound_exclusions.push_back(object({{"id", text(candidate_key(program))}, {"proof", proof}}));
         return false;
     }
-    if (py_truthy(hard_bound(program)) || !is_null(run_bound(program, effects))) return false;
+    if (py_truthy(hard_bound(program)) || !is_null(reserve_slower(program, effects)) || !is_null(run_bound(program, effects)))
+        return false;
     return admitted(program);
 }
 
@@ -230,6 +255,7 @@ Value NodeSearch::screen(Program& program, NodeEffects& effects) const {
     Program& bounded = projected ? *projected : program;
     Value bound = time_bound(bounded);
     if (!py_truthy(bound)) bound = hard_bound(bounded);
+    if (!py_truthy(bound)) bound = reserve_slower(bounded, effects);
     if (!py_truthy(bound)) bound = run_bound(bounded, effects);
     if (!is_null(bound)) return bound;
     std::vector<std::string> required;

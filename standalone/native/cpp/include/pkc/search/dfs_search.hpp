@@ -146,6 +146,9 @@ private:
     Value time_bound(const Value& program, Frame& f);
     Value tick_label(const Value& program, Frame& f, const std::string& identity, bool validated);
     Value run_bound(const SharedValue& program, Frame& f);
+    std::optional<std::int64_t> best_arrival(const Frame& f) const;
+    Value reserve_slower(const SharedValue& program, Frame& f);
+    bool restore_first(Frame& f, const std::vector<std::size_t>& reserves, const std::optional<Value>& recovery);
     bool eligible(const SharedValue& program, Frame& f);
     Value reject_time(const Value& program, Frame& f);
     bool numerical_pending(const Record& r) const;
@@ -156,7 +159,9 @@ private:
     RecordPtr score(Frame& f, const SharedValue& program, const RecordPtr& old);
     void refine(Frame& f, const RecordPtr& pending);
     RecordPtr variant_record(Frame& f, const Record& record, const Value& variant);
+    std::vector<RecordPtr> fallback_sources(Frame& f);
     bool restore_fallback(Frame& f, const Value& recovery);
+    void mark_failed(Frame& f, const std::string& candidate);
     void close_frame(const FramePtr& f);
     bool frame_end(Frame& f, Record& chosen);
     Value witness_rank(const Record& record) const;

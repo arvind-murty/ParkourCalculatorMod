@@ -20,7 +20,7 @@
 namespace pkc {
 
 inline constexpr std::int64_t kHardJumpPolicyVersion = 5;  // policy.HARD_JUMP_POLICY_VERSION
-inline constexpr std::int64_t kSearchPolicyVersion = 22;   // semantic_settings' searchPolicyVersion
+inline constexpr std::int64_t kSearchPolicyVersion = 23;   // semantic_settings' searchPolicyVersion
 
 using Visit = std::pair<std::int64_t, std::string>;  // (tick, face name)
 

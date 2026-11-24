@@ -310,9 +310,11 @@ def node_trace(state, scene=None):
                 for i,name in zip(e['members'],e['names']):
                     # Members are in box order, so a block's repeated name is its next box.
                     solids.setdefault(i,name if e['names'].count(name) == 1 else f'{name}#{e["names"][:e["members"].index(i)].count(name)}')
-            def owners(bound):
-                return '+'.join(sorted({solids.get(o,'?').upper() for o in bound['owners']}))
-            sides = [dict(segment=p['segment'],faces=[[(owners(b),side(b)) for b in f.get('bounds') or [f]] for f in p['faces']])
+            def owners(bound, block):
+                # An over or under side (vertical_side) names no solids: it is the passage block's.
+                return '+'.join(sorted({solids.get(o,'?').upper() for o in bound['owners']})) or block.upper()
+            sides = [dict(segment=p['segment'],faces=[[(owners(b,p['blockId']),side(b)) for b in f.get('bounds') or [f]]
+                                                      for f in p['faces']])
                      for p in (repair.get('interactionChoices',{}).get(branch_key(kept['rows'],kept['passages'],kept['hits']),[])
                                if kept else [])]
             parent = solved(node['parent'])
@@ -673,7 +675,7 @@ RUN_CANDIDATES = dict(anchor='jump onto anchor', ceiling='ceiling jump under', g
                       slab_boost='slab boost onto', corner_jump_cancel='corner jump cancel past', landing='run-off onto',
                       step='step-up onto', scan='run-tick scan', same_face='jump back onto')
 RUN_OUTCOMES = dict(dominated='beaten by a kept candidate', unreached='no run count below the bound passed the screens',
-                    held='held (does not fit its face)', queued='queued at once (does not fit its face; nothing else to wait for)')
+                    held='held (does not fit its face)')
 
 
 def minimum_run_text(candidates, numbers):

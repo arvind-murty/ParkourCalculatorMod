@@ -32,6 +32,8 @@ struct NodeFrame {
     mutable bool comparison_context_set = false;
     std::int64_t tick_peer_revision = 0;
     Value incumbent;  // {T} of state['best'], or null
+    std::optional<std::int64_t> frame_best;  // best_arrival
+    Value expanding_node;                    // the decision node of the program the frontier is expanding, or null
     Value hard_latches, transfers;
     std::int64_t latch_revision = 0;
     bool minimum_run_pruning = false;
@@ -61,6 +63,8 @@ struct NodeSearch {
     Value time_bound(const Program& program) const;
     Value hard_bound(const Program& program) const;
     Value run_bound(Program& program, NodeEffects& effects) const;
+    void reserve(const Program& program, const Value& proof, NodeEffects& effects) const;
+    Value reserve_slower(Program& program, NodeEffects& effects) const;
     bool eligible(Program& program, NodeEffects& effects) const;
     bool admitted(const Program& program) const;  // accepted_program and the adapter's program_allowed
     Value screen(Program& program, NodeEffects& effects) const;  // check_program may add a walk-off selection
