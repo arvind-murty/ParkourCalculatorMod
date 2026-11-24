@@ -1,0 +1,18 @@
+native.solve_case (the entry) vs search/application.run under the native core (hosted), each in its own process,
+{result, validation} compared path by path without wall-clock fields (keys containing 'econds', and 'timings').
+Calibration cases straight{2,4,6,8}-{anchored,open} copied from the learned-search worktree; physical-open is
+cases/real11/physical-anchors.json with anchorSearch.anchors = []; fixed is research/prefix-reuse-keys/2026-11-21/
+extended-fixedwork100.json; short is the short Real11 control. sec = [hosted, entry] seconds of the whole call.
+
+fixed                diffs 0 term numerical_call_limit ticks [None, None] calls [100, 100] exp [48, 48] passed [[], []] sec [14.14, 12.632]
+physical-anchors     diffs 0 term exhausted ticks [64, 64] calls [39, 39] exp [10, 10] passed [[True], [True]] sec [1.879, 1.495]
+physical-open        diffs 0 term exhausted ticks [64, 64] calls [39, 39] exp [10, 10] passed [[True], [True]] sec [1.47, 1.194]
+short                diffs 0 term exhausted ticks [64, 64] calls [39, 39] exp [10, 10] passed [[True], [True]] sec [1.847, 1.495]
+straight2-anchored   diffs 0 term exhausted ticks [12, 12] calls [1, 1] exp [1, 1] passed [[True], [True]] sec [0.134, 0.086]
+straight2-open       diffs 0 term exhausted ticks [12, 12] calls [1, 1] exp [1, 1] passed [[True], [True]] sec [0.184, 0.081]
+straight4-anchored   diffs 0 term exhausted ticks [36, 36] calls [3, 3] exp [3, 3] passed [[True], [True]] sec [0.359, 0.305]
+straight4-open       diffs 0 term exhausted ticks [36, 36] calls [3, 3] exp [3, 3] passed [[True], [True]] sec [0.273, 0.129]
+straight6-anchored   diffs 0 term exhausted ticks [60, 60] calls [6, 6] exp [5, 5] passed [[True], [True]] sec [0.605, 0.516]
+straight6-open       diffs 0 term exhausted ticks [60, 60] calls [6, 6] exp [5, 5] passed [[True], [True]] sec [0.23, 0.149]
+straight8-anchored   diffs 0 term exhausted ticks [84, 84] calls [9, 9] exp [7, 7] passed [[True], [True]] sec [0.962, 0.825]
+straight8-open       diffs 0 term exhausted ticks [84, 84] calls [9, 9] exp [7, 7] passed [[True], [True]] sec [0.307, 0.207]

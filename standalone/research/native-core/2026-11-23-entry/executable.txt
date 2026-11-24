@@ -1,0 +1,28 @@
+pkc_solve links (otool -L):
+build/native/cpp/pkc_solve:
+	/usr/lib/libsqlite3.dylib (compatibility version 9.0.0, current version 350.2.0)
+	/usr/lib/libz.1.dylib (compatibility version 1.0.0, current version 1.2.12)
+	/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 1600.157.0)
+	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1336.61.1)
+
+pkc_solve run from /tmp with an empty environment (env -i), report read back with read_report and compared with the
+hosted result without wall-clock fields: straight8-anchored and physical-anchors equal, validation equal; frame-end
+IPOPT polishes ran in the worker beside the executable (frameEndIpoptCalls 7 and 8).
+
+Cancel and resume: pkc_solve --save-progress on physical-anchors, SIGINT after 0.8 s: exit 130, report status cancelled
+with 4 frames on the stack; the Python CLI (native core) resumed from that report: exact resume, session 2 ,
+best 64 -1093.2383028783543 ; uninterrupted pkc_solve best 64 -1093.2383028783543 ; candidates equal True
+
+Durable: pkc_solve --save-progress on fixed work; its manifest read 5 s into the run holds the search state at 38 calls and
+28 transitions; the run then ends numerical_call_limit as the hosted run does.
+
+Python-free build: cmake -DPKC_PYTHON_MODULE=OFF -DPKC_CASADI_ROOT=<the venv casadi>, env -i with PATH=cmake, cargo,
+/usr/bin, /bin: configure and build of pkc_core, pkc_solve and pkc_numerics_worker exit 0; that pkc_solve solves
+straight8-anchored (feasible, exhausted).
+
+Transfer-time bounds (native.transfer_bounds vs search/bounds/flight.transfer_bounds over PythonCompiler): equal on
+test_transfer_time_bounds' ceiling scenes (x=0: shortening_ceiling_not_excluded; x=15: shortening_ceilings_unreachable,
+proof ids included) and the Real11 anchor contexts.
+
+AddressSanitizer build: pkc_solve --save-progress on physical-anchors and fixed work exit 0 with no reports;
+tests.integration.test_native_core and tests.unit.io.test_checkpoint_store: 31 tests OK, no reports.

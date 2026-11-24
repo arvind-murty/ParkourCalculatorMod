@@ -389,3 +389,63 @@ class EnvelopeTests(unittest.TestCase):
                         reasons.add(self.assert_same(blocked, y)['contradiction']['reason'])
         self.assertIn(None, reasons)
         self.assertIn('interval_reach_contradiction', reasons)
+
+
+def timeless(value):
+    """A result without its wall-clock fields."""
+    if isinstance(value, dict):
+        return {k: timeless(v) for k, v in value.items() if 'econds' not in k and k != 'timings'}
+    if isinstance(value, list):
+        return [timeless(v) for v in value]
+    return value
+
+
+class SolveEntryTests(unittest.TestCase):
+    """The native solve entry (search/application.hpp, pkc_solve) against the Python it ports."""
+
+    def test_transfer_bounds_match_python_on_ceiling_scenes_and_real11(self):
+        import gzip
+        from parkour_solver.bridge.python_compiler import PythonCompiler
+        from parkour_solver.reachability.service import InteractionGate
+        from parkour_solver.scene.normalize import prepare_scene
+        from parkour_solver.search.bounds.flight import transfer_bounds
+        from parkour_solver.spatial.anchor_guides import build_guides
+        from tests.support.archived_events import current_events
+        from tests.support.paths import REGRESSION_FIXTURES
+        from tests.support.checkpoint_guidance import transfer_ceiling_scene
+        module = native()
+        cases = []
+        for x in (0., 15.):  # a ceiling the launch can reach, and one it cannot
+            scene, guides = transfer_ceiling_scene(x)
+            cases.append((scene, guides, dict(storedSpeedNorm=.4, movementAfterSupportCheck=.8)))
+        data = current_events(json.loads(gzip.decompress((REGRESSION_FIXTURES/'anchor-contexts.json.gz').read_bytes())))
+        scene = prepare_scene(data['request'])
+        scene['movementSearch']['types'] = ['normal', 'ceiling', 'stepping']
+        cases.append((scene, build_guides(data['domain'], data['policy']), data['motion']))
+        for scene, guides, motion in cases:
+            with self.subTest(anchors=guides['anchors']), PythonCompiler() as compiler:
+                expected = transfer_bounds(scene, guides, motion, InteractionGate(scene, compiler))
+                self.assertEqual(module.transfer_bounds(scene, guides, motion), json.loads(json.dumps(expected)))
+
+    @unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'), 'Set PKC_IPOPT_PYTHON for the solve')
+    def test_pkc_solve_reports_what_the_python_cli_reports(self):
+        import subprocess
+        import sys
+        import tempfile
+        from parkour_solver.io.checkpoint_store import read_report
+        module = native()
+        build = Path(module.__file__).parent
+        case = ROOT/'cases/real11/physical-anchors.json'
+        with tempfile.TemporaryDirectory() as directory:
+            native_report, python_report = Path(directory)/'native.json.gz', Path(directory)/'python.json.gz'
+            # No Python and no PKC_* variables reach the executable.
+            subprocess.run([str(build/'pkc_solve'), '--input', str(case), '--output', str(native_report)],
+                           env=dict(PATH='/usr/bin:/bin'), check=True, capture_output=True)
+            subprocess.run([sys.executable, '-B', '-m', 'parkour_solver.cli.solve', '--input', str(case),
+                            '--output', str(python_report)],
+                           env=dict(os.environ, PKC_NATIVE_CORE=str(build), PYTHONPATH=f'{ROOT/"src"}:{ROOT}'),
+                           check=True, capture_output=True)
+            solved, expected = read_report(native_report), read_report(python_report)
+        self.assertIsNotNone(solved['result']['best'])
+        self.assertEqual(timeless(solved['result']), timeless(expected['result']))
+        self.assertEqual(timeless(solved['validation']), timeless(expected['validation']))

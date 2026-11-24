@@ -50,46 +50,50 @@ SearchSaver::SearchSaver(std::shared_ptr<CheckpointStore> store, Value metadata,
     dfs_path_ = is_null(outer_) ? Array{text("searchState")} : Array{text("searchState"), text("dfs")};
 }
 
-void SearchSaver::save(const Value& state, const RepairTargets& repair) {
-    Timer timer{seconds, max_seconds};
-    ++saves;
+void SearchSaver::store_windows(const Value& dfs) {
     // Audit windows are immutable: each is stored once, and the saves name it.
-    const Array& windows = items(at(fields(state), "windows"));
+    const Array& windows = items(at(fields(dfs), "windows"));
     if (windows.size() < windows_.size()) fail("Checkpoint audit windows cannot shrink");
     for (std::size_t i = windows_.size(); i < windows.size(); ++i)
         windows_.push_back(store_->archive([&](CheckpointEncoder& e) { return e.encode(windows[i]); }).root);
+}
+
+std::string SearchSaver::search_state(CheckpointEncoder& e, const Value& outer, const Value& dfs) const {
+    const std::string stored = e.encode_replacing(dfs, "windows", windows_);
+    if (is_null(outer)) return stored;
+    std::vector<std::pair<std::string, std::string>> entries;
+    bool placed = false;
+    for (const auto& [key, value] : fields(outer)) {
+        placed = placed || key == "dfs";
+        entries.emplace_back(key, key == "dfs" ? stored : e.encode(value));
+    }
+    if (!placed) entries.emplace_back("dfs", stored);
+    return e.entries(entries);
+}
+
+std::string SearchSaver::document(CheckpointEncoder& e,
+                                  const std::vector<std::pair<std::string, std::string>>& entries) const {
+    std::vector<std::pair<std::string, std::string>> saved;
+    std::vector<bool> placed(entries.size(), false);
+    for (const auto& [key, value] : fields(metadata_)) {
+        std::size_t i = 0;
+        while (i < entries.size() && entries[i].first != key) ++i;
+        if (i < entries.size()) placed[i] = true;
+        saved.emplace_back(key, i < entries.size() ? entries[i].second : e.encode(value));
+    }
+    for (std::size_t i = 0; i < entries.size(); ++i)
+        if (!placed[i]) saved.push_back(entries[i]);
+    return e.entries(saved);
+}
+
+void SearchSaver::save(const Value& state, const RepairTargets& repair) {
+    Timer timer{seconds, max_seconds};
+    ++saves;
+    store_windows(state);
     // dict(metadata, windows=windows, searchState=dict(outer, dfs=stored)): existing keys keep their place.
-    const auto document = [&](CheckpointEncoder& e) {
-        const std::string dfs = e.encode_replacing(state, "windows", windows_);
-        std::string search_state = dfs;
-        if (!is_null(outer_)) {
-            std::vector<std::pair<std::string, std::string>> outer;
-            bool placed = false;
-            for (const auto& [key, value] : fields(outer_)) {
-                placed = placed || key == "dfs";
-                outer.emplace_back(key, key == "dfs" ? dfs : e.encode(value));
-            }
-            if (!placed) outer.emplace_back("dfs", dfs);
-            search_state = e.entries(outer);
-        }
-        std::vector<std::pair<std::string, std::string>> saved;
-        bool has_windows = false, has_state = false;
-        for (const auto& [key, value] : fields(metadata_)) {
-            if (key == "windows") {
-                has_windows = true;
-                saved.emplace_back(key, e.references(windows_));
-            } else if (key == "searchState") {
-                has_state = true;
-                saved.emplace_back(key, search_state);
-            } else {
-                saved.emplace_back(key, e.encode(value));
-            }
-        }
-        if (!has_windows) saved.emplace_back("windows", e.references(windows_));
-        if (!has_state) saved.emplace_back("searchState", search_state);
-        return e.entries(saved);
-    };
-    const std::string root = store_->archive(document).root;
+    const std::string root = store_->archive([&](CheckpointEncoder& e) {
+        return document(e, {{"windows", e.references(windows_)}, {"searchState", search_state(e, outer_, state)}});
+    }).root;
     store_->publish(root);
     base_ = root;
     token_ = repair.token;
@@ -101,6 +105,32 @@ void SearchSaver::save(const Value& state, const RepairTargets& repair) {
         for (const Array& path : paths) full.push_back(joined(dfs_path_, path));
         extra_.push_back(std::move(full));
     }
+}
+
+void SearchSaver::finish(const Value& result, const Value& validation) {
+    const Object& r = fields(result);
+    const Value* state = get(r, "searchState");
+    const Value* dfs = state && is_object(*state) ? get(fields(*state), "dfs") : nullptr;
+    const bool stored = dfs && !is_null(*dfs);
+    if (stored) store_windows(*dfs);
+    const std::string root = store_->archive([&](CheckpointEncoder& e) {
+        const std::string references = e.references(windows_);
+        std::vector<std::pair<std::string, std::string>> entries;
+        bool windows = false;
+        for (const auto& [key, value] : r) {
+            windows = windows || key == "windows";
+            if (key == "windows")
+                entries.emplace_back(key, references);
+            else if (key == "searchState" && stored)
+                entries.emplace_back(key, search_state(e, object(with(fields(*state), "dfs", kNull)), *dfs));
+            else
+                entries.emplace_back(key, e.encode(value));
+        }
+        if (!windows) entries.emplace_back("windows", references);
+        return document(e, {{"windows", references}, {"result", e.entries(entries)}, {"validation", e.encode(validation)}});
+    }).root;
+    store_->publish(root);
+    store_->compact();
 }
 
 void SearchSaver::progress(const Value& state, const RepairTargets& repair) {

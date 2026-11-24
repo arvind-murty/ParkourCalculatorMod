@@ -291,6 +291,8 @@ Array blockage_usage(const Array& passages) {
 // physics/vertical.clamp.
 Value clamp(const Value& v) { return pkc::value(py_max(flt(-kCap), py_min(flt(kCap), any_num(v)))); }
 
+}  // namespace
+
 // validation/scene.check_geometry(geometry, plan, candidate, vertical, compiler, seconds).
 Value check_geometry(const Value& geometry_value, const Object& plan, const Object& candidate, const Object& vertical,
                      const SolveHooks& hooks, double seconds) {
@@ -352,6 +354,8 @@ Value check_geometry(const Value& geometry_value, const Object& plan, const Obje
     }
     return object(std::move(checked));
 }
+
+namespace {
 
 // `cause` logs why an unresolved branch ended without a verdict.
 Value save_branch(const Value& score, const Array& rows, const Array& passages, const Array& hits, const Value& warm_yaw,

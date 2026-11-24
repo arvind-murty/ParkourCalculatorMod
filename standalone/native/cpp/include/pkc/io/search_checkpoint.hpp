@@ -33,12 +33,21 @@ public:
 
     void save(const Value& state, const RepairTargets& repair);      // __call__: a full save
     void progress(const Value& state, const RepairTargets& repair);  // repair_progress: a patch when it can
+    // finish(result, validation): the final report dict(metadata, windows, result=dict(result, windows, searchState
+    // with its dfs's windows stored), validation), saved, then the store compacted.
+    void finish(const Value& result, const Value& validation);
     const std::vector<std::string>& windows() const { return windows_; }
 
     double seconds = 0, max_seconds = 0;  // spent saving, in all and in the longest save or patch
     std::int64_t saves = 0, patches = 0;
 
 private:
+    void store_windows(const Value& dfs);  // each audit window once, in order
+    // The event state `outer` with `dfs` in its dfs entry, the dfs's windows replaced by the stored ones.
+    std::string search_state(CheckpointEncoder& e, const Value& outer, const Value& dfs) const;
+    // dict(metadata, **entries): each entry in the metadata's place when it has one, else appended in order.
+    std::string document(CheckpointEncoder& e, const std::vector<std::pair<std::string, std::string>>& entries) const;
+
     std::shared_ptr<CheckpointStore> store_;
     Value metadata_, outer_;
     Array dfs_path_;

@@ -1031,3 +1031,27 @@ later temporary's stale encoding), and a failed native file write raises the `OS
   the short control 2.21 s and 2.16 s against 2.47 s and 2.43 s; on fixed work the 469 Python save callbacks (3.71 s)
   become 467 native saves and patches (2.08 s) and the final save takes 1.05 s instead of 1.84 s
   ([runs](2026-11-23-saver/durable-ab.txt)). Real11 was not rerun.
+
+## The native solve entry, 2026-11-23
+Source: `69dee392` plus `search/application.hpp` (`solve_case`: `search/application.run` through
+`find_checkpoint_route`, the event search's sessions and the native anchor search, with no Python) and `work.hpp`
+(the work budget), behind the `pkc_solve` executable and a `native.solve_case` binding. The services a Python-hosted
+native search gets from Python run natively: the compiler (coefficient tables, scene checks and footprints, counted
+as `CountingCompiler` counts), the interaction gate's preparation cache and its interval analysis, the node solves'
+services, the transfer-time bounds (with their ceiling proofs), `motion_bound` and the final witness replay. Routes
+with wall hits or ladder events, which the native solves leave to Python, are rejected; the search forces
+`maxWallHits=0` and runs without ladders. `pkc_solve` mirrors `cli/solve.py` (checkpoint report, `--save-progress`,
+SIGINT/SIGTERM cancel with exit 130) without `--resume`; CMake's `PKC_PYTHON_MODULE=OFF` builds it, the core and the
+worker with no Python at configure time.
+
+- Results equal the Python-hosted native run's, each side in its own process and without wall-clock fields, on the
+  eight straight calibration courses, physical-anchors with and without anchors, fixed work and the short control:
+  no differing path in any of the 12 ([parity](2026-11-23-entry/parity.txt)). The native transfer-time bounds equal
+  Python's on the ceiling scenes of `test_transfer_time_bounds` and the Real11 anchor contexts.
+- `pkc_solve` links no Python and runs with an empty environment; its report equals the Python CLI's, a cancelled
+  durable run resumes in the Python CLI to the uninterrupted route, and a Python-free CMake build solves
+  ([executable](2026-11-23-entry/executable.txt)). `tests/integration/test_native_core.py` `SolveEntryTests` checks
+  the report and the transfer bounds in the suite. AddressSanitizer runs clean on `pkc_solve` (durable physical-anchors
+  and fixed work) and on the native-core and checkpoint-store tests. The suite passes in both modes (875 tests, 10
+  skipped as before) and the gate in both modes (621, no failures, errors or skips; [Python mode](2026-11-23-entry/gate-python-mode-report.json),
+  [native mode](2026-11-23-entry/gate-native-mode-report.json)).

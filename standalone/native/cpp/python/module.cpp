@@ -32,6 +32,7 @@
 #include "pkc/io/search_checkpoint.hpp"
 #include "pkc/io/store.hpp"
 #include "pkc/search/anchors/adapter.hpp"
+#include "pkc/search/application.hpp"
 #include "pkc/search/anchors/policy.hpp"
 #include "pkc/search/bounds/remaining.hpp"
 #include "pkc/search/comparison.hpp"
@@ -1520,6 +1521,24 @@ PYBIND11_MODULE(_pkc_native, m) {
           py::arg("core"), py::arg("problem"), py::kw_only(), py::arg("seconds"), py::arg("stop_on_feasible"),
           py::arg("mode"), py::arg("post_alarm"), py::arg("cancel_event"), py::arg("on_incumbent"),
           "numerics/disk.RelaxedDispatch's entry point `mode` with its decided answers in the gate's native core");
+    m.def("solve_case", [](py::handle fixture, py::object seconds, py::object max_solver_calls) {
+        pkc::SolveCaseOptions options;
+        if (!seconds.is_none()) options.seconds = seconds.cast<double>();
+        if (!max_solver_calls.is_none()) options.max_solver_calls = max_solver_calls.cast<std::int64_t>();
+        options.worker = worker_path();
+        const pkc::Value value = convert(fixture);
+        pkc::Value solved;
+        {
+            py::gil_scoped_release release;  // the entry calls no Python
+            solved = pkc::solve_case(value, options);
+        }
+        return to_python(solved);
+    }, py::arg("fixture"), py::kw_only(), py::arg("seconds") = py::none(), py::arg("max_solver_calls") = py::none(),
+       "search/application.hpp's solve_case: application.run(fixture)'s {result, validation} with no Python");
+    m.def("transfer_bounds", [](py::handle scene, py::handle guides, py::handle motion, py::handle saved) {
+        return to_python(pkc::transfer_bounds(convert(scene), convert(guides), convert(motion), convert(saved)));
+    }, py::arg("scene"), py::arg("guides"), py::arg("motion"), py::arg("saved") = py::none(),
+       "search/bounds/flight.transfer_bounds on a fresh gate over the native compiler (search/application.hpp)");
     m.def("set_request_observer", [](py::object observer) { request_observer() = std::move(observer); },
           py::arg("observer"),
           "observer(mode, problem, seconds, stop_on_feasible, result) before (result None) and after each request a "

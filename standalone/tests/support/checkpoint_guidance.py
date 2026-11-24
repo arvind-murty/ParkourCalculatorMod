@@ -1,4 +1,5 @@
-"""Shared test builders extracted from tests.unit.spatial.test_checkpoint_guidance."""
+"""Shared test builders extracted from tests.unit.spatial.test_checkpoint_guidance and
+tests.unit.search.test_transfer_time_bounds."""
 from parkour_solver.scene.normalize import prepare_scene
 
 def flat_scene():
@@ -7,6 +8,18 @@ def flat_scene():
         startBlock='start', goalBlock='goal', maxWallHits=0, maxContactCombinations=0,
         blocks=[dict(id='start', boxes=[[-2,0,-2,3,1,2]]), dict(id='goal', boxes=[[5,0,-1,6,1,1]])],
         movementSearch=dict(types=['normal'], maxInputs=30, maxPrefixes=96, maxQueuedPrefixes=128, maxChoicesPerType=16)))
+
+
+def transfer_ceiling_scene(x):
+    """The flat scene with a ceiling block at `x` over the start-to-goal jump, and guides for that transfer."""
+    s=flat_scene();s['movementSearch']['types']=['normal','ceiling']
+    box=[x,2.9,-2,x+1,3.9,2];index=len(s['collisionScene']['solids'])
+    s['collisionScene']['solids'].append(box)
+    s['blocks'].append(dict(id='ceiling',sourceBlock='ceiling',solidIndex=index,
+                            bounds=[x,x+1,-2,2],top=3.9))
+    g=dict(anchors=['start','goal'],coverPhase='pre_or_post',covers={
+        'start':[[-2.3,1,-2.3,3.3,1,2.3]],'goal':[[4.7,1,-1.3,6.3,1,1.3]]})
+    return s,g
 
 def programs(scene, tick, limit=64):
     """Up to `limit` distinct ungated programs of the scene's movement types that end exactly at `tick`: generated

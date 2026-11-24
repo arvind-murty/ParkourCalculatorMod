@@ -14,6 +14,11 @@
 
 namespace pkc {
 
+// validation/scene.check_geometry(geometry, plan, candidate, vertical, compiler, seconds), with the compiler's
+// check_scene from `hooks`.
+Value check_geometry(const Value& geometry, const Object& plan, const Object& candidate, const Object& vertical,
+                     const SolveHooks& hooks, double seconds);
+
 struct RepairOptions {
     double seconds = 0, candidate_seconds = 0;
     std::int64_t retries = 0;
