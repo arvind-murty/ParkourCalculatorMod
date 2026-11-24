@@ -44,6 +44,7 @@ production code.
 | `c2b2a3d2` (on PR 5) | confirmation walk, decision objectives, conflict-driven avoidance; 6.2 s | 64 | -1093.2381026602418 | 19 / 1 + 1 finalization | 11 | 8/8 | [encounter groups](../research/encounter-groups/README.md#phase-4-controls-2026-11-20) |
 | `fb50d8f8` + run-tick revision | time-bounded minimum run ticks; 5.8 s | 64 | -1093.2381026602418 | 19 / 1 + 1 finalization | 11 | 8/8 | [encounter groups](../research/encounter-groups/README.md#time-bounded-minimum-run-ticks-2026-11-20) |
 | `fb50d8f8` + run-tick rework, walk-off faces | run-offs vs the jump onto their block, walk-off faces; 6.1 s | 64 | -1093.2381026602418 | 19 / 1 + 1 finalization | 11 | 8/8 | [encounter groups](../research/encounter-groups/README.md#run-tick-rework-and-walk-off-faces-2026-11-20) |
+| `7ac9eed6` | frame-end re-solves in place of the finalization (`25f7fc62` paired: 39 / 0 + 1 finalization, 4.10 s); 5.14 s | 64 | -1093.2383028783543 | 39 / 0 + 8 frame-end | 10 | 8/8 | [post-alarm](../research/post-alarm/README.md#frame-end-re-solves-on-real11) |
 
 On the extended task (measurement only) side-family siblings multiply decision
 checks inside the B4 → B20 group: 234 checks in 300 s versus the base's 140, and
@@ -157,6 +158,10 @@ ordered options. That is targeted enumeration work, not a whole-solver speedup.
 - In-process movement bridge: on the extended B22 task at an equal 300 s budget,
   coefficient, scene and footprint calls took 0.72 s against 6.84 s through the Java
   process, with identical requests ([evidence](../research/jvm-free-bridge/README.md)).
+- Clarabel iterative refinement off in every disk solve: on the extended fixed-work control
+  (100 solver calls) search time fell from 39.36 s to 37.50 s with identical transitions and
+  verdicts, and a 300 s extended run spent 7.92 s instead of 11.43 s in Clarabel requests
+  ([evidence](../research/clarabel-refinement/README.md)).
 - IPOPT row reduction: final rows fall from 278 to 91 on the benchmark
   ([constraint reduction](IPOPT_CONSTRAINT_REDUCTION.md)).
 - Content-addressed manifest plus SQLite checkpoints

@@ -22,6 +22,13 @@ def prepare(request):
             raise ValueError('fallbackYaw has the wrong length')
         for value in values:
             number(value, 'fallbackYaw')
+    # Post-alarm hint (numerics/post_alarm.py), not physical: the parent answer's facings on the shared prefix.
+    if 'warmYaw' in problem:
+        values = problem['warmYaw']
+        if not isinstance(values, list) or not 1 <= len(values) <= n:
+            raise ValueError('warmYaw has the wrong length')
+        for value in values:
+            number(value, 'warmYaw')
     if any(m < 0 for m in problem['magnitude']):
         raise ValueError('Acceleration magnitudes must be nonnegative')
     if any(f < 0 or f > 1 for f in problem['friction']):
@@ -185,5 +192,6 @@ def prepare(request):
 
 
 def fingerprint(problem):
-    physical = {k: v for k, v in problem.items() if k not in ('seconds', 'yaw', 'fallbackYaw', 'stopOnFeasible', 'objectiveMode', 'source', 'maxIterations')}
+    physical = {k: v for k, v in problem.items() if k not in ('seconds', 'yaw', 'fallbackYaw', 'stopOnFeasible', 'objectiveMode', 'source', 'maxIterations',
+                                                               'warmYaw')}
     return hashlib.sha256(json.dumps(physical, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()

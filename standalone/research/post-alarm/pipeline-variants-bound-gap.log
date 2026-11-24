@@ -1,0 +1,2 @@
+Real11: requests with a best known answer 445 | best known more than 1e-2 below the relaxed bound: 113 | more than 0.1 below: 25
+study: requests with a reference 340 | reference more than 1e-2 below the disk bound: 72 | more than 0.1 below: 11

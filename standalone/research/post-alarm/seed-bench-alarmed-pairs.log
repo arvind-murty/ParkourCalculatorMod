@@ -1,0 +1,31 @@
+requests 482 methods {'prodSeed': 34, 'race': 47, 'push': 337, 'none': 36, 'polish': 8, 'probe': 5, 'quadrant': 15}
+with a reference: {'reach IPOPT': 55, 'all': 444} | reach, pipeline answered: 42
+answers on quadrant-certified: {'prodSeed': 0, 'fallbackYaw': 0, 'relaxedStates': 0, 'central': 0, 'polish': 0, 'pushLast': 0, 'pushBest': 0, 'warm': 0, 'track0': 0, 'track1': 0, 'sigmaDelta': 0, 'flip1': 0, 'flip2': 0, 'flip3': 0}
+| seed | reach answered within 1e-2 | all within 1e-2 | reach IPOPT s mean (both runs) | reach answered at 0.2 s |
+|---|---|---|---|---|
+| prodSeed | 34 | 364 | 0.286 | 32 |
+| fallbackYaw | 35 | 362 | 0.290 | 35 |
+| relaxedStates | 35 | 366 | 0.253 | 34 |
+| central | 31 | 372 | 0.279 | 30 |
+| polish | 38 | 384 | 0.209 | 40 |
+| pushLast | 36 | 382 | 0.276 | 35 |
+| pushBest | 36 | 381 | 0.285 | 35 |
+| warm | 33 | 364 | 0.292 | 33 |
+| track0 | 30 | 371 | 0.312 | 30 |
+| track1 | 31 | 372 | 0.272 | 31 |
+| sigmaDelta | 33 | 367 | 0.283 | 32 |
+| flip1 | 34 | 317 | 0.237 | 34 |
+| flip2 | 29 | 305 | 0.317 | 32 |
+| flip3 | 30 | 280 | 0.274 | 30 |
+today (prodSeed, polish): {'reach IPOPT': 42, 'all': 392}
+pair ('flip1', 'polish') {'reach IPOPT': 53, 'all': 406}
+pair ('polish', 'flip1') {'reach IPOPT': 52, 'all': 411}
+pair ('pushLast', 'flip1') {'reach IPOPT': 50, 'all': 412}
+pair ('pushBest', 'flip1') {'reach IPOPT': 50, 'all': 410}
+pair ('flip1', 'pushLast') {'reach IPOPT': 49, 'all': 401}
+pair ('flip1', 'pushBest') {'reach IPOPT': 49, 'all': 401}
+pair ('prodSeed', 'flip1') {'reach IPOPT': 49, 'all': 400}
+pair ('sigmaDelta', 'flip1') {'reach IPOPT': 49, 'all': 399}
+pair ('flip1', 'prodSeed') {'reach IPOPT': 48, 'all': 390}
+pair ('flip1', 'sigmaDelta') {'reach IPOPT': 48, 'all': 390}
+reach requests no seed answers: 0 with no reference: 23

@@ -1,0 +1,14 @@
+| policy | misses answered (gained/lost vs today) / IPOPT s mean | population reach answered (gained/lost vs today) / IPOPT s mean | Real11 reach answered (gained/lost vs today) / IPOPT s mean |
+|---|---|---|---|
+| prodSeed then polish | 0/5 (+0/-0) / 0.273 | 18/18 (+0/-0) / 0.189 | 42/55 (+0/-0) / 0.217 |
+| pushLast then flip1 | 5/5 (+5/-0) / 0.243 | 18/18 (+0/-0) / 0.163 | 48/55 (+12/-6) / 0.194 |
+| pushBest then flip1 | 5/5 (+5/-0) / 0.257 | 18/18 (+0/-0) / 0.169 | 48/55 (+12/-6) / 0.197 |
+| polish then flip1 | 5/5 (+5/-0) / 0.258 | 17/18 (+0/-1) / 0.156 | 52/55 (+12/-2) / 0.175 |
+| flip1 then polish | 5/5 (+5/-0) / 0.221 | 16/18 (+0/-2) / 0.195 | 53/55 (+12/-1) / 0.198 |
+| polish then prodSeed | 0/5 (+0/-0) / 0.273 | 17/18 (+0/-1) / 0.158 | 40/55 (+0/-2) / 0.191 |
+| pushLast then prodSeed | 0/5 (+0/-0) / 0.258 | 17/18 (+0/-1) / 0.169 | 38/55 (+2/-6) / 0.209 |
+
+losses of polish then flip1 vs today (answer at 0.2 s per seed, reference):
+  population reach 68ea812865f5 {'prodSeed': 497.33188635133274, 'polish': 497.26581160868454, 'flip1': None} ref 497.3322544874867
+  Real11 reach acdef751f76b {'prodSeed': -385.9609167694418, 'polish': -385.9922146342456, 'flip1': -385.9609167755556} ref -385.96091675249244
+  Real11 reach 5e7b97ca555c {'prodSeed': 496.5410994516765, 'polish': 496.4581363515642, 'flip1': 496.54109945167613} ref 496.54109945167687

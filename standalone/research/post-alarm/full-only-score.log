@@ -1,0 +1,12 @@
+
+Study (371 alarmed requests): 370 requests, 340 with a reference, 27 infeasible
+| variant | answered | within 1e-3 | within 1e-2 | above reference by > 1e-3 | answers on infeasible | gained / lost within 1e-2 vs accept1pct | mean / median / p90 ms | IPOPT calls (requests calling) | Clarabel solves mean |
+|---|---|---|---|---|---|---|---|---|---|
+| accept1pct | 340 | 123 | 340 | 4 | 0 | +0 / -0 | 25 / 9 / 53 | 0 (0) | 10.3 |
+| fullOnly | 340 | 122 | 340 | 0 | 0 | +0 / -0 | 26 / 9 / 56 | 0 (0) | 10.6 |
+
+Real11 (482 alarmed requests from an 1800 s pipeline run): 482 requests, 445 with a reference, 15 infeasible
+| variant | answered | within 1e-3 | within 1e-2 | above reference by > 1e-3 | answers on infeasible | gained / lost within 1e-2 vs accept1pct | mean / median / p90 ms | IPOPT calls (requests calling) | Clarabel solves mean |
+|---|---|---|---|---|---|---|---|---|---|
+| accept1pct | 445 | 261 | 433 | 0 | 0 | +0 / -0 | 41 / 14 / 118 | 0 (0) | 15.6 |
+| fullOnly | 440 | 249 | 421 | 0 | 0 | +0 / -12 | 43 / 13 / 124 | 0 (0) | 16.5 |

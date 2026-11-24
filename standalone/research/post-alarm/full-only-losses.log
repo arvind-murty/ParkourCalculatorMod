@@ -1,0 +1,7 @@
+accept1pct within 1e-2 of the best full-strength answer known: 437 of 443 requests with one; answered 445
+fullOnly within 1e-2 of the best full-strength answer known: 434 of 443 requests with one; answered 440
+  lost answer f2f701d00f94 push relaxed 754.6119 | full-strength route known: True
+  lost answer fab671bfb906 decay relaxed 754.6402 | full-strength route known: False
+  lost answer f28894ab054b push relaxed 754.8002 | full-strength route known: True
+  lost answer d6f678f29f99 push relaxed 754.6226 | full-strength route known: True
+  lost answer a6a2637448b7 push relaxed 754.5866 | full-strength route known: False

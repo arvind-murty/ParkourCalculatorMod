@@ -1,0 +1,31 @@
+| run | ticks | objective | termination | search s | solverCalls | conicCandidates | workerLaunches | confirmations | confirmationIpoptCalls | confirmationClarabelSolves | materialGaps | finalizationIpoptCalls | replays passed |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| extended-A | None | None | deadline | 306.78 | 741 | 463 | 41 | 41 | 41 | 0 | 27 | 0 | True |
+| extended-B | None | None | deadline | 298.68 | 739 | 484 | 1 | 41 | 26 | 1023 | 28 | 0 | True |
+| fixed-A1 | None | None | numerical_call_limit | 38.87 | 100 | 70 | 5 | 5 | 5 | 0 | 4 | 0 | True |
+| fixed-A2 | None | None | numerical_call_limit | 38.35 | 100 | 70 | 5 | 5 | 5 | 0 | 4 | 0 | True |
+| fixed-A3 | None | None | numerical_call_limit | 38.58 | 100 | 70 | 5 | 5 | 5 | 0 | 4 | 0 | True |
+| fixed-B1 | None | None | numerical_call_limit | 37.74 | 100 | 74 | 1 | 5 | 1 | 145 | 5 | 0 | True |
+| fixed-B2 | None | None | numerical_call_limit | 37.97 | 100 | 74 | 1 | 5 | 1 | 145 | 5 | 0 | True |
+| fixed-B3 | None | None | numerical_call_limit | 38.15 | 100 | 74 | 1 | 5 | 1 | 145 | 5 | 0 | True |
+| long-A | None | None | deadline | 1795.66 | 1944 | 1380 | 198 | 198 | 198 | 0 | 115 | 0 | True |
+| long-B | None | None | deadline | 1795.04 | 1995 | 1575 | 1 | 206 | 68 | 3299 | 148 | 0 | True |
+
+parity fixed-A1 vs fixed-B1: transitions [19, 19]; exact match; tolerant match
+parity fixed-A2 vs fixed-B2: transitions [19, 19]; exact match; tolerant match
+parity fixed-A3 vs fixed-B3: transitions [19, 19]; exact match; tolerant match
+parity fixed-A1 vs fixed-A2: transitions [19, 19]; exact match; tolerant match
+parity fixed-B1 vs fixed-B2: transitions [19, 19]; exact match; tolerant match
+parity extended-A vs extended-B: transitions [19, 19]; exact match; tolerant match
+parity long-A vs long-B: transitions [19, 19]; exact match; tolerant match
+
+extended-A: 741 requests, 41 confirmations (41 not cached), confirmation seconds total 11.96 median 231.6 ms mean 291.7 ms; outcomes {('ipopt', 'feasible'): 31, ('ipopt', 'unknown'): 10}
+extended-B: 739 requests, 41 confirmations (41 not cached), confirmation seconds total 5.59 median 68.2 ms mean 136.3 ms; outcomes {('prodSeed', 'feasible'): 6, ('race', 'feasible'): 6, ('push', 'feasible'): 16, ('none', 'unknown'): 9, ('polish', 'feasible'): 1, ('probe', 'feasible'): 1, ('quadrant', 'unknown'): 2}
+fixed-A1: 0 requests, 0 confirmations (0 not cached), confirmation seconds none; outcomes {}
+fixed-A2: 0 requests, 0 confirmations (0 not cached), confirmation seconds none; outcomes {}
+fixed-A3: 0 requests, 0 confirmations (0 not cached), confirmation seconds none; outcomes {}
+fixed-B1: 0 requests, 0 confirmations (0 not cached), confirmation seconds none; outcomes {}
+fixed-B2: 0 requests, 0 confirmations (0 not cached), confirmation seconds none; outcomes {}
+fixed-B3: 0 requests, 0 confirmations (0 not cached), confirmation seconds none; outcomes {}
+long-A: 1944 requests, 198 confirmations (198 not cached), confirmation seconds total 60.22 median 234.0 ms mean 304.2 ms; outcomes {('ipopt', 'feasible'): 151, ('ipopt', 'unknown'): 47}
+long-B: 1995 requests, 206 confirmations (206 not cached), confirmation seconds total 15.96 median 31.1 ms mean 77.5 ms; outcomes {('prodSeed', 'feasible'): 16, ('race', 'feasible'): 23, ('push', 'feasible'): 127, ('none', 'unknown'): 22, ('polish', 'feasible'): 4, ('probe', 'feasible'): 4, ('quadrant', 'unknown'): 10}

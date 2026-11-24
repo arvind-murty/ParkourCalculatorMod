@@ -157,6 +157,9 @@ def numerical_problem(route, plan, coefficients, parent=None):
                    objective=dict(route.get('guideObjective', route['objective']), tick=plan['ticks']))
     if 'ladderTicks' in plan:
         problem['ladderTicks'] = plan['ladderTicks']
+    if parent is None and route.get('warmYaw'):
+        # The parent answer's facings, kept apart from `yaw`, which passage_seed may replace.
+        problem['warmYaw'] = route['warmYaw'][:plan['ticks']]
     return prepare(problem)
 
 
@@ -296,7 +299,7 @@ def find_route(request, compiler, *, seconds=60, candidate_seconds=2, retries=1,
                                     'objectiveMode': 'configured',
                                     'workerLaunched': result.get('workerLaunched'),
                                     'workerStatus': result.get('workerStatus'),
-                                    **{k: result[k] for k in ('backend', 'disk', 'confirmation', 'fallback') if k in result}})
+                                    **{k: result[k] for k in ('backend', 'disk', 'confirmation', 'fallback', 'frameEnd') if k in result}})
                 if result['status'] == 'cancelled':
                     return {'status': 'cancelled', 'diagnostics': diagnostics}
                 if result['feasible']:

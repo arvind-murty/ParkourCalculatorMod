@@ -178,13 +178,13 @@ class DiskScreenTests(unittest.TestCase):
 
     def test_a_limit_hit_twice_rules_out_and_verdicts_are_cached(self):
         limit = dict(status='MaxIterations',outcome='limit',controls=None,objective=None,iterations=200)
-        with patch.object(disk,'_solve',side_effect=lambda *a:dict(limit)) as solved:
+        with patch.object(disk,'_attempt',side_effect=lambda *a:(dict(limit),None)) as solved:
             for _ in range(2):
                 checked = interaction_reachability(reachable_envelopes(self.model(1.25)),{},refine=True)
                 self.assertEqual((checked['ruledOut'],checked['reason']),(True,'disk_control_relaxation_infeasible'))
-        self.assertEqual([c.args[1:] for c in solved.call_args_list],[(disk.CAP,disk.MAX_ITER),(disk.RETRY_CAP,disk.RETRY_MAX_ITER)])
+        self.assertEqual([c.args[1:3] for c in solved.call_args_list],[(disk.CAP,disk.MAX_ITER),(disk.RETRY_CAP,disk.RETRY_MAX_ITER)])
         self.assertTrue(interaction_reachability(reachable_envelopes(self.model(1.7)),{},refine=True)['ruledOut'])
-        with patch.object(disk,'_solve',side_effect=AssertionError('cached')):
+        with patch.object(disk,'_attempt',side_effect=AssertionError('cached')):
             self.assertEqual(disk.screen(self.model(1.7))['outcome'],'infeasible')
 
     def test_screen_objective_is_the_model_objective_unless_constant_zero_else_the_supplied_one(self):

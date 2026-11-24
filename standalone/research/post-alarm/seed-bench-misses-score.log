@@ -1,0 +1,22 @@
+
+all: 12 requests, 5 with a reference, 0 infeasible
+| seed | built on | answered at 0.2 s | answered (0.2 s, else 2 s) | within 1e-3 | within 1e-2 | answers on infeasible | IPOPT s mean (0.2 s run) | IPOPT s mean (both runs) | median start violation |
+|---|---|---|---|---|---|---|---|---|---|
+| prodSeed | 12 | 0 | 0 | 0 | 0 | 0 | 0.142 | 0.282 | 0.181 |
+| fallbackYaw | 12 | 3 | 3 | 3 | 3 | 0 | 0.129 | 0.238 | 3.070 |
+| relaxedStates | 12 | 2 | 2 | 2 | 2 | 0 | 0.158 | 0.313 | 0.181 |
+| central | 12 | 1 | 1 | 1 | 1 | 0 | 0.144 | 0.280 | 0.179 |
+| polish | 12 | 0 | 0 | 0 | 0 | 0 | 0.131 | 0.278 | 0.039 |
+| pushLast | 12 | 0 | 0 | 0 | 0 | 0 | 0.117 | 0.233 | 0.039 |
+| pushBest | 12 | 0 | 0 | 0 | 0 | 0 | 0.131 | 0.279 | 0.039 |
+| warm | 12 | 2 | 2 | 2 | 2 | 0 | 0.141 | 0.280 | 0.183 |
+| track0 | 12 | 1 | 1 | 1 | 1 | 0 | 0.145 | 0.278 | 0.134 |
+| track1 | 12 | 0 | 0 | 0 | 0 | 0 | 0.122 | 0.239 | 0.127 |
+| sigmaDelta | 12 | 0 | 0 | 0 | 0 | 0 | 0.128 | 0.253 | 0.346 |
+| flip1 | 12 | 5 | 5 | 5 | 5 | 0 | 0.127 | 0.237 | 0.750 |
+| flip2 | 12 | 0 | 0 | 0 | 0 | 0 | 0.113 | 0.231 | 0.834 |
+| flip3 | 7 | 0 | 0 | 0 | 0 | 0 | 0.118 | 0.238 | 0.477 |
+| screen | 12 | 0 | 0 | 0 | 0 | 0 | 0.136 | 0.276 | 0.039 |
+greedy set ['flip1']: 5 of 5 answerable within 1e-2 (of 5 with a reference)
+least-violation yaw-only seed answers 0/5; a random yaw-only seed answers 1.1/5 on average
+screen picks {'pushLast': 8, 'track0': 1, 'flip2': 1, 'pushBest': 1, 'prodSeed': 1}
