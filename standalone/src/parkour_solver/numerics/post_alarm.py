@@ -1,8 +1,8 @@
 """Answer an alarmed relaxed optimum with Clarabel alone (docs/reference/NUMERICAL_SOLVER.md#post-alarm-pipeline).
 
 The relaxed optimum leaves a jump tick short, so it may be no route at full strength. A penalty push moves the relaxed
-point toward full strength under the request's own rows; a point every tick of which is at most 1% short and that the
-scalar validator accepts answers the request, and the first such answer ends the search. Without one, a sector check
+point toward full strength under the request's own rows; a full-strength point that the scalar validator accepts
+answers the request, and the first such answer ends the search. Without one, a sector check
 may prove the request infeasible, reversal cuts look for a route that turns one tick around, and a push whose objective
 weight decays comes last. Every constant was measured on 371 study and 482 Real11 alarmed requests
 (research/post-alarm/README.md).
@@ -17,7 +17,6 @@ from parkour_solver.numerics import disk
 G = 1e-2              # an answer this close to its node's bound stops the push and needs no probe
 W0, RAMP, W_MAX, MOMENTUM = .3, 1.2, 1e3, .5
 FULL = 1e-6           # a tick this little short is full strength
-ACCEPT_SHORT = .01    # a relaxed answer's largest tick shortfall
 PUSH_CAP = 10
 QUADRANT_BUDGET = 7   # Clarabel solves of the sector check
 QUADRANT_FULL = 1e-7  # a sector solution this little short ends the check open
@@ -85,8 +84,7 @@ class _Pipeline:
         self.clarabel = 0
         # The best answer so far, which a deadline does not discard.
         self.best = None
-        self.info = dict(method='none', acceptedAs=None, pushSteps=0, probes=0, reversalTick=None, raced=0,
-                         quadrant=None)
+        self.info = dict(method='none', pushSteps=0, probes=0, reversalTick=None, raced=0, quadrant=None)
 
     def check(self):
         if self.cancel_event is not None and self.cancel_event.is_set():
@@ -107,20 +105,12 @@ class _Pipeline:
         return other is None or self.sense*value > self.sense*other
 
     def accept(self, controls):
-        """(kind, candidate) for an acceptable point: full strength passing `validate`, else every tick at most
-        ACCEPT_SHORT short passing `validate_controls`."""
-        from parkour_solver.validation.numerical import validate, validate_controls
-        peak = disk.deficits(self.problem, controls)[0]
-        if peak < FULL:
-            candidate = validate(self.problem, facings(self.problem, controls))
-            if candidate['feasible']:
-                return 'full', candidate
-        if peak <= ACCEPT_SHORT:
-            candidate = validate_controls(self.problem, controls)
-            if candidate['feasible']:
-                candidate['model'] = 'relaxed_disk'
-                return 'relaxed', candidate
-        return None
+        """The validated candidate of a full-strength point, else None."""
+        from parkour_solver.validation.numerical import validate
+        if disk.deficits(self.problem, controls)[0] >= FULL:
+            return None
+        candidate = validate(self.problem, facings(self.problem, controls))
+        return candidate if candidate['feasible'] else None
 
     def push(self, node, start, cap, decaying=False, state=None):
         """(best accepted or None, last iterate, steps, state): the penalty push from `start`, or continuing an earlier
@@ -135,13 +125,13 @@ class _Pipeline:
                 break
             u, steps = point, steps+1
             accepted = self.accept(u)
-            if accepted is not None and (best is None or self.better(accepted[1]['objective'], best[1]['objective'])):
+            if accepted is not None and (best is None or self.better(accepted['objective'], best['objective'])):
                 best = accepted
-            history.append(None if best is None else best[1]['objective'])
-            if best is not None and self.sense*(node.bound-best[1]['objective']) <= G:
+            history.append(None if best is None else best['objective'])
+            if best is not None and self.sense*(node.bound-best['objective']) <= G:
                 break
             if (best is not None and len(history) > 3 and history[-4] is not None
-                    and self.sense*(best[1]['objective']-history[-4]) < G/10):
+                    and self.sense*(best['objective']-history[-4]) < G/10):
                 break
             full = disk.deficits(self.problem, u)[0] < FULL
             if last_full is not None:
@@ -183,17 +173,17 @@ class _Pipeline:
     def probes(self, plain, best):
         """Objective-cut probes: push inside objective >= best+LEVEL_STEP (MAX) while best is more than G below the
         bound. The level row holds the objective, so the probe push decays."""
-        while self.info['probes'] < LEVEL_PROBES and self.sense*(plain.bound-best[1]['objective']) > G:
+        while self.info['probes'] < LEVEL_PROBES and self.sense*(plain.bound-best['objective']) > G:
             self.info['probes'] += 1
-            level = (self.content['objective'], best[1]['objective']+self.sense*LEVEL_STEP)
+            level = (self.content['objective'], best['objective']+self.sense*LEVEL_STEP)
             node = _Node(self, self.exact, level=level)
             if not node.feasible:
                 break
             found, _, _, _ = self.push(node, node.central, PROBE_CAP, decaying=True)
-            if found is None or not self.better(found[1]['objective'], best[1]['objective']):
+            if found is None or not self.better(found['objective'], best['objective']):
                 break
             best = self.best = found
-            self.info.update(method='probe', acceptedAs=found[0])
+            self.info['method'] = 'probe'
         return best
 
     def race(self, plain):
@@ -223,21 +213,21 @@ class _Pipeline:
             found, _, _, state = self.push(node, node.central, RACE_STEPS)
             self.info['raced'] += 1
             first = first or state
-            if found is not None and (best is None or self.better(found[1]['objective'], best[1]['objective'])):
+            if found is not None and (best is None or self.better(found['objective'], best['objective'])):
                 best = self.best = found
-                self.info.update(method='race', acceptedAs=found[0], reversalTick=t)
-            if best is not None and (i+1 == len(nodes) or self.sense*(best[1]['objective']-nodes[i+1][1].bound) >= 0):
+                self.info.update(method='race', reversalTick=t)
+            if best is not None and (i+1 == len(nodes) or self.sense*(best['objective']-nodes[i+1][1].bound) >= 0):
                 break
         if best is None and nodes:
             t, node = nodes[0]
             found, _, _, _ = self.push(node, None, RACE_FINISH_CAP-RACE_STEPS, state=first)
             if found is not None:
                 best = self.best = found
-                self.info.update(method='race', acceptedAs=found[0], reversalTick=t)
+                self.info.update(method='race', reversalTick=t)
         return best
 
     def answer(self):
-        """The best accepted (kind, candidate) or None, and the termination."""
+        """The best accepted candidate or None, and the termination."""
         alarmed_point = (self.relaxed['objective'], self.relaxed_candidate['controls'])
         plain = _Node(self, self.exact, disk_point=alarmed_point)
         if not plain.feasible:
@@ -251,7 +241,7 @@ class _Pipeline:
         best, _, self.info['pushSteps'], _ = self.push(plain, start, PUSH_CAP)
         if best is not None:
             self.best = best
-            self.info.update(method='push', acceptedAs=best[0])
+            self.info['method'] = 'push'
             best = self.probes(plain, best)
             return best, TERMINATIONS[self.info['method']]
         self.info['quadrant'] = self.quadrant()
@@ -267,7 +257,7 @@ class _Pipeline:
         best, _, _, _ = self.push(plain, plain.central, DECAY_CAP, decaying=True)
         if best is not None:
             self.best = best
-            self.info.update(method='decay', acceptedAs=best[0])
+            self.info['method'] = 'decay'
             return best, TERMINATIONS['decay']
         return None, 'post_alarm_none'
 
@@ -286,15 +276,15 @@ def run(problem, relaxed_candidate, relaxed, *, seconds, cancel_event):
     if cancelled:
         best = None
     status = 'cancelled' if cancelled else 'feasible' if best is not None else 'unknown'
-    result = disk._result(problem, pipeline.started, status, None if best is None else best[1], termination,
+    result = disk._result(problem, pipeline.started, status, best, termination,
                           relaxed['status'], relaxed)
     # search.engine.numerical_counts counts a confirmation without ipoptCalls as one IPOPT call.
     confirmation = dict(peak=relaxed['peakRelativeDeficit'], tick=relaxed['peakTick'], cached=False,
                         diskObjective=relaxed_candidate['objective'], ipoptObjective=None, gap=None, material=False,
                         **pipeline.info, ipoptCalls=0, clarabelSolves=pipeline.clarabel)
     if best is not None:
-        gap = pipeline.sense*(relaxed_candidate['objective']-best[1]['objective'])
-        confirmation.update(ipoptObjective=best[1]['objective'], gap=gap, material=gap > disk.MATERIAL_GAP)
+        gap = pipeline.sense*(relaxed_candidate['objective']-best['objective'])
+        confirmation.update(ipoptObjective=best['objective'], gap=gap, material=gap > disk.MATERIAL_GAP)
     result['confirmation'] = confirmation
     return result
 

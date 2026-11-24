@@ -203,3 +203,32 @@ facings (`ipopt-check-failures.log`).
 - Answers with ticks up to 1% short (37 Real11, 20 study): IPOPT confirms 35 and 19 from their facings. Of the other
   three, the study request is feasible by the study's labels (754.591); on the two Real11 requests (fab671bfb906,
   a6a2637448b7) no IPOPT start of the seed bench found a route either, so these answers are unconfirmed.
+
+## Full-strength acceptance and frame-end re-solves
+
+These scripts ran at 25f7fc62, whose pipeline also accepted a point with every tick at most 1% short
+(`ACCEPT_SHORT`); they turn that rule off by setting `ACCEPT_SHORT` to -1, so they need that revision to rerun.
+
+Full strength only, against the 1% rule (`full_only.py`, `full-only-score.log`, `full-only-losses.log`,
+`full-only-vs-ipopt-alarmed.log`): the study answers the same 340 of 370 requests (122 vs 123 within 1e-3 of the
+reference, all 340 within 1e-2); Real11's 482 alarmed requests get 440 answers instead of 445 (421 vs 433 within 1e-2 of
+the reference), 2 ms slower on average (43 vs 41 ms). Against the best full-strength answer known per request, 434 of
+443 are within 1e-2 instead of 437. Of the 5 lost answers, 3 requests have a known full-strength route.
+
+Frame-end re-solves: `capture_unalarmed.py` recorded the 401 unalarmed relaxed answers of a Real11 run
+(`runs/post-alarm/hybrid/unalarmed.jsonl`). `push_vs_ipopt.py` answers each one with the relaxed point itself when it
+is already full strength and `validate` passes, else with the full-strength pipeline, and separately with one IPOPT
+start (5 s) from the relaxed facings turned by `ipopt_seed`, keeping `fallbackYaw` (`push-vs-ipopt-unalarmed.log`): the
+push answers 398, IPOPT 384, and IPOPT answers none the push misses. The push is at most 0.0098 below IPOPT, and
+takes 11.5 ms on average against IPOPT's 237 ms. `push_then_ipopt.py` adds one IPOPT polish (5 s, no `fallbackYaw`) from
+the push answer's exact facings; `frame_end_score.py` compares the policies on the unalarmed and the 482 alarmed requests
+(`frame-end-policies.log`):
+
+| policy | unalarmed answered / within 1e-3 / worst gap | alarmed answered / within 1e-3 / worst gap |
+|---|---|---|
+| IPOPT alone | 384 / 382 / 0.0155 | 400 / 385 / 0.7321 |
+| push alone | 398 / 277 / 0.0098 | 440 / 277 / 0.0442 |
+| push, then an IPOPT polish (IPOPT from the relaxed facings without a push answer) | 398 / 387 / 0.0098 | 443 / 420 / 0.0435 |
+
+The polish never failed (0 of 838) and never returned a worse point. It must start from the exact facings: the 1e-4
+rad `ipopt_seed` turn moves validated full-strength points out of IPOPT's tolerance (see "IPOPT on pipeline answers").

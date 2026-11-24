@@ -507,25 +507,25 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 
 | Symbol | Line | Kind |
 | --- | ---: | --- |
-| `_Stop` | [32](../src/parkour_solver/numerics/post_alarm.py#L32) | class |
-| `_Node` | [36](../src/parkour_solver/numerics/post_alarm.py#L36) | class |
-| `_Node.__init__` | [38](../src/parkour_solver/numerics/post_alarm.py#L38) | function |
-| `_Node.step` | [58](../src/parkour_solver/numerics/post_alarm.py#L58) | function |
-| `_Pipeline` | [76](../src/parkour_solver/numerics/post_alarm.py#L76) | class |
-| `_Pipeline.__init__` | [77](../src/parkour_solver/numerics/post_alarm.py#L77) | function |
-| `_Pipeline.check` | [91](../src/parkour_solver/numerics/post_alarm.py#L91) | function |
-| `_Pipeline.decide` | [97](../src/parkour_solver/numerics/post_alarm.py#L97) | function |
-| `_Pipeline.better` | [106](../src/parkour_solver/numerics/post_alarm.py#L106) | function |
-| `_Pipeline.accept` | [109](../src/parkour_solver/numerics/post_alarm.py#L109) | function |
-| `_Pipeline.push` | [125](../src/parkour_solver/numerics/post_alarm.py#L125) | function |
-| `_Pipeline.quadrant` | [162](../src/parkour_solver/numerics/post_alarm.py#L162) | function |
-| `_Pipeline.probes` | [183](../src/parkour_solver/numerics/post_alarm.py#L183) | function |
-| `_Pipeline.race` | [199](../src/parkour_solver/numerics/post_alarm.py#L199) | function |
-| `_Pipeline.answer` | [239](../src/parkour_solver/numerics/post_alarm.py#L239) | function |
-| `run` | [275](../src/parkour_solver/numerics/post_alarm.py#L275) | function |
-| `facings` | [302](../src/parkour_solver/numerics/post_alarm.py#L302) | function |
-| `sector_cuts` | [307](../src/parkour_solver/numerics/post_alarm.py#L307) | function |
-| `sector_children` | [313](../src/parkour_solver/numerics/post_alarm.py#L313) | function |
+| `_Stop` | [31](../src/parkour_solver/numerics/post_alarm.py#L31) | class |
+| `_Node` | [35](../src/parkour_solver/numerics/post_alarm.py#L35) | class |
+| `_Node.__init__` | [37](../src/parkour_solver/numerics/post_alarm.py#L37) | function |
+| `_Node.step` | [57](../src/parkour_solver/numerics/post_alarm.py#L57) | function |
+| `_Pipeline` | [75](../src/parkour_solver/numerics/post_alarm.py#L75) | class |
+| `_Pipeline.__init__` | [76](../src/parkour_solver/numerics/post_alarm.py#L76) | function |
+| `_Pipeline.check` | [89](../src/parkour_solver/numerics/post_alarm.py#L89) | function |
+| `_Pipeline.decide` | [95](../src/parkour_solver/numerics/post_alarm.py#L95) | function |
+| `_Pipeline.better` | [104](../src/parkour_solver/numerics/post_alarm.py#L104) | function |
+| `_Pipeline.accept` | [107](../src/parkour_solver/numerics/post_alarm.py#L107) | function |
+| `_Pipeline.push` | [115](../src/parkour_solver/numerics/post_alarm.py#L115) | function |
+| `_Pipeline.quadrant` | [152](../src/parkour_solver/numerics/post_alarm.py#L152) | function |
+| `_Pipeline.probes` | [173](../src/parkour_solver/numerics/post_alarm.py#L173) | function |
+| `_Pipeline.race` | [189](../src/parkour_solver/numerics/post_alarm.py#L189) | function |
+| `_Pipeline.answer` | [229](../src/parkour_solver/numerics/post_alarm.py#L229) | function |
+| `run` | [265](../src/parkour_solver/numerics/post_alarm.py#L265) | function |
+| `facings` | [292](../src/parkour_solver/numerics/post_alarm.py#L292) | function |
+| `sector_cuts` | [297](../src/parkour_solver/numerics/post_alarm.py#L297) | function |
+| `sector_children` | [303](../src/parkour_solver/numerics/post_alarm.py#L303) | function |
 
 ## numerics/solver.py
 

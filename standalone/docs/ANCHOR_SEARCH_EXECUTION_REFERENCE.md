@@ -116,9 +116,8 @@ flight, so a resume repeats only the walk (`work`: `confirmations`,
 `find_checkpoint_route` setting `post_alarm` answers those alarms with
 the [post-alarm pipeline](reference/NUMERICAL_SOLVER.md#post-alarm-pipeline)
 by default, `'ipopt'` with the IPOPT confirmation above (solve policy `numerical: relaxed_pipeline`, recorded in the run and DFS
-identities, so neither value resumes the other's state); its answer may be a
-relaxed point at most 1% short, which the finalization then re-solves like any
-relaxed finish. The anchor `feasibilityPolicy` has one value,
+identities, so neither value resumes the other's state); its answer is always
+a full-strength physical point. The anchor `feasibilityPolicy` has one value,
 `numerical_oracle`: the numerical backend's infeasibility verdict (IPOPT
 `Infeasible_Problem_Detected` or a Clarabel infeasible status) rejects the node.
 

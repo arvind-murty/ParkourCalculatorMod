@@ -7,7 +7,7 @@ from types import SimpleNamespace
 from unittest import mock
 
 from parkour_solver.numerics import disk, post_alarm, prepare, solver
-from parkour_solver.validation.numerical import validate, validate_controls
+from parkour_solver.validation.numerical import validate
 
 # One alarmed request per study pipeline outcome (research/post-alarm/README.md), and a Real11 request whose most short
 # tick is not a jump tick.
@@ -49,9 +49,8 @@ class PipelineTests(unittest.TestCase):
         self.assertAlmostEqual(result['candidate']['objective'], reference, delta=delta)
         self.assertEqual(confirmation['ipoptObjective'], result['candidate']['objective'])
         self.assertEqual(confirmation['ipoptCalls'], 0)
-        check = validate_controls if result['candidate'].get('model') == 'relaxed_disk' else validate
-        argument = result['candidate']['controls' if check is validate_controls else 'yaw']
-        self.assertTrue(check(problem, argument)['feasible'])
+        self.assertNotIn('model', result['candidate'])
+        self.assertTrue(validate(problem, result['candidate']['yaw'])['feasible'])
 
     def test_a_push_answer_is_confirmed_once_and_cached(self):
         problem = alarmed('push')

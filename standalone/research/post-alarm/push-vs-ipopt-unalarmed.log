@@ -1,0 +1,11 @@
+401 requests; push methods {'direct': 183, 'push': 187, 'decay': 23, 'none': 3, 'race': 3, 'probe': 2}
+both answer 384 | push only 14 | IPOPT only 0 | neither 3
+push minus IPOPT where both answer: below by >1e-2 0, by 1e-3..1e-2 115, within 1e-3 268, above by >1e-3 1; min -0.0098 median -6.78e-09 max 0.0155
+push ms mean 11.5 median 6.8 p90 16.1 max 232.9
+IPOPT ms mean 237.3 median 213.2 p90 281.6 max 814.3
+  push decay: 23 requests, IPOPT feasible on 14, push ms mean 70.5, Clarabel solves mean 26.5
+  push direct: 183 requests, IPOPT feasible on 183, push ms mean 0.4, Clarabel solves mean 0.0
+  push none: 3 requests, IPOPT feasible on 0, push ms mean 223.4, Clarabel solves mean 80.0
+  push probe: 2 requests, IPOPT feasible on 1, push ms mean 57.8, Clarabel solves mean 22.0
+  push push: 187 requests, IPOPT feasible on 185, push ms mean 10.5, Clarabel solves mean 2.9
+  push race: 3 requests, IPOPT feasible on 1, push ms mean 56.2, Clarabel solves mean 21.7

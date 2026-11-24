@@ -1,0 +1,18 @@
+
+runs/post-alarm/hybrid/unalarmed.jsonl: 401 requests, 398 answered by something
+| policy | answered | within 1e-3 of best | within 1e-2 | worst gap | IPOPT calls |
+|---|---|---|---|---|---|
+| IPOPT alone | 384 | 382 | 383 | 0.0155 | 401 |
+| push alone | 398 | 277 | 398 | 0.0098 | 0 |
+| IPOPT, then push if it fails | 398 | 390 | 397 | 0.0155 | 401 |
+| push + IPOPT polish (IPOPT from relaxed if no push) | 398 | 387 | 398 | 0.0098 | 401 |
+polish minus push where both: improved >1e-3 110, within 1e-3 288, worse >1e-3 0; polish failed 0 of 398
+
+runs/post-alarm/hybrid/alarmed.jsonl: 482 requests, 443 answered by something
+| policy | answered | within 1e-3 of best | within 1e-2 | worst gap | IPOPT calls |
+|---|---|---|---|---|---|
+| IPOPT alone | 400 | 385 | 394 | 0.7321 | 482 |
+| push alone | 440 | 277 | 435 | 0.0442 | 0 |
+| IPOPT, then push if it fails | 443 | 415 | 437 | 0.7321 | 482 |
+| push + IPOPT polish (IPOPT from relaxed if no push) | 443 | 420 | 441 | 0.0435 | 482 |
+polish minus push where both: improved >1e-3 147, within 1e-3 293, worse >1e-3 0; polish failed 0 of 440

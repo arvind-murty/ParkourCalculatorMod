@@ -245,11 +245,11 @@ answer ends the search; later steps run only without one.
    `warmYaw`, starts at full strength along the parent's facings). `w` starts at
    0.3; after a full-strength step that follows another, `w` grows by 1.2 (to
    1e3) and `y` moves on with momentum 0.5; a short step after one halves `w` and
-   returns `y` to the last full-strength point. A point is accepted when every
-   tick is full strength (shortfall below 1e-6) and `validate` passes, else when
-   every tick is at most 1% short and `validate_controls` passes (`model:
-   relaxed_disk`). The push stops within `G` (1e-2) of its bound, after a gain
-   below `G/10` over 3 steps, or at the cap.
+   returns `y` to the last full-strength point. A point is accepted only at full
+   strength: every tick's shortfall below 1e-6 and `validate` passing at the
+   point's facings, so every answer is a physical candidate (user, 2026-11-23).
+   The push stops within `G` (1e-2) of its bound, after a gain below `G/10` over
+   3 steps, or at the cap.
 3. An accepted answer more than `G` below the bound gets up to 3 objective-cut
    probes: the row objective >= answer + 1e-2 (MAX; <= answer - 1e-2 for MIN)
    on a fresh problem, a 5-step decaying push (step 6) from its central point,
@@ -274,7 +274,7 @@ accepted candidate, `unknown` (`quadrant_infeasible`, `post_alarm_none`,
 `time_limit`) or `cancelled`; `termination` names the step that answered
 (`post_alarm_push`, `_probe`, `_race`, `_decay`). `confirmation` keeps the IPOPT
 confirmation's fields (`ipoptObjective` is the answer's objective, `ipoptCalls`
-is 0) and adds `method`, `acceptedAs` (`full`/`relaxed`), `pushSteps`, `probes`,
+is 0) and adds `method`, `pushSteps`, `probes`,
 `reversalTick`, `raced`, `quadrant` and `clarabelSolves`. Answers, certificates
 and `post_alarm_none` are cached like confirmations; a cache hit reports 0 solves.
 The problem field `warmYaw` is a hint: validated by `prepare`, left out of
