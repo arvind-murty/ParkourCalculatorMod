@@ -1,0 +1,33 @@
+| run | ticks | objective | termination | search s | solverCalls | conicCandidates | workerLaunches | expandedPrefixes |
+|---|---|---|---|---|---|---|---|---|
+| extended-A | None | None | deadline | 295.25 | 713 | 436 | 41 | None |
+| extended-B | None | None | deadline | 296.30 | 732 | 454 | 41 | None |
+| fixed-A1 | None | None | numerical_call_limit | 40.06 | 100 | 71 | 5 | None |
+| fixed-A2 | None | None | numerical_call_limit | 38.91 | 100 | 71 | 5 | None |
+| fixed-A3 | None | None | numerical_call_limit | 39.11 | 100 | 71 | 5 | None |
+| fixed-B1 | None | None | numerical_call_limit | 37.70 | 100 | 70 | 5 | None |
+| fixed-B2 | None | None | numerical_call_limit | 37.29 | 100 | 70 | 5 | None |
+| fixed-B3 | None | None | numerical_call_limit | 37.52 | 100 | 70 | 5 | None |
+| smoke-A | 64 | -1093.238302878354 | exhausted | 6.57 | 39 | 17 | 0 | None |
+| smoke-B | 64 | -1093.238302878354 | exhausted | 3.87 | 39 | 17 | 0 | None |
+
+extended-A {"relaxationChecks": {"screen": {"solved": 3493, "feasible": 2493, "infeasible": 1000, "cacheHits": 197, "retried": 1}, "candidate": {"solved": 524, "feasible": 300, "cacheHits": 189, "infeasible": 224, "retried": 2}}, "workerLaunches": 41, "relaxedFallbacks": 0, "confirmations": 41, "confirmationIpoptCalls": 41}
+extended-B {"relaxationChecks": {"screen": {"solved": 3457, "feasible": 2471, "infeasible": 986, "cacheHits": 206}, "candidate": {"solved": 534, "feasible": 309, "cacheHits": 198, "infeasible": 225}}, "workerLaunches": 41, "relaxedFallbacks": 0, "confirmations": 41, "confirmationIpoptCalls": 41}
+fixed-A1 {"relaxationChecks": {"screen": {"solved": 538, "feasible": 371, "infeasible": 167, "cacheHits": 40, "retried": 1}, "candidate": {"solved": 56, "feasible": 32, "cacheHits": 44, "infeasible": 24, "retried": 1}}, "workerLaunches": 5, "relaxedFallbacks": 0, "confirmations": 5, "confirmationIpoptCalls": 5}
+fixed-A2 {"relaxationChecks": {"screen": {"solved": 538, "feasible": 371, "infeasible": 167, "cacheHits": 40, "retried": 1}, "candidate": {"solved": 56, "feasible": 32, "cacheHits": 44, "infeasible": 24, "retried": 1}}, "workerLaunches": 5, "relaxedFallbacks": 0, "confirmations": 5, "confirmationIpoptCalls": 5}
+fixed-A3 {"relaxationChecks": {"screen": {"solved": 538, "feasible": 371, "infeasible": 167, "cacheHits": 40, "retried": 1}, "candidate": {"solved": 56, "feasible": 32, "cacheHits": 44, "infeasible": 24, "retried": 1}}, "workerLaunches": 5, "relaxedFallbacks": 0, "confirmations": 5, "confirmationIpoptCalls": 5}
+fixed-B1 {"relaxationChecks": {"screen": {"solved": 538, "feasible": 371, "infeasible": 167, "cacheHits": 40}, "candidate": {"solved": 56, "feasible": 31, "cacheHits": 44, "infeasible": 25}}, "workerLaunches": 5, "relaxedFallbacks": 0, "confirmations": 5, "confirmationIpoptCalls": 5}
+fixed-B2 {"relaxationChecks": {"screen": {"solved": 538, "feasible": 371, "infeasible": 167, "cacheHits": 40}, "candidate": {"solved": 56, "feasible": 31, "cacheHits": 44, "infeasible": 25}}, "workerLaunches": 5, "relaxedFallbacks": 0, "confirmations": 5, "confirmationIpoptCalls": 5}
+fixed-B3 {"relaxationChecks": {"screen": {"solved": 538, "feasible": 371, "infeasible": 167, "cacheHits": 40}, "candidate": {"solved": 56, "feasible": 31, "cacheHits": 44, "infeasible": 25}}, "workerLaunches": 5, "relaxedFallbacks": 0, "confirmations": 5, "confirmationIpoptCalls": 5}
+smoke-A {"relaxationChecks": {"screen": {"solved": 49, "feasible": 45, "infeasible": 4}, "candidate": {"solved": 36, "feasible": 14, "cacheHits": 3, "infeasible": 22}}, "workerLaunches": 0, "relaxedFallbacks": 0, "confirmations": 0, "confirmationIpoptCalls": 0}
+smoke-B {"relaxationChecks": {"screen": {"solved": 49, "feasible": 45, "infeasible": 4}, "candidate": {"solved": 36, "feasible": 14, "cacheHits": 3, "infeasible": 22}}, "workerLaunches": 0, "relaxedFallbacks": 0, "confirmations": 0, "confirmationIpoptCalls": 0}
+
+parity fixed-A1 vs fixed-B1: transitions [19, 19]; exact match; tolerant match
+parity fixed-A2 vs fixed-B2: transitions [19, 19]; exact match; tolerant match
+parity fixed-A3 vs fixed-B3: transitions [19, 19]; exact match; tolerant match
+parity fixed-A1 vs fixed-A2: transitions [19, 19]; exact match; tolerant match
+parity fixed-B1 vs fixed-B2: transitions [19, 19]; exact match; tolerant match
+parity extended-A vs extended-B: transitions [19, 19]; exact match; tolerant match
+parity smoke-A vs smoke-B: transitions [62, 62]; exact 1 differences, first transition 23; tolerant match
+extended-A: 672 requests, clarabel 672 median 9.25 ms mean 17.01 ms total 11.43 s; worker launches 0; statuses {'feasible': 436, 'unknown': 236}
+extended-B: 691 requests, clarabel 691 median 7.00 ms mean 11.46 ms total 7.92 s; worker launches 0; statuses {'feasible': 454, 'unknown': 237}

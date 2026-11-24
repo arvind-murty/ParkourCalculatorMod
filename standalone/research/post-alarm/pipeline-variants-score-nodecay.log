@@ -1,0 +1,21 @@
+
+Study (371 alarmed requests): 370 requests, 340 with a reference, 27 infeasible
+| variant | answered | within 1e-3 | within 1e-2 | above reference by > 1e-3 | answers on infeasible | gained / lost within 1e-2 vs today | mean / median / p90 ms | IPOPT calls (requests calling) | Clarabel solves mean |
+|---|---|---|---|---|---|---|---|---|---|
+| today | 340 | 125 | 340 | 3 | 0 | +0 / -0 | 37 / 10 / 59 | 46 (31) | 8.2 |
+| race-probe-today | 340 | 125 | 340 | 3 | 0 | +0 / -0 | 40 / 10 / 54 | 46 (31) | 9.4 |
+| race-probe-flip1-prod | 338 | 122 | 337 | 3 | 0 | +0 / -3 | 42 / 10 / 53 | 51 (31) | 9.4 |
+
+Real11 (482 alarmed requests from an 1800 s pipeline run): 482 requests, 445 with a reference, 15 infeasible
+| variant | answered | within 1e-3 | within 1e-2 | above reference by > 1e-3 | answers on infeasible | gained / lost within 1e-2 vs today | mean / median / p90 ms | IPOPT calls (requests calling) | Clarabel solves mean |
+|---|---|---|---|---|---|---|---|---|---|
+| today | 431 | 270 | 418 | 0 | 0 | +0 / -0 | 71 / 14 / 243 | 122 (78) | 13.9 |
+| race-probe-today | 443 | 273 | 438 | 0 | 0 | +20 / -0 | 68 / 14 / 205 | 93 (62) | 15.6 |
+| race-probe-flip1-prod | 438 | 271 | 432 | 0 | 0 | +20 / -6 | 73 / 14 / 240 | 105 (62) | 15.6 |
+
+Real11, requests today sends to IPOPT: 78 requests, 56 with a reference, 0 infeasible
+| variant | answered | within 1e-3 | within 1e-2 | above reference by > 1e-3 | answers on infeasible | gained / lost within 1e-2 vs today | mean / median / p90 ms | IPOPT calls (requests calling) | Clarabel solves mean |
+|---|---|---|---|---|---|---|---|---|---|
+| today | 42 | 34 | 41 | 0 | 0 | +0 / -0 | 294 / 285 / 437 | 122 (78) | 35.8 |
+| race-probe-today | 54 | 32 | 53 | 0 | 0 | +12 / -0 | 266 / 248 / 483 | 93 (62) | 41.9 |
+| race-probe-flip1-prod | 49 | 30 | 47 | 0 | 0 | +12 / -6 | 296 / 300 / 505 | 105 (62) | 41.9 |

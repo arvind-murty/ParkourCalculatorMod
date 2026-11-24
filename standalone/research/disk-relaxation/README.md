@@ -3,7 +3,7 @@
 2026-11-19, `feat/disk-interim-solver`. Automatic discovery solves its interim
 numerical queries with the Clarabel disk relaxation (`|a| <= magnitude`), confirms
 acceleration-shortfall alarms with IPOPT, and publishes one IPOPT finalization; the
-HiGHS LP screen is removed. Behavior: [numerical backend](../../docs/ANCHOR_SEARCH_EXECUTION_REFERENCE.md#numerical-backend-and-finalization),
+HiGHS LP screen is removed. Behavior: [numerical backend](../../docs/ANCHOR_SEARCH_EXECUTION_REFERENCE.md#numerical-backend-and-frame-end-re-solves),
 [solver](../../docs/reference/NUMERICAL_SOLVER.md#disk-relaxation),
 [decision](../../docs/DECISIONS_AND_PLANS.md). New identities: reachability proof
 policy3, constraint generation policy14, event constraint policy15 and numerical

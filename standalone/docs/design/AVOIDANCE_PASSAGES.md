@@ -179,7 +179,7 @@ let the existing named-case scene replay judge them; rejected uncertain repair
 work remains unresolved rather than acquiring an absence certificate.
 
 Legacy collision-driven repair (callers without an initial generator, such as the
-finalization's re-solve of a fixed branch)
+frame-end re-solve of a fixed branch)
 uses `ConstraintVariants.for_plan` after an observed mismatch. It builds bounds
 with the real compiler and selected vertical schedule for that fixed allocation,
 then assigns every applicable box jointly. It uses the same phase builder and
@@ -217,7 +217,7 @@ family is climbed, the best accepted alternative by `candidate_rank` is kept, an
 up to `FALLBACK_LIMIT` (2) others with the same ticks and an objective within
 `FALLBACK_GAP` (0.3 blocks) are saved as `fallbackVariants` for the DFS to restore
 if a later leg fails. On the relaxed backend these are relaxed points: the
-[confirmation walk](../ANCHOR_SEARCH_EXECUTION_REFERENCE.md#numerical-backend-and-finalization)
+[confirmation walk](../ANCHOR_SEARCH_EXECUTION_REFERENCE.md#numerical-backend-and-frame-end-re-solves)
 confirms the kept candidates when the loop ends, and a point it rejected is never
 saved as a fallback. The family state and held variants persist in the repair
 snapshot (version 3), so a resumed climb solves nothing twice.

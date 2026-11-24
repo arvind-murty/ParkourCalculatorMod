@@ -11,10 +11,19 @@ everything not being worked on is in the [deferred-work register](DEFERRED_WORK.
 - Merged as PR #5 (`feat/disk-interim-solver`): automatic discovery runs on the
   Clarabel [disk relaxation](reference/NUMERICAL_SOLVER.md#disk-relaxation): the
   HiGHS LP screen is gone, interim candidates are relaxed, an acceleration-shortfall
-  alarm on jump ticks confirms with IPOPT, and one IPOPT finalization
-  publishes the physical route ([execution](ANCHOR_SEARCH_EXECUTION_REFERENCE.md#numerical-backend-and-finalization)).
+  alarm on jump ticks confirmed with IPOPT, and one IPOPT finalization
+  published the physical route ([execution](ANCHOR_SEARCH_EXECUTION_REFERENCE.md#numerical-backend-and-frame-end-re-solves)).
   Real11 keeps the replayed T64 with 0 interim IPOPT workers and 1 finalization call,
   median search 3.6 s against 7.5 s on `c9deef42` ([evidence](../research/disk-relaxation/README.md)).
+- Local, `feat/post-alarm-pipeline`: Clarabel iterative refinement off, validator-rejected relaxed
+  points infeasible, the Clarabel-only
+  [post-alarm pipeline](reference/NUMERICAL_SOLVER.md#post-alarm-pipeline) behind the case setting
+  `post_alarm` (default `pipeline`; `ipopt` keeps the IPOPT confirmation), accepting only full-strength
+  answers, and [frame-end re-solves](ANCHOR_SEARCH_EXECUTION_REFERENCE.md#numerical-backend-and-frame-end-re-solves)
+  in place of the run-end finalization: every chosen witness is re-solved at full strength before the search
+  commits to it. Every frame examines its whole queue before it chooses, then chooses by ticks and objective, and
+  unknown outcomes are infeasible and logged, never retried
+  ([decision](DECISIONS_AND_PLANS.md)).
 - Merged as PR #4 (`feat/jvm-free-orchestrator`): search is JVM-free. The
   in-process Python movement bridge is the default and the Java bridge an explicit
   oracle ([evidence](../research/jvm-free-bridge/README.md)).

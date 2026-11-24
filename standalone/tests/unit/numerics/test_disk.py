@@ -106,15 +106,23 @@ class ArchivedReal11Tests(unittest.TestCase):
             self.assertGreaterEqual(sense*candidate['objective'], sense*row['stockObjective']-1e-6, row['problemHash'])
         self.assertEqual((verdicts.count('feasible'), verdicts.count('infeasible')), (14, 4))
 
-    def test_requests_clarabel_never_solved_under_their_objective_are_infeasible(self):
-        # Captured requests that end without a verdict under their objective and are primal infeasible without it.
+    def test_requests_iterative_refinement_left_undecided_are_primal_infeasible(self):
+        # Captured requests that ended NumericalError under their objective with iterative refinement on.
         for row in read('disk-undecided.json.gz')['rows']:
             content = disk.spec(prepare(row['request']), strict=True)
             result = disk.solve(content, seconds=disk.CAP)
-            self.assertNotIn(result['status'], disk.FEASIBLE+PRIMAL_INFEASIBLE, row['capturedId'])
             self.assertEqual(result['outcome'], 'infeasible', row['capturedId'])
+            self.assertIn(result['status'], PRIMAL_INFEASIBLE, row['capturedId'])
             stripped = {k: v for k, v in content.items() if k != 'objective'}
             self.assertIn(disk.solve(stripped, seconds=disk.CAP)['status'], PRIMAL_INFEASIBLE, row['capturedId'])
+
+    def test_a_status_neither_feasible_nor_a_limit_is_infeasible(self):
+        import clarabel
+        content = disk.spec(request(2, .1), strict=True)
+        failed = SimpleNamespace(solve=lambda: SimpleNamespace(status='NumericalError', x=[0.]*16, iterations=3))
+        with mock.patch.object(clarabel, 'DefaultSolver', return_value=failed):
+            result, _ = disk._attempt(content, disk.CAP, disk.MAX_ITER)
+        self.assertEqual((result['status'], result['outcome'], result['controls']), ('NumericalError', 'infeasible', None))
 
 
 @unittest.skipUnless(RUNTIME, 'Set PKC_IPOPT_PYTHON to compare the relaxation with IPOPT')
@@ -128,7 +136,8 @@ class IpoptOracleTests(unittest.TestCase):
         self.assertEqual(full['status'], 'feasible')
         sense = 1 if p['objective']['sense'] == 'MAX' else -1
         self.assertGreaterEqual(sense*candidate['objective'], sense*full['candidate']['objective']-1e-7)
-        self.assertAlmostEqual(result['objective'], candidate['objective'], delta=1e-9)
+        # Without iterative refinement Clarabel's own states carry residuals of a few 1e-9 (research/clarabel-refinement).
+        self.assertAlmostEqual(result['objective'], candidate['objective'], delta=1e-8)
         if disk.deficits(p, result['controls'])[0] <= disk.ALARM_FRACTION:
             self.assertAlmostEqual(candidate['objective'], full['candidate']['objective'], delta=1e-6)
         return candidate
@@ -183,6 +192,20 @@ class StartAndStatusTests(unittest.TestCase):
         self.assertEqual((limited['outcome'], limited['status'], limited['retried']), ('infeasible', 'MaxIterations', True))
         self.assertTrue(disk.solve(copy.deepcopy(other), seconds=disk.CAP)['cached'])
 
+    def test_cut_and_level_rows(self):
+        content = disk.spec(request(1, .1), strict=True)
+        free, _ = disk._attempt(content, disk.CAP, disk.MAX_ITER)
+        self.assertAlmostEqual(free['controls'][0][0], .1, delta=1e-7)
+        # -a_x >= .05 excludes the free optimum's direction; the tick ends on the cut.
+        cut, _ = disk._attempt(content, disk.CAP, disk.MAX_ITER, cuts=[(0, -1., 0., .05)])
+        self.assertAlmostEqual(cut['controls'][0][0], -.05, delta=1e-7)
+        stripped = {k: v for k, v in content.items() if k != 'objective'}
+        for sense, value, outcome in (('MAX', free['objective']+.01, 'infeasible'), ('MAX', free['objective']-.01, 'feasible'),
+                                      ('MIN', free['objective']-.3, 'infeasible'), ('MIN', free['objective']-.1, 'feasible')):
+            level = (dict(content['objective'], sense=sense), value)
+            result, _ = disk._attempt(stripped, disk.CAP, disk.MAX_ITER, level=level)
+            self.assertEqual(result['outcome'], outcome, (sense, value))
+
     def test_unsupported_requests_have_no_spec(self):
         self.assertIsNone(disk.spec(request(2, .1, threshold=.005), strict=True))
         self.assertIsNone(disk.spec(request(2, .1, walls=[dict(mode='F', t1=0, cmp='EQ', rhs=90.)]), strict=True))
@@ -228,7 +251,7 @@ class DispatchTests(unittest.TestCase):
                          ('unknown', 'disk_finished', None, []))
         self.assertIn(result['workerStatus'], PRIMAL_INFEASIBLE)
 
-    def test_ipopt_decides_only_unsupported_and_rejected_requests(self):
+    def test_ipopt_decides_only_unsupported_requests(self):
         result, calls, _ = self.dispatch(request(2, .1, threshold=.005))
         self.assertEqual((result['backend'], result['fallback'], calls), ('ipopt', 'unsupported', [False]))
         with mock.patch.object(disk, 'MAX_ITER', 1), mock.patch.object(disk, 'RETRY_MAX_ITER', 1):
@@ -240,7 +263,8 @@ class DispatchTests(unittest.TestCase):
                        cached=False)
         with mock.patch.object(disk, 'solve', return_value=outside):
             result, calls, _ = self.dispatch(request(2, .1))
-        self.assertEqual((result['backend'], result['fallback'], calls), ('ipopt', 'rejected_relaxed_point', [False]))
+        self.assertEqual((result['status'], result['backend'], result['termination'], result['candidate'], calls),
+                         ('unknown', 'clarabel', 'disk_rejected', None, []))
 
 
 def jumping(problem):
@@ -289,7 +313,7 @@ class ConfirmationTests(unittest.TestCase):
         def counted(request, **kwargs):
             calls.append(kwargs['stop_on_feasible'])
             return original(request, **dict(kwargs, python_executable=RUNTIME))
-        dispatch = disk.RelaxedDispatch(gate=gate or SimpleNamespace(cache={}))
+        dispatch = disk.RelaxedDispatch(gate=gate or SimpleNamespace(cache={}), post_alarm='ipopt')
         with mock.patch.object(full, 'solve', side_effect=counted):
             result = dispatch.confirmed(problem, seconds=5., stop_on_feasible=stop_on_feasible,
                                     on_incumbent=incumbents.append)
@@ -350,12 +374,85 @@ class ConfirmationTests(unittest.TestCase):
         self.assertEqual(incumbents, [second['candidate']])
 
 
+@unittest.skipUnless(RUNTIME, 'Set PKC_IPOPT_PYTHON for frame-end IPOPT solves')
+class FrameEndTests(unittest.TestCase):
+    def full_strength(self, problem, gate=None):
+        import parkour_solver.numerics.solver as full
+        requests, original = [], full.solve
+        def recorded(request, **kwargs):
+            requests.append(request)
+            return original(request, **dict(kwargs, python_executable=RUNTIME))
+        with mock.patch.object(full, 'solve', side_effect=recorded):
+            result = disk.RelaxedDispatch(gate=gate or SimpleNamespace(cache={})).full_strength(
+                problem, seconds=5., stop_on_feasible=False)
+        return result, requests
+
+    def test_a_full_strength_optimum_answers_directly_and_is_polished_from_its_exact_facings(self):
+        p = dict(analytic('no-alarm'), fallbackYaw=[0., 0.])
+        result, requests = self.full_strength(p)
+        record = result['frameEnd']
+        self.assertEqual((result['status'], record['method'], record['clarabelSolves'], record['ipoptCalls']),
+                         ('feasible', 'direct', 0, 1))
+        _, point = relaxed(p)
+        answer = validate(p, [math.degrees(math.atan2(c[1], c[0])-b) for c, b in zip(point['controls'], p['base'])])
+        (polish,) = requests
+        self.assertEqual(polish['yaw'], answer['yaw'])
+        self.assertNotIn('fallbackYaw', polish)
+        self.assertEqual(record['pushObjective'], answer['objective'])
+        self.assert_kept(p, result)
+
+    def test_a_short_point_is_pushed_to_full_strength_then_polished(self):
+        p = analytic('true-gap')
+        result, requests = self.full_strength(p)
+        record = result['frameEnd']
+        self.assertEqual((result['status'], record['method'], record['ipoptCalls']), ('feasible', 'push', 1))
+        self.assertGreater(record['clarabelSolves'], 0)
+        # The polish did not beat the push, which is kept, and it started from the push answer's facings.
+        self.assertEqual((result['backend'], requests[0]['yaw']), ('clarabel', result['candidate']['yaw']))
+        self.assert_kept(p, result)
+
+    def test_without_a_full_strength_answer_ipopt_starts_from_the_turned_disk_facings(self):
+        p = dict(analytic('false-alarm'), fallbackYaw=[0., 0.])
+        result, requests = self.full_strength(p)
+        _, point = relaxed(p)
+        (start,) = requests
+        self.assertEqual((start['yaw'], start['fallbackYaw']), (disk.ipopt_seed(point['yaw']), [0., 0.]))
+        self.assertEqual((result['status'], result['backend'], result['frameEnd']['method'], result['frameEnd']['pushObjective']),
+                         ('feasible', 'ipopt', 'none', None))
+        self.assert_kept(p, result)
+
+    def test_a_sector_certificate_needs_no_ipopt(self):
+        from tests.support.post_alarm import alarmed
+        gate = SimpleNamespace(cache={})
+        result, requests = self.full_strength(alarmed('quadrant'), gate)
+        self.assertEqual((result['status'], result['termination'], result['frameEnd']['method'], requests),
+                         ('unknown', 'quadrant_infeasible', 'quadrant', []))
+        self.assertEqual(len(gate.cache), 1)
+
+    def test_a_decided_answer_is_cached(self):
+        gate = SimpleNamespace(cache={})
+        first, _ = self.full_strength(analytic('no-alarm'), gate)
+        again, requests = self.full_strength(analytic('no-alarm'), gate)
+        self.assertEqual((again['candidate'], requests), (first['candidate'], []))
+        self.assertEqual({k: again['frameEnd'][k] for k in ('cached', 'ipoptCalls', 'clarabelSolves')},
+                         dict(cached=True, ipoptCalls=0, clarabelSolves=0))
+
+    def assert_kept(self, problem, result):
+        """The better of the push answer and IPOPT's, a physical point the validator accepts."""
+        record = result['frameEnd']
+        sign = 1 if problem['objective']['sense'] == 'MAX' else -1
+        kept = max((v for v in (record['pushObjective'], record['ipoptObjective']) if v is not None), key=lambda v: sign*v)
+        self.assertEqual(result['candidate']['objective'], kept)
+        self.assertNotIn('model', result['candidate'])
+        self.assertTrue(validate(problem, result['candidate']['yaw'])['feasible'])
+
+
 class RejectedConfirmationTests(unittest.TestCase):
     def test_an_ipopt_rejection_governs_the_alarmed_request(self):
         rejected = dict(status='unknown', feasible=False, candidate=None, termination='worker_finished',
                         workerLaunched=True, workerStatus='Infeasible_Problem_Detected')
         with mock.patch('parkour_solver.numerics.solver.solve', return_value=rejected):
-            dispatch = disk.RelaxedDispatch(gate=SimpleNamespace(cache={}))
+            dispatch = disk.RelaxedDispatch(gate=SimpleNamespace(cache={}), post_alarm='ipopt')
             result = dispatch.confirmed(analytic('true-gap'), seconds=1., stop_on_feasible=False)
         self.assertEqual((result['status'], result['termination'], result['workerStatus'], result['candidate']),
                          ('unknown', 'worker_finished', 'Infeasible_Problem_Detected', None))

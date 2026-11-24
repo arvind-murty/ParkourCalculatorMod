@@ -1,5 +1,6 @@
 import copy
 import json
+import threading
 import unittest
 from unittest.mock import patch
 
@@ -77,7 +78,7 @@ class EventSearchTests(unittest.TestCase):
             startBlock='start',goalBlock='goal',geometryBounds=[-5,-5,-5,10,10,5],blocks=[
                 dict(id='start',boxes=[[0,0,0,1,1,1]]),dict(id='mid',boxes=[[2,0,0,3,2,1]]),
                 dict(id='goal',boxes=[[4,0,0,5,3,1]])],movementSearch=dict(types=['normal'],maxInputs=30)))
-        dispatched=[];published=[]
+        dispatched=[];published=[];cancel=threading.Event()
         def generate(s,*,report,initial_programs,**kwargs):
             report['continuation']=dict(expanded=1,exhausted=True)
             parent=initial_programs[0]
@@ -88,10 +89,12 @@ class EventSearchTests(unittest.TestCase):
             p['profile']['contactEvents']=[dict(offset=n-1,axis='Y',direction=-1,boxes=[s['collisionScene']['solids'][target['solidIndex']]])]
             yield p
         def evaluate(s,p,compiler,adapter,work,motion,**kwargs):
-            work.before_solve({});dispatched.append((p['terminalSupport'],p['profile']['duration']))
+            if kwargs.get('final_route') is None:
+                # A frame-end re-solve (final_route) answers with the chosen witness's own point; only scoring is logged.
+                work.before_solve({});dispatched.append((p['terminalSupport'],p['profile']['duration']))
             n=p['profile']['duration']
             best=dict(candidate=dict(yaw=[0.]*n,positions=[[.5,0.]]*(n+1),velocity=[[0.,0.]]*(n+1),objective=0.),
-                plan=dict(ticks=n,walls=[]),profiles=[p['profile']],allocation=[0],cost=0)
+                plan=dict(ticks=n,walls=[]),profiles=[p['profile']],allocation=[0],cost=0,route=dict(source='stub',objective=dict(axis='X',sense='MAX')))
             return dict(status='feasible',termination='done',best=best,work=dict(solverCalls=1),fullSceneValidated=True)
         def progress(state):
             dfs=state['dfs']
@@ -99,16 +102,19 @@ class EventSearchTests(unittest.TestCase):
             if chosen:
                 owner=next(d for d in dfs['discovery'].values() if d['parent'] and d['parent']['candidate']==chosen[-1]['candidate'])
                 published.append(owner['owner'])
+                # Stop once the child frame is published, before it scores anything.
+                cancel.set()
         with patch('parkour_solver.search.engine.motion_bound',return_value=dict(movementAfterSupportCheck=.5)), \
              patch('parkour_solver.search.dfs.iter_movement_programs',side_effect=generate), \
              patch('parkour_solver.search.engine.evaluate_program',side_effect=evaluate):
-            result=find_checkpoint_route(scene,object(),anchor_search=dict(anchors=['mid']),seconds=2,max_solver_calls=1,
-on_progress=progress)
+            # A second call is room only: the frame's generator must report itself exhausted before the frame chooses.
+            result=find_checkpoint_route(scene,object(),anchor_search=dict(anchors=['mid']),seconds=2,max_solver_calls=2,
+on_progress=progress,cancel_event=cancel)
         self.assertEqual(dispatched,[('mid',10)])
         self.assertTrue(published)
         dfs=result['searchState']['dfs']
         self.assertEqual(dfs['version'],8)
-        child_owner=dfs['discovery'][dfs['pendingGoalOwner']]
+        child_owner=dfs['discovery'][published[0]]
         self.assertEqual(child_owner['index'],1)
         self.assertEqual(child_owner['parents'][0]['profile']['duration'],10)
         root=next(d for d in dfs['discovery'].values() if d['parent'] is None)

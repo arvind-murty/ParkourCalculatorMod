@@ -92,4 +92,7 @@ def numerical_problem(route, plan, coefficients, parent=None):
                    objective=dict(route.get('guideObjective', route['objective']), tick=plan['ticks']))
     if 'ladderTicks' in plan:
         problem['ladderTicks'] = plan['ladderTicks']
+    if parent is None and route.get('warmYaw'):
+        # The parent answer's facings, kept apart from `yaw`, which passage_seed may replace.
+        problem['warmYaw'] = route['warmYaw'][:plan['ticks']]
     return prepare(problem)

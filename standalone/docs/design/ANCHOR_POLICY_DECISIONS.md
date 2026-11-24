@@ -503,8 +503,8 @@ stair boost is a real option.
 - **Promote or reserve**: once every forward of the move has an outcome, its sides are
   queued when none is slack. Otherwise each is held like a node's alternatives
   (`state['alternatives']`, watching the slack forwards and their held node alternatives):
-  restored once those branches died, never below a validated group-end arrival, with
-  deferred nodes counted live.
+  restored once those branches died, never below a validated group-end arrival. An
+  unresolved node is rejected, so it never keeps a branch alive.
 - **Run ticks**: a held side counts live in `restore_alternatives`, so a run-tick reserve
   or held jump watching it, or its decision, waits until the side variants are exhausted.
   A held side otherwise counts as a queued child of its decision: its landings set N and

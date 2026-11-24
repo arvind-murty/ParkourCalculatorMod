@@ -1,0 +1,28 @@
+extended-A extended-B confirmations 41 41 common 38 {('feasible', 'feasible'): 26, ('feasible', 'unknown'): 3, ('unknown', 'unknown'): 7, ('unknown', 'feasible'): 2}
+  both feasible: pipeline worse by >1e-3 10 [(-0.00293, 'push'), (-0.00244, 'push'), (-0.00242, 'push'), (-0.00225, 'push'), (-0.00176, 'probe'), (-0.00161, 'push'), (-0.00148, 'push'), (-0.00135, 'push')] ; better by >1e-3 2 [(0.3813, 'race'), (0.73209, 'race')]
+  differ 57a9712ff8b0 ipopt feasible Solve_Succeeded | pipeline unknown none None None
+  differ ae8805224220 ipopt feasible Solve_Succeeded | pipeline unknown none None None
+  differ ad6ba1da602c ipopt feasible Solve_Succeeded | pipeline unknown none None None
+  differ 099bfa0d0cd9 ipopt unknown Infeasible_Problem_Detected | pipeline feasible race full None
+  differ 0ae7833038f1 ipopt unknown Infeasible_Problem_Detected | pipeline feasible race full None
+long-A long-B confirmations 198 206 common 179 {('feasible', 'feasible'): 136, ('unknown', 'feasible'): 14, ('unknown', 'unknown'): 24, ('feasible', 'unknown'): 5}
+  both feasible: pipeline worse by >1e-3 45 [(-0.47671, 'race'), (-0.0239, 'race'), (-0.00734, 'race'), (-0.00569, 'push'), (-0.00465, 'push'), (-0.00453, 'push'), (-0.00444, 'push'), (-0.00416, 'push')] ; better by >1e-3 3 [(0.00323, 'push'), (0.3813, 'race'), (0.73209, 'race')]
+  differ 7730fe40d7da ipopt unknown Infeasible_Problem_Detected | pipeline feasible polish full None
+  differ ae8805224220 ipopt feasible Solve_Succeeded | pipeline unknown none None None
+  differ 22ec0fc861e0 ipopt unknown Infeasible_Problem_Detected | pipeline feasible race relaxed None
+  differ 49e3a4533658 ipopt unknown Infeasible_Problem_Detected | pipeline feasible race relaxed None
+  differ ad6ba1da602c ipopt feasible Solve_Succeeded | pipeline unknown none None None
+  differ 766011e8fe2f ipopt unknown Infeasible_Problem_Detected | pipeline feasible race full None
+  differ b314e30bc7e9 ipopt unknown Infeasible_Problem_Detected | pipeline feasible race full None
+  differ 2cf00be3ab90 ipopt unknown Infeasible_Problem_Detected | pipeline feasible race full None
+  differ 5447d9e393e7 ipopt feasible Solve_Succeeded | pipeline unknown none None None
+  differ ae55b0f8c4d6 ipopt unknown Infeasible_Problem_Detected | pipeline feasible push full None
+  differ db4111146fa5 ipopt unknown Infeasible_Problem_Detected | pipeline feasible push full None
+  differ 6bb63ef5bb97 ipopt unknown Infeasible_Problem_Detected | pipeline feasible push full None
+  differ 099bfa0d0cd9 ipopt unknown Infeasible_Problem_Detected | pipeline feasible race full None
+  differ 5b573a4fd584 ipopt unknown Infeasible_Problem_Detected | pipeline feasible push full None
+  differ 0ae7833038f1 ipopt unknown Infeasible_Problem_Detected | pipeline feasible race full None
+  differ 93ddcfa0de02 ipopt unknown Infeasible_Problem_Detected | pipeline feasible race relaxed None
+  differ 57a9712ff8b0 ipopt feasible Solve_Succeeded | pipeline unknown none None None
+  differ cf69a16b8feb ipopt feasible Solve_Succeeded | pipeline unknown none None None
+  differ fad84261fcf0 ipopt unknown Infeasible_Problem_Detected | pipeline feasible polish full None

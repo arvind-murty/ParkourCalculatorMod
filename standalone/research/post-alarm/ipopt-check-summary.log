@@ -1,0 +1,51 @@
+real11.jsonl 445 answers
+   ('full', 'feasible', 'Solve_Succeeded') 386
+   ('full', 'unknown', 'Infeasible_Problem_Detected') 22
+   ('relaxed', 'feasible', 'Solve_Succeeded') 33
+   ('relaxed', 'unknown', 'Infeasible_Problem_Detected') 4
+   NOT CONFIRMED d71093a17110 race full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED ad6ba1da602c race full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED 10c55c8db8cd race full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED 57a9712ff8b0 race full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED ae8805224220 race full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED 7730fe40d7da decay relaxed peak shortfall 0.0009 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED fab671bfb906 decay relaxed peak shortfall 0.0073 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED db4111146fa5 push full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED cf69a16b8feb race full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED 22ec0fc861e0 race relaxed peak shortfall 0.0022 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED 80eafb12713f decay full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED 73130af4e9fb push full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED a06135136c0b race full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED cf961a721e06 push full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED c0bddda7c143 decay full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED df64b2d45639 push full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED 381fa2f3195f decay full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED fb46532dd9ac decay full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED 36f0afce0fc4 push full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED 64c66e81ba8f decay full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED 1f9a964f913b race full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED 1c2990f6dd36 race full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED a6a2637448b7 push relaxed peak shortfall 0.0099 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED 1f0fa433b805 push full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED 522f8f6b7117 race full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED 2adf5a5d62c7 push full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+  IPOPT objective minus answer (sign as MAX for study; Real11 mixed): min -0.0789 max 0.0258
+study.jsonl 340 answers
+   ('full', 'feasible', 'Solve_Succeeded') 309
+   ('full', 'unknown', 'Infeasible_Problem_Detected') 11
+   ('relaxed', 'feasible', 'Solve_Succeeded') 18
+   ('relaxed', 'unknown', 'Infeasible_Problem_Detected') 2
+   NOT CONFIRMED df25c91983e9 push full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED 316ee8b897da push full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED 0d8e291793f4 push full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED 9602c9e33582 push full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED 6aae60cb40b8 push full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED 6c647771f08f push relaxed peak shortfall 0.0094 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED c9d50e4a2642 push relaxed peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED 1f3a932ea42c push full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED f25814e2d13e push full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED a26a8ac4910a push full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED 46f2e29143b2 push full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED a6597596eb1e push full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+   NOT CONFIRMED ce02806427af push full peak shortfall 0.0000 worker_finished Infeasible_Problem_Detected
+  IPOPT objective minus answer (sign as MAX for study; Real11 mixed): min -0.0143 max 0.0348

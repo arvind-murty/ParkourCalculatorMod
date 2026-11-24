@@ -19,7 +19,7 @@ Start with [architecture](ARCHITECTURE.md) for call flow, [runbook](RUNBOOK.md) 
 | Constraint variant | One concrete hard row/contact alternative for a fixed program. A schedule can require many such trials. |
 | Branch | One handled constraint alternative. It may be screened or stopped before worker dispatch. |
 | Solver wrapper / worker launch | The Python solve API may return a validated feasible seed without IPOPT in early-stop mode. A worker launch starts a subprocess numerical solve. One worker can have multiple internal phases/iterations/callbacks. |
-| Relaxed candidate / finalization | Automatic discovery answers numerical requests with the Clarabel disk relaxation (no worker); its candidates carry `model: relaxed_disk`. One IPOPT finalization at the end turns the relaxed incumbent into the published physical witness. |
+| Relaxed candidate / frame-end re-solve | Automatic discovery answers numerical requests with the Clarabel disk relaxation (no worker); its candidates carry `model: relaxed_disk`. Before the search commits to a chosen relaxed witness, a frame-end re-solve replaces it with a full-strength physical one. |
 | Repair search/state | Inner fixed-program enumeration/refinement and its resumable queues/logs. It is not an IPOPT mixed-integer mechanism. |
 | Spatial probe | Auxiliary arrival solve used to compare alternatives at a common spatial goal; does not by itself establish a complete route. |
 | Accepted prefix | Numerically and physically accepted for its recorded scope/horizon. Not a complete terminal incumbent. |
@@ -56,17 +56,17 @@ print('continuation keys:', sorted(s))
 PY
 ```
 
-For automatic discovery, `best` is the physical witness from the IPOPT
-finalization, or `None` with `termination: finalization_failed` (or `cancelled`
-when cancellation stops the traversal or the finalization); the relaxed
-incumbent stays in `searchState.dfs.best`, and `provisionalBest` (ticks,
-objective, model) appears whenever the published route differs from it.
-`finalization` lists the attempts and stage. In `work`, `workerLaunches` and
+For automatic discovery, `best` is the incumbent, always a physical
+frame-end answer, also when the run is cancelled; `None` when no finish was
+confirmed. Each chosen record's `frameEnd` holds its re-solve's status and
+attempts, and the DFS transitions log `frame_end_confirmed` and
+`frame_end_rejected`. In `work`, `workerLaunches` and
 `feasibleSeedReturns` count interim IPOPT only; `conicCandidates`,
-`relaxedFallbacks` (and `relaxedFallback:<reason>`: `unsupported`,
-`rejected_relaxed_point`) describe relaxed requests, and
-`finalizationIpoptCalls` the finalization's worker launches. The solve report
-labels each request's status with its solver and adds a `Finalization` row.
+`relaxedFallbacks` (and `relaxedFallback:unsupported`) describe relaxed requests,
+`confirmations`, `confirmationIpoptCalls` and `confirmationClarabelSolves` the
+answers to alarms, and `frameEnds`, `frameEndRejections` and
+`frameEndIpoptCalls` the frame-end re-solves. The solve report labels each
+request's status with its solver and adds a `Frame-end re-solves` row.
 
 Do not dump complete multi-MB reports to the conversation. Use tables/counters and link exact provenance. Resume snapshots repeat history; count identity deltas, not list lengths summed across files. Logs do not always align one-to-one: the saved Real11 corpus has two missing post-validation records with ambiguous possible branch placements. Preserve that ambiguity.
 
@@ -81,7 +81,7 @@ writes these files to its output directory:
 | `routes.json` | The same per-route trace as data. |
 | `nodes.json` | Each frame's search tree as data. |
 | `summary.json` | Best route, timings, work counters, replay verdicts and the `stop` report. |
-| `requests.json` | Every solver request with its fingerprint, status, IPOPT status, wall seconds and `owners`. |
+| `requests.json` | Every solver request with its fingerprint, status, IPOPT status, wall seconds and `owners`; a relaxed request also has its `backend` and its alarm `confirmation` or `frameEnd` record. |
 | `report.json.gz` | The full saved search state; read it with `read_report` (paired `.store.sqlite3`). |
 | `provenance.json`, `profile.json`, `bookkeeping.json` | Source revision and hashes, fixture, interpreter; timing buckets. |
 
@@ -176,7 +176,7 @@ Preserve plain/gzip JSON, exact constraints, source hashes, command/settings, wa
 
 ## DFS reports
 
-`result.searchState` contains `stack`, archived `frames`, `suspended`, deferred `refinements`, ordered `transitions`, `initialRoots`, cumulative calls and the incumbent. Frames name their shared spatial goal and retain parents, a symbolic generator/cursor, unscored `ready` programs, scored `records` and `inFlight`. A frame may be archived as history, but has only one execution owner among active/suspended/refinement queues. Reports' old `windows` fields are selected-goal diagnostics, not breadth barriers.
+`result.searchState` contains `stack`, archived `frames`, `suspended`, ordered `transitions`, `initialRoots`, cumulative calls and the incumbent. Frames name their shared spatial goal and retain parents, a symbolic generator/cursor, unscored `ready` programs, scored `records` and `inFlight`. A frame may be archived as history, but has only one execution owner among active/suspended/refinement queues. Reports' old `windows` fields are selected-goal diagnostics, not breadth barriers.
 
 Record `arrival` is a validated goal time. `value` is that program's local objective, not an arrival lower bound. `child` is the actual committed discrete program. A parent's current best child can improve during refinement; the descended frame's saved `parents` is the authoritative program used for that descent. `variantOf` records inherit numerical provenance but do not own additional worker calls; don't sum their copied logs again.
 

@@ -235,7 +235,10 @@ and local solver behavior affect the work fitting a time budget. No archived
 facings or trajectories are seeded into a cold profile.
 
 Physical anchor mode uses `seconds` and `max_solver_calls` for the whole session,
-and `candidate_seconds` for each numerical request. Legacy `score_seconds`,
+and `candidate_seconds` for each numerical request. The case setting `post_alarm`
+(`pipeline`, the default, or `ipopt`) chooses how alarmed relaxed optima are
+answered ([post-alarm pipeline](reference/NUMERICAL_SOLVER.md#post-alarm-pipeline));
+it is part of the run identity. Legacy `score_seconds`,
 `score_call_limit` and `final_call_limit` settings remain accepted for older input
 files but do not limit anchor search. Non-anchor modes retain their existing
 service budgets. Changing these budgets does not change physical model identities

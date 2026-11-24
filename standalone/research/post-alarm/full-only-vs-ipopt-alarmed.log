@@ -1,0 +1,5 @@
+482 alarmed requests: both answer 427 | full-only pipeline only 13 | today IPOPT pipeline only 4 | neither 38
+full-only minus today where both: below >1e-2 5, 1e-3..1e-2 below 15, within 1e-3 396, above >1e-3 11; min -0.0442 max 0.4767
+today answers only (method): [('f2f701d00f94', 'push'), ('f28894ab054b', 'push'), ('d6f678f29f99', 'push'), ('a6a2637448b7', 'push')]
+below by >1e-2: [('e360ac499199', -0.01, 'probe'), ('a20c4d6b6298', -0.01, 'probe'), ('39d775c59b3d', -0.0122, 'prodSeed'), ('2f83fb71bff2', -0.0123, 'prodSeed'), ('90433016e772', -0.0442, 'prodSeed')]
+mean ms full-only 43.0 today 66.9

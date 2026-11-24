@@ -84,6 +84,7 @@ control work; inclusion here is not authorization to implement a historical plan
 | [research/checkpoint-cost/README.md](../research/checkpoint-cost/README.md) | Frozen source-era evidence; use research guide for reproduction: Checkpoint cost and alias paths from the save walk |
 | [research/checkpoint-guidance/README.md](../research/checkpoint-guidance/README.md) | Frozen source-era evidence; use research guide for reproduction: Geometric checkpoint guidance |
 | [research/checkpoint-guidance/RESULTS.md](../research/checkpoint-guidance/RESULTS.md) | Frozen source-era evidence; use research guide for reproduction: Checkpoint guidance results |
+| [research/clarabel-refinement/README.md](../research/clarabel-refinement/README.md) | Frozen source-era evidence; use research guide for reproduction: Clarabel iterative refinement off in the disk solve |
 | [research/contact-combinations/README.md](../research/contact-combinations/README.md) | Frozen source-era evidence; use research guide for reproduction: Coupled contact and ladder evidence |
 | [research/cpp-pruning-pilot/README.md](../research/cpp-pruning-pilot/README.md) | Frozen source-era evidence; use research guide for reproduction: C++ pruning pilot |
 | [research/decision-windows/README.md](../research/decision-windows/README.md) | Frozen source-era evidence; use research guide for reproduction: Joint decision windows and objective bands |
@@ -143,6 +144,7 @@ control work; inclusion here is not authorization to implement a historical plan
 | [research/orchestrator-fixes/audit/PRUNING_FOLLOWUP.md](../research/orchestrator-fixes/audit/PRUNING_FOLLOWUP.md) | Frozen source-era evidence; use research guide for reproduction: Follow-up: what can actually be pruned |
 | [research/orchestrator-fixes/audit/WORKER_CALLS.md](../research/orchestrator-fixes/audit/WORKER_CALLS.md) | Frozen source-era evidence; use research guide for reproduction: Every cold Real11 worker-call slot |
 | [research/parent-linked-programs/README.md](../research/parent-linked-programs/README.md) | Frozen source-era evidence; use research guide for reproduction: Parent-linked programs |
+| [research/post-alarm/README.md](../research/post-alarm/README.md) | Frozen source-era evidence; use research guide for reproduction: Post-alarm answers |
 | [research/prefix-reuse-keys/README.md](../research/prefix-reuse-keys/README.md) | Frozen source-era evidence; use research guide for reproduction: Norm-check reuse and prepared analysis keys |
 | [research/real11-extension/README.md](../research/real11-extension/README.md) | Frozen source-era evidence; use research guide for reproduction: Real11 extension: geometry evidence |
 | [research/real11-long-solve/README.md](../research/real11-long-solve/README.md) | Frozen source-era evidence; use research guide for reproduction: Longer Real11 with fixed initial-0 decisions through B5 |

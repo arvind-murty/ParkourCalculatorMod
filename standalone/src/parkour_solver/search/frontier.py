@@ -38,7 +38,7 @@ def restore_alternatives(state, extra_live=()):
             node = parents.get(node)
     held_sides = [p for reserve in state.get('sideReserves', []) for p in reserve['programs']] + [
         held['programs'][0] for held in state['alternatives'].values() if 'side' in held and not held['next']]
-    for program in [*state['pending'], *state['ready'], *state.get('deferredNodes', []), state.get('nodeInFlight'),
+    for program in [*state['pending'], *state['ready'], state.get('nodeInFlight'),
                     expansion.get('program'), *extra_live, *held_sides]:
         live(program)
     restored = False
@@ -82,7 +82,6 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
     state.setdefault('exclusions', [])
     if node_evaluator is not None:
         state.setdefault('nodes', {})
-        state.setdefault('deferredNodes', [])
         state.setdefault('decisionParents', {})
         state.setdefault('alternatives', {})
         state.setdefault('succeededNodes', [])
@@ -628,8 +627,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
     def update(reason='running'):
         report.update(termination=reason, expandedPrefixes=expanded, totalExpandedPrefixes=state['expanded'],
             generated=state['generated'], emittedPrograms=state['emitted'], screenedPrefixes=state['screened'],
-            remainingPrefixes=len(state['pending'])+len(state['ready'])+len(state.get('deferredNodes',[]))+int(state['expansion'] is not None)+int(state.get('nodeInFlight') is not None),
-            deferredNodes=len(state.get('deferredNodes',[])),
+            remainingPrefixes=len(state['pending'])+len(state['ready'])+int(state['expansion'] is not None)+int(state.get('nodeInFlight') is not None),
             queuedCompletePrograms=len(state['ready']), queueDrops=0, partialQueueDrops=0, completeQueueDrops=0,
             policyRejections=state['policyRejections'], queuePolicy='persistent', types=settings['types'],
             explicitProgramPriority=False, deferredPrefixes=max(0, len(state['pending'])-settings['maxQueuedPrefixes']),
@@ -678,12 +676,6 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
                     update()
                     result=node_evaluator(program,state['nodes'],False)
                     state['nodeInFlight']=program=result['program']
-                    if result.get('deferUnknown'):
-                        state['deferredNodes'].append(program)
-                        state.pop('nodeInFlight',None)
-                        settle_sides(program['decisionNode'])
-                        update()
-                        continue
                     if result['status'] in ('suspended','error'):
                         update(result['status'])
                         return
@@ -778,7 +770,7 @@ def persistent_programs(scene, *, settings, report, continuation=None, deadline=
             for field in ('choice','child','fullProgram','projected','proposalChecked'):e.pop(field,None)
             update()
         state['exhausted'] = True
-        update('numerical_unknown' if state.get('deferredNodes') else 'exhausted')
+        update('exhausted')
     except TimeoutError as error:
         update(work.termination if work is not None and work.termination else str(error))
     finally:

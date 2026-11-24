@@ -1,0 +1,33 @@
+
+Study (371 alarmed requests): 370 requests, 340 with a reference, 27 infeasible
+| variant | answered | within 1e-3 | within 1e-2 | above reference by > 1e-3 | answers on infeasible | gained / lost within 1e-2 vs today | mean / median / p90 ms | IPOPT calls (requests calling) | Clarabel solves mean |
+|---|---|---|---|---|---|---|---|---|---|
+| today | 340 | 125 | 340 | 3 | 0 | +0 / -0 | 37 / 10 / 60 | 46 (31) | 8.2 |
+| decay10 | 340 | 113 | 336 | 4 | 0 | +0 / -4 | 30 / 11 / 45 | 26 (13) | 7.5 |
+| decay30 | 340 | 117 | 337 | 4 | 0 | +0 / -3 | 35 / 11 / 66 | 26 (13) | 9.3 |
+| decay30-flip1 | 340 | 117 | 337 | 4 | 0 | +0 / -3 | 30 / 10 / 63 | 13 (13) | 9.3 |
+| decay30-flip1-prod | 340 | 117 | 337 | 4 | 0 | +0 / -3 | 36 / 11 / 59 | 26 (13) | 9.3 |
+| decay30-race-flip1-prod | 340 | 117 | 337 | 4 | 0 | +0 / -3 | 36 / 11 / 62 | 26 (13) | 9.8 |
+| decay30-race-probe-flip1-prod | 340 | 117 | 337 | 4 | 0 | +0 / -3 | 37 / 11 / 63 | 26 (13) | 9.8 |
+
+Real11 (482 alarmed requests from an 1800 s pipeline run): 482 requests, 445 with a reference, 15 infeasible
+| variant | answered | within 1e-3 | within 1e-2 | above reference by > 1e-3 | answers on infeasible | gained / lost within 1e-2 vs today | mean / median / p90 ms | IPOPT calls (requests calling) | Clarabel solves mean |
+|---|---|---|---|---|---|---|---|---|---|
+| today | 431 | 270 | 418 | 0 | 0 | +0 / -0 | 73 / 16 / 237 | 123 (78) | 13.9 |
+| decay10 | 432 | 251 | 410 | 0 | 0 | +6 / -14 | 58 / 14 / 162 | 78 (42) | 12.0 |
+| decay30 | 432 | 252 | 415 | 0 | 0 | +6 / -9 | 65 / 14 / 165 | 73 (38) | 14.9 |
+| decay30-flip1 | 443 | 263 | 426 | 0 | 0 | +17 / -9 | 54 / 14 / 164 | 38 (38) | 14.9 |
+| decay30-flip1-prod | 444 | 264 | 427 | 0 | 0 | +17 / -8 | 61 / 15 / 166 | 62 (38) | 14.9 |
+| decay30-race-flip1-prod | 444 | 250 | 429 | 0 | 0 | +19 / -8 | 62 / 15 / 155 | 46 (23) | 15.8 |
+| decay30-race-probe-flip1-prod | 444 | 254 | 433 | 0 | 0 | +23 / -8 | 63 / 14 / 158 | 46 (23) | 16.2 |
+
+Real11, requests today sends to IPOPT: 78 requests, 56 with a reference, 0 infeasible
+| variant | answered | within 1e-3 | within 1e-2 | above reference by > 1e-3 | answers on infeasible | gained / lost within 1e-2 vs today | mean / median / p90 ms | IPOPT calls (requests calling) | Clarabel solves mean |
+|---|---|---|---|---|---|---|---|---|---|
+| today | 42 | 34 | 41 | 0 | 0 | +0 / -0 | 304 / 288 / 530 | 123 (78) | 35.8 |
+| decay10 | 43 | 27 | 35 | 0 | 0 | +2 / -8 | 213 / 203 / 494 | 78 (42) | 24.1 |
+| decay30 | 43 | 26 | 36 | 0 | 0 | +2 / -7 | 234 / 166 / 541 | 73 (38) | 32.7 |
+| decay30-flip1 | 54 | 37 | 47 | 0 | 0 | +13 / -7 | 161 / 130 / 357 | 38 (38) | 32.7 |
+| decay30-flip1-prod | 55 | 38 | 48 | 0 | 0 | +13 / -6 | 212 / 151 / 533 | 62 (38) | 32.7 |
+| decay30-race-flip1-prod | 55 | 24 | 49 | 0 | 0 | +14 / -6 | 209 / 137 / 547 | 46 (23) | 37.3 |
+| decay30-race-probe-flip1-prod | 55 | 24 | 49 | 0 | 0 | +14 / -6 | 207 / 125 / 541 | 46 (23) | 37.5 |

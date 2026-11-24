@@ -1,0 +1,21 @@
+
+Study (371 alarmed requests): 370 requests, 340 with a reference, 27 infeasible
+| variant | answered | within 1e-3 | within 1e-2 | above reference by > 1e-3 | answers on infeasible | gained / lost within 1e-2 vs today | mean / median / p90 ms | IPOPT calls (requests calling) | Clarabel solves mean |
+|---|---|---|---|---|---|---|---|---|---|
+| today | 340 | 125 | 340 | 3 | 0 | +0 / -0 | 40 / 11 / 68 | 46 (31) | 8.2 |
+| race-probe-today | 340 | 126 | 340 | 3 | 0 | +0 / -0 | 43 / 11 / 59 | 47 (31) | 9.4 |
+| race-probe-decayfallback | 340 | 123 | 340 | 5 | 0 | +0 / -0 | 32 / 11 / 67 | 0 (0) | 11.2 |
+
+Real11 (482 alarmed requests from an 1800 s pipeline run): 482 requests, 445 with a reference, 15 infeasible
+| variant | answered | within 1e-3 | within 1e-2 | above reference by > 1e-3 | answers on infeasible | gained / lost within 1e-2 vs today | mean / median / p90 ms | IPOPT calls (requests calling) | Clarabel solves mean |
+|---|---|---|---|---|---|---|---|---|---|
+| today | 431 | 265 | 416 | 0 | 0 | +0 / -0 | 76 / 15 / 269 | 124 (78) | 13.9 |
+| race-probe-today | 443 | 268 | 435 | 0 | 0 | +20 / -1 | 74 / 15 / 213 | 96 (62) | 15.6 |
+| race-probe-decayfallback | 445 | 264 | 433 | 0 | 0 | +25 / -8 | 54 / 15 / 171 | 0 (0) | 18.3 |
+
+Real11, requests today sends to IPOPT: 78 requests, 56 with a reference, 0 infeasible
+| variant | answered | within 1e-3 | within 1e-2 | above reference by > 1e-3 | answers on infeasible | gained / lost within 1e-2 vs today | mean / median / p90 ms | IPOPT calls (requests calling) | Clarabel solves mean |
+|---|---|---|---|---|---|---|---|---|---|
+| today | 42 | 29 | 39 | 0 | 0 | +0 / -0 | 317 / 310 / 476 | 124 (78) | 35.8 |
+| race-probe-today | 54 | 27 | 50 | 0 | 0 | +12 / -1 | 293 / 260 / 525 | 96 (62) | 41.9 |
+| race-probe-decayfallback | 56 | 23 | 48 | 0 | 0 | +17 / -8 | 168 / 156 / 265 | 0 (0) | 58.2 |

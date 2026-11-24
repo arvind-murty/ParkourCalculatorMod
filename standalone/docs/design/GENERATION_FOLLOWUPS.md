@@ -53,8 +53,8 @@ IPOPT dominates: 53 calls, 9.77 s of a 26.6 s search (`profile.json`,
   alternative and the first feasible numerical seed (objective = the guide
   objective, `route['guideObjective']`); goal frames optimize and rank every
   alternative. Each saved accepted variant becomes a sibling child route (`score`,
-  the `acceptedVariants` loop). Frames with unsolved alternatives are suspended and
-  revisited later (`close_frame`, the `suspended`/`refinements` loop).
+  the `acceptedVariants` loop). A frame with a budget-interrupted solve is suspended and
+  revisited later (`close_frame`, the `suspended` loop).
 - **Landing covers.** `decompose` (`spatial/cells.py`) builds player-space free cells
   and per-solid support/ceiling/wall `contact_patches`; `support_components`
   (`spatial/regions.py`) unions support patches with `canonical_cover`;
@@ -76,7 +76,7 @@ IPOPT dominates: 53 calls, 9.77 s of a 26.6 s search (`profile.json`,
   round to 0.0119999, artifacts are 0 or about 1e-12, so the half cut separates
   them; a strict 0.012 cut would drop real gaps.
 - IPOPT unknown counts as infeasible when comparing switch ticks (user, 2026-11-17).
-  It stays on the existing unresolved/retry path.
+  An unresolved branch is infeasible too: logged and never retried (user, 2026-11-23).
 - Commit once per step with its tests and docs. After each step run the solve
   report on Real11 (below) into a new `runs/` directory, compare frames 4 and 8 with
   the baseline, and require the final result (T64, Z -1093.2381026602418, 47/47

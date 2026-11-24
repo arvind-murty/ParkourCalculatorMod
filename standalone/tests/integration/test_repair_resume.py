@@ -22,7 +22,7 @@ class RepairResumeTests(RepairHarness, unittest.TestCase):
         work=SearchWork(1)
         work.before_solve({})
         first=self.invoke(route(),lambda *a,**k:self.fail('Dispatched beyond the run budget'),filter_candidate,
-            work=work,resume_state=json.loads(json.dumps(seeded['repairState'])),retry_unresolved=False)
+            work=work,resume_state=json.loads(json.dumps(seeded['repairState'])))
         self.assertEqual(first['termination'],'numerical_call_limit')
         self.assertEqual(len(first['repairState']['pending']),2)
         self.assertEqual(first['repairState']['unresolved'],[])
@@ -32,7 +32,7 @@ class RepairResumeTests(RepairHarness, unittest.TestCase):
             requests.append(request['constraints'])
             return outcome()
         resumed=self.invoke(route(),solve,lambda *a:dict(accepted=True),
-            resume_state=json.loads(json.dumps(first['repairState'])),retry_unresolved=False)
+            resume_state=json.loads(json.dumps(first['repairState'])))
         self.assertEqual(requests,[[rows[0]]])
         self.assertEqual(resumed['status'],'feasible')
 
@@ -53,7 +53,7 @@ class RepairResumeTests(RepairHarness, unittest.TestCase):
             requests.append(request['constraints'])
             return outcome()
         resumed=self.invoke(route(),solve,lambda *a:dict(accepted=True),
-            resume_state=json.loads(json.dumps(first['repairState'])),retry_unresolved=False)
+            resume_state=json.loads(json.dumps(first['repairState'])))
         self.assertEqual(requests,[[row]])
         self.assertEqual(resumed['status'],'feasible')
 
@@ -94,7 +94,7 @@ class RepairResumeTests(RepairHarness, unittest.TestCase):
             self.assertEqual(classify(first, 'model', dict(oracleRejection=True))['status'], 'suspended')
             with patch.object(ConstraintVariants, 'for_plan', return_value=Source()):
                 second = self.invoke(route(), solve, lambda *a: dict(accepted=True),
-                                     geometry=geometry, resume_state=saved, retry_unresolved=False)
+                                     geometry=geometry, resume_state=saved)
         self.assertEqual(requests, [[], [row]])
         self.assertEqual(second['status'], 'feasible')
         self.assertTrue(second['repairResume']['exact'])
@@ -150,15 +150,6 @@ class RepairResumeTests(RepairHarness, unittest.TestCase):
         self.assertEqual(second['status'],'feasible')
         self.assertIsNone(second['repairState']['inFlight'])
 
-    def test_unknown_retry_is_explicit_and_not_a_completed_result(self):
-        first=self.invoke(route(),lambda *a,**k:dict(status='unknown',termination='deadline',best=None,attempts=[]),
-            lambda *a:dict(accepted=True))
-        second=self.invoke(route(),lambda *a,**k:self.fail('Unknown retried without request'),lambda *a:dict(accepted=True),
-            resume_state=first['repairState'],retry_unresolved=False)
-        self.assertEqual(len(second['repairState']['unresolved']),1)
-        self.assertIsNone(second['best'])
-
-
     def test_pending_guards_and_facing_guesses_resume_without_repeating_root(self):
         rows=[dict(leg=0,offset=1,mode='X',cmp='GE',rhs=v) for v in (1,2)]
         def filter_candidate(*args):
@@ -179,14 +170,26 @@ class RepairResumeTests(RepairHarness, unittest.TestCase):
         self.assertEqual(second['repairState']['unresolved'][0]['rows'],[rows[0]])
         self.assertEqual(requests[0]['initial'],route()['initial'])
 
-    def test_unknown_numeric_branch_is_stored_and_revalidated_on_resume(self):
+    def test_an_unknown_branch_is_logged_with_its_cause_and_never_retried(self):
         request=dict(route(),warmYaw=[8,8])
         first=self.invoke(request,lambda *a,**k:dict(status='unknown',termination='done',best=None,attempts=[]),
                           lambda *a:dict(accepted=True))
-        self.assertEqual(first['repairState']['unresolved'][0]['warmYaw'],[8,8])
-        second=self.invoke(request,lambda *a,**k:outcome(9),lambda *a:dict(accepted=True),resume_state=first['repairState'])
-        self.assertEqual(second['status'],'feasible')
-        self.assertTrue(second['repairResume']['compatible'])
+        (unresolved,)=first['repairState']['unresolved']
+        self.assertEqual((unresolved['warmYaw'],unresolved['cause']),([8,8],'done'))
+        second=self.invoke(request,lambda *a,**k:self.fail('Unknown branch retried'),lambda *a:dict(accepted=True),
+                           resume_state=first['repairState'])
+        self.assertEqual((second['repairState']['unresolved'],second['best']),(first['repairState']['unresolved'],None))
+
+    def test_a_cancelled_solve_stays_in_flight_and_a_resume_repeats_it(self):
+        first=self.invoke(route(),lambda *a,**k:dict(status='cancelled',termination='cancelled',best=None,attempts=[]),
+                          lambda *a:dict(accepted=True))
+        state=first['repairState']
+        self.assertEqual((first['status'],state['unresolved'],state['completed']),('cancelled',[],[]))
+        self.assertIsNotNone(state['inFlight'])
+        called=[]
+        def resumed(*args,**kwargs):called.append(True);return outcome()
+        second=self.invoke(route(),resumed,lambda *a:dict(accepted=True),resume_state=json.loads(json.dumps(state)))
+        self.assertEqual((called,second['status']),([True],'feasible'))
 
     def test_changed_start_or_corridor_discards_incompatible_state(self):
         first=self.invoke(route(),lambda *a,**k:dict(status='unknown',termination='done',best=None,attempts=[]),

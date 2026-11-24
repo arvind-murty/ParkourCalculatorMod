@@ -239,8 +239,13 @@ class GenericNumericalTests(unittest.TestCase):
         result = find_checkpoint_route(request, self.compiler, anchor_search={}, seconds=60,
                                        python_executable=os.environ['PKC_IPOPT_PYTHON'])
         self.assertEqual(result['termination'], 'exhausted')
-        self.assertEqual(result['best']['plan']['ticks'], 5)
-        self.assertEqual(result['best']['plan']['jump'], [True, False, False, False, False])
+        (frame,) = result['searchState']['dfs']['frames']
+        grind_blip = next(r for r in frame['records'] if r.get('witness') and r['ticks'] == 5)
+        self.assertEqual(grind_blip['witness']['plan']['jump'], [True, False, False, False, False])
+        # The fixture's one start-to-goal span is unlike real anchors: once the frame's single-jump finish latches the
+        # span as a hard transfer, the stepped grind-then-blip finish is excluded although it was found and validated.
+        self.assertEqual(grind_blip['preparationDeferral']['reason'], 'global_single_jump_latch')
+        self.assertEqual(result['best']['plan']['ticks'], 6)
 
     def test_repeated_ceiling_type_with_blip_and_ground_movement_between(self):
         scene = prepare_scene(json.loads((ROOT / 'fixtures/generic-repeat-ceiling.json').read_text()))

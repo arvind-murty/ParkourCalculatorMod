@@ -1,0 +1,14 @@
+
+Study (371 alarmed requests): 370 requests, 340 with a reference, 27 infeasible
+| variant | answered | within 1e-3 | within 1e-2 | above reference by > 1e-3 | answers on infeasible | gained / lost within 1e-2 vs lean-decayprobe | mean / median / p90 ms | IPOPT calls (requests calling) | Clarabel solves mean |
+|---|---|---|---|---|---|---|---|---|---|
+| lean-decayprobe | 340 | 123 | 340 | 4 | 0 | +0 / -0 | 27 / 10 / 53 | 0 (0) | 10.3 |
+| lean-decayfirst | 340 | 121 | 338 | 4 | 0 | +0 / -2 | 25 / 10 / 49 | 0 (0) | 9.5 |
+| lean-decayfirst-guard | 340 | 122 | 339 | 4 | 0 | +0 / -1 | 26 / 10 / 51 | 0 (0) | 10.0 |
+
+Real11 (482 alarmed requests from an 1800 s pipeline run): 482 requests, 445 with a reference, 15 infeasible
+| variant | answered | within 1e-3 | within 1e-2 | above reference by > 1e-3 | answers on infeasible | gained / lost within 1e-2 vs lean-decayprobe | mean / median / p90 ms | IPOPT calls (requests calling) | Clarabel solves mean |
+|---|---|---|---|---|---|---|---|---|---|
+| lean-decayprobe | 445 | 261 | 433 | 0 | 0 | +0 / -0 | 42 / 15 / 123 | 0 (0) | 15.6 |
+| lean-decayfirst | 445 | 259 | 430 | 0 | 0 | +0 / -3 | 37 / 14 / 76 | 0 (0) | 13.4 |
+| lean-decayfirst-guard | 445 | 259 | 430 | 0 | 0 | +0 / -3 | 39 / 14 / 101 | 0 (0) | 14.4 |

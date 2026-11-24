@@ -1,0 +1,43 @@
+
+all: 370 requests, 340 with a reference, 27 infeasible
+| seed | built on | answered at 0.2 s | answered (0.2 s, else 2 s) | within 1e-3 | within 1e-2 | answers on infeasible | IPOPT s mean (0.2 s run) | IPOPT s mean (both runs) | median start violation |
+|---|---|---|---|---|---|---|---|---|---|
+| prodSeed | 370 | 283 | 286 | 266 | 275 | 0 | 0.077 | 0.125 | 0.335 |
+| fallbackYaw | 370 | 294 | 298 | 271 | 284 | 0 | 0.084 | 0.131 | 3.038 |
+| relaxedStates | 370 | 284 | 286 | 263 | 276 | 0 | 0.078 | 0.124 | 0.335 |
+| central | 370 | 288 | 288 | 272 | 275 | 0 | 0.077 | 0.125 | 0.214 |
+| polish | 370 | 338 | 338 | 320 | 332 | 0 | 0.057 | 0.072 | 0.002 |
+| pushLast | 370 | 323 | 324 | 313 | 319 | 0 | 0.066 | 0.097 | 0.002 |
+| pushBest | 370 | 321 | 324 | 311 | 319 | 0 | 0.068 | 0.102 | 0.002 |
+| track0 | 370 | 284 | 284 | 254 | 275 | 0 | 0.079 | 0.133 | 0.127 |
+| track1 | 370 | 283 | 286 | 257 | 277 | 0 | 0.079 | 0.126 | 0.118 |
+| sigmaDelta | 370 | 281 | 285 | 266 | 280 | 0 | 0.076 | 0.128 | 0.402 |
+| flip1 | 370 | 284 | 286 | 250 | 267 | 0 | 0.082 | 0.130 | 0.665 |
+| flip2 | 294 | 213 | 215 | 189 | 199 | 0 | 0.095 | 0.162 | 0.458 |
+| flip3 | 254 | 192 | 195 | 181 | 186 | 0 | 0.090 | 0.147 | 0.364 |
+| screen | 370 | 321 | 323 | 307 | 318 | 0 | 0.068 | 0.101 | 0.002 |
+greedy set ['polish']: 332 of 336 answerable within 1e-2 (of 340 with a reference)
+greedy set ['polish', 'prodSeed']: 336 of 336 answerable within 1e-2 (of 340 with a reference)
+least-violation yaw-only seed answers 323/340; a random yaw-only seed answers 294.6/340 on average
+screen picks {'pushLast': 270, 'pushBest': 36, 'central': 23, 'track1': 13, 'track0': 12, 'fallbackYaw': 8, 'prodSeed': 3, 'flip3': 2, 'flip1': 1, 'flip2': 1, 'random': 1}
+
+requests whose pipeline answer is IPOPT or none (they reach the IPOPT calls): 31 requests, 18 with a reference, 12 infeasible
+| seed | built on | answered at 0.2 s | answered (0.2 s, else 2 s) | within 1e-3 | within 1e-2 | answers on infeasible | IPOPT s mean (0.2 s run) | IPOPT s mean (both runs) | median start violation |
+|---|---|---|---|---|---|---|---|---|---|
+| prodSeed | 31 | 15 | 16 | 15 | 16 | 0 | 0.123 | 0.288 | 0.215 |
+| fallbackYaw | 31 | 17 | 17 | 16 | 17 | 0 | 0.098 | 0.166 | 2.977 |
+| relaxedStates | 31 | 15 | 15 | 15 | 15 | 0 | 0.098 | 0.212 | 0.215 |
+| central | 31 | 13 | 13 | 13 | 13 | 0 | 0.114 | 0.261 | 0.247 |
+| polish | 31 | 18 | 18 | 15 | 17 | 0 | 0.089 | 0.166 | 0.088 |
+| pushLast | 31 | 17 | 17 | 16 | 17 | 0 | 0.090 | 0.203 | 0.088 |
+| pushBest | 31 | 17 | 18 | 16 | 18 | 0 | 0.096 | 0.223 | 0.065 |
+| track0 | 31 | 16 | 16 | 16 | 16 | 0 | 0.110 | 0.205 | 0.182 |
+| track1 | 31 | 15 | 15 | 14 | 15 | 0 | 0.115 | 0.219 | 0.181 |
+| sigmaDelta | 31 | 15 | 15 | 15 | 15 | 0 | 0.106 | 0.251 | 0.347 |
+| flip1 | 31 | 11 | 12 | 10 | 11 | 0 | 0.123 | 0.235 | 0.570 |
+| flip2 | 30 | 15 | 15 | 13 | 13 | 0 | 0.129 | 0.255 | 0.320 |
+| flip3 | 30 | 13 | 13 | 13 | 13 | 0 | 0.118 | 0.231 | 0.356 |
+| screen | 31 | 17 | 18 | 16 | 18 | 0 | 0.103 | 0.232 | 0.064 |
+greedy set ['pushBest']: 18 of 18 answerable within 1e-2 (of 18 with a reference)
+least-violation yaw-only seed answers 18/18; a random yaw-only seed answers 15.2/18 on average
+screen picks {'pushLast': 18, 'pushBest': 5, 'track1': 3, 'prodSeed': 2, 'flip1': 1, 'flip2': 1, 'central': 1}

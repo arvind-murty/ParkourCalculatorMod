@@ -15,7 +15,7 @@ from parkour_solver.search.repair_state import branch_key
 
 def frames(state):
     seen = set()
-    for group in ('stack','suspended','refinements','goalQueue','frames'):
+    for group in ('stack','suspended','goalQueue','frames'):
         for frame in state['dfs'].get(group,[]):
             if frame['id'] not in seen:
                 seen.add(frame['id'])
@@ -48,8 +48,7 @@ def stop_report(state, requests):
         repairs = [r['program'].get('repairState',{}) for r in frame['records']]
         suspended.append(dict(frame=frame['id'],goal=frame['goal'].get('block'),records=len(frame['records']),
             unresolvedBranches=sum(len(r.get('unresolved') or []) for r in repairs),
-            pendingBranches=sum(len(r.get('pending') or []) for r in repairs),
-            deferredNodes=len(frame['generation'].get('continuation',{}).get('deferredNodes') or [])))
+            pendingBranches=sum(len(r.get('pending') or []) for r in repairs)))
     rejected = [route(frame,record) for frame in frames(state) for record in frame['records']
                 if (record.get('nodeFeasibility') or {}).get('status') == 'oracle_rejected']
     unknown = [dict(index=r['index'],fingerprint=r['fingerprint'],status=r['status'],workerStatus=r.get('workerStatus'),
@@ -802,8 +801,8 @@ def render(report, requests, routes, stop, trees):
         ['First full solution',f'{dfs.get("firstFullSolutionSeconds"):.1f} s' if dfs.get('firstFullSolutionSeconds') is not None else 'none'],
         ['Search ended',f'{result["elapsedSeconds"]:.1f} s, `{termination}`'],
         ['Solver requests / worker launches',f'{result["work"].get("solverCalls")} / {result["work"].get("workerLaunches")}'],
-        *([['Finalization',f'{result["finalization"]["stage"]}, {len(result["finalization"]["attempts"])} attempts, '
-                           f'{result["work"].get("finalizationIpoptCalls", 0)} IPOPT calls']] if result.get('finalization') else []),
+        *([['Frame-end re-solves',f'{result["work"]["frameEnds"]}, {result["work"]["frameEndRejections"]} rejected, '
+                                  f'{result["work"]["frameEndIpoptCalls"]} IPOPT calls']] if 'frameEnds' in result['work'] else []),
         ['Expanded prefixes',result.get('expandedPrefixes')],
         ['Independent replays',f'{sum(v["passed"] for v in replays)}/{len(replays)} passed' if replays else 'not run']])
     lines += [f'The search {TERMINATIONS.get(termination,"ended with `"+termination+"`")}. '
@@ -811,8 +810,8 @@ def render(report, requests, routes, stop, trees):
               '## Why the search stopped','']
     if stop['suspendedFrames']:
         lines += ['Frames left suspended (not fully explored):','']
-        lines += table(['Frame','Goal','Routes','Unresolved alternatives','Pending alternatives','Deferred nodes'],
-                       [[f['frame'],f['goal'],f['records'],f['unresolvedBranches'],f['pendingBranches'],f['deferredNodes']]
+        lines += table(['Frame','Goal','Routes','Unresolved alternatives','Pending alternatives'],
+                       [[f['frame'],f['goal'],f['records'],f['unresolvedBranches'],f['pendingBranches']]
                         for f in stop['suspendedFrames']])
     else:
         lines += ['No frame was left suspended.','']

@@ -1,0 +1,50 @@
+study race-probe-today answers by source:
+   ('Clarabel answer',) 339
+   ('IPOPT answer', 'within 1e-2', 'no Clarabel-only answer') 18
+   ('no answer',) 13
+study winning reversal tick rank by shortfall (variant, rank): count
+   ('race-probe-flip1-prod', 24) 1
+   ('race-probe-flip1-prod', 27) 1
+   ('race-probe-flip1-prod', 83) 2
+   ('race-probe-today', 24) 1
+   ('race-probe-today', 27) 1
+   ('race-probe-today', 83) 2
+   ('today', 24) 1
+   ('today', 27) 1
+   ('today', 83) 2
+study winning reversal tick (variant, in today window, jump tick): count
+   ('race-probe-flip1-prod', True, True) 4
+   ('race-probe-today', True, True) 4
+   ('today', True, True) 4
+study race candidates per request today: mean 2.52 max 5; with the most short tick added: mean 2.91 max 6
+real11 race-probe-today answers by source:
+   ('Clarabel answer',) 420
+   ('IPOPT answer', 'below', 'a Clarabel-only stage of some variant answers within 1e-2') 1
+   ('IPOPT answer', 'within 1e-2', 'a Clarabel-only stage of some variant answers within 1e-2') 31
+   ('IPOPT answer', 'within 1e-2', 'no Clarabel-only answer') 6
+   ('no answer',) 24
+real11 winning reversal tick rank by shortfall (variant, rank): count
+   ('race-probe-flip1-prod', 1) 48
+   ('race-probe-flip1-prod', 2) 5
+   ('race-probe-flip1-prod', 3) 3
+   ('race-probe-flip1-prod', 24) 1
+   ('race-probe-flip1-prod', 26) 1
+   ('race-probe-flip1-prod', 84) 1
+   ('race-probe-today', 1) 48
+   ('race-probe-today', 2) 5
+   ('race-probe-today', 3) 3
+   ('race-probe-today', 24) 1
+   ('race-probe-today', 26) 1
+   ('race-probe-today', 84) 1
+   ('today', 1) 24
+   ('today', 2) 6
+   ('today', 3) 3
+   ('today', 24) 1
+   ('today', 26) 1
+real11 winning reversal tick (variant, in today window, jump tick): count
+   ('race-probe-flip1-prod', False, False) 21
+   ('race-probe-flip1-prod', True, True) 38
+   ('race-probe-today', False, False) 21
+   ('race-probe-today', True, True) 38
+   ('today', True, True) 35
+real11 race candidates per request today: mean 2.98 max 6; with the most short tick added: mean 3.36 max 7

@@ -1,0 +1,62 @@
+
+===== real11.jsonl: 482 requests, total Clarabel solves 8802, mean 18.3, total seconds 23.08
+outcome by method {'decayFallback': 40, 'race': 58, 'push': 337, 'none': 22, 'probe': 10, 'quadrant': 15}
+| stage | requests | solves | seconds |
+|---|---|---|---|
+| race | 125 | 2994 | 7.58 |
+| plainPush | 482 | 2354 | 5.72 |
+| decay | 62 | 1032 | 2.54 |
+| quadrant | 140 | 966 | 2.59 |
+| probes after push | 69 | 488 | 1.20 |
+| setup | 482 | 482 | 1.85 |
+| probes after decay | 35 | 245 | 0.60 |
+| probes after race | 34 | 241 | 0.60 |
+| after race | 41 | 0 | 0.01 |
+quadrant: {'open': 125, 'infeasible': 15} solves when open 875 when infeasible 91 | race+decay solves on requests quadrant left open but nothing answered 1101
+race: 125 requests raced, 63 won by race; outcome of raced requests {'decayFallback': 40, 'race': 58, 'none': 22, 'probe': 5}
+  candidates 457 feasible 149 | node solves 606 screen solves 617 finish solves 1771 | finish steps repeating the screen 537
+  race solves on requests the race does not win 1617 of which then answered by the decayed push 1176 requests 40
+  winner ('bound rank', 1, 'of', 1) 32
+  winner ('bound rank', 1, 'of', 2) 15
+  winner ('bound rank', 1, 'of', 3) 6
+  winner ('bound rank', 1, 'of', 4) 2
+  winner ('bound rank', 2, 'of', 2) 5
+  winner ('bound rank', 2, 'of', 4) 1
+  winner ('bound rank', 2, 'of', 5) 1
+  winner ('bound rank', 3, 'of', 3) 1
+  winner ('node disk-point peak rank', 1) 46
+  winner ('node disk-point peak rank', 2) 12
+  winner ('node disk-point peak rank', 3) 4
+  winner ('node disk-point peak rank', 4) 1
+  winner ('screen found', False) 2
+  winner ('screen found', True) 61
+  winner ('winner is top-shortfall tick', False) 14
+  winner ('winner is top-shortfall tick', True) 49
+probes (stage, outcome): requests {'race no gain': 29, 'push no gain': 64, 'decay no gain': 35, 'push gained': 5, 'race gained': 5} | probe solves by stage {'probes after race': 241, 'probes after push': 488, 'probes after decay': 245}
+decay: requests 62 answered 40 solves 1032 mean 16.6
+
+===== study.jsonl: 370 requests, total Clarabel solves 4157, mean 11.2, total seconds 10.44
+outcome by method {'decayFallback': 18, 'push': 315, 'none': 13, 'quadrant': 17, 'probe': 3, 'race': 4}
+| stage | requests | solves | seconds |
+|---|---|---|---|
+| plainPush | 370 | 1482 | 3.31 |
+| race | 35 | 868 | 2.08 |
+| decay | 31 | 563 | 1.38 |
+| probes after push | 55 | 384 | 0.85 |
+| setup | 370 | 370 | 1.29 |
+| quadrant | 52 | 350 | 0.92 |
+| probes after decay | 16 | 112 | 0.27 |
+| probes after race | 4 | 28 | 0.08 |
+| after race | 16 | 0 | 0.00 |
+quadrant: {'open': 35, 'infeasible': 17} solves when open 245 when infeasible 105 | race+decay solves on requests quadrant left open but nothing answered 682
+race: 35 requests raced, 4 won by race; outcome of raced requests {'decayFallback': 18, 'none': 13, 'race': 4}
+  candidates 106 feasible 24 | node solves 130 screen solves 116 finish solves 622 | finish steps repeating the screen 116
+  race solves on requests the race does not win 772 of which then answered by the decayed push 480 requests 18
+  winner ('bound rank', 1, 'of', 1) 3
+  winner ('bound rank', 2, 'of', 2) 1
+  winner ('node disk-point peak rank', 1) 3
+  winner ('node disk-point peak rank', 2) 1
+  winner ('screen found', True) 4
+  winner ('winner is top-shortfall tick', False) 4
+probes (stage, outcome): requests {'push no gain': 52, 'decay no gain': 16, 'push gained': 3, 'race no gain': 4} | probe solves by stage {'probes after push': 384, 'probes after decay': 112, 'probes after race': 28}
+decay: requests 31 answered 18 solves 563 mean 18.2

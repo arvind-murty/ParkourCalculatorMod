@@ -92,17 +92,28 @@ def solve(content, *, seconds, kind='candidate'):
         stats['cacheHits'] += 1
         return dict(_DECIDED[encoded], cached=True)
     stats['solved'] += 1
-    result = _attempt(content, min(CAP, seconds), MAX_ITER)
-    if result['outcome'] == 'limit':
+    result, _ = decide(content, seconds)
+    if result.get('retried'):
         stats['retried'] += 1
-        result = dict(_attempt(content, min(RETRY_CAP, seconds), RETRY_MAX_ITER), retried=True)
-        if result['outcome'] == 'limit':
-            result['outcome'] = 'infeasible'
     stats[result['outcome']] += 1
     _DECIDED[encoded] = result
     while len(_DECIDED) > 1024:
         _DECIDED.pop(next(iter(_DECIDED)))
     return dict(result, cached=False)
+
+
+def decide(content, seconds, cuts=(), level=None):
+    """(verdict, built problem): one run, a limit retried once with higher limits, a second limit infeasible.
+
+    `cuts` and `level` add rows (`_build`); the built problem is None after an exception.
+    """
+    result, built = _attempt(content, min(CAP, seconds), MAX_ITER, cuts, level)
+    if result['outcome'] == 'limit':
+        result, built = _attempt(content, min(RETRY_CAP, seconds), RETRY_MAX_ITER, cuts, level)
+        result['retried'] = True
+        if result['outcome'] == 'limit':
+            result['outcome'] = 'infeasible'
+    return result, built
 
 
 def screen(model, extra_rows=(), objective=None):
@@ -154,26 +165,36 @@ def alarm_ticks(problem, shortfall):
 class RelaxedDispatch:
     """`find_route`'s numerical callable: Clarabel unless IPOPT must decide.
 
-    IPOPT runs, with stock semantics, on requests outside the supported class
-    and relaxed points the scalar validator rejects. Every other request is solved relaxed. `solve` returns
+    IPOPT runs, with stock semantics, on requests outside the supported class.
+    Every other request is solved relaxed; a relaxed point the scalar validator
+    rejects is infeasible. `solve` returns
     the relaxed point with its alarm ticks; `confirmed` also re-solves an
     optimization request whose relaxed optimum leaves more than ALARM_FRACTION
-    of a jump tick's acceleration unused (alarm_ticks) with IPOPT. The repair
+    of a jump tick's acceleration unused (alarm_ticks): through numerics.post_alarm
+    (Clarabel only), or with `post_alarm='ipopt'` with IPOPT. The repair
     loop solves with `solve` and confirms its kept candidates once, at its end
-    (search/repair.py). A gate with a native core (PKC_NATIVE_CORE) dispatches natively
+    (search/repair.py). `full_strength` answers every request at full strength,
+    for the search's frame-end re-solve of a chosen witness (search/dfs.py).
+    A gate with a native core (PKC_NATIVE_CORE) dispatches natively
     (numerics/disk.hpp) and keeps the confirmations in the core's cache.
     """
-    def __init__(self, *, gate):
+    def __init__(self, *, gate, post_alarm='pipeline'):
+        if post_alarm not in ('ipopt', 'pipeline'):
+            raise ValueError('post_alarm must be ipopt or pipeline')
         self.gate = gate
+        self.post_alarm = post_alarm
 
     def solve(self, problem, **options):
-        return self._dispatch(problem, confirming=False, **options)
+        return self._dispatch(problem, mode='solve', **options)
 
     def confirmed(self, problem, **options):
-        return self._dispatch(problem, confirming=True, **options)
+        return self._dispatch(problem, mode='confirmed', **options)
+
+    def full_strength(self, problem, **options):
+        return self._dispatch(problem, mode='full_strength', **options)
 
     def _dispatch(self, problem, *, seconds, stop_on_feasible, python_executable=None, cancel_event=None,
-                  on_incumbent=None, confirming):
+                  on_incumbent=None, mode):
         from parkour_solver.numerics.solver import solve as full_solve
         from parkour_solver.validation.numerical import validate_controls
         core = getattr(self.gate, 'core', None)
@@ -199,12 +220,17 @@ class RelaxedDispatch:
             return _result(problem, started, 'unknown', None, 'disk_finished', solved['status'], relaxed)
         candidate = validate_controls(problem, solved['controls'])
         if not candidate['feasible']:
-            return full('rejected_relaxed_point')
+            # The replay only fails a solved point by numerical error; it is not worth an IPOPT call (user, 2026-11-23).
+            return _result(problem, started, 'unknown', None, 'disk_rejected', solved['status'], relaxed)
         peak, shortfall, tick = deficits(problem, solved['controls'])
         alarmed = alarm_ticks(problem, shortfall)
-        relaxed.update(peakRelativeDeficit=peak, peakTick=tick, alarmTicks=alarmed)
+        relaxed.update(peakRelativeDeficit=peak, peakTick=tick, alarmTicks=alarmed, objective=solved['objective'])
         candidate['model'] = 'relaxed_disk'
-        if confirming and alarmed and not stop_on_feasible:
+        if mode == 'full_strength':
+            return self._frame_end(problem, candidate, relaxed, started, seconds=seconds,
+                                   python_executable=python_executable, cancel_event=cancel_event,
+                                   on_incumbent=on_incumbent)
+        if mode == 'confirmed' and alarmed and not stop_on_feasible:
             return self.confirm(problem, candidate, relaxed, seconds=seconds, python_executable=python_executable,
                                 cancel_event=cancel_event, on_incumbent=on_incumbent)
         if on_incumbent is not None:
@@ -212,11 +238,25 @@ class RelaxedDispatch:
         return _result(problem, started, 'feasible', candidate, 'disk_finished', solved['status'], relaxed)
 
     def confirm(self, problem, relaxed_candidate, relaxed, *, seconds, python_executable, cancel_event, on_incumbent):
-        """Re-solve an alarmed request with IPOPT, whose outcome then governs it."""
+        """Re-solve an alarmed request with IPOPT, or answer it with the post-alarm pipeline (no IPOPT); the outcome
+        governs it."""
         from parkour_solver.numerics.model import fingerprint
         from parkour_solver.numerics.solver import solve as full_solve
         key = ('confirmation', fingerprint(problem))
         cached = key in self.gate.cache
+        if self.post_alarm == 'pipeline':
+            from parkour_solver.numerics import post_alarm
+            if cached:
+                result = dict(self.gate.cache[key])
+                result['confirmation'] = dict(result['confirmation'], cached=True, clarabelSolves=0)
+            else:
+                result = post_alarm.run(problem, relaxed_candidate, relaxed, seconds=seconds, cancel_event=cancel_event)
+                # Decided: an answer, a sector certificate, or no answer after every step; a deadline is not.
+                if result['status'] == 'feasible' or result['termination'] in ('quadrant_infeasible', 'post_alarm_none'):
+                    self.gate.cache[key] = result
+            if result['status'] == 'feasible' and on_incumbent is not None:
+                on_incumbent(json.loads(json.dumps(result['candidate'])))
+            return result
         if cached:
             result = dict(self.gate.cache[key], workerLaunched=False)
         else:
@@ -237,6 +277,62 @@ class RelaxedDispatch:
                 on_incumbent(json.loads(json.dumps(result['candidate'])))
         return dict(result, backend='ipopt', disk=relaxed, confirmation=confirmation)
 
+    def _frame_end(self, problem, relaxed_candidate, relaxed, started, *, seconds, python_executable, cancel_event,
+                   on_incumbent):
+        """`full_strength`'s answer for a validated relaxed point, cached when decided like a confirmation."""
+        from parkour_solver.numerics.model import fingerprint
+        key = ('frameEnd', fingerprint(problem))
+        if key in self.gate.cache:
+            result = dict(self.gate.cache[key], workerLaunched=False)
+            result['frameEnd'] = dict(result['frameEnd'], cached=True, ipoptCalls=0, clarabelSolves=0)
+        else:
+            result = _full_strength(problem, relaxed_candidate, relaxed, started, seconds=seconds,
+                                    python_executable=python_executable, cancel_event=cancel_event)
+            if result['status'] == 'feasible' or result['termination'] in ('quadrant_infeasible', 'worker_finished'):
+                self.gate.cache[key] = result
+        if result['status'] == 'feasible' and on_incumbent is not None:
+            on_incumbent(json.loads(json.dumps(result['candidate'])))
+        return result
+
+
+def _full_strength(problem, relaxed_candidate, relaxed, started, *, seconds, python_executable, cancel_event):
+    """The relaxed point itself when it is full strength, else the post-alarm pipeline's answer, then one IPOPT polish
+    from the answer's exact facings (the SEED_TILT turn moves validated points out of IPOPT's tolerance), keeping the
+    better; without an answer or a sector certificate, IPOPT from the turned disk facings
+    (research/post-alarm/README.md#full-strength-acceptance-and-frame-end-re-solves)."""
+    from parkour_solver.numerics import post_alarm
+    from parkour_solver.numerics.solver import solve as full_solve
+    from parkour_solver.validation.numerical import validate
+    record = dict(method='direct', pushObjective=None, ipoptObjective=None, ipoptCalls=0, clarabelSolves=0,
+                  cached=False)
+    answer, termination = None, 'disk_finished'
+    if deficits(problem, relaxed_candidate['controls'])[0] < post_alarm.FULL:
+        checked = validate(problem, post_alarm.facings(problem, relaxed_candidate['controls']))
+        answer = checked if checked['feasible'] else None
+    if answer is None:
+        pushed = post_alarm.run(problem, relaxed_candidate, relaxed, seconds=max(.001, started+seconds-time.monotonic()),
+                                cancel_event=cancel_event)
+        record.update(method=pushed['confirmation']['method'], clarabelSolves=pushed['confirmation']['clarabelSolves'])
+        if pushed['status'] == 'cancelled' or pushed['termination'] == 'quadrant_infeasible':
+            return dict(pushed, frameEnd=record)
+        answer, termination = pushed['candidate'], pushed['termination']
+    if answer is not None:
+        record['pushObjective'] = answer['objective']
+        request = {k: v for k, v in dict(problem, yaw=answer['yaw']).items() if k != 'fallbackYaw'}
+    else:
+        request = dict(problem, yaw=ipopt_seed(relaxed_candidate['yaw']))
+    ipopt = full_solve(request, seconds=max(.001, started+seconds-time.monotonic()), stop_on_feasible=False,
+                       python_executable=python_executable, cancel_event=cancel_event)
+    record['ipoptCalls'] = int(ipopt.get('workerLaunched') is True)
+    if ipopt['status'] == 'feasible':
+        record['ipoptObjective'] = ipopt['candidate']['objective']
+    sense = 1 if problem['objective']['sense'] == 'MAX' else -1
+    if answer is None or ipopt['status'] == 'cancelled' or (
+            ipopt['status'] == 'feasible' and sense*ipopt['candidate']['objective'] > sense*answer['objective']):
+        return dict(ipopt, backend='ipopt', disk=relaxed, frameEnd=record)
+    result = _result(problem, started, 'feasible', answer, termination, relaxed['status'], relaxed)
+    return dict(result, workerLaunched=ipopt.get('workerLaunched'), frameEnd=record)
+
 
 def _result(problem, started, status, candidate, termination, solver_status, relaxed):
     """A `numerics.solver.solve`-shaped result for an answer Clarabel decided."""
@@ -254,18 +350,21 @@ def _result(problem, started, status, candidate, termination, solver_status, rel
             'diagnostics': {'rejectedCandidates': 0, 'lastRejection': None, 'stderr': []}}
 
 
-def _attempt(content, time_limit, max_iter):
+def _attempt(content, time_limit, max_iter, cuts=(), level=None):
     try:
-        return _solve(content, time_limit, max_iter)
+        built = _build(content, time_limit, max_iter, cuts, level)
+        return dict(_run(built), assemblySeconds=built['assemblySeconds'], setupSeconds=built['setupSeconds']), built
     except (ValueError, RuntimeError) as error:
         return dict(status='exception', outcome='infeasible', controls=None, objective=None,
-                    iterations=0, message=repr(error))
+                    iterations=0, message=repr(error)), None
 
 
-def _solve(content, time_limit, max_iter):
-    native = _native()
-    if native is not None:
-        return native.disk_solve(content, time_limit, max_iter)
+def _build(content, time_limit, max_iter, cuts=(), level=None):
+    """The Clarabel problem of a spec, built and set up but not solved.
+
+    `cuts`: rows `nx*a_x[t] + nz*a_z[t] >= rhs` as (t, nx, nz, rhs). `level`: (objective, value), the row objective >=
+    value (MAX) or <= value (MIN); it is separate from the content's own objective so a solve without one keeps it.
+    """
     import clarabel
     import numpy as np
     from scipy.sparse import coo_matrix, csc_matrix
@@ -322,6 +421,16 @@ def _solve(content, time_limit, max_iter):
             row(inequalities, entries, rhs-offset)
         else:
             row(inequalities, {k: -v for k, v in entries.items()}, offset-rhs)
+    for t, nx, nz, bound in cuts:
+        row(inequalities, {control(0, t): -nx, control(1, t): -nz}, -bound)
+    if level is not None:
+        objective, value = level
+        weights, origin, sign = _cost(dict(content, objective=objective), width, pos)
+        # The objective is origin+sign*weights@x.
+        if objective['sense'] == 'MAX':
+            row(inequalities, {i: -sign*float(w) for i, w in enumerate(weights) if w}, origin-value)
+        else:
+            row(inequalities, {i: sign*float(w) for i, w in enumerate(weights) if w}, value-origin)
     disks = ([], [], [], [])
     for t, magnitude in enumerate(content['magnitude']):
         disks[3].extend([magnitude+ALLOWANCE, 0., 0.])
@@ -346,24 +455,34 @@ def _solve(content, time_limit, max_iter):
     settings.max_iter = max_iter
     settings.tol_feas = settings.tol_gap_abs = settings.tol_gap_rel = TOL
     settings.tol_infeas_abs = settings.tol_infeas_rel = INFEASIBILITY_TOL
+    # Same verdicts and search decisions, faster solves (research/clarabel-refinement/README.md).
+    settings.iterative_refinement_enable = False
     assembled = time.perf_counter()
     solver = clarabel.DefaultSolver(csc_matrix((2*width, 2*width)), cost, matrix, rhs, cones, settings)
     ready = time.perf_counter()
-    solution = solver.solve()
+    return dict(solver=solver, cost=cost, offset=offset, sense=sense,
+                columns=[[control(axis, t) for axis in range(2)] for t in range(n)],
+                assemblySeconds=assembled-started, setupSeconds=ready-assembled)
+
+
+def _run(built):
+    """Solves a built problem (again after `solver.update`) and decodes its verdict."""
+    import numpy as np
+    started = time.perf_counter()
+    solution = built['solver'].solve()
     finished = time.perf_counter()
     status = str(solution.status)
     x = np.asarray(solution.x)
     controls = objective = None
     if status in FEASIBLE and np.isfinite(x).all():
         outcome = 'feasible'
-        controls = [[float(x[control(axis, t)]) for axis in range(2)] for t in range(n)]
-        objective = offset+sense*float(cost@x) if sense else None
+        controls = [[float(x[i]) for i in tick] for tick in built['columns']]
+        objective = built['offset']+built['sense']*float(built['cost']@x) if built['sense'] else None
     else:
         # Every status but a limit is a verdict: no undecided result reaches IPOPT (user, 2026-11-22).
         outcome = 'limit' if status in LIMIT else 'infeasible'
     return dict(status=status, outcome=outcome, controls=controls, objective=objective,
-                iterations=int(solution.iterations), assemblySeconds=assembled-started,
-                setupSeconds=ready-assembled, solveSeconds=finished-ready)
+                iterations=int(solution.iterations), solveSeconds=finished-started)
 
 
 def _cost(content, width, pos):

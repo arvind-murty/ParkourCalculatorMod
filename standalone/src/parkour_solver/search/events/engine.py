@@ -17,7 +17,8 @@ from parkour_solver.work import SearchWork
 
 # Per-session work counters the event report sums across allocation sessions.
 NUMERICAL_COUNTS = ('workerLaunches', 'feasibleSeedReturns', 'conicCandidates', 'relaxedFallbacks',
-                    'confirmations', 'confirmationIpoptCalls', 'materialGaps')
+                    'confirmations', 'confirmationIpoptCalls', 'confirmationClarabelSolves', 'materialGaps',
+                    'frameEnds', 'frameEndRejections', 'frameEndIpoptCalls')
 
 
 def discovery_settings(settings=None):
@@ -37,8 +38,6 @@ def search_event_routes(request, compiler, *, task_goal=None, discovery=None, an
     from parkour_solver.search.engine import motion_bound
     from parkour_solver.search.dfs import search_goals
     started=time.monotonic(); deadline=started+options['seconds']
-    # Traversal stops early enough for the one IPOPT finalization of its relaxed finish.
-    search_deadline=deadline-min(5.,.25*options['seconds'])
     limits=discovery_settings(discovery)
     scene=prepare_scene(request)
     task=goal_spec(scene,task_goal)
@@ -54,12 +53,13 @@ def search_event_routes(request, compiler, *, task_goal=None, discovery=None, an
     cfg=movement_settings(scene)
     cfg['types']=[t for t in cfg['types'] if t in ('normal','ceiling','stepping')]
     scene['movementSearch']=cfg
-    context=digest(dict(policy=4,comparisonPolicy=COMPARISON_POLICY_VERSION,anchorPolicy=semantic_settings(anchor_policy),
+    context=digest(dict(policy=5,comparisonPolicy=COMPARISON_POLICY_VERSION,anchorPolicy=semantic_settings(anchor_policy),
         constraintPolicy=16,numericalPolicy=1,scene={k:v for k,v in scene.items() if k!='movementSearch'},
         task=task,roots=roots,filter=getattr(policy,'checkpoint_identity',None),
         minimumRuns=options['minimum_run_pruning'],
         domain={k:v for k,v in cfg.items() if k not in
-            ('maxPrefixes','maxQueuedPrefixes','maxChoicesPerType','expansionsPerProposal')}))
+            ('maxPrefixes','maxQueuedPrefixes','maxChoicesPerType','expansionsPerProposal')},
+        postAlarm=options['post_alarm']))
     schema=2
     if saved is not None and (saved.get('schema')!=schema or saved.get('kind')!='event_route_search' or saved.get('context')!=context):
         raise ValueError('Incompatible automatic event continuation; cell-walk/schema6 states require their source-era runner')
@@ -109,16 +109,18 @@ def search_event_routes(request, compiler, *, task_goal=None, discovery=None, an
     accepted_program.caps = {k: request[k] for k in ('maxJumps', 'maxTotalRunTicks', 'maxRunTicksPerJump') if k in request}
     accepted_program.caps['initialJumpInputs'] = getattr(policy, 'initial_jump_inputs', None)
     accepted_program.native = policy is None or type(policy) is InitialJumpDomain
-    def search(work, deadline, **extra):
+    def search(work, deadline, on_progress):
         return search_goals(scene,counted,adapter,work,motion,
             cfg=dict(cfg,maxPrefixes=cfg['maxPrefixes']-expanded),
             accepted_program=accepted_program,program_filter=policy,roots=roots,
-            resume_state=state['dfs'],retry_unknown=options['retry_unknown'],deadline=deadline,started=started,
+            resume_state=state['dfs'],deadline=deadline,started=started,
             candidate_seconds=options['candidate_seconds'],
             score_seconds=options['seconds'],batch_size=options['max_candidates'],
             python_executable=options.get('python_executable'),cancel_event=options.get('cancel_event'),
-            minimum_run_pruning=options['minimum_run_pruning'],numerical_backend='relaxed',_owned_state=True,**extra)
-    while time.monotonic()<search_deadline and calls<options['max_solver_calls'] and expanded<cfg['maxPrefixes']:
+            minimum_run_pruning=options['minimum_run_pruning'],
+            numerical_backend='relaxed' if options['post_alarm']=='ipopt' else 'relaxed_pipeline',_owned_state=True,
+            on_progress=on_progress)
+    while time.monotonic()<deadline and calls<options['max_solver_calls'] and expanded<cfg['maxPrefixes']:
         if options.get('cancel_event') is not None and options['cancel_event'].is_set():
             termination='cancelled';break
         adapter.discovery_settings=dict(limits,
@@ -126,8 +128,7 @@ def search_event_routes(request, compiler, *, task_goal=None, discovery=None, an
             maxGuideMaterializations=max(0,limits['maxGuideMaterializations']-used['materializations']))
         # Anchor DFS owns its traversal until the run budget ends. It does not
         # rotate stalled branches, so service slices only interrupt that work.
-        local_deadline=search_deadline
-        work=SearchWork(options['max_solver_calls']-calls,deadline=local_deadline)
+        work=SearchWork(options['max_solver_calls']-calls,deadline=deadline)
         dfs=state['dfs']
         before_depth=max((f['index'] for f in dfs.get('stack',[])),default=-1) if dfs else -1
         before_frames=dfs['nextFrame'] if dfs else 0
@@ -148,7 +149,7 @@ def search_event_routes(request, compiler, *, task_goal=None, discovery=None, an
         publish.begin_repair=begin_repair
         publish.repair_progress=repair_progress
         # Without a saver the search skips progress snapshots entirely.
-        last=search(work,local_deadline,on_progress=publish if options.get('on_progress') else None)
+        last=search(work,deadline,on_progress=publish if options.get('on_progress') else None)
         state['dfs']=last['searchState']; state['best']=last['best']
         dfs=state['dfs']
         for k in used:used[k]+=dfs['discoveryWork'][k]
@@ -163,44 +164,22 @@ def search_event_routes(request, compiler, *, task_goal=None, discovery=None, an
         termination=last['termination']
         if termination in ('error','cancelled'):
             break
-        active=bool(dfs['stack'] or dfs['goalQueue'] or dfs['refinements'])
+        active=bool(dfs['stack'] or dfs['goalQueue'])
         discoverable=any(not d['exhausted'] for d in dfs['discovery'].values()) and (
             used['expansions']<limits['maxGraphExpansions'] and used['materializations']<limits['maxGuideMaterializations'])
         if not active and not discoverable:
             break
         if not last['work'].get('solverCalls',0) and not last['expandedPrefixes'] and dfs['nextFrame']==before_frames and not active:
             break
-    if time.monotonic()>=search_deadline:termination='deadline'
+    if time.monotonic()>=deadline:termination='deadline'
     elif calls>=options['max_solver_calls']:termination='numerical_call_limit'
     elif expanded>=cfg['maxPrefixes']:termination='prefix_limit'
-    finalization=None
-    if state['dfs'] is not None and state['dfs']['best'] is not None and termination not in ('error','cancelled'):
-        def publish_final(value):
-            state['dfs']=value
-            if options.get('on_progress'):
-                options['on_progress'](state)
-        final=search(SearchWork(None,deadline=deadline),deadline,on_progress=publish_final,finalize=True)
-        state['dfs']=final['searchState']  # a native search publishes snapshots, not its live state
-        finalization=final['searchState']['finalization']
-        numerical['finalizationIpoptCalls']+=final['work'].get('workerLaunches',0)
     report=dict(last or {})
+    # Incumbents are frame-end answers (search/dfs.py), so the published route is the search's own.
     best=state['best']
-    # The search keeps its relaxed incumbent; only a physical witness is published,
-    # so a cancelled or failed run without a finalization publishes no relaxed one.
-    if finalization is not None:
-        best=finalization['best']
-        report['finalization']={k:v for k,v in finalization.items() if k!='best'}
-        if best is None:
-            # Only a cancellation leaves the finalization running.
-            termination='cancelled' if finalization['stage']=='running' else 'finalization_failed'
-    elif best is not None and 'model' in best['candidate']:
-        best=None
-    if state['best'] is not None and (best is None or best['candidate']['positions']!=state['best']['candidate']['positions']):
-        report['provisionalBest']=dict(ticks=state['best']['plan']['ticks'],objective=state['best']['candidate']['objective'],
-                                       model=state['best']['candidate'].get('model'))
     report.update(status='feasible' if best else 'cancelled' if termination=='cancelled' else 'unknown',
         termination=termination,best=best,searchState=state,effectiveRequest=request,taskGoal=task,
-        work=dict(dict.fromkeys(NUMERICAL_COUNTS+('finalizationIpoptCalls',),0),**numerical,solverCalls=calls,
+        work=dict(dict.fromkeys(NUMERICAL_COUNTS,0),**numerical,solverCalls=calls,
                   maxSolverCalls=options['max_solver_calls']),expandedPrefixes=expanded,
         elapsedSeconds=time.monotonic()-started,compiler=counted.summary(),backend='event_goals_v1',
         routeGeneration=dict(backend='event_goals_v1',events=len(state['graph']['events']),**used,
@@ -217,10 +196,12 @@ def search_event_routes(request, compiler, *, task_goal=None, discovery=None, an
             nodes=state['dfs']['nodeResults'],observations=summary(state['dfs']['observations']),
             runDeferrals=len(state['dfs']['minimumRunExclusions']),
             runRestorations=sum(r.get('restored',False) for r in state['dfs']['minimumRunExclusions']))
-        owners={f['id']:f for group in ('frames','stack','suspended','refinements','goalQueue')
+        owners={f['id']:f for group in ('frames','stack','suspended','goalQueue')
                 for f in state['dfs'].get(group,[])}
-        report['anchorSearch']['deferredNodes']=sum(len(f['generation'].get('continuation',{}).get('deferredNodes',[]))
-                                                   for f in owners.values())
+        # Unresolved branches are infeasible and never retried; each keeps its cause in its repairState.
+        report['anchorSearch']['unresolvedBranches']=sum(
+            len((p.get('repairState') or {}).get('unresolved',[])) for f in owners.values()
+            for p in [r['program'] for r in f['records']]+[n['program'] for n in f['generation'].get('continuation',{}).get('nodes',{}).values()])
         report['backend']='anchor_goals_v1'
         report['routeGeneration']['backend']='anchor_goals_v1'
     if options.get('on_progress'):options['on_progress'](state)
