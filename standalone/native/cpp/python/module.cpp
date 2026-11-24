@@ -1071,6 +1071,17 @@ PYBIND11_MODULE(_pkc_native, m) {
         return checkpoint_encode([&](pkc::CheckpointEncoder& e) { return e.encode(v); }, known, cache);
     }, py::arg("value"), py::arg("known"), py::arg("cache") = nullptr,
        "io/checkpoint_store's encode of a JSON value: (its encoding, new objects [(key, data)] not in `known`)");
+    m.def(
+        "read_report",
+        [](const std::string& path) {
+            pkc::Value report;
+            {
+                py::gil_scoped_release release;
+                report = pkc::read_report(path);
+            }
+            return to_python(report);
+        },
+        py::arg("path"), "io/checkpoint_store.read_report(path), natively (io/store.hpp)");
     py::class_<pkc::CheckpointStore, std::shared_ptr<pkc::CheckpointStore>>(m, "CheckpointStore")
         .def(py::init<std::string>(), "io/store.hpp: opens or creates the store whose manifest is `path`")
         .def_property_readonly("identity", &pkc::CheckpointStore::identity)

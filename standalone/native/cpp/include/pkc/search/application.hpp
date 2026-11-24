@@ -28,6 +28,7 @@ struct SolveCaseOptions {
     std::shared_ptr<CheckpointStore> store;
     Value metadata;
     bool save_progress = false;
+    Value resume_state;  // a saved event search state (report result.searchState) to continue; null starts fresh
 };
 
 // application.run(fixture): {result, validation}. Raises std::invalid_argument as the Python raises ValueError.

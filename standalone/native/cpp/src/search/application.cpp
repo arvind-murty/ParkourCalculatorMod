@@ -39,6 +39,7 @@
 #include "pkc/search/goals.hpp"
 #include "pkc/search/repair.hpp"
 #include "pkc/spatial/event_routes.hpp"
+#include "pkc/spatial/regions.hpp"
 #include "pkc/validation/numerical.hpp"
 #include "pkc/validation/vertical.hpp"
 #include "pkc/vertical.hpp"
@@ -718,6 +719,17 @@ Value turns_summary(const Value& observations) {
 
 // ---- the run
 
+Value replay_witness(const Value& scene, const Value& best, Compiler& compiler);  // defined with the public one
+
+// RouteDomain.from_dict(value)'s checks on a saved domain.
+void check_route_domain(const Value& domain) {
+    const Object& d = fields(domain);
+    if (!py_equal(get_or_null(d, "schema"), integer_value(1))) throw std::invalid_argument("Incompatible event domain schema");
+    const Value& identity = get_or_null(d, "domainId");
+    if (!py_equal(identity, text(geometry_key(without_key(domain, "domainId")))))
+        throw std::invalid_argument("Event domain content does not match domainId");
+}
+
 // One solve's environment: the services every session's search shares.
 struct Run {
     const SolveCaseOptions& options;
@@ -1117,11 +1129,12 @@ void save_state(Run& run, const Object& state) {
 }
 
 // search/events/engine.search_event_routes(request, compiler, ...).
-Value search_event_routes(Run& run, const Value& request_value, const Value& task_goal, const Value& discovery,
+Value search_event_routes(Run& run, const Value& fixture_request, const Value& task_goal, const Value& discovery,
                           const Value& anchor_search, const Settings& settings, const Value& initial_jump_inputs,
                           const Value& checkpoint_identity) {
     const double started = seconds_now(), deadline = started + settings.seconds;
     const Object limits = discovery_settings(discovery);
+    Value request_value = fixture_request;  // a resumed run's is the saved effectiveRequest
     Value scene = prepare_scene(request_value);
     const Value task = goal_spec(scene, task_goal);
     if (as_text(at(fields(task), "kind")) != "landing")
@@ -1150,23 +1163,54 @@ Value search_event_routes(Run& run, const Value& request_value, const Value& tas
                                                {"minimumRuns", boolean(settings.minimum_run_pruning)},
                                                {"domain", object(std::move(domain_settings))},
                                                {"postAlarm", text(settings.post_alarm)}}));
-    const Value data =
-        build_route_domain(scene, task, deadline - seconds_now(), 20000, kMovementTypes);
-    Object state{{"schema", integer_value(2)},
-                 {"kind", text("event_route_search")},
-                 {"context", text(context)},
-                 {"domain", data},
-                 {"graph", build_event_graph(data)},
-                 {"dfs", kNull},
-                 {"initialRoots", kNull},
-                 {"effectiveRequest", request_value},
-                 {"best", kNull},
-                 {"sessions", integer_value(0)},
-                 {"allocations", array({})}};
-    put(state, "sessions", integer_value(1));
-    const Value motion = motion_bound(scene, run.counted,
-                                      std::max(.001, std::min(settings.candidate_seconds, deadline - seconds_now())));
-    put(state, "motion", motion);
+    const Value& saved = run.options.resume_state;
+    if (!is_null(saved)) {
+        const Object& s = fields(saved);
+        if (!py_equal(get_or_null(s, "schema"), integer_value(2)) ||
+            !py_equal(get_or_null(s, "kind"), text("event_route_search")) ||
+            !py_equal(get_or_null(s, "context"), text(context)))
+            throw std::invalid_argument(
+                "Incompatible automatic event continuation; cell-walk/schema6 states require their source-era runner");
+    }
+    Value data;
+    Object state;
+    if (!is_null(saved)) {
+        state = fields(saved);
+        data = at(state, "domain");
+        check_route_domain(data);
+        request_value = at(state, "effectiveRequest");
+        scene = object(with(fields(prepare_scene(request_value)), "movementSearch", cfg_value));
+    } else {
+        data = build_route_domain(scene, task, deadline - seconds_now(), 20000, kMovementTypes);
+        state = Object{{"schema", integer_value(2)},
+                       {"kind", text("event_route_search")},
+                       {"context", text(context)},
+                       {"domain", data},
+                       {"graph", build_event_graph(data)},
+                       {"dfs", kNull},
+                       {"initialRoots", kNull},
+                       {"effectiveRequest", request_value},
+                       {"best", kNull},
+                       {"sessions", integer_value(0)},
+                       {"allocations", array({})}};
+    }
+    put(state, "sessions", integer_value(as_int(at(state, "sessions")) + 1));
+    if (!is_null(saved)) {
+        const Value& dfs = at(state, "dfs");
+        const Value& dfs_best = is_null(dfs) ? kNull : get_or_null(fields(dfs), "best");
+        const Value saved_best = py_truthy(dfs_best) ? dfs_best : get_or_null(state, "best");
+        if (py_truthy(saved_best)) {
+            if (!py_truthy(at(fields(replay_witness(scene, saved_best, run.counted)), "passed")))
+                throw std::invalid_argument("Saved automatic incumbent no longer passes independent replay");
+            put(state, "best", saved_best);
+        }
+    }
+    Value motion = get_or_null(state, "motion");
+    if (is_null(motion)) {
+        motion = motion_bound(scene, run.counted,
+                              std::max(.001, std::min(settings.candidate_seconds, deadline - seconds_now())));
+        put(state, "motion", motion);
+    }
     // The anchor adapter's guide plan, with its encounter groups over the domain's scene.
     Object guide_plan = fields(build_guides(data, anchor_policy));
     {
@@ -1303,7 +1347,7 @@ Value search_event_routes(Run& run, const Value& request_value, const Value& tas
     put(report, "coverageProven", boolean(false));
     put(report, "objectiveOptimalityProven", boolean(false));
     put(report, "minimumTicksProven", boolean(false));
-    put(report, "resume", object({{"exact", boolean(false)}, {"session", at(state, "sessions")}}));
+    put(report, "resume", object({{"exact", boolean(!is_null(saved))}, {"session", at(state, "sessions")}}));
     if (!is_null(dfs_value)) {
         const Object& dfs = fields(dfs_value);
         std::int64_t restorations = 0;
@@ -1449,8 +1493,10 @@ Value transfer_bounds(const Value& scene, const Value& guides, const Value& moti
     return transfer_bounds(scene, guides, motion, gate, saved, {});
 }
 
-Value replay_witness(const Value& scene_value, const Value& best_value) {
-    Compiler compiler(false);
+namespace {
+
+// validation/witness.replay_witness(scene, best, compiler).
+Value replay_witness(const Value& scene_value, const Value& best_value, Compiler& compiler) {
     const SolveHooks hooks = compiler.hooks();
     const Object &scene = fields(scene_value), &best = fields(best_value);
     const Value route_value = prepare_route(at(best, "route"));
@@ -1538,6 +1584,13 @@ Value replay_witness(const Value& scene_value, const Value& best_value) {
                    {"objective", at(candidate, "objective")},
                    {"objectiveHasY", boolean(false)},
                    {"model", model}});
+}
+
+}  // namespace
+
+Value replay_witness(const Value& scene_value, const Value& best_value) {
+    Compiler compiler(false);
+    return replay_witness(scene_value, best_value, compiler);
 }
 
 Value solve_case(const Value& fixture_value, const SolveCaseOptions& options) {

@@ -1,4 +1,4 @@
-// Port of io/checkpoint_store.py's CheckpointStore (writing side).
+// Port of io/checkpoint_store.py's CheckpointStore and read_report.
 #include "pkc/io/store.hpp"
 
 #include <sqlite3.h>
@@ -11,7 +11,9 @@
 #include <random>
 #include <stdexcept>
 #include <system_error>
+#include <unordered_map>
 
+#include "../schema.hpp"
 #include "../value_ops.hpp"
 #include "pkc/canonical.hpp"
 
@@ -298,6 +300,105 @@ void CheckpointStore::compact() {
     }
     execute("VACUUM");
     known_ = std::move(reachable);
+}
+
+namespace {
+
+// decode's 'p': parent[path[-1]] = replacement after walking path[:-1], by path copy (Values are immutable).
+Value assign(const Value& node, const Array& path, std::size_t at_part, const Value& replacement) {
+    if (at_part == path.size()) return replacement;
+    const Value& part = path[at_part];
+    if (is_object(node)) {
+        Object out = fields(node);
+        const std::string& key = as_text(part);
+        const Value* child = get(out, key);
+        if (!child && at_part + 1 < path.size()) fail("Invalid checkpoint patch path");
+        put(out, key, assign(child ? *child : Value{nullptr}, path, at_part + 1, replacement));
+        return object(std::move(out));
+    }
+    Array out = items(node);
+    const std::int64_t index = as_int(part);
+    if (index < 0 || index >= static_cast<std::int64_t>(out.size())) fail("Invalid checkpoint patch path");
+    out[index] = assign(out[index], path, at_part + 1, replacement);
+    return array(std::move(out));
+}
+
+}  // namespace
+
+Value read_report(const std::string& path) {
+    const std::string raw = read_file(path);
+    const Value value = loads(gz(path) ? gunzip(raw) : raw);
+    if (!is_object(value)) return value;
+    const Object& manifest = fields(value);
+    const Value* format = get(manifest, "format");
+    if (!format || !py_equal(*format, text("pkc-checkpoint-store"))) return value;
+    const Value* version = get(manifest, "version");
+    if (!version || !py_equal(*version, integer_value(kVersion))) fail("Unsupported checkpoint manifest version");
+    const std::string database = (std::filesystem::path(path).parent_path() / as_text(at(manifest, "store"))).string();
+    if (!std::filesystem::is_regular_file(database)) fail("Missing checkpoint companion database: " + database);
+    sqlite3* db = nullptr;
+    if (sqlite3_open_v2(database.c_str(), &db, SQLITE_OPEN_READONLY, nullptr) != SQLITE_OK) {
+        sqlite3_close(db);
+        sqlite_fail(nullptr, "open " + database);
+    }
+    struct Close {
+        sqlite3* db;
+        ~Close() { sqlite3_close(db); }
+    } closing{db};
+    {
+        Statement select(db, "SELECT version, identity FROM metadata");
+        const bool row = sqlite3_step(select.stmt) == SQLITE_ROW;
+        if (!row || sqlite3_column_type(select.stmt, 0) != SQLITE_INTEGER ||
+            sqlite3_column_int64(select.stmt, 0) != kVersion || sqlite3_column_type(select.stmt, 1) != SQLITE_TEXT ||
+            reinterpret_cast<const char*>(sqlite3_column_text(select.stmt, 1)) != as_text(at(manifest, "storeId")))
+            fail("Checkpoint companion database does not match manifest");
+    }
+    Statement select(db, "SELECT data FROM objects WHERE key=?");
+    std::unordered_map<std::string, Value> decoded;
+    std::function<Value(const std::string&)> resolve;
+    std::function<Value(const Value&)> decode = [&](const Value& node) -> Value {
+        if (!is_list(node)) return node;
+        const Array& pair = items(node);
+        const std::string& tag = as_text(pair.at(0));
+        const Value& content = pair.at(1);
+        if (tag == "r") return resolve(as_text(content));
+        if (tag == "d") {
+            Object out;
+            for (const Value& entry : items(content)) {
+                const Array& kv = items(entry);
+                out.emplace_back(as_text(kv.at(0)), decode(kv.at(1)));
+            }
+            return object(std::move(out));
+        }
+        if (tag == "l") {
+            Array out;
+            for (const Value& item : items(content)) out.push_back(decode(item));
+            return array(std::move(out));
+        }
+        if (tag == "j") return content;
+        if (tag == "p") {
+            const Array& keys = items(content);
+            Value base = resolve(as_text(keys.at(0)));
+            const Value changes = resolve(as_text(keys.at(1)));
+            for (const Value& change : items(changes)) {
+                const Array& entry = items(change);
+                base = assign(base, items(entry.at(0)), 0, entry.at(1));
+            }
+            return base;
+        }
+        fail("Invalid checkpoint object tag");
+    };
+    resolve = [&](const std::string& key) -> Value {
+        if (auto found = decoded.find(key); found != decoded.end()) return found->second;
+        sqlite3_bind_text(select.stmt, 1, key.c_str(), -1, SQLITE_TRANSIENT);
+        std::string data;
+        const bool row = sqlite3_step(select.stmt) == SQLITE_ROW;
+        if (row) data = inflate(sqlite3_column_blob(select.stmt, 0), sqlite3_column_bytes(select.stmt, 0));
+        sqlite3_reset(select.stmt);
+        if (!row || sha256_hex(data) != key) fail("Missing or corrupt checkpoint object: " + key);
+        return decoded.emplace(key, decode(loads(data))).first->second;
+    };
+    return resolve(as_text(at(manifest, "root")));
 }
 
 }  // namespace pkc

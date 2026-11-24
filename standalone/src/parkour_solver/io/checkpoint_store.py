@@ -259,6 +259,10 @@ class CheckpointStore:
 
 def read_report(path):
     """Read a new manifest/store pair or a legacy plain/gzipped JSON report."""
+    from parkour_solver import native_core
+    native = native_core.from_environment()
+    if native is not None:  # under PKC_NATIVE_CORE the native reader (io/store.hpp), as the store writes natively
+        return native.read_report(str(path))
     path = Path(path)
     raw = path.read_bytes()
     value = json.loads(gzip.decompress(raw) if path.suffix == '.gz' else raw)

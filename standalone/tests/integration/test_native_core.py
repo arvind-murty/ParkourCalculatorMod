@@ -444,3 +444,47 @@ class SolveEntryTests(unittest.TestCase):
                 self.assertIsNotNone(solved['result']['best'])
                 self.assertEqual(timeless(solved['result']), timeless(expected['result']))
                 self.assertEqual(timeless(solved['validation']), timeless(expected['validation']))
+
+    @unittest.skipUnless(os.environ.get('PKC_IPOPT_PYTHON'), 'Set PKC_IPOPT_PYTHON for the solve')
+    def test_pkc_solve_resumes_what_the_python_cli_resumes(self):
+        import subprocess
+        import sys
+        import tempfile
+        from parkour_solver.io.checkpoint_store import read_report
+        from tests.support.checkpoint_guidance import timeless
+        build = Path(native().__file__).parent
+        case = ROOT/'cases/real11/physical-anchors.json'
+        fixture = json.loads(case.read_text())
+
+        def solve(cli, *arguments):
+            if cli == 'native':  # no Python and no PKC_* variables reach the executable
+                return subprocess.run([str(build/'pkc_solve'), *map(str, arguments)], env=dict(PATH='/usr/bin:/bin'),
+                                      capture_output=True, text=True)
+            return subprocess.run([sys.executable, '-B', '-m', 'parkour_solver.cli.solve', *map(str, arguments)],
+                                  env=dict(os.environ, PKC_NATIVE_CORE=str(build), PYTHONPATH=f'{ROOT/"src"}:{ROOT}'),
+                                  capture_output=True, text=True)
+
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            # Cut short after it has an incumbent, so the resume also replays the saved best.
+            cut = directory/'cut.json'
+            cut.write_text(json.dumps(dict(fixture, settings=dict(fixture['settings'], max_solver_calls=10))))
+            resumed = {}
+            for writer in ('native', 'python'):
+                saved = directory/f'{writer}.json.gz'
+                self.assertEqual(solve(writer, '--input', cut, '--output', saved, '--save-progress').returncode, 0)
+                for reader in ('native', 'python'):
+                    output = directory/f'{writer}-{reader}.json.gz'
+                    self.assertEqual(solve(reader, '--input', case, '--output', output, '--resume', saved).returncode, 0)
+                    resumed[writer, reader] = read_report(output)
+            other = solve('native', '--input', ROOT/'cases/real11/extended-anchors.json', '--output',
+                          directory/'other.json.gz', '--resume', directory/'native.json.gz')
+        expected = resumed['python', 'python']
+        self.assertEqual(expected['result']['resume'], dict(exact=True, session=2))
+        self.assertIsNotNone(expected['result']['best'])
+        for key, report in resumed.items():
+            with self.subTest(writer=key[0], reader=key[1]):
+                self.assertEqual(timeless(report['result']), timeless(expected['result']))
+                self.assertEqual(timeless(report['validation']), timeless(expected['validation']))
+        self.assertEqual(other.returncode, 1)
+        self.assertIn('Incompatible automatic event continuation', other.stderr)

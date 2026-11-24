@@ -1,7 +1,7 @@
 // io/checkpoint_store.py's CheckpointStore for native callers: the same manifest, SQLite companion database and
 // objects (keys are the SHA-256 of an object's uncompressed encoding, data zlib level 1), so either side reads the
 // other's reports. Objects commit in one transaction before the manifest is replaced, which a failed save leaves as it
-// was. Reading stays Python (read_report).
+// was. read_report reads either side's reports.
 #pragma once
 
 #include <cstdint>
@@ -56,5 +56,9 @@ private:
     std::unordered_set<std::string> known_;
     std::shared_ptr<EncodeCache> cache_ = std::make_shared<EncodeCache>();
 };
+
+// read_report(path): a manifest's report decoded from its companion database (read only), or a legacy plain or
+// gzipped JSON report as it is; the Python reader's checks and messages (std::invalid_argument).
+Value read_report(const std::string& path);
 
 }  // namespace pkc

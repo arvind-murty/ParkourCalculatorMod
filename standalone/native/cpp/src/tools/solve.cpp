@@ -1,5 +1,6 @@
 // pkc_solve: cli/solve.py over the native solve entry (search/application.hpp), with no Python. The report is a
-// checkpoint store at --output, read by io/checkpoint_store.read_report as the Python CLI's is.
+// checkpoint store at --output, read by io/checkpoint_store.read_report as the Python CLI's is; --resume reads either
+// CLI's report (io/store.hpp read_report).
 #include <atomic>
 #include <csignal>
 #include <cstdint>
@@ -41,8 +42,8 @@ std::string executable_path(const char* argv0) {
 }
 
 int usage(const std::string& message) {
-    std::cerr << "usage: pkc_solve --input CASE.json --output REPORT.json.gz [--save-progress] [--seconds S] "
-                 "[--max-solver-calls N]\n"
+    std::cerr << "usage: pkc_solve --input CASE.json --output REPORT.json.gz [--resume REPORT] [--save-progress] "
+                 "[--seconds S] [--max-solver-calls N]\n"
               << message << "\n";
     return 2;
 }
@@ -50,7 +51,7 @@ int usage(const std::string& message) {
 }  // namespace
 
 int main(int argc, char** argv) {
-    std::optional<std::string> input, output;
+    std::optional<std::string> input, output, resume;
     pkc::SolveCaseOptions options;
     const std::vector<std::string> args(argv + 1, argv + argc);
     for (std::size_t i = 0; i < args.size(); ++i) {
@@ -74,7 +75,8 @@ int main(int argc, char** argv) {
             if (!v) return usage("--max-solver-calls needs a value");
             options.max_solver_calls = std::stoll(*v);
         } else if (arg == "--resume") {
-            return usage("--resume: resuming runs in the Python CLI (cli/solve.py); the native entry has no reader");
+            resume = next();
+            if (!resume) return usage("--resume needs a value");
         } else if (arg == "--compiler") {
             return usage("--compiler: the Java bridge runs in the Python CLI only");
         } else {
@@ -90,6 +92,16 @@ int main(int argc, char** argv) {
     std::signal(SIGTERM, on_signal);
     try {
         const pkc::Value fixture = pkc::loads(text.str());
+        if (resume) {
+            const pkc::Value prior = pkc::read_report(*resume);
+            const pkc::Value* result = pkc::is_object(prior) ? pkc::get(pkc::fields(prior), "result") : nullptr;
+            const pkc::Value* state =
+                result && pkc::is_object(*result) ? pkc::get(pkc::fields(*result), "searchState") : nullptr;
+            if (!state || !pkc::py_truthy(*state))
+                state = pkc::is_object(prior) ? pkc::get(pkc::fields(prior), "searchState") : nullptr;
+            if (!state || !pkc::py_truthy(*state)) return usage("Resume report has no saved automatic search state");
+            options.resume_state = *state;
+        }
         options.worker = (std::filesystem::path(executable_path(argv[0])).parent_path() / "pkc_numerics_worker").string();
         options.cancelled = [] { return cancel.load(); };
         options.store = std::make_shared<pkc::CheckpointStore>(*output);

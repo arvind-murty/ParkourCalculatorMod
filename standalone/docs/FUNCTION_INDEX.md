@@ -179,7 +179,7 @@ Line numbers are a snapshot; symbol names are the stable lookup keys. Private he
 | `CheckpointStore.patch` | [205](../src/parkour_solver/io/checkpoint_store.py#L205) | function |
 | `CheckpointStore.compact` | [222](../src/parkour_solver/io/checkpoint_store.py#L222) | function |
 | `read_report` | [260](../src/parkour_solver/io/checkpoint_store.py#L260) | function |
-| `main` | [316](../src/parkour_solver/io/checkpoint_store.py#L316) | function |
+| `main` | [320](../src/parkour_solver/io/checkpoint_store.py#L320) | function |
 
 ## io/provenance.py
 

@@ -58,14 +58,14 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/AGENT_SETUP.md](AGENT_SETUP.md) | 3797 |
 | [docs/ANCHOR_SEARCH_EXECUTION_REFERENCE.md](ANCHOR_SEARCH_EXECUTION_REFERENCE.md) | 42137 |
 | [docs/ARCHITECTURE.md](ARCHITECTURE.md) | 16507 |
-| [docs/CHECKPOINT_STORAGE.md](CHECKPOINT_STORAGE.md) | 9565 |
+| [docs/CHECKPOINT_STORAGE.md](CHECKPOINT_STORAGE.md) | 9808 |
 | [docs/CODE_MAP.md](CODE_MAP.md) | 42910 |
 | [docs/CURRENT_STATE.md](CURRENT_STATE.md) | 13681 |
 | [docs/DECISIONS_AND_PLANS.md](DECISIONS_AND_PLANS.md) | 26431 |
 | [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 36552 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11512 |
 | [docs/DOC_INDEX.md](DOC_INDEX.md) | 29236 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 309936 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 310256 |
 | [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 69040 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
@@ -75,8 +75,8 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/REAL11_EXTENDED_GEOMETRY.md](REAL11_EXTENDED_GEOMETRY.md) | 12104 |
 | [docs/REAL11_GUIDE.md](REAL11_GUIDE.md) | 20426 |
 | [docs/RESULTS_AND_DEBUGGING.md](RESULTS_AND_DEBUGGING.md) | 19344 |
-| [docs/RUNBOOK.md](RUNBOOK.md) | 21452 |
-| [docs/TESTING.md](TESTING.md) | 22825 |
+| [docs/RUNBOOK.md](RUNBOOK.md) | 21563 |
+| [docs/TESTING.md](TESTING.md) | 23068 |
 | [docs/design/ANCHOR_POLICY_DECISIONS.md](design/ANCHOR_POLICY_DECISIONS.md) | 47419 |
 | [docs/design/AVOIDANCE_PASSAGES.md](design/AVOIDANCE_PASSAGES.md) | 21679 |
 | [docs/design/BRANCH_SCHEDULING_INVESTIGATION.md](design/BRANCH_SCHEDULING_INVESTIGATION.md) | 34070 |
@@ -150,7 +150,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/include/pkc/gate.hpp](../native/cpp/include/pkc/gate.hpp) | 764 |
 | [native/cpp/include/pkc/io/checkpoint_store.hpp](../native/cpp/include/pkc/io/checkpoint_store.hpp) | 3220 |
 | [native/cpp/include/pkc/io/search_checkpoint.hpp](../native/cpp/include/pkc/io/search_checkpoint.hpp) | 3086 |
-| [native/cpp/include/pkc/io/store.hpp](../native/cpp/include/pkc/io/store.hpp) | 2561 |
+| [native/cpp/include/pkc/io/store.hpp](../native/cpp/include/pkc/io/store.hpp) | 2821 |
 | [native/cpp/include/pkc/movement/cases.hpp](../native/cpp/include/pkc/movement/cases.hpp) | 2661 |
 | [native/cpp/include/pkc/movement/contact_combinations.hpp](../native/cpp/include/pkc/movement/contact_combinations.hpp) | 2119 |
 | [native/cpp/include/pkc/movement/generation.hpp](../native/cpp/include/pkc/movement/generation.hpp) | 2131 |
@@ -183,7 +183,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/include/pkc/screen.hpp](../native/cpp/include/pkc/screen.hpp) | 1420 |
 | [native/cpp/include/pkc/search/anchors/adapter.hpp](../native/cpp/include/pkc/search/anchors/adapter.hpp) | 2442 |
 | [native/cpp/include/pkc/search/anchors/policy.hpp](../native/cpp/include/pkc/search/anchors/policy.hpp) | 5679 |
-| [native/cpp/include/pkc/search/application.hpp](../native/cpp/include/pkc/search/application.hpp) | 2284 |
+| [native/cpp/include/pkc/search/application.hpp](../native/cpp/include/pkc/search/application.hpp) | 2398 |
 | [native/cpp/include/pkc/search/bounds/remaining.hpp](../native/cpp/include/pkc/search/bounds/remaining.hpp) | 595 |
 | [native/cpp/include/pkc/search/comparison.hpp](../native/cpp/include/pkc/search/comparison.hpp) | 1387 |
 | [native/cpp/include/pkc/search/dfs.hpp](../native/cpp/include/pkc/search/dfs.hpp) | 3776 |
@@ -206,7 +206,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/include/pkc/value.hpp](../native/cpp/include/pkc/value.hpp) | 698 |
 | [native/cpp/include/pkc/vertical.hpp](../native/cpp/include/pkc/vertical.hpp) | 2554 |
 | [native/cpp/include/pkc/work.hpp](../native/cpp/include/pkc/work.hpp) | 2188 |
-| [native/cpp/python/module.cpp](../native/cpp/python/module.cpp) | 101215 |
+| [native/cpp/python/module.cpp](../native/cpp/python/module.cpp) | 101584 |
 | [native/cpp/src/canonical.cpp](../native/cpp/src/canonical.cpp) | 13694 |
 | [native/cpp/src/codec.hpp](../native/cpp/src/codec.hpp) | 11503 |
 | [native/cpp/src/coefficient_tables.inc](../native/cpp/src/coefficient_tables.inc) | 23532 |
@@ -221,7 +221,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/src/gate.cpp](../native/cpp/src/gate.cpp) | 5000 |
 | [native/cpp/src/io/checkpoint_store.cpp](../native/cpp/src/io/checkpoint_store.cpp) | 6998 |
 | [native/cpp/src/io/search_checkpoint.cpp](../native/cpp/src/io/search_checkpoint.cpp) | 7024 |
-| [native/cpp/src/io/store.cpp](../native/cpp/src/io/store.cpp) | 12076 |
+| [native/cpp/src/io/store.cpp](../native/cpp/src/io/store.cpp) | 16912 |
 | [native/cpp/src/movement/cases.cpp](../native/cpp/src/movement/cases.cpp) | 13830 |
 | [native/cpp/src/movement/contact_combinations.cpp](../native/cpp/src/movement/contact_combinations.cpp) | 17101 |
 | [native/cpp/src/movement/generation.cpp](../native/cpp/src/movement/generation.cpp) | 25695 |
@@ -256,7 +256,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/src/screen.cpp](../native/cpp/src/screen.cpp) | 8465 |
 | [native/cpp/src/search/anchors/adapter.cpp](../native/cpp/src/search/anchors/adapter.cpp) | 13616 |
 | [native/cpp/src/search/anchors/policy.cpp](../native/cpp/src/search/anchors/policy.cpp) | 37738 |
-| [native/cpp/src/search/application.cpp](../native/cpp/src/search/application.cpp) | 87517 |
+| [native/cpp/src/search/application.cpp](../native/cpp/src/search/application.cpp) | 90062 |
 | [native/cpp/src/search/bounds/remaining.cpp](../native/cpp/src/search/bounds/remaining.cpp) | 8052 |
 | [native/cpp/src/search/comparison.cpp](../native/cpp/src/search/comparison.cpp) | 8960 |
 | [native/cpp/src/search/dfs.cpp](../native/cpp/src/search/dfs.cpp) | 20102 |
@@ -276,7 +276,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/src/spatial/py_order.hpp](../native/cpp/src/spatial/py_order.hpp) | 1566 |
 | [native/cpp/src/spatial/regions.cpp](../native/cpp/src/spatial/regions.cpp) | 17114 |
 | [native/cpp/src/spatial/surfaces.cpp](../native/cpp/src/spatial/surfaces.cpp) | 18568 |
-| [native/cpp/src/tools/solve.cpp](../native/cpp/src/tools/solve.cpp) | 4869 |
+| [native/cpp/src/tools/solve.cpp](../native/cpp/src/tools/solve.cpp) | 5608 |
 | [native/cpp/src/validation/numerical.cpp](../native/cpp/src/validation/numerical.cpp) | 16622 |
 | [native/cpp/src/validation/vertical.cpp](../native/cpp/src/validation/vertical.cpp) | 6999 |
 | [native/cpp/src/value_ops.hpp](../native/cpp/src/value_ops.hpp) | 6992 |
@@ -1721,12 +1721,16 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/native-core/2026-11-23-shared-state/short-parity-python-native.json](../research/native-core/2026-11-23-shared-state/short-parity-python-native.json) | 176 |
 | [research/native-core/2026-11-23-shared-state/short-report-vs-previous.json](../research/native-core/2026-11-23-shared-state/short-report-vs-previous.json) | 170 |
 | [research/native-core/2026-11-23-shared-state/times.txt](../research/native-core/2026-11-23-shared-state/times.txt) | 1467 |
+| [research/native-core/2026-11-24-resume/evidence.txt](../research/native-core/2026-11-24-resume/evidence.txt) | 1262 |
+| [research/native-core/2026-11-24-resume/gate-native-mode-report.json](../research/native-core/2026-11-24-resume/gate-native-mode-report.json) | 15919 |
+| [research/native-core/2026-11-24-resume/gate-python-mode-report.json](../research/native-core/2026-11-24-resume/gate-python-mode-report.json) | 15920 |
+| [research/native-core/2026-11-24-resume/readers.txt](../research/native-core/2026-11-24-resume/readers.txt) | 305 |
 | [research/native-core/2026-11-24-work-only/caps-fixed.json](../research/native-core/2026-11-24-work-only/caps-fixed.json) | 529 |
 | [research/native-core/2026-11-24-work-only/caps-short.json](../research/native-core/2026-11-24-work-only/caps-short.json) | 416 |
 | [research/native-core/2026-11-24-work-only/evidence.txt](../research/native-core/2026-11-24-work-only/evidence.txt) | 2552 |
 | [research/native-core/2026-11-24-work-only/gate-native-mode-report.json](../research/native-core/2026-11-24-work-only/gate-native-mode-report.json) | 15919 |
 | [research/native-core/2026-11-24-work-only/gate-python-mode-report.json](../research/native-core/2026-11-24-work-only/gate-python-mode-report.json) | 15919 |
-| [research/native-core/README.md](../research/native-core/README.md) | 91864 |
+| [research/native-core/README.md](../research/native-core/README.md) | 94301 |
 | [research/obstacle-avoidance/README.md](../research/obstacle-avoidance/README.md) | 3166 |
 | [research/obstacle-avoidance/blocked-result.json](../research/obstacle-avoidance/blocked-result.json) | 52110 |
 | [research/obstacle-avoidance/cross-neo-request.json](../research/obstacle-avoidance/cross-neo-request.json) | 5584 |
@@ -2061,7 +2065,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [src/parkour_solver/constraints/variants.py](../src/parkour_solver/constraints/variants.py) | 21772 |
 | [src/parkour_solver/io/__init__.py](../src/parkour_solver/io/__init__.py) | 0 |
 | [src/parkour_solver/io/capture.py](../src/parkour_solver/io/capture.py) | 6352 |
-| [src/parkour_solver/io/checkpoint_store.py](../src/parkour_solver/io/checkpoint_store.py) | 14534 |
+| [src/parkour_solver/io/checkpoint_store.py](../src/parkour_solver/io/checkpoint_store.py) | 14781 |
 | [src/parkour_solver/io/provenance.py](../src/parkour_solver/io/provenance.py) | 708 |
 | [src/parkour_solver/io/reports.py](../src/parkour_solver/io/reports.py) | 514 |
 | [src/parkour_solver/io/search_checkpoint.py](../src/parkour_solver/io/search_checkpoint.py) | 7746 |
@@ -2256,7 +2260,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/integration/test_geometry_bounds.py](../tests/integration/test_geometry_bounds.py) | 4077 |
 | [tests/integration/test_integration.py](../tests/integration/test_integration.py) | 10053 |
 | [tests/integration/test_movement_contacts.py](../tests/integration/test_movement_contacts.py) | 11263 |
-| [tests/integration/test_native_core.py](../tests/integration/test_native_core.py) | 25274 |
+| [tests/integration/test_native_core.py](../tests/integration/test_native_core.py) | 28101 |
 | [tests/integration/test_orchestrator_continuation.py](../tests/integration/test_orchestrator_continuation.py) | 11427 |
 | [tests/integration/test_package_layout.py](../tests/integration/test_package_layout.py) | 5628 |
 | [tests/integration/test_profiling.py](../tests/integration/test_profiling.py) | 39799 |

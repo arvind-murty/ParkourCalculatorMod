@@ -1082,3 +1082,29 @@ process-wide.
   [native mode](2026-11-24-work-only/gate-native-mode-report.json)). AddressSanitizer runs clean on the durable fixed
   work run and the native-core, checkpoint-store, search and numerics tests; under it the Java bridge's infinite
   `queue.get` timeout was found and fixed (it now waits without one).
+
+## `pkc_solve --resume`, 2026-11-24
+Source: `81e14099` plus a native report reader (`io/store.hpp` `read_report`: legacy plain or gzipped JSON as is, the
+manifest and companion database checks, hash-checked objects, patch roots; Python's checks and messages), which
+`checkpoint_store.read_report` uses under `PKC_NATIVE_CORE` as the store's writes already go native, and the saved
+branch of the native `search_event_routes` (`search/events/engine.py`'s: the continuation's schema, kind and context,
+the saved domain's id, the effective request, the session count, the saved incumbent's replay, the saved motion
+bound and `resume.exact`). `pkc_solve --resume` takes either CLI's report.
+
+- The native reader decodes the A/B harness's durable reports to the same value as the Python reader, 3.6 times
+  faster on fixed work (0.695 s against 2.516 s) and 4.1 times on the short control (0.128 s against 0.526 s)
+  ([readers](2026-11-24-resume/readers.txt)); the checkpoint-store tests pass through it in native mode.
+- Short control and fixed work run by `pkc_solve --save-progress` and stopped by SIGINT (a cancelled final report)
+  and by SIGKILL (a progress manifest whose root is a patch or a reference): each resumed by `pkc_solve` and by the
+  Python CLI gives the same result without wall-clock fields ([log](2026-11-24-resume/evidence.txt)).
+  `SolveEntryTests.test_pkc_solve_resumes_what_the_python_cli_resumes` checks the four writer and reader pairs on
+  physical-anchors cut at 10 solver calls, and the error for a report from another case.
+- The suite passes in both modes (881 tests, 11 skipped) and the gate in both modes (626, no failures, errors or
+  skips; [Python mode](2026-11-24-resume/gate-python-mode-report.json),
+  [native mode](2026-11-24-resume/gate-native-mode-report.json)). AddressSanitizer runs clean on the durable fixed
+  work run, the native-core, checkpoint-store, search and numerics tests, and `pkc_solve --resume` of the killed
+  fixed-work report. Tests that start a Python CLI child run under it apart, with `ASAN_OPTIONS=strip_env=0` (ASan
+  otherwise drops itself from the children's `DYLD_INSERT_LIBRARIES`, and a child that loads the instrumented module
+  aborts) and the Python bridge (the JVM does not start with ASan inserted): `SolveEntryTests` and
+  `test_cli_writes_structured_error_atomically`, which failed under the shared run for that reason since the first
+  ASan checks, pass there.

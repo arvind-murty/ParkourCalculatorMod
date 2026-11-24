@@ -200,15 +200,16 @@ A new program field fails the typed conversion by name, so add it to
 
 The build also makes `pkc_solve` beside the module: the solve CLI (`cli/solve.py`) with no Python
 (`native/cpp/include/pkc/search/application.hpp`), for collision-box cases without ladders or wall hits. It reads
-the same case file and writes the same checkpoint report, which `read_report` reads and the Python CLI resumes from;
-`--seconds` and `--max-solver-calls` override the case's settings (a `work_only` case ignores `--seconds` as it
-ignores its own `seconds`), and it has no `--resume` or `--compiler`. It runs
+the same case file and writes the same checkpoint report, which `read_report` reads; `--resume` continues a report
+either CLI wrote, as the Python CLI's `--resume` does, and the Python CLI resumes its reports. `--seconds` and
+`--max-solver-calls` override the case's settings (a `work_only` case ignores `--seconds` as it ignores its own
+`seconds`); it has no `--compiler`. It runs
 `pkc_numerics_worker` from its own directory. With `-DPKC_PYTHON_MODULE=OFF -DPKC_CASADI_ROOT=<casadi package
 directory>` CMake builds the core, the worker and `pkc_solve` without Python at configure time.
 
 ```sh
 build/native/cpp/pkc_solve --input cases/real11/physical-anchors.json --output /path/to/report.json.gz \
-  [--save-progress] [--seconds S] [--max-solver-calls N]
+  [--resume /path/to/earlier.json.gz] [--save-progress] [--seconds S] [--max-solver-calls N]
 cmake -S native/cpp -B /path/to/build -DPKC_PYTHON_MODULE=OFF -DPKC_CASADI_ROOT=/path/to/site-packages/casadi
 cmake --build /path/to/build --target pkc_solve pkc_numerics_worker
 ```

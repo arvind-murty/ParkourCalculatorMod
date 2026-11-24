@@ -1,0 +1,3 @@
+read_report on the durable reports of the A/B harness (fixed work, short control), one process each, 2026-11-24:
+fixed python: 2.516 s  native: 0.695 s  (decoded report sha256 prefix 4ee18a9465b82e38 on both)
+short python: 0.526 s  native: 0.128 s  (decoded report sha256 prefix 8a87e365bfd17d88 on both)
