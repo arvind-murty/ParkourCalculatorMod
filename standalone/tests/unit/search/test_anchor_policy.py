@@ -321,6 +321,17 @@ class AnchorPolicyTests(unittest.TestCase):
             with self.subTest(name), self.assertRaisesRegex(ValueError,'^'+name+' shares its top face with .*pad'):
                 settings({},flush_scene(('pad',box)))
 
+    def test_tops_less_than_the_free_width_apart_are_one_face(self):
+        # Gaps are 0.6 or 0.625 in practice; 0.612 absorbs rounding between them (user, 2026-11-23).
+        for gap,shared in ((.6,True),(.605,True),(.625,False)):
+            s=flush_scene(('pad',[7+gap,0,0,8+gap,1,1]))
+            with self.subTest(gap):
+                if shared:
+                    with self.assertRaisesRegex(ValueError,'^goal shares its top face with pad'):
+                        settings({},s)
+                else:
+                    self.assertEqual(settings({},s)['anchors'],[])
+
     def test_face_namer_names_one_block_by_its_face_and_cut_pieces_by_their_owner(self):
         from parkour_solver.search.anchors.policy import face_namer, support_face
         # wall stands through C's top and cuts it in two; E is flush with C's right piece only.

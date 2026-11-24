@@ -40,8 +40,10 @@ def _overlap(a, b, *, positive_area=True):
 
 
 def _adjacent(a, b):
-    overlap = _overlap(a, b, positive_area=False)
-    return overlap is not None and (overlap[0] < overlap[2] or overlap[1] < overlap[3])
+    # Player-space rectangles less than MIN_FREE_WIDTH apart leave no free piece between them, so they are one
+    # surface: a block gap under 0.612 joins two tops (user, 2026-11-23).
+    gap_u, gap_v = max(a[0], b[0])-min(a[2], b[2]), max(a[1], b[1])-min(a[3], b[3])
+    return gap_u < MIN_FREE_WIDTH and gap_v < MIN_FREE_WIDTH and (gap_u < 0 or gap_v < 0)
 
 
 def _check(check_budget):
