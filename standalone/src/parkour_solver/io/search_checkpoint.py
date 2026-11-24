@@ -10,6 +10,7 @@ the store encodes it natively, and it names the paths of its repair program and
 targets itself where a dict's are found by identity.
 """
 from parkour_solver import native_core
+from parkour_solver.io.checkpoint_store import StoredValue
 
 
 class _NativeState:
@@ -29,10 +30,35 @@ class SearchCheckpoint:
         self.paths = []
         self.token = None
         self.frozen = {}  # id -> (part, its native copy)
+        self.saver = None  # the native saver of the current native search
+        self.final = None  # (a native search's result state, its snapshot)
+
+    def native_saver(self, outer):
+        """A native search's saver on this checkpoint's native store (io/search_checkpoint.hpp), or None. The search
+        then saves every transition itself, with no Python call; `outer` is the event state, whose dfs it fills."""
+        if getattr(self.store, 'native', None) is None:
+            return None
+        self.sync()
+        self.final = None  # the next search may change the state it named
+        self.saver = native_core.from_environment().SearchSaver(self.store.native, self.metadata, outer,
+                                                                [w.key for w in self.windows])
+        return self.saver
+
+    def native_final(self, state, snapshot):
+        """A native search's result state (a dict) and its snapshot: a later save of that dict encodes the snapshot."""
+        self.final = state, snapshot
+
+    def sync(self):
+        """Take the windows the native saver stored."""
+        if self.saver is not None:
+            self.windows.extend(StoredValue(self.store.identity, key) for key in self.saver.windows[len(self.windows):])
 
     def state(self, state, encode_natively=True):
+        self.sync()
         dfs=state.get('dfs') if state.get('kind')=='event_route_search' else state
         if dfs is None:return dict(state)
+        if self.final is not None and dfs is self.final[0]:
+            dfs = self.final[1]  # the same state, encoded natively from its snapshot
         native = hasattr(dfs, 'checkpoint_encode')
         count = dfs.length(['windows']) if native else len(dfs['windows'])
         if count < len(self.windows):

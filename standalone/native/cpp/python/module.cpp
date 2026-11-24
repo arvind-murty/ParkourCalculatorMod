@@ -3,6 +3,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -28,6 +29,8 @@
 #include "pkc/reachability/service.hpp"
 #include "pkc/spatial/event_routes.hpp"
 #include "pkc/movement/settings.hpp"
+#include "pkc/io/search_checkpoint.hpp"
+#include "pkc/io/store.hpp"
 #include "pkc/search/anchors/adapter.hpp"
 #include "pkc/search/anchors/policy.hpp"
 #include "pkc/search/bounds/remaining.hpp"
@@ -560,7 +563,11 @@ py::list paths_to_python(const std::vector<pkc::Array>& paths) {
 // the store's `known` set and reusing the store's encode cache when given.
 py::tuple checkpoint_encode(const std::function<std::string(pkc::CheckpointEncoder&)>& encode, py::handle known,
                             pkc::EncodeCache* cache = nullptr) {
+    // `known` is the store's key set, or a native store itself.
+    const pkc::CheckpointStore* store =
+        py::isinstance<pkc::CheckpointStore>(known) ? known.cast<const pkc::CheckpointStore*>() : nullptr;
     pkc::CheckpointEncoder encoder([&](const std::string& key) {
+        if (store) return store->known(key);
         const int found = PySet_Contains(known.ptr(), py::str(key).ptr());
         if (found < 0) throw py::error_already_set();
         return found == 1;
@@ -578,6 +585,15 @@ PYBIND11_MODULE(_pkc_native, m) {
     py::register_exception<std::invalid_argument>(m, "NativeValueError", PyExc_ValueError);
     py::register_exception<pkc::Unsupported>(m, "NativeUnsupported", PyExc_NotImplementedError);
     py::register_exception<pkc::Timeout>(m, "NativeTimeout", PyExc_TimeoutError);
+    py::register_exception_translator([](std::exception_ptr failure) {
+        try {
+            if (failure) std::rethrow_exception(failure);
+        } catch (const std::filesystem::filesystem_error& e) {  // OSError(errno, strerror, filename), as Python raises
+            py::object error = py::module_::import("builtins").attr("OSError")(e.code().value(), e.code().message(),
+                                                                                e.path1().string());
+            PyErr_SetObject(error.get_type().ptr(), error.ptr());
+        }
+    });
     m.def("canonical_json", [](py::handle value) { return py::bytes(pkc::canonical_json(convert(value))); },
           "json.dumps(value, sort_keys=True, allow_nan=False).encode()");
     m.def("digest", [](py::handle value) { return pkc::digest(convert(value)); },
@@ -1053,6 +1069,44 @@ PYBIND11_MODULE(_pkc_native, m) {
         return checkpoint_encode([&](pkc::CheckpointEncoder& e) { return e.encode(v); }, known, cache);
     }, py::arg("value"), py::arg("known"), py::arg("cache") = nullptr,
        "io/checkpoint_store's encode of a JSON value: (its encoding, new objects [(key, data)] not in `known`)");
+    py::class_<pkc::CheckpointStore, std::shared_ptr<pkc::CheckpointStore>>(m, "CheckpointStore")
+        .def(py::init<std::string>(), "io/store.hpp: opens or creates the store whose manifest is `path`")
+        .def_property_readonly("identity", &pkc::CheckpointStore::identity)
+        .def_property_readonly("cache", &pkc::CheckpointStore::cache)
+        .def("__contains__", &pkc::CheckpointStore::known)
+        .def("__len__", &pkc::CheckpointStore::size)
+        .def("insert", [](pkc::CheckpointStore& store, py::handle objects) {
+            std::vector<std::pair<std::string, std::string>> rows;
+            for (py::handle row : objects) {
+                auto pair = row.cast<py::tuple>();
+                rows.emplace_back(pair[0].cast<std::string>(), pair[1].cast<std::string>());
+            }
+            store.insert(rows);
+        }, "commits (key, uncompressed bytes) objects the store does not hold, in one transaction")
+        .def("publish", &pkc::CheckpointStore::publish)
+        .def("publish_patch", &pkc::CheckpointStore::publish_patch)
+        .def("compact", &pkc::CheckpointStore::compact)
+        .def("close", &pkc::CheckpointStore::close);
+    py::class_<pkc::SearchSaver, std::shared_ptr<pkc::SearchSaver>>(m, "SearchSaver")
+        .def(py::init([](std::shared_ptr<pkc::CheckpointStore> store, py::handle metadata, py::handle outer,
+                         std::vector<std::string> windows) {
+            return std::make_shared<pkc::SearchSaver>(std::move(store), convert(metadata), convert(outer), std::move(windows));
+        }), "io/search_checkpoint.hpp: a native search's saver; `outer` is the event state, whose dfs it fills, or None")
+        .def("save", [](pkc::SearchSaver& saver, const NativeSnapshot& state) {
+            saver.save(state.snapshot->state, state.snapshot->repair);
+        }, "a native search's full save of this snapshot")
+        .def("progress", [](pkc::SearchSaver& saver, const NativeSnapshot& state) {
+            saver.progress(state.snapshot->state, state.snapshot->repair);
+        }, "a native search's repair progress: a patch of the last save when the snapshot's repair follows it")
+        .def_property_readonly("windows", &pkc::SearchSaver::windows)
+        .def_property_readonly("counts", [](const pkc::SearchSaver& s) {
+            py::dict out;
+            out["seconds"] = s.seconds;
+            out["maxSeconds"] = s.max_seconds;
+            out["saves"] = s.saves;
+            out["patches"] = s.patches;
+            return out;
+        });
     py::class_<FrozenValue, std::shared_ptr<FrozenValue>>(m, "FrozenValue")
         .def(py::init([](py::handle value) { return std::make_shared<FrozenValue>(FrozenValue{convert(value)}); }))
         .def("checkpoint_encode", [](const FrozenValue& f, py::handle known,
@@ -1148,6 +1202,8 @@ PYBIND11_MODULE(_pkc_native, m) {
                 };
             };
             h.publish = snapshot_hook(hook("publish"));
+            if (py::object saver = py::getattr(hooks, "saver", py::none()); !saver.is_none())
+                h.saver = saver.cast<std::shared_ptr<pkc::SearchSaver>>();
             h.begin_repair = snapshot_hook(hook("begin_repair"));
             h.repair_progress = snapshot_hook(hook("repair_progress"));
             h.check = [f = hook("check")] { python_hook([&] { f(); }); };
@@ -1198,6 +1254,9 @@ PYBIND11_MODULE(_pkc_native, m) {
                                                     std::move(gate), std::move(anchors), std::move(adapter));
         }))
         .def("run", &pkc::DfsSearch::run, "the main loop; its termination")
+        .def("snapshot", [](const pkc::DfsSearch& search) {
+            return std::make_shared<NativeSnapshot>(NativeSnapshot{search.snapshot(), {}});
+        }, "the state as a frozen snapshot: the checkpoint saver encodes the result's state from it natively")
         .def("state", [](const pkc::DfsSearch& search) {
             // One Python object per shared container, as the Python search's state shares its dicts.
             SharedObjects shared;

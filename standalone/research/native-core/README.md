@@ -1008,3 +1008,26 @@ and seconds, so the two resume tests that record or cancel at `RelaxedDispatch`'
 cancelled frame-end test and the bridge's saved-search test. In native mode they record the same requests and
 frame-end requests as Python mode, fingerprint for fingerprint, and the profiler's `requests.json` rows are unchanged
 ([evidence](2026-11-23-observer/resume-tests.txt)).
+
+## The native checkpoint saver, 2026-11-23
+Source: `ef1f5919` plus a native checkpoint store (`io/store.hpp`: SQLite, zlib, the manifest, patches and compaction
+on the Python store's files and objects) and a native search saver (`io/search_checkpoint.hpp`): under the native
+core `CheckpointStore` writes through the native store, and a `SearchCheckpoint` on it hands the native anchor search
+a saver, so the search's full saves and repair patches are written with no Python call. The search's final snapshot
+goes to the checkpoint too, so the final save encodes the result's state from it. The native encoder's per-archive
+memo now holds each container it names (it keyed raw addresses, so an encoded temporary's address could return a
+later temporary's stale encoding), and a failed native file write raises the `OSError` Python raises.
+
+- Same objects: in one run, every snapshot saved by the Python saver is also saved by a native saver on a second
+  store, and after every save and patch both manifests name the same root: 185 of 185 on the short control and 467 of
+  467 on fixed work ([short](2026-11-23-saver/store-parity-short.json), [fixed](2026-11-23-saver/store-parity-fixed.json));
+  `tests/unit/io/test_checkpoint_store.py` checks the same in the suite. Two runs cannot be compared store to store:
+  their timing fields differ.
+- The suite passes in both modes (873 tests, 10 skipped as before), the gate in both modes (621, no failures, errors
+  or skips), AddressSanitizer runs clean on the search, checkpoint and numerics tests (the known
+  `test_cli_writes_structured_error_atomically` harness failure aside) and on durable fixed work, whose report equals
+  the release build's.
+- Durable, alternating with `ef1f5919`: reports equal; fixed work 15.00 s and 14.97 s against 15.79 s and 15.84 s,
+  the short control 2.21 s and 2.16 s against 2.47 s and 2.43 s; on fixed work the 469 Python save callbacks (3.71 s)
+  become 467 native saves and patches (2.08 s) and the final save takes 1.05 s instead of 1.84 s
+  ([runs](2026-11-23-saver/durable-ab.txt)). Real11 was not rerun.

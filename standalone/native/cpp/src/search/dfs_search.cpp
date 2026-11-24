@@ -193,7 +193,12 @@ RepairTargets DfsSearch::active_targets() {
 
 void DfsSearch::publish() {
     state_.cumulative_calls = options_.prior_calls + hooks_.solver_calls();
-    if (hooks_.progress) hooks_.publish(snapshot(active_targets()));
+    if (!hooks_.progress) return;
+    const Snapshot state = snapshot(active_targets());
+    if (hooks_.saver)
+        hooks_.saver->save(state->state, state->repair);
+    else
+        hooks_.publish(state);
 }
 
 // `program` is the anchor-leg program the targets follow, or null for a decision check's node program.
@@ -204,7 +209,18 @@ void DfsSearch::begin_repair(RepairTargets targets, const SharedValue& program) 
     repair_ = targets;
     repair_program_ = program;
     repair_node_ = !program;
-    hooks_.begin_repair(snapshot(std::move(targets)));
+    const Snapshot state = snapshot(std::move(targets));
+    if (hooks_.saver)
+        hooks_.saver->save(state->state, state->repair);
+    else
+        hooks_.begin_repair(state);
+}
+
+void DfsSearch::report_repair(const Snapshot& state) {
+    if (hooks_.saver)
+        hooks_.saver->progress(state->state, state->repair);
+    else
+        hooks_.repair_progress(state);
 }
 
 void DfsSearch::repair_progress() {
@@ -219,9 +235,9 @@ void DfsSearch::repair_progress() {
     if (following && !(active && (repair_node_ || active->program != repair_program_))) {
         RepairTargets targets = repair_;
         targets.patch = true;
-        hooks_.repair_progress(snapshot(std::move(targets)));
+        report_repair(snapshot(std::move(targets)));
     } else {
-        hooks_.repair_progress(snapshot(active_targets()));
+        report_repair(snapshot(active_targets()));
     }
 }
 

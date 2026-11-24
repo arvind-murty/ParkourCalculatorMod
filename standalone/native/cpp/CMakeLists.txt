@@ -23,7 +23,7 @@ endif()
 
 add_library(pkc_core STATIC src/canonical.cpp src/coefficients.cpp src/envelopes.cpp src/gate.cpp src/program.cpp src/screen.cpp src/sha256.cpp src/vertical.cpp
             src/constraints/avoidance.cpp src/constraints/contacts.cpp src/constraints/encounters.cpp src/constraints/hit_events.cpp src/constraints/variants.cpp src/reachability/screen.cpp
-            src/movement/contact_combinations.cpp src/movement/cases.cpp src/movement/generation.cpp src/movement/normal.cpp src/reachability/service.cpp src/search/anchors/adapter.cpp src/search/anchors/policy.cpp src/search/bounds/remaining.cpp src/search/comparison.cpp src/search/dfs.cpp src/search/dfs_search.cpp src/search/dfs_state.cpp src/search/engine.cpp src/search/feasibility.cpp src/search/frontier.cpp src/search/goals.cpp src/search/identity.cpp src/search/node.cpp src/search/ordered_route.cpp src/search/repair.cpp src/reachability/viability.cpp src/movement/ladder/ceiling.cpp src/movement/ladder/events.cpp src/movement/ladder/settings.cpp src/movement/settings.cpp src/movement/units.cpp src/movement/vertical_profiles.cpp src/observability/turns.cpp src/io/checkpoint_store.cpp
+            src/movement/contact_combinations.cpp src/movement/cases.cpp src/movement/generation.cpp src/movement/normal.cpp src/reachability/service.cpp src/search/anchors/adapter.cpp src/search/anchors/policy.cpp src/search/bounds/remaining.cpp src/search/comparison.cpp src/search/dfs.cpp src/search/dfs_search.cpp src/search/dfs_state.cpp src/search/engine.cpp src/search/feasibility.cpp src/search/frontier.cpp src/search/goals.cpp src/search/identity.cpp src/search/node.cpp src/search/ordered_route.cpp src/search/repair.cpp src/reachability/viability.cpp src/movement/ladder/ceiling.cpp src/movement/ladder/events.cpp src/movement/ladder/settings.cpp src/movement/settings.cpp src/movement/units.cpp src/movement/vertical_profiles.cpp src/observability/turns.cpp src/io/checkpoint_store.cpp src/io/search_checkpoint.cpp src/io/store.cpp
             src/numerics/builders.cpp src/numerics/constraints.cpp src/numerics/disk.cpp src/numerics/post_alarm.cpp src/numerics/continuation.cpp src/numerics/model.cpp src/numerics/solver.cpp
             src/scene/geometry.cpp src/scene/ladders.cpp src/scene/normalize.cpp src/scene/objectives.cpp src/scene/route.cpp src/scene/static_collision.cpp
             src/spatial/cells.cpp src/spatial/event_routes.cpp src/spatial/regions.cpp src/spatial/surfaces.cpp
@@ -53,6 +53,10 @@ set_target_properties(clarabel_c PROPERTIES IMPORTED_LOCATION "${CLARABEL_LIBRAR
                       INTERFACE_INCLUDE_DIRECTORIES "${clarabel_cpp_SOURCE_DIR}/include")
 add_dependencies(clarabel_c clarabel_build)
 target_link_libraries(pkc_core PUBLIC clarabel_c)
+# The checkpoint store (io/store.hpp) writes the same SQLite database and zlib objects as io/checkpoint_store.py.
+find_package(SQLite3 REQUIRED)
+find_package(ZLIB REQUIRED)
+target_link_libraries(pkc_core PUBLIC SQLite::SQLite3 ZLIB::ZLIB)
 
 find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
 execute_process(COMMAND "${Python_EXECUTABLE}" -m pybind11 --cmakedir

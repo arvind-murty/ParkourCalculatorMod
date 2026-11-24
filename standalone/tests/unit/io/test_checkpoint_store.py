@@ -8,6 +8,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from parkour_solver import native_core
 from parkour_solver.io.checkpoint_store import CheckpointStore, read_report
 from parkour_solver.io.search_checkpoint import SearchCheckpoint
 import tests.support.repair_resume as repair_tests
@@ -50,9 +51,12 @@ class CheckpointStoreTests(StoreCase):
     def test_failed_manifest_publication_preserves_previous_committed_root(self):
         with CheckpointStore(self.path) as store:
             store.save(dict(accepted='old'))
-            with patch('parkour_solver.io.checkpoint_store._atomic_json',side_effect=OSError('interrupted')):
-                with self.assertRaises(OSError):
-                    store.save(dict(accepted='new'))
+            # The manifest's temporary file cannot be written: the publication fails after its objects commit.
+            temporary=self.path.with_name(self.path.name+'.tmp')
+            temporary.mkdir()
+            with self.assertRaises(OSError):
+                store.save(dict(accepted='new'))
+            temporary.rmdir()
             self.assertEqual(read_report(self.path),dict(accepted='old'))
             store.save(dict(accepted='new'))
         self.assertEqual(read_report(self.path),dict(accepted='new'))
@@ -220,18 +224,48 @@ class NativeCheckpointTests(StoreCase):
         from parkour_solver.search.domain import InitialJumpDomain
         from tests.support.checkpoint_guidance import flat_scene
         scene=flat_scene();scene['movementSearch'].update(maxInputs=28,maxPrefixes=64)
-        checked=[];owners=[];testcase=self
+        checked=[];owners=[];mirrored=[];testcase=self
+        core=native_core.from_environment()
+        mirror=self.path.with_name('native.json.gz')
+
+        def root(path):
+            return json.loads(gzip.decompress(path.read_bytes()))['root']
+
         class CheckedWriter(SearchCheckpoint):
+            """Saves the published states in Python, which reads them back live; under the native core each snapshot
+            also goes to a native saver on a second store, which must publish the same roots."""
+            saver=outer=None
+            progressing=False
+            def native_saver(self,outer):
+                return None  # the snapshots come to the hooks below
+            def mirror(self,state,call):
+                dfs=state['dfs']
+                if core is None or not hasattr(dfs,'repair'):
+                    return
+                if self.saver is None or dict(state,dfs=None)!=self.outer:  # each search's own event state
+                    self.outer=dict(state,dfs=None)
+                    self.saver=core.SearchSaver(mirrored_store,{},self.outer,list(self.saver.windows) if self.saver else [])
+                getattr(self.saver,call)(dfs)
+                testcase.assertEqual(root(mirror),root(testcase.path))
+                mirrored.append(call)
+            def __call__(self,state,program=None,extra_targets=()):
+                super().__call__(state,program,extra_targets)
+                if not self.progressing:  # a progress that saves in full is mirrored as progress
+                    self.mirror(state,'save')
             def begin_repair(self,state,program,extra_targets=()):
                 super().begin_repair(state,program,extra_targets)
                 dfs=state['dfs']  # a native snapshot names its repair targets itself
                 owners.append(bool(dfs.repair['targets'] if hasattr(dfs,'repair') else extra_targets))
             def repair_progress(self,state):
+                self.progressing=True
                 super().repair_progress(state)
+                self.progressing=False
+                self.mirror(state,'progress')
                 dfs=state['dfs']  # a native search publishes snapshots, converted on request
                 live=dict(state,dfs=dfs.to_python()) if hasattr(dfs,'to_python') else state
                 testcase.assertEqual(read_report(testcase.path)['searchState'],json.loads(json.dumps(live)))
                 checked.append(True)
+        mirrored_store=core.CheckpointStore(str(mirror)) if core is not None else None
         with PythonCompiler() as compiler, CheckpointStore(self.path) as store:
             writer=CheckedWriter(store,{})
             result=find_checkpoint_route(scene,compiler,anchor_search={},seconds=8,
@@ -241,6 +275,8 @@ class NativeCheckpointTests(StoreCase):
             self.assertEqual(read_report(self.path)['result'],json.loads(json.dumps(result)))
         self.assertTrue(checked)
         self.assertIn(True,owners,'No internal-node checkpoint was exercised')
+        if core is not None:
+            self.assertIn('progress',mirrored)
 
 if __name__ == '__main__':
     unittest.main()

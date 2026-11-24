@@ -47,6 +47,7 @@ class DurableProgress:
     """Keep the production callback protocol while timing each boundary."""
     def __init__(self, checkpoint, profile):
         self.checkpoint, self.profile = checkpoint, profile
+        self.savers = []
 
     def __call__(self, *args, **kwargs):
         return self.profile.call('callback.durable.transition', self.checkpoint, *args, **kwargs)
@@ -56,6 +57,24 @@ class DurableProgress:
 
     def repair_progress(self, *args, **kwargs):
         return self.profile.call('callback.durable.repair', self.checkpoint.repair_progress, *args, **kwargs)
+
+    def native_saver(self, outer):
+        saver = self.checkpoint.native_saver(outer)
+        if saver is not None:
+            self.savers.append(saver)
+        return saver
+
+    def record_native(self):
+        """The native savers' time as one bucket: they save with no Python call to time."""
+        if self.savers:
+            counts = [saver.counts for saver in self.savers]
+            seconds = sum(c['seconds'] for c in counts)
+            self.profile.buckets['callback.durable.native'] = dict(
+                calls=sum(c['saves']+c['patches'] for c in counts), inclusiveSeconds=seconds, selfSeconds=seconds,
+                maxSeconds=max(c['maxSeconds'] for c in counts))
+
+    def native_final(self, state, snapshot):
+        return self.checkpoint.native_final(state, snapshot)
 
 
 def main():
@@ -156,6 +175,8 @@ def main():
                 result, validation = profile.call('run.search_and_final_replay',run,copy.deepcopy(fixture),compiler,
                     python_executable=args.python,on_progress=callback,
                     cancel_event=cancelled,resume_state=previous)
+            if checkpoint is not None:
+                callback.record_native()
             scene = prepare_scene(result['effectiveRequest'])
             replays = profile.call('postrun.accepted_replays',lambda:[replay_witness(scene,best,compiler)
                                         for best in witnesses(result['searchState'])])

@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "pkc/io/search_checkpoint.hpp"
 #include "pkc/reachability/service.hpp"
 #include "pkc/search/anchors/adapter.hpp"
 #include "pkc/search/anchors/policy.hpp"
@@ -26,17 +27,6 @@
 #include "pkc/value.hpp"
 
 namespace pkc {
-
-// Where the program of the repair a checkpoint saver follows sits in a published state (paths from the state's root),
-// and where each extra target sits (a decision check's node entry): until the next full save, the saver writes the
-// program's repairState and each target whole there. Mirrors io/search_checkpoint.py's identity search: the active
-// anchor-leg program by default, the program and targets a repair began with.
-struct RepairTargets {
-    std::int64_t token = 0;  // the full save these paths belong to
-    bool patch = false;      // a repair's progress: patch that save rather than saving in full
-    std::vector<Array> program;
-    std::vector<std::vector<Array>> targets;
-};
 
 // A published state, frozen: Python reads it field by field and the checkpoint store encodes it natively.
 struct DfsSnapshot {
@@ -54,6 +44,9 @@ struct DfsHooks {
     std::function<void(const Snapshot& state)> publish;
     std::function<void(const Snapshot& state)> begin_repair;
     std::function<void(const Snapshot& state)> repair_progress;
+    // A native checkpoint saver, when the run saves natively: it takes every snapshot instead of the three hooks
+    // above, and Python is not called for progress.
+    std::shared_ptr<SearchSaver> saver;
     // The work budget: check() (raises TimeoutError), counts['solverCalls'], counts[name] += by, accepted(candidate),
     // termination (null for None).
     std::function<void()> check;
@@ -110,6 +103,8 @@ public:
 
     std::string run();      // the main loop; the termination
     Value state() const;    // the state as published
+    // The state as a frozen snapshot with these repair targets (none for the result's).
+    Snapshot snapshot(RepairTargets repair = {}) const;
     std::int64_t viability_checked() const { return viability_checked_; }
     std::int64_t viability_excluded() const { return viability_excluded_; }
     void score_progress(const Value& repair);  // an anchor-leg or finish solve's progress
@@ -172,7 +167,7 @@ private:
     void publish();
     void begin_repair(RepairTargets targets, const SharedValue& program);
     void repair_progress();
-    Snapshot snapshot(RepairTargets repair) const;
+    void report_repair(const Snapshot& state);  // to the native saver, else the repair_progress hook
     std::vector<Array> frame_paths(const Frame& f) const;
     std::vector<Array> program_paths(const SharedValue& program) const;
     RepairTargets active_targets();

@@ -145,22 +145,28 @@ std::string CheckpointEncoder::encode(const Value& value) {
     return data;
 }
 
+std::string CheckpointEncoder::references(const std::vector<std::string>& stored) {
+    // A list of references is never flat; an empty one is.
+    if (stored.empty()) return "[\"j\",[]]";
+    std::string out = "[\"l\",[";
+    for (std::size_t i = 0; i < stored.size(); ++i) out += (i ? "," : "") + reference(stored[i]);
+    return chunk(out + "]]");
+}
+
+std::string CheckpointEncoder::entries(const std::vector<std::pair<std::string, std::string>>& encoded) {
+    std::string data = "[\"d\",[";
+    for (std::size_t i = 0; i < encoded.size(); ++i)
+        data += std::string(i ? "," : "") + '[' + json(Value{encoded[i].first}) + ',' + encoded[i].second + ']';
+    return chunk(data + "]]");
+}
+
 std::string CheckpointEncoder::chunk(std::string data) {
     return data.size() >= kChunkBytes ? reference(remember(data)) : data;
 }
 
 std::string CheckpointEncoder::encode_replacing(const Value& object, const std::string& key,
                                                 const std::vector<std::string>& stored) {
-    // A list of references is never flat; an empty one is.
-    std::string replaced;
-    if (stored.empty()) {
-        replaced = "[\"j\",[]]";
-    } else {
-        replaced = "[\"l\",[";
-        for (std::size_t i = 0; i < stored.size(); ++i) replaced += (i ? "," : "") + reference(stored[i]);
-        replaced += "]]";
-        replaced = chunk(std::move(replaced));
-    }
+    const std::string replaced = references(stored);
     bool all_flat = true;
     for (const auto& [k, child] : fields(object)) all_flat = all_flat && (k == key ? stored.empty() : flat(child));
     if (all_flat) {

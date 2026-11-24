@@ -1,0 +1,7 @@
+Durable runs (tools.profiling.run --durable --profile-mode none), alternating: ef1f5919 build vs the native saver.
+Inputs: fixed work research/prefix-reuse-keys/2026-11-21/extended-fixedwork100.json; short control /private/var/tmp/standalone-cpp-node-20261122/short/input.json.
+fixed: search seconds ef1f5919 [15.79, 15.84], saver [15.0, 14.97]
+short: search seconds ef1f5919 [2.47, 2.43], saver [2.21, 2.16]
+Reports equal apart from provenance (compare_reports) for both inputs.
+fixed work ef1f5919: callback.durable.transition 72 calls 2.06 s, callback.durable.dispatch 51 calls 0.70 s, callback.durable.repair 346 calls 0.95 s, postrun.durable_finish 1 calls 1.84 s
+fixed work saver (a later run, once the profile took the saver's own time as callback.durable.native): callback.durable.transition 2 calls 0.05 s, callback.durable.native 467 calls 2.08 s, postrun.durable_finish 1 calls 1.05 s
