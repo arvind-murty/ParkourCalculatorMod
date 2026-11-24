@@ -422,7 +422,7 @@ class FrameEndTests(unittest.TestCase):
         self.assert_kept(p, result)
 
     def test_a_sector_certificate_needs_no_ipopt(self):
-        from tests.unit.numerics.test_post_alarm import alarmed
+        from tests.support.post_alarm import alarmed
         gate = SimpleNamespace(cache={})
         result, requests = self.full_strength(alarmed('quadrant'), gate)
         self.assertEqual((result['status'], result['termination'], result['frameEnd']['method'], requests),

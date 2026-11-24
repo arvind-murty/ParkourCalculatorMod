@@ -232,3 +232,21 @@ the push answer's exact facings; `frame_end_score.py` compares the policies on t
 
 The polish never failed (0 of 838) and never returned a worse point. It must start from the exact facings: the 1e-4
 rad `ipopt_seed` turn moves validated full-strength points out of IPOPT's tolerance (see "IPOPT on pipeline answers").
+
+## Frame-end re-solves on Real11
+
+One bookkeeping run each (`tools.profiling.run`, 300 s), 25f7fc62 (run-end finalization) against 7ac9eed6 (frame-end
+re-solves) on the same machine.
+
+| case | source | best | requests | IPOPT | search s |
+|---|---|---|---|---|---|
+| `cases/real11/physical-anchors.json` | 25f7fc62 | T64, -1093.238302878354 | 39 | 1 finalization | 4.10 |
+| `cases/real11/physical-anchors.json` | 7ac9eed6 | T64, -1093.2383028783543 | 39 | 8 frame-end polishes | 5.14 |
+| extended (`runs/post-alarm/real11-ab/extended-B.json`) | 25f7fc62 | none (deadline; final frame reached with no finish) | 740 | 0 | 306.5 |
+| extended | 7ac9eed6 | none (deadline; final frame reached with no finish) | 740 + 3 frame-end | 3 frame-end polishes | 306.8 |
+
+Same decisions throughout: the same witnesses are chosen, with the same 10 expanded prefixes and 8/8 replays on the
+standard case. On the extended case, the same 40 alarm confirmations end the same way by method and status. Every
+Real11 witness was already full strength (`direct`), and the polish never changed an objective. The standard case's
+8 frame-end solves took 1.244 s in all, about 0.15 s each, which accounts for its extra second. Full-strength
+acceptance adds 8 Clarabel solves to the extended case's confirmations (1122 against 1114).

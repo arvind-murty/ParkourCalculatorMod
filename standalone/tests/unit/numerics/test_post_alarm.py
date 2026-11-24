@@ -1,29 +1,18 @@
-import gzip
 import math
-import json
-import pathlib
 import unittest
 from types import SimpleNamespace
 from unittest import mock
 
-from parkour_solver.numerics import disk, post_alarm, prepare, solver
+from parkour_solver.numerics import disk, post_alarm, solver
 from parkour_solver.validation.numerical import validate
+from tests.support.post_alarm import alarmed
 
-# One alarmed request per study pipeline outcome (research/post-alarm/README.md), and a Real11 request whose most short
-# tick is not a jump tick.
-FIXTURE = pathlib.Path(__file__).resolve().parents[2]/'fixtures'/'post_alarm'/'alarmed-requests.json.gz'
 # The study's answers (research/ipopt-seeds 1a5dcb53, configuration "O2 + no iterative refinement"); this source's
 # disk points differ by its contact margin, so answers agree to solver precision.
 STUDY = dict(push=-385.9620712857143, probe=-385.3082456476679, race=754.6023070789445)
 # IPOPT's answers to the requests the pipeline now answers without it: the study's production-seed and polish calls,
 # and on shortTick a start with tick 69 reversed (research/post-alarm/README.md#seed-bench).
 IPOPT = dict(prodSeed=-385.96199530132577, polish=496.51754119429324, shortTick=754.6119201657268)
-
-
-def alarmed(kind):
-    with gzip.open(FIXTURE, 'rt') as stream:
-        row = json.load(stream)['requests'][kind]
-    return prepare(dict(row['problem'], objectiveMode='configured'))
 
 
 def no_ipopt(request, **options):

@@ -88,10 +88,12 @@ class EventSearchTests(unittest.TestCase):
             p['profile']['contactEvents']=[dict(offset=n-1,axis='Y',direction=-1,boxes=[s['collisionScene']['solids'][target['solidIndex']]])]
             yield p
         def evaluate(s,p,compiler,adapter,work,motion,**kwargs):
-            work.before_solve({});dispatched.append((p['terminalSupport'],p['profile']['duration']))
+            if kwargs.get('final_route') is None:
+                # A frame-end re-solve (final_route) answers with the chosen witness's own point; only scoring is logged.
+                work.before_solve({});dispatched.append((p['terminalSupport'],p['profile']['duration']))
             n=p['profile']['duration']
             best=dict(candidate=dict(yaw=[0.]*n,positions=[[.5,0.]]*(n+1),velocity=[[0.,0.]]*(n+1),objective=0.),
-                plan=dict(ticks=n,walls=[]),profiles=[p['profile']],allocation=[0],cost=0)
+                plan=dict(ticks=n,walls=[]),profiles=[p['profile']],allocation=[0],cost=0,route=dict(source='stub'))
             return dict(status='feasible',termination='done',best=best,work=dict(solverCalls=1),fullSceneValidated=True)
         def progress(state):
             dfs=state['dfs']

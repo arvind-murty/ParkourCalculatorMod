@@ -71,10 +71,10 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
 | [docs/LAYOUT.md](LAYOUT.md) | 6304 |
 | [docs/MOD_REFERENCES.md](MOD_REFERENCES.md) | 5279 |
-| [docs/PERFORMANCE.md](PERFORMANCE.md) | 18028 |
+| [docs/PERFORMANCE.md](PERFORMANCE.md) | 18295 |
 | [docs/REAL11_EXTENDED_GEOMETRY.md](REAL11_EXTENDED_GEOMETRY.md) | 12104 |
 | [docs/REAL11_GUIDE.md](REAL11_GUIDE.md) | 20426 |
-| [docs/RESULTS_AND_DEBUGGING.md](RESULTS_AND_DEBUGGING.md) | 19271 |
+| [docs/RESULTS_AND_DEBUGGING.md](RESULTS_AND_DEBUGGING.md) | 19363 |
 | [docs/RUNBOOK.md](RUNBOOK.md) | 13337 |
 | [docs/TESTING.md](TESTING.md) | 20586 |
 | [docs/design/ANCHOR_POLICY_DECISIONS.md](design/ANCHOR_POLICY_DECISIONS.md) | 47387 |
@@ -1301,7 +1301,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [research/parent-linked-programs/native-gate/report.json](../research/parent-linked-programs/native-gate/report.json) | 19245 |
 | [research/parent-linked-programs/native-gate-phaseB/report.json](../research/parent-linked-programs/native-gate-phaseB/report.json) | 19246 |
 | [research/parent-linked-programs/prefix_stability.py](../research/parent-linked-programs/prefix_stability.py) | 2586 |
-| [research/post-alarm/README.md](../research/post-alarm/README.md) | 18707 |
+| [research/post-alarm/README.md](../research/post-alarm/README.md) | 20014 |
 | [research/post-alarm/capture_alarmed.py](../research/post-alarm/capture_alarmed.py) | 1711 |
 | [research/post-alarm/capture_misses.py](../research/post-alarm/capture_misses.py) | 1192 |
 | [research/post-alarm/capture_unalarmed.py](../research/post-alarm/capture_unalarmed.py) | 1527 |
@@ -1742,6 +1742,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/support/obstacle_faces.py](../tests/support/obstacle_faces.py) | 332 |
 | [tests/support/ordered_route.py](../tests/support/ordered_route.py) | 408 |
 | [tests/support/paths.py](../tests/support/paths.py) | 980 |
+| [tests/support/post_alarm.py](../tests/support/post_alarm.py) | 631 |
 | [tests/support/proposal_analysis.py](../tests/support/proposal_analysis.py) | 313 |
 | [tests/support/repair_resume.py](../tests/support/repair_resume.py) | 1442 |
 | [tests/support/route_regions.py](../tests/support/route_regions.py) | 587 |
@@ -1778,12 +1779,12 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/unit/numerics/test_capture.py](../tests/unit/numerics/test_capture.py) | 4383 |
 | [tests/unit/numerics/test_constraints.py](../tests/unit/numerics/test_constraints.py) | 3961 |
 | [tests/unit/numerics/test_continuation.py](../tests/unit/numerics/test_continuation.py) | 4844 |
-| [tests/unit/numerics/test_disk.py](../tests/unit/numerics/test_disk.py) | 26888 |
+| [tests/unit/numerics/test_disk.py](../tests/unit/numerics/test_disk.py) | 26877 |
 | [tests/unit/numerics/test_integration.py](../tests/unit/numerics/test_integration.py) | 9197 |
 | [tests/unit/numerics/test_ladder_model.py](../tests/unit/numerics/test_ladder_model.py) | 6840 |
 | [tests/unit/numerics/test_model.py](../tests/unit/numerics/test_model.py) | 5334 |
 | [tests/unit/numerics/test_movement.py](../tests/unit/numerics/test_movement.py) | 2925 |
-| [tests/unit/numerics/test_post_alarm.py](../tests/unit/numerics/test_post_alarm.py) | 7175 |
+| [tests/unit/numerics/test_post_alarm.py](../tests/unit/numerics/test_post_alarm.py) | 6735 |
 | [tests/unit/numerics/test_solver.py](../tests/unit/numerics/test_solver.py) | 6345 |
 | [tests/unit/numerics/test_worker_bounds.py](../tests/unit/numerics/test_worker_bounds.py) | 5510 |
 | [tests/unit/reachability/__init__.py](../tests/unit/reachability/__init__.py) | 0 |
@@ -1796,7 +1797,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tests/unit/search/test_anchor_search.py](../tests/unit/search/test_anchor_search.py) | 74678 |
 | [tests/unit/search/test_anchor_time_bound.py](../tests/unit/search/test_anchor_time_bound.py) | 1920 |
 | [tests/unit/search/test_candidate_comparison.py](../tests/unit/search/test_candidate_comparison.py) | 6044 |
-| [tests/unit/search/test_event_search.py](../tests/unit/search/test_event_search.py) | 8043 |
+| [tests/unit/search/test_event_search.py](../tests/unit/search/test_event_search.py) | 8245 |
 | [tests/unit/search/test_search.py](../tests/unit/search/test_search.py) | 6711 |
 | [tests/unit/search/test_search_fixes.py](../tests/unit/search/test_search_fixes.py) | 4286 |
 | [tests/unit/search/test_transfer_time_bounds.py](../tests/unit/search/test_transfer_time_bounds.py) | 5318 |
@@ -1824,7 +1825,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [tools/native_gate.py](../tools/native_gate.py) | 1679 |
 | [tools/paths.py](../tools/paths.py) | 567 |
 | [tools/profiling/__init__.py](../tools/profiling/__init__.py) | 66 |
-| [tools/profiling/bookkeeping.py](../tools/profiling/bookkeeping.py) | 12124 |
+| [tools/profiling/bookkeeping.py](../tools/profiling/bookkeeping.py) | 12251 |
 | [tools/profiling/calibrate.py](../tools/profiling/calibrate.py) | 3578 |
 | [tools/profiling/enumeration.py](../tools/profiling/enumeration.py) | 5300 |
 | [tools/profiling/enumeration_calibrate.py](../tools/profiling/enumeration_calibrate.py) | 4476 |
