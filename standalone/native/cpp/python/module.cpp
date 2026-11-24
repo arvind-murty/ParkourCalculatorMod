@@ -135,8 +135,13 @@ PyObject* key_reference(const std::string& key) {
     return found->second;
 }
 
-PyObject* new_reference(const pkc::Value& value) {
-    return std::visit([](const auto& held) -> PyObject* {
+// `shared`, when given, maps each container already converted in this call to its object (borrowed: the tree being
+// built holds it), so a container the value holds in several places becomes one Python object, as a Python state
+// holds one dict in several lists.
+using SharedObjects = std::unordered_map<const void*, PyObject*>;
+
+PyObject* new_reference(const pkc::Value& value, SharedObjects* shared = nullptr) {
+    return std::visit([shared](const auto& held) -> PyObject* {
         using T = std::decay_t<decltype(held)>;
         if constexpr (std::is_same_v<T, std::nullptr_t>) {
             Py_RETURN_NONE;
@@ -149,10 +154,16 @@ PyObject* new_reference(const pkc::Value& value) {
         } else if constexpr (std::is_same_v<T, std::string>) {
             return PyUnicode_FromStringAndSize(held.data(), held.size());
         } else if constexpr (std::is_same_v<T, std::shared_ptr<const pkc::Array>>) {
+            if (shared)
+                if (auto found = shared->find(held.get()); found != shared->end()) {
+                    Py_INCREF(found->second);
+                    return found->second;
+                }
             PyObject* list = PyList_New(held->size());
             if (!list) return nullptr;
+            if (shared) shared->emplace(held.get(), list);
             for (std::size_t i = 0; i < held->size(); ++i) {
-                PyObject* item = new_reference((*held)[i]);
+                PyObject* item = new_reference((*held)[i], shared);
                 if (!item) {
                     Py_DECREF(list);
                     return nullptr;
@@ -161,11 +172,17 @@ PyObject* new_reference(const pkc::Value& value) {
             }
             return list;
         } else {
+            if (shared)
+                if (auto found = shared->find(held.get()); found != shared->end()) {
+                    Py_INCREF(found->second);
+                    return found->second;
+                }
             PyObject* dict = PyDict_New();
             if (!dict) return nullptr;
+            if (shared) shared->emplace(held.get(), dict);
             for (const auto& [key, item] : *held) {
                 PyObject* name = key_reference(key);
-                PyObject* converted = name ? new_reference(item) : nullptr;
+                PyObject* converted = name ? new_reference(item, shared) : nullptr;
                 int failed = !converted || PyDict_SetItem(dict, name, converted) < 0;
                 Py_XDECREF(name);
                 Py_XDECREF(converted);
@@ -1160,7 +1177,13 @@ PYBIND11_MODULE(_pkc_native, m) {
         }))
         .def("run", &pkc::DfsSearch::run, "the main loop; its termination")
         .def("finalize_best", &pkc::DfsSearch::finalize_best)
-        .def("state", [](const pkc::DfsSearch& search) { return to_python(search.state()); })
+        .def("state", [](const pkc::DfsSearch& search) {
+            // One Python object per shared container, as the Python search's state shares its dicts.
+            SharedObjects shared;
+            PyObject* result = new_reference(search.state(), &shared);
+            if (!result) throw py::error_already_set();
+            return py::reinterpret_steal<py::object>(result);
+        })
         .def("viability", [](const pkc::DfsSearch& search) {
             py::dict out;
             out["checked"] = search.viability_checked();

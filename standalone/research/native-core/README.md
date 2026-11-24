@@ -957,3 +957,16 @@ native value inside a small dict as a JSON scalar.
   2.48 s against 5.83 and 6.73 s; peak memory 963 and 916 MiB against 865 and 804 MiB. Plain runs are unchanged
   ([times](2026-11-23-encode-cache/search-seconds.txt)). A cache that held its containers ran as fast at 1346 and
   1384 MiB; without reuse across saves a durable fixed run took 37.31 s.
+
+## The result state keeps its shared containers, 2026-11-23
+Source: `2b2ba7d6` plus `native.state()` converting each container the native state holds in several places to one
+Python object, as the Python search's state shares its dicts; it used to copy every occurrence, so the final report
+save converted and encoded each copy.
+
+- States equal Python mode (short control 191, fixed work 454, the milestone list's searching tests except the two
+  `disk.cached` flags); reports equal the previous code's except provenance, plain and durable; the milestone list
+  passes in both modes and AddressSanitizer runs clean ([checks](2026-11-23-shared-state/checks.txt),
+  [fixed](2026-11-23-shared-state/fixed-report-vs-previous.json), [short](2026-11-23-shared-state/short-report-vs-previous.json)).
+- Fixed work, alternating against `2b2ba7d6`: whole run 14.92 and 14.95 s against 15.62 and 15.41 s, peak memory 750
+  and 756 MiB against 895 and 877 MiB. Real11 extended at 300 s (one native run each): final report save 18.44 s
+  against 29.61 s, peak memory 2,842 MiB against 3,639 MiB ([times](2026-11-23-shared-state/times.txt)).

@@ -1,0 +1,7 @@
+Alternating sequential runs: base = 2b2ba7d6 with its own native build, new = the working tree (native mode); searchSeconds, wallSeconds, maxRssBytes (MiB)
+ab8 fixed search base 13.905100829899311 13.7423329167068 new 13.70686487853527 13.715359710156918; wall base 15.618616543710232 15.413451246917248 new 14.918237462639809 14.946479544043541; rss base 895 877 new 750 756
+ab8 short search base 1.2859113365411758 1.265081498771906 new 1.2491278760135174 1.2590961679816246; wall base 1.8953884541988373 1.878492582589388 new 1.7269222065806389 1.7367354184389114; rss base 338 341 new 294 294
+ab8d fixed search base 16.56034716963768 16.534223537892103 new 16.51645191386342 16.554061248898506; wall base 19.573743127286434 19.56729970499873 new 19.070150669664145 19.142931457608938; rss base 988 973 new 901 905
+ab8d short search base 2.3251281268894672 2.338131081312895 new 2.3261853754520416 2.333679586648941; wall base 2.957403250038624 2.9673039130866528 new 2.891095083206892 2.8827442936599255; rss base 305 316 new 274 273
+(ab8d = --durable). Reports of the first round equal the base reports except provenance, plain and durable.
+Real11 extended anchors, 300 s, call cap 100000, native mode, one run each (runs/real11-300s-20261123 at 2b2ba7d6, runs/real11-300s-shared-20261123 with this change): final report save 29.61 s -> 18.44 s, compaction 3.98 s -> 3.97 s, peak memory 3639 -> 2842 MiB, expanded prefixes 525 -> 533, solver calls 1761 -> 1779.
