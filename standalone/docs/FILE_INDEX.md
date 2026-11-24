@@ -65,7 +65,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [docs/DEFERRED_WORK.md](DEFERRED_WORK.md) | 35770 |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | 11512 |
 | [docs/DOC_INDEX.md](DOC_INDEX.md) | 29236 |
-| [docs/FILE_INDEX.md](FILE_INDEX.md) | 307801 |
+| [docs/FILE_INDEX.md](FILE_INDEX.md) | 307541 |
 | [docs/FUNCTION_INDEX.md](FUNCTION_INDEX.md) | 68572 |
 | [docs/IPOPT_CONSTRAINT_REDUCTION.md](IPOPT_CONSTRAINT_REDUCTION.md) | 5578 |
 | [docs/IPOPT_FEASIBILITY_MODE.md](IPOPT_FEASIBILITY_MODE.md) | 5131 |
@@ -183,7 +183,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/include/pkc/search/anchors/policy.hpp](../native/cpp/include/pkc/search/anchors/policy.hpp) | 5679 |
 | [native/cpp/include/pkc/search/bounds/remaining.hpp](../native/cpp/include/pkc/search/bounds/remaining.hpp) | 595 |
 | [native/cpp/include/pkc/search/comparison.hpp](../native/cpp/include/pkc/search/comparison.hpp) | 1387 |
-| [native/cpp/include/pkc/search/dfs.hpp](../native/cpp/include/pkc/search/dfs.hpp) | 3905 |
+| [native/cpp/include/pkc/search/dfs.hpp](../native/cpp/include/pkc/search/dfs.hpp) | 3776 |
 | [native/cpp/include/pkc/search/dfs_search.hpp](../native/cpp/include/pkc/search/dfs_search.hpp) | 11046 |
 | [native/cpp/include/pkc/search/dfs_state.hpp](../native/cpp/include/pkc/search/dfs_state.hpp) | 8253 |
 | [native/cpp/include/pkc/search/engine.hpp](../native/cpp/include/pkc/search/engine.hpp) | 2658 |
@@ -252,7 +252,7 @@ verified by [layout validation](../tools/validate_layout.py), not rewritten here
 | [native/cpp/src/search/anchors/policy.cpp](../native/cpp/src/search/anchors/policy.cpp) | 37738 |
 | [native/cpp/src/search/bounds/remaining.cpp](../native/cpp/src/search/bounds/remaining.cpp) | 8052 |
 | [native/cpp/src/search/comparison.cpp](../native/cpp/src/search/comparison.cpp) | 8960 |
-| [native/cpp/src/search/dfs.cpp](../native/cpp/src/search/dfs.cpp) | 21944 |
+| [native/cpp/src/search/dfs.cpp](../native/cpp/src/search/dfs.cpp) | 20114 |
 | [native/cpp/src/search/dfs_search.cpp](../native/cpp/src/search/dfs_search.cpp) | 81911 |
 | [native/cpp/src/search/dfs_state.cpp](../native/cpp/src/search/dfs_state.cpp) | 14157 |
 | [native/cpp/src/search/engine.cpp](../native/cpp/src/search/engine.cpp) | 13911 |
