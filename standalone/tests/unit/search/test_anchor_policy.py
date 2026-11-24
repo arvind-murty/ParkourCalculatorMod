@@ -231,10 +231,13 @@ class AnchorPolicyTests(unittest.TestCase):
         state['child']=outcome(result,'child-model',policy)
         self.assertEqual(state['child']['status'],'oracle_rejected')
         self.assertEqual(state['parent']['status'],'untested')
-        for field,value in (('pending',[{}]),('unresolved',[{}]),('inFlight',{}),('constraintGeneration',dict(exhausted=False))):
+        for field,value in (('pending',[{}]),('inFlight',{}),('constraintGeneration',dict(exhausted=False))):
             other=copy.deepcopy(result);other['repairState'][field]=value
             if field=='inFlight':other['repairState'][field]={'branch':'future'}
             self.assertEqual(outcome(other,'m',policy)['status'],'suspended')
+        # An unresolved branch is infeasible, not unfinished work.
+        other=copy.deepcopy(result);other['repairState']['unresolved']=[dict(rows=[],passages=[],hits=[],cause='done')]
+        self.assertEqual(outcome(other,'m',policy)['status'],'oracle_rejected')
         result['status']='error'
         self.assertEqual(outcome(result,'m',policy)['status'],'error')
 
@@ -257,10 +260,13 @@ class AnchorPolicyTests(unittest.TestCase):
         self.assertEqual(result,original)
         restored=json.loads(json.dumps(result))
         self.assertEqual(outcome(restored,'empty-node',policy),verdict)
-        for field,value in (('pending',[{}]),('unresolved',[{}]),('inFlight',dict(branch='unfinished')),
+        for field,value in (('pending',[{}]),('inFlight',dict(branch='unfinished')),
                             ('constraintGeneration',dict(exhausted=False))):
             unfinished=copy.deepcopy(result);unfinished['repairState'][field]=value
             self.assertEqual(outcome(unfinished,'empty-node',policy)['status'],'suspended')
+        unresolved=copy.deepcopy(result)
+        unresolved['repairState']['unresolved']=[dict(rows=[],passages=[],hits=[],cause='uncertain_interactions')]
+        self.assertEqual(outcome(unresolved,'empty-node',policy)['status'],'oracle_rejected')
         no_evidence=dict(status='unknown',best=None,repairState=dict(completed=[]))
         self.assertEqual(outcome(no_evidence,'unqueried',policy)['status'],'suspended')
 
